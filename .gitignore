@@ -348,3 +348,6 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+/BlueberryEngine/bin-int/Debug-windows-x86_64/BlueberryEngine/BlueberryEngine.tlog
+/BlueberryEditor/bin-int/Debug-windows-x86_64/BlueberryEditor/BlueberryEditor.tlog
+/BlueberryEngine/vendor/imgui/bin-int/Debug-windows-x86_64/ImGui

@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BlueberryEditor", "BlueberryEditor\BlueberryEditor.vcxproj", "{D88D060C-4419-74D0-4D2A-F7C4B934D0D0}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BlueberryEngine", "BlueberryEngine\BlueberryEngine.vcxproj", "{273BBA0C-93C6-27D1-9CD7-AAC508E283D1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Dependencies", "Dependencies", "{53E47842-3FC8-3998-A828-34EB942B241A}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ImGui", "BlueberryEngine\vendor\imgui\ImGui.vcxproj", "{C0FF640D-2C14-8DBE-F595-301E616989EF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D88D060C-4419-74D0-4D2A-F7C4B934D0D0}.Debug|x64.ActiveCfg = Debug|x64
+		{D88D060C-4419-74D0-4D2A-F7C4B934D0D0}.Debug|x64.Build.0 = Debug|x64
+		{D88D060C-4419-74D0-4D2A-F7C4B934D0D0}.Release|x64.ActiveCfg = Release|x64
+		{D88D060C-4419-74D0-4D2A-F7C4B934D0D0}.Release|x64.Build.0 = Release|x64
+		{273BBA0C-93C6-27D1-9CD7-AAC508E283D1}.Debug|x64.ActiveCfg = Debug|x64
+		{273BBA0C-93C6-27D1-9CD7-AAC508E283D1}.Debug|x64.Build.0 = Debug|x64
+		{273BBA0C-93C6-27D1-9CD7-AAC508E283D1}.Release|x64.ActiveCfg = Release|x64
+		{273BBA0C-93C6-27D1-9CD7-AAC508E283D1}.Release|x64.Build.0 = Release|x64
+		{C0FF640D-2C14-8DBE-F595-301E616989EF}.Debug|x64.ActiveCfg = Debug|x64
+		{C0FF640D-2C14-8DBE-F595-301E616989EF}.Debug|x64.Build.0 = Debug|x64
+		{C0FF640D-2C14-8DBE-F595-301E616989EF}.Release|x64.ActiveCfg = Release|x64
+		{C0FF640D-2C14-8DBE-F595-301E616989EF}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C0FF640D-2C14-8DBE-F595-301E616989EF} = {53E47842-3FC8-3998-A828-34EB942B241A}
+	EndGlobalSection
+EndGlobal

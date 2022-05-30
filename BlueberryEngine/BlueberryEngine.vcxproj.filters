@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{2DAB880B-99B4-887C-2230-9F7C8E38947C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Blueberry">
+      <UniqueIdentifier>{2861CF06-9421-4B3D-5D5C-94BAC9DB8F19}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Blueberry\Content">
+      <UniqueIdentifier>{72829A50-DEEE-554B-A7E2-EDA8130E78B3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Blueberry\Core">
+      <UniqueIdentifier>{807E5B45-6C62-1C9B-D5C2-16EEC1C5061D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Blueberry\Events">
+      <UniqueIdentifier>{0C30570F-F8BE-E0D8-A1DD-F4D38D4BF17E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Blueberry\Graphics">
+      <UniqueIdentifier>{68F646DD-54F0-6F2F-3D5D-064029F6D59B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Blueberry\Math">
+      <UniqueIdentifier>{01BF6045-EDA2-219B-5603-1CEE42060C1D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Blueberry\Scene">
+      <UniqueIdentifier>{450CE6F1-B16D-C3FF-3ADB-09B2A63BFABE}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Blueberry\Scene\ComponentManager">
+      <UniqueIdentifier>{E23B5F24-CE22-211C-7773-873963399A82}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Blueberry\Scene\Components">
+      <UniqueIdentifier>{3A9C4B2D-26C2-1594-0F08-9B5FFBCC3A60}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Blueberry\Tools">
+      <UniqueIdentifier>{A8E3FEF1-1445-DCFF-9DB2-22B2091313BF}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Concrete">
+      <UniqueIdentifier>{CF8ABFE9-BBED-4E8E-6473-874450B51A11}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Concrete\DX11">
+      <UniqueIdentifier>{7CEA5AA7-E800-593D-3178-E45E9DCD29C5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Concrete\Windows">
+      <UniqueIdentifier>{09945604-F522-E0CD-9E41-F4C88AAFF073}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="vendor">
+      <UniqueIdentifier>{B3738122-9F15-ACF8-88D0-BF4C74113349}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="vendor\stb">
+      <UniqueIdentifier>{8BD3C5A8-778B-07F6-E092-E051CC69A2E6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="vendor\stb\stb">
+      <UniqueIdentifier>{635F6677-4F2D-5A7D-38C1-CAA3242E36E2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Blueberry\Content\ContentManager.h">
+      <Filter>src\Blueberry\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Core\Base.h">
+      <Filter>src\Blueberry\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Core\Engine.h">
+      <Filter>src\Blueberry\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Core\Layer.h">
+      <Filter>src\Blueberry\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Core\LayerStack.h">
+      <Filter>src\Blueberry\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Core\Object.h">
+      <Filter>src\Blueberry\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Core\ServiceContainer.h">
+      <Filter>src\Blueberry\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Core\Window.h">
+      <Filter>src\Blueberry\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Events\Event.h">
+      <Filter>src\Blueberry\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Events\KeyEvent.h">
+      <Filter>src\Blueberry\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Events\WindowEvent.h">
+      <Filter>src\Blueberry\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Graphics\Buffer.h">
+      <Filter>src\Blueberry\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Graphics\GraphicsAPI.h">
+      <Filter>src\Blueberry\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Graphics\GraphicsDevice.h">
+      <Filter>src\Blueberry\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Graphics\ImGuiRenderer.h">
+      <Filter>src\Blueberry\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Graphics\Material.h">
+      <Filter>src\Blueberry\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Graphics\Renderer2D.h">
+      <Filter>src\Blueberry\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Graphics\Shader.h">
+      <Filter>src\Blueberry\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Graphics\Texture.h">
+      <Filter>src\Blueberry\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Graphics\VertexLayout.h">
+      <Filter>src\Blueberry\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Math\Math.h">
+      <Filter>src\Blueberry\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Math\SimpleMath.h">
+      <Filter>src\Blueberry\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Scene\ComponentManager\BaseComponentManagers.h">
+      <Filter>src\Blueberry\Scene\ComponentManager</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Scene\ComponentManager\ComponentManager.h">
+      <Filter>src\Blueberry\Scene\ComponentManager</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Scene\Components\Camera.h">
+      <Filter>src\Blueberry\Scene\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Scene\Components\Component.h">
+      <Filter>src\Blueberry\Scene\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Scene\Components\Renderer.h">
+      <Filter>src\Blueberry\Scene\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Scene\Components\SpriteRenderer.h">
+      <Filter>src\Blueberry\Scene\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Scene\Components\Transform.h">
+      <Filter>src\Blueberry\Scene\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Scene\EnityComponent.h">
+      <Filter>src\Blueberry\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Scene\Entity.h">
+      <Filter>src\Blueberry\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Scene\Scene.h">
+      <Filter>src\Blueberry\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Scene\Serializer.h">
+      <Filter>src\Blueberry\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Tools\HashIndex.h">
+      <Filter>src\Blueberry\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Tools\Hierarchy.h">
+      <Filter>src\Blueberry\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Tools\StringConverter.h">
+      <Filter>src\Blueberry\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Tools\WindowsHelper.h">
+      <Filter>src\Blueberry\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Concrete\DX11\DX11Buffer.h">
+      <Filter>src\Concrete\DX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Concrete\DX11\DX11GraphicsDevice.h">
+      <Filter>src\Concrete\DX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Concrete\DX11\DX11ImGuiRenderer.h">
+      <Filter>src\Concrete\DX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Concrete\DX11\DX11Shader.h">
+      <Filter>src\Concrete\DX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Concrete\DX11\DX11Texture.h">
+      <Filter>src\Concrete\DX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Concrete\Windows\WindowsWindow.h">
+      <Filter>src\Concrete\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="src\bbpch.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="vendor\stb\stb\stb_image.h">
+      <Filter>vendor\stb\stb</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Logging\Log.h" />
+    <ClInclude Include="src\Blueberry\Logging\Logger.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Blueberry\Content\ContentManager.cpp">
+      <Filter>src\Blueberry\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Blueberry\Core\Engine.cpp">
+      <Filter>src\Blueberry\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Blueberry\Core\Layer.cpp">
+      <Filter>src\Blueberry\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Blueberry\Core\LayerStack.cpp">
+      <Filter>src\Blueberry\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Blueberry\Core\Object.cpp">
+      <Filter>src\Blueberry\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Blueberry\Core\Window.cpp">
+      <Filter>src\Blueberry\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Blueberry\Graphics\GraphicsAPI.cpp">
+      <Filter>src\Blueberry\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Blueberry\Graphics\GraphicsDevice.cpp">
+      <Filter>src\Blueberry\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Blueberry\Graphics\Material.cpp">
+      <Filter>src\Blueberry\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Blueberry\Graphics\Renderer2D.cpp">
+      <Filter>src\Blueberry\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Blueberry\Graphics\Shader.cpp">
+      <Filter>src\Blueberry\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Blueberry\Graphics\VertexLayout.cpp">
+      <Filter>src\Blueberry\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Blueberry\Math\SimpleMath.cpp">
+      <Filter>src\Blueberry\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Blueberry\Scene\Components\Camera.cpp">
+      <Filter>src\Blueberry\Scene\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Blueberry\Scene\Components\Component.cpp">
+      <Filter>src\Blueberry\Scene\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Blueberry\Scene\Components\Renderer.cpp">
+      <Filter>src\Blueberry\Scene\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Blueberry\Scene\Components\SpriteRenderer.cpp">
+      <Filter>src\Blueberry\Scene\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Blueberry\Scene\Components\Transform.cpp">
+      <Filter>src\Blueberry\Scene\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Blueberry\Scene\Entity.cpp">
+      <Filter>src\Blueberry\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Blueberry\Scene\Scene.cpp">
+      <Filter>src\Blueberry\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Blueberry\Tools\HashIndex.cpp">
+      <Filter>src\Blueberry\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Blueberry\Tools\StringConverter.cpp">
+      <Filter>src\Blueberry\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Blueberry\Tools\WindowsHelper.cpp">
+      <Filter>src\Blueberry\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Concrete\DX11\DX11Buffer.cpp">
+      <Filter>src\Concrete\DX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Concrete\DX11\DX11GraphicsDevice.cpp">
+      <Filter>src\Concrete\DX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Concrete\DX11\DX11ImGuiRenderer.cpp">
+      <Filter>src\Concrete\DX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Concrete\DX11\DX11Shader.cpp">
+      <Filter>src\Concrete\DX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Concrete\DX11\DX11Texture.cpp">
+      <Filter>src\Concrete\DX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Concrete\Windows\WindowsWindow.cpp">
+      <Filter>src\Concrete\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\bbpch.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="vendor\stb\stb\stb_image.cpp">
+      <Filter>vendor\stb\stb</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
