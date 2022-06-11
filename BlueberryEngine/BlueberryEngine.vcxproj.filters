@@ -120,12 +120,6 @@
     <ClInclude Include="src\Blueberry\Math\SimpleMath.h">
       <Filter>src\Blueberry\Math</Filter>
     </ClInclude>
-    <ClInclude Include="src\Blueberry\Scene\ComponentManager\BaseComponentManagers.h">
-      <Filter>src\Blueberry\Scene\ComponentManager</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Blueberry\Scene\ComponentManager\ComponentManager.h">
-      <Filter>src\Blueberry\Scene\ComponentManager</Filter>
-    </ClInclude>
     <ClInclude Include="src\Blueberry\Scene\Components\Camera.h">
       <Filter>src\Blueberry\Scene\Components</Filter>
     </ClInclude>
@@ -191,6 +185,9 @@
     </ClInclude>
     <ClInclude Include="src\Blueberry\Logging\Log.h" />
     <ClInclude Include="src\Blueberry\Logging\Logger.h" />
+    <ClInclude Include="src\Blueberry\Scene\Components\ComponentManager.h">
+      <Filter>src\Blueberry\Scene\ComponentManager</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Blueberry\Content\ContentManager.cpp">

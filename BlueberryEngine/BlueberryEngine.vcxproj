@@ -110,8 +110,7 @@
     <ClInclude Include="src\Blueberry\Logging\Logger.h" />
     <ClInclude Include="src\Blueberry\Math\Math.h" />
     <ClInclude Include="src\Blueberry\Math\SimpleMath.h" />
-    <ClInclude Include="src\Blueberry\Scene\ComponentManager\BaseComponentManagers.h" />
-    <ClInclude Include="src\Blueberry\Scene\ComponentManager\ComponentManager.h" />
+    <ClInclude Include="src\Blueberry\Scene\Components\ComponentManager.h" />
     <ClInclude Include="src\Blueberry\Scene\Components\Camera.h" />
     <ClInclude Include="src\Blueberry\Scene\Components\Component.h" />
     <ClInclude Include="src\Blueberry\Scene\Components\Renderer.h" />

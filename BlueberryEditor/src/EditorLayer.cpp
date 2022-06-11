@@ -7,11 +7,6 @@
 #include "imgui\imgui.h"
 #include "imgui\imgui_internal.h"
 
-void OnResize(const Event& event)
-{
-
-}
-
 void EditorLayer::OnAttach()
 {
 	m_Scene = CreateRef<Scene>(m_ServiceContainer);

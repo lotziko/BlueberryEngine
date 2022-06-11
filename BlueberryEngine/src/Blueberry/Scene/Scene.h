@@ -1,7 +1,7 @@
 #pragma once
 
 #include "EnityComponent.h"
-#include "ComponentManager\BaseComponentManagers.h"
+#include "Components\ComponentManager.h"
 
 class Camera;
 struct ServiceContainer;
@@ -17,20 +17,16 @@ public:
 	void DrawCamera(Camera* camera);
 
 	template<class ComponentType>
-	ComponentIterator<ComponentType> GetIterator();
+	ComponentIterator GetIterator();
 
 	Ref<Entity> CreateEntity(const std::string& name);
 	void DestroyEntity(Ref<Entity>& entity);
 
 	const std::vector<Ref<Entity>>& GetEntities() { return m_Entities; }
-	
-protected:
-	template<class ComponentManagerType>
-	Ref<ComponentManagerType> AddComponentManager();
 
 protected:
 	std::vector<Ref<Entity>> m_Entities;
-	std::map<std::size_t, Ref<ComponentManager>> m_ComponentManagers;
+	ComponentManager m_ComponentManager;
 	Ref<ServiceContainer> m_ServiceContainer;
 
 	std::stack<std::size_t> m_EmptyEntityIds;
@@ -73,15 +69,7 @@ inline void Scene::DestroyEntity(Ref<Entity>& entity)
 }
 
 template<class ComponentType>
-inline ComponentIterator<ComponentType> Scene::GetIterator()
+inline ComponentIterator Scene::GetIterator()
 {
-	return static_cast<TComponentManager<ComponentType>*>(m_ComponentManagers[ComponentType::Type].get())->GetIterator();
-}
-
-template<class ComponentManagerType>
-inline Ref<ComponentManagerType> Scene::AddComponentManager()
-{
-	auto ref = CreateRef<ComponentManagerType>();
-	m_ComponentManagers[ref->GetComponentType()] = ref;
-	return ref;
+	return m_ComponentManager.GetIterator<ComponentType>();
 }
