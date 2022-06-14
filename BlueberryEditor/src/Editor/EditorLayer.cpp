@@ -4,6 +4,8 @@
 #include "Blueberry\Core\ServiceContainer.h"
 #include "Blueberry\Content\ContentManager.h"
 
+#include "Editor\Misc\ImGuiHelper.h"
+
 #include "imgui\imgui.h"
 #include "imgui\imgui_internal.h"
 
@@ -12,11 +14,12 @@ void EditorLayer::OnAttach()
 	m_Scene = CreateRef<Scene>(m_ServiceContainer);
 	m_Scene->Initialize();
 
-	m_ServiceContainer->ContentManager->Load<Texture>("TestImage.png", m_BackgroundTexture);
+	m_ServiceContainer->ContentManager->Load<Texture>("assets/TestImage.png", m_BackgroundTexture);
 
 	auto mainCamera = m_Scene->CreateEntity("Camera");
 	mainCamera->AddComponent<Camera>();
 	mainCamera->GetTransform()->SetLocalPosition(Vector3(0, 0, 0));
+	m_Camera = mainCamera->GetComponent<Camera>();
 
 	auto test = m_Scene->CreateEntity("Test");
 	test->AddComponent<SpriteRenderer>();
@@ -25,7 +28,14 @@ void EditorLayer::OnAttach()
 
 	m_SceneHierarchy = SceneHierarchy(m_Scene);
 
-	m_ServiceContainer->GraphicsDevice->CreateImGuiRenderer(m_ImGuiRenderer);
+	if (m_ServiceContainer->GraphicsDevice->CreateImGuiRenderer(m_ImGuiRenderer))
+	{
+		ImGuiIO& io = ImGui::GetIO(); (void)io;
+		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+		ImGui::ApplyEditorDarkTheme();
+		ImGui::LoadDefaultEditorFonts();
+	}
 
 	m_ServiceContainer->EventDispatcher->AddCallback(EventType::WindowResize, BIND_EVENT(EditorLayer::OnResizeEvent));
 }
@@ -37,6 +47,11 @@ void EditorLayer::OnDraw()
 	{
 		graphicsDevice->SetViewport(m_Viewport.x, m_Viewport.y, m_Viewport.z, m_Viewport.w);
 		graphicsDevice->ClearColor({ 0, 0, 0, 1 });
+
+		if (m_Viewport.z > 0)
+		{
+			m_Camera->SetResolution(Vector2(m_Viewport.z, m_Viewport.w));
+		}
 
 		if (m_Scene != NULL)
 		{
@@ -98,12 +113,8 @@ void EditorLayer::DrawDockSpace()
 
 		DrawMenuBar();
 
-		ImGui::Begin("Hierarchy");
 		m_SceneHierarchy.DrawUI();
-		ImGui::End();
-
-		ImGui::Begin("Inspector");
-		ImGui::End();
+		m_SceneInspector.DrawUI();
 
 		ImGui::End();
 	}

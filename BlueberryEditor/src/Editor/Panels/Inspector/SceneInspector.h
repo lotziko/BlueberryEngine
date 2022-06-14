@@ -1,14 +1,13 @@
 #pragma once
 
-class GraphicsDevice;
 class Scene;
 class Entity;
 
-class SceneHierarchy
+class SceneInspector
 {
 public:
-	SceneHierarchy() = default;
-	SceneHierarchy(const Ref<Scene>& scene);
+	SceneInspector() = default;
+	SceneInspector(const Ref<Scene>& scene);
 
 	void DrawUI();
 	void DrawEntity(const Ref<Entity>& entity);

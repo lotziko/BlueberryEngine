@@ -1,7 +1,7 @@
 #include "bbpch.h"
 #include "Blueberry\Core\Engine.h"
 
-#include "EditorLayer.h"
+#include "Editor\EditorLayer.h"
 
 int APIENTRY wWinMain(_In_ HINSTANCE	hInstance,
 	_In_opt_ HINSTANCE					hPrevInstance,

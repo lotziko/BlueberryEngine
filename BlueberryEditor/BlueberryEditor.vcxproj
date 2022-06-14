@@ -59,7 +59,7 @@
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>..\BlueberryEngine\src;..\BlueberryEngine\vendor;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;..\BlueberryEngine\src;..\BlueberryEngine\vendor;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -74,7 +74,7 @@
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>..\BlueberryEngine\src;..\BlueberryEngine\vendor;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;..\BlueberryEngine\src;..\BlueberryEngine\vendor;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -86,15 +86,31 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="src\Content\AssetDatabase.h" />
-    <ClInclude Include="src\EditorLayer.h" />
-    <ClInclude Include="src\Panels\SceneHierarchy.h" />
+    <ClInclude Include="src\Editor\Content\AssetDatabase.h" />
+    <ClInclude Include="src\Editor\EditorLayer.h" />
+    <ClInclude Include="src\Editor\Inspector\Concrete\CameraInspector.h" />
+    <ClInclude Include="src\Editor\Inspector\Concrete\EntityInspector.h" />
+    <ClInclude Include="src\Editor\Inspector\Concrete\SpriteRendererInspector.h" />
+    <ClInclude Include="src\Editor\Inspector\Concrete\TransformInspector.h" />
+    <ClInclude Include="src\Editor\Inspector\ObjectInspector.h" />
+    <ClInclude Include="src\Editor\Misc\ImGuiHelper.h" />
+    <ClInclude Include="src\Editor\Panels\Hierarchy\SceneHierarchy.h" />
+    <ClInclude Include="src\Editor\Panels\Inspector\SceneInspector.h" />
+    <ClInclude Include="src\Editor\Selection.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Content\AssetDatabase.cpp" />
-    <ClCompile Include="src\EditorLayer.cpp" />
+    <ClCompile Include="src\Editor\Content\AssetDatabase.cpp" />
+    <ClCompile Include="src\Editor\EditorLayer.cpp" />
+    <ClCompile Include="src\Editor\Inspector\Concrete\CameraInspector.cpp" />
+    <ClCompile Include="src\Editor\Inspector\Concrete\EntityInspector.cpp" />
+    <ClCompile Include="src\Editor\Inspector\Concrete\SpriteRendererInspector.cpp" />
+    <ClCompile Include="src\Editor\Inspector\Concrete\TransformInspector.cpp" />
+    <ClCompile Include="src\Editor\Inspector\ObjectInspector.cpp" />
+    <ClCompile Include="src\Editor\Misc\ImGuiHelper.cpp" />
+    <ClCompile Include="src\Editor\Panels\Hierarchy\SceneHierarchy.cpp" />
+    <ClCompile Include="src\Editor\Panels\Inspector\SceneInspector.cpp" />
+    <ClCompile Include="src\Editor\Selection.cpp" />
     <ClCompile Include="src\EntryPoint.cpp" />
-    <ClCompile Include="src\Panels\SceneHierarchy.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BlueberryEngine\BlueberryEngine.vcxproj">

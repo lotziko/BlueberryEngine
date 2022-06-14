@@ -1,23 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Panels">
-      <UniqueIdentifier>{A80D95C9-94AF-BF9F-7D6A-D3F369AB46F0}</UniqueIdentifier>
+    <Filter Include="Editor">
+      <UniqueIdentifier>{8C1A20B0-78BC-4A86-6177-5EDA4DB8D1D6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Editor\Content">
+      <UniqueIdentifier>{D65F30B8-C22D-24BE-ABC1-94E4972E0023}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Editor\Panels">
+      <UniqueIdentifier>{5E756613-CA35-E249-9370-2BC7FFEF2626}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Editor\Panels\Hierarchy">
+      <UniqueIdentifier>{6C8F7939-D8C6-C1D0-E1D0-25F44D87E8C9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Editor\Panels\Inspector">
+      <UniqueIdentifier>{A49B847C-10D3-CC13-19DD-30378593F30C}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\EditorLayer.h" />
-    <ClInclude Include="src\Panels\SceneHierarchy.h">
-      <Filter>Panels</Filter>
+    <ClInclude Include="src\Editor\Content\AssetDatabase.h">
+      <Filter>Editor\Content</Filter>
     </ClInclude>
-    <ClInclude Include="src\Content\AssetDatabase.h" />
+    <ClInclude Include="src\Editor\EditorLayer.h">
+      <Filter>Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Editor\Panels\Hierarchy\SceneHierarchy.h">
+      <Filter>Editor\Panels\Hierarchy</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Editor\Panels\Inspector\SceneInspector.h">
+      <Filter>Editor\Panels\Inspector</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Editor\Selection.h">
+      <Filter>Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Editor\Inspector\ObjectInspector.h" />
+    <ClInclude Include="src\Editor\Inspector\Concrete\TransformInspector.h" />
+    <ClInclude Include="src\Editor\Inspector\Concrete\SpriteRendererInspector.h" />
+    <ClInclude Include="src\Editor\Inspector\Concrete\EntityInspector.h" />
+    <ClInclude Include="src\Editor\Misc\ImGuiHelper.h" />
+    <ClInclude Include="src\Editor\Inspector\Concrete\CameraInspector.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\EditorLayer.cpp" />
-    <ClCompile Include="src\EntryPoint.cpp" />
-    <ClCompile Include="src\Panels\SceneHierarchy.cpp">
-      <Filter>Panels</Filter>
+    <ClCompile Include="src\Editor\Content\AssetDatabase.cpp">
+      <Filter>Editor\Content</Filter>
     </ClCompile>
-    <ClCompile Include="src\Content\AssetDatabase.cpp" />
+    <ClCompile Include="src\Editor\EditorLayer.cpp">
+      <Filter>Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Editor\Panels\Hierarchy\SceneHierarchy.cpp">
+      <Filter>Editor\Panels\Hierarchy</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Editor\Panels\Inspector\SceneInspector.cpp">
+      <Filter>Editor\Panels\Inspector</Filter>
+    </ClCompile>
+    <ClCompile Include="src\EntryPoint.cpp" />
+    <ClCompile Include="src\Editor\Inspector\ObjectInspector.cpp" />
+    <ClCompile Include="src\Editor\Inspector\Concrete\TransformInspector.cpp" />
+    <ClCompile Include="src\Editor\Inspector\Concrete\SpriteRendererInspector.cpp" />
+    <ClCompile Include="src\Editor\Inspector\Concrete\EntityInspector.cpp" />
+    <ClCompile Include="src\Editor\Selection.cpp" />
+    <ClCompile Include="src\Editor\Inspector\Concrete\CameraInspector.cpp" />
+    <ClCompile Include="src\Editor\Misc\ImGuiHelper.cpp" />
   </ItemGroup>
 </Project>

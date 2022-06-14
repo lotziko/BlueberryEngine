@@ -15,6 +15,7 @@ project "BlueberryEditor"
 
 	includedirs
 	{
+		"src",
 		"%{wks.location}/BlueberryEngine/src",
 		"%{wks.location}/BlueberryEngine/vendor",
 	}
