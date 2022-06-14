@@ -8,52 +8,55 @@
 
 #include "Blueberry\Core\Layer.h"
 
-bool Engine::Initialize(const WindowProperties& properties)
+namespace Blueberry
 {
-	m_Window = Window::Create(properties);
-
-	Ref<EventDispatcher> eventDispatcher = CreateRef<EventDispatcher>();
-	m_Window->SetEventDispatcher(eventDispatcher);
-
-	Ref<GraphicsDevice> graphicsDevice = GraphicsDevice::Create();
-	if (!graphicsDevice->Initialize(properties.Width, properties.Height, m_Window->GetHandle()))
+	bool Engine::Initialize(const WindowProperties& properties)
 	{
-		return false;
+		m_Window = Window::Create(properties);
+
+		Ref<EventDispatcher> eventDispatcher = CreateRef<EventDispatcher>();
+		m_Window->SetEventDispatcher(eventDispatcher);
+
+		Ref<GraphicsDevice> graphicsDevice = GraphicsDevice::Create();
+		if (!graphicsDevice->Initialize(properties.Width, properties.Height, m_Window->GetHandle()))
+		{
+			return false;
+		}
+
+		Ref<Renderer2D> renderer2D = CreateRef<Renderer2D>(graphicsDevice);
+		if (!renderer2D->Initialize())
+		{
+			return false;
+		}
+
+		Ref<ContentManager> contentManager = CreateRef<ContentManager>(graphicsDevice);
+
+		ServiceContainer::EventDispatcher = eventDispatcher;
+		ServiceContainer::ContentManager = contentManager;
+		ServiceContainer::GraphicsDevice = graphicsDevice;
+		ServiceContainer::Renderer2D = renderer2D;
+
+		return true;
 	}
 
-	Ref<Renderer2D> renderer2D = CreateRef<Renderer2D>(graphicsDevice);
-	if (!renderer2D->Initialize())
+	bool Engine::ProcessMessages()
 	{
-		return false;
+		return m_Window->ProcessMessages();
 	}
 
-	Ref<ContentManager> contentManager = CreateRef<ContentManager>(graphicsDevice);
+	void Engine::Update()
+	{
+	}
 
-	ServiceContainer::EventDispatcher = eventDispatcher;
-	ServiceContainer::ContentManager = contentManager;
-	ServiceContainer::GraphicsDevice = graphicsDevice;
-	ServiceContainer::Renderer2D = renderer2D;
+	void Engine::Draw()
+	{
+		for (Layer* layer : m_LayerStack)
+			layer->OnDraw();
+	}
 
-	return true;
-}
-
-bool Engine::ProcessMessages()
-{
-	return m_Window->ProcessMessages();
-}
-
-void Engine::Update()
-{
-}
-
-void Engine::Draw()
-{
-	for (Layer* layer : m_LayerStack)
-		layer->OnDraw();
-}
-
-void Engine::PushLayer(Layer* layer)
-{
-	m_LayerStack.PushLayer(layer);
-	layer->OnAttach();
+	void Engine::PushLayer(Layer* layer)
+	{
+		m_LayerStack.PushLayer(layer);
+		layer->OnAttach();
+	}
 }

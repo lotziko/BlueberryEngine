@@ -8,20 +8,23 @@
 
 #include "imgui\imgui.h"
 
-void SceneInspector::DrawUI()
+namespace Blueberry
 {
-	ImGui::Begin("Inspector");
-
-	Object* selectedObject = Selection::GetActiveObject();
-	if (selectedObject != nullptr)
+	void SceneInspector::DrawUI()
 	{
-		std::size_t type = selectedObject->GetType();
-		ObjectInspector* inspector = ObjectInspectors::GetInspector(type);
-		if (inspector != nullptr)
-		{
-			inspector->Draw(selectedObject);
-		}
-	}
+		ImGui::Begin("Inspector");
 
-	ImGui::End();
+		Object* selectedObject = Selection::GetActiveObject();
+		if (selectedObject != nullptr)
+		{
+			std::size_t type = selectedObject->GetType();
+			ObjectInspector* inspector = ObjectInspectors::GetInspector(type);
+			if (inspector != nullptr)
+			{
+				inspector->Draw(selectedObject);
+			}
+		}
+
+		ImGui::End();
+	}
 }

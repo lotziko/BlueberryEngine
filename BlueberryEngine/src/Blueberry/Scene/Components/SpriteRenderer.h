@@ -3,26 +3,29 @@
 #include "Blueberry\Scene\Components\Component.h"
 #include "Renderer.h"
 
-class Texture;
-
-class SpriteRenderer : public Renderer
+namespace Blueberry
 {
-	OBJECT_DECLARATION(SpriteRenderer)
+	class Texture;
 
-public:
-	SpriteRenderer()
+	class SpriteRenderer : public Renderer
 	{
-		m_Color = Color(1, 1, 1, 1);
-	}
-	~SpriteRenderer() = default;
+		OBJECT_DECLARATION(SpriteRenderer)
 
-	const Color& GetColor() { return m_Color; }
-	void SetColor(const Color& color) { m_Color = color; }
+	public:
+		SpriteRenderer()
+		{
+			m_Color = Color(1, 1, 1, 1);
+		}
+		~SpriteRenderer() = default;
 
-	const Ref<Texture>& GetTexture() { return m_Texture; }
-	void SetTexture(const Ref<Texture>& texture) { m_Texture = texture; }
+		const Color& GetColor() { return m_Color; }
+		void SetColor(const Color& color) { m_Color = color; }
 
-private:
-	Color m_Color;
-	Ref<Texture> m_Texture;
-};
+		const Ref<Texture>& GetTexture() { return m_Texture; }
+		void SetTexture(const Ref<Texture>& texture) { m_Texture = texture; }
+
+	private:
+		Color m_Color;
+		Ref<Texture> m_Texture;
+	};
+}

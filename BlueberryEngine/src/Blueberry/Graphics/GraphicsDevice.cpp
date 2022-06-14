@@ -5,17 +5,20 @@
 
 #include "Concrete\DX11\DX11GraphicsDevice.h"
 
-Ref<GraphicsDevice> GraphicsDevice::Create()
+namespace Blueberry
 {
-	switch (GraphicsAPI::GetAPI())
+	Ref<GraphicsDevice> GraphicsDevice::Create()
 	{
+		switch (GraphicsAPI::GetAPI())
+		{
 		case GraphicsAPI::API::None:
 			BB_ERROR("API doesn't exist.");
 			return nullptr;
 		case GraphicsAPI::API::DX11:
 			return CreateRef<DX11GraphicsDevice>();
-	}
+		}
 
-	BB_ERROR("API doesn't exist.");
-	return nullptr;
+		BB_ERROR("API doesn't exist.");
+		return nullptr;
+	}
 }

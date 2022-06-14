@@ -2,10 +2,13 @@
 
 #include "Editor\Inspector\ObjectInspector.h"
 
-class CameraInspector : public ObjectInspector
+namespace Blueberry
 {
-public:
-	virtual ~CameraInspector() = default;
+	class CameraInspector : public ObjectInspector
+	{
+	public:
+		virtual ~CameraInspector() = default;
 
-	virtual void Draw(Object* object) override;
-};
+		virtual void Draw(Object* object) override;
+	};
+}

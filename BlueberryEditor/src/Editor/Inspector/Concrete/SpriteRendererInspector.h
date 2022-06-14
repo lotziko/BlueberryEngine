@@ -2,10 +2,13 @@
 
 #include "Editor\Inspector\ObjectInspector.h"
 
-class SpriteRendererInspector : public ObjectInspector
+namespace Blueberry
 {
-public:
-	virtual ~SpriteRendererInspector() = default;
+	class SpriteRendererInspector : public ObjectInspector
+	{
+	public:
+		virtual ~SpriteRendererInspector() = default;
 
-	virtual void Draw(Object* object) override;
-};
+		virtual void Draw(Object* object) override;
+	};
+}

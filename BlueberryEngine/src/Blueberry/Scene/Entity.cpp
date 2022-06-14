@@ -3,16 +3,19 @@
 
 #include "Blueberry\Scene\Scene.h"
 
-OBJECT_DEFINITION(Object, Entity)
-
-void Entity::AddComponentIntoScene(Component* component)
+namespace Blueberry
 {
-	std::size_t type = component->GetType();
-	m_Scene->m_ComponentManager.AddComponent(this, component);
-}
+	OBJECT_DEFINITION(Object, Entity)
 
-void Entity::RemoveComponentFromScene(Component* component)
-{
-	std::size_t type = component->GetType();
-	m_Scene->m_ComponentManager.RemoveComponent(this, component);
+	void Entity::AddComponentIntoScene(Component* component)
+	{
+		std::size_t type = component->GetType();
+		m_Scene->m_ComponentManager.AddComponent(this, component);
+	}
+
+	void Entity::RemoveComponentFromScene(Component* component)
+	{
+		std::size_t type = component->GetType();
+		m_Scene->m_ComponentManager.RemoveComponent(this, component);
+	}
 }

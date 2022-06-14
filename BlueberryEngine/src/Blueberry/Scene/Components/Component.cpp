@@ -1,4 +1,7 @@
 #include "bbpch.h"
 #include "Component.h"
 
-OBJECT_DEFINITION(Object, Component)
+namespace Blueberry
+{
+	OBJECT_DEFINITION(Object, Component)
+}

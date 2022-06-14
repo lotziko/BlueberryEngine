@@ -2,6 +2,9 @@
 
 #include <string>
 
+namespace Blueberry
+{
+
 //********************************************************************************
 // OBJECT_DECLARATION
 // This macro must be included in the declaration of any subclass of Object.
@@ -33,21 +36,22 @@ std::size_t childclass::GetType() const															\
 	return childclass::Type;																	\
 }																								\
 
-class Object
-{
-public:
-	virtual bool IsClassType(const std::size_t classType) const
+	class Object
 	{
-		return classType == Type;
-	}
-	virtual std::size_t GetType() const
-	{
-		return Type;
-	}
-	virtual std::string ToString() const
-	{
-		return "Object";
-	}
-public:
-	static const std::size_t Type;
-};
+	public:
+		virtual bool IsClassType(const std::size_t classType) const
+		{
+			return classType == Type;
+		}
+		virtual std::size_t GetType() const
+		{
+			return Type;
+		}
+		virtual std::string ToString() const
+		{
+			return "Object";
+		}
+	public:
+		static const std::size_t Type;
+	};
+}

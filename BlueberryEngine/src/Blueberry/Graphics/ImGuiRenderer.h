@@ -1,10 +1,13 @@
 #pragma once
 
-class ImGuiRenderer
+namespace Blueberry
 {
-public:
-	virtual ~ImGuiRenderer() = default;
+	class ImGuiRenderer
+	{
+	public:
+		virtual ~ImGuiRenderer() = default;
 
-	virtual void Begin() = 0;
-	virtual void End() = 0;
-};
+		virtual void Begin() = 0;
+		virtual void End() = 0;
+	};
+}

@@ -1,9 +1,12 @@
 #pragma once
 
-class WindowsHelper
+namespace Blueberry
 {
-public:
-	static std::string GetStringLastError();
-	static std::string GetErrorMessage(HRESULT result);
-	static std::string GetErrorMessage(HRESULT result, std::string message);
-};
+	class WindowsHelper
+	{
+	public:
+		static std::string GetStringLastError();
+		static std::string GetErrorMessage(HRESULT result);
+		static std::string GetErrorMessage(HRESULT result, std::string message);
+	};
+}

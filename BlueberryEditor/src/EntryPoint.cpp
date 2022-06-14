@@ -11,14 +11,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE	hInstance,
 	AllocConsole();
 	BB_INITIALIZE_LOG();
 
-	Engine engine;
-	engine.Initialize(WindowProperties("Blueberry Editor", 960, 640, &hInstance));
-	engine.PushLayer(new EditorLayer());
+	Blueberry::Engine engine;
+	engine.Initialize(Blueberry::WindowProperties("Blueberry Editor", 960, 640, &hInstance));
+	engine.PushLayer(new Blueberry::EditorLayer());
 	while (engine.ProcessMessages())
 	{
 		engine.Update();
 		engine.Draw();
-		Sleep(1000/60);
+		Sleep(1000 / 60);
 	}
 	return 0;
 }

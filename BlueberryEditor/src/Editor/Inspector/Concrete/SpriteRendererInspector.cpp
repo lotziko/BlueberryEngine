@@ -5,12 +5,15 @@
 
 #include "imgui\imgui.h"
 
-OBJECT_INSPECTOR_DECLARATION(SpriteRendererInspector, SpriteRenderer)
-
-void SpriteRendererInspector::Draw(Object* object)
+namespace Blueberry
 {
-	if (ImGui::CollapsingHeader("SpriteRenderer"))
-	{
+	OBJECT_INSPECTOR_DECLARATION(SpriteRendererInspector, SpriteRenderer)
 
+	void SpriteRendererInspector::Draw(Object* object)
+	{
+		if (ImGui::CollapsingHeader("SpriteRenderer"))
+		{
+
+		}
 	}
 }

@@ -1,18 +1,21 @@
 #pragma once
 
-class Scene;
-class Entity;
-
-class SceneHierarchy
+namespace Blueberry
 {
-public:
-	SceneHierarchy() = default;
-	SceneHierarchy(const Ref<Scene>& scene);
+	class Scene;
+	class Entity;
 
-	void DrawUI();
+	class SceneHierarchy
+	{
+	public:
+		SceneHierarchy() = default;
+		SceneHierarchy(const Ref<Scene>& scene);
 
-private:
-	void DrawEntity(Entity* entity);
-private:
-	Ref<Scene> m_Scene;
-};
+		void DrawUI();
+
+	private:
+		void DrawEntity(Entity* entity);
+	private:
+		Ref<Scene> m_Scene;
+	};
+}

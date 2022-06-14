@@ -3,7 +3,7 @@
 
 #include "imgui\imgui.h"
 
-bool ImGui::DragVector3(const std::string& label, Vector3& vector)
+bool ImGui::DragVector3(const std::string& label, Blueberry::Vector3& vector)
 {
 	ImGui::PushID(label.c_str());
 

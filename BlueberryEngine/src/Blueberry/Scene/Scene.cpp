@@ -3,11 +3,14 @@
 
 #include "Blueberry\Core\ServiceContainer.h"
 
-Scene::Scene()
+namespace Blueberry
 {
-}
+	Scene::Scene()
+	{
+	}
 
-bool Scene::Initialize()
-{
-	return true;
+	bool Scene::Initialize()
+	{
+		return true;
+	}
 }

@@ -2,10 +2,13 @@
 
 #include "Editor\Inspector\ObjectInspector.h"
 
-class EntityInspector : public ObjectInspector
+namespace Blueberry
 {
-public:
-	virtual ~EntityInspector() = default;
+	class EntityInspector : public ObjectInspector
+	{
+	public:
+		virtual ~EntityInspector() = default;
 
-	virtual void Draw(Object* object) override;
-};
+		virtual void Draw(Object* object) override;
+	};
+}

@@ -2,20 +2,21 @@
 
 #include "Blueberry\Core\ServiceContainer.h"
 
-class Layer
+namespace Blueberry
 {
-public:
-	Layer(const std::string& name = "Layer");
-	virtual ~Layer() = default;
+	class Layer
+	{
+	public:
+		Layer(const std::string& name = "Layer");
+		virtual ~Layer() = default;
 
-	virtual void OnAttach() {}
-	virtual void OnDetach() {}
-	virtual void OnUpdate() {}
-	virtual void OnDraw() {}
+		virtual void OnAttach() {}
+		virtual void OnDetach() {}
+		virtual void OnUpdate() {}
+		virtual void OnDraw() {}
 
-	const std::string& GetName() const { return m_Name; }
-protected:
-	std::string m_Name;
-};
-
-#pragma once
+		const std::string& GetName() const { return m_Name; }
+	protected:
+		std::string m_Name;
+	};
+}

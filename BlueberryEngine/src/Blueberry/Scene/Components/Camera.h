@@ -2,33 +2,36 @@
 
 #include "Blueberry\Scene\EnityComponent.h"
 
-class Camera : public Component
+namespace Blueberry
 {
-	OBJECT_DECLARATION(Camera)
-public:
-	Camera();
-	~Camera() = default;
+	class Camera : public Component
+	{
+		OBJECT_DECLARATION(Camera)
+	public:
+		Camera();
+		~Camera() = default;
 
-	void Update();
+		void Update();
 
-	const Matrix& GetProjectionMatrix() const { return m_ProjectionMatrix; }
-	const Matrix& GetViewMatrix() const { return m_ViewMatrix; }
-	
-	const void SetResolution(const Vector2& resolution) { m_Resolution = resolution; }
+		const Matrix& GetProjectionMatrix() const { return m_ProjectionMatrix; }
+		const Matrix& GetViewMatrix() const { return m_ViewMatrix; }
 
-private:
-	void RecalculateViewMatrix();
-	void RecalculateProjectionMatrix();
-private:
-	Matrix m_ProjectionMatrix;
-	Matrix m_ViewMatrix;
+		const void SetResolution(const Vector2& resolution) { m_Resolution = resolution; }
 
-	float m_PixelsPerUnit = 32;
+	private:
+		void RecalculateViewMatrix();
+		void RecalculateProjectionMatrix();
+	private:
+		Matrix m_ProjectionMatrix;
+		Matrix m_ViewMatrix;
 
-	Vector2 m_Resolution = Vector2(480, 320);
-	Vector3 m_Direction = Vector3(0, 0, -1);
-	Vector3 m_Up = Vector3(0, 1, 0);
+		float m_PixelsPerUnit = 32;
 
-	float m_ZNearPlane = 1.0f;
-	float m_ZFarPlane = 100.0f;
-};
+		Vector2 m_Resolution = Vector2(480, 320);
+		Vector3 m_Direction = Vector3(0, 0, -1);
+		Vector3 m_Up = Vector3(0, 1, 0);
+
+		float m_ZNearPlane = 1.0f;
+		float m_ZFarPlane = 100.0f;
+	};
+}

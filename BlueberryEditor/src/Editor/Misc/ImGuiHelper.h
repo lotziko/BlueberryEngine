@@ -2,7 +2,7 @@
 
 namespace ImGui
 {
-	bool DragVector3(const std::string& label, Vector3& vector);
+	bool DragVector3(const std::string& label, Blueberry::Vector3& vector);
 
 	void ApplyEditorDarkTheme();
 	void LoadDefaultEditorFonts();

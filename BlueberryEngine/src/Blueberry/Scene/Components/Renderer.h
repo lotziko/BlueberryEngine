@@ -2,7 +2,10 @@
 
 #include "Blueberry\Scene\Components\Component.h"
 
-class Renderer : public Component
+namespace Blueberry
 {
-	OBJECT_DECLARATION(Renderer)
-};
+	class Renderer : public Component
+	{
+		OBJECT_DECLARATION(Renderer)
+	};
+}

@@ -5,23 +5,26 @@
 
 #include "imgui\imgui.h"
 
-OBJECT_INSPECTOR_DECLARATION(EntityInspector, Entity)
-
-void EntityInspector::Draw(Object* object)
+namespace Blueberry
 {
-	Entity* entity = static_cast<Entity*>(object);
-	std::vector<Ref<Component>> components = entity->GetComponents();
+	OBJECT_INSPECTOR_DECLARATION(EntityInspector, Entity)
 
-	ImGui::Text(entity->ToString().c_str());
-
-	for (auto component : components)
+	void EntityInspector::Draw(Object* object)
 	{
-		std::size_t type = component->GetType();
-		ObjectInspector* inspector = ObjectInspectors::GetInspector(type);
+		Entity* entity = static_cast<Entity*>(object);
+		std::vector<Ref<Component>> components = entity->GetComponents();
 
-		if (inspector != nullptr)
+		ImGui::Text(entity->ToString().c_str());
+
+		for (auto component : components)
 		{
-			inspector->Draw(component.get());
+			std::size_t type = component->GetType();
+			ObjectInspector* inspector = ObjectInspectors::GetInspector(type);
+
+			if (inspector != nullptr)
+			{
+				inspector->Draw(component.get());
+			}
 		}
 	}
 }

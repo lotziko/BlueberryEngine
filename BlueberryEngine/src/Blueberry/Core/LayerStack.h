@@ -1,19 +1,22 @@
 #pragma once
 
-class Layer;
-
-class LayerStack
+namespace Blueberry
 {
-public:
-	LayerStack() = default;
-	~LayerStack();
+	class Layer;
 
-	void PushLayer(Layer* layer);
-	void PopLayer(Layer* layer);
+	class LayerStack
+	{
+	public:
+		LayerStack() = default;
+		~LayerStack();
 
-	std::vector<Layer*>::iterator begin() { return m_Layers.begin(); }
-	std::vector<Layer*>::iterator end() { return m_Layers.end(); }
+		void PushLayer(Layer* layer);
+		void PopLayer(Layer* layer);
 
-private:
-	std::vector<Layer*> m_Layers;
-};
+		std::vector<Layer*>::iterator begin() { return m_Layers.begin(); }
+		std::vector<Layer*>::iterator end() { return m_Layers.end(); }
+
+	private:
+		std::vector<Layer*> m_Layers;
+	};
+}

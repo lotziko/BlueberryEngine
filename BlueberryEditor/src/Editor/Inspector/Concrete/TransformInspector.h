@@ -4,13 +4,16 @@
 
 #include <map>
 
-class TransformInspector : public ObjectInspector
+namespace Blueberry
 {
-public:
-	virtual ~TransformInspector() = default;
+	class TransformInspector : public ObjectInspector
+	{
+	public:
+		virtual ~TransformInspector() = default;
 
-	virtual void Draw(Object* object) override;
+		virtual void Draw(Object* object) override;
 
-private:
-	std::map<std::intptr_t, Vector3> m_TransformEulerCache;
-};
+	private:
+		std::map<std::intptr_t, Vector3> m_TransformEulerCache;
+	};
+}

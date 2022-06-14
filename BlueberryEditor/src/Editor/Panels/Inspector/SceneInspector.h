@@ -1,12 +1,15 @@
 #pragma once
 
-class Scene;
-class Entity;
-
-class SceneInspector
+namespace Blueberry
 {
-public:
-	SceneInspector() = default;
+	class Scene;
+	class Entity;
 
-	void DrawUI();
-};
+	class SceneInspector
+	{
+	public:
+		SceneInspector() = default;
+
+		void DrawUI();
+	};
+}

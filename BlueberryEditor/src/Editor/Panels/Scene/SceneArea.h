@@ -1,20 +1,25 @@
 #pragma once
 
-class Scene;
-class Camera;
+#include "Blueberry\Math\Math.h"
 
-class SceneArea
+namespace Blueberry
 {
-public:
-	SceneArea() = default;
-	SceneArea(const Ref<Scene>& scene);
+	class Scene;
+	class Camera;
 
-	void Draw();
-	void SetCamera(Camera* camera) { m_Camera = camera; }
-	void SetViewport(const Rect& viewport) { m_Viewport = viewport; }
+	class SceneArea
+	{
+	public:
+		SceneArea() = default;
+		SceneArea(const Ref<Scene>& scene);
 
-private:
-	Ref<Scene> m_Scene;
-	Camera* m_Camera;
-	Rect m_Viewport;
-};
+		void Draw();
+		void SetCamera(Camera* camera) { m_Camera = camera; }
+		void SetViewport(const Viewport& viewport) { m_Viewport = viewport; }
+
+	private:
+		Ref<Scene> m_Scene;
+		Camera* m_Camera;
+		Viewport m_Viewport;
+	};
+}

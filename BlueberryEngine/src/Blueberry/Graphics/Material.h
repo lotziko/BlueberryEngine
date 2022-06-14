@@ -1,9 +1,12 @@
 #pragma once
 
-class Shader;
-
-class Material : public Object
+namespace Blueberry
 {
-private:
-	Shader* m_Shader;
-};
+	class Shader;
+
+	class Material : public Object
+	{
+	private:
+		Shader* m_Shader;
+	};
+}

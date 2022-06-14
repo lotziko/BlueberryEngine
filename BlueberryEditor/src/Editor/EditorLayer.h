@@ -7,30 +7,33 @@
 #include "Editor\Panels\Inspector\SceneInspector.h"
 #include "Editor\Panels\Scene\SceneArea.h"
 
-class Scene;
-class Camera;
-class Texture;
-class ImGuiRenderer;
-
-class EditorLayer : public Layer
+namespace Blueberry
 {
-public:
-	EditorLayer() = default;
+	class Scene;
+	class Camera;
+	class Texture;
+	class ImGuiRenderer;
 
-	virtual void OnAttach() override;
-	virtual void OnDraw() override;
-	virtual void OnResizeEvent(const Event& event);
+	class EditorLayer : public Layer
+	{
+	public:
+		EditorLayer() = default;
 
-private:
-	void DrawDockSpace();
-	void DrawMenuBar();
+		virtual void OnAttach() override;
+		virtual void OnDraw() override;
+		virtual void OnResizeEvent(const Event& event);
 
-private:
-	Ref<Scene> m_Scene;
-	Ref<ImGuiRenderer> m_ImGuiRenderer;
-	Ref<Texture> m_BackgroundTexture;
+	private:
+		void DrawDockSpace();
+		void DrawMenuBar();
 
-	SceneHierarchy m_SceneHierarchy;
-	SceneInspector m_SceneInspector;
-	SceneArea m_SceneArea;
-};
+	private:
+		Ref<Scene> m_Scene;
+		Ref<ImGuiRenderer> m_ImGuiRenderer;
+		Ref<Texture> m_BackgroundTexture;
+
+		SceneHierarchy m_SceneHierarchy;
+		SceneInspector m_SceneInspector;
+		SceneArea m_SceneArea;
+	};
+}

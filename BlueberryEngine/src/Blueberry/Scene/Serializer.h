@@ -1,7 +1,10 @@
 #pragma once
 
-class Serializer
+namespace Blueberry
 {
-	virtual void Serialize() = 0;
-	virtual void Deserialize() = 0;
-};
+	class Serializer
+	{
+		virtual void Serialize() = 0;
+		virtual void Deserialize() = 0;
+	};
+}

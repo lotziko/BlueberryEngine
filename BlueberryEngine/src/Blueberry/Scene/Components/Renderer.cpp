@@ -1,4 +1,7 @@
 #include "bbpch.h"
 #include "Renderer.h"
 
-OBJECT_DEFINITION(Component, Renderer)
+namespace Blueberry
+{
+	OBJECT_DEFINITION(Component, Renderer)
+}

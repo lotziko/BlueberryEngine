@@ -2,68 +2,71 @@
 
 #include "Event.h"
 
-using KeyCode = unsigned char;
-
-class KeyEvent : public Event
+namespace Blueberry
 {
-public:
-	KeyCode GetKeyCode() const { return m_KeyCode; }
+	using KeyCode = unsigned char;
 
-protected:
-	KeyEvent(const KeyCode keycode)	: m_KeyCode(keycode) 
+	class KeyEvent : public Event
 	{
-	}
+	public:
+		KeyCode GetKeyCode() const { return m_KeyCode; }
 
-	KeyCode m_KeyCode;
-};
+	protected:
+		KeyEvent(const KeyCode keycode) : m_KeyCode(keycode)
+		{
+		}
 
-class KeyPressedEvent : public KeyEvent
-{
-public:
-	EVENT_DECLARATION(KeyPressed)
+		KeyCode m_KeyCode;
+	};
 
-	KeyPressedEvent(const KeyCode keycode) : KeyEvent(keycode)
+	class KeyPressedEvent : public KeyEvent
 	{
-	}
+	public:
+		EVENT_DECLARATION(KeyPressed)
 
-	std::string ToString() const override
+		KeyPressedEvent(const KeyCode keycode) : KeyEvent(keycode)
+		{
+		}
+
+		std::string ToString() const override
+		{
+			std::stringstream ss;
+			ss << "KeyPressedEvent: " << m_KeyCode;
+			return ss.str();
+		}
+	};
+
+	class KeyReleasedEvent : public KeyEvent
 	{
-		std::stringstream ss;
-		ss << "KeyPressedEvent: " << m_KeyCode;
-		return ss.str();
-	}
-};
+	public:
+		EVENT_DECLARATION(KeyReleased)
 
-class KeyReleasedEvent : public KeyEvent
-{
-public:
-	EVENT_DECLARATION(KeyReleased)
+		KeyReleasedEvent(const KeyCode keycode) : KeyEvent(keycode)
+		{
+		}
 
-	KeyReleasedEvent(const KeyCode keycode) : KeyEvent(keycode)
+		std::string ToString() const override
+		{
+			std::stringstream ss;
+			ss << "KeyReleasedEvent: " << m_KeyCode;
+			return ss.str();
+		}
+	};
+
+	class KeyTypedEvent : public KeyEvent
 	{
-	}
+	public:
+		EVENT_DECLARATION(KeyTyped)
 
-	std::string ToString() const override
-	{
-		std::stringstream ss;
-		ss << "KeyReleasedEvent: " << m_KeyCode;
-		return ss.str();
-	}
-};
+		KeyTypedEvent(const KeyCode keycode) : KeyEvent(keycode)
+		{
+		}
 
-class KeyTypedEvent : public KeyEvent
-{
-public:
-	EVENT_DECLARATION(KeyTyped)
-
-	KeyTypedEvent(const KeyCode keycode) : KeyEvent(keycode)
-	{
-	}
-
-	std::string ToString() const override
-	{
-		std::stringstream ss;
-		ss << "KeyTypedEvent: " << m_KeyCode;
-		return ss.str();
-	}
-};
+		std::string ToString() const override
+		{
+			std::stringstream ss;
+			ss << "KeyTypedEvent: " << m_KeyCode;
+			return ss.str();
+		}
+	};
+}

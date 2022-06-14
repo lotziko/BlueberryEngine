@@ -3,35 +3,38 @@
 
 #include "Blueberry\Scene\EnityComponent.h"
 
-OBJECT_DEFINITION(Component, Camera)
-
-Camera::Camera()
+namespace Blueberry
 {
-	RecalculateProjectionMatrix();
-}
+	OBJECT_DEFINITION(Component, Camera)
 
-void Camera::Update()
-{
-	RecalculateViewMatrix();
-	RecalculateProjectionMatrix();
-}
+	Camera::Camera()
+	{
+		RecalculateProjectionMatrix();
+	}
 
-void Camera::RecalculateViewMatrix()
-{
-	Transform* transform = GetEntity()->GetTransform();
-	Vector3 position = transform->GetLocalPosition();
-	Quaternion rotation = transform->GetLocalRotation();
+	void Camera::Update()
+	{
+		RecalculateViewMatrix();
+		RecalculateProjectionMatrix();
+	}
 
-	Matrix rotationMatrix = Matrix::CreateFromQuaternion(rotation);
-	Vector3 target = Vector3::Transform(m_Direction, rotationMatrix);
-	target += position;
+	void Camera::RecalculateViewMatrix()
+	{
+		Transform* transform = GetEntity()->GetTransform();
+		Vector3 position = transform->GetLocalPosition();
+		Quaternion rotation = transform->GetLocalRotation();
 
-	Vector3 up = Vector3::Transform(m_Up, rotationMatrix);
+		Matrix rotationMatrix = Matrix::CreateFromQuaternion(rotation);
+		Vector3 target = Vector3::Transform(m_Direction, rotationMatrix);
+		target += position;
 
-	m_ViewMatrix = Matrix::CreateLookAt(position, target, up);
-}
+		Vector3 up = Vector3::Transform(m_Up, rotationMatrix);
 
-void Camera::RecalculateProjectionMatrix()
-{
-	m_ProjectionMatrix = Matrix::CreateOrthographic(m_Resolution.x / m_PixelsPerUnit, m_Resolution.y / m_PixelsPerUnit, m_ZNearPlane, m_ZFarPlane);
+		m_ViewMatrix = Matrix::CreateLookAt(position, target, up);
+	}
+
+	void Camera::RecalculateProjectionMatrix()
+	{
+		m_ProjectionMatrix = Matrix::CreateOrthographic(m_Resolution.x / m_PixelsPerUnit, m_Resolution.y / m_PixelsPerUnit, m_ZNearPlane, m_ZFarPlane);
+	}
 }

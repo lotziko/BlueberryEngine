@@ -3,7 +3,10 @@
 
 #include "Concrete\Windows\WindowsWindow.h"
 
-Scope<Window> Window::Create(const WindowProperties& properties)
+namespace Blueberry
 {
-	return CreateScope<WindowsWindow>(properties);
+	Scope<Window> Window::Create(const WindowProperties& properties)
+	{
+		return CreateScope<WindowsWindow>(properties);
+	}
 }

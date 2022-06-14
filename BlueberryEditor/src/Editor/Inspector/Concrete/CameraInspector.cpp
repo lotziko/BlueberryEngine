@@ -5,14 +5,17 @@
 
 #include "imgui\imgui.h"
 
-OBJECT_INSPECTOR_DECLARATION(CameraInspector, Camera)
-
-void CameraInspector::Draw(Object* object)
+namespace Blueberry
 {
-	Camera* camera = static_cast<Camera*>(object);
+	OBJECT_INSPECTOR_DECLARATION(CameraInspector, Camera)
 
-	if (ImGui::CollapsingHeader("Camera"))
+	void CameraInspector::Draw(Object* object)
 	{
+		Camera* camera = static_cast<Camera*>(object);
 
+		if (ImGui::CollapsingHeader("Camera"))
+		{
+
+		}
 	}
 }

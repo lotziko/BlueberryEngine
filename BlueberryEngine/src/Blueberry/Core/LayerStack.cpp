@@ -3,26 +3,29 @@
 
 #include "Layer.h"
 
-LayerStack::~LayerStack()
+namespace Blueberry
 {
-	for (Layer* layer : m_Layers)
+	LayerStack::~LayerStack()
 	{
-		layer->OnDetach();
-		delete layer;
+		for (Layer* layer : m_Layers)
+		{
+			layer->OnDetach();
+			delete layer;
+		}
 	}
-}
 
-void LayerStack::PushLayer(Layer* layer)
-{
-	m_Layers.emplace_back(layer);
-}
-
-void LayerStack::PopLayer(Layer* layer)
-{
-	auto it = std::find(m_Layers.begin(), m_Layers.end(), layer);
-	if (it != m_Layers.end())
+	void LayerStack::PushLayer(Layer* layer)
 	{
-		layer->OnDetach();
-		m_Layers.erase(it);
+		m_Layers.emplace_back(layer);
+	}
+
+	void LayerStack::PopLayer(Layer* layer)
+	{
+		auto it = std::find(m_Layers.begin(), m_Layers.end(), layer);
+		if (it != m_Layers.end())
+		{
+			layer->OnDetach();
+			m_Layers.erase(it);
+		}
 	}
 }

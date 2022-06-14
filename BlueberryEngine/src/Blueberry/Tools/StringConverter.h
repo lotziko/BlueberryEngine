@@ -1,7 +1,10 @@
 #pragma once
 
-class StringConverter
+namespace Blueberry
 {
-public:
-	static std::wstring StringToWide(std::string str);
-};
+	class StringConverter
+	{
+	public:
+		static std::wstring StringToWide(std::string str);
+	};
+}
