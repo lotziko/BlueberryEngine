@@ -17,6 +17,5 @@ public:
 
 private:
 	Scope<Window> m_Window;
-	Ref<ServiceContainer> m_ServiceContainer;
 	LayerStack m_LayerStack;
 };

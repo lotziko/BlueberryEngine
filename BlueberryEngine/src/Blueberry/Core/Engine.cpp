@@ -29,11 +29,10 @@ bool Engine::Initialize(const WindowProperties& properties)
 
 	Ref<ContentManager> contentManager = CreateRef<ContentManager>(graphicsDevice);
 
-	m_ServiceContainer = CreateRef<ServiceContainer>();
-	m_ServiceContainer->EventDispatcher = eventDispatcher;
-	m_ServiceContainer->ContentManager = contentManager;
-	m_ServiceContainer->GraphicsDevice = graphicsDevice;
-	m_ServiceContainer->Renderer2D = renderer2D;
+	ServiceContainer::EventDispatcher = eventDispatcher;
+	ServiceContainer::ContentManager = contentManager;
+	ServiceContainer::GraphicsDevice = graphicsDevice;
+	ServiceContainer::Renderer2D = renderer2D;
 
 	return true;
 }
@@ -56,6 +55,5 @@ void Engine::Draw()
 void Engine::PushLayer(Layer* layer)
 {
 	m_LayerStack.PushLayer(layer);
-	layer->SetServiceContainer(m_ServiceContainer);
 	layer->OnAttach();
 }

@@ -6,8 +6,8 @@
 
 struct ServiceContainer
 {
-	Ref<EventDispatcher> EventDispatcher;
-	Ref<ContentManager> ContentManager;
-	Ref<GraphicsDevice> GraphicsDevice;
-	Ref<Renderer2D> Renderer2D;
+	static inline Ref<EventDispatcher> EventDispatcher = nullptr;
+	static inline Ref<ContentManager> ContentManager = nullptr;
+	static inline Ref<GraphicsDevice> GraphicsDevice = nullptr;
+	static inline Ref<Renderer2D> Renderer2D = nullptr;
 };

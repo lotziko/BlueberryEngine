@@ -9,12 +9,10 @@ struct ServiceContainer;
 class Scene
 {
 public:
-	Scene(const Ref<ServiceContainer>& serviceContainer);
+	Scene();
 	virtual ~Scene() = default;
 
 	bool Initialize();
-	void Draw();
-	void DrawCamera(Camera* camera);
 
 	template<class ComponentType>
 	ComponentIterator GetIterator();
@@ -27,7 +25,6 @@ public:
 protected:
 	std::vector<Ref<Entity>> m_Entities;
 	ComponentManager m_ComponentManager;
-	Ref<ServiceContainer> m_ServiceContainer;
 
 	std::stack<std::size_t> m_EmptyEntityIds;
 	std::size_t m_MaxEntityId = 0;

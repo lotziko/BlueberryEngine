@@ -3,6 +3,7 @@
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Core\ServiceContainer.h"
 #include "Blueberry\Content\ContentManager.h"
+#include "Blueberry\Graphics\SceneRenderer.h"
 
 #include "Editor\Misc\ImGuiHelper.h"
 
@@ -11,10 +12,10 @@
 
 void EditorLayer::OnAttach()
 {
-	m_Scene = CreateRef<Scene>(m_ServiceContainer);
+	m_Scene = CreateRef<Scene>();
 	m_Scene->Initialize();
 
-	m_ServiceContainer->ContentManager->Load<Texture>("assets/TestImage.png", m_BackgroundTexture);
+	ServiceContainer::ContentManager->Load<Texture>("assets/TestImage.png", m_BackgroundTexture);
 
 	auto mainCamera = m_Scene->CreateEntity("Camera");
 	mainCamera->AddComponent<Camera>();
@@ -28,7 +29,7 @@ void EditorLayer::OnAttach()
 
 	m_SceneHierarchy = SceneHierarchy(m_Scene);
 
-	if (m_ServiceContainer->GraphicsDevice->CreateImGuiRenderer(m_ImGuiRenderer))
+	if (ServiceContainer::GraphicsDevice->CreateImGuiRenderer(m_ImGuiRenderer))
 	{
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -37,12 +38,12 @@ void EditorLayer::OnAttach()
 		ImGui::LoadDefaultEditorFonts();
 	}
 
-	m_ServiceContainer->EventDispatcher->AddCallback(EventType::WindowResize, BIND_EVENT(EditorLayer::OnResizeEvent));
+	ServiceContainer::EventDispatcher->AddCallback(EventType::WindowResize, BIND_EVENT(EditorLayer::OnResizeEvent));
 }
 
 void EditorLayer::OnDraw()
 {
-	auto graphicsDevice = m_ServiceContainer->GraphicsDevice.get();
+	auto graphicsDevice = ServiceContainer::GraphicsDevice.get();
 	if (graphicsDevice != NULL)
 	{
 		graphicsDevice->SetViewport(m_Viewport.x, m_Viewport.y, m_Viewport.z, m_Viewport.w);
@@ -55,7 +56,7 @@ void EditorLayer::OnDraw()
 
 		if (m_Scene != NULL)
 		{
-			m_Scene->Draw();
+			SceneRenderer::Draw(m_Scene);
 		}
 		DrawUI();
 		graphicsDevice->SwapBuffers();
@@ -65,7 +66,7 @@ void EditorLayer::OnDraw()
 void EditorLayer::OnResizeEvent(const Event& event)
 {
 	auto resizeEvent = static_cast<const WindowResizeEvent&>(event);
-	m_ServiceContainer->GraphicsDevice->ResizeBackbuffer(resizeEvent.GetWidth(), resizeEvent.GetHeight());
+	ServiceContainer::GraphicsDevice->ResizeBackbuffer(resizeEvent.GetWidth(), resizeEvent.GetHeight());
 }
 
 void EditorLayer::DrawUI()
