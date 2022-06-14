@@ -5,6 +5,7 @@
 
 #include "Editor\Panels\Hierarchy\SceneHierarchy.h"
 #include "Editor\Panels\Inspector\SceneInspector.h"
+#include "Editor\Panels\Scene\SceneArea.h"
 
 class Scene;
 class Camera;
@@ -21,7 +22,6 @@ public:
 	virtual void OnResizeEvent(const Event& event);
 
 private:
-	void DrawUI();
 	void DrawDockSpace();
 	void DrawMenuBar();
 
@@ -30,9 +30,7 @@ private:
 	Ref<ImGuiRenderer> m_ImGuiRenderer;
 	Ref<Texture> m_BackgroundTexture;
 
-	Camera* m_Camera;
-
 	SceneHierarchy m_SceneHierarchy;
 	SceneInspector m_SceneInspector;
-	Vector4 m_Viewport;
+	SceneArea m_SceneArea;
 };

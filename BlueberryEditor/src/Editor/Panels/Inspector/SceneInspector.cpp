@@ -8,10 +8,6 @@
 
 #include "imgui\imgui.h"
 
-SceneInspector::SceneInspector(const Ref<Scene>& scene) : m_Scene(scene)
-{
-}
-
 void SceneInspector::DrawUI()
 {
 	ImGui::Begin("Inspector");
@@ -28,8 +24,4 @@ void SceneInspector::DrawUI()
 	}
 
 	ImGui::End();
-}
-
-void SceneInspector::DrawEntity(const Ref<Entity>& entity)
-{
 }

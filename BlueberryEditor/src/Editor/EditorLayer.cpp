@@ -20,7 +20,6 @@ void EditorLayer::OnAttach()
 	auto mainCamera = m_Scene->CreateEntity("Camera");
 	mainCamera->AddComponent<Camera>();
 	mainCamera->GetTransform()->SetLocalPosition(Vector3(0, 0, 0));
-	m_Camera = mainCamera->GetComponent<Camera>();
 
 	auto test = m_Scene->CreateEntity("Test");
 	test->AddComponent<SpriteRenderer>();
@@ -28,6 +27,10 @@ void EditorLayer::OnAttach()
 	sprite->SetTexture(m_BackgroundTexture);
 
 	m_SceneHierarchy = SceneHierarchy(m_Scene);
+	m_SceneInspector = SceneInspector();
+
+	m_SceneArea = SceneArea(m_Scene);
+	m_SceneArea.SetCamera(mainCamera->GetComponent<Camera>());
 
 	if (ServiceContainer::GraphicsDevice->CreateImGuiRenderer(m_ImGuiRenderer))
 	{
@@ -43,37 +46,19 @@ void EditorLayer::OnAttach()
 
 void EditorLayer::OnDraw()
 {
-	auto graphicsDevice = ServiceContainer::GraphicsDevice.get();
-	if (graphicsDevice != NULL)
-	{
-		graphicsDevice->SetViewport(m_Viewport.x, m_Viewport.y, m_Viewport.z, m_Viewport.w);
-		graphicsDevice->ClearColor({ 0, 0, 0, 1 });
+	m_SceneArea.Draw();
+	
+	m_ImGuiRenderer->Begin();
+	DrawDockSpace();
+	m_ImGuiRenderer->End();
 
-		if (m_Viewport.z > 0)
-		{
-			m_Camera->SetResolution(Vector2(m_Viewport.z, m_Viewport.w));
-		}
-
-		if (m_Scene != NULL)
-		{
-			SceneRenderer::Draw(m_Scene);
-		}
-		DrawUI();
-		graphicsDevice->SwapBuffers();
-	}
+	ServiceContainer::GraphicsDevice->SwapBuffers();
 }
 
 void EditorLayer::OnResizeEvent(const Event& event)
 {
 	auto resizeEvent = static_cast<const WindowResizeEvent&>(event);
 	ServiceContainer::GraphicsDevice->ResizeBackbuffer(resizeEvent.GetWidth(), resizeEvent.GetHeight());
-}
-
-void EditorLayer::DrawUI()
-{
-	m_ImGuiRenderer->Begin();
-	DrawDockSpace();
-	m_ImGuiRenderer->End();
 }
 
 void EditorLayer::DrawDockSpace()
@@ -109,7 +94,7 @@ void EditorLayer::DrawDockSpace()
 			ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
 
 			auto centeralNode = ImGui::DockBuilderGetCentralNode(dockspace_id);
-			m_Viewport = Vector4(centeralNode->Pos.x, centeralNode->Pos.y, centeralNode->Size.x, centeralNode->Size.y);
+			m_SceneArea.SetViewport(Rect(centeralNode->Pos.x, centeralNode->Pos.y, centeralNode->Size.x, centeralNode->Size.y));
 		}
 
 		DrawMenuBar();

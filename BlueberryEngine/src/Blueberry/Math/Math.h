@@ -8,6 +8,7 @@ using Vector4 = DirectX::SimpleMath::Vector4;
 using Quaternion = DirectX::SimpleMath::Quaternion;
 using Matrix = DirectX::SimpleMath::Matrix;
 using Color = DirectX::SimpleMath::Color;
+using Rect = DirectX::SimpleMath::Rectangle;
 
 constexpr auto Pi = 3.1415926535f;
 constexpr auto DegreeToRad = 57.29577951471995f;
