@@ -6,8 +6,9 @@ class Component;
 class Transform;
 class Scene;
 
-class Entity : Object
+class Entity : public Object
 {
+	OBJECT_DECLARATION(Entity)
 public:
 	Entity() = default;
 	
@@ -20,6 +21,8 @@ public:
 
 	template<class ComponentType>
 	ComponentType* GetComponent();
+
+	std::vector<Ref<Component>> GetComponents();
 
 	template<class ComponentType>
 	bool HasComponent();
@@ -85,6 +88,11 @@ inline ComponentType* Entity::GetComponent()
 	}
 
 	return Ref<ComponentType>().get();
+}
+
+inline std::vector<Ref<Component>> Entity::GetComponents()
+{
+	return m_Components;
 }
 
 template<class ComponentType>

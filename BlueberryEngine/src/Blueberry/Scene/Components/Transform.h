@@ -27,15 +27,32 @@ public:
 	const Quaternion& GetLocalRotation() const { return m_LocalRotation; }
 	const Vector3& GetLocalScale() const { return m_LocalScale; }
 
+	const Vector3& GetLocalEulerRotation() const
+	{
+		return m_LocalRotation.ToEuler();
+	}
+
 	void SetLocalPosition(const Vector3& position)
 	{
 		m_LocalPosition = position;
 		m_IsDirty = true;
 	}
 
-	void SetLocalRotation(const Vector3& euler)
+	void SetLocalRotation(const Quaternion& rotation)
+	{
+		m_LocalRotation = rotation;
+		m_IsDirty = true;
+	}
+
+	void SetLocalEulerRotation(const Vector3& euler)
 	{
 		m_LocalRotation = Quaternion::CreateFromYawPitchRoll(euler.x, euler.y, euler.z);
+		m_IsDirty = true;
+	}
+
+	void SetLocalScale(const Vector3& scale)
+	{
+		m_LocalScale = scale;
 		m_IsDirty = true;
 	}
 

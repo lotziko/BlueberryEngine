@@ -56,7 +56,7 @@ bool Renderer2D::Initialize()
 		return false;
 	}
 
-	if (!m_GraphicsDevice->CreateShader(L"standard-v.cso", L"standard-p.cso", m_DefaultShader))
+	if (!m_GraphicsDevice->CreateShader(L"assets/standard-v.cso", L"assets/standard-p.cso", m_DefaultShader))
 	{
 		return false;
 	}

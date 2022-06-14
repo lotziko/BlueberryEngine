@@ -13,6 +13,7 @@ Camera::Camera()
 void Camera::Update()
 {
 	RecalculateViewMatrix();
+	RecalculateProjectionMatrix();
 }
 
 void Camera::RecalculateViewMatrix()

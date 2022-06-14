@@ -110,9 +110,9 @@
     <ClInclude Include="src\Blueberry\Logging\Logger.h" />
     <ClInclude Include="src\Blueberry\Math\Math.h" />
     <ClInclude Include="src\Blueberry\Math\SimpleMath.h" />
-    <ClInclude Include="src\Blueberry\Scene\Components\ComponentManager.h" />
     <ClInclude Include="src\Blueberry\Scene\Components\Camera.h" />
     <ClInclude Include="src\Blueberry\Scene\Components\Component.h" />
+    <ClInclude Include="src\Blueberry\Scene\Components\ComponentManager.h" />
     <ClInclude Include="src\Blueberry\Scene\Components\Renderer.h" />
     <ClInclude Include="src\Blueberry\Scene\Components\SpriteRenderer.h" />
     <ClInclude Include="src\Blueberry\Scene\Components\Transform.h" />
@@ -120,8 +120,6 @@
     <ClInclude Include="src\Blueberry\Scene\Entity.h" />
     <ClInclude Include="src\Blueberry\Scene\Scene.h" />
     <ClInclude Include="src\Blueberry\Scene\Serializer.h" />
-    <ClInclude Include="src\Blueberry\Tools\HashIndex.h" />
-    <ClInclude Include="src\Blueberry\Tools\Hierarchy.h" />
     <ClInclude Include="src\Blueberry\Tools\StringConverter.h" />
     <ClInclude Include="src\Blueberry\Tools\WindowsHelper.h" />
     <ClInclude Include="src\Concrete\DX11\DX11Buffer.h" />
@@ -154,7 +152,6 @@
     <ClCompile Include="src\Blueberry\Scene\Components\Transform.cpp" />
     <ClCompile Include="src\Blueberry\Scene\Entity.cpp" />
     <ClCompile Include="src\Blueberry\Scene\Scene.cpp" />
-    <ClCompile Include="src\Blueberry\Tools\HashIndex.cpp" />
     <ClCompile Include="src\Blueberry\Tools\StringConverter.cpp" />
     <ClCompile Include="src\Blueberry\Tools\WindowsHelper.cpp" />
     <ClCompile Include="src\Concrete\DX11\DX11Buffer.cpp" />

@@ -7,11 +7,16 @@ class Entity;
 class ComponentDefinitions
 {
 public:
-	static std::vector<std::string> s_Names;
-	ComponentDefinitions(std::string name) { s_Names.push_back(name); }
+	static std::vector<std::string>& GetDefinitions()
+	{
+		static std::vector<std::string> s_Definitions = std::vector<std::string>();
+		return s_Definitions;
+	}
+
+	ComponentDefinitions(std::string name) { ComponentDefinitions::GetDefinitions().push_back(name); }
 };
 
-#define COMPONENT_DEFINITION(cls) static ComponentDefinitions myclass_##cls(#cls);
+#define COMPONENT_DEFINITION(componentType) static ComponentDefinitions ComponentDefinition_##componentType(#componentType);
 
 class Component : public Object
 {

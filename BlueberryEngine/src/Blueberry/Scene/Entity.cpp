@@ -3,6 +3,8 @@
 
 #include "Blueberry\Scene\Scene.h"
 
+OBJECT_DEFINITION(Object, Entity)
+
 void Entity::AddComponentIntoScene(Component* component)
 {
 	std::size_t type = component->GetType();

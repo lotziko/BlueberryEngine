@@ -16,7 +16,6 @@
 
 #include <Windows.h>
 #include "Blueberry\Tools\WindowsHelper.h"
-#include "Blueberry\Tools\HashIndex.h"
 
 #include "Blueberry\Logging\Log.h"
 

@@ -13,6 +13,8 @@ public:
 
 	const Matrix& GetProjectionMatrix() const { return m_ProjectionMatrix; }
 	const Matrix& GetViewMatrix() const { return m_ViewMatrix; }
+	
+	const void SetResolution(const Vector2& resolution) { m_Resolution = resolution; }
 
 private:
 	void RecalculateViewMatrix();
