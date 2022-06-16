@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Blueberry\Math\Math.h"
+#include "SceneCamera.h"
 
 namespace Blueberry
 {
@@ -14,12 +15,12 @@ namespace Blueberry
 		SceneArea(const Ref<Scene>& scene);
 
 		void Draw();
-		void SetCamera(Camera* camera) { m_Camera = camera; }
 		void SetViewport(const Viewport& viewport) { m_Viewport = viewport; }
 
 	private:
 		Ref<Scene> m_Scene;
-		Camera* m_Camera;
+		SceneCamera m_Camera;
+
 		Viewport m_Viewport;
 	};
 }

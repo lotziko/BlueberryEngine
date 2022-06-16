@@ -25,11 +25,30 @@ namespace Blueberry
 			DrawEntity(entity.get());
 		}
 
+		if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
+		{
+			Selection::SetActiveObject(nullptr);
+		}
+
+		if (ImGui::BeginPopupContextWindow(0, 1, false))
+		{
+			if (ImGui::MenuItem("Create Empty Entity"))
+			{
+				m_Scene->CreateEntity("Empty Entity");
+			}
+			ImGui::EndPopup();
+		}
+
 		ImGui::End();
 	}
 
 	void SceneHierarchy::DrawEntity(Entity* entity)
 	{
+		if (entity == nullptr)
+		{
+			return;
+		}
+
 		ImGuiTreeNodeFlags flags = ((Selection::GetActiveObject() == entity) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_Leaf;// | ImGuiTreeNodeFlags_OpenOnArrow;
 		flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
 
@@ -37,6 +56,20 @@ namespace Blueberry
 		if (ImGui::IsItemClicked())
 		{
 			Selection::SetActiveObject(entity);
+		}
+
+		if (ImGui::BeginPopupContextItem())
+		{
+			if (ImGui::MenuItem("Delete Entity"))
+			{
+				m_Scene->DestroyEntity(entity);
+				if (Selection::GetActiveObject() == entity)
+				{
+					Selection::SetActiveObject(nullptr);
+				}
+			}
+
+			ImGui::EndPopup();
 		}
 
 		if (opened)

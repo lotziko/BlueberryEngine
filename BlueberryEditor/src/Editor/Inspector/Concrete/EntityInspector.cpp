@@ -26,5 +26,25 @@ namespace Blueberry
 				inspector->Draw(component.get());
 			}
 		}
+
+		if (ImGui::Button("Add component..."))
+		{
+			ImGui::OpenPopup("addComponent");
+		}
+		
+		if (ImGui::BeginPopup("addComponent"))
+		{
+			auto definitions = ComponentDefinitions::GetDefinitions();
+			
+			for (auto definition : definitions)
+			{
+				if (ImGui::Selectable(definition.second.name.c_str()))
+				{
+					entity->AddComponent(definition.second.createInstance());
+				}
+			}
+
+			ImGui::EndPopup();
+		}
 	}
 }

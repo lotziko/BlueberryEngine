@@ -40,6 +40,7 @@
     <ClInclude Include="src\Editor\Misc\ImGuiHelper.h" />
     <ClInclude Include="src\Editor\Inspector\Concrete\CameraInspector.h" />
     <ClInclude Include="src\Editor\Panels\Scene\SceneArea.h" />
+    <ClInclude Include="src\Editor\Panels\Scene\SceneCamera.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Editor\Content\AssetDatabase.cpp">
@@ -63,5 +64,6 @@
     <ClCompile Include="src\Editor\Inspector\Concrete\CameraInspector.cpp" />
     <ClCompile Include="src\Editor\Misc\ImGuiHelper.cpp" />
     <ClCompile Include="src\Editor\Panels\Scene\SceneArea.cpp" />
+    <ClCompile Include="src\Editor\Panels\Scene\SceneCamera.cpp" />
   </ItemGroup>
 </Project>
