@@ -22,6 +22,9 @@ namespace Blueberry
 		void AddComponent(Args&&... params);
 
 		template<class ComponentType>
+		void AddComponent(Ref<ComponentType> component);
+
+		template<class ComponentType>
 		ComponentType* GetComponent();
 
 		std::vector<Ref<Component>> GetComponents();
@@ -34,6 +37,7 @@ namespace Blueberry
 		virtual std::string ToString() const final { return m_Name; }
 
 		inline Transform* GetTransform() { return m_Transform; }
+		inline Scene* GetScene() { return m_Scene; }
 
 		void Destroy();
 	private:
@@ -75,6 +79,28 @@ namespace Blueberry
 		if (index >= m_Components.size())
 		{
 			m_Components.emplace_back(std::move(componentToAdd));
+		}
+	}
+
+	template<class ComponentType>
+	inline void Entity::AddComponent(Ref<ComponentType> component)
+	{
+		int index = 0;
+		for (auto && componentSlot : m_Components)
+		{
+			if (componentSlot == nullptr)
+			{
+				componentSlot = std::move(component);
+				break;
+			}
+			++index;
+		}
+
+		component->m_Entity = this;
+		AddComponentIntoScene(component.get());
+		if (index >= m_Components.size())
+		{
+			m_Components.emplace_back(std::move(component));
 		}
 	}
 

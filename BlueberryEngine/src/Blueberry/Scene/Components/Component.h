@@ -5,20 +5,46 @@
 namespace Blueberry
 {
 	class Entity;
+	class Component;
 
 	class ComponentDefinitions
 	{
 	public:
-		static std::vector<std::string>& GetDefinitions()
+		struct Info
 		{
-			static std::vector<std::string> s_Definitions = std::vector<std::string>();
+			std::string name;
+			std::function<Ref<Component>()> createInstance;
+		};
+
+		static std::map<std::size_t, Info>& GetDefinitions()
+		{
+			static std::map<std::size_t, Info> s_Definitions = std::map<std::size_t, Info>();
 			return s_Definitions;
 		}
 
-		ComponentDefinitions(std::string name) { ComponentDefinitions::GetDefinitions().push_back(name); }
+		ComponentDefinitions(const std::size_t& id, const std::string& name, const std::function<Ref<Component>()>&& createFunction) 
+		{ 
+			ComponentDefinitions::GetDefinitions().insert({ id, { name, createFunction } }); 
+		}
 	};
 
-#define COMPONENT_DEFINITION(componentType) static ComponentDefinitions ComponentDefinition_##componentType(#componentType);
+//********************************************************************************
+// COMPONENT_DECLARATION
+// This macro must be included in the declaration of any subclass of Component.
+// It declares method to create instances of the component.
+//********************************************************************************
+#define COMPONENT_DECLARATION( componentType )								\
+public:																		\
+	static Ref<Component> CreateInstance();									\
+
+//********************************************************************************
+// COMPONENT_DEFINITION
+// This macro must be included in the class definition to properly initialize 
+// method used in component instance creation. Take special care to ensure that the 
+//********************************************************************************
+#define COMPONENT_DEFINITION( componentType )																															\
+	Ref<Component> componentType::CreateInstance() { return CreateRef<componentType>(); }																				\
+	static ComponentDefinitions ComponentDefinition_##componentType( componentType::Type, #componentType, std::bind<Ref<Component>>(&componentType::CreateInstance) );	\
 
 	class Component : public Object
 	{

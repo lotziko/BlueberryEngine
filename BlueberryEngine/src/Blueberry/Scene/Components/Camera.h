@@ -7,6 +7,7 @@ namespace Blueberry
 	class Camera : public Component
 	{
 		OBJECT_DECLARATION(Camera)
+		COMPONENT_DECLARATION(Camera)
 	public:
 		Camera();
 		~Camera() = default;

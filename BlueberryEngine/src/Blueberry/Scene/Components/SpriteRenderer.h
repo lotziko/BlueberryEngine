@@ -10,6 +10,7 @@ namespace Blueberry
 	class SpriteRenderer : public Renderer
 	{
 		OBJECT_DECLARATION(SpriteRenderer)
+		COMPONENT_DECLARATION(SpriteRenderer)
 
 	public:
 		SpriteRenderer()
