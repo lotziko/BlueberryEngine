@@ -11,9 +11,6 @@ namespace Blueberry
 
 	void SpriteRendererInspector::Draw(Object* object)
 	{
-		if (ImGui::CollapsingHeader("SpriteRenderer"))
-		{
-
-		}
+		
 	}
 }

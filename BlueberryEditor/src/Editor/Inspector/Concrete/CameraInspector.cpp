@@ -12,10 +12,5 @@ namespace Blueberry
 	void CameraInspector::Draw(Object* object)
 	{
 		Camera* camera = static_cast<Camera*>(object);
-
-		if (ImGui::CollapsingHeader("Camera"))
-		{
-
-		}
 	}
 }

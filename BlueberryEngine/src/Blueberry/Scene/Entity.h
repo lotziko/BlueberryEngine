@@ -39,10 +39,11 @@ namespace Blueberry
 		inline Transform* GetTransform() { return m_Transform; }
 		inline Scene* GetScene() { return m_Scene; }
 
-		void Destroy();
 	private:
 		void AddComponentIntoScene(Component* component);
 		void RemoveComponentFromScene(Component* component);
+
+		void Destroy();
 
 	private:
 		std::vector<Ref<Component>> m_Components;

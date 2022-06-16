@@ -58,6 +58,8 @@ namespace Blueberry
 
 		const bool& IsDirty() const { return m_IsDirty; }
 
+		virtual std::string ToString() const final { return "Transform"; }
+
 	private:
 		void RecalculateWorldMatrix()
 		{

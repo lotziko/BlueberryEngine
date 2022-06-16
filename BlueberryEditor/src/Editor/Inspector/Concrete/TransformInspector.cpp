@@ -14,39 +14,36 @@ namespace Blueberry
 	{
 		Transform* transform = static_cast<Transform*>(object);
 
-		if (ImGui::CollapsingHeader("Transform"))
+		Vector3 localPosition = transform->GetLocalPosition();
+		if (ImGui::DragVector3("Position", localPosition))
 		{
-			Vector3 localPosition = transform->GetLocalPosition();
-			if (ImGui::DragVector3("Position", localPosition))
-			{
-				transform->SetLocalPosition(localPosition);
-			}
+			transform->SetLocalPosition(localPosition);
+		}
 
-			Vector3 localRotation = ToDegrees(transform->GetLocalEulerRotation());
-			std::intptr_t transformId = reinterpret_cast<std::intptr_t>(transform);
-			if (m_TransformEulerCache.count(transformId) > 0)
-			{
-				localRotation = m_TransformEulerCache[transformId];
-			}
+		Vector3 localRotation = ToDegrees(transform->GetLocalEulerRotation());
+		std::intptr_t transformId = reinterpret_cast<std::intptr_t>(transform);
+		if (m_TransformEulerCache.count(transformId) > 0)
+		{
+			localRotation = m_TransformEulerCache[transformId];
+		}
 
-			if (ImGui::DragVector3("Rotation", localRotation))
+		if (ImGui::DragVector3("Rotation", localRotation))
+		{
+			transform->SetLocalEulerRotation(ToRadians(localRotation));
+			if (ImGui::IsItemActive())
 			{
-				transform->SetLocalEulerRotation(ToRadians(localRotation));
-				if (ImGui::IsItemActive())
-				{
-					m_TransformEulerCache[transformId] = localRotation;
-				}
-				else
-				{
-					m_TransformEulerCache.erase(transformId);
-				}
+				m_TransformEulerCache[transformId] = localRotation;
 			}
+			else
+			{
+				m_TransformEulerCache.erase(transformId);
+			}
+		}
 
-			Vector3 localScale = transform->GetLocalScale();
-			if (ImGui::DragVector3("Scale", localScale))
-			{
-				transform->SetLocalScale(localScale);
-			}
+		Vector3 localScale = transform->GetLocalScale();
+		if (ImGui::DragVector3("Scale", localScale))
+		{
+			transform->SetLocalScale(localScale);
 		}
 	}
 }

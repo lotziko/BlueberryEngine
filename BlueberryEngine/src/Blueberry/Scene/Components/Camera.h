@@ -19,6 +19,8 @@ namespace Blueberry
 
 		const void SetResolution(const Vector2& resolution) { m_Resolution = resolution; }
 
+		virtual std::string ToString() const final { return "Camera"; }
+
 	private:
 		void RecalculateViewMatrix();
 		void RecalculateProjectionMatrix();

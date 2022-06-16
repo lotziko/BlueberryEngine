@@ -23,7 +23,10 @@ namespace Blueberry
 
 			if (inspector != nullptr)
 			{
-				inspector->Draw(component.get());
+				if (ImGui::CollapsingHeader(component->ToString().c_str()))
+				{
+					inspector->Draw(component.get());
+				}
 			}
 		}
 

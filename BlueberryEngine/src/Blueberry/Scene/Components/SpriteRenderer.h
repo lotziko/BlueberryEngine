@@ -25,6 +25,8 @@ namespace Blueberry
 		const Ref<Texture>& GetTexture() { return m_Texture; }
 		void SetTexture(const Ref<Texture>& texture) { m_Texture = texture; }
 
+		virtual std::string ToString() const final { return "SpriteRenderer"; }
+
 	private:
 		Color m_Color;
 		Ref<Texture> m_Texture;
