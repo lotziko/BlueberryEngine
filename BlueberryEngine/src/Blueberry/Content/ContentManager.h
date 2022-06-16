@@ -8,17 +8,15 @@ namespace Blueberry
 	class ContentManager
 	{
 	public:
-		ContentManager(const Ref<GraphicsDevice>& graphicsDevice);
-		virtual ~ContentManager() = default;
+		ContentManager() = default;
+		~ContentManager() = default;
 
 		template<class ContentType>
 		void Load(const std::string& path, Ref<ContentType>& content);
 
 	private:
-		Ref<GraphicsDevice> m_GraphicsDevice;
 		std::map<std::string, Ref<Object>> m_LoadedContent;
 	};
-
 	template<class ContentType>
 	inline void ContentManager::Load(const std::string& path, Ref<ContentType>& content)
 	{
@@ -29,7 +27,7 @@ namespace Blueberry
 		{
 			if (ContentType::Type == Texture::Type)
 			{
-				m_GraphicsDevice->CreateTexture(path, ref);
+				g_GraphicsDevice->CreateTexture(path, ref);
 				m_LoadedContent.insert({ path, ref });
 			}
 

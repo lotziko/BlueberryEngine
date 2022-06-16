@@ -1,6 +1,7 @@
 #include "bbpch.h"
 #include "Renderer2D.h"
 
+#include "Blueberry\Core\GlobalServices.h"
 #include "Blueberry\Graphics\GraphicsDevice.h"
 #include "Blueberry\Graphics\Shader.h"
 
@@ -11,9 +12,8 @@ namespace Blueberry
 		Matrix viewProjectionMatrix;
 	};
 
-	Renderer2D::Renderer2D(const Ref<GraphicsDevice>& graphicsDevice)
+	Renderer2D::Renderer2D()
 	{
-		m_GraphicsDevice = graphicsDevice;
 	}
 
 	bool Renderer2D::Initialize()
@@ -26,7 +26,7 @@ namespace Blueberry
 		int size = layout.GetSize();
 		m_VertexData = new float[MAX_VERTICES * size / sizeof(float)];
 
-		if (!m_GraphicsDevice->CreateVertexBuffer(layout, MAX_VERTICES, m_VertexBuffer))
+		if (!g_GraphicsDevice->CreateVertexBuffer(layout, MAX_VERTICES, m_VertexBuffer))
 		{
 			return false;
 		}
@@ -46,19 +46,19 @@ namespace Blueberry
 			offset += 4;
 		}
 
-		if (!m_GraphicsDevice->CreateIndexBuffer(MAX_INDICES, m_IndexBuffer))
+		if (!g_GraphicsDevice->CreateIndexBuffer(MAX_INDICES, m_IndexBuffer))
 		{
 			return false;
 		}
 		m_IndexBuffer->SetData(indexData, MAX_INDICES);
 		delete[] indexData;
 
-		if (!m_GraphicsDevice->CreateConstantBuffer(sizeof(CONSTANTS) * 1, m_ConstantBuffer))
+		if (!g_GraphicsDevice->CreateConstantBuffer(sizeof(CONSTANTS) * 1, m_ConstantBuffer))
 		{
 			return false;
 		}
 
-		if (!m_GraphicsDevice->CreateShader(L"assets/standard-v.cso", L"assets/standard-p.cso", m_DefaultShader))
+		if (!g_GraphicsDevice->CreateShader(L"assets/standard-v.cso", L"assets/standard-p.cso", m_DefaultShader))
 		{
 			return false;
 		}
@@ -85,7 +85,7 @@ namespace Blueberry
 	{
 		CONSTANTS constants[] =
 		{
-			{ m_GraphicsDevice->GetGPUMatrix(view * projection) }
+			{ g_GraphicsDevice->GetGPUMatrix(view * projection) }
 		};
 
 		m_ConstantBuffer->SetData(reinterpret_cast<char*>(&constants), sizeof(constants));
@@ -147,7 +147,7 @@ namespace Blueberry
 		m_IndexBuffer->Bind();
 		m_ConstantBuffer->Bind();
 		m_DefaultShader->Bind();
-		m_GraphicsDevice->DrawIndexed(m_QuadIndexCount);
+		g_GraphicsDevice->DrawIndexed(m_QuadIndexCount);
 
 		m_QuadIndexCount = 0;
 		m_VertexDataPtr = m_VertexData;

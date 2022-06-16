@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Blueberry\Core\ServiceContainer.h"
+#include <string>
 
 namespace Blueberry
 {

@@ -1,7 +1,7 @@
 #include "EditorLayer.h"
 
+#include "Blueberry\Core\GlobalServices.h"
 #include "Blueberry\Content\ContentManager.h"
-#include "Blueberry\Core\ServiceContainer.h"
 #include "Blueberry\Graphics\SceneRenderer.h"
 #include "Blueberry\Math\Math.h"
 #include "Blueberry\Scene\Scene.h"
@@ -18,11 +18,7 @@ namespace Blueberry
 		m_Scene = CreateRef<Scene>();
 		m_Scene->Initialize();
 
-		ServiceContainer::ContentManager->Load<Texture>("assets/TestImage.png", m_BackgroundTexture);
-
-		auto mainCamera = m_Scene->CreateEntity("Camera");
-		mainCamera->AddComponent<Camera>();
-		mainCamera->GetTransform()->SetLocalPosition(Vector3(0, 0, 0));
+		g_ContentManager->Load<Texture>("assets/TestImage.png", m_BackgroundTexture);
 
 		auto test = m_Scene->CreateEntity("Test");
 		test->AddComponent<SpriteRenderer>();
@@ -33,9 +29,8 @@ namespace Blueberry
 		m_SceneInspector = SceneInspector();
 
 		m_SceneArea = SceneArea(m_Scene);
-		m_SceneArea.SetCamera(mainCamera->GetComponent<Camera>());
 
-		if (ServiceContainer::GraphicsDevice->CreateImGuiRenderer(m_ImGuiRenderer))
+		if (g_GraphicsDevice->CreateImGuiRenderer(m_ImGuiRenderer))
 		{
 			ImGuiIO& io = ImGui::GetIO(); (void)io;
 			io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -44,7 +39,7 @@ namespace Blueberry
 			ImGui::LoadDefaultEditorFonts();
 		}
 
-		ServiceContainer::EventDispatcher->AddCallback(EventType::WindowResize, BIND_EVENT(EditorLayer::OnResizeEvent));
+		g_EventDispatcher->AddCallback(EventType::WindowResize, BIND_EVENT(EditorLayer::OnResizeEvent));
 	}
 
 	void EditorLayer::OnDraw()
@@ -55,13 +50,13 @@ namespace Blueberry
 		DrawDockSpace();
 		m_ImGuiRenderer->End();
 
-		ServiceContainer::GraphicsDevice->SwapBuffers();
+		g_GraphicsDevice->SwapBuffers();
 	}
 
 	void EditorLayer::OnResizeEvent(const Event& event)
 	{
 		auto resizeEvent = static_cast<const WindowResizeEvent&>(event);
-		ServiceContainer::GraphicsDevice->ResizeBackbuffer(resizeEvent.GetWidth(), resizeEvent.GetHeight());
+		g_GraphicsDevice->ResizeBackbuffer(resizeEvent.GetWidth(), resizeEvent.GetHeight());
 	}
 
 	void EditorLayer::DrawDockSpace()

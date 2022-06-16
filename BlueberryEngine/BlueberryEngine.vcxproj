@@ -89,10 +89,10 @@
     <ClInclude Include="src\Blueberry\Content\ContentManager.h" />
     <ClInclude Include="src\Blueberry\Core\Base.h" />
     <ClInclude Include="src\Blueberry\Core\Engine.h" />
+    <ClInclude Include="src\Blueberry\Core\GlobalServices.h" />
     <ClInclude Include="src\Blueberry\Core\Layer.h" />
     <ClInclude Include="src\Blueberry\Core\LayerStack.h" />
     <ClInclude Include="src\Blueberry\Core\Object.h" />
-    <ClInclude Include="src\Blueberry\Core\ServiceContainer.h" />
     <ClInclude Include="src\Blueberry\Core\Window.h" />
     <ClInclude Include="src\Blueberry\Events\Event.h" />
     <ClInclude Include="src\Blueberry\Events\KeyEvent.h" />
@@ -135,6 +135,7 @@
   <ItemGroup>
     <ClCompile Include="src\Blueberry\Content\ContentManager.cpp" />
     <ClCompile Include="src\Blueberry\Core\Engine.cpp" />
+    <ClCompile Include="src\Blueberry\Core\GlobalServices.cpp" />
     <ClCompile Include="src\Blueberry\Core\Layer.cpp" />
     <ClCompile Include="src\Blueberry\Core\LayerStack.cpp" />
     <ClCompile Include="src\Blueberry\Core\Object.cpp" />

@@ -33,6 +33,6 @@ namespace Blueberry
 		virtual Matrix GetGPUMatrix(const Matrix& viewProjection) const = 0;
 
 	public:
-		static Ref<GraphicsDevice> Create();
+		static GraphicsDevice* Create();
 	};
 }

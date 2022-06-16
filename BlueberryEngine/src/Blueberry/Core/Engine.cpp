@@ -1,10 +1,10 @@
 #include "bbpch.h"
 #include "Engine.h"
 
+#include "Blueberry\Core\GlobalServices.h"
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Graphics\GraphicsDevice.h"
 #include "Blueberry\Graphics\Renderer2D.h"
-#include "Blueberry\Core\ServiceContainer.h"
 
 #include "Blueberry\Core\Layer.h"
 
@@ -14,27 +14,21 @@ namespace Blueberry
 	{
 		m_Window = Window::Create(properties);
 
-		Ref<EventDispatcher> eventDispatcher = CreateRef<EventDispatcher>();
-		m_Window->SetEventDispatcher(eventDispatcher);
+		g_EventDispatcher = new EventDispatcher();
 
-		Ref<GraphicsDevice> graphicsDevice = GraphicsDevice::Create();
-		if (!graphicsDevice->Initialize(properties.Width, properties.Height, m_Window->GetHandle()))
+		g_GraphicsDevice = GraphicsDevice::Create();
+		if (!g_GraphicsDevice->Initialize(properties.Width, properties.Height, m_Window->GetHandle()))
 		{
 			return false;
 		}
 
-		Ref<Renderer2D> renderer2D = CreateRef<Renderer2D>(graphicsDevice);
-		if (!renderer2D->Initialize())
+		g_Renderer2D = new Renderer2D();
+		if (!g_Renderer2D->Initialize())
 		{
 			return false;
 		}
 
-		Ref<ContentManager> contentManager = CreateRef<ContentManager>(graphicsDevice);
-
-		ServiceContainer::EventDispatcher = eventDispatcher;
-		ServiceContainer::ContentManager = contentManager;
-		ServiceContainer::GraphicsDevice = graphicsDevice;
-		ServiceContainer::Renderer2D = renderer2D;
+		g_ContentManager = new ContentManager();
 
 		return true;
 	}

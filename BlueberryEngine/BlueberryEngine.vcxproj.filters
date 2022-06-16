@@ -72,9 +72,6 @@
     <ClInclude Include="src\Blueberry\Core\Object.h">
       <Filter>src\Blueberry\Core</Filter>
     </ClInclude>
-    <ClInclude Include="src\Blueberry\Core\ServiceContainer.h">
-      <Filter>src\Blueberry\Core</Filter>
-    </ClInclude>
     <ClInclude Include="src\Blueberry\Core\Window.h">
       <Filter>src\Blueberry\Core</Filter>
     </ClInclude>
@@ -187,6 +184,7 @@
       <Filter>vendor\stb\stb</Filter>
     </ClInclude>
     <ClInclude Include="src\Blueberry\Graphics\SceneRenderer.h" />
+    <ClInclude Include="src\Blueberry\Core\GlobalServices.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Blueberry\Content\ContentManager.cpp">
@@ -280,5 +278,6 @@
       <Filter>vendor\stb\stb</Filter>
     </ClCompile>
     <ClCompile Include="src\Blueberry\Graphics\SceneRenderer.cpp" />
+    <ClCompile Include="src\Blueberry\Core\GlobalServices.cpp" />
   </ItemGroup>
 </Project>

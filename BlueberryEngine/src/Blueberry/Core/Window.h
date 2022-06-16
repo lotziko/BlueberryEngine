@@ -24,14 +24,10 @@ namespace Blueberry
 		virtual bool ProcessMessages() = 0;
 
 		virtual void* GetHandle() = 0;
-		virtual void SetEventDispatcher(const Ref<EventDispatcher>& eventDispatcher) { m_EventDispatcher = eventDispatcher; }
-
+		
 		virtual int GetWidth() const = 0;
 		virtual int GetHeight() const = 0;
 
 		static Scope<Window> Create(const WindowProperties& properties);
-
-	protected:
-		Ref<EventDispatcher> m_EventDispatcher;
 	};
 }

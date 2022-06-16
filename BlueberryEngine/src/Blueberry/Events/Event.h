@@ -36,6 +36,10 @@ namespace Blueberry
 	class EventDispatcher
 	{
 	public:
+		EventDispatcher() = default;
+		~EventDispatcher() = default;
+
+	public:
 		void AddCallback(const EventType& type, EventCallback&& callback);
 		void Invoke(Event& event) const;
 

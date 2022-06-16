@@ -5,8 +5,6 @@
 
 namespace Blueberry
 {
-	struct ServiceContainer;
-
 	class Engine
 	{
 	public:

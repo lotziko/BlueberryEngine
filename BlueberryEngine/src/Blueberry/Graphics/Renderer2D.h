@@ -14,7 +14,8 @@ namespace Blueberry
 	class Renderer2D
 	{
 	public:
-		Renderer2D(const Ref<GraphicsDevice>& graphicsDevice);
+		Renderer2D();
+		~Renderer2D() = default;
 
 		bool Initialize();
 		void Shutdown();
@@ -26,7 +27,6 @@ namespace Blueberry
 		void Flush();
 
 	private:
-		Ref<GraphicsDevice> m_GraphicsDevice;
 		Ref<VertexBuffer> m_VertexBuffer;
 		Ref<IndexBuffer> m_IndexBuffer;
 		Ref<ConstantBuffer> m_ConstantBuffer;

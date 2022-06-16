@@ -7,7 +7,7 @@
 
 namespace Blueberry
 {
-	Ref<GraphicsDevice> GraphicsDevice::Create()
+	GraphicsDevice* GraphicsDevice::Create()
 	{
 		switch (GraphicsAPI::GetAPI())
 		{
@@ -15,7 +15,7 @@ namespace Blueberry
 			BB_ERROR("API doesn't exist.");
 			return nullptr;
 		case GraphicsAPI::API::DX11:
-			return CreateRef<DX11GraphicsDevice>();
+			return new DX11GraphicsDevice();
 		}
 
 		BB_ERROR("API doesn't exist.");

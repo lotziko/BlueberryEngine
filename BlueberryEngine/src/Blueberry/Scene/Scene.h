@@ -7,7 +7,6 @@
 namespace Blueberry
 {
 	class Camera;
-	struct ServiceContainer;
 
 	class Scene
 	{
@@ -21,6 +20,7 @@ namespace Blueberry
 		ComponentIterator GetIterator();
 
 		Ref<Entity> CreateEntity(const std::string& name);
+		void DestroyEntity(Entity* entity);
 		void DestroyEntity(Ref<Entity>& entity);
 
 		const std::vector<Ref<Entity>>& GetEntities() { return m_Entities; }
@@ -60,11 +60,16 @@ namespace Blueberry
 		return entity;
 	}
 
-	inline void Scene::DestroyEntity(Ref<Entity>& entity)
+	inline void Scene::DestroyEntity(Entity* entity)
 	{
 		entity->Destroy();
 		m_Entities[entity->m_Id] = nullptr;
 		m_EmptyEntityIds.push(entity->m_Id);
+	}
+
+	inline void Scene::DestroyEntity(Ref<Entity>& entity)
+	{
+		DestroyEntity(entity.get());
 		entity.reset();
 	}
 
