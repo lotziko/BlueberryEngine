@@ -27,10 +27,13 @@ namespace Blueberry
 		template<class ComponentType>
 		ComponentType* GetComponent();
 
-		std::vector<Ref<Component>> GetComponents();
+		std::vector<Ref<Component>> GetComponents() { return m_Components; }
 
 		template<class ComponentType>
 		bool HasComponent();
+
+		template<class ComponentType>
+		void RemoveComponent(Ref<ComponentType> component);
 
 		inline std::size_t GetId() { return m_Id; }
 
@@ -119,11 +122,6 @@ namespace Blueberry
 		return Ref<ComponentType>().get();
 	}
 
-	inline std::vector<Ref<Component>> Entity::GetComponents()
-	{
-		return m_Components;
-	}
-
 	template<class ComponentType>
 	inline bool Entity::HasComponent()
 	{
@@ -136,6 +134,14 @@ namespace Blueberry
 		}
 
 		return false;
+	}
+
+	template<class ComponentType>
+	inline void Entity::RemoveComponent(Ref<ComponentType> component)
+	{
+		RemoveComponentFromScene(component.get());
+		auto& index = std::find(m_Components.begin(), m_Components.end(), component);
+		m_Components.erase(index);
 	}
 
 	inline void Entity::Destroy()
