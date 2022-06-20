@@ -58,7 +58,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>bbpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>src;vendor\imgui;vendor\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;vendor\imgui;vendor\stb;vendor\yaml-cpp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -74,7 +74,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>bbpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>src;vendor\imgui;vendor\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;vendor\imgui;vendor\stb;vendor\yaml-cpp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -102,8 +102,8 @@
     <ClInclude Include="src\Blueberry\Graphics\GraphicsDevice.h" />
     <ClInclude Include="src\Blueberry\Graphics\ImGuiRenderer.h" />
     <ClInclude Include="src\Blueberry\Graphics\Material.h" />
-    <ClInclude Include="src\Blueberry\Graphics\SceneRenderer.h" />
     <ClInclude Include="src\Blueberry\Graphics\Renderer2D.h" />
+    <ClInclude Include="src\Blueberry\Graphics\SceneRenderer.h" />
     <ClInclude Include="src\Blueberry\Graphics\Shader.h" />
     <ClInclude Include="src\Blueberry\Graphics\Texture.h" />
     <ClInclude Include="src\Blueberry\Graphics\VertexLayout.h" />
@@ -143,8 +143,8 @@
     <ClCompile Include="src\Blueberry\Graphics\GraphicsAPI.cpp" />
     <ClCompile Include="src\Blueberry\Graphics\GraphicsDevice.cpp" />
     <ClCompile Include="src\Blueberry\Graphics\Material.cpp" />
-    <ClCompile Include="src\Blueberry\Graphics\SceneRenderer.cpp" />
     <ClCompile Include="src\Blueberry\Graphics\Renderer2D.cpp" />
+    <ClCompile Include="src\Blueberry\Graphics\SceneRenderer.cpp" />
     <ClCompile Include="src\Blueberry\Graphics\Shader.cpp" />
     <ClCompile Include="src\Blueberry\Graphics\VertexLayout.cpp" />
     <ClCompile Include="src\Blueberry\Math\SimpleMath.cpp" />

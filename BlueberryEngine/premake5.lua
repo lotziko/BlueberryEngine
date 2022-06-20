@@ -23,6 +23,7 @@ project "BlueberryEngine"
 		"src",
 		"%{IncludeDir.imgui}",
 		"%{IncludeDir.stb}",
+		"%{IncludeDir.yaml_cpp}",
 	}
 
 	links
