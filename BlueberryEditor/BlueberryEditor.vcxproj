@@ -86,7 +86,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="src\Editor\Content\AssetDatabase.h" />
     <ClInclude Include="src\Editor\EditorLayer.h" />
     <ClInclude Include="src\Editor\Inspector\Concrete\CameraInspector.h" />
     <ClInclude Include="src\Editor\Inspector\Concrete\EntityInspector.h" />
@@ -101,7 +100,6 @@
     <ClInclude Include="src\Editor\Selection.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Editor\Content\AssetDatabase.cpp" />
     <ClCompile Include="src\Editor\EditorLayer.cpp" />
     <ClCompile Include="src\Editor\Inspector\Concrete\CameraInspector.cpp" />
     <ClCompile Include="src\Editor\Inspector\Concrete\EntityInspector.cpp" />

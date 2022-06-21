@@ -4,9 +4,6 @@
     <Filter Include="Editor">
       <UniqueIdentifier>{8C1A20B0-78BC-4A86-6177-5EDA4DB8D1D6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Editor\Content">
-      <UniqueIdentifier>{D65F30B8-C22D-24BE-ABC1-94E4972E0023}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Editor\Inspector">
       <UniqueIdentifier>{5212F9CB-3E0B-181E-673D-FDA25395F729}</UniqueIdentifier>
     </Filter>
@@ -30,9 +27,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Editor\Content\AssetDatabase.h">
-      <Filter>Editor\Content</Filter>
-    </ClInclude>
     <ClInclude Include="src\Editor\EditorLayer.h">
       <Filter>Editor</Filter>
     </ClInclude>
@@ -71,9 +65,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Editor\Content\AssetDatabase.cpp">
-      <Filter>Editor\Content</Filter>
-    </ClCompile>
     <ClCompile Include="src\Editor\EditorLayer.cpp">
       <Filter>Editor</Filter>
     </ClCompile>
