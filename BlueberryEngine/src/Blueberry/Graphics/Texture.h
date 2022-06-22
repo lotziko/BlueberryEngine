@@ -6,6 +6,8 @@ namespace Blueberry
 {
 	class Texture : public Object
 	{
+		OBJECT_DECLARATION(Texture)
+
 	public:
 		Texture() = default;
 		virtual ~Texture() = default;

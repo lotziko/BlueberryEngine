@@ -68,6 +68,8 @@
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>
+      </OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

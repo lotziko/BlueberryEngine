@@ -16,6 +16,8 @@ namespace Blueberry
 
 		g_EventDispatcher = new EventDispatcher();
 
+		g_AssetManager = new AssetManager();
+
 		g_GraphicsDevice = GraphicsDevice::Create();
 		if (!g_GraphicsDevice->Initialize(properties.Width, properties.Height, m_Window->GetHandle()))
 		{
@@ -27,8 +29,6 @@ namespace Blueberry
 		{
 			return false;
 		}
-
-		g_ContentManager = new ContentManager();
 
 		return true;
 	}

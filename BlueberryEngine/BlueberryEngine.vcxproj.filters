@@ -54,7 +54,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Blueberry\Content\ContentManager.h">
+    <ClInclude Include="src\Blueberry\Content\AssetImporter.h">
+      <Filter>src\Blueberry\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Content\AssetManager.h">
+      <Filter>src\Blueberry\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Content\TextureImporter.h">
       <Filter>src\Blueberry\Content</Filter>
     </ClInclude>
     <ClInclude Include="src\Blueberry\Core\Base.h">
@@ -189,9 +195,13 @@
     <ClInclude Include="vendor\stb\stb\stb_image.h">
       <Filter>vendor\stb\stb</Filter>
     </ClInclude>
+    <ClInclude Include="src\Blueberry\Content\ShaderImporter.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Blueberry\Content\ContentManager.cpp">
+    <ClCompile Include="src\Blueberry\Content\AssetManager.cpp">
+      <Filter>src\Blueberry\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Blueberry\Content\TextureImporter.cpp">
       <Filter>src\Blueberry\Content</Filter>
     </ClCompile>
     <ClCompile Include="src\Blueberry\Core\Engine.cpp">
@@ -287,5 +297,7 @@
     <ClCompile Include="vendor\stb\stb\stb_image.cpp">
       <Filter>vendor\stb\stb</Filter>
     </ClCompile>
+    <ClCompile Include="src\Blueberry\Graphics\Texture.cpp" />
+    <ClCompile Include="src\Blueberry\Content\ShaderImporter.cpp" />
   </ItemGroup>
 </Project>

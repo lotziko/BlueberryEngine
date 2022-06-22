@@ -86,7 +86,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="src\Blueberry\Content\ContentManager.h" />
+    <ClInclude Include="src\Blueberry\Content\AssetImporter.h" />
+    <ClInclude Include="src\Blueberry\Content\AssetManager.h" />
+    <ClInclude Include="src\Blueberry\Content\ShaderImporter.h" />
+    <ClInclude Include="src\Blueberry\Content\TextureImporter.h" />
     <ClInclude Include="src\Blueberry\Core\Base.h" />
     <ClInclude Include="src\Blueberry\Core\Engine.h" />
     <ClInclude Include="src\Blueberry\Core\GlobalServices.h" />
@@ -133,7 +136,9 @@
     <ClInclude Include="vendor\stb\stb\stb_image.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Blueberry\Content\ContentManager.cpp" />
+    <ClCompile Include="src\Blueberry\Content\AssetManager.cpp" />
+    <ClCompile Include="src\Blueberry\Content\ShaderImporter.cpp" />
+    <ClCompile Include="src\Blueberry\Content\TextureImporter.cpp" />
     <ClCompile Include="src\Blueberry\Core\Engine.cpp" />
     <ClCompile Include="src\Blueberry\Core\GlobalServices.cpp" />
     <ClCompile Include="src\Blueberry\Core\Layer.cpp" />
@@ -146,6 +151,7 @@
     <ClCompile Include="src\Blueberry\Graphics\Renderer2D.cpp" />
     <ClCompile Include="src\Blueberry\Graphics\SceneRenderer.cpp" />
     <ClCompile Include="src\Blueberry\Graphics\Shader.cpp" />
+    <ClCompile Include="src\Blueberry\Graphics\Texture.cpp" />
     <ClCompile Include="src\Blueberry\Graphics\VertexLayout.cpp" />
     <ClCompile Include="src\Blueberry\Math\SimpleMath.cpp" />
     <ClCompile Include="src\Blueberry\Scene\Components\Camera.cpp" />

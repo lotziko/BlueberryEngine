@@ -58,7 +58,7 @@ namespace Blueberry
 			return false;
 		}
 
-		if (!g_GraphicsDevice->CreateShader(L"assets/standard-v.cso", L"assets/standard-p.cso", m_DefaultShader))
+		if (!g_AssetManager->Load<Shader>("assets/standard", m_DefaultShader))
 		{
 			return false;
 		}
@@ -104,6 +104,10 @@ namespace Blueberry
 		if (m_QuadIndexCount >= MAX_INDICES)
 			Flush();
 
+		if (texture == nullptr)
+		{
+			return;
+		}
 		texture->Bind();
 
 		for (int i = 0; i < 4; i++)

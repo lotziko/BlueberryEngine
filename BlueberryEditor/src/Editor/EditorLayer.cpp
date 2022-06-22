@@ -1,7 +1,7 @@
 #include "EditorLayer.h"
 
 #include "Blueberry\Core\GlobalServices.h"
-#include "Blueberry\Content\ContentManager.h"
+#include "Blueberry\Content\AssetManager.h"
 #include "Blueberry\Graphics\SceneRenderer.h"
 #include "Blueberry\Math\Math.h"
 #include "Blueberry\Scene\Scene.h"
@@ -18,7 +18,7 @@ namespace Blueberry
 		m_Scene = CreateRef<Scene>();
 		m_Scene->Initialize();
 
-		g_ContentManager->Load<Texture>("assets/TestImage.png", m_BackgroundTexture);
+		g_AssetManager->Load<Texture>("assets/TestImage", m_BackgroundTexture);
 
 		auto test = m_Scene->CreateEntity("Test");
 		test->AddComponent<SpriteRenderer>();
