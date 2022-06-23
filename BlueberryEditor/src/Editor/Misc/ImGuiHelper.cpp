@@ -25,6 +25,29 @@ bool ImGui::DragVector3(const std::string& label, Blueberry::Vector3& vector)
 	return false;
 }
 
+bool ImGui::ColorEdit(const std::string& label, Blueberry::Color& color)
+{
+	ImGui::PushID(label.c_str());
+
+	ImGui::Text(label.c_str());
+	ImGui::SameLine();
+	ImGui::SetCursorPosX(100);
+
+	float color4[4] = { color.R(), color.G(), color.B(), color.A() };
+	if (ImGui::ColorEdit4("##color4", color4))
+	{
+		color.R(color4[0]);
+		color.G(color4[1]);
+		color.B(color4[2]);
+		color.A(color4[3]);
+
+		ImGui::PopID();
+		return true;
+	}
+	ImGui::PopID();
+	return false;
+}
+
 void ImGui::ApplyEditorDarkTheme()
 {
 	ImGuiStyle* style = &ImGui::GetStyle();
