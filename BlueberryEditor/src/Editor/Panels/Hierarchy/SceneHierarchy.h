@@ -15,6 +15,9 @@ namespace Blueberry
 
 	private:
 		void DrawEntity(Entity* entity);
+		void DrawCreateEntity();
+		void DrawDestroyEntity(Entity* entity);
+
 	private:
 		Ref<Scene> m_Scene;
 	};

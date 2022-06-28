@@ -27,13 +27,22 @@ namespace Blueberry
 
 	void SceneRenderer::Draw(const Ref<Scene>& scene, const Matrix& viewMatrix, const Matrix& projectionMatrix)
 	{
+		//Update transforms
+		{
+			for (auto component : scene->GetIterator<Transform>())
+			{
+				auto transform = static_cast<Transform*>(component.second);
+				transform->Update();
+			}
+		}
+
 		//Draw sprites
 		{
 			g_Renderer2D->Begin(viewMatrix, projectionMatrix);
 			for (auto component : scene->GetIterator<SpriteRenderer>())
 			{
 				auto spriteRenderer = static_cast<SpriteRenderer*>(component.second);
-				g_Renderer2D->Draw(spriteRenderer->GetEntity()->GetTransform()->GetWorldMatrix(), spriteRenderer->GetTexture().get(), spriteRenderer->GetColor());
+				g_Renderer2D->Draw(spriteRenderer->GetEntity()->GetTransform()->GetLocalToWorldMatrix(), spriteRenderer->GetTexture().get(), spriteRenderer->GetColor());
 			}
 			g_Renderer2D->End();
 		}

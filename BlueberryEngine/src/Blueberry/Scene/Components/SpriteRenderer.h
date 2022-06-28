@@ -13,10 +13,7 @@ namespace Blueberry
 		COMPONENT_DECLARATION(SpriteRenderer)
 
 	public:
-		SpriteRenderer()
-		{
-			m_Color = Color(1, 1, 1, 1);
-		}
+		SpriteRenderer();
 		~SpriteRenderer() = default;
 
 		const Color& GetColor() { return m_Color; }

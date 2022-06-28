@@ -150,9 +150,6 @@
     <ClInclude Include="src\Blueberry\Scene\Components\SpriteRenderer.h">
       <Filter>src\Blueberry\Scene\Components</Filter>
     </ClInclude>
-    <ClInclude Include="src\Blueberry\Scene\Components\Transform.h">
-      <Filter>src\Blueberry\Scene\Components</Filter>
-    </ClInclude>
     <ClInclude Include="src\Blueberry\Scene\EnityComponent.h">
       <Filter>src\Blueberry\Scene</Filter>
     </ClInclude>
@@ -196,6 +193,7 @@
       <Filter>vendor\stb\stb</Filter>
     </ClInclude>
     <ClInclude Include="src\Blueberry\Content\ShaderImporter.h" />
+    <ClInclude Include="src\Blueberry\Scene\Components\Transform.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Blueberry\Content\AssetManager.cpp">
@@ -258,9 +256,6 @@
     <ClCompile Include="src\Blueberry\Scene\Components\SpriteRenderer.cpp">
       <Filter>src\Blueberry\Scene\Components</Filter>
     </ClCompile>
-    <ClCompile Include="src\Blueberry\Scene\Components\Transform.cpp">
-      <Filter>src\Blueberry\Scene\Components</Filter>
-    </ClCompile>
     <ClCompile Include="src\Blueberry\Scene\Entity.cpp">
       <Filter>src\Blueberry\Scene</Filter>
     </ClCompile>
@@ -299,5 +294,6 @@
     </ClCompile>
     <ClCompile Include="src\Blueberry\Graphics\Texture.cpp" />
     <ClCompile Include="src\Blueberry\Content\ShaderImporter.cpp" />
+    <ClCompile Include="src\Blueberry\Scene\Components\Transform.cpp" />
   </ItemGroup>
 </Project>

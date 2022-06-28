@@ -18,12 +18,8 @@ namespace Blueberry
 		m_Scene = CreateRef<Scene>();
 		m_Scene->Initialize();
 
-		g_AssetManager->Load<Texture>("assets/TestImage", m_BackgroundTexture);
-
 		auto test = m_Scene->CreateEntity("Test");
 		test->AddComponent<SpriteRenderer>();
-		auto sprite = test->GetComponent<SpriteRenderer>();
-		sprite->SetTexture(m_BackgroundTexture);
 
 		m_SceneHierarchy = SceneHierarchy(m_Scene);
 		m_SceneInspector = SceneInspector();

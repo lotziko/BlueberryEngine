@@ -36,7 +36,7 @@ namespace Blueberry
 
 			AssetImporter* importer = m_Importers.find(type)->second;
 			ref = importer->Import(path);
-			m_LoadedContent.insert({ path, content });
+			m_LoadedContent.insert({ path, ref });
 		}
 		else
 		{

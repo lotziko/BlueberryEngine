@@ -13,6 +13,8 @@ namespace Blueberry
 	{
 		stbi_uc* data = nullptr;
 		int width, height, channels;
+		
+		stbi_set_flip_vertically_on_load(1);
 		data = stbi_load(path.c_str(), &width, &height, &channels, 4);
 
 		if (!data)
