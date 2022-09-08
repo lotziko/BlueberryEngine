@@ -4,4 +4,9 @@
 namespace Blueberry
 {
 	OBJECT_DEFINITION(Object, Component)
+
+	Entity* Component::GetEntity()
+	{
+		return m_Entity;
+	}
 }

@@ -19,6 +19,26 @@ namespace Blueberry
 		RecalculateProjectionMatrix();
 	}
 
+	const Matrix& Camera::GetProjectionMatrix() const
+	{
+		return m_ProjectionMatrix;
+	}
+
+	const Matrix& Camera::GetViewMatrix() const
+	{
+		return m_ViewMatrix;
+	}
+
+	const void Camera::SetResolution(const Vector2& resolution)
+	{
+		m_Resolution = resolution;
+	}
+
+	std::string Camera::ToString() const
+	{
+		return "Camera";
+	}
+
 	void Camera::RecalculateViewMatrix()
 	{
 		Transform* transform = GetEntity()->GetTransform();

@@ -4,4 +4,19 @@
 namespace Blueberry
 {
 	const std::size_t Object::Type = std::hash<std::string>()(TO_STRING(Object));
+
+	bool Object::IsClassType(const std::size_t classType) const
+	{
+		return classType == Type;
+	}
+
+	std::size_t Object::GetType() const
+	{
+		return Type;
+	}
+
+	std::string Object::ToString() const
+	{
+		return "Object";
+	}
 }

@@ -9,6 +9,6 @@ namespace Blueberry
 	{
 	public:
 		virtual Ref<Object> Import(const std::string& path) final;
-		virtual std::size_t GetType() final { return Texture::Type; }
+		virtual std::size_t GetType() final;
 	};
 }

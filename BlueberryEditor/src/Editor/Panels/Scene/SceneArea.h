@@ -15,7 +15,7 @@ namespace Blueberry
 		SceneArea(const Ref<Scene>& scene);
 
 		void Draw();
-		void SetViewport(const Viewport& viewport) { m_Viewport = viewport; }
+		void SetViewport(const Viewport& viewport);
 
 	private:
 		Ref<Scene> m_Scene;

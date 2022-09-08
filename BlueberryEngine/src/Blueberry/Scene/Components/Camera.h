@@ -14,12 +14,12 @@ namespace Blueberry
 
 		void Update();
 
-		const Matrix& GetProjectionMatrix() const { return m_ProjectionMatrix; }
-		const Matrix& GetViewMatrix() const { return m_ViewMatrix; }
+		const Matrix& GetProjectionMatrix() const;
+		const Matrix& GetViewMatrix() const;
 
-		const void SetResolution(const Vector2& resolution) { m_Resolution = resolution; }
+		const void SetResolution(const Vector2& resolution);
 
-		virtual std::string ToString() const final { return "Camera"; }
+		virtual std::string ToString() const final;
 
 	private:
 		void RecalculateViewMatrix();

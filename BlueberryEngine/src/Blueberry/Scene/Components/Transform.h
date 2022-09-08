@@ -13,16 +13,7 @@ namespace Blueberry
 		Transform();
 		~Transform();
 
-		const Matrix& GetLocalToWorldMatrix()
-		{
-			if (m_IsDirty)
-			{
-				//RecalculateWorldMatrix();
-				m_IsDirty = false;
-			}
-
-			return m_LocalToWorldMatrix;
-		}
+		const Matrix& GetLocalToWorldMatrix();
 		const Vector3& GetLocalPosition() const;
 		const Quaternion& GetLocalRotation() const;
 		const Vector3& GetLocalScale() const;
@@ -42,9 +33,9 @@ namespace Blueberry
 
 		void Update();
 
-		const bool& IsDirty() const { return m_IsDirty; }
+		const bool& IsDirty() const;
 
-		virtual std::string ToString() const final { return "Transform"; }
+		virtual std::string ToString() const final;
 
 	private:
 		void RecalculateWorldMatrix(bool dirty);

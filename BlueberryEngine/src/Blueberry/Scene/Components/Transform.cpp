@@ -25,6 +25,17 @@ namespace Blueberry
 		}
 	}
 
+	const Matrix& Transform::GetLocalToWorldMatrix()
+	{
+		if (m_IsDirty)
+		{
+			//RecalculateWorldMatrix();
+			m_IsDirty = false;
+		}
+
+		return m_LocalToWorldMatrix;
+	}
+
 	const Vector3& Transform::GetLocalPosition() const
 	{
 		return m_LocalPosition;
@@ -96,6 +107,16 @@ namespace Blueberry
 		{
 			RecalculateWorldMatrix(m_IsDirty);
 		}
+	}
+
+	const bool& Transform::IsDirty() const
+	{
+		return m_IsDirty;
+	}
+
+	std::string Transform::ToString() const
+	{
+		return "Transform";
 	}
 
 	void Transform::RecalculateWorldMatrix(bool dirty)

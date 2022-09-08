@@ -14,12 +14,13 @@ namespace Blueberry
 		bool Load(const std::string& path, Ref<ContentType>& content);
 
 	private:
-		void Register(AssetImporter* importer) { m_Importers.insert({ importer->GetType(), importer }); }
+		void Register(AssetImporter* importer);
 
 	private:
 		std::map<std::string, Ref<Object>> m_LoadedContent;
 		std::map<std::size_t, AssetImporter*> m_Importers;
 	};
+
 	template<class ContentType>
 	inline bool AssetManager::Load(const std::string& path, Ref<ContentType>& content)
 	{

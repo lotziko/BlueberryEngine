@@ -39,18 +39,9 @@ std::size_t childclass::GetType() const															\
 	class Object
 	{
 	public:
-		virtual bool IsClassType(const std::size_t classType) const
-		{
-			return classType == Type;
-		}
-		virtual std::size_t GetType() const
-		{
-			return Type;
-		}
-		virtual std::string ToString() const
-		{
-			return "Object";
-		}
+		virtual bool IsClassType(const std::size_t classType) const;
+		virtual std::size_t GetType() const;
+		virtual std::string ToString() const;
 	public:
 		static const std::size_t Type;
 	};

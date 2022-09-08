@@ -33,18 +33,7 @@ namespace Blueberry
 		};
 	public:
 		template<ElementType T>
-		const Element& Resolve() const
-		{
-			for (auto& element : m_Elements)
-			{
-				if (element.GetType() == T)
-				{
-					return element;
-				}
-				BB_ERROR("Could not resolve element type.");
-				return m_Elements.front();
-			}
-		}
+		const Element& Resolve() const;
 
 		VertexLayout& Append(ElementType type);
 
@@ -54,4 +43,18 @@ namespace Blueberry
 	private:
 		std::vector<Element> m_Elements;
 	};
+
+	template<VertexLayout::ElementType T>
+	inline const VertexLayout::Element& VertexLayout::Resolve() const
+	{
+		for (auto& element : m_Elements)
+		{
+			if (element.GetType() == T)
+			{
+				return element;
+			}
+			BB_ERROR("Could not resolve element type.");
+			return m_Elements.front();
+		}
+	}
 }

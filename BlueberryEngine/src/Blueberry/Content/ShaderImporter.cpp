@@ -13,4 +13,9 @@ namespace Blueberry
 		g_GraphicsDevice->CreateShader(vertexPath, pixelPath, ref);
 		return ref;
 	}
+
+	std::size_t ShaderImporter::GetType()
+	{
+		return Shader::Type;
+	}
 }

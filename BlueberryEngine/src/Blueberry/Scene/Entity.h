@@ -27,7 +27,7 @@ namespace Blueberry
 		template<class ComponentType>
 		ComponentType* GetComponent();
 
-		std::vector<Ref<Component>> GetComponents() { return m_Components; }
+		std::vector<Ref<Component>> GetComponents();
 
 		template<class ComponentType>
 		bool HasComponent();
@@ -35,12 +35,12 @@ namespace Blueberry
 		template<class ComponentType>
 		void RemoveComponent(Ref<ComponentType> component);
 
-		inline std::size_t GetId() { return m_Id; }
+		inline std::size_t GetId();
 
-		virtual std::string ToString() const final { return m_Name; }
+		virtual std::string ToString() const final;
 
-		inline Transform* GetTransform() { return m_Transform; }
-		inline Scene* GetScene() { return m_Scene; }
+		Transform* GetTransform();
+		Scene* GetScene();
 
 	private:
 		void AddComponentIntoScene(Component* component);

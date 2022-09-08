@@ -16,13 +16,13 @@ namespace Blueberry
 		SpriteRenderer();
 		~SpriteRenderer() = default;
 
-		const Color& GetColor() { return m_Color; }
-		void SetColor(const Color& color) { m_Color = color; }
+		const Color& GetColor();
+		void SetColor(const Color& color);
 
-		const Ref<Texture>& GetTexture() { return m_Texture; }
-		void SetTexture(const Ref<Texture>& texture) { m_Texture = texture; }
+		const Ref<Texture>& GetTexture();
+		void SetTexture(const Ref<Texture>& texture);
 
-		virtual std::string ToString() const final { return "SpriteRenderer"; }
+		virtual std::string ToString() const final;
 
 	private:
 		Color m_Color;

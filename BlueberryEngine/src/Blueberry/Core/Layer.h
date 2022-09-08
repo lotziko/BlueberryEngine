@@ -15,7 +15,7 @@ namespace Blueberry
 		virtual void OnUpdate() {}
 		virtual void OnDraw() {}
 
-		const std::string& GetName() const { return m_Name; }
+		const std::string& GetName() const;
 	protected:
 		std::string m_Name;
 	};

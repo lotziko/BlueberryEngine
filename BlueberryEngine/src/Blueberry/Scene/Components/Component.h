@@ -52,7 +52,7 @@ public:																		\
 	public:
 		virtual ~Component() = default;
 
-		inline Entity* GetEntity() { return m_Entity; }
+		Entity* GetEntity();
 
 	private:
 		Entity* m_Entity;

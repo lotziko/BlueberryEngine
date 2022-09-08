@@ -27,4 +27,9 @@ namespace Blueberry
 			SceneRenderer::Draw(m_Scene, m_Camera.GetViewMatrix(), m_Camera.GetProjectionMatrix());
 		}
 	}
+
+	void SceneArea::SetViewport(const Viewport& viewport)
+	{
+		m_Viewport = viewport;
+	}
 }

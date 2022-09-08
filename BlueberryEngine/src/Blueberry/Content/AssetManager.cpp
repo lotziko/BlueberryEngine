@@ -11,4 +11,9 @@ namespace Blueberry
 		Register(new TextureImporter());
 		Register(new ShaderImporter());
 	}
+
+	void AssetManager::Register(AssetImporter* importer)
+	{
+		m_Importers.insert({ importer->GetType(), importer });
+	}
 }

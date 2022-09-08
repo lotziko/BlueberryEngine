@@ -12,4 +12,9 @@ namespace Blueberry
 		g_GraphicsDevice->CreateTexture(texturePath, ref);
 		return ref;
 	}
+
+	std::size_t TextureImporter::GetType()
+	{
+		return Texture::Type;
+	}
 }
