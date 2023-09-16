@@ -6,7 +6,6 @@
 namespace Blueberry
 {
 	OBJECT_DEFINITION(Renderer, SpriteRenderer)
-	COMPONENT_DEFINITION(SpriteRenderer)
 
 	SpriteRenderer::SpriteRenderer()
 	{

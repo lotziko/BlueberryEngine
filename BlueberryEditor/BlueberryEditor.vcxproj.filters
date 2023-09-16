@@ -63,6 +63,8 @@
     <ClInclude Include="src\Editor\Selection.h">
       <Filter>Editor</Filter>
     </ClInclude>
+    <ClInclude Include="src\Editor\Inspector\ObjectInspectorDB.h" />
+    <ClInclude Include="src\Editor\Inspector\RegisterObjectInspectors.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Editor\EditorLayer.cpp">
@@ -102,5 +104,7 @@
       <Filter>Editor</Filter>
     </ClCompile>
     <ClCompile Include="src\EntryPoint.cpp" />
+    <ClCompile Include="src\Editor\Inspector\ObjectInspectorDB.cpp" />
+    <ClCompile Include="src\Editor\Inspector\RegisterObjectInspectors.cpp" />
   </ItemGroup>
 </Project>

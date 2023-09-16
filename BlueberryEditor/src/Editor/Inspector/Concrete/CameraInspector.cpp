@@ -7,8 +7,6 @@
 
 namespace Blueberry
 {
-	OBJECT_INSPECTOR_DECLARATION(CameraInspector, Camera)
-
 	void CameraInspector::Draw(Object* object)
 	{
 		Camera* camera = static_cast<Camera*>(object);

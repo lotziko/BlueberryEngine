@@ -93,7 +93,9 @@
     <ClInclude Include="src\Editor\Inspector\Concrete\EntityInspector.h" />
     <ClInclude Include="src\Editor\Inspector\Concrete\SpriteRendererInspector.h" />
     <ClInclude Include="src\Editor\Inspector\Concrete\TransformInspector.h" />
+    <ClInclude Include="src\Editor\Inspector\ObjectInspectorDB.h" />
     <ClInclude Include="src\Editor\Inspector\ObjectInspector.h" />
+    <ClInclude Include="src\Editor\Inspector\RegisterObjectInspectors.h" />
     <ClInclude Include="src\Editor\Misc\ImGuiHelper.h" />
     <ClInclude Include="src\Editor\Panels\Hierarchy\SceneHierarchy.h" />
     <ClInclude Include="src\Editor\Panels\Inspector\SceneInspector.h" />
@@ -108,6 +110,8 @@
     <ClCompile Include="src\Editor\Inspector\Concrete\SpriteRendererInspector.cpp" />
     <ClCompile Include="src\Editor\Inspector\Concrete\TransformInspector.cpp" />
     <ClCompile Include="src\Editor\Inspector\ObjectInspector.cpp" />
+    <ClCompile Include="src\Editor\Inspector\ObjectInspectorDB.cpp" />
+    <ClCompile Include="src\Editor\Inspector\RegisterObjectInspectors.cpp" />
     <ClCompile Include="src\Editor\Misc\ImGuiHelper.cpp" />
     <ClCompile Include="src\Editor\Panels\Hierarchy\SceneHierarchy.cpp" />
     <ClCompile Include="src\Editor\Panels\Inspector\SceneInspector.cpp" />

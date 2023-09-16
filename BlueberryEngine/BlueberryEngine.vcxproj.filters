@@ -194,6 +194,8 @@
     </ClInclude>
     <ClInclude Include="src\Blueberry\Content\ShaderImporter.h" />
     <ClInclude Include="src\Blueberry\Scene\Components\Transform.h" />
+    <ClInclude Include="src\Blueberry\Core\ClassDB.h" />
+    <ClInclude Include="src\Blueberry\Scene\RegisterSceneTypes.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Blueberry\Content\AssetManager.cpp">
@@ -295,5 +297,7 @@
     <ClCompile Include="src\Blueberry\Graphics\Texture.cpp" />
     <ClCompile Include="src\Blueberry\Content\ShaderImporter.cpp" />
     <ClCompile Include="src\Blueberry\Scene\Components\Transform.cpp" />
+    <ClCompile Include="src\Blueberry\Core\ClassDB.cpp" />
+    <ClCompile Include="src\Blueberry\Scene\RegisterSceneTypes.cpp" />
   </ItemGroup>
 </Project>

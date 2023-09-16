@@ -3,6 +3,7 @@
 
 #include "Blueberry\Core\GlobalServices.h"
 #include "Blueberry\Scene\Scene.h"
+#include "Blueberry\Scene\RegisterSceneTypes.h"
 #include "Blueberry\Graphics\GraphicsDevice.h"
 #include "Blueberry\Graphics\Renderer2D.h"
 
@@ -29,6 +30,8 @@ namespace Blueberry
 		{
 			return false;
 		}
+
+		RegisterSceneTypes();
 
 		return true;
 	}

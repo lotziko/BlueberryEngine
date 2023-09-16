@@ -8,8 +8,6 @@
 
 namespace Blueberry
 {
-	OBJECT_INSPECTOR_DECLARATION(TransformInspector, Transform)
-
 	void TransformInspector::Draw(Object* object)
 	{
 		Transform* transform = static_cast<Transform*>(object);

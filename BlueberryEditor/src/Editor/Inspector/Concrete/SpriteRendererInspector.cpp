@@ -8,8 +8,6 @@
 
 namespace Blueberry
 {
-	OBJECT_INSPECTOR_DECLARATION(SpriteRendererInspector, SpriteRenderer)
-
 	void SpriteRendererInspector::Draw(Object* object)
 	{
 		SpriteRenderer* spriteRenderer = static_cast<SpriteRenderer*>(object);

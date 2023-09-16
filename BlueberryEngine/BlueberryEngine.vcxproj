@@ -91,6 +91,7 @@
     <ClInclude Include="src\Blueberry\Content\ShaderImporter.h" />
     <ClInclude Include="src\Blueberry\Content\TextureImporter.h" />
     <ClInclude Include="src\Blueberry\Core\Base.h" />
+    <ClInclude Include="src\Blueberry\Core\ClassDB.h" />
     <ClInclude Include="src\Blueberry\Core\Engine.h" />
     <ClInclude Include="src\Blueberry\Core\GlobalServices.h" />
     <ClInclude Include="src\Blueberry\Core\Layer.h" />
@@ -122,6 +123,7 @@
     <ClInclude Include="src\Blueberry\Scene\Components\Transform.h" />
     <ClInclude Include="src\Blueberry\Scene\EnityComponent.h" />
     <ClInclude Include="src\Blueberry\Scene\Entity.h" />
+    <ClInclude Include="src\Blueberry\Scene\RegisterSceneTypes.h" />
     <ClInclude Include="src\Blueberry\Scene\Scene.h" />
     <ClInclude Include="src\Blueberry\Scene\Serializer.h" />
     <ClInclude Include="src\Blueberry\Tools\StringConverter.h" />
@@ -139,6 +141,7 @@
     <ClCompile Include="src\Blueberry\Content\AssetManager.cpp" />
     <ClCompile Include="src\Blueberry\Content\ShaderImporter.cpp" />
     <ClCompile Include="src\Blueberry\Content\TextureImporter.cpp" />
+    <ClCompile Include="src\Blueberry\Core\ClassDB.cpp" />
     <ClCompile Include="src\Blueberry\Core\Engine.cpp" />
     <ClCompile Include="src\Blueberry\Core\GlobalServices.cpp" />
     <ClCompile Include="src\Blueberry\Core\Layer.cpp" />
@@ -160,6 +163,7 @@
     <ClCompile Include="src\Blueberry\Scene\Components\SpriteRenderer.cpp" />
     <ClCompile Include="src\Blueberry\Scene\Components\Transform.cpp" />
     <ClCompile Include="src\Blueberry\Scene\Entity.cpp" />
+    <ClCompile Include="src\Blueberry\Scene\RegisterSceneTypes.cpp" />
     <ClCompile Include="src\Blueberry\Scene\Scene.cpp" />
     <ClCompile Include="src\Blueberry\Tools\StringConverter.cpp" />
     <ClCompile Include="src\Blueberry\Tools\WindowsHelper.cpp" />

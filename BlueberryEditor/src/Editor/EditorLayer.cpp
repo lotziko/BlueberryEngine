@@ -7,6 +7,7 @@
 #include "Blueberry\Scene\Scene.h"
 
 #include "Editor\Misc\ImGuiHelper.h"
+#include "Editor\Inspector\RegisterObjectInspectors.h"
 
 #include "imgui\imgui.h"
 #include "imgui\imgui_internal.h"
@@ -15,6 +16,8 @@ namespace Blueberry
 {
 	void EditorLayer::OnAttach()
 	{
+		RegisterObjectInspectors();
+
 		m_Scene = CreateRef<Scene>();
 		m_Scene->Initialize();
 

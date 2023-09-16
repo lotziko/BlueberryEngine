@@ -4,10 +4,26 @@
 #include "Blueberry\Scene\Entity.h"
 
 #include "imgui\imgui.h"
+#include "Blueberry\Core\ClassDB.h"
+
+#include "Editor\Inspector\ObjectInspectorDB.h"
 
 namespace Blueberry
 {
-	OBJECT_INSPECTOR_DECLARATION(EntityInspector, Entity)
+	bool ShouldHideType(const std::size_t type, const ClassDB::ClassInfo& info)
+	{
+		if (info.createInstance == nullptr)
+		{
+			return true;
+		}
+
+		if (!ClassDB::IsParent(type, Component::Type))
+		{
+			return true;
+		}
+
+		return false;
+	}
 
 	void EntityInspector::Draw(Object* object)
 	{
@@ -20,7 +36,7 @@ namespace Blueberry
 		{
 			std::size_t type = component->GetType();
 			std::string name = component->ToString();
-			ObjectInspector* inspector = ObjectInspectors::GetInspector(type);
+			ObjectInspector* inspector = ObjectInspectorDB::GetInspector(type);
 
 			if (inspector != nullptr)
 			{
@@ -57,13 +73,18 @@ namespace Blueberry
 		
 		if (ImGui::BeginPopup("addComponent"))
 		{
-			auto definitions = ComponentDefinitions::GetDefinitions();
+			auto infos = ClassDB::GetInfos();
 			
-			for (auto definition : definitions)
+			for (auto info : infos)
 			{
-				if (ImGui::Selectable(definition.second.name.c_str()))
+				if (ShouldHideType(info.first, info.second))
 				{
-					entity->AddComponent(definition.second.createInstance());
+					continue;
+				}
+
+				if (ImGui::Selectable(info.second.name.c_str()))
+				{
+					entity->AddComponent(std::dynamic_pointer_cast<Component>(info.second.createInstance()));
 				}
 			}
 

@@ -7,7 +7,6 @@ namespace Blueberry
 	class Transform : public Component
 	{
 		OBJECT_DECLARATION(Transform)
-		COMPONENT_DECLARATION(Transform)
 
 	public:
 		Transform();

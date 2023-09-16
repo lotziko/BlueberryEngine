@@ -6,7 +6,6 @@
 namespace Blueberry
 {
 	OBJECT_DEFINITION(Component, Camera)
-	COMPONENT_DEFINITION(Camera);
 
 	Camera::Camera()
 	{
