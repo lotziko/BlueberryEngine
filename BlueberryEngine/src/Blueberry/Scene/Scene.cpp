@@ -22,7 +22,7 @@ namespace Blueberry
 
 	Ref<Entity> Scene::CreateEntity(const std::string& name = "Entity")
 	{
-		Ref<Entity> entity = CreateRef<Entity>(name);
+		Ref<Entity> entity = ObjectDB::CreateObject<Entity>(name);
 		entity->m_Scene = this;
 
 		entity->AddComponent<Transform>();
@@ -50,6 +50,7 @@ namespace Blueberry
 		entity->Destroy();
 		m_Entities[entity->m_Id] = nullptr;
 		m_EmptyEntityIds.push(entity->m_Id);
+		ObjectDB::DestroyObject(entity);
 	}
 
 	void Scene::DestroyEntity(Ref<Entity>& entity)

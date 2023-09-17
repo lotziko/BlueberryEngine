@@ -38,28 +38,51 @@ std::size_t childclass::GetType() const																\
 	return childclass::Type;																		\
 }																									\
 
+	using ObjectId = uint64_t;
+
 	class Object
 	{
 	public:
 		static const std::size_t Type;
 		static const std::size_t ParentType;
+
 	public:
 		virtual bool IsClassType(const std::size_t classType) const;
 		virtual std::size_t GetType() const;
 		virtual std::string ToString() const;
-	};
+		ObjectId GetObjectId() const;
 
-	using ObjectId = uint64_t;
+	protected:
+		ObjectId m_ObjectId;
+
+		friend class ObjectDB;
+	};
 
 	class ObjectDB
 	{
-	private:
-		static ObjectId AddInstance(Object* object);
-		static void RemoveInstance(Object* object);
+	public:
+		template<class ObjectType, typename... Args>
+		static Ref<ObjectType> CreateObject(Args&&... params);
+		static void DestroyObject(Ref<Object>& object);
+		static void DestroyObject(Object* object);
 
 	private:
-		static std::vector<Object> s_Objects;
+		static std::map<ObjectId, Ref<Object>> s_Objects;
+		static ObjectId s_Id;
 
 		friend class Object;
 	};
+
+	template<class ObjectType, typename... Args>
+	inline Ref<ObjectType> ObjectDB::CreateObject(Args&&... params)
+	{
+		static_assert(std::is_base_of<Object, ObjectType>::value, "Type is not derived from Object.");
+
+		ObjectId id = ++s_Id;
+		auto& object = CreateRef<ObjectType>(std::forward<Args>(params)...);
+		object->m_ObjectId = id;
+		s_Objects.insert({ id, object });
+
+		return object;
+	}
 }

@@ -65,7 +65,7 @@ namespace Blueberry
 	{
 		static_assert(std::is_base_of<Component, ComponentType>::value, "Type is not derived from Component.");
 
-		auto& componentToAdd = CreateRef<ComponentType>(std::forward<Args>(params)...);
+		auto& componentToAdd = ObjectDB::CreateObject<ComponentType>(std::forward<Args>(params)...);
 
 		int index = 0;
 		for (auto && componentSlot : m_Components)
@@ -142,6 +142,7 @@ namespace Blueberry
 		RemoveComponentFromScene(component.get());
 		auto& index = std::find(m_Components.begin(), m_Components.end(), component);
 		m_Components.erase(index);
+		ObjectDB::DestroyObject(component.get());
 	}
 
 	inline void Entity::Destroy()

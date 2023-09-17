@@ -1,11 +1,10 @@
 #pragma once
 
 #include <string>
+#include "Blueberry\Core\Object.h"
 
 namespace Blueberry
 {
-	class Object;
-
 	class ClassDB
 	{
 	public:
@@ -16,12 +15,6 @@ namespace Blueberry
 			std::function<Ref<Object>()> createInstance;
 		};
 
-		template <class T>
-		static Ref<Object> CreateInstance()
-		{
-			return CreateRef<T>();
-		}
-
 		static std::map<std::size_t, ClassInfo>& GetInfos();
 		static bool IsParent(const std::size_t& id, const std::size_t& parentId);
 
@@ -31,6 +24,6 @@ namespace Blueberry
 		static std::map<std::size_t, ClassInfo> s_Classes;
 	};
 
-	#define REGISTER_CLASS( classname ) ClassDB::Register(classname::Type, classname::ParentType, #classname, &ClassDB::CreateInstance<classname>);
+	#define REGISTER_CLASS( classname ) ClassDB::Register(classname::Type, classname::ParentType, #classname, &ObjectDB::CreateObject<classname>);
 	#define REGISTER_ABSTRACT_CLASS( classname ) ClassDB::Register(classname::Type, classname::ParentType, #classname, nullptr);
 }
