@@ -13,7 +13,7 @@ namespace Blueberry
 
 		virtual void* GetHandle() override;
 
-		virtual void Bind() const override;
+		virtual void Bind(const UINT& slot) override;
 
 	private:
 		ComRef<ID3D11Texture2D> m_Texture;

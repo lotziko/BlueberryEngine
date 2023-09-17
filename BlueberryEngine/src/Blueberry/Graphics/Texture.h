@@ -12,8 +12,8 @@ namespace Blueberry
 		Texture() = default;
 		virtual ~Texture() = default;
 
-		virtual void* GetHandle();
+		virtual void* GetHandle() = 0;
 
-		virtual void Bind() const;
+		virtual void Bind(const UINT& slot = 0) = 0;
 	};
 }

@@ -90,9 +90,9 @@ namespace Blueberry
 		return m_ResourceView.Get();
 	}
 
-	void DX11Texture::Bind() const
+	void DX11Texture::Bind(const UINT& slot)
 	{
-		m_DeviceContext->PSSetShaderResources(0, 1, m_ResourceView.GetAddressOf());
-		m_DeviceContext->PSSetSamplers(0, 1, m_SamplerState.GetAddressOf());
+		m_DeviceContext->PSSetShaderResources(slot, 1, m_ResourceView.GetAddressOf());
+		m_DeviceContext->PSSetSamplers(slot, 1, m_SamplerState.GetAddressOf());
 	}
 }
