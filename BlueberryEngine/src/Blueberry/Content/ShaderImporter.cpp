@@ -8,9 +8,8 @@ namespace Blueberry
 	Ref<Object> ShaderImporter::Import(const std::string& path)
 	{
 		static Ref<Shader> ref;
-		std::wstring vertexPath = std::wstring(path.begin(), path.end()).append(L"-v.cso");
-		std::wstring pixelPath = std::wstring(path.begin(), path.end()).append(L"-p.cso");
-		g_GraphicsDevice->CreateShader(vertexPath, pixelPath, ref);
+		std::wstring shaderPath = std::wstring(path.begin(), path.end()).append(L".hlsl");
+		g_GraphicsDevice->CreateShader(shaderPath, ref);
 		return ref;
 	}
 

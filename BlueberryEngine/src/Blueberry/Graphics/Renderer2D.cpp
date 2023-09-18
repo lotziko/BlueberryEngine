@@ -58,7 +58,7 @@ namespace Blueberry
 			return false;
 		}
 
-		if (!g_AssetManager->Load<Shader>("assets/standard", m_DefaultShader))
+		if (!g_AssetManager->Load<Shader>("assets/Sprite", m_DefaultShader))
 		{
 			return false;
 		}

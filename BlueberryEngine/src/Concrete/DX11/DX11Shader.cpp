@@ -8,6 +8,50 @@ namespace Blueberry
 	{
 	}
 
+	bool DX11Shader::Compile(const std::wstring& shaderPath)
+	{
+		UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
+
+		HRESULT hr = D3DCompileFromFile(shaderPath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "Vertex", "vs_5_0", flags, 0, m_VertexShaderBuffer.GetAddressOf(), nullptr);
+		if (FAILED(hr))
+		{
+			std::string errorMsg = "Failed to compile vertex shader: " + std::string(shaderPath.begin(), shaderPath.end());
+			BB_ERROR(errorMsg);
+			return false;
+		}
+	
+		hr = m_Device->CreateVertexShader(m_VertexShaderBuffer->GetBufferPointer(), m_VertexShaderBuffer->GetBufferSize(), NULL, m_VertexShader.GetAddressOf());
+		if (FAILED(hr))
+		{
+			std::string errorMsg = "Failed to create vertex shader: " + std::string(shaderPath.begin(), shaderPath.end());
+			BB_ERROR(errorMsg);
+			return false;
+		}
+
+		hr = D3DCompileFromFile(shaderPath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "Fragment", "ps_5_0", flags, 0, m_PixelShaderBuffer.GetAddressOf(), nullptr);
+		if (FAILED(hr))
+		{
+			std::string errorMsg = "Failed to compile fragment shader: " + std::string(shaderPath.begin(), shaderPath.end());
+			BB_ERROR(errorMsg);
+			return false;
+		}
+
+		hr = m_Device->CreatePixelShader(m_PixelShaderBuffer->GetBufferPointer(), m_PixelShaderBuffer->GetBufferSize(), NULL, m_PixelShader.GetAddressOf());
+		if (FAILED(hr))
+		{
+			std::string errorMsg = "Failed to create pixel shader: " + std::string(shaderPath.begin(), shaderPath.end());
+			BB_ERROR(errorMsg);
+			return false;
+		}
+
+		if (!InitializeVertexLayout())
+		{
+			return false;
+		}
+
+		return true;
+	}
+
 	bool DX11Shader::Initialize(const std::wstring& vertexShaderPath, const std::wstring& pixelShaderPath)
 	{
 		HRESULT hr = D3DReadFileToBlob(vertexShaderPath.c_str(), m_VertexShaderBuffer.GetAddressOf());
@@ -42,8 +86,31 @@ namespace Blueberry
 			return false;
 		}
 
+		if (!InitializeVertexLayout())
+		{
+			return false;
+		}
+
+		return true;
+	}
+
+	void DX11Shader::Bind() const
+	{
+		m_DeviceContext->IASetInputLayout(m_InputLayout.Get());
+		m_DeviceContext->VSSetShader(m_VertexShader.Get(), NULL, 0);
+		m_DeviceContext->PSSetShader(m_PixelShader.Get(), NULL, 0);
+
+		m_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	}
+
+	void DX11Shader::Unbind() const
+	{
+	}
+
+	bool DX11Shader::InitializeVertexLayout()
+	{
 		ID3D11ShaderReflection* vertexShaderReflection;
-		hr = D3DReflect(m_VertexShaderBuffer->GetBufferPointer(), m_VertexShaderBuffer->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&vertexShaderReflection);
+		HRESULT hr = D3DReflect(m_VertexShaderBuffer->GetBufferPointer(), m_VertexShaderBuffer->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&vertexShaderReflection);
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to get vertex shader reflection."));
@@ -103,18 +170,5 @@ namespace Blueberry
 		}
 
 		return true;
-	}
-
-	void DX11Shader::Bind() const
-	{
-		m_DeviceContext->IASetInputLayout(m_InputLayout.Get());
-		m_DeviceContext->VSSetShader(m_VertexShader.Get(), NULL, 0);
-		m_DeviceContext->PSSetShader(m_PixelShader.Get(), NULL, 0);
-
-		m_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	}
-
-	void DX11Shader::Unbind() const
-	{
 	}
 }

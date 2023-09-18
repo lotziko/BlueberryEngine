@@ -9,9 +9,14 @@ namespace Blueberry
 		DX11Shader(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
 		virtual ~DX11Shader() final = default;
 
+		bool Compile(const std::wstring& shaderPath);
 		bool Initialize(const std::wstring& vertexShaderPath, const std::wstring& pixelShaderPath);
 		virtual void Bind() const override;
 		virtual void Unbind() const override;
+
+	private:
+		bool InitializeVertexLayout();
+
 	private:
 		ComRef<ID3D11VertexShader> m_VertexShader = nullptr;
 		ComRef<ID3D10Blob> m_VertexShaderBuffer = nullptr;
