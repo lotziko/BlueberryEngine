@@ -108,7 +108,7 @@ namespace Blueberry
 		{
 			return;
 		}
-		texture->Bind();
+		g_GraphicsDevice->BindTexture(texture, 0);
 
 		for (int i = 0; i < 4; i++)
 		{

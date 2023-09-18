@@ -21,7 +21,14 @@ namespace Blueberry
 
 	void DX11GraphicsDevice::ClearColor(const Color& color) const
 	{
-		m_DeviceContext->ClearRenderTargetView(m_RenderTargetView.Get(), color);
+		if (m_BindedRenderTarget == nullptr)
+		{
+			m_DeviceContext->ClearRenderTargetView(m_RenderTargetView.Get(), color);
+		}
+		else
+		{
+			m_BindedRenderTarget->Clear(color);
+		}
 	}
 
 	void DX11GraphicsDevice::SwapBuffers() const
@@ -133,11 +140,22 @@ namespace Blueberry
 	bool DX11GraphicsDevice::CreateTexture(const std::string& path, Ref<Texture>& texture) const
 	{
 		auto dxTexture = CreateRef<DX11Texture>(m_Device.Get(), m_DeviceContext.Get());
-		if (!dxTexture->Initialize(path))
+		if (!dxTexture->Load(path))
 		{
 			return false;
 		}
 		texture = dxTexture;
+		return true;
+	}
+
+	bool DX11GraphicsDevice::CreateRenderTarget(const UINT& width, const UINT& height, Ref<Texture>& renderTarget) const
+	{
+		auto dxRenderTarget = CreateRef<DX11Texture>(m_Device.Get(), m_DeviceContext.Get());
+		if (!dxRenderTarget->Create(width, height, true))
+		{
+			return false;
+		}
+		renderTarget = dxRenderTarget;
 		return true;
 	}
 
@@ -146,6 +164,38 @@ namespace Blueberry
 		auto dxRenderer = CreateRef<DX11ImGuiRenderer>(m_Hwnd, m_Device.Get(), m_DeviceContext.Get());
 		renderer = dxRenderer;
 		return true;
+	}
+
+	void DX11GraphicsDevice::BindTexture(Ref<Texture>& texture, const UINT& slot) const
+	{
+		auto dxTexture = static_cast<DX11Texture*>(texture.get());
+		dxTexture->BindShaderResource(slot);
+	}
+
+	void DX11GraphicsDevice::BindTexture(Texture* texture, const UINT& slot) const
+	{
+		auto dxTexture = static_cast<DX11Texture*>(texture);
+		dxTexture->BindShaderResource(slot);
+	}
+
+	void DX11GraphicsDevice::BindRenderTarget(Ref<Texture>& renderTarget)
+	{
+		auto dxRenderTarget = static_cast<DX11Texture*>(renderTarget.get());
+		dxRenderTarget->BindRenderTarget();
+		m_BindedRenderTarget = dxRenderTarget;
+	}
+
+	void DX11GraphicsDevice::BindRenderTarget(Texture* renderTarget)
+	{
+		auto dxRenderTarget = static_cast<DX11Texture*>(renderTarget);
+		dxRenderTarget->BindRenderTarget();
+		m_BindedRenderTarget = dxRenderTarget;
+	}
+
+	void DX11GraphicsDevice::UnbindRenderTarget()
+	{
+		m_DeviceContext->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), NULL);
+		m_BindedRenderTarget = nullptr;
 	}
 
 	void DX11GraphicsDevice::Draw(const int& vertices) const
@@ -270,6 +320,8 @@ namespace Blueberry
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create depth stencil state."));
 			return false;
 		}
+
+		m_BindedRenderTarget = nullptr;
 
 		BB_INFO("DirectX initialized successful.");
 

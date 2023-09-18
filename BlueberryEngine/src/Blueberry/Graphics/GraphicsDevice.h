@@ -25,7 +25,14 @@ namespace Blueberry
 		virtual bool CreateIndexBuffer(const UINT& indexCount, Ref<IndexBuffer>& buffer) = 0;
 		virtual bool CreateConstantBuffer(const UINT& byteSize, Ref<ConstantBuffer>& buffer) = 0;
 		virtual bool CreateTexture(const std::string& path, Ref<Texture>& texture) const = 0;
+		virtual bool CreateRenderTarget(const UINT& width, const UINT& height, Ref<Texture>& renderTarget) const = 0;
 		virtual bool CreateImGuiRenderer(Ref<ImGuiRenderer>& renderer) const = 0;
+
+		virtual void BindTexture(Ref<Texture>& texture, const UINT& slot = 0) const = 0;
+		virtual void BindTexture(Texture* texture, const UINT& slot = 0) const = 0;
+		virtual void BindRenderTarget(Ref<Texture>& renderTarget) = 0;
+		virtual void BindRenderTarget(Texture* renderTarget) = 0;
+		virtual void UnbindRenderTarget() = 0;
 
 		virtual void Draw(const int& vertices) const = 0;
 		virtual void DrawIndexed(const int& indices) const = 0;

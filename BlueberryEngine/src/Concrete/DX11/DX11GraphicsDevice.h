@@ -4,6 +4,8 @@
 
 namespace Blueberry
 {
+	class DX11Texture;
+
 	class DX11GraphicsDevice final : public GraphicsDevice
 	{
 	public:
@@ -23,7 +25,14 @@ namespace Blueberry
 		virtual bool CreateIndexBuffer(const UINT& indexCount, Ref<IndexBuffer>& buffer) final;
 		virtual bool CreateConstantBuffer(const UINT& byteCount, Ref<ConstantBuffer>& buffer) final;
 		virtual bool CreateTexture(const std::string& path, Ref<Texture>& texture) const final;
+		virtual bool CreateRenderTarget(const UINT& width, const UINT& height, Ref<Texture>& renderTarget) const final;
 		virtual bool CreateImGuiRenderer(Ref<ImGuiRenderer>& renderer) const final;
+
+		virtual void BindTexture(Ref<Texture>& texture, const UINT& slot) const final;
+		virtual void BindTexture(Texture* texture, const UINT& slot) const final;
+		virtual void BindRenderTarget(Ref<Texture>& renderTarget) final;
+		virtual void BindRenderTarget(Texture* renderTarget) final;
+		virtual void UnbindRenderTarget() final;
 
 		virtual void Draw(const int& vertices) const final;
 		virtual void DrawIndexed(const int& indices) const final;
@@ -40,5 +49,7 @@ namespace Blueberry
 		ComRef<ID3D11RenderTargetView> m_RenderTargetView;
 		ComRef<ID3D11RasterizerState> m_RasterizerState;
 		ComRef<ID3D11DepthStencilState> m_DepthStencilState;
+
+		DX11Texture* m_BindedRenderTarget;
 	};
 }
