@@ -6,6 +6,7 @@
 namespace Blueberry
 {
 	class Scene;
+	class Texture;
 	class Camera;
 
 	class SceneArea
@@ -13,12 +14,15 @@ namespace Blueberry
 	public:
 		SceneArea() = default;
 		SceneArea(const Ref<Scene>& scene);
+		
+		void DrawUI();
 
-		void Draw();
-		void SetViewport(const Viewport& viewport);
+	private:
+		void DrawScene(const float width, const float height);
 
 	private:
 		Ref<Scene> m_Scene;
+		Ref<Texture> m_SceneRenderTarget;
 		SceneCamera m_Camera;
 
 		Viewport m_Viewport;

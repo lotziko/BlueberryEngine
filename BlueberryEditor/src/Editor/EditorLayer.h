@@ -30,7 +30,6 @@ namespace Blueberry
 	private:
 		Ref<Scene> m_Scene;
 		Ref<ImGuiRenderer> m_ImGuiRenderer;
-		Ref<Texture> m_BackgroundTexture;
 
 		SceneHierarchy m_SceneHierarchy;
 		SceneInspector m_SceneInspector;

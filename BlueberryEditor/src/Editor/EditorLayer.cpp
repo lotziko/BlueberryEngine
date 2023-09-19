@@ -43,7 +43,7 @@ namespace Blueberry
 
 	void EditorLayer::OnDraw()
 	{
-		m_SceneArea.Draw();
+		g_GraphicsDevice->ClearColor({ 0, 0, 0, 1 });
 
 		m_ImGuiRenderer->Begin();
 		DrawDockSpace();
@@ -89,15 +89,13 @@ namespace Blueberry
 			{
 				ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
 				ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
-
-				auto centeralNode = ImGui::DockBuilderGetCentralNode(dockspace_id);
-				m_SceneArea.SetViewport(Viewport(centeralNode->Pos.x, centeralNode->Pos.y, centeralNode->Size.x, centeralNode->Size.y));
 			}
 
 			DrawMenuBar();
 
 			m_SceneHierarchy.DrawUI();
 			m_SceneInspector.DrawUI();
+			m_SceneArea.DrawUI();
 
 			ImGui::End();
 		}

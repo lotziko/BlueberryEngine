@@ -48,6 +48,16 @@ namespace Blueberry
 		return result;
 	}
 
+	UINT DX11Texture::GetWidth() const
+	{
+		return m_Width;
+	}
+
+	UINT DX11Texture::GetHeight() const
+	{
+		return m_Height;
+	}
+
 	void* DX11Texture::GetHandle()
 	{
 		return m_ResourceView.Get();

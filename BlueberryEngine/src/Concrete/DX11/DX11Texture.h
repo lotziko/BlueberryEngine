@@ -12,6 +12,8 @@ namespace Blueberry
 		bool Create(const UINT& width, const UINT& height, bool isRenderTarget);
 		bool Load(const std::string& path);
 
+		virtual UINT GetWidth() const override;
+		virtual UINT GetHeight() const override;
 		virtual void* GetHandle() override;
 
 		void BindShaderResource(const UINT& slot);
