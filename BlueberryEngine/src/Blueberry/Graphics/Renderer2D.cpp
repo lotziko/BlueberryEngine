@@ -2,8 +2,12 @@
 #include "Renderer2D.h"
 
 #include "Blueberry\Core\GlobalServices.h"
-#include "Blueberry\Graphics\GraphicsDevice.h"
+#include "Blueberry\Graphics\GfxBuffer.h"
+#include "Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\Shader.h"
+#include "Blueberry\Graphics\Texture2D.h"
+#include "Blueberry\Graphics\Mesh.h"
 
 namespace Blueberry
 {
@@ -26,10 +30,7 @@ namespace Blueberry
 		int size = layout.GetSize();
 		m_VertexData = new float[MAX_VERTICES * size / sizeof(float)];
 
-		if (!g_GraphicsDevice->CreateVertexBuffer(layout, MAX_VERTICES, m_VertexBuffer))
-		{
-			return false;
-		}
+		m_Mesh = Mesh::Create(layout, MAX_VERTICES, MAX_INDICES);
 
 		UINT* indexData = new UINT[MAX_INDICES];
 		UINT offset = 0;
@@ -45,20 +46,11 @@ namespace Blueberry
 
 			offset += 4;
 		}
-
-		if (!g_GraphicsDevice->CreateIndexBuffer(MAX_INDICES, m_IndexBuffer))
-		{
-			return false;
-		}
-		m_IndexBuffer->SetData(indexData, MAX_INDICES);
+		
+		m_Mesh->SetIndexData(indexData, MAX_INDICES);
 		delete[] indexData;
 
 		if (!g_GraphicsDevice->CreateConstantBuffer(sizeof(CONSTANTS) * 1, m_ConstantBuffer))
-		{
-			return false;
-		}
-
-		if (!g_AssetManager->Load<Shader>("assets/Sprite", m_DefaultShader))
 		{
 			return false;
 		}
@@ -99,7 +91,7 @@ namespace Blueberry
 		Flush();
 	}
 
-	void Renderer2D::Draw(const Matrix& transform, Texture* texture, const Color& color)
+	void Renderer2D::Draw(const Matrix& transform, const Ref<Texture2D>& texture, const Ref<Material>& material, const Color& color)
 	{
 		if (m_QuadIndexCount >= MAX_INDICES)
 			Flush();
@@ -108,7 +100,14 @@ namespace Blueberry
 		{
 			return;
 		}
-		g_GraphicsDevice->BindTexture(texture, 0);
+
+		if (material == nullptr)
+		{
+			return;
+		}
+
+		m_Material = material;
+		material->SetTexture(texture);
 
 		for (int i = 0; i < 4; i++)
 		{
@@ -132,11 +131,11 @@ namespace Blueberry
 		m_QuadIndexCount += 6;
 	}
 
-	void Renderer2D::DrawImmediate(const Vector3& position, const Vector2& size, Texture* texture, const Color& color)
+	void Renderer2D::DrawImmediate(const Vector3& position, const Vector2& size, const Ref<Texture2D>& texture, const Ref<Material>& material, const Color& color)
 	{
 		if (m_QuadIndexCount > 0)
 			Flush();
-		Draw(Matrix::CreateTranslation(position) * Matrix::CreateScale(size.x, size.y, 1), texture, color);
+		Draw(Matrix::CreateTranslation(position) * Matrix::CreateScale(size.x, size.y, 1), texture, material, color);
 		Flush();
 	}
 
@@ -145,13 +144,10 @@ namespace Blueberry
 		if (m_QuadIndexCount == 0)
 			return;
 
-		m_VertexBuffer->SetData(m_VertexData, m_QuadIndexCount / 6 * 4);
-
-		m_VertexBuffer->Bind();
-		m_IndexBuffer->Bind();
-		m_ConstantBuffer->Bind();
-		m_DefaultShader->Bind();
-		g_GraphicsDevice->DrawIndexed(m_QuadIndexCount);
+		m_Mesh->SetVertexData(m_VertexData, m_QuadIndexCount / 6 * 4);
+		
+		g_GraphicsDevice->SetGlobalConstantBuffer(std::hash<std::string>()("PerDrawData"), m_ConstantBuffer.get());
+		g_GraphicsDevice->Draw(GfxDrawingOperation(m_Mesh.get(), m_Material.get(), m_QuadIndexCount));
 
 		m_QuadIndexCount = 0;
 		m_VertexDataPtr = m_VertexData;

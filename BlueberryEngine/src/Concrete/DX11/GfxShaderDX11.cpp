@@ -1,14 +1,14 @@
 #include "bbpch.h"
-#include "DX11Shader.h"
-#include "DX11GraphicsDevice.h"
+#include "GfxShaderDX11.h"
+#include "GfxDeviceDX11.h"
 
 namespace Blueberry
 {
-	DX11Shader::DX11Shader(ID3D11Device* device, ID3D11DeviceContext* deviceContext) : m_Device(device), m_DeviceContext(deviceContext)
+	GfxShaderDX11::GfxShaderDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext) : m_Device(device), m_DeviceContext(deviceContext)
 	{
 	}
 
-	bool DX11Shader::Compile(const std::wstring& shaderPath)
+	bool GfxShaderDX11::Compile(const std::wstring& shaderPath)
 	{
 		UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
 
@@ -52,7 +52,7 @@ namespace Blueberry
 		return true;
 	}
 
-	bool DX11Shader::Initialize(const std::wstring& vertexShaderPath, const std::wstring& pixelShaderPath)
+	bool GfxShaderDX11::Initialize(const std::wstring& vertexShaderPath, const std::wstring& pixelShaderPath)
 	{
 		HRESULT hr = D3DReadFileToBlob(vertexShaderPath.c_str(), m_VertexShaderBuffer.GetAddressOf());
 		if (FAILED(hr))
@@ -94,20 +94,7 @@ namespace Blueberry
 		return true;
 	}
 
-	void DX11Shader::Bind() const
-	{
-		m_DeviceContext->IASetInputLayout(m_InputLayout.Get());
-		m_DeviceContext->VSSetShader(m_VertexShader.Get(), NULL, 0);
-		m_DeviceContext->PSSetShader(m_PixelShader.Get(), NULL, 0);
-
-		m_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	}
-
-	void DX11Shader::Unbind() const
-	{
-	}
-
-	bool DX11Shader::InitializeVertexLayout()
+	bool GfxShaderDX11::InitializeVertexLayout()
 	{
 		ID3D11ShaderReflection* vertexShaderReflection;
 		HRESULT hr = D3DReflect(m_VertexShaderBuffer->GetBufferPointer(), m_VertexShaderBuffer->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&vertexShaderReflection);
@@ -119,6 +106,14 @@ namespace Blueberry
 
 		D3D11_SHADER_DESC shaderDesc;
 		vertexShaderReflection->GetDesc(&shaderDesc);
+
+		for (UINT i = 0; i < shaderDesc.ConstantBuffers; i++)
+		{
+			ID3D11ShaderReflectionConstantBuffer* constantBufferReflection = vertexShaderReflection->GetConstantBufferByIndex(i);
+			D3D11_SHADER_BUFFER_DESC shaderBufferDesc;
+			constantBufferReflection->GetDesc(&shaderBufferDesc);
+			m_ConstantBufferSlots.insert({ std::hash<std::string>()(std::string(shaderBufferDesc.Name)), i });
+		}
 
 		std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDescArray;
 		unsigned int parameterCount = shaderDesc.InputParameters;

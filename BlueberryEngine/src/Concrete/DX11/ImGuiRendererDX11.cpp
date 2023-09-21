@@ -1,5 +1,5 @@
 #include "bbpch.h"
-#include "DX11ImGuiRenderer.h"
+#include "ImGuiRendererDX11.h"
 
 #include "imgui.h"
 #include "backends\imgui_impl_win32.h"
@@ -7,7 +7,7 @@
 
 namespace Blueberry
 {
-	DX11ImGuiRenderer::DX11ImGuiRenderer(HWND hwnd, ID3D11Device* device, ID3D11DeviceContext* deviceContext) : m_Hwnd(hwnd), m_Device(device), m_DeviceContext(deviceContext)
+	ImGuiRendererDX11::ImGuiRendererDX11(HWND hwnd, ID3D11Device* device, ID3D11DeviceContext* deviceContext) : m_Hwnd(hwnd), m_Device(device), m_DeviceContext(deviceContext)
 	{
 		// Setup Dear ImGui context
 		IMGUI_CHECKVERSION();
@@ -18,7 +18,7 @@ namespace Blueberry
 		ImGui_ImplDX11_Init(device, deviceContext);
 	}
 
-	DX11ImGuiRenderer::~DX11ImGuiRenderer()
+	ImGuiRendererDX11::~ImGuiRendererDX11()
 	{
 		// Cleanup
 		ImGui_ImplDX11_Shutdown();
@@ -26,7 +26,7 @@ namespace Blueberry
 		ImGui::DestroyContext();
 	}
 
-	void DX11ImGuiRenderer::Begin()
+	void ImGuiRendererDX11::Begin()
 	{
 		// Start the Dear ImGui frame
 		ImGui_ImplDX11_NewFrame();
@@ -34,7 +34,7 @@ namespace Blueberry
 		ImGui::NewFrame();
 	}
 
-	void DX11ImGuiRenderer::End()
+	void ImGuiRendererDX11::End()
 	{
 		// Rendering
 		ImGui::Render();

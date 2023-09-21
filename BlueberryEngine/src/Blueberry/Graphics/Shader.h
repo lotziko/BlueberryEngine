@@ -1,17 +1,25 @@
 #pragma once
 
 #include "Blueberry\Core\Object.h"
+#include "Blueberry\Graphics\GfxShader.h"
 
 namespace Blueberry
 {
+	class GfxShader;
+
 	class Shader : public Object
 	{
 		OBJECT_DECLARATION(Shader)
 
 	public:
-		virtual ~Shader() = default;
+		Shader() = default;
+		Shader(std::wstring shaderPath);
 
-		virtual void Bind() const;
-		virtual void Unbind() const;
+		static Ref<Shader> Create(std::wstring shaderPath);
+
+	private:
+		Ref<GfxShader> m_Shader;
+
+		friend struct GfxDrawingOperation;
 	};
 }

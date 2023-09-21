@@ -4,8 +4,9 @@
 #include "Blueberry\Core\GlobalServices.h"
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Scene\RegisterSceneTypes.h"
-#include "Blueberry\Graphics\GraphicsDevice.h"
+#include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\Renderer2D.h"
+#include "Blueberry\Graphics\RegisterGraphicsTypes.h"
 
 #include "Blueberry\Core\Layer.h"
 
@@ -19,7 +20,7 @@ namespace Blueberry
 
 		g_AssetManager = new AssetManager();
 
-		g_GraphicsDevice = GraphicsDevice::Create();
+		g_GraphicsDevice = GfxDevice::Create();
 		if (!g_GraphicsDevice->Initialize(properties.Width, properties.Height, m_Window->GetHandle()))
 		{
 			return false;
@@ -32,6 +33,7 @@ namespace Blueberry
 		}
 
 		RegisterSceneTypes();
+		RegisterGraphicsTypes();
 
 		return true;
 	}

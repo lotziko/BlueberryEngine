@@ -1,13 +1,13 @@
 #pragma once
-#include "Blueberry\Graphics\Texture.h"
+#include "Blueberry\Graphics\GfxTexture.h"
 
 namespace Blueberry
 {
-	class DX11Texture : public Texture
+	class GfxTextureDX11 : public GfxTexture
 	{
 	public:
-		DX11Texture(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
-		virtual ~DX11Texture() final = default;
+		GfxTextureDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
+		virtual ~GfxTextureDX11() final = default;
 		
 		bool Create(const UINT& width, const UINT& height, bool isRenderTarget);
 		bool Load(const std::string& path);
@@ -15,9 +15,6 @@ namespace Blueberry
 		virtual UINT GetWidth() const override;
 		virtual UINT GetHeight() const override;
 		virtual void* GetHandle() override;
-
-		void BindShaderResource(const UINT& slot);
-		void BindRenderTarget();
 
 		void Clear(const Color& color);
 
@@ -35,5 +32,7 @@ namespace Blueberry
 
 		ID3D11Device* m_Device;
 		ID3D11DeviceContext* m_DeviceContext;
+
+		friend class GfxDeviceDX11;
 	};
 }

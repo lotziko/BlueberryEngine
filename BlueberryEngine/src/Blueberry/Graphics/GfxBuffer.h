@@ -2,27 +2,24 @@
 
 namespace Blueberry
 {
-	class VertexBuffer
+	class GfxVertexBuffer
 	{
 	public:
-		virtual ~VertexBuffer() = default;
-		virtual void Bind() = 0;
+		virtual ~GfxVertexBuffer() = default;
 		virtual void SetData(float* data, const UINT& vertexCount) = 0;
 	};
 
-	class IndexBuffer
+	class GfxIndexBuffer
 	{
 	public:
-		virtual ~IndexBuffer() = default;
-		virtual void Bind() = 0;
+		virtual ~GfxIndexBuffer() = default;
 		virtual void SetData(UINT* data, const UINT& indexCount) = 0;
 	};
 
-	class ConstantBuffer
+	class GfxConstantBuffer
 	{
 	public:
-		virtual ~ConstantBuffer() = default;
-		virtual void Bind() = 0;
+		virtual ~GfxConstantBuffer() = default;
 		virtual void SetData(char* data, const UINT& byteCount) = 0;
 	};
 }

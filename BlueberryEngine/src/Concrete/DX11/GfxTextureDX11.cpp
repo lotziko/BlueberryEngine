@@ -1,22 +1,22 @@
 #include "bbpch.h"
-#include "DX11Texture.h"
+#include "GfxTextureDX11.h"
 
 #include "stb\stb_image.h"
 
 namespace Blueberry
 {
-	DX11Texture::DX11Texture(ID3D11Device* device, ID3D11DeviceContext* deviceContext) : m_Device(device), m_DeviceContext(deviceContext)
+	GfxTextureDX11::GfxTextureDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext) : m_Device(device), m_DeviceContext(deviceContext)
 	{
 	}
 
-	bool DX11Texture::Create(const UINT& width, const UINT& height, bool isRenderTarget)
+	bool GfxTextureDX11::Create(const UINT& width, const UINT& height, bool isRenderTarget)
 	{
 		m_Width = width;
 		m_Height = height;
 		return Initialize(nullptr, isRenderTarget);
 	}
 
-	bool DX11Texture::Load(const std::string& path)
+	bool GfxTextureDX11::Load(const std::string& path)
 	{
 		stbi_uc* data = nullptr;
 		int width, height, channels;
@@ -48,38 +48,27 @@ namespace Blueberry
 		return result;
 	}
 
-	UINT DX11Texture::GetWidth() const
+	UINT GfxTextureDX11::GetWidth() const
 	{
 		return m_Width;
 	}
 
-	UINT DX11Texture::GetHeight() const
+	UINT GfxTextureDX11::GetHeight() const
 	{
 		return m_Height;
 	}
 
-	void* DX11Texture::GetHandle()
+	void* GfxTextureDX11::GetHandle()
 	{
 		return m_ResourceView.Get();
 	}
 
-	void DX11Texture::BindShaderResource(const UINT& slot)
-	{
-		m_DeviceContext->PSSetShaderResources(slot, 1, m_ResourceView.GetAddressOf());
-		m_DeviceContext->PSSetSamplers(slot, 1, m_SamplerState.GetAddressOf());
-	}
-
-	void DX11Texture::BindRenderTarget()
-	{
-		m_DeviceContext->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), NULL);
-	}
-
-	void DX11Texture::Clear(const Color& color)
+	void GfxTextureDX11::Clear(const Color& color)
 	{
 		m_DeviceContext->ClearRenderTargetView(m_RenderTargetView.Get(), color);
 	}
 
-	bool DX11Texture::Initialize(D3D11_SUBRESOURCE_DATA* subresourceData, bool isRenderTarget)
+	bool GfxTextureDX11::Initialize(D3D11_SUBRESOURCE_DATA* subresourceData, bool isRenderTarget)
 	{
 		D3D11_TEXTURE2D_DESC textureDesc;
 		ZeroMemory(&textureDesc, sizeof(D3D11_TEXTURE2D_DESC));

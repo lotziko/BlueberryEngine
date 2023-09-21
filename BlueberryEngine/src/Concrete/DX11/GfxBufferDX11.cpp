@@ -1,18 +1,13 @@
 #include "bbpch.h"
-#include "DX11Buffer.h"
+#include "GfxBufferDX11.h"
 
 namespace Blueberry
 {
-	DX11VertexBuffer::DX11VertexBuffer(ID3D11Device* device, ID3D11DeviceContext* deviceContext) : m_Device(device), m_DeviceContext(deviceContext)
+	GfxVertexBufferDX11::GfxVertexBufferDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext) : m_Device(device), m_DeviceContext(deviceContext)
 	{
 	}
 
-	void DX11VertexBuffer::Bind()
-	{
-		m_DeviceContext->IASetVertexBuffers(0, 1, m_Buffer.GetAddressOf(), &m_Stride, &m_Offset);
-	}
-
-	void DX11VertexBuffer::SetData(float* data, const UINT& vertexCount)
+	void GfxVertexBufferDX11::SetData(float* data, const UINT& vertexCount)
 	{
 		D3D11_MAPPED_SUBRESOURCE mappedBuffer;
 		ZeroMemory(&mappedBuffer, sizeof(D3D11_MAPPED_SUBRESOURCE));
@@ -24,7 +19,7 @@ namespace Blueberry
 		m_DeviceContext->Unmap(m_Buffer.Get(), 0);
 	}
 
-	bool DX11VertexBuffer::Initialize(const VertexLayout& layout, const UINT& vertexCount)
+	bool GfxVertexBufferDX11::Initialize(const VertexLayout& layout, const UINT& vertexCount)
 	{
 		m_Layout = layout;
 		m_Stride = layout.GetSize();
@@ -49,20 +44,15 @@ namespace Blueberry
 		return true;
 	}
 
-	DX11IndexBuffer::DX11IndexBuffer(ID3D11Device* device, ID3D11DeviceContext* deviceContext) : m_Device(device), m_DeviceContext(deviceContext)
+	GfxIndexBufferDX11::GfxIndexBufferDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext) : m_Device(device), m_DeviceContext(deviceContext)
 	{
 	}
 
-	DX11IndexBuffer::~DX11IndexBuffer()
+	GfxIndexBufferDX11::~GfxIndexBufferDX11()
 	{
 	}
 
-	void DX11IndexBuffer::Bind()
-	{
-		m_DeviceContext->IASetIndexBuffer(m_Buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-	}
-
-	void DX11IndexBuffer::SetData(UINT* data, const UINT& indexCount)
+	void GfxIndexBufferDX11::SetData(UINT* data, const UINT& indexCount)
 	{
 		D3D11_MAPPED_SUBRESOURCE mappedBuffer;
 		ZeroMemory(&mappedBuffer, sizeof(D3D11_MAPPED_SUBRESOURCE));
@@ -74,7 +64,7 @@ namespace Blueberry
 		m_DeviceContext->Unmap(m_Buffer.Get(), 0);
 	}
 
-	bool DX11IndexBuffer::Initialize(const UINT& indexCount)
+	bool GfxIndexBufferDX11::Initialize(const UINT& indexCount)
 	{
 		D3D11_BUFFER_DESC indexBufferDesc;
 		ZeroMemory(&indexBufferDesc, sizeof(D3D11_BUFFER_DESC));
@@ -96,20 +86,15 @@ namespace Blueberry
 		return true;
 	}
 
-	DX11ConstantBuffer::DX11ConstantBuffer(ID3D11Device* device, ID3D11DeviceContext* deviceContext) : m_Device(device), m_DeviceContext(deviceContext)
+	GfxConstantBufferDX11::GfxConstantBufferDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext) : m_Device(device), m_DeviceContext(deviceContext)
 	{
 	}
 
-	DX11ConstantBuffer::~DX11ConstantBuffer()
+	GfxConstantBufferDX11::~GfxConstantBufferDX11()
 	{
 	}
 
-	void DX11ConstantBuffer::Bind()
-	{
-		m_DeviceContext->VSSetConstantBuffers(0, 1, m_Buffer.GetAddressOf());
-	}
-
-	void DX11ConstantBuffer::SetData(char* data, const UINT& byteCount)
+	void GfxConstantBufferDX11::SetData(char* data, const UINT& byteCount)
 	{
 		D3D11_MAPPED_SUBRESOURCE mappedBuffer;
 		ZeroMemory(&mappedBuffer, sizeof(D3D11_MAPPED_SUBRESOURCE));
@@ -121,7 +106,7 @@ namespace Blueberry
 		m_DeviceContext->Unmap(m_Buffer.Get(), 0);
 	}
 
-	bool DX11ConstantBuffer::Initialize(const UINT& byteCount)
+	bool GfxConstantBufferDX11::Initialize(const UINT& byteCount)
 	{
 		D3D11_BUFFER_DESC constantBufferDesc;
 		ZeroMemory(&constantBufferDesc, sizeof(D3D11_BUFFER_DESC));

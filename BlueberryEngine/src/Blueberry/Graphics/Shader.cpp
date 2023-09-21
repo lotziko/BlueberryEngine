@@ -1,15 +1,19 @@
 #include "bbpch.h"
 #include "Shader.h"
 
+#include "Blueberry\Core\GlobalServices.h"
+
 namespace Blueberry
 {
 	OBJECT_DEFINITION(Object, Shader)
 
-	void Shader::Bind() const
+	Shader::Shader(std::wstring shaderPath)
 	{
+		g_GraphicsDevice->CreateShader(shaderPath, m_Shader);
 	}
 
-	void Shader::Unbind() const
+	Ref<Shader> Shader::Create(std::wstring shaderPath)
 	{
+		return ObjectDB::CreateObject<Shader>(shaderPath);
 	}
 }

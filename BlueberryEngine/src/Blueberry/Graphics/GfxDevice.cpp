@@ -1,13 +1,15 @@
 #include "bbpch.h"
-#include "GraphicsDevice.h"
+#include "GfxDevice.h"
 
 #include "GraphicsAPI.h"
 
-#include "Concrete\DX11\DX11GraphicsDevice.h"
+#include "Blueberry\Graphics\Mesh.h"
+
+#include "Concrete\DX11\GfxDeviceDX11.h"
 
 namespace Blueberry
 {
-	GraphicsDevice* GraphicsDevice::Create()
+	GfxDevice* GfxDevice::Create()
 	{
 		switch (GraphicsAPI::GetAPI())
 		{
@@ -15,7 +17,7 @@ namespace Blueberry
 			BB_ERROR("API doesn't exist.");
 			return nullptr;
 		case GraphicsAPI::API::DX11:
-			return new DX11GraphicsDevice();
+			return new GfxDeviceDX11();
 		}
 
 		BB_ERROR("API doesn't exist.");

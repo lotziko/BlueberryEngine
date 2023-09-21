@@ -1,18 +1,16 @@
 #pragma once
-#include "Blueberry\Graphics\Shader.h"
+#include "Blueberry\Graphics\GfxShader.h"
 
 namespace Blueberry
 {
-	class DX11Shader : public Shader
+	class GfxShaderDX11 : public GfxShader
 	{
 	public:
-		DX11Shader(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
-		virtual ~DX11Shader() final = default;
+		GfxShaderDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
+		virtual ~GfxShaderDX11() final = default;
 
 		bool Compile(const std::wstring& shaderPath);
 		bool Initialize(const std::wstring& vertexShaderPath, const std::wstring& pixelShaderPath);
-		virtual void Bind() const override;
-		virtual void Unbind() const override;
 
 	private:
 		bool InitializeVertexLayout();
@@ -28,5 +26,9 @@ namespace Blueberry
 
 		ID3D11Device* m_Device;
 		ID3D11DeviceContext* m_DeviceContext;
+
+		std::map<std::size_t, UINT> m_ConstantBufferSlots;
+
+		friend class GfxDeviceDX11;
 	};
 }

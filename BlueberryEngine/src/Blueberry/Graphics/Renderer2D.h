@@ -4,12 +4,10 @@
 
 namespace Blueberry
 {
-	class GraphicsDevice;
-	class Texture;
-	class VertexBuffer;
-	class IndexBuffer;
-	class ConstantBuffer;
-	class Shader;
+	class Texture2D;
+	class Mesh;
+	class Material;
+	class GfxConstantBuffer;
 
 	class Renderer2D
 	{
@@ -22,15 +20,14 @@ namespace Blueberry
 
 		void Begin(const Matrix& view, const Matrix& projection);
 		void End();
-		void Draw(const Matrix& transform, Texture* texture, const Color& color);
-		void DrawImmediate(const Vector3& position, const Vector2& size, Texture* texture, const Color& color);
+		void Draw(const Matrix& transform, const Ref<Texture2D>& texture, const Ref<Material>& material, const Color& color);
+		void DrawImmediate(const Vector3& position, const Vector2& size, const Ref<Texture2D>& texture, const Ref<Material>& material, const Color& color);
 		void Flush();
 
 	private:
-		Ref<VertexBuffer> m_VertexBuffer;
-		Ref<IndexBuffer> m_IndexBuffer;
-		Ref<ConstantBuffer> m_ConstantBuffer;
-		Ref<Shader> m_DefaultShader;
+		Ref<Mesh> m_Mesh;
+		Ref<Material> m_Material;
+		Ref<GfxConstantBuffer> m_ConstantBuffer;
 
 		float* m_VertexData = nullptr;
 		float* m_VertexDataPtr = nullptr;

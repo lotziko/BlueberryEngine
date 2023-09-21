@@ -93,13 +93,7 @@
     <ClInclude Include="src\Blueberry\Events\WindowEvent.h">
       <Filter>src\Blueberry\Events</Filter>
     </ClInclude>
-    <ClInclude Include="src\Blueberry\Graphics\Buffer.h">
-      <Filter>src\Blueberry\Graphics</Filter>
-    </ClInclude>
     <ClInclude Include="src\Blueberry\Graphics\GraphicsAPI.h">
-      <Filter>src\Blueberry\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Blueberry\Graphics\GraphicsDevice.h">
       <Filter>src\Blueberry\Graphics</Filter>
     </ClInclude>
     <ClInclude Include="src\Blueberry\Graphics\ImGuiRenderer.h">
@@ -168,21 +162,6 @@
     <ClInclude Include="src\Blueberry\Tools\WindowsHelper.h">
       <Filter>src\Blueberry\Tools</Filter>
     </ClInclude>
-    <ClInclude Include="src\Concrete\DX11\DX11Buffer.h">
-      <Filter>src\Concrete\DX11</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Concrete\DX11\DX11GraphicsDevice.h">
-      <Filter>src\Concrete\DX11</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Concrete\DX11\DX11ImGuiRenderer.h">
-      <Filter>src\Concrete\DX11</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Concrete\DX11\DX11Shader.h">
-      <Filter>src\Concrete\DX11</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Concrete\DX11\DX11Texture.h">
-      <Filter>src\Concrete\DX11</Filter>
-    </ClInclude>
     <ClInclude Include="src\Concrete\Windows\WindowsWindow.h">
       <Filter>src\Concrete\Windows</Filter>
     </ClInclude>
@@ -196,6 +175,33 @@
     <ClInclude Include="src\Blueberry\Scene\Components\Transform.h" />
     <ClInclude Include="src\Blueberry\Core\ClassDB.h" />
     <ClInclude Include="src\Blueberry\Scene\RegisterSceneTypes.h" />
+    <ClInclude Include="src\Concrete\DX11\GfxTextureDX11.h">
+      <Filter>src\Concrete\DX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Graphics\GfxDevice.h">
+      <Filter>src\Blueberry\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Concrete\DX11\GfxDeviceDX11.h">
+      <Filter>src\Concrete\DX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Graphics\GfxShader.h" />
+    <ClInclude Include="src\Blueberry\Graphics\GfxTexture.h" />
+    <ClInclude Include="src\Concrete\DX11\GfxShaderDX11.h">
+      <Filter>src\Concrete\DX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Graphics\GfxBuffer.h">
+      <Filter>src\Blueberry\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Concrete\DX11\GfxBufferDX11.h">
+      <Filter>src\Concrete\DX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Concrete\DX11\ImGuiRendererDX11.h">
+      <Filter>src\Concrete\DX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Blueberry\Graphics\Mesh.h" />
+    <ClInclude Include="src\Blueberry\Graphics\RegisterGraphicsTypes.h" />
+    <ClInclude Include="src\Blueberry\Graphics\Texture2D.h" />
+    <ClInclude Include="src\Blueberry\Graphics\GfxDrawingOperation.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Blueberry\Content\AssetManager.cpp">
@@ -223,9 +229,6 @@
       <Filter>src\Blueberry\Core</Filter>
     </ClCompile>
     <ClCompile Include="src\Blueberry\Graphics\GraphicsAPI.cpp">
-      <Filter>src\Blueberry\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Blueberry\Graphics\GraphicsDevice.cpp">
       <Filter>src\Blueberry\Graphics</Filter>
     </ClCompile>
     <ClCompile Include="src\Blueberry\Graphics\Material.cpp">
@@ -270,21 +273,6 @@
     <ClCompile Include="src\Blueberry\Tools\WindowsHelper.cpp">
       <Filter>src\Blueberry\Tools</Filter>
     </ClCompile>
-    <ClCompile Include="src\Concrete\DX11\DX11Buffer.cpp">
-      <Filter>src\Concrete\DX11</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Concrete\DX11\DX11GraphicsDevice.cpp">
-      <Filter>src\Concrete\DX11</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Concrete\DX11\DX11ImGuiRenderer.cpp">
-      <Filter>src\Concrete\DX11</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Concrete\DX11\DX11Shader.cpp">
-      <Filter>src\Concrete\DX11</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Concrete\DX11\DX11Texture.cpp">
-      <Filter>src\Concrete\DX11</Filter>
-    </ClCompile>
     <ClCompile Include="src\Concrete\Windows\WindowsWindow.cpp">
       <Filter>src\Concrete\Windows</Filter>
     </ClCompile>
@@ -299,5 +287,27 @@
     <ClCompile Include="src\Blueberry\Scene\Components\Transform.cpp" />
     <ClCompile Include="src\Blueberry\Core\ClassDB.cpp" />
     <ClCompile Include="src\Blueberry\Scene\RegisterSceneTypes.cpp" />
+    <ClCompile Include="src\Concrete\DX11\GfxTextureDX11.cpp">
+      <Filter>src\Concrete\DX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Blueberry\Graphics\GfxDevice.cpp">
+      <Filter>src\Blueberry\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Concrete\DX11\GfxDeviceDX11.cpp">
+      <Filter>src\Concrete\DX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Concrete\DX11\GfxShaderDX11.cpp">
+      <Filter>src\Concrete\DX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Concrete\DX11\GfxBufferDX11.cpp">
+      <Filter>src\Concrete\DX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Concrete\DX11\ImGuiRendererDX11.cpp">
+      <Filter>src\Concrete\DX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Blueberry\Graphics\Mesh.cpp" />
+    <ClCompile Include="src\Blueberry\Graphics\RegisterGraphicsTypes.cpp" />
+    <ClCompile Include="src\Blueberry\Graphics\Texture2D.cpp" />
+    <ClCompile Include="src\Blueberry\Graphics\GfxDrawingOperation.cpp" />
   </ItemGroup>
 </Project>

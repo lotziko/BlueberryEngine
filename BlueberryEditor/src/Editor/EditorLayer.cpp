@@ -3,6 +3,7 @@
 #include "Blueberry\Core\GlobalServices.h"
 #include "Blueberry\Content\AssetManager.h"
 #include "Blueberry\Graphics\SceneRenderer.h"
+#include "Blueberry\Graphics\ImGuiRenderer.h"
 #include "Blueberry\Math\Math.h"
 #include "Blueberry\Scene\Scene.h"
 

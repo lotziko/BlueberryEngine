@@ -2,6 +2,9 @@
 #include "SpriteRenderer.h"
 
 #include "Blueberry\Core\GlobalServices.h"
+#include "Blueberry\Graphics\Texture2D.h"
+#include "Blueberry\Graphics\Shader.h"
+#include "Blueberry\Graphics\Material.h"
 
 namespace Blueberry
 {
@@ -9,8 +12,11 @@ namespace Blueberry
 
 	SpriteRenderer::SpriteRenderer()
 	{
+		Ref<Shader> shaderRef;
 		m_Color = Color(1, 1, 1, 1);
-		g_AssetManager->Load<Texture>("assets/TestImage", m_Texture);
+		g_AssetManager->Load<Texture2D>("assets/TestImage", m_Texture);
+		g_AssetManager->Load<Shader>("assets/Sprite", shaderRef);
+		m_Material = Material::Create(shaderRef);
 	}
 
 	const Color& SpriteRenderer::GetColor()
@@ -23,14 +29,24 @@ namespace Blueberry
 		m_Color = color;
 	}
 
-	const Ref<Texture>& SpriteRenderer::GetTexture()
+	const Ref<Texture2D>& SpriteRenderer::GetTexture()
 	{
 		return m_Texture;
 	}
 
-	void SpriteRenderer::SetTexture(const Ref<Texture>& texture)
+	void SpriteRenderer::SetTexture(const Ref<Texture2D>& texture)
 	{
 		m_Texture = texture;
+	}
+
+	const Ref<Material>& SpriteRenderer::GetMaterial()
+	{
+		return m_Material;
+	}
+
+	void SpriteRenderer::SetMaterial(const Ref<Material>& material)
+	{
+		m_Material = material;
 	}
 
 	std::string SpriteRenderer::ToString() const

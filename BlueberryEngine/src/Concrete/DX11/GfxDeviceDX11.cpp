@@ -1,17 +1,18 @@
 #include "bbpch.h"
-#include "DX11GraphicsDevice.h"
-#include "DX11Shader.h"
-#include "DX11Buffer.h"
-#include "DX11Texture.h"
-#include "DX11ImGuiRenderer.h"
+#include "GfxDeviceDX11.h"
+#include "GfxShaderDX11.h"
+#include "GfxBufferDX11.h"
+#include "GfxTextureDX11.h"
+#include "ImGuiRendererDX11.h"
+#include "Blueberry\Graphics\Texture.h"
 
 namespace Blueberry
 {
-	DX11GraphicsDevice::DX11GraphicsDevice()
+	GfxDeviceDX11::GfxDeviceDX11()
 	{
 	}
 
-	bool DX11GraphicsDevice::Initialize(int width, int height, void* data)
+	bool GfxDeviceDX11::Initialize(int width, int height, void* data)
 	{
 		if (!InitializeDirectX(*(static_cast<HWND*>(data)), width, height))
 			return false;
@@ -19,7 +20,7 @@ namespace Blueberry
 		return true;
 	}
 
-	void DX11GraphicsDevice::ClearColor(const Color& color) const
+	void GfxDeviceDX11::ClearColor(const Color& color) const
 	{
 		if (m_BindedRenderTarget == nullptr)
 		{
@@ -31,12 +32,12 @@ namespace Blueberry
 		}
 	}
 
-	void DX11GraphicsDevice::SwapBuffers() const
+	void GfxDeviceDX11::SwapBuffers() const
 	{
 		m_SwapChain->Present(1, NULL);
 	}
 
-	void DX11GraphicsDevice::SetViewport(int x, int y, int width, int height)
+	void GfxDeviceDX11::SetViewport(int x, int y, int width, int height)
 	{
 		D3D11_VIEWPORT viewport;
 		ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
@@ -49,7 +50,7 @@ namespace Blueberry
 		m_DeviceContext->RSSetViewports(1, &viewport);
 	}
 
-	void DX11GraphicsDevice::ResizeBackbuffer(int width, int height)
+	void GfxDeviceDX11::ResizeBackbuffer(int width, int height)
 	{
 		m_DeviceContext->OMSetRenderTargets(0, 0, 0);
 		m_RenderTargetView->Release();
@@ -93,9 +94,9 @@ namespace Blueberry
 		m_DeviceContext->RSSetViewports(1, &viewport);
 	}
 
-	bool DX11GraphicsDevice::CreateShader(const std::wstring& shaderPath, Ref<Shader>& shader)
+	bool GfxDeviceDX11::CreateShader(const std::wstring& shaderPath, Ref<GfxShader>& shader)
 	{
-		auto dxShader = CreateRef<DX11Shader>(m_Device.Get(), m_DeviceContext.Get());
+		auto dxShader = CreateRef<GfxShaderDX11>(m_Device.Get(), m_DeviceContext.Get());
 		if (!dxShader->Compile(shaderPath))
 		{
 			return false;
@@ -104,9 +105,9 @@ namespace Blueberry
 		return true;
 	}
 
-	bool DX11GraphicsDevice::CreateShader(const std::wstring& vertexShaderPath, const std::wstring& pixelShaderPath, Ref<Shader>& shader)
+	bool GfxDeviceDX11::CreateShader(const std::wstring& vertexShaderPath, const std::wstring& pixelShaderPath, Ref<GfxShader>& shader)
 	{
-		auto dxShader = CreateRef<DX11Shader>(m_Device.Get(), m_DeviceContext.Get());
+		auto dxShader = CreateRef<GfxShaderDX11>(m_Device.Get(), m_DeviceContext.Get());
 		if (!dxShader->Initialize(vertexShaderPath, pixelShaderPath))
 		{
 			return false;
@@ -115,9 +116,9 @@ namespace Blueberry
 		return true;
 	}
 
-	bool DX11GraphicsDevice::CreateVertexBuffer(const VertexLayout& layout, const UINT& vertexCount, Ref<VertexBuffer>& buffer)
+	bool GfxDeviceDX11::CreateVertexBuffer(const VertexLayout& layout, const UINT& vertexCount, Ref<GfxVertexBuffer>& buffer)
 	{
-		auto dxBuffer = CreateRef<DX11VertexBuffer>(m_Device.Get(), m_DeviceContext.Get());
+		auto dxBuffer = CreateRef<GfxVertexBufferDX11>(m_Device.Get(), m_DeviceContext.Get());
 		if (!dxBuffer->Initialize(layout, vertexCount))
 		{
 			return false;
@@ -126,9 +127,9 @@ namespace Blueberry
 		return true;
 	}
 
-	bool DX11GraphicsDevice::CreateIndexBuffer(const UINT& indexCount, Ref<IndexBuffer>& buffer)
+	bool GfxDeviceDX11::CreateIndexBuffer(const UINT& indexCount, Ref<GfxIndexBuffer>& buffer)
 	{
-		auto dxBuffer = CreateRef<DX11IndexBuffer>(m_Device.Get(), m_DeviceContext.Get());
+		auto dxBuffer = CreateRef<GfxIndexBufferDX11>(m_Device.Get(), m_DeviceContext.Get());
 		if (!dxBuffer->Initialize(indexCount))
 		{
 			return false;
@@ -137,9 +138,9 @@ namespace Blueberry
 		return true;
 	}
 
-	bool DX11GraphicsDevice::CreateConstantBuffer(const UINT& byteSize, Ref<ConstantBuffer>& buffer)
+	bool GfxDeviceDX11::CreateConstantBuffer(const UINT& byteSize, Ref<GfxConstantBuffer>& buffer)
 	{
-		auto dxBuffer = CreateRef<DX11ConstantBuffer>(m_Device.Get(), m_DeviceContext.Get());
+		auto dxBuffer = CreateRef<GfxConstantBufferDX11>(m_Device.Get(), m_DeviceContext.Get());
 		if (!dxBuffer->Initialize(byteSize))
 		{
 			return false;
@@ -148,9 +149,9 @@ namespace Blueberry
 		return true;
 	}
 
-	bool DX11GraphicsDevice::CreateTexture(const std::string& path, Ref<Texture>& texture) const
+	bool GfxDeviceDX11::CreateTexture(const std::string& path, Ref<GfxTexture>& texture) const
 	{
-		auto dxTexture = CreateRef<DX11Texture>(m_Device.Get(), m_DeviceContext.Get());
+		auto dxTexture = CreateRef<GfxTextureDX11>(m_Device.Get(), m_DeviceContext.Get());
 		if (!dxTexture->Load(path))
 		{
 			return false;
@@ -159,78 +160,93 @@ namespace Blueberry
 		return true;
 	}
 
-	bool DX11GraphicsDevice::CreateRenderTarget(const UINT& width, const UINT& height, Ref<Texture>& renderTarget) const
+	bool GfxDeviceDX11::CreateRenderTexture(const UINT& width, const UINT& height, Ref<GfxTexture>& renderTexture) const
 	{
-		auto dxRenderTarget = CreateRef<DX11Texture>(m_Device.Get(), m_DeviceContext.Get());
-		if (!dxRenderTarget->Create(width, height, true))
+		auto dxRenderTexture = CreateRef<GfxTextureDX11>(m_Device.Get(), m_DeviceContext.Get());
+		if (!dxRenderTexture->Create(width, height, true))
 		{
 			return false;
 		}
-		renderTarget = dxRenderTarget;
+		renderTexture = dxRenderTexture;
 		return true;
 	}
 
-	bool DX11GraphicsDevice::CreateImGuiRenderer(Ref<ImGuiRenderer>& renderer) const
+	bool GfxDeviceDX11::CreateImGuiRenderer(Ref<ImGuiRenderer>& renderer) const
 	{
-		auto dxRenderer = CreateRef<DX11ImGuiRenderer>(m_Hwnd, m_Device.Get(), m_DeviceContext.Get());
+		auto dxRenderer = CreateRef<ImGuiRendererDX11>(m_Hwnd, m_Device.Get(), m_DeviceContext.Get());
 		renderer = dxRenderer;
 		return true;
 	}
 
-	void DX11GraphicsDevice::BindTexture(Ref<Texture>& texture, const UINT& slot) const
+	void GfxDeviceDX11::SetRenderTarget(GfxTexture* renderTexture)
 	{
-		auto dxTexture = static_cast<DX11Texture*>(texture.get());
-		dxTexture->BindShaderResource(slot);
+		if (renderTexture == nullptr)
+		{
+			m_DeviceContext->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), NULL);
+			m_BindedRenderTarget = nullptr;
+		}
+		else
+		{
+			auto dxRenderTarget = static_cast<GfxTextureDX11*>(renderTexture);
+			m_DeviceContext->OMSetRenderTargets(1, dxRenderTarget->m_RenderTargetView.GetAddressOf(), NULL);
+			m_BindedRenderTarget = dxRenderTarget;
+		}
 	}
 
-	void DX11GraphicsDevice::BindTexture(Texture* texture, const UINT& slot) const
+	void GfxDeviceDX11::SetGlobalConstantBuffer(const std::size_t& id, GfxConstantBuffer* buffer)
 	{
-		auto dxTexture = static_cast<DX11Texture*>(texture);
-		dxTexture->BindShaderResource(slot);
+		if (m_BindedConstantBuffers.count(id) == 0)
+		{
+			auto dxConstantBuffer = static_cast<GfxConstantBufferDX11*>(buffer);
+			m_BindedConstantBuffers.insert({ id, dxConstantBuffer });
+		}
 	}
 
-	void DX11GraphicsDevice::BindRenderTarget(Ref<Texture>& renderTarget)
+	void GfxDeviceDX11::Draw(const GfxDrawingOperation& operation) const
 	{
-		auto dxRenderTarget = static_cast<DX11Texture*>(renderTarget.get());
-		dxRenderTarget->BindRenderTarget();
-		m_BindedRenderTarget = dxRenderTarget;
-	}
+		auto dxShader = static_cast<GfxShaderDX11*>(operation.shader);
+		m_DeviceContext->IASetInputLayout(dxShader->m_InputLayout.Get());
+		m_DeviceContext->VSSetShader(dxShader->m_VertexShader.Get(), NULL, 0);
+		m_DeviceContext->PSSetShader(dxShader->m_PixelShader.Get(), NULL, 0);
 
-	void DX11GraphicsDevice::BindRenderTarget(Texture* renderTarget)
-	{
-		auto dxRenderTarget = static_cast<DX11Texture*>(renderTarget);
-		dxRenderTarget->BindRenderTarget();
-		m_BindedRenderTarget = dxRenderTarget;
-	}
+		m_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	void DX11GraphicsDevice::UnbindRenderTarget()
-	{
-		m_DeviceContext->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), NULL);
-		m_BindedRenderTarget = nullptr;
-	}
+		auto dxTexture = static_cast<GfxTextureDX11*>(operation.texture);
+		m_DeviceContext->PSSetShaderResources(0, 1, dxTexture->m_ResourceView.GetAddressOf());
+		m_DeviceContext->PSSetSamplers(0, 1, dxTexture->m_SamplerState.GetAddressOf());
 
-	void DX11GraphicsDevice::Draw(const int& vertices) const
-	{
+		auto dxVertexBuffer = static_cast<GfxVertexBufferDX11*>(operation.vertexBuffer);
+		m_DeviceContext->IASetVertexBuffers(0, 1, dxVertexBuffer->m_Buffer.GetAddressOf(), &dxVertexBuffer->m_Stride, &dxVertexBuffer->m_Offset);
+	
+		auto dxIndexBuffer = static_cast<GfxIndexBufferDX11*>(operation.indexBuffer);
+		m_DeviceContext->IASetIndexBuffer(dxIndexBuffer->m_Buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+
+		auto bufferMap = dxShader->m_ConstantBufferSlots;
+		int offset = 0;
+		std::map<std::size_t, UINT>::iterator it;
+		for (it = bufferMap.begin(); it != bufferMap.end(); it++)
+		{
+			auto pair = m_BindedConstantBuffers.find(it->first);
+			if (pair != m_BindedConstantBuffers.end())
+			{
+				m_DeviceContext->VSSetConstantBuffers(offset, 1, pair->second->m_Buffer.GetAddressOf());
+			}
+			++offset;
+		}
+
 		m_DeviceContext->RSSetState(m_RasterizerState.Get());
 		m_DeviceContext->OMSetDepthStencilState(m_DepthStencilState.Get(), 0);
-		m_DeviceContext->Draw(vertices, 0);
+		m_DeviceContext->DrawIndexed(operation.indexCount, 0, 0);
 	}
 
-	void DX11GraphicsDevice::DrawIndexed(const int& indices) const
-	{
-		m_DeviceContext->RSSetState(m_RasterizerState.Get());
-		m_DeviceContext->OMSetDepthStencilState(m_DepthStencilState.Get(), 0);
-		m_DeviceContext->DrawIndexed(indices, 0, 0);
-	}
-
-	Matrix DX11GraphicsDevice::GetGPUMatrix(const Matrix& viewProjection) const
+	Matrix GfxDeviceDX11::GetGPUMatrix(const Matrix& viewProjection) const
 	{
 		Matrix copy;
 		viewProjection.Transpose(copy);
 		return copy;
 	}
 
-	bool DX11GraphicsDevice::InitializeDirectX(HWND hwnd, int width, int height)
+	bool GfxDeviceDX11::InitializeDirectX(HWND hwnd, int width, int height)
 	{
 		m_Hwnd = hwnd;
 

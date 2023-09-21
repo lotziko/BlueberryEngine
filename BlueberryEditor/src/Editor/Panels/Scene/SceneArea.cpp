@@ -4,6 +4,7 @@
 #include "Blueberry\Core\GlobalServices.h"
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Graphics\SceneRenderer.h"
+#include "Blueberry\Graphics\GfxTexture.h"
 
 #include "imgui\imgui.h"
 
@@ -11,7 +12,7 @@ namespace Blueberry
 {
 	SceneArea::SceneArea(const Ref<Scene>& scene) : m_Scene(scene)
 	{
-		g_GraphicsDevice->CreateRenderTarget(1920, 1080, m_SceneRenderTarget);
+		g_GraphicsDevice->CreateRenderTexture(1920, 1080, m_SceneRenderTarget);
 	}
 
 	void SceneArea::DrawUI()
@@ -30,7 +31,7 @@ namespace Blueberry
 
 	void SceneArea::DrawScene(const float width, const float height)
 	{
-		g_GraphicsDevice->BindRenderTarget(m_SceneRenderTarget);
+		g_GraphicsDevice->SetRenderTarget(m_SceneRenderTarget.get());
 		g_GraphicsDevice->SetViewport(0, 0, static_cast<int>(width), static_cast<int>(height));
 		g_GraphicsDevice->ClearColor({ 0, 0, 0, 1 });
 
@@ -44,6 +45,6 @@ namespace Blueberry
 		{
 			SceneRenderer::Draw(m_Scene, m_Camera.GetViewMatrix(), m_Camera.GetProjectionMatrix());
 		}
-		g_GraphicsDevice->UnbindRenderTarget();
+		g_GraphicsDevice->SetRenderTarget(nullptr);
 	}
 }

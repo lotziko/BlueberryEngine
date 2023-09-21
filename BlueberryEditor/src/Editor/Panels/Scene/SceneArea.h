@@ -6,7 +6,7 @@
 namespace Blueberry
 {
 	class Scene;
-	class Texture;
+	class GfxTexture;
 	class Camera;
 
 	class SceneArea
@@ -22,7 +22,7 @@ namespace Blueberry
 
 	private:
 		Ref<Scene> m_Scene;
-		Ref<Texture> m_SceneRenderTarget;
+		Ref<GfxTexture> m_SceneRenderTarget;
 		SceneCamera m_Camera;
 
 		Viewport m_Viewport;

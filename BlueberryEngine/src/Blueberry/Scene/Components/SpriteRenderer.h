@@ -5,7 +5,8 @@
 
 namespace Blueberry
 {
-	class Texture;
+	class Texture2D;
+	class Material;
 
 	class SpriteRenderer : public Renderer
 	{
@@ -18,13 +19,17 @@ namespace Blueberry
 		const Color& GetColor();
 		void SetColor(const Color& color);
 
-		const Ref<Texture>& GetTexture();
-		void SetTexture(const Ref<Texture>& texture);
+		const Ref<Texture2D>& GetTexture();
+		void SetTexture(const Ref<Texture2D>& texture);
+
+		const Ref<Material>& GetMaterial();
+		void SetMaterial(const Ref<Material>& material);
 
 		virtual std::string ToString() const final;
 
 	private:
 		Color m_Color;
-		Ref<Texture> m_Texture;
+		Ref<Texture2D> m_Texture;
+		Ref<Material> m_Material;
 	};
 }
