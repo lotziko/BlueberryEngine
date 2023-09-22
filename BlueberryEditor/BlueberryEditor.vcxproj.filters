@@ -107,7 +107,4 @@
     <ClCompile Include="src\Editor\Inspector\ObjectInspectorDB.cpp" />
     <ClCompile Include="src\Editor\Inspector\RegisterObjectInspectors.cpp" />
   </ItemGroup>
-  <ItemGroup>
-    <CopyFileToFolders Include="assets\Sprite.hlsl" />
-  </ItemGroup>
 </Project>
