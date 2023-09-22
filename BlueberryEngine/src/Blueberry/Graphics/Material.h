@@ -4,6 +4,7 @@ namespace Blueberry
 {
 	class Texture;
 	class Shader;
+	class GfxTexture;
 
 	class Material : public Object
 	{
@@ -15,10 +16,15 @@ namespace Blueberry
 
 		static Ref<Material> Create(const Ref<Shader>& shader);
 
-		void SetTexture(const Ref<Texture>& texture);
+		void SetTexture(std::size_t id, const Ref<Texture>& texture);
+		void SetTexture(std::string name, const Ref<Texture>& texture);
 
 	private:
-		Ref<Texture> m_Texture;
+		void FillGfxTextures();
+
+	private:
+		std::vector<std::pair<std::size_t, GfxTexture*>> m_GfxTextures;
+		std::map<std::size_t, Ref<Texture>> m_Textures;
 		Ref<Shader> m_Shader;
 
 		friend struct GfxDrawingOperation;

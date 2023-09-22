@@ -9,6 +9,7 @@
 #include <bitset>
 #include <iterator>
 #include <sstream>
+#include <tuple>
 
 #include "Blueberry\Core\Base.h"
 #include "Blueberry\Core\Object.h"

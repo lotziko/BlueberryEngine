@@ -107,7 +107,7 @@ namespace Blueberry
 		}
 
 		m_Material = material;
-		material->SetTexture(texture);
+		material->SetTexture("_BaseMap", texture);
 
 		for (int i = 0; i < 4; i++)
 		{

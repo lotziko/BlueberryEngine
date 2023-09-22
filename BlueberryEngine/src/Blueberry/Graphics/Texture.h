@@ -31,6 +31,6 @@ namespace Blueberry
 	protected:
 		Ref<GfxTexture> m_Texture;
 
-		friend struct GfxDrawingOperation;
+		friend class Material;
 	};
 }

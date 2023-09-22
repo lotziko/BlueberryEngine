@@ -1,10 +1,12 @@
 #include "bbpch.h"
+
 #include "GfxDeviceDX11.h"
 #include "GfxShaderDX11.h"
 #include "GfxBufferDX11.h"
 #include "GfxTextureDX11.h"
 #include "ImGuiRendererDX11.h"
 #include "Blueberry\Graphics\Texture.h"
+#include <tuple>
 
 namespace Blueberry
 {
@@ -211,9 +213,19 @@ namespace Blueberry
 
 		m_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		auto dxTexture = static_cast<GfxTextureDX11*>(operation.texture);
-		m_DeviceContext->PSSetShaderResources(0, 1, dxTexture->m_ResourceView.GetAddressOf());
-		m_DeviceContext->PSSetSamplers(0, 1, dxTexture->m_SamplerState.GetAddressOf());
+		auto textureVector = operation.textures;
+		for (int i = 0; i < textureVector->size(); i++)
+		{
+			auto pair = textureVector->at(i);
+			auto dxTexture = static_cast<GfxTextureDX11*>(pair.second);
+			auto slot = dxShader->m_TextureSlots.find(pair.first);
+			if (slot != dxShader->m_TextureSlots.end())
+			{
+				UINT slotIndex = slot->second;
+				m_DeviceContext->PSSetShaderResources(slotIndex, 1, dxTexture->m_ResourceView.GetAddressOf());
+				m_DeviceContext->PSSetSamplers(slotIndex, 1, dxTexture->m_SamplerState.GetAddressOf());
+			}
+		}
 
 		auto dxVertexBuffer = static_cast<GfxVertexBufferDX11*>(operation.vertexBuffer);
 		m_DeviceContext->IASetVertexBuffers(0, 1, dxVertexBuffer->m_Buffer.GetAddressOf(), &dxVertexBuffer->m_Stride, &dxVertexBuffer->m_Offset);

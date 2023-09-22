@@ -11,7 +11,7 @@ namespace Blueberry
 	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material, const UINT& indexCount)
 	{
 		shader = material->m_Shader->m_Shader.get();
-		texture = material->m_Texture->m_Texture.get();
+		textures = &(material->m_GfxTextures);
 		vertexBuffer = mesh->m_VertexBuffer.get();
 		indexBuffer = mesh->m_IndexBuffer.get();
 		this->indexCount = indexCount;

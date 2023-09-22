@@ -28,6 +28,7 @@ namespace Blueberry
 		ID3D11DeviceContext* m_DeviceContext;
 
 		std::map<std::size_t, UINT> m_ConstantBufferSlots;
+		std::map<std::size_t, UINT> m_TextureSlots;
 
 		friend class GfxDeviceDX11;
 	};

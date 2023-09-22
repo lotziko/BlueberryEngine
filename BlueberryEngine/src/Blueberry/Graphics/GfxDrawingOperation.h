@@ -14,7 +14,7 @@ namespace Blueberry
 		GfxDrawingOperation(Mesh* mesh, Material* material, const UINT& indexCount);
 
 		GfxShader* shader;
-		GfxTexture* texture;
+		std::vector<std::pair<std::size_t, GfxTexture*>>* textures;
 		GfxVertexBuffer* vertexBuffer;
 		GfxIndexBuffer* indexBuffer;
 		UINT indexCount;

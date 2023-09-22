@@ -104,10 +104,12 @@ namespace Blueberry
 			return false;
 		}
 
-		D3D11_SHADER_DESC shaderDesc;
-		vertexShaderReflection->GetDesc(&shaderDesc);
+		D3D11_SHADER_DESC vertexShaderDesc;
+		vertexShaderReflection->GetDesc(&vertexShaderDesc);
 
-		for (UINT i = 0; i < shaderDesc.ConstantBuffers; i++)
+		unsigned int constantBufferCount = vertexShaderDesc.ConstantBuffers;
+
+		for (UINT i = 0; i < constantBufferCount; i++)
 		{
 			ID3D11ShaderReflectionConstantBuffer* constantBufferReflection = vertexShaderReflection->GetConstantBufferByIndex(i);
 			D3D11_SHADER_BUFFER_DESC shaderBufferDesc;
@@ -115,8 +117,31 @@ namespace Blueberry
 			m_ConstantBufferSlots.insert({ std::hash<std::string>()(std::string(shaderBufferDesc.Name)), i });
 		}
 
+		ID3D11ShaderReflection* pixelShaderReflection;
+		hr = D3DReflect(m_PixelShaderBuffer->GetBufferPointer(), m_PixelShaderBuffer->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&pixelShaderReflection);
+		if (FAILED(hr))
+		{
+			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to get pixel shader reflection."));
+			return false;
+		}
+
+		D3D11_SHADER_DESC pixelShaderDesc;
+		pixelShaderReflection->GetDesc(&pixelShaderDesc);
+
+		unsigned int resourceBindingCount = pixelShaderDesc.BoundResources;
+
+		for (int i = 0; i < resourceBindingCount; i++)
+		{
+			D3D11_SHADER_INPUT_BIND_DESC inputBindDesc;
+			pixelShaderReflection->GetResourceBindingDesc(i, &inputBindDesc);
+			if (inputBindDesc.Type == D3D_SIT_TEXTURE)
+			{
+				m_TextureSlots.insert({ std::hash<std::string>()(std::string(inputBindDesc.Name)), inputBindDesc.BindPoint });
+			}
+		}
+
 		std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDescArray;
-		unsigned int parameterCount = shaderDesc.InputParameters;
+		unsigned int parameterCount = vertexShaderDesc.InputParameters;
 
 		for (unsigned int i = 0; i < parameterCount; ++i)
 		{
