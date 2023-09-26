@@ -14,6 +14,8 @@ namespace Blueberry
 		Mesh() = default;
 		Mesh(const VertexLayout& layout, const UINT& vertexCount, const UINT& indexCount);
 
+		const UINT& GetVertexCount();
+		const UINT& GetIndexCount();
 		void SetVertexData(float* data, const UINT& vertexCount);
 		void SetIndexData(UINT* data, const UINT& indexCount);
 
@@ -22,6 +24,9 @@ namespace Blueberry
 	private:
 		Ref<GfxVertexBuffer> m_VertexBuffer;
 		Ref<GfxIndexBuffer> m_IndexBuffer;
+
+		UINT m_VertexCount;
+		UINT m_IndexCount;
 
 		friend struct GfxDrawingOperation;
 	};

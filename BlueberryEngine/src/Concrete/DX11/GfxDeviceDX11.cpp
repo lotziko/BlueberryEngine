@@ -1,12 +1,10 @@
 #include "bbpch.h"
-
 #include "GfxDeviceDX11.h"
 #include "GfxShaderDX11.h"
 #include "GfxBufferDX11.h"
 #include "GfxTextureDX11.h"
 #include "ImGuiRendererDX11.h"
 #include "Blueberry\Graphics\Texture.h"
-#include <tuple>
 
 namespace Blueberry
 {
@@ -206,6 +204,12 @@ namespace Blueberry
 
 	void GfxDeviceDX11::Draw(const GfxDrawingOperation& operation) const
 	{
+		if (!operation.IsValid())
+		{
+			return;
+		}
+
+		// TODO check if shader variant/material/mesh is the same to skip some bindings
 		auto dxShader = static_cast<GfxShaderDX11*>(operation.shader);
 		m_DeviceContext->IASetInputLayout(dxShader->m_InputLayout.Get());
 		m_DeviceContext->VSSetShader(dxShader->m_VertexShader.Get(), NULL, 0);

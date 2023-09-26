@@ -35,7 +35,7 @@ namespace Blueberry
 				transform->Update();
 			}
 		}
-
+		
 		//Draw sprites
 		{
 			g_Renderer2D->Begin(viewMatrix, projectionMatrix);

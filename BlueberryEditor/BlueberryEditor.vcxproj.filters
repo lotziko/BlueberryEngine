@@ -65,6 +65,7 @@
     </ClInclude>
     <ClInclude Include="src\Editor\Inspector\ObjectInspectorDB.h" />
     <ClInclude Include="src\Editor\Inspector\RegisterObjectInspectors.h" />
+    <ClInclude Include="src\Editor\EditorMaterials.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Editor\EditorLayer.cpp">
@@ -106,5 +107,6 @@
     <ClCompile Include="src\EntryPoint.cpp" />
     <ClCompile Include="src\Editor\Inspector\ObjectInspectorDB.cpp" />
     <ClCompile Include="src\Editor\Inspector\RegisterObjectInspectors.cpp" />
+    <ClCompile Include="src\Editor\EditorMaterials.cpp" />
   </ItemGroup>
 </Project>

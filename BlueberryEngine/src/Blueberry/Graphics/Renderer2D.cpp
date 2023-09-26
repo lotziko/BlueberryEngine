@@ -30,7 +30,10 @@ namespace Blueberry
 		int size = layout.GetSize();
 		m_VertexData = new float[MAX_VERTICES * size / sizeof(float)];
 
-		m_Mesh = Mesh::Create(layout, MAX_VERTICES, MAX_INDICES);
+		if (!g_GraphicsDevice->CreateVertexBuffer(layout, MAX_VERTICES, m_VertexBuffer))
+		{
+			return false;
+		}
 
 		UINT* indexData = new UINT[MAX_INDICES];
 		UINT offset = 0;
@@ -47,7 +50,11 @@ namespace Blueberry
 			offset += 4;
 		}
 		
-		m_Mesh->SetIndexData(indexData, MAX_INDICES);
+		if (!g_GraphicsDevice->CreateIndexBuffer(MAX_INDICES, m_IndexBuffer))
+		{
+			return false;
+		}
+		m_IndexBuffer->SetData(indexData, MAX_INDICES);
 		delete[] indexData;
 
 		if (!g_GraphicsDevice->CreateConstantBuffer(sizeof(CONSTANTS) * 1, m_ConstantBuffer))
@@ -111,7 +118,7 @@ namespace Blueberry
 
 		for (int i = 0; i < 4; i++)
 		{
-			auto position = Vector4::Transform(m_QuadVertexPositons[i], transform);
+			auto position = Vector4::Transform(m_QuadVertexPositons[i] * Vector4(texture->GetWidth(), texture->GetHeight(), 1, 1), transform);
 
 			m_VertexDataPtr[0] = position.x;
 			m_VertexDataPtr[1] = position.y;
@@ -143,11 +150,11 @@ namespace Blueberry
 	{
 		if (m_QuadIndexCount == 0)
 			return;
-
-		m_Mesh->SetVertexData(m_VertexData, m_QuadIndexCount / 6 * 4);
+		
+		m_VertexBuffer->SetData(m_VertexData, m_QuadIndexCount / 6 * 4);
 		
 		g_GraphicsDevice->SetGlobalConstantBuffer(std::hash<std::string>()("PerDrawData"), m_ConstantBuffer.get());
-		g_GraphicsDevice->Draw(GfxDrawingOperation(m_Mesh.get(), m_Material.get(), m_QuadIndexCount));
+		g_GraphicsDevice->Draw(GfxDrawingOperation(m_VertexBuffer.get(), m_IndexBuffer.get(), m_Material.get(), m_QuadIndexCount));
 
 		m_QuadIndexCount = 0;
 		m_VertexDataPtr = m_VertexData;

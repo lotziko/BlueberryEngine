@@ -5,8 +5,9 @@
 namespace Blueberry
 {
 	class Texture2D;
-	class Mesh;
 	class Material;
+	class GfxVertexBuffer;
+	class GfxIndexBuffer;
 	class GfxConstantBuffer;
 
 	class Renderer2D
@@ -25,8 +26,9 @@ namespace Blueberry
 		void Flush();
 
 	private:
-		Ref<Mesh> m_Mesh;
 		Ref<Material> m_Material;
+		Ref<GfxVertexBuffer> m_VertexBuffer;
+		Ref<GfxIndexBuffer> m_IndexBuffer;
 		Ref<GfxConstantBuffer> m_ConstantBuffer;
 
 		float* m_VertexData = nullptr;

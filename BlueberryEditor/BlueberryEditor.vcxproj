@@ -89,6 +89,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="src\Editor\EditorLayer.h" />
+    <ClInclude Include="src\Editor\EditorMaterials.h" />
     <ClInclude Include="src\Editor\Inspector\Concrete\CameraInspector.h" />
     <ClInclude Include="src\Editor\Inspector\Concrete\EntityInspector.h" />
     <ClInclude Include="src\Editor\Inspector\Concrete\SpriteRendererInspector.h" />
@@ -105,6 +106,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Editor\EditorLayer.cpp" />
+    <ClCompile Include="src\Editor\EditorMaterials.cpp" />
     <ClCompile Include="src\Editor\Inspector\Concrete\CameraInspector.cpp" />
     <ClCompile Include="src\Editor\Inspector\Concrete\EntityInspector.cpp" />
     <ClCompile Include="src\Editor\Inspector\Concrete\SpriteRendererInspector.cpp" />

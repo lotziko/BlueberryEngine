@@ -114,6 +114,7 @@
     <ClInclude Include="src\Blueberry\Graphics\Renderer2D.h" />
     <ClInclude Include="src\Blueberry\Graphics\SceneRenderer.h" />
     <ClInclude Include="src\Blueberry\Graphics\Shader.h" />
+    <ClInclude Include="src\Blueberry\Graphics\StandardMeshes.h" />
     <ClInclude Include="src\Blueberry\Graphics\Texture.h" />
     <ClInclude Include="src\Blueberry\Graphics\Texture2D.h" />
     <ClInclude Include="src\Blueberry\Graphics\VertexLayout.h" />
@@ -165,6 +166,7 @@
     <ClCompile Include="src\Blueberry\Graphics\Shader.cpp" />
     <ClCompile Include="src\Blueberry\Graphics\Texture.cpp" />
     <ClCompile Include="src\Blueberry\Graphics\Texture2D.cpp" />
+    <ClCompile Include="src\Blueberry\Graphics\StandardMeshes.cpp" />
     <ClCompile Include="src\Blueberry\Graphics\VertexLayout.cpp" />
     <ClCompile Include="src\Blueberry\Math\SimpleMath.cpp" />
     <ClCompile Include="src\Blueberry\Scene\Components\Camera.cpp" />

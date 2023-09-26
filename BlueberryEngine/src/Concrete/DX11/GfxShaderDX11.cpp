@@ -31,7 +31,7 @@ namespace Blueberry
 		hr = D3DCompileFromFile(shaderPath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "Fragment", "ps_5_0", flags, 0, m_PixelShaderBuffer.GetAddressOf(), nullptr);
 		if (FAILED(hr))
 		{
-			std::string errorMsg = "Failed to compile fragment shader: " + std::string(shaderPath.begin(), shaderPath.end());
+			std::string errorMsg = "Failed to compile pixel shader: " + std::string(shaderPath.begin(), shaderPath.end());
 			BB_ERROR(errorMsg);
 			return false;
 		}

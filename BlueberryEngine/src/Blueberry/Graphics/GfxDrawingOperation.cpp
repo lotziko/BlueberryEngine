@@ -8,12 +8,25 @@
 
 namespace Blueberry
 {
-	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material, const UINT& indexCount)
+	GfxDrawingOperation::GfxDrawingOperation(GfxVertexBuffer* vertexBuffer, GfxIndexBuffer* indexBuffer, Material* material, const UINT& indexCount)
 	{
 		shader = material->m_Shader->m_Shader.get();
 		textures = &(material->m_GfxTextures);
-		vertexBuffer = mesh->m_VertexBuffer.get();
-		indexBuffer = mesh->m_IndexBuffer.get();
+		this->vertexBuffer = vertexBuffer;
+		this->indexBuffer = indexBuffer;
 		this->indexCount = indexCount;
+	}
+
+	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material, const UINT& indexCount) : GfxDrawingOperation(mesh->m_VertexBuffer.get(), mesh->m_IndexBuffer.get(), material, indexCount)
+	{
+	}
+
+	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material) : GfxDrawingOperation(mesh->m_VertexBuffer.get(), mesh->m_IndexBuffer.get(), material, mesh->m_IndexCount)
+	{
+	}
+
+	bool GfxDrawingOperation::IsValid() const
+	{
+		return shader != nullptr && vertexBuffer != nullptr && indexBuffer != nullptr && indexCount > 0;
 	}
 }

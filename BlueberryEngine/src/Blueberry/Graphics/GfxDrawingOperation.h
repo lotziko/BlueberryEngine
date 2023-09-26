@@ -11,7 +11,11 @@ namespace Blueberry
 
 	struct GfxDrawingOperation
 	{
+		GfxDrawingOperation(GfxVertexBuffer* vertexBuffer, GfxIndexBuffer* indexBuffer, Material* material, const UINT& indexCount);
 		GfxDrawingOperation(Mesh* mesh, Material* material, const UINT& indexCount);
+		GfxDrawingOperation(Mesh* mesh, Material* material);
+
+		bool IsValid() const;
 
 		GfxShader* shader;
 		std::vector<std::pair<std::size_t, GfxTexture*>>* textures;

@@ -7,11 +7,23 @@
 namespace Blueberry
 {
 	OBJECT_DEFINITION(Object, Mesh)
-		
+
 	Mesh::Mesh(const VertexLayout& layout, const UINT& vertexCount, const UINT& indexCount)
 	{
 		g_GraphicsDevice->CreateVertexBuffer(layout, vertexCount, m_VertexBuffer);
 		g_GraphicsDevice->CreateIndexBuffer(indexCount, m_IndexBuffer);
+		m_VertexCount = vertexCount;
+		m_IndexCount = indexCount;
+	}
+
+	const UINT& Mesh::GetVertexCount()
+	{
+		return m_VertexCount;
+	}
+
+	const UINT& Mesh::GetIndexCount()
+	{
+		return m_IndexCount;
 	}
 
 	void Mesh::SetVertexData(float* data, const UINT& vertexCount)

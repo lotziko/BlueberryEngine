@@ -6,6 +6,9 @@
 #include "Blueberry\Graphics\SceneRenderer.h"
 #include "Blueberry\Graphics\GfxTexture.h"
 
+#include "Blueberry\Graphics\StandardMeshes.h"
+#include "Editor\EditorMaterials.h"
+
 #include "imgui\imgui.h"
 
 namespace Blueberry
@@ -21,6 +24,8 @@ namespace Blueberry
 		
 		ImVec2 pos = ImGui::GetCursorScreenPos();
 		ImVec2 size = ImGui::GetContentRegionAvail();
+		
+		m_Camera.Update();
 
 		DrawScene(size.x, size.y);
 
@@ -34,11 +39,12 @@ namespace Blueberry
 		g_GraphicsDevice->SetRenderTarget(m_SceneRenderTarget.get());
 		g_GraphicsDevice->SetViewport(0, 0, static_cast<int>(width), static_cast<int>(height));
 		g_GraphicsDevice->ClearColor({ 0, 0, 0, 1 });
+		g_GraphicsDevice->Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), EditorMaterials::GetEditorGridMaterial()));
 
 		if (width > 0)
 		{
 			m_Camera.SetViewport({ 0, 0, width, height });
-			m_Camera.Update();
+			m_Camera.UpdateMatrices();
 		}
 
 		if (m_Scene != NULL)
