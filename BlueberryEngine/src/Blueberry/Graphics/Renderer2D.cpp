@@ -118,7 +118,7 @@ namespace Blueberry
 
 		for (int i = 0; i < 4; i++)
 		{
-			auto position = Vector4::Transform(m_QuadVertexPositons[i] * Vector4(texture->GetWidth(), texture->GetHeight(), 1, 1), transform);
+			auto position = Vector4::Transform(m_QuadVertexPositons[i] * Vector4(texture->GetWidth() / 32, texture->GetHeight() / 32, 1, 1), transform);
 
 			m_VertexDataPtr[0] = position.x;
 			m_VertexDataPtr[1] = position.y;

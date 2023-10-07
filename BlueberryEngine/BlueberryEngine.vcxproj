@@ -101,6 +101,7 @@
     <ClInclude Include="src\Blueberry\Events\Event.h" />
     <ClInclude Include="src\Blueberry\Events\KeyEvent.h" />
     <ClInclude Include="src\Blueberry\Events\WindowEvent.h" />
+    <ClInclude Include="src\Blueberry\Graphics\BaseCamera.h" />
     <ClInclude Include="src\Blueberry\Graphics\GfxBuffer.h" />
     <ClInclude Include="src\Blueberry\Graphics\GfxDrawingOperation.h" />
     <ClInclude Include="src\Blueberry\Graphics\GfxShader.h" />
@@ -155,6 +156,7 @@
     <ClCompile Include="src\Blueberry\Core\LayerStack.cpp" />
     <ClCompile Include="src\Blueberry\Core\Object.cpp" />
     <ClCompile Include="src\Blueberry\Core\Window.cpp" />
+    <ClCompile Include="src\Blueberry\Graphics\BaseCamera.cpp" />
     <ClCompile Include="src\Blueberry\Graphics\GfxDrawingOperation.cpp" />
     <ClCompile Include="src\Blueberry\Graphics\GraphicsAPI.cpp" />
     <ClCompile Include="src\Blueberry\Graphics\GfxDevice.cpp" />

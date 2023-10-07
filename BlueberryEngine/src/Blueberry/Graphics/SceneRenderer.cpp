@@ -13,7 +13,12 @@ namespace Blueberry
 			for (auto component : scene->GetIterator<Camera>())
 			{
 				auto camera = static_cast<Camera*>(component.second);
-				camera->Update();
+				auto transform = camera->GetEntity()->GetTransform();
+				if (transform->IsDirty())
+				{
+					camera->SetPosition(transform->GetLocalPosition());
+					camera->SetRotation(transform->GetLocalRotation());
+				}
 				Draw(scene, camera);
 			}
 		}

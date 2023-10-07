@@ -8,6 +8,7 @@ namespace Blueberry
 	using Vector3 = DirectX::SimpleMath::Vector3;
 	using Vector4 = DirectX::SimpleMath::Vector4;
 	using Quaternion = DirectX::SimpleMath::Quaternion;
+	using Ray = DirectX::SimpleMath::Ray;
 	using Matrix = DirectX::SimpleMath::Matrix;
 	using Color = DirectX::SimpleMath::Color;
 	using Rectangle = DirectX::SimpleMath::Rectangle;

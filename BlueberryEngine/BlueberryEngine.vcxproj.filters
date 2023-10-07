@@ -203,6 +203,7 @@
     <ClInclude Include="src\Blueberry\Graphics\Texture2D.h" />
     <ClInclude Include="src\Blueberry\Graphics\GfxDrawingOperation.h" />
     <ClInclude Include="src\Blueberry\Graphics\StandardMeshes.h" />
+    <ClInclude Include="src\Blueberry\Graphics\BaseCamera.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Blueberry\Content\AssetManager.cpp">
@@ -311,5 +312,6 @@
     <ClCompile Include="src\Blueberry\Graphics\Texture2D.cpp" />
     <ClCompile Include="src\Blueberry\Graphics\GfxDrawingOperation.cpp" />
     <ClCompile Include="src\Blueberry\Graphics\StandardMeshes.cpp" />
+    <ClCompile Include="src\Blueberry\Graphics\BaseCamera.cpp" />
   </ItemGroup>
 </Project>

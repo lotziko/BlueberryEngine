@@ -101,6 +101,7 @@
     <ClInclude Include="src\Editor\Panels\Hierarchy\SceneHierarchy.h" />
     <ClInclude Include="src\Editor\Panels\Inspector\SceneInspector.h" />
     <ClInclude Include="src\Editor\Panels\Scene\SceneArea.h" />
+    <ClInclude Include="src\Editor\Panels\Scene\SceneAreaMovement.h" />
     <ClInclude Include="src\Editor\Panels\Scene\SceneCamera.h" />
     <ClInclude Include="src\Editor\Selection.h" />
   </ItemGroup>
@@ -118,6 +119,7 @@
     <ClCompile Include="src\Editor\Panels\Hierarchy\SceneHierarchy.cpp" />
     <ClCompile Include="src\Editor\Panels\Inspector\SceneInspector.cpp" />
     <ClCompile Include="src\Editor\Panels\Scene\SceneArea.cpp" />
+    <ClCompile Include="src\Editor\Panels\Scene\SceneAreaMovement.cpp" />
     <ClCompile Include="src\Editor\Panels\Scene\SceneCamera.cpp" />
     <ClCompile Include="src\Editor\Selection.cpp" />
     <ClCompile Include="src\EntryPoint.cpp" />
