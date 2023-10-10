@@ -1,5 +1,6 @@
 #pragma once
 #include "Blueberry\Graphics\VertexLayout.h"
+#include "Blueberry\Graphics\Enums.h"
 
 namespace Blueberry
 {
@@ -19,6 +20,9 @@ namespace Blueberry
 		void SetVertexData(float* data, const UINT& vertexCount);
 		void SetIndexData(UINT* data, const UINT& indexCount);
 
+		const Topology& GetTopology();
+		void SetTopology(const Topology& topology);
+
 		static Ref<Mesh> Create(const VertexLayout& layout, const UINT& vertexCount, const UINT& indexCount);
 
 	private:
@@ -27,6 +31,8 @@ namespace Blueberry
 
 		UINT m_VertexCount;
 		UINT m_IndexCount;
+
+		Topology m_Topology = Topology::TriangleList;
 
 		friend struct GfxDrawingOperation;
 	};

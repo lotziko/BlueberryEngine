@@ -204,6 +204,7 @@
     <ClInclude Include="src\Blueberry\Graphics\GfxDrawingOperation.h" />
     <ClInclude Include="src\Blueberry\Graphics\StandardMeshes.h" />
     <ClInclude Include="src\Blueberry\Graphics\BaseCamera.h" />
+    <ClInclude Include="src\Blueberry\Graphics\Enums.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Blueberry\Content\AssetManager.cpp">

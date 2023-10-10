@@ -36,6 +36,16 @@ namespace Blueberry
 		m_IndexBuffer->SetData(data, indexCount);
 	}
 
+	const Topology& Mesh::GetTopology()
+	{
+		return m_Topology;
+	}
+
+	void Mesh::SetTopology(const Topology& topology)
+	{
+		m_Topology = topology;
+	}
+
 	Ref<Mesh> Mesh::Create(const VertexLayout& layout, const UINT& vertexCount, const UINT& indexCount)
 	{
 		return ObjectDB::CreateObject<Mesh>(layout, vertexCount, indexCount);

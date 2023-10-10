@@ -5,6 +5,7 @@
 #include "GfxTextureDX11.h"
 #include "ImGuiRendererDX11.h"
 #include "Blueberry\Graphics\Texture.h"
+#include "Blueberry\Graphics\Enums.h"
 
 namespace Blueberry
 {
@@ -202,6 +203,17 @@ namespace Blueberry
 		}
 	}
 
+	D3D11_PRIMITIVE_TOPOLOGY GetPrimitiveTopology(const Topology& topology)
+	{
+		switch (topology)
+		{
+		case Topology::Unknown:			return D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
+		case Topology::LineList:		return D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
+		case Topology::LineStrip:		return D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP;
+		case Topology::TriangleList:	return D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+		}
+	}
+
 	void GfxDeviceDX11::Draw(const GfxDrawingOperation& operation) const
 	{
 		if (!operation.IsValid())
@@ -215,7 +227,7 @@ namespace Blueberry
 		m_DeviceContext->VSSetShader(dxShader->m_VertexShader.Get(), NULL, 0);
 		m_DeviceContext->PSSetShader(dxShader->m_PixelShader.Get(), NULL, 0);
 
-		m_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_DeviceContext->IASetPrimitiveTopology(GetPrimitiveTopology(operation.topology));
 
 		auto textureVector = operation.textures;
 		for (int i = 0; i < textureVector->size(); i++)

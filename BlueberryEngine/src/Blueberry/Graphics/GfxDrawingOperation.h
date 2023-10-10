@@ -8,10 +8,11 @@ namespace Blueberry
 	class GfxTexture;
 	class GfxVertexBuffer;
 	class GfxIndexBuffer;
+	enum Topology;
 
 	struct GfxDrawingOperation
 	{
-		GfxDrawingOperation(GfxVertexBuffer* vertexBuffer, GfxIndexBuffer* indexBuffer, Material* material, const UINT& indexCount);
+		GfxDrawingOperation(GfxVertexBuffer* vertexBuffer, GfxIndexBuffer* indexBuffer, Material* material, const UINT& indexCount, const Topology& topology);
 		GfxDrawingOperation(Mesh* mesh, Material* material, const UINT& indexCount);
 		GfxDrawingOperation(Mesh* mesh, Material* material);
 
@@ -21,6 +22,7 @@ namespace Blueberry
 		std::vector<std::pair<std::size_t, GfxTexture*>>* textures;
 		GfxVertexBuffer* vertexBuffer;
 		GfxIndexBuffer* indexBuffer;
+		Topology topology;
 		UINT indexCount;
 	};
 }

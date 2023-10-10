@@ -154,7 +154,7 @@ namespace Blueberry
 		m_VertexBuffer->SetData(m_VertexData, m_QuadIndexCount / 6 * 4);
 		
 		g_GraphicsDevice->SetGlobalConstantBuffer(std::hash<std::string>()("PerDrawData"), m_ConstantBuffer.get());
-		g_GraphicsDevice->Draw(GfxDrawingOperation(m_VertexBuffer.get(), m_IndexBuffer.get(), m_Material.get(), m_QuadIndexCount));
+		g_GraphicsDevice->Draw(GfxDrawingOperation(m_VertexBuffer.get(), m_IndexBuffer.get(), m_Material.get(), m_QuadIndexCount, Topology::TriangleList));
 
 		m_QuadIndexCount = 0;
 		m_VertexDataPtr = m_VertexData;

@@ -98,7 +98,7 @@ namespace Blueberry
 	{
 		g_GraphicsDevice->SetRenderTarget(m_SceneRenderTarget.get());
 		g_GraphicsDevice->SetViewport(0, 0, static_cast<int>(width), static_cast<int>(height));
-		g_GraphicsDevice->ClearColor({ 0, 0, 0, 1 });
+		g_GraphicsDevice->ClearColor({ 0.117f, 0.117f, 0.117f, 1 });
 		g_GraphicsDevice->Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), EditorMaterials::GetEditorGridMaterial()));
 
 		if (m_Scene != NULL)
