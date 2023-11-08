@@ -21,7 +21,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
+    <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
@@ -49,7 +49,7 @@
     <TargetExt>.exe</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LinkIncremental>true</LinkIncremental>
+    <LinkIncremental>false</LinkIncremental>
     <OutDir>bin\Release-windows-x86_64\BlueberryEditor\</OutDir>
     <IntDir>bin-int\Release-windows-x86_64\BlueberryEditor\</IntDir>
     <TargetName>BlueberryEditor</TargetName>
@@ -59,32 +59,39 @@
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>src;..\BlueberryEngine\src;..\BlueberryEngine\vendor;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>YAML_CPP_STATIC_DEFINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>src;..\BlueberryEngine\src;..\BlueberryEngine\vendor\imgui;..\BlueberryEngine\vendor\stb;..\BlueberryEngine\vendor\yaml-cpp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>false</MinimalRebuild>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <OptimizeReferences>
-      </OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>src;..\BlueberryEngine\src;..\BlueberryEngine\vendor;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>YAML_CPP_STATIC_DEFINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>src;..\BlueberryEngine\src;..\BlueberryEngine\vendor\imgui;..\BlueberryEngine\vendor\stb;..\BlueberryEngine\vendor\yaml-cpp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <Optimization>Full</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
       <MinimalRebuild>false</MinimalRebuild>
+      <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -94,16 +101,21 @@
     <ClInclude Include="src\Editor\Inspector\Concrete\EntityInspector.h" />
     <ClInclude Include="src\Editor\Inspector\Concrete\SpriteRendererInspector.h" />
     <ClInclude Include="src\Editor\Inspector\Concrete\TransformInspector.h" />
-    <ClInclude Include="src\Editor\Inspector\ObjectInspectorDB.h" />
     <ClInclude Include="src\Editor\Inspector\ObjectInspector.h" />
+    <ClInclude Include="src\Editor\Inspector\ObjectInspectorDB.h" />
     <ClInclude Include="src\Editor\Inspector\RegisterObjectInspectors.h" />
     <ClInclude Include="src\Editor\Misc\ImGuiHelper.h" />
     <ClInclude Include="src\Editor\Panels\Hierarchy\SceneHierarchy.h" />
     <ClInclude Include="src\Editor\Panels\Inspector\SceneInspector.h" />
+    <ClInclude Include="src\Editor\Panels\Project\ProjectBrowser.h" />
     <ClInclude Include="src\Editor\Panels\Scene\SceneArea.h" />
     <ClInclude Include="src\Editor\Panels\Scene\SceneAreaMovement.h" />
     <ClInclude Include="src\Editor\Panels\Scene\SceneCamera.h" />
     <ClInclude Include="src\Editor\Selection.h" />
+    <ClInclude Include="src\Editor\Serialization\AssetDB.h" />
+    <ClInclude Include="src\Editor\Serialization\AssetImporter.h" />
+    <ClInclude Include="src\Editor\Serialization\Concrete\TextureImporter.h" />
+    <ClInclude Include="src\Editor\Serialization\EditorAssetExporter.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Editor\EditorLayer.cpp" />
@@ -118,15 +130,23 @@
     <ClCompile Include="src\Editor\Misc\ImGuiHelper.cpp" />
     <ClCompile Include="src\Editor\Panels\Hierarchy\SceneHierarchy.cpp" />
     <ClCompile Include="src\Editor\Panels\Inspector\SceneInspector.cpp" />
+    <ClCompile Include="src\Editor\Panels\Project\ProjectBrowser.cpp" />
     <ClCompile Include="src\Editor\Panels\Scene\SceneArea.cpp" />
     <ClCompile Include="src\Editor\Panels\Scene\SceneAreaMovement.cpp" />
     <ClCompile Include="src\Editor\Panels\Scene\SceneCamera.cpp" />
     <ClCompile Include="src\Editor\Selection.cpp" />
+    <ClCompile Include="src\Editor\Serialization\AssetDB.cpp" />
+    <ClCompile Include="src\Editor\Serialization\AssetImporter.cpp" />
+    <ClCompile Include="src\Editor\Serialization\Concrete\TextureImporter.cpp" />
+    <ClCompile Include="src\Editor\Serialization\EditorAssetExporter.cpp" />
     <ClCompile Include="src\EntryPoint.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BlueberryEngine\BlueberryEngine.vcxproj">
       <Project>{273BBA0C-93C6-27D1-9CD7-AAC508E283D1}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\BlueberryEngine\vendor\yaml-cpp\yaml-cpp.vcxproj">
+      <Project>{88F1A057-74BE-FB62-9DD7-E90A890331F1}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

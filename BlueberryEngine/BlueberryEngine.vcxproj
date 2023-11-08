@@ -21,7 +21,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
+    <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
@@ -58,10 +58,10 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>bbpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>src;vendor\imgui;vendor\stb;vendor\yaml-cpp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;vendor\imgui;vendor\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>false</MinimalRebuild>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -74,7 +74,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>bbpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>src;vendor\imgui;vendor\stb;vendor\yaml-cpp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;vendor\imgui;vendor\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -94,6 +94,7 @@
     <ClInclude Include="src\Blueberry\Core\ClassDB.h" />
     <ClInclude Include="src\Blueberry\Core\Engine.h" />
     <ClInclude Include="src\Blueberry\Core\GlobalServices.h" />
+    <ClInclude Include="src\Blueberry\Core\Guid.h" />
     <ClInclude Include="src\Blueberry\Core\Layer.h" />
     <ClInclude Include="src\Blueberry\Core\LayerStack.h" />
     <ClInclude Include="src\Blueberry\Core\Object.h" />
@@ -104,11 +105,11 @@
     <ClInclude Include="src\Blueberry\Graphics\BaseCamera.h" />
     <ClInclude Include="src\Blueberry\Graphics\Enums.h" />
     <ClInclude Include="src\Blueberry\Graphics\GfxBuffer.h" />
+    <ClInclude Include="src\Blueberry\Graphics\GfxDevice.h" />
     <ClInclude Include="src\Blueberry\Graphics\GfxDrawingOperation.h" />
     <ClInclude Include="src\Blueberry\Graphics\GfxShader.h" />
     <ClInclude Include="src\Blueberry\Graphics\GfxTexture.h" />
     <ClInclude Include="src\Blueberry\Graphics\GraphicsAPI.h" />
-    <ClInclude Include="src\Blueberry\Graphics\GfxDevice.h" />
     <ClInclude Include="src\Blueberry\Graphics\ImGuiRenderer.h" />
     <ClInclude Include="src\Blueberry\Graphics\Material.h" />
     <ClInclude Include="src\Blueberry\Graphics\Mesh.h" />
@@ -139,9 +140,9 @@
     <ClInclude Include="src\Blueberry\Tools\WindowsHelper.h" />
     <ClInclude Include="src\Concrete\DX11\GfxBufferDX11.h" />
     <ClInclude Include="src\Concrete\DX11\GfxDeviceDX11.h" />
-    <ClInclude Include="src\Concrete\DX11\ImGuiRendererDX11.h" />
     <ClInclude Include="src\Concrete\DX11\GfxShaderDX11.h" />
     <ClInclude Include="src\Concrete\DX11\GfxTextureDX11.h" />
+    <ClInclude Include="src\Concrete\DX11\ImGuiRendererDX11.h" />
     <ClInclude Include="src\Concrete\Windows\WindowsWindow.h" />
     <ClInclude Include="src\bbpch.h" />
     <ClInclude Include="vendor\stb\stb\stb_image.h" />
@@ -153,23 +154,24 @@
     <ClCompile Include="src\Blueberry\Core\ClassDB.cpp" />
     <ClCompile Include="src\Blueberry\Core\Engine.cpp" />
     <ClCompile Include="src\Blueberry\Core\GlobalServices.cpp" />
+    <ClCompile Include="src\Blueberry\Core\Guid.cpp" />
     <ClCompile Include="src\Blueberry\Core\Layer.cpp" />
     <ClCompile Include="src\Blueberry\Core\LayerStack.cpp" />
     <ClCompile Include="src\Blueberry\Core\Object.cpp" />
     <ClCompile Include="src\Blueberry\Core\Window.cpp" />
     <ClCompile Include="src\Blueberry\Graphics\BaseCamera.cpp" />
+    <ClCompile Include="src\Blueberry\Graphics\GfxDevice.cpp" />
     <ClCompile Include="src\Blueberry\Graphics\GfxDrawingOperation.cpp" />
     <ClCompile Include="src\Blueberry\Graphics\GraphicsAPI.cpp" />
-    <ClCompile Include="src\Blueberry\Graphics\GfxDevice.cpp" />
     <ClCompile Include="src\Blueberry\Graphics\Material.cpp" />
     <ClCompile Include="src\Blueberry\Graphics\Mesh.cpp" />
     <ClCompile Include="src\Blueberry\Graphics\RegisterGraphicsTypes.cpp" />
     <ClCompile Include="src\Blueberry\Graphics\Renderer2D.cpp" />
     <ClCompile Include="src\Blueberry\Graphics\SceneRenderer.cpp" />
     <ClCompile Include="src\Blueberry\Graphics\Shader.cpp" />
+    <ClCompile Include="src\Blueberry\Graphics\StandardMeshes.cpp" />
     <ClCompile Include="src\Blueberry\Graphics\Texture.cpp" />
     <ClCompile Include="src\Blueberry\Graphics\Texture2D.cpp" />
-    <ClCompile Include="src\Blueberry\Graphics\StandardMeshes.cpp" />
     <ClCompile Include="src\Blueberry\Graphics\VertexLayout.cpp" />
     <ClCompile Include="src\Blueberry\Math\SimpleMath.cpp" />
     <ClCompile Include="src\Blueberry\Scene\Components\Camera.cpp" />
@@ -184,9 +186,9 @@
     <ClCompile Include="src\Blueberry\Tools\WindowsHelper.cpp" />
     <ClCompile Include="src\Concrete\DX11\GfxBufferDX11.cpp" />
     <ClCompile Include="src\Concrete\DX11\GfxDeviceDX11.cpp" />
-    <ClCompile Include="src\Concrete\DX11\ImGuiRendererDX11.cpp" />
     <ClCompile Include="src\Concrete\DX11\GfxShaderDX11.cpp" />
     <ClCompile Include="src\Concrete\DX11\GfxTextureDX11.cpp" />
+    <ClCompile Include="src\Concrete\DX11\ImGuiRendererDX11.cpp" />
     <ClCompile Include="src\Concrete\Windows\WindowsWindow.cpp" />
     <ClCompile Include="src\bbpch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -194,7 +196,7 @@
     <ClCompile Include="vendor\stb\stb\stb_image.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="vendor\imgui\ImGui.vcxproj">
+    <ProjectReference Include="vendor\imgui\imgui\ImGui.vcxproj">
       <Project>{C0FF640D-2C14-8DBE-F595-301E616989EF}</Project>
     </ProjectReference>
   </ItemGroup>

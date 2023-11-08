@@ -22,12 +22,24 @@
     <Filter Include="Editor\Panels\Inspector">
       <UniqueIdentifier>{A49B847C-10D3-CC13-19DD-30378593F30C}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Editor\Panels\Project">
+      <UniqueIdentifier>{A497063F-1004-C239-D9F7-59974523E4A1}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Editor\Panels\Scene">
       <UniqueIdentifier>{FBF0449D-6752-22AB-F0BF-685D5C20596A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Editor\Serialization">
+      <UniqueIdentifier>{19F8D371-0587-5D3B-AEA5-71369A136EE1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Editor\Serialization\Concrete">
+      <UniqueIdentifier>{3B213E71-A739-259B-70E6-B434DCBDB934}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Editor\EditorLayer.h">
+      <Filter>Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Editor\EditorMaterials.h">
       <Filter>Editor</Filter>
     </ClInclude>
     <ClInclude Include="src\Editor\Inspector\Concrete\CameraInspector.h">
@@ -45,6 +57,12 @@
     <ClInclude Include="src\Editor\Inspector\ObjectInspector.h">
       <Filter>Editor\Inspector</Filter>
     </ClInclude>
+    <ClInclude Include="src\Editor\Inspector\ObjectInspectorDB.h">
+      <Filter>Editor\Inspector</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Editor\Inspector\RegisterObjectInspectors.h">
+      <Filter>Editor\Inspector</Filter>
+    </ClInclude>
     <ClInclude Include="src\Editor\Misc\ImGuiHelper.h">
       <Filter>Editor\Misc</Filter>
     </ClInclude>
@@ -54,7 +72,13 @@
     <ClInclude Include="src\Editor\Panels\Inspector\SceneInspector.h">
       <Filter>Editor\Panels\Inspector</Filter>
     </ClInclude>
+    <ClInclude Include="src\Editor\Panels\Project\ProjectBrowser.h">
+      <Filter>Editor\Panels\Project</Filter>
+    </ClInclude>
     <ClInclude Include="src\Editor\Panels\Scene\SceneArea.h">
+      <Filter>Editor\Panels\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Editor\Panels\Scene\SceneAreaMovement.h">
       <Filter>Editor\Panels\Scene</Filter>
     </ClInclude>
     <ClInclude Include="src\Editor\Panels\Scene\SceneCamera.h">
@@ -63,13 +87,24 @@
     <ClInclude Include="src\Editor\Selection.h">
       <Filter>Editor</Filter>
     </ClInclude>
-    <ClInclude Include="src\Editor\Inspector\ObjectInspectorDB.h" />
-    <ClInclude Include="src\Editor\Inspector\RegisterObjectInspectors.h" />
-    <ClInclude Include="src\Editor\EditorMaterials.h" />
-    <ClInclude Include="src\Editor\Panels\Scene\SceneAreaMovement.h" />
+    <ClInclude Include="src\Editor\Serialization\AssetDB.h">
+      <Filter>Editor\Serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Editor\Serialization\AssetImporter.h">
+      <Filter>Editor\Serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Editor\Serialization\Concrete\TextureImporter.h">
+      <Filter>Editor\Serialization\Concrete</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Editor\Serialization\EditorAssetExporter.h">
+      <Filter>Editor\Serialization</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Editor\EditorLayer.cpp">
+      <Filter>Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Editor\EditorMaterials.cpp">
       <Filter>Editor</Filter>
     </ClCompile>
     <ClCompile Include="src\Editor\Inspector\Concrete\CameraInspector.cpp">
@@ -87,6 +122,12 @@
     <ClCompile Include="src\Editor\Inspector\ObjectInspector.cpp">
       <Filter>Editor\Inspector</Filter>
     </ClCompile>
+    <ClCompile Include="src\Editor\Inspector\ObjectInspectorDB.cpp">
+      <Filter>Editor\Inspector</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Editor\Inspector\RegisterObjectInspectors.cpp">
+      <Filter>Editor\Inspector</Filter>
+    </ClCompile>
     <ClCompile Include="src\Editor\Misc\ImGuiHelper.cpp">
       <Filter>Editor\Misc</Filter>
     </ClCompile>
@@ -96,7 +137,13 @@
     <ClCompile Include="src\Editor\Panels\Inspector\SceneInspector.cpp">
       <Filter>Editor\Panels\Inspector</Filter>
     </ClCompile>
+    <ClCompile Include="src\Editor\Panels\Project\ProjectBrowser.cpp">
+      <Filter>Editor\Panels\Project</Filter>
+    </ClCompile>
     <ClCompile Include="src\Editor\Panels\Scene\SceneArea.cpp">
+      <Filter>Editor\Panels\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Editor\Panels\Scene\SceneAreaMovement.cpp">
       <Filter>Editor\Panels\Scene</Filter>
     </ClCompile>
     <ClCompile Include="src\Editor\Panels\Scene\SceneCamera.cpp">
@@ -105,10 +152,18 @@
     <ClCompile Include="src\Editor\Selection.cpp">
       <Filter>Editor</Filter>
     </ClCompile>
+    <ClCompile Include="src\Editor\Serialization\AssetDB.cpp">
+      <Filter>Editor\Serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Editor\Serialization\AssetImporter.cpp">
+      <Filter>Editor\Serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Editor\Serialization\Concrete\TextureImporter.cpp">
+      <Filter>Editor\Serialization\Concrete</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Editor\Serialization\EditorAssetExporter.cpp">
+      <Filter>Editor\Serialization</Filter>
+    </ClCompile>
     <ClCompile Include="src\EntryPoint.cpp" />
-    <ClCompile Include="src\Editor\Inspector\ObjectInspectorDB.cpp" />
-    <ClCompile Include="src\Editor\Inspector\RegisterObjectInspectors.cpp" />
-    <ClCompile Include="src\Editor\EditorMaterials.cpp" />
-    <ClCompile Include="src\Editor\Panels\Scene\SceneAreaMovement.cpp" />
   </ItemGroup>
 </Project>

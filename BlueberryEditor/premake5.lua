@@ -2,7 +2,7 @@ project "BlueberryEditor"
 	kind "WindowedApp"
 	language "C++"
 	cppdialect "C++17"
-	staticruntime "off"
+	systemversion "latest"
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
@@ -17,17 +17,28 @@ project "BlueberryEditor"
 	{
 		"src",
 		"%{wks.location}/BlueberryEngine/src",
-		"%{wks.location}/BlueberryEngine/vendor",
+		"%{IncludeDir.imgui}",
+		"%{IncludeDir.stb}",
+		"%{IncludeDir.yaml_cpp}"
 	}
 
 	links
 	{
 		"BlueberryEngine",
+		"yaml-cpp"
 	}
-
-filter "system:windows"
-	systemversion "latest"
 
 	defines
 	{
+		"YAML_CPP_STATIC_DEFINE"
 	}
+
+	filter "system:windows"
+
+	filter "configurations:Debug"
+		runtime "Debug"
+		symbols "on"
+
+	filter "configurations:Release"
+		runtime "Release"
+		optimize "on"

@@ -2,7 +2,7 @@ project "BlueberryEngine"
 	kind "StaticLib"
 	language "C++"
 	cppdialect "C++17"
-	staticruntime "off"
+	systemversion "latest"
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
@@ -14,26 +14,31 @@ project "BlueberryEngine"
 	{
 		"src/**.h",
 		"src/**.cpp",
-		"vendor/stb/stb/**.h",
-		"vendor/stb/stb/**.cpp",
+		"vendor/stb/**.h",
+		"vendor/stb/**.cpp"
 	}
 
 	includedirs
 	{
 		"src",
 		"%{IncludeDir.imgui}",
-		"%{IncludeDir.stb}",
-		"%{IncludeDir.yaml_cpp}",
+		"%{IncludeDir.stb}"
 	}
 
 	links
 	{
-		"Imgui",
+		"Imgui"
 	}
 
-filter "system:windows"
-	systemversion "latest"
+	filter "system:windows"
 
-	defines
-	{
-	}
+	filter "system:linux"
+		pic "On"
+
+	filter "configurations:Debug"
+		staticruntime "off"
+		runtime "Debug"
+
+	filter "configurations:Release"
+		staticruntime "off"
+		runtime "Release"
