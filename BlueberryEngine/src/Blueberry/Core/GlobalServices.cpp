@@ -4,7 +4,6 @@
 namespace Blueberry
 {
 	EventDispatcher* g_EventDispatcher = 0;
-	AssetManager* g_AssetManager = 0;
 	GfxDevice* g_GraphicsDevice = 0;
 	Renderer2D* g_Renderer2D = 0;
 }

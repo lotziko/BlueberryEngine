@@ -1,7 +1,7 @@
+#include "bbpch.h"
 #include "EditorLayer.h"
 
 #include "Blueberry\Core\GlobalServices.h"
-#include "Blueberry\Content\AssetManager.h"
 #include "Blueberry\Graphics\SceneRenderer.h"
 #include "Blueberry\Graphics\ImGuiRenderer.h"
 #include "Blueberry\Math\Math.h"
@@ -13,10 +13,16 @@
 #include "imgui\imgui.h"
 #include "imgui\imgui_internal.h"
 
+#include "Editor\Serialization\RegisterAssetImporters.h"
+#include "Editor\Serialization\AssetDB.h"
+
 namespace Blueberry
 {
 	void EditorLayer::OnAttach()
 	{
+		RegisterAssetImporters();
+		AssetDB::ImportAll();
+
 		RegisterObjectInspectors();
 
 		m_Scene = CreateRef<Scene>();
@@ -29,6 +35,8 @@ namespace Blueberry
 		m_SceneInspector = SceneInspector();
 
 		m_SceneArea = SceneArea(m_Scene);
+
+		m_ProjectBrowser = ProjectBrowser();
 
 		if (g_GraphicsDevice->CreateImGuiRenderer(m_ImGuiRenderer))
 		{
@@ -97,6 +105,7 @@ namespace Blueberry
 			m_SceneHierarchy.DrawUI();
 			m_SceneInspector.DrawUI();
 			m_SceneArea.DrawUI();
+			m_ProjectBrowser.DrawUI();
 
 			ImGui::End();
 		}

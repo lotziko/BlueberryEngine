@@ -18,8 +18,6 @@ namespace Blueberry
 
 		g_EventDispatcher = new EventDispatcher();
 
-		g_AssetManager = new AssetManager();
-
 		g_GraphicsDevice = GfxDevice::Create();
 		if (!g_GraphicsDevice->Initialize(properties.Width, properties.Height, m_Window->GetHandle()))
 		{

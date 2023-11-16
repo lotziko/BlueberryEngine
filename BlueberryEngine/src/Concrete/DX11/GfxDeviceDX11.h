@@ -26,8 +26,7 @@ namespace Blueberry
 		virtual bool CreateVertexBuffer(const VertexLayout& layout, const UINT& vertexCount, Ref<GfxVertexBuffer>& buffer) final;
 		virtual bool CreateIndexBuffer(const UINT& indexCount, Ref<GfxIndexBuffer>& buffer) final;
 		virtual bool CreateConstantBuffer(const UINT& byteCount, Ref<GfxConstantBuffer>& buffer) final;
-		virtual bool CreateTexture(const std::string& path, Ref<GfxTexture>& texture) const final;
-		virtual bool CreateRenderTexture(const UINT& width, const UINT& height, Ref<GfxTexture>& renderTexture) const final;
+		virtual bool CreateTexture(const TextureProperties& properties, Ref<GfxTexture>& texture) const final;
 		virtual bool CreateImGuiRenderer(Ref<ImGuiRenderer>& renderer) const final;
 		
 		virtual void SetRenderTarget(GfxTexture* renderTexture) final;

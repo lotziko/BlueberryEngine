@@ -5,6 +5,11 @@ namespace Blueberry
 {
 	std::map<std::size_t, ClassDB::ClassInfo> ClassDB::s_Classes = std::map<std::size_t, ClassDB::ClassInfo>();
 
+	const ClassDB::ClassInfo& ClassDB::GetInfo(const std::size_t& id)
+	{
+		return s_Classes.find(id)->second;
+	}
+
 	std::map<std::size_t, ClassDB::ClassInfo>& ClassDB::GetInfos()
 	{
 		return s_Classes;

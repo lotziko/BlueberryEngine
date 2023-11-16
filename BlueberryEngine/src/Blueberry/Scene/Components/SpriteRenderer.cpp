@@ -12,11 +12,10 @@ namespace Blueberry
 
 	SpriteRenderer::SpriteRenderer()
 	{
-		Ref<Shader> shaderRef;
 		m_Color = Color(1, 1, 1, 1);
-		g_AssetManager->Load<Texture2D>("assets/TestImage", m_Texture);
-		g_AssetManager->Load<Shader>("assets/Sprite", shaderRef);
-		m_Material = Material::Create(shaderRef);
+		auto type = Texture2D::Type;
+		m_Texture = nullptr;
+		m_Material = nullptr;
 	}
 
 	const Color& SpriteRenderer::GetColor()

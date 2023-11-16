@@ -150,25 +150,14 @@ namespace Blueberry
 		return true;
 	}
 
-	bool GfxDeviceDX11::CreateTexture(const std::string& path, Ref<GfxTexture>& texture) const
+	bool GfxDeviceDX11::CreateTexture(const TextureProperties& properties, Ref<GfxTexture>& texture) const
 	{
 		auto dxTexture = CreateRef<GfxTextureDX11>(m_Device.Get(), m_DeviceContext.Get());
-		if (!dxTexture->Load(path))
+		if (!dxTexture->Create(properties))
 		{
 			return false;
 		}
 		texture = dxTexture;
-		return true;
-	}
-
-	bool GfxDeviceDX11::CreateRenderTexture(const UINT& width, const UINT& height, Ref<GfxTexture>& renderTexture) const
-	{
-		auto dxRenderTexture = CreateRef<GfxTextureDX11>(m_Device.Get(), m_DeviceContext.Get());
-		if (!dxRenderTexture->Create(width, height, true))
-		{
-			return false;
-		}
-		renderTexture = dxRenderTexture;
 		return true;
 	}
 

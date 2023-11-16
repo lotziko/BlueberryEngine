@@ -1,4 +1,5 @@
 #pragma once
+#include "Blueberry\Graphics\Structs.h"
 #include "Blueberry\Graphics\Texture.h"
 
 namespace Blueberry
@@ -9,8 +10,8 @@ namespace Blueberry
 
 	public:
 		Texture2D() = default;
-		Texture2D(const std::string& path);
+		Texture2D(const TextureProperties& properties);
 
-		static Ref<Texture2D> Create(const std::string& path);
+		static Ref<Texture2D> Create(const TextureProperties& properties);
 	};
 }

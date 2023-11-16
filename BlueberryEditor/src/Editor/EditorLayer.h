@@ -6,6 +6,7 @@
 #include "Editor\Panels\Hierarchy\SceneHierarchy.h"
 #include "Editor\Panels\Inspector\SceneInspector.h"
 #include "Editor\Panels\Scene\SceneArea.h"
+#include "Editor\Panels\Project\ProjectBrowser.h"
 
 namespace Blueberry
 {
@@ -34,5 +35,6 @@ namespace Blueberry
 		SceneHierarchy m_SceneHierarchy;
 		SceneInspector m_SceneInspector;
 		SceneArea m_SceneArea;
+		ProjectBrowser m_ProjectBrowser;
 	};
 }

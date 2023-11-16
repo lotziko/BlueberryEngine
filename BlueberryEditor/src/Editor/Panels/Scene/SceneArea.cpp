@@ -16,7 +16,12 @@ namespace Blueberry
 {
 	SceneArea::SceneArea(const Ref<Scene>& scene) : m_Scene(scene)
 	{
-		g_GraphicsDevice->CreateRenderTexture(1920, 1080, m_SceneRenderTarget);
+		TextureProperties properties;
+		properties.width = 1920;
+		properties.height = 1080;
+		properties.data = nullptr;
+		properties.isRenderTarget = true;
+		g_GraphicsDevice->CreateTexture(properties, m_SceneRenderTarget);
 	}
 
 	void SceneArea::DrawUI()
@@ -37,7 +42,10 @@ namespace Blueberry
 		float mouseWheelDelta = io->MouseWheel;
 		if (mouseWheelDelta != 0)
 		{
-			SceneAreaMovement::HandleZoom(this, mouseWheelDelta, Vector2(mousePos.x - pos.x, size.y - (mousePos.y - pos.y)));
+			if (mousePos.x >= pos.x && mousePos.y >= pos.y && mousePos.x <= pos.x + size.x && mousePos.y <= pos.y + size.y)
+			{
+				SceneAreaMovement::HandleZoom(this, mouseWheelDelta, Vector2(mousePos.x - pos.x, size.y - (mousePos.y - pos.y)));
+			}
 		}
 
 		// Dragging
@@ -99,7 +107,7 @@ namespace Blueberry
 		g_GraphicsDevice->SetRenderTarget(m_SceneRenderTarget.get());
 		g_GraphicsDevice->SetViewport(0, 0, static_cast<int>(width), static_cast<int>(height));
 		g_GraphicsDevice->ClearColor({ 0.117f, 0.117f, 0.117f, 1 });
-		g_GraphicsDevice->Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), EditorMaterials::GetEditorGridMaterial()));
+		//g_GraphicsDevice->Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), EditorMaterials::GetEditorGridMaterial()));
 
 		if (m_Scene != NULL)
 		{

@@ -15,7 +15,7 @@ namespace Blueberry
 		if (s_EditorGridMaterialTriedToLoad == false)
 		{
 			Ref<Shader> shaderRef;
-			g_AssetManager->Load<Shader>("assets/EditorGrid", shaderRef);
+			//g_AssetManager->Load<Shader>("assets/EditorGrid", shaderRef);
 			s_EditorGridMaterial = Material::Create(shaderRef);
 			s_EditorGridMaterialTriedToLoad = true;
 		}

@@ -2,6 +2,7 @@
 
 #include "GfxDrawingOperation.h"
 #include "VertexLayout.h"
+#include "Structs.h"
 
 namespace Blueberry
 {
@@ -28,8 +29,7 @@ namespace Blueberry
 		virtual bool CreateVertexBuffer(const VertexLayout& layout, const UINT& vertexCount, Ref<GfxVertexBuffer>& buffer) = 0;
 		virtual bool CreateIndexBuffer(const UINT& indexCount, Ref<GfxIndexBuffer>& buffer) = 0;
 		virtual bool CreateConstantBuffer(const UINT& byteSize, Ref<GfxConstantBuffer>& buffer) = 0;
-		virtual bool CreateTexture(const std::string& path, Ref<GfxTexture>& texture) const = 0;
-		virtual bool CreateRenderTexture(const UINT& width, const UINT& height, Ref<GfxTexture>& renderTexture) const = 0;
+		virtual bool CreateTexture(const TextureProperties& properties, Ref<GfxTexture>& texture) const = 0;
 		virtual bool CreateImGuiRenderer(Ref<ImGuiRenderer>& renderer) const = 0;
 		
 		virtual void SetRenderTarget(GfxTexture* renderTexture) = 0;

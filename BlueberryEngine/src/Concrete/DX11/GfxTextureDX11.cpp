@@ -9,43 +9,24 @@ namespace Blueberry
 	{
 	}
 
-	bool GfxTextureDX11::Create(const UINT& width, const UINT& height, bool isRenderTarget)
+	bool GfxTextureDX11::Create(const TextureProperties& properties)
 	{
-		m_Width = width;
-		m_Height = height;
-		return Initialize(nullptr, isRenderTarget);
-	}
+		m_Width = properties.width;
+		m_Height = properties.height;
 
-	bool GfxTextureDX11::Load(const std::string& path)
-	{
-		stbi_uc* data = nullptr;
-		int width, height, channels;
-
-		stbi_set_flip_vertically_on_load(1);
-		data = stbi_load(path.c_str(), &width, &height, &channels, 4);
-
-		if (!data)
+		if (properties.data != nullptr)
 		{
-			std::string errorMsg = "Failed to load texture: " + std::string(path.begin(), path.end());
-			BB_ERROR(errorMsg);
-			return false;
+			D3D11_SUBRESOURCE_DATA subresourceData;
+
+			subresourceData.pSysMem = properties.data;
+			subresourceData.SysMemPitch = properties.width * 4;
+
+			return Initialize(&subresourceData, properties.isRenderTarget);
 		}
-
-		m_Width = width;
-		m_Height = height;
-
-		D3D11_SUBRESOURCE_DATA* subresourceData;
-		subresourceData = new D3D11_SUBRESOURCE_DATA();
-
-		subresourceData->pSysMem = data;
-		subresourceData->SysMemPitch = width * 4;
-
-		bool result = Initialize(subresourceData, false);
-
-		stbi_image_free(data);
-		delete subresourceData;
-
-		return result;
+		else
+		{
+			return Initialize(nullptr, properties.isRenderTarget);
+		}
 	}
 
 	UINT GfxTextureDX11::GetWidth() const
@@ -61,6 +42,10 @@ namespace Blueberry
 	void* GfxTextureDX11::GetHandle()
 	{
 		return m_ResourceView.Get();
+	}
+
+	void GfxTextureDX11::SetData(void* data)
+	{
 	}
 
 	void GfxTextureDX11::Clear(const Color& color)

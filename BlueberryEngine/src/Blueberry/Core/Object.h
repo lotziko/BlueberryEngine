@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include "Blueberry\Core\Guid.h"
 
 namespace Blueberry
 {
@@ -51,9 +52,11 @@ std::size_t childclass::GetType() const																\
 		virtual std::size_t GetType() const;
 		virtual std::string ToString() const;
 		ObjectId GetObjectId() const;
+		Guid GetGuid() const;
 
 	protected:
 		ObjectId m_ObjectId;
+		Guid m_Guid;
 
 		friend class ObjectDB;
 	};
@@ -63,6 +66,8 @@ std::size_t childclass::GetType() const																\
 	public:
 		template<class ObjectType, typename... Args>
 		static Ref<ObjectType> CreateObject(Args&&... params);
+		template<class ObjectType, typename... Args>
+		static Ref<ObjectType> CreateGuidObject(const Guid& guid, Args&&... params);
 		static void DestroyObject(Ref<Object>& object);
 		static void DestroyObject(Object* object);
 
@@ -83,6 +88,14 @@ std::size_t childclass::GetType() const																\
 		object->m_ObjectId = id;
 		s_Objects.insert({ id, object });
 
+		return object;
+	}
+
+	template<class ObjectType, typename... Args>
+	inline Ref<ObjectType> ObjectDB::CreateGuidObject(const Guid& guid, Args&&... params)
+	{
+		Ref<ObjectType> object = CreateObject<ObjectType>(std::forward<Args>(params)...);
+		object->m_Guid = guid;
 		return object;
 	}
 }

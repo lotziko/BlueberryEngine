@@ -29,6 +29,11 @@ namespace Blueberry
 		return m_ObjectId;
 	}
 
+	Guid Object::GetGuid() const
+	{
+		return m_Guid;
+	}
+
 	void ObjectDB::DestroyObject(Ref<Object>& object)
 	{
 		s_Objects.erase(object->GetObjectId());

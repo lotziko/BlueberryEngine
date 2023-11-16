@@ -15,6 +15,7 @@ namespace Blueberry
 			std::function<Ref<Object>()> createInstance;
 		};
 
+		static const ClassInfo& GetInfo(const std::size_t&);
 		static std::map<std::size_t, ClassInfo>& GetInfos();
 		static bool IsParent(const std::size_t& id, const std::size_t& parentId);
 

@@ -1,4 +1,5 @@
 #pragma once
+#include "Blueberry\Graphics\Structs.h"
 #include "Blueberry\Graphics\GfxTexture.h"
 
 namespace Blueberry
@@ -9,12 +10,13 @@ namespace Blueberry
 		GfxTextureDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
 		virtual ~GfxTextureDX11() final = default;
 		
-		bool Create(const UINT& width, const UINT& height, bool isRenderTarget);
-		bool Load(const std::string& path);
+		bool Create(const TextureProperties& properties);
 
 		virtual UINT GetWidth() const override;
 		virtual UINT GetHeight() const override;
 		virtual void* GetHandle() override;
+
+		virtual void SetData(void* data) override;
 
 		void Clear(const Color& color);
 

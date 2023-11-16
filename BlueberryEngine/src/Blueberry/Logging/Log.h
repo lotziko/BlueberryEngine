@@ -1,11 +1,12 @@
 #pragma once
 
 #include "Logger.h"
+#include <iostream>
 
 namespace Blueberry
 {
-#define BB_INITIALIZE_LOG() 
-#define BB_INFO(...) 
-#define BB_ERROR(...) 
-#define BB_WARNING(...) 
+#define BB_INITIALIZE_LOG() freopen("CONOUT$", "w", stdout);
+#define BB_INFO(...) std::cout << __VA_ARGS__ << std::endl;
+#define BB_ERROR(...) std::cout << __VA_ARGS__ << std::endl;
+#define BB_WARNING(...) std::cout << __VA_ARGS__ << std::endl;
 }
