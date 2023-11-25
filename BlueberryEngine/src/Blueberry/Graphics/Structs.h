@@ -7,6 +7,7 @@ namespace Blueberry
 		UINT width;
 		UINT height;
 		void* data;
+		size_t dataSize;
 		bool isRenderTarget;
 	};
 }

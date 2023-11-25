@@ -15,14 +15,17 @@ project "BlueberryEngine"
 		"src/**.h",
 		"src/**.cpp",
 		"vendor/stb/**.h",
-		"vendor/stb/**.cpp"
+		"vendor/stb/**.cpp",
+		"vendor/rapidyaml/**.h",
+		"vendor/rapidyaml/**.cpp"
 	}
 
 	includedirs
 	{
 		"src",
 		"%{IncludeDir.imgui}",
-		"%{IncludeDir.stb}"
+		"%{IncludeDir.stb}",
+		"%{IncludeDir.rapidyaml}"
 	}
 
 	links

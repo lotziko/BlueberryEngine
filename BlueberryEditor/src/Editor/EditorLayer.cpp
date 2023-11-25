@@ -16,6 +16,8 @@
 #include "Editor\Serialization\RegisterAssetImporters.h"
 #include "Editor\Serialization\AssetDB.h"
 
+#include <fstream>
+
 namespace Blueberry
 {
 	void EditorLayer::OnAttach()
@@ -30,6 +32,12 @@ namespace Blueberry
 
 		auto test = m_Scene->CreateEntity("Test");
 		test->AddComponent<SpriteRenderer>();
+
+		ryml::Tree tree;
+		ryml::NodeRef root = tree.rootref();
+		root |= ryml::MAP;
+		m_Scene->Serialize(root);
+		YamlHelper::Save(tree, "Test.yaml");
 
 		m_SceneHierarchy = SceneHierarchy(m_Scene);
 		m_SceneInspector = SceneInspector();

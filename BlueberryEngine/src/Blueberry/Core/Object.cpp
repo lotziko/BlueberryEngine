@@ -9,6 +9,14 @@ namespace Blueberry
 	std::map<ObjectId, Ref<Object>> ObjectDB::s_Objects = std::map<ObjectId, Ref<Object>>();
 	ObjectId ObjectDB::s_Id = 0;
 
+	void Object::Serialize(ryml::NodeRef& node)
+	{
+	}
+
+	void Object::Deserialize(ryml::NodeRef& node)
+	{
+	}
+
 	bool Object::IsClassType(const std::size_t classType) const
 	{
 		return classType == Type;

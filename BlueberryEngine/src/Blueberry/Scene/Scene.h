@@ -14,6 +14,8 @@ namespace Blueberry
 		Scene();
 		~Scene();
 
+		void Serialize(ryml::NodeRef& node);
+
 		bool Initialize();
 
 		template<class ComponentType>

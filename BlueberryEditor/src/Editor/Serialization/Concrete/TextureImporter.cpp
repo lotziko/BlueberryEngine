@@ -10,34 +10,45 @@ namespace Blueberry
 {
 	OBJECT_DEFINITION(AssetImporter, TextureImporter)
 
-	void TextureImporter::SerializeMeta(YAML::Emitter& out)
+	void TextureImporter::Serialize(ryml::NodeRef& node)
 	{
-		out << YAML::Key << "Test" << YAML::Value << "Test";
 	}
 
-	void TextureImporter::DeserializeMeta(YAML::Node& in)
+	void TextureImporter::Deserialize(ryml::NodeRef& node)
 	{
 	}
 
 	void TextureImporter::ImportData()
 	{
-		std::string path = GetFilePath();
+		Guid guid = GetGuid();
+		// TODO check if dirty too
+		if (AssetDB::HasAssetWithGuidInData(guid))
+		{
+			AssetDB::LoadAssetObject<Texture2D>(guid);
+		}
+		else
+		{
+			std::string path = GetFilePath();
 
-		stbi_uc* data = nullptr;
-		int width, height, channels;
+			stbi_uc* data = nullptr;
+			int width, height, channels;
 
-		stbi_set_flip_vertically_on_load(1);
-		data = stbi_load(path.c_str(), &width, &height, &channels, 4);
+			stbi_set_flip_vertically_on_load(1);
+			data = stbi_load(path.c_str(), &width, &height, &channels, 4);
 
-		TextureProperties properties;
+			TextureProperties properties;
 
-		properties.width = width;
-		properties.height = height;
-		properties.data = data;
-		properties.isRenderTarget = false;
+			properties.width = width;
+			properties.height = height;
+			properties.data = data;
+			properties.dataSize = width * height * 4;
+			properties.isRenderTarget = false;
 
-		AssetDB::CreateAssetObject<Texture2D>(GetGuid(), properties);
+			Ref<Texture2D> object = AssetDB::CreateAssetObject<Texture2D>(guid, properties);
+			AssetDB::SaveAssetObject(object);
 
-		stbi_image_free(data);
+			//i'm not sure if asset should stay at memory
+			//stbi_image_free(data);
+		}
 	}
 }

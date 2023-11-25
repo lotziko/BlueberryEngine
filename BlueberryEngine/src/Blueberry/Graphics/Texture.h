@@ -30,6 +30,8 @@ namespace Blueberry
 
 	protected:
 		Ref<GfxTexture> m_Texture;
+		BYTE* m_RawData;
+		size_t m_RawDataSize;
 
 		friend class Material;
 	};

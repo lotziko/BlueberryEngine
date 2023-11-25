@@ -12,6 +12,9 @@ namespace Blueberry
 		Transform();
 		~Transform();
 
+		virtual void Serialize(ryml::NodeRef& node) override final;
+		virtual void Deserialize(ryml::NodeRef& node) override final;
+
 		const Matrix& GetLocalToWorldMatrix();
 		const Vector3& GetLocalPosition() const;
 		const Quaternion& GetLocalRotation() const;

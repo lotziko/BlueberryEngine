@@ -15,6 +15,19 @@ namespace Blueberry
 		}
 	}
 
+	void Scene::Serialize(ryml::NodeRef& node)
+	{
+		ryml::NodeRef entitiesNode = node["Entities"];
+		entitiesNode |= ryml::MAP;
+		for (auto entity : m_Entities)
+		{
+			ryml::NodeRef entityNode = entitiesNode.append_child() << ryml::key("Entity");
+			entityNode.set_key_anchor("Test");
+			entityNode |= ryml::MAP;
+			entity->Serialize(entityNode);
+		}
+	}
+
 	bool Scene::Initialize()
 	{
 		return true;

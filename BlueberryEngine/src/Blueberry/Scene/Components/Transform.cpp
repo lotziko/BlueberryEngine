@@ -24,6 +24,22 @@ namespace Blueberry
 		}
 	}
 
+	void Transform::Serialize(ryml::NodeRef& node)
+	{
+		node["m_Position"] << m_LocalPosition |= ryml::_WIP_VAL_PLAIN;
+		node["m_Rotation"] << m_LocalRotation |= ryml::_WIP_VAL_PLAIN;
+		node["m_Scale"] << m_LocalScale |= ryml::_WIP_VAL_PLAIN;
+		// TODO child references
+	}
+
+	void Transform::Deserialize(ryml::NodeRef& node)
+	{
+		node["m_Position"] >> m_LocalPosition;
+		node["m_Rotation"] >> m_LocalRotation;
+		node["m_Scale"] >> m_LocalScale;
+		// TODO parent/child references
+	}
+
 	const Matrix& Transform::GetLocalToWorldMatrix()
 	{
 		if (m_IsDirty)

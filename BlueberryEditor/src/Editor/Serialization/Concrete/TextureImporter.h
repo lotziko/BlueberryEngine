@@ -11,8 +11,8 @@ namespace Blueberry
 		TextureImporter() = default;
 
 	protected:
-		virtual void SerializeMeta(YAML::Emitter& out) override;
-		virtual void DeserializeMeta(YAML::Node& in) override;
+		virtual void Serialize(ryml::NodeRef& node) override final;
+		virtual void Deserialize(ryml::NodeRef& node) override final;
 		virtual void ImportData() override;
 	};
 }

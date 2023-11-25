@@ -1,7 +1,6 @@
 #pragma once
 #include "Blueberry\Core\Object.h"
 #include "Blueberry\Core\Guid.h"
-#include "yaml-cpp\yaml.h"
 
 namespace Blueberry
 {
@@ -22,8 +21,6 @@ namespace Blueberry
 		static Ref<AssetImporter> Load(const std::string& path, const std::string& metaPath);
 		
 	protected:
-		virtual void SerializeMeta(YAML::Emitter& out) = 0;
-		virtual void DeserializeMeta(YAML::Node& in) = 0;
 		virtual void ImportData() = 0;
 
 	private:

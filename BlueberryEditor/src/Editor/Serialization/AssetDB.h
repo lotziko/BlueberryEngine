@@ -1,7 +1,9 @@
 #pragma once
 #include <filesystem>
 
+#include "Editor\Path.h"
 #include "Blueberry\Core\Guid.h"
+#include "Blueberry\Serialization\YamlHelper.h"
 
 namespace Blueberry
 {
@@ -26,6 +28,12 @@ namespace Blueberry
 		template<class ObjectType, typename... Args>
 		static Ref<ObjectType> CreateAssetObject(const Guid& guid, Args&&... params);
 
+		template<class ObjectType>
+		static Ref<ObjectType> LoadAssetObject(const Guid& guid);
+
+		static bool HasAssetWithGuidInData(const Guid& guid);
+		static void SaveAssetObject(Ref<Object> object);
+
 	private:
 		static void Import(const std::filesystem::path& path);
 
@@ -45,6 +53,18 @@ namespace Blueberry
 		static_assert(std::is_base_of<Object, ObjectType>::value, "Type is not derived from Object.");
 		Ref<ObjectType> object = ObjectDB::CreateGuidObject<ObjectType>(guid, std::forward<Args>(params)...);
 		s_ImportedObjects.insert_or_assign(guid, std::dynamic_pointer_cast<Object>(object));
+		return object;
+	}
+
+	template<class ObjectType>
+	inline Ref<ObjectType> AssetDB::LoadAssetObject(const Guid& guid)
+	{
+		auto dataPath = Path::GetDataPath();
+		dataPath.append(guid.ToString().append(".yaml"));
+		ryml::Tree tree;
+		YamlHelper::Load(tree, dataPath.string());
+		Ref<ObjectType> object = ObjectDB::CreateGuidObject<ObjectType>(guid);
+		object->Deserialize(tree.rootref());
 		return object;
 	}
 

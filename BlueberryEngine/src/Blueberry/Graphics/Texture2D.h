@@ -12,6 +12,9 @@ namespace Blueberry
 		Texture2D() = default;
 		Texture2D(const TextureProperties& properties);
 
+		virtual void Serialize(ryml::NodeRef& node) override final;
+		virtual void Deserialize(ryml::NodeRef& node) override final;
+
 		static Ref<Texture2D> Create(const TextureProperties& properties);
 	};
 }

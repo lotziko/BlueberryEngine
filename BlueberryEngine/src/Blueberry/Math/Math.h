@@ -37,4 +37,14 @@ namespace Blueberry
 	{
 		return Vector3(degrees.x * RadToDegree, degrees.y * RadToDegree, degrees.z * RadToDegree);
 	}
+
+	inline float Max(float a, float b)
+	{
+		return a > b ? a : b;
+	}
+
+	inline float Min(float a, float b)
+	{
+		return a < b ? a : b;
+	}
 }

@@ -25,6 +25,9 @@ namespace Blueberry
 	}
 }
 
+#undef min
+#undef max
+
 #define MAX_COMPONENTS 128
 #define INVALID_ID -1
 #define TO_STRING( x ) #x

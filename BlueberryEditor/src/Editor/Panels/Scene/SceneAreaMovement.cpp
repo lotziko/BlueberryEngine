@@ -74,7 +74,7 @@ namespace Blueberry
 	Vector2 GetDynamicClipPlanes(float size)
 	{
 		const float k_MaxCameraFarClip = 1.844674E+19f;
-		float farClip = min(max(2000.0f * size, 1000.0f), k_MaxCameraFarClip);
+		float farClip = Min(Max(2000.0f * size, 1000.0f), k_MaxCameraFarClip);
 		return Vector2(farClip * 0.000005f, farClip);
 	}
 
@@ -90,7 +90,7 @@ namespace Blueberry
 		float previousFar = camera->GetFarClipPlane();
 		float size = area->m_Size;
 
-		area->m_Size = min(size, k_MaxCameraSizeForWorldToScreen);
+		area->m_Size = Min(size, k_MaxCameraSizeForWorldToScreen);
 		float scale = size / area->m_Size;
 		Vector2 clip = GetDynamicClipPlanes(area->m_Size);
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include "Blueberry\Serialization\YamlSerializers.h"
 #include "Blueberry\Core\Guid.h"
 
 namespace Blueberry
@@ -48,6 +49,9 @@ std::size_t childclass::GetType() const																\
 		static const std::size_t ParentType;
 
 	public:
+		virtual void Serialize(ryml::NodeRef& node);
+		virtual void Deserialize(ryml::NodeRef& node);
+
 		virtual bool IsClassType(const std::size_t classType) const;
 		virtual std::size_t GetType() const;
 		virtual std::string ToString() const;

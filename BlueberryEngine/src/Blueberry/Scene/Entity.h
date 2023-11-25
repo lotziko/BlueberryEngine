@@ -18,6 +18,8 @@ namespace Blueberry
 		{
 		}
 
+		virtual void Serialize(ryml::NodeRef& node) override final;
+
 		template<class ComponentType, typename... Args>
 		void AddComponent(Args&&... params);
 

@@ -1,11 +1,10 @@
 #include "bbpch.h"
 #include "AssetDB.h"
 
-#include "Editor\Path.h"
 #include "Editor\Serialization\AssetImporter.h"
+#include "rapidyaml\ryml.h"
 
 #include <fstream>
-#include "yaml-cpp\yaml.h"
 
 namespace Blueberry
 {
@@ -25,6 +24,31 @@ namespace Blueberry
 	void AssetDB::Import(const std::string& path)
 	{
 		Import(std::filesystem::path(path));
+	}
+
+	bool AssetDB::HasAssetWithGuidInData(const Guid& guid)
+	{
+		auto dataPath = Path::GetDataPath();
+		dataPath.append(guid.ToString().append(".yaml"));
+		return std::filesystem::exists(dataPath);
+	}
+
+	void AssetDB::SaveAssetObject(Ref<Object> object)
+	{
+		auto dataPath = Path::GetDataPath();
+
+		if (!std::filesystem::exists(dataPath))
+		{
+			std::filesystem::create_directories(dataPath);
+		}
+
+		dataPath.append(object->GetGuid().ToString().append(".yaml"));
+
+		ryml::Tree tree;
+		ryml::NodeRef root = tree.rootref();
+		root |= ryml::MAP;
+		object->Serialize(root);
+		YamlHelper::Save(tree, dataPath.string());
 	}
 
 	void AssetDB::Import(const std::filesystem::path& path)

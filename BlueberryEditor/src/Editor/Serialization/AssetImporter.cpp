@@ -1,9 +1,9 @@
 #include "bbpch.h"
 
-#include <fstream>
 #include "AssetImporter.h"
 #include "Blueberry\Core\ClassDB.h"
-#include "Editor\Serialization\YamlSerializers.h"
+#include "Blueberry\Serialization\YamlHelper.h"
+#include "Blueberry\Serialization\YamlSerializers.h"
 
 namespace Blueberry
 {
@@ -26,15 +26,19 @@ namespace Blueberry
 
 	void AssetImporter::Save()
 	{
-		YAML::Emitter out;
-		out << YAML::BeginMap;
-		out << YAML::Key << "Guid" << YAML::Value << m_Guid;
-		out << YAML::Key << m_Type << YAML::BeginMap;
-		SerializeMeta(out);
-		out << YAML::EndMap;
-		out << YAML::EndMap;
-		std::ofstream fout(m_MetaPath);
-		fout << out.c_str();
+		ryml::Tree tree;
+		std::string str;
+		
+		ryml::NodeRef root = tree.rootref();
+		root |= ryml::MAP;
+
+		auto importerType = m_Type.c_str();
+		root["Guid"] << m_Guid;
+		ryml::NodeRef dataNode = root.append_child() << ryml::key(importerType);
+		dataNode |= ryml::MAP;
+		Serialize(dataNode);
+
+		YamlHelper::Save(tree, m_MetaPath);
 	}
 
 	Ref<AssetImporter> AssetImporter::Create(const size_t& type, const std::string& path, const std::string& metaPath)
@@ -52,17 +56,15 @@ namespace Blueberry
 
 	Ref<AssetImporter> AssetImporter::Load(const std::string& path, const std::string& metaPath)
 	{
-		YAML::Node node = YAML::LoadFile(metaPath);
-		Guid guid = node["Guid"].as<Guid>();
-		std::string type;
-		for (auto& pair : node)
-		{
-			std::string key = pair.first.as<std::string>();
-			if (key != "Guid")
-			{
-				type = key;
-			}
-		}
+		ryml::Tree tree;
+		YamlHelper::Load(tree, metaPath);
+
+		ryml::NodeRef root = tree.rootref();
+
+		Guid guid;
+		root[0] >> guid;
+		auto importerKey = root[1].key();
+		std::string type(importerKey.str, importerKey.len);
 
 		auto info = ClassDB::GetInfo(std::hash<std::string>()(type));
 		Ref<AssetImporter> importer = std::dynamic_pointer_cast<AssetImporter>(info.createInstance());
@@ -70,7 +72,7 @@ namespace Blueberry
 		importer->m_Type = type;
 		importer->m_Path = path;
 		importer->m_MetaPath = metaPath;
-		importer->DeserializeMeta(node[type]);
+		importer->Deserialize(root[1]);
 		importer->ImportData();
 		return importer;
 	}

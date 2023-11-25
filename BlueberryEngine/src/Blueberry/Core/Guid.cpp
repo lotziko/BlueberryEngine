@@ -1,6 +1,8 @@
 #include "bbpch.h"
 #include "Guid.h"
 
+#include "Blueberry\Tools\ByteConverter.h"
+#include <iomanip>
 #include <random>
 
 namespace Blueberry
@@ -22,9 +24,10 @@ namespace Blueberry
 
 	std::string Guid::ToString() const
 	{
-		std::stringstream stream;
-		stream << std::hex << data[0] << data[1];
-		return stream.str();
+		char dst[33];
+		dst[32] = '\0';
+		ByteConverter::BytesToHexString(data, dst, 16);
+		return std::string(dst, 32);
 	}
 
 	Guid Guid::Create()

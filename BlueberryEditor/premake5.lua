@@ -19,18 +19,12 @@ project "BlueberryEditor"
 		"%{wks.location}/BlueberryEngine/src",
 		"%{IncludeDir.imgui}",
 		"%{IncludeDir.stb}",
-		"%{IncludeDir.yaml_cpp}"
+		"%{IncludeDir.rapidyaml}"
 	}
 
 	links
 	{
-		"BlueberryEngine",
-		"yaml-cpp"
-	}
-
-	defines
-	{
-		"YAML_CPP_STATIC_DEFINE"
+		"BlueberryEngine"
 	}
 
 	filter "system:windows"
