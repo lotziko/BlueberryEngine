@@ -14,7 +14,7 @@ namespace Blueberry
 		Scene();
 		~Scene();
 
-		void Serialize(ryml::NodeRef& node);
+		void Serialize(SerializationContext& context, ryml::NodeRef& node);
 
 		bool Initialize();
 

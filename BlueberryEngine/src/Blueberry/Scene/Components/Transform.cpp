@@ -24,7 +24,7 @@ namespace Blueberry
 		}
 	}
 
-	void Transform::Serialize(ryml::NodeRef& node)
+	void Transform::Serialize(SerializationContext& context, ryml::NodeRef& node)
 	{
 		node["m_Position"] << m_LocalPosition |= ryml::_WIP_VAL_PLAIN;
 		node["m_Rotation"] << m_LocalRotation |= ryml::_WIP_VAL_PLAIN;
@@ -32,7 +32,7 @@ namespace Blueberry
 		// TODO child references
 	}
 
-	void Transform::Deserialize(ryml::NodeRef& node)
+	void Transform::Deserialize(SerializationContext& context, ryml::NodeRef& node)
 	{
 		node["m_Position"] >> m_LocalPosition;
 		node["m_Rotation"] >> m_LocalRotation;

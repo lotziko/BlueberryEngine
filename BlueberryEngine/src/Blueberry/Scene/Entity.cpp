@@ -7,7 +7,7 @@ namespace Blueberry
 {
 	OBJECT_DEFINITION(Object, Entity)
 
-	void Entity::Serialize(ryml::NodeRef& node)
+	void Entity::Serialize(SerializationContext& context, ryml::NodeRef& node)
 	{
 		ryml::NodeRef componentsNode = node["Components"];
 		componentsNode |= ryml::MAP;
@@ -15,8 +15,13 @@ namespace Blueberry
 		{
 			ryml::NodeRef componentNode = componentsNode.append_child() << ryml::key(componentSlot->ToString());
 			componentNode |= ryml::MAP;
-			componentSlot->Serialize(componentNode);
+			componentSlot->Serialize(context, componentNode);
 		}
+	}
+
+	void Entity::Deserialize(SerializationContext& context, ryml::NodeRef& node)
+	{
+
 	}
 
 	std::vector<Ref<Component>> Entity::GetComponents()

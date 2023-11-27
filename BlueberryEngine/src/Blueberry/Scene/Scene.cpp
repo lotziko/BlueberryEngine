@@ -15,22 +15,26 @@ namespace Blueberry
 		}
 	}
 
-	void Scene::Serialize(ryml::NodeRef& node)
+	void Scene::Serialize(SerializationContext& context, ryml::NodeRef& node)
 	{
 		ryml::NodeRef entitiesNode = node["Entities"];
 		entitiesNode |= ryml::MAP;
 		for (auto entity : m_Entities)
 		{
+			FileId id = ++context.maxId;
 			ryml::NodeRef entityNode = entitiesNode.append_child() << ryml::key("Entity");
-			entityNode.set_key_anchor("Test");
 			entityNode |= ryml::MAP;
-			entity->Serialize(entityNode);
+			auto str = std::to_string(id);
+			auto sub = ryml::to_csubstr(str.c_str());
+			entityNode.set_val_anchor("1");
+			context.objectsFileIds.insert({ entity->GetObjectId(), id });
+			entity->Serialize(context, entityNode);
 		}
 	}
 
 	bool Scene::Initialize()
 	{
-		return true;
+		return true; auto t = &Scene::CreateEntity;
 	}
 
 	Ref<Entity> Scene::CreateEntity(const std::string& name = "Entity")

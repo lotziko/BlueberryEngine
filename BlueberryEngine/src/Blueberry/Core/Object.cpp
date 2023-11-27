@@ -7,13 +7,14 @@ namespace Blueberry
 	const std::size_t Object::ParentType = 0;
 
 	std::map<ObjectId, Ref<Object>> ObjectDB::s_Objects = std::map<ObjectId, Ref<Object>>();
-	ObjectId ObjectDB::s_Id = 0;
+	std::map<ObjectId, Guid> ObjectDB::s_ObjectIdToGuid = std::map<ObjectId, Guid>();
+	ObjectId ObjectDB::s_MaxId = 0;
 
-	void Object::Serialize(ryml::NodeRef& node)
+	void Object::Serialize(SerializationContext& context, ryml::NodeRef& node)
 	{
 	}
 
-	void Object::Deserialize(ryml::NodeRef& node)
+	void Object::Deserialize(SerializationContext& context, ryml::NodeRef& node)
 	{
 	}
 
@@ -37,18 +38,22 @@ namespace Blueberry
 		return m_ObjectId;
 	}
 
-	Guid Object::GetGuid() const
+	Guid& Object::GetGuid() const
 	{
-		return m_Guid;
+		return ObjectDB::s_ObjectIdToGuid.find(m_ObjectId)->second;
 	}
 
 	void ObjectDB::DestroyObject(Ref<Object>& object)
 	{
-		s_Objects.erase(object->GetObjectId());
+		ObjectId id = object->GetObjectId();
+		s_Objects.erase(id);
+		s_ObjectIdToGuid.erase(id);
 	}
 
 	void ObjectDB::DestroyObject(Object* object)
 	{
-		s_Objects.erase(object->GetObjectId());
+		ObjectId id = object->GetObjectId();
+		s_Objects.erase(id);
+		s_ObjectIdToGuid.erase(id);
 	}
 }

@@ -2,6 +2,7 @@
 
 #include <string>
 #include "Blueberry\Serialization\YamlSerializers.h"
+#include "Blueberry\Serialization\SerializationContext.h"
 #include "Blueberry\Core\Guid.h"
 
 namespace Blueberry
@@ -49,18 +50,17 @@ std::size_t childclass::GetType() const																\
 		static const std::size_t ParentType;
 
 	public:
-		virtual void Serialize(ryml::NodeRef& node);
-		virtual void Deserialize(ryml::NodeRef& node);
+		virtual void Serialize(SerializationContext& context, ryml::NodeRef& node);
+		virtual void Deserialize(SerializationContext& context, ryml::NodeRef& node);
 
 		virtual bool IsClassType(const std::size_t classType) const;
 		virtual std::size_t GetType() const;
 		virtual std::string ToString() const;
 		ObjectId GetObjectId() const;
-		Guid GetGuid() const;
+		Guid& GetGuid() const;
 
 	protected:
 		ObjectId m_ObjectId;
-		Guid m_Guid;
 
 		friend class ObjectDB;
 	};
@@ -77,7 +77,8 @@ std::size_t childclass::GetType() const																\
 
 	private:
 		static std::map<ObjectId, Ref<Object>> s_Objects;
-		static ObjectId s_Id;
+		static std::map<ObjectId, Guid> s_ObjectIdToGuid;
+		static ObjectId s_MaxId;
 
 		friend class Object;
 	};
@@ -87,7 +88,7 @@ std::size_t childclass::GetType() const																\
 	{
 		static_assert(std::is_base_of<Object, ObjectType>::value, "Type is not derived from Object.");
 
-		ObjectId id = ++s_Id;
+		ObjectId id = ++s_MaxId;
 		auto& object = CreateRef<ObjectType>(std::forward<Args>(params)...);
 		object->m_ObjectId = id;
 		s_Objects.insert({ id, object });
@@ -98,8 +99,14 @@ std::size_t childclass::GetType() const																\
 	template<class ObjectType, typename... Args>
 	inline Ref<ObjectType> ObjectDB::CreateGuidObject(const Guid& guid, Args&&... params)
 	{
+		static_assert(std::is_base_of<Object, ObjectType>::value, "Type is not derived from Object.");
+
+		ObjectId id = ++s_MaxId;
 		Ref<ObjectType> object = CreateObject<ObjectType>(std::forward<Args>(params)...);
-		object->m_Guid = guid;
+		object->m_ObjectId = id;
+		s_Objects.insert({ id, object });
+		s_ObjectIdToGuid.insert({ id, guid });
+
 		return object;
 	}
 }

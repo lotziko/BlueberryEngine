@@ -44,7 +44,7 @@ namespace Blueberry
 		static std::map<std::string, long long> s_PathModifyCache;
 		static std::map<std::string, std::size_t> s_ImporterTypes;
 		static std::map<Guid, Ref<AssetImporter>> s_Importers;
-		static std::map<Guid, Ref<Object>> s_ImportedObjects;
+		//static std::map<Guid, Ref<Object>> s_ImportedObjects;
 	};
 
 	template<class ObjectType, typename... Args>
@@ -52,7 +52,7 @@ namespace Blueberry
 	{
 		static_assert(std::is_base_of<Object, ObjectType>::value, "Type is not derived from Object.");
 		Ref<ObjectType> object = ObjectDB::CreateGuidObject<ObjectType>(guid, std::forward<Args>(params)...);
-		s_ImportedObjects.insert_or_assign(guid, std::dynamic_pointer_cast<Object>(object));
+		//s_ImportedObjects.insert_or_assign(guid, std::dynamic_pointer_cast<Object>(object));
 		return object;
 	}
 
@@ -63,8 +63,10 @@ namespace Blueberry
 		dataPath.append(guid.ToString().append(".yaml"));
 		ryml::Tree tree;
 		YamlHelper::Load(tree, dataPath.string());
+		SerializationContext context;
+		context.tree = tree;
 		Ref<ObjectType> object = ObjectDB::CreateGuidObject<ObjectType>(guid);
-		object->Deserialize(tree.rootref());
+		object->Deserialize(context, tree.rootref());
 		return object;
 	}
 

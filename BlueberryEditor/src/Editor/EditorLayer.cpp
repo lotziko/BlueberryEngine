@@ -34,9 +34,11 @@ namespace Blueberry
 		test->AddComponent<SpriteRenderer>();
 
 		ryml::Tree tree;
+		SerializationContext context;
+		context.tree = tree;
 		ryml::NodeRef root = tree.rootref();
 		root |= ryml::MAP;
-		m_Scene->Serialize(root);
+		m_Scene->Serialize(context, root);
 		YamlHelper::Save(tree, "Test.yaml");
 
 		m_SceneHierarchy = SceneHierarchy(m_Scene);

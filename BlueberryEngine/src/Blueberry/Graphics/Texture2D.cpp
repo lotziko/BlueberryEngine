@@ -16,7 +16,7 @@ namespace Blueberry
 		m_RawDataSize = properties.dataSize;
 	}
 
-	void Texture2D::Serialize(ryml::NodeRef& node)
+	void Texture2D::Serialize(SerializationContext& context, ryml::NodeRef& node)
 	{
 		size_t length = m_RawDataSize * 2;
 		char* dst = new char[length];
@@ -30,7 +30,7 @@ namespace Blueberry
 		delete[] dst;
 	}
 
-	void Texture2D::Deserialize(ryml::NodeRef& node)
+	void Texture2D::Deserialize(SerializationContext& context, ryml::NodeRef& node)
 	{
 		UINT width, height;
 		std::string dataString;

@@ -1,4 +1,5 @@
 #include "bbpch.h"
+#include "YamlSerializers.h"
 
 namespace DirectX::SimpleMath
 {

@@ -11,7 +11,7 @@ namespace Blueberry
 	std::map<std::string, long long> AssetDB::s_PathModifyCache = std::map<std::string, long long>();
 	std::map<std::string, std::size_t> AssetDB::s_ImporterTypes = std::map<std::string, std::size_t>();
 	std::map<Guid, Ref<AssetImporter>> AssetDB::s_Importers = std::map<Guid, Ref<AssetImporter>>();
-	std::map<Guid, Ref<Object>> AssetDB::s_ImportedObjects = std::map<Guid, Ref<Object>>();
+	//std::map<Guid, Ref<Object>> AssetDB::s_ImportedObjects = std::map<Guid, Ref<Object>>();
 
 	void AssetDB::ImportAll()
 	{
@@ -45,9 +45,13 @@ namespace Blueberry
 		dataPath.append(object->GetGuid().ToString().append(".yaml"));
 
 		ryml::Tree tree;
+
+		SerializationContext context;
+		context.tree = tree;
+
 		ryml::NodeRef root = tree.rootref();
 		root |= ryml::MAP;
-		object->Serialize(root);
+		object->Serialize(context, root);
 		YamlHelper::Save(tree, dataPath.string());
 	}
 

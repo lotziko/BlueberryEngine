@@ -28,6 +28,9 @@ namespace Blueberry
 	{
 		ryml::Tree tree;
 		std::string str;
+
+		SerializationContext context;
+		context.tree = tree;
 		
 		ryml::NodeRef root = tree.rootref();
 		root |= ryml::MAP;
@@ -36,7 +39,7 @@ namespace Blueberry
 		root["Guid"] << m_Guid;
 		ryml::NodeRef dataNode = root.append_child() << ryml::key(importerType);
 		dataNode |= ryml::MAP;
-		Serialize(dataNode);
+		Serialize(context, dataNode);
 
 		YamlHelper::Save(tree, m_MetaPath);
 	}
@@ -59,6 +62,9 @@ namespace Blueberry
 		ryml::Tree tree;
 		YamlHelper::Load(tree, metaPath);
 
+		SerializationContext context;
+		context.tree = tree;
+
 		ryml::NodeRef root = tree.rootref();
 
 		Guid guid;
@@ -72,7 +78,7 @@ namespace Blueberry
 		importer->m_Type = type;
 		importer->m_Path = path;
 		importer->m_MetaPath = metaPath;
-		importer->Deserialize(root[1]);
+		importer->Deserialize(context, root[1]);
 		importer->ImportData();
 		return importer;
 	}
