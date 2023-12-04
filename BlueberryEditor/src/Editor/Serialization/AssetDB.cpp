@@ -2,6 +2,7 @@
 #include "AssetDB.h"
 
 #include "Editor\Serialization\AssetImporter.h"
+#include "Blueberry\Serialization\Serializer.h"
 #include "rapidyaml\ryml.h"
 
 #include <fstream>
@@ -45,13 +46,10 @@ namespace Blueberry
 		dataPath.append(object->GetGuid().ToString().append(".yaml"));
 
 		ryml::Tree tree;
-
-		SerializationContext context;
-		context.tree = tree;
-
 		ryml::NodeRef root = tree.rootref();
 		root |= ryml::MAP;
-		object->Serialize(context, root);
+		Serializer serializer(root);
+		serializer.Serialize(object);
 		YamlHelper::Save(tree, dataPath.string());
 	}
 

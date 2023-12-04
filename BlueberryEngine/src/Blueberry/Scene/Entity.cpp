@@ -1,28 +1,13 @@
 #include "bbpch.h"
 #include "Entity.h"
 
+#include "Blueberry\Core\ClassDB.h"
+#include "Blueberry\Serialization\YamlHelper.h"
 #include "Blueberry\Scene\Scene.h"
 
 namespace Blueberry
 {
 	OBJECT_DEFINITION(Object, Entity)
-
-	void Entity::Serialize(SerializationContext& context, ryml::NodeRef& node)
-	{
-		ryml::NodeRef componentsNode = node["Components"];
-		componentsNode |= ryml::MAP;
-		for (auto&& componentSlot : m_Components)
-		{
-			ryml::NodeRef componentNode = componentsNode.append_child() << ryml::key(componentSlot->ToString());
-			componentNode |= ryml::MAP;
-			componentSlot->Serialize(context, componentNode);
-		}
-	}
-
-	void Entity::Deserialize(SerializationContext& context, ryml::NodeRef& node)
-	{
-
-	}
 
 	std::vector<Ref<Component>> Entity::GetComponents()
 	{
@@ -36,7 +21,7 @@ namespace Blueberry
 
 	std::string Entity::ToString() const
 	{
-		return m_Name;
+		return "Entity";
 	}
 
 	Transform* Entity::GetTransform()
@@ -49,6 +34,13 @@ namespace Blueberry
 		return m_Scene;
 	}
 
+	void Entity::BindProperties()
+	{
+		BEGIN_OBJECT_BINDING(Entity)
+		BIND_FIELD("m_Name", &Entity::m_Name, BindingType::String)
+		END_OBJECT_BINDING()
+	}
+
 	void Entity::AddComponentIntoScene(Component* component)
 	{
 		std::size_t type = component->GetType();
@@ -59,5 +51,14 @@ namespace Blueberry
 	{
 		std::size_t type = component->GetType();
 		m_Scene->m_ComponentManager.RemoveComponent(this, component);
+	}
+
+	void Entity::Destroy()
+	{
+		for (auto && componentSlot : m_Components)
+		{
+			RemoveComponentFromScene(componentSlot.get());
+			ObjectDB::DestroyObject(std::dynamic_pointer_cast<Object>(componentSlot));
+		}
 	}
 }

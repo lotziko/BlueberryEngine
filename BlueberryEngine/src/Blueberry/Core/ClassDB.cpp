@@ -31,12 +31,4 @@ namespace Blueberry
 
 		return false;
 	}
-
-	void ClassDB::Register(const std::size_t& id, const std::size_t& parentId, const std::string& name, const std::function<Ref<Object>()>&& createFunction)
-	{
-		if (s_Classes.count(id) == 0)
-		{
-			s_Classes.insert({ id, { name, parentId, createFunction } });
-		}
-	}
 }

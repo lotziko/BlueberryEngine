@@ -3,7 +3,7 @@
 #include "AssetImporter.h"
 #include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Serialization\YamlHelper.h"
-#include "Blueberry\Serialization\YamlSerializers.h"
+#include "Blueberry\Serialization\Serializer.h"
 
 namespace Blueberry
 {
@@ -27,21 +27,17 @@ namespace Blueberry
 	void AssetImporter::Save()
 	{
 		ryml::Tree tree;
-		std::string str;
-
-		SerializationContext context;
-		context.tree = tree;
-		
 		ryml::NodeRef root = tree.rootref();
 		root |= ryml::MAP;
+		Serializer serializer(root);
 
-		auto importerType = m_Type.c_str();
+		/*auto importerType = m_Type.c_str();
 		root["Guid"] << m_Guid;
 		ryml::NodeRef dataNode = root.append_child() << ryml::key(importerType);
 		dataNode |= ryml::MAP;
 		Serialize(context, dataNode);
 
-		YamlHelper::Save(tree, m_MetaPath);
+		YamlHelper::Save(tree, m_MetaPath);*/
 	}
 
 	Ref<AssetImporter> AssetImporter::Create(const size_t& type, const std::string& path, const std::string& metaPath)
@@ -62,9 +58,6 @@ namespace Blueberry
 		ryml::Tree tree;
 		YamlHelper::Load(tree, metaPath);
 
-		SerializationContext context;
-		context.tree = tree;
-
 		ryml::NodeRef root = tree.rootref();
 
 		Guid guid;
@@ -78,8 +71,12 @@ namespace Blueberry
 		importer->m_Type = type;
 		importer->m_Path = path;
 		importer->m_MetaPath = metaPath;
-		importer->Deserialize(context, root[1]);
+		//importer->Deserialize(root[1]);
 		importer->ImportData();
 		return importer;
+	}
+
+	void AssetImporter::BindProperties()
+	{
 	}
 }

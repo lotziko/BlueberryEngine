@@ -2,7 +2,6 @@
 
 namespace Blueberry
 {
-	class Scene;
 	class Entity;
 
 	class SceneInspector

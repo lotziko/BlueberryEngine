@@ -63,11 +63,11 @@ namespace Blueberry
 		dataPath.append(guid.ToString().append(".yaml"));
 		ryml::Tree tree;
 		YamlHelper::Load(tree, dataPath.string());
-		SerializationContext context;
-		context.tree = tree;
-		Ref<ObjectType> object = ObjectDB::CreateGuidObject<ObjectType>(guid);
-		object->Deserialize(context, tree.rootref());
-		return object;
+		return nullptr;
+		//SerializationContext context(tree);
+		//Ref<ObjectType> object = ObjectDB::CreateGuidObject<ObjectType>(guid);
+		//object->Deserialize(context, tree.rootref());
+		//return object;
 	}
 
 	#define REGISTER_ASSET_IMPORTER( fileExtension, importerType ) AssetDB::Register(fileExtension, importerType);

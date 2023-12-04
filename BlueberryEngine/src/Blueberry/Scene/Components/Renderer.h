@@ -7,5 +7,8 @@ namespace Blueberry
 	class Renderer : public Component
 	{
 		OBJECT_DECLARATION(Renderer)
+
+	public:
+		static void BindProperties();
 	};
 }

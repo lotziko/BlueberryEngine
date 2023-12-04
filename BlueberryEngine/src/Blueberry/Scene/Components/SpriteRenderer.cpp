@@ -52,4 +52,8 @@ namespace Blueberry
 	{
 		return "SpriteRenderer";
 	}
+
+	void SpriteRenderer::BindProperties()
+	{
+	}
 }

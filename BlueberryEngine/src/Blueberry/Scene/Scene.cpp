@@ -1,40 +1,54 @@
 #include "bbpch.h"
 #include "Scene.h"
 
+#include "Blueberry\Serialization\Serializer.h"
+
+#include "Blueberry\Core\ClassDB.h"
+
 namespace Blueberry
 {
 	Scene::Scene()
 	{
 	}
 
-	Scene::~Scene()
+	void Scene::Serialize(Serializer& serializer)
+	{
+		for (auto entity : m_Entities)
+		{
+			serializer.Serialize(entity);
+			for (auto component : entity->GetComponents())
+			{
+				serializer.Serialize(component);
+			}
+		}
+	}
+
+	void Scene::Deserialize(ryml::NodeRef& root)
+	{
+		//ryml::NodeRef entitiesNode = node["m_Entities"];
+		//for (auto entityNode : entitiesNode)
+		//{
+		//	auto k = entityNode.key();// TODO store all objects as one list and deserialize them after creating
+		//	bool b = entityNode.has_key_anchor();// Use tree root in node argument and remove tree from context
+		//	auto anchor = entityNode.key_anchor();
+		//	FileId fileId = std::stoull(std::string(anchor.data(), anchor.len));
+		//	Ref<Entity> entity = CreateEntity("Entity");
+		//	context.AddObject(fileId, entity->GetObjectId());
+		//	entity->Deserialize(context, entityNode);
+		//}
+	}
+
+	bool Scene::Initialize()
+	{
+		return true;
+	}
+
+	void Scene::Destroy()
 	{
 		for (auto entity : m_Entities)
 		{
 			DestroyEntity(entity);
 		}
-	}
-
-	void Scene::Serialize(SerializationContext& context, ryml::NodeRef& node)
-	{
-		ryml::NodeRef entitiesNode = node["Entities"];
-		entitiesNode |= ryml::MAP;
-		for (auto entity : m_Entities)
-		{
-			FileId id = ++context.maxId;
-			ryml::NodeRef entityNode = entitiesNode.append_child() << ryml::key("Entity");
-			entityNode |= ryml::MAP;
-			auto str = std::to_string(id);
-			auto sub = ryml::to_csubstr(str.c_str());
-			entityNode.set_val_anchor("1");
-			context.objectsFileIds.insert({ entity->GetObjectId(), id });
-			entity->Serialize(context, entityNode);
-		}
-	}
-
-	bool Scene::Initialize()
-	{
-		return true; auto t = &Scene::CreateEntity;
 	}
 
 	Ref<Entity> Scene::CreateEntity(const std::string& name = "Entity")

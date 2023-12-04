@@ -6,15 +6,20 @@
 #include "Blueberry\Graphics\SceneRenderer.h"
 #include "Blueberry\Graphics\GfxTexture.h"
 
+#include "Editor\EditorSceneManager.h"
+
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Editor\EditorMaterials.h"
 #include "SceneAreaMovement.h"
+
+#include "Blueberry\Serialization\YamlHelper.h"
+#include "Blueberry\Scene\Scene.h"
 
 #include "imgui\imgui.h"
 
 namespace Blueberry
 {
-	SceneArea::SceneArea(const Ref<Scene>& scene) : m_Scene(scene)
+	SceneArea::SceneArea()
 	{
 		TextureProperties properties;
 		properties.width = 1920;
@@ -27,6 +32,7 @@ namespace Blueberry
 	void SceneArea::DrawUI()
 	{
 		ImGui::Begin("Scene");
+		DrawSceneSave();
 		
 		ImGuiIO *io = &ImGui::GetIO();
 		ImVec2 mousePos = ImGui::GetMousePos();
@@ -102,6 +108,24 @@ namespace Blueberry
 		return result;
 	}
 
+	void SceneArea::DrawSceneSave()
+	{
+		if (ImGui::Button("Create"))
+		{
+			EditorSceneManager::CreateEmpty("");
+		}
+
+		if (ImGui::Button("Save"))
+		{
+			EditorSceneManager::Save();
+		}
+
+		if (ImGui::Button("Load"))
+		{
+			EditorSceneManager::Load("");
+		}
+	}
+
 	void SceneArea::DrawScene(const float width, const float height)
 	{
 		g_GraphicsDevice->SetRenderTarget(m_SceneRenderTarget.get());
@@ -109,9 +133,10 @@ namespace Blueberry
 		g_GraphicsDevice->ClearColor({ 0.117f, 0.117f, 0.117f, 1 });
 		//g_GraphicsDevice->Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), EditorMaterials::GetEditorGridMaterial()));
 
-		if (m_Scene != NULL)
+		Ref<Scene> scene = EditorSceneManager::GetScene();
+		if (scene != nullptr)
 		{
-			SceneRenderer::Draw(m_Scene, m_Camera.GetViewMatrix(), m_Camera.GetProjectionMatrix());
+			SceneRenderer::Draw(scene, m_Camera.GetViewMatrix(), m_Camera.GetProjectionMatrix());
 		}
 		g_GraphicsDevice->SetRenderTarget(nullptr);
 	}

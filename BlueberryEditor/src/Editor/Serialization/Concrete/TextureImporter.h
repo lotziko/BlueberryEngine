@@ -10,9 +10,9 @@ namespace Blueberry
 	public:
 		TextureImporter() = default;
 
+		static void BindProperties();
+
 	protected:
-		virtual void Serialize(SerializationContext& context, ryml::NodeRef& node) override final;
-		virtual void Deserialize(SerializationContext& context, ryml::NodeRef& node) override final;
 		virtual void ImportData() override;
 	};
 }

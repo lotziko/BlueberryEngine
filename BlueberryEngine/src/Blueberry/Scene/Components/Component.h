@@ -14,6 +14,8 @@ namespace Blueberry
 
 		Entity* GetEntity();
 
+		static void BindProperties();
+
 	private:
 		Entity* m_Entity;
 

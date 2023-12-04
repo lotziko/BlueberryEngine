@@ -4,4 +4,8 @@
 namespace Blueberry
 {
 	OBJECT_DEFINITION(Component, Renderer)
+
+	void Renderer::BindProperties()
+	{
+	}
 }

@@ -1,6 +1,8 @@
 #include "bbpch.h"
 #include "Transform.h"
 
+#include "Blueberry\Core\ClassDB.h"
+
 namespace Blueberry
 {
 	OBJECT_DEFINITION(Component, Transform)
@@ -24,44 +26,28 @@ namespace Blueberry
 		}
 	}
 
-	void Transform::Serialize(SerializationContext& context, ryml::NodeRef& node)
-	{
-		node["m_Position"] << m_LocalPosition |= ryml::_WIP_VAL_PLAIN;
-		node["m_Rotation"] << m_LocalRotation |= ryml::_WIP_VAL_PLAIN;
-		node["m_Scale"] << m_LocalScale |= ryml::_WIP_VAL_PLAIN;
-		// TODO child references
-	}
-
-	void Transform::Deserialize(SerializationContext& context, ryml::NodeRef& node)
-	{
-		node["m_Position"] >> m_LocalPosition;
-		node["m_Rotation"] >> m_LocalRotation;
-		node["m_Scale"] >> m_LocalScale;
-		// TODO parent/child references
-	}
-
 	const Matrix& Transform::GetLocalToWorldMatrix()
 	{
 		if (m_IsDirty)
 		{
-			//RecalculateWorldMatrix();
+			RecalculateWorldMatrix(true);
 			m_IsDirty = false;
 		}
 
 		return m_LocalToWorldMatrix;
 	}
 
-	const Vector3& Transform::GetLocalPosition() const
+	const Vector3& Transform::GetLocalPosition()
 	{
 		return m_LocalPosition;
 	}
 
-	const Quaternion& Transform::GetLocalRotation() const
+	const Quaternion& Transform::GetLocalRotation()
 	{
 		return m_LocalRotation;
 	}
 
-	const Vector3& Transform::GetLocalScale() const
+	const Vector3& Transform::GetLocalScale()
 	{
 		return m_LocalScale;
 	}
@@ -132,6 +118,16 @@ namespace Blueberry
 	std::string Transform::ToString() const
 	{
 		return "Transform";
+	}
+
+	void Transform::BindProperties()
+	{
+		BEGIN_OBJECT_BINDING(Transform)
+		BIND_FIELD("m_LocalPosition", &Transform::m_LocalPosition, BindingType::Vector3)
+		BIND_FIELD("m_LocalRotation", &Transform::m_LocalRotation, BindingType::Quaternion)
+		BIND_FIELD("m_LocalScale", &Transform::m_LocalScale, BindingType::Vector3)
+		BIND_FIELD("m_Parent", &Transform::m_Parent, BindingType::Object)
+		END_OBJECT_BINDING()
 	}
 
 	void Transform::RecalculateWorldMatrix(bool dirty)

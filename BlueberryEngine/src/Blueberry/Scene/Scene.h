@@ -7,19 +7,22 @@
 namespace Blueberry
 {
 	class Camera;
+	class Serializer;
 
 	class Scene
 	{
 	public:
 		Scene();
-		~Scene();
 
-		void Serialize(SerializationContext& context, ryml::NodeRef& node);
+		void Serialize(Serializer& serializer);
+		void Deserialize(ryml::NodeRef& root);
 
 		bool Initialize();
 
 		template<class ComponentType>
 		ComponentIterator GetIterator();
+
+		void Destroy();
 
 		Ref<Entity> CreateEntity(const std::string& name);
 		void DestroyEntity(Entity* entity);

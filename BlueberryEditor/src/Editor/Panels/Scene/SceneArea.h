@@ -5,15 +5,13 @@
 
 namespace Blueberry
 {
-	class Scene;
 	class GfxTexture;
 	class Camera;
 
 	class SceneArea
 	{
 	public:
-		SceneArea() = default;
-		SceneArea(const Ref<Scene>& scene);
+		SceneArea();
 		
 		void DrawUI();
 
@@ -23,10 +21,10 @@ namespace Blueberry
 		Vector3 GetCameraPosition();
 		float GetCameraOrthographicSize();
 
+		void DrawSceneSave();
 		void DrawScene(const float width, const float height);
 
 	private:
-		Ref<Scene> m_Scene;
 		Ref<GfxTexture> m_SceneRenderTarget;
 		SceneCamera m_Camera;
 

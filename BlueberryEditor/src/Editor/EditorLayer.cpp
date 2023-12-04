@@ -5,7 +5,6 @@
 #include "Blueberry\Graphics\SceneRenderer.h"
 #include "Blueberry\Graphics\ImGuiRenderer.h"
 #include "Blueberry\Math\Math.h"
-#include "Blueberry\Scene\Scene.h"
 
 #include "Editor\Misc\ImGuiHelper.h"
 #include "Editor\Inspector\RegisterObjectInspectors.h"
@@ -27,24 +26,10 @@ namespace Blueberry
 
 		RegisterObjectInspectors();
 
-		m_Scene = CreateRef<Scene>();
-		m_Scene->Initialize();
-
-		auto test = m_Scene->CreateEntity("Test");
-		test->AddComponent<SpriteRenderer>();
-
-		ryml::Tree tree;
-		SerializationContext context;
-		context.tree = tree;
-		ryml::NodeRef root = tree.rootref();
-		root |= ryml::MAP;
-		m_Scene->Serialize(context, root);
-		YamlHelper::Save(tree, "Test.yaml");
-
-		m_SceneHierarchy = SceneHierarchy(m_Scene);
+		m_SceneHierarchy = SceneHierarchy();
 		m_SceneInspector = SceneInspector();
 
-		m_SceneArea = SceneArea(m_Scene);
+		m_SceneArea = SceneArea();
 
 		m_ProjectBrowser = ProjectBrowser();
 

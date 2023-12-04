@@ -33,6 +33,10 @@ namespace Blueberry
 		SetTexture(std::hash<std::string>()(name), texture);
 	}
 
+	void Material::BindProperties()
+	{
+	}
+
 	void Material::FillGfxTextures()
 	{
 		m_GfxTextures.clear();

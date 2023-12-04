@@ -6,4 +6,8 @@
 namespace Blueberry
 {
 	OBJECT_DEFINITION(Object, Texture)
+		
+	void Texture::BindProperties()
+	{
+	}
 }

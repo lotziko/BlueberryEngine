@@ -10,11 +10,7 @@ namespace Blueberry
 {
 	OBJECT_DEFINITION(AssetImporter, TextureImporter)
 
-	void TextureImporter::Serialize(SerializationContext& context, ryml::NodeRef& node)
-	{
-	}
-
-	void TextureImporter::Deserialize(SerializationContext& context, ryml::NodeRef& node)
+	void TextureImporter::BindProperties()
 	{
 	}
 

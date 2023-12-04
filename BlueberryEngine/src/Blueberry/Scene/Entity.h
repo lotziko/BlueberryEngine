@@ -14,12 +14,10 @@ namespace Blueberry
 	public:
 		Entity() = default;
 
-		Entity(const std::string& name) : m_Name(name)
+		Entity(const std::string& name)
 		{
+			SetName(name);
 		}
-
-		virtual void Serialize(SerializationContext& context, ryml::NodeRef& node) override final;
-		virtual void Deserialize(SerializationContext& context, ryml::NodeRef& node) override final;
 
 		template<class ComponentType, typename... Args>
 		void AddComponent(Args&&... params);
@@ -45,6 +43,8 @@ namespace Blueberry
 		Transform* GetTransform();
 		Scene* GetScene();
 
+		static void BindProperties();
+
 	private:
 		void AddComponentIntoScene(Component* component);
 		void RemoveComponentFromScene(Component* component);
@@ -55,7 +55,6 @@ namespace Blueberry
 		std::vector<Ref<Component>> m_Components;
 
 		std::size_t m_Id;
-		std::string m_Name;
 
 		Transform* m_Transform;
 		Scene* m_Scene;
@@ -146,13 +145,5 @@ namespace Blueberry
 		auto& index = std::find(m_Components.begin(), m_Components.end(), component);
 		m_Components.erase(index);
 		ObjectDB::DestroyObject(component.get());
-	}
-
-	inline void Entity::Destroy()
-	{
-		for (auto && componentSlot : m_Components)
-		{
-			RemoveComponentFromScene(componentSlot.get());
-		}
 	}
 }

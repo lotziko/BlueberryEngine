@@ -1,6 +1,8 @@
 #include "bbpch.h"
 #include "Object.h"
 
+#include "Blueberry\Core\ClassDB.h"
+
 namespace Blueberry
 {
 	const std::size_t Object::Type = std::hash<std::string>()(TO_STRING(Object));
@@ -9,15 +11,7 @@ namespace Blueberry
 	std::map<ObjectId, Ref<Object>> ObjectDB::s_Objects = std::map<ObjectId, Ref<Object>>();
 	std::map<ObjectId, Guid> ObjectDB::s_ObjectIdToGuid = std::map<ObjectId, Guid>();
 	ObjectId ObjectDB::s_MaxId = 0;
-
-	void Object::Serialize(SerializationContext& context, ryml::NodeRef& node)
-	{
-	}
-
-	void Object::Deserialize(SerializationContext& context, ryml::NodeRef& node)
-	{
-	}
-
+	
 	bool Object::IsClassType(const std::size_t classType) const
 	{
 		return classType == Type;
@@ -41,6 +35,23 @@ namespace Blueberry
 	Guid& Object::GetGuid() const
 	{
 		return ObjectDB::s_ObjectIdToGuid.find(m_ObjectId)->second;
+	}
+
+	const std::string& Object::GetName()
+	{
+		return m_Name;
+	}
+
+	void Object::SetName(const std::string& name)
+	{
+		m_Name = name;
+	}
+
+	void Object::BindProperties()
+	{
+		BEGIN_OBJECT_BINDING(Object)
+		BIND_FIELD("m_Name", &Object::m_Name, BindingType::String)
+		END_OBJECT_BINDING()
 	}
 
 	void ObjectDB::DestroyObject(Ref<Object>& object)

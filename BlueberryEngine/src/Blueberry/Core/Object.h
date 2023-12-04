@@ -2,7 +2,6 @@
 
 #include <string>
 #include "Blueberry\Serialization\YamlSerializers.h"
-#include "Blueberry\Serialization\SerializationContext.h"
 #include "Blueberry\Core\Guid.h"
 
 namespace Blueberry
@@ -50,17 +49,20 @@ std::size_t childclass::GetType() const																\
 		static const std::size_t ParentType;
 
 	public:
-		virtual void Serialize(SerializationContext& context, ryml::NodeRef& node);
-		virtual void Deserialize(SerializationContext& context, ryml::NodeRef& node);
-
 		virtual bool IsClassType(const std::size_t classType) const;
 		virtual std::size_t GetType() const;
 		virtual std::string ToString() const;
 		ObjectId GetObjectId() const;
 		Guid& GetGuid() const;
 
+		const std::string& GetName();
+		void SetName(const std::string& name);
+
+		static void BindProperties();
+
 	protected:
 		ObjectId m_ObjectId;
+		std::string m_Name;
 
 		friend class ObjectDB;
 	};

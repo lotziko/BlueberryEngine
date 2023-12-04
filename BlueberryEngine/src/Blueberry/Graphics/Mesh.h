@@ -25,6 +25,8 @@ namespace Blueberry
 
 		static Ref<Mesh> Create(const VertexLayout& layout, const UINT& vertexCount, const UINT& indexCount);
 
+		static void BindProperties();
+
 	private:
 		Ref<GfxVertexBuffer> m_VertexBuffer;
 		Ref<GfxIndexBuffer> m_IndexBuffer;

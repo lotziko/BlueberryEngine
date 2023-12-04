@@ -16,4 +16,8 @@ namespace Blueberry
 	{
 		return ObjectDB::CreateObject<Shader>(shaderPath);
 	}
+
+	void Shader::BindProperties()
+	{
+	}
 }

@@ -11,14 +11,11 @@ namespace Blueberry
 	public:
 		Transform();
 		~Transform();
-
-		virtual void Serialize(SerializationContext& context, ryml::NodeRef& node) override final;
-		virtual void Deserialize(SerializationContext& context, ryml::NodeRef& node) override final;
-
+		
 		const Matrix& GetLocalToWorldMatrix();
-		const Vector3& GetLocalPosition() const;
-		const Quaternion& GetLocalRotation() const;
-		const Vector3& GetLocalScale() const;
+		const Vector3& GetLocalPosition();
+		const Quaternion& GetLocalRotation();
+		const Vector3& GetLocalScale();
 		const Vector3 GetLocalEulerRotation() const;
 
 		Transform* GetParent();
@@ -38,6 +35,8 @@ namespace Blueberry
 		const bool& IsDirty() const;
 
 		virtual std::string ToString() const final;
+
+		static void BindProperties();
 
 	private:
 		void RecalculateWorldMatrix(bool dirty);

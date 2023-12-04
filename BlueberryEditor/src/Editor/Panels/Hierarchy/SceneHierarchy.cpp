@@ -7,38 +7,40 @@
 #include "Blueberry\Scene\Scene.h"
 
 #include "Editor\Selection.h"
+#include "Editor\EditorSceneManager.h"
 
 #include "imgui\imgui.h"
 
 namespace Blueberry
 {
-	SceneHierarchy::SceneHierarchy(const Ref<Scene>& scene) : m_Scene(scene)
-	{
-	}
-
 	void SceneHierarchy::DrawUI()
 	{
 		ImGui::Begin("Hierarchy");
 
-		std::vector<Ref<Entity>> entities = std::vector<Ref<Entity>>(m_Scene->GetEntities());
+		Ref<Scene> scene = EditorSceneManager::GetScene();
 
-		for (auto entity : entities)
+		if (scene != nullptr)
 		{
-			if (entity != nullptr && entity->GetTransform()->GetParent() == nullptr)
+			std::vector<Ref<Entity>> entities = std::vector<Ref<Entity>>(scene->GetEntities());
+
+			for (auto entity : entities)
 			{
-				DrawEntity(entity.get());
+				if (entity != nullptr && entity->GetTransform()->GetParent() == nullptr)
+				{
+					DrawEntity(entity.get());
+				}
 			}
-		}
 
-		if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
-		{
-			Selection::SetActiveObject(nullptr);
-		}
+			if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
+			{
+				Selection::SetActiveObject(nullptr);
+			}
 
-		if (ImGui::BeginPopupContextWindow(0, 1, false))
-		{
-			DrawCreateEntity();
-			ImGui::EndPopup();
+			if (ImGui::BeginPopupContextWindow(0, 1, false))
+			{
+				DrawCreateEntity();
+				ImGui::EndPopup();
+			}
 		}
 
 		ImGui::End();
@@ -54,7 +56,7 @@ namespace Blueberry
 		ImGuiTreeNodeFlags flags = ((Selection::GetActiveObject() == entity) ? ImGuiTreeNodeFlags_Selected : 0) | (entity->GetTransform()->GetChildrenCount() > 0 ? ImGuiTreeNodeFlags_OpenOnArrow : ImGuiTreeNodeFlags_Leaf);
 		flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
 
-		bool opened = ImGui::TreeNodeEx((void*)entity, flags, entity->ToString().c_str());
+		bool opened = ImGui::TreeNodeEx((void*)entity, flags, entity->GetName().c_str());
 		if (ImGui::IsItemClicked())
 		{
 			Selection::SetActiveObject(entity);
@@ -85,7 +87,7 @@ namespace Blueberry
 	{
 		if (ImGui::MenuItem("Create Empty Entity"))
 		{
-			Ref<Entity> entity = m_Scene->CreateEntity("Empty Entity");
+			Ref<Entity> entity = EditorSceneManager::GetScene()->CreateEntity("Empty Entity");
 
 			Object* selectedObject = Selection::GetActiveObject();
 			if (selectedObject != nullptr && selectedObject->IsClassType(Entity::Type))
@@ -99,7 +101,7 @@ namespace Blueberry
 	{
 		if (ImGui::MenuItem("Delete Entity"))
 		{
-			m_Scene->DestroyEntity(entity);
+			EditorSceneManager::GetScene()->DestroyEntity(entity);
 			if (Selection::GetActiveObject() == entity)
 			{
 				Selection::SetActiveObject(nullptr);

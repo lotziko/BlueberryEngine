@@ -14,5 +14,7 @@ namespace Blueberry
 		~Camera() = default;
 
 		virtual std::string ToString() const final;
+
+		static void BindProperties();
 	};
 }

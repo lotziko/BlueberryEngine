@@ -50,4 +50,8 @@ namespace Blueberry
 	{
 		return ObjectDB::CreateObject<Mesh>(layout, vertexCount, indexCount);
 	}
+
+	void Mesh::BindProperties()
+	{
+	}
 }

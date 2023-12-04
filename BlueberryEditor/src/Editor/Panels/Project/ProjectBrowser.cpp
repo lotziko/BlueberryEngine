@@ -40,7 +40,7 @@ namespace Blueberry
 			{
 				if (ImGui::Button(relativePath.stem().string().c_str()))
 				{
-					
+					// TODO make it select AssetImporter
 				}
 			}
 		}

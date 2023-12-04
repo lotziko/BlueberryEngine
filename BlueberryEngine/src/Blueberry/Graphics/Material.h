@@ -19,6 +19,8 @@ namespace Blueberry
 		void SetTexture(std::size_t id, const Ref<Texture>& texture);
 		void SetTexture(std::string name, const Ref<Texture>& texture);
 
+		static void BindProperties();
+
 	private:
 		void FillGfxTextures();
 

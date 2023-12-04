@@ -27,6 +27,8 @@ namespace Blueberry
 
 		virtual std::string ToString() const final;
 
+		static void BindProperties();
+
 	private:
 		Color m_Color;
 		Ref<Texture2D> m_Texture;

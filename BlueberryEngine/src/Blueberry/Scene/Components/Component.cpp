@@ -9,4 +9,8 @@ namespace Blueberry
 	{
 		return m_Entity;
 	}
+
+	void Component::BindProperties()
+	{
+	}
 }

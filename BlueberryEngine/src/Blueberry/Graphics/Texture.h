@@ -28,6 +28,8 @@ namespace Blueberry
 			return m_Texture->GetHandle();
 		}
 
+		static void BindProperties();
+
 	protected:
 		Ref<GfxTexture> m_Texture;
 		BYTE* m_RawData;
