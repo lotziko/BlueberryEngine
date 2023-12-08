@@ -6,23 +6,37 @@ namespace Blueberry
 	{
 	public:
 		Variant() = default;
-		Variant(const int& $int);
-		Variant(const std::string& string);
-		Variant(const Vector3& vector3);
-		Variant(const Quaternion& quaternion);
-		Variant(Object* object);
+		
+		template<class ObjectType>
+		Variant(const ObjectType* data);
 
-		operator const int&();
-		operator const std::string&();
-		operator const Vector3&();
-		operator const Quaternion&();
-		operator Object*();
+		template<class ObjectType>
+		operator const ObjectType();
 
+		template<class ObjectType>
+		ObjectType* Get();
+		
 	private:
-		int m_IntData;
-		std::string m_StringData;
-		Vector3 m_Vector3Data;
-		Quaternion m_QuaternionData;
-		Object* m_ObjectData;
+		void* m_Data;
 	};
+
+	template<class ObjectType>
+	inline Variant::Variant(const ObjectType* data)
+	{
+		m_Data = (void*)(data);
+	}
+
+	template<class ObjectType>
+	inline Variant::operator const ObjectType()
+	{
+		return *(static_cast<ObjectType*>(m_Data));
+	}
+
+	template<class ObjectType>
+	inline ObjectType* Variant::Get()
+	{
+		return static_cast<ObjectType*>(m_Data);
+	}
 }
+
+	

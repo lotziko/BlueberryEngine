@@ -9,7 +9,12 @@ namespace Blueberry
 {
 	OBJECT_DEFINITION(Object, Entity)
 
-	std::vector<Ref<Component>> Entity::GetComponents()
+	Entity::Entity(const std::string& name)
+	{
+		SetName(name);
+	}
+
+	std::vector<Ref<Component>>& Entity::GetComponents()
 	{
 		return m_Components;
 	}
@@ -19,12 +24,7 @@ namespace Blueberry
 		return m_Id;
 	}
 
-	std::string Entity::ToString() const
-	{
-		return "Entity";
-	}
-
-	Transform* Entity::GetTransform()
+	Ref<Transform>& Entity::GetTransform()
 	{
 		return m_Transform;
 	}
@@ -38,6 +38,7 @@ namespace Blueberry
 	{
 		BEGIN_OBJECT_BINDING(Entity)
 		BIND_FIELD("m_Name", &Entity::m_Name, BindingType::String)
+		BIND_FIELD("m_Components", &Entity::m_Components, BindingType::ObjectRefArray)
 		END_OBJECT_BINDING()
 	}
 

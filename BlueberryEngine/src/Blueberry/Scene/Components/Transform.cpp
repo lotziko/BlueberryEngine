@@ -19,7 +19,7 @@ namespace Blueberry
 		{
 			if (m_Parent->m_Children.size() > 0)
 			{
-				auto index = std::find(m_Parent->m_Children.begin(), m_Parent->m_Children.end(), this);
+				auto index = std::find_if(m_Parent->m_Children.begin(), m_Parent->m_Children.end(), [this](std::shared_ptr<Transform> const& i) { return i.get() == this; });
 				m_Parent->m_Children.erase(index);
 				m_Parent = nullptr;
 			}
@@ -57,12 +57,12 @@ namespace Blueberry
 		return m_LocalRotation.ToEuler();
 	}
 
-	Transform* Transform::GetParent()
+	const Ref<Transform>& Transform::GetParent() const
 	{
 		return m_Parent;
 	}
 
-	const std::vector<Transform*>& Transform::GetChildren() const
+	const std::vector<Ref<Transform>>& Transform::GetChildren() const
 	{
 		return m_Children;
 	}
@@ -96,7 +96,7 @@ namespace Blueberry
 		m_IsDirty = true;
 	}
 
-	void Transform::SetParent(Transform* parent)
+	void Transform::SetParent(Ref<Transform>& parent)
 	{
 		m_Parent = parent;
 		m_Parent->m_Children.emplace_back(this);
@@ -115,18 +115,15 @@ namespace Blueberry
 		return m_IsDirty;
 	}
 
-	std::string Transform::ToString() const
-	{
-		return "Transform";
-	}
-
 	void Transform::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(Transform)
+		BIND_FIELD("m_Entity", &Transform::m_Entity, BindingType::Object)
 		BIND_FIELD("m_LocalPosition", &Transform::m_LocalPosition, BindingType::Vector3)
 		BIND_FIELD("m_LocalRotation", &Transform::m_LocalRotation, BindingType::Quaternion)
 		BIND_FIELD("m_LocalScale", &Transform::m_LocalScale, BindingType::Vector3)
-		BIND_FIELD("m_Parent", &Transform::m_Parent, BindingType::Object)
+		BIND_FIELD("m_Parent", &Transform::m_Parent, BindingType::ObjectRef)
+		BIND_FIELD("m_Children", &Transform::m_Children, BindingType::ObjectRefArray)
 		END_OBJECT_BINDING()
 	}
 

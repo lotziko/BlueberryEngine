@@ -40,19 +40,12 @@ namespace Blueberry
 	template<class ObjectType, class FieldType>
 	inline void FieldBindGeneric<ObjectType, FieldType>::Get(Object* target, Variant& variant) const
 	{
-		variant = ((static_cast<ObjectType*>(target))->*m_Field);
+		variant = &((static_cast<ObjectType*>(target))->*m_Field);
 	}
 
 	template<class ObjectType, class FieldType>
 	inline void FieldBindGeneric<ObjectType, FieldType>::Set(Object* target, Variant& variant) const
 	{
-		if constexpr (std::is_base_of<Object, typename std::remove_pointer<FieldType>::type>::value)
-		{
-			(static_cast<ObjectType*>(target))->*m_Field = static_cast<ObjectType*>(variant.operator Object*());
-		}
-		else
-		{
-			(static_cast<ObjectType*>(target))->*m_Field = variant;
-		}
+		(static_cast<ObjectType*>(target))->*m_Field = *(variant.operator const FieldType());
 	}
 }

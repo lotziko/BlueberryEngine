@@ -16,8 +16,11 @@ namespace Blueberry
 		s_Scene = CreateRef<Scene>();
 		s_Scene->Initialize();
 
-		auto test = s_Scene->CreateEntity("Test");
-		test->AddComponent<SpriteRenderer>();
+		for (int i = 0; i < 2; i++)
+		{
+			auto test = s_Scene->CreateEntity("Test");
+			test->AddComponent<SpriteRenderer>();
+		}
 
 		Save();
 	}
@@ -40,11 +43,12 @@ namespace Blueberry
 		ryml::Tree tree;
 		YamlHelper::Load(tree, scenePath.string());
 		ryml::NodeRef root = tree.rootref();
+		Serializer serializer(root);
 
 		s_Scene = CreateRef<Scene>();
 		s_Scene->Initialize();
 
-		s_Scene->Deserialize(root);
+		s_Scene->Deserialize(serializer);
 	}
 
 	void EditorSceneManager::Save()

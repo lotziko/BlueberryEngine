@@ -15,7 +15,7 @@ namespace Blueberry
 		Scene();
 
 		void Serialize(Serializer& serializer);
-		void Deserialize(ryml::NodeRef& root);
+		void Deserialize(Serializer& serializer);
 
 		bool Initialize();
 
@@ -25,6 +25,7 @@ namespace Blueberry
 		void Destroy();
 
 		Ref<Entity> CreateEntity(const std::string& name);
+		void AddEntity(Ref<Entity>& entity);
 		void DestroyEntity(Entity* entity);
 		void DestroyEntity(Ref<Entity>& entity);
 

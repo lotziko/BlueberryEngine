@@ -25,8 +25,6 @@ namespace Blueberry
 		const Ref<Material>& GetMaterial();
 		void SetMaterial(const Ref<Material>& material);
 
-		virtual std::string ToString() const final;
-
 		static void BindProperties();
 
 	private:

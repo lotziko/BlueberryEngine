@@ -49,7 +49,8 @@ namespace Blueberry
 		ryml::NodeRef root = tree.rootref();
 		root |= ryml::MAP;
 		Serializer serializer(root);
-		serializer.Serialize(object);
+		serializer.AddObject(object.get());
+		serializer.Serialize();
 		YamlHelper::Save(tree, dataPath.string());
 	}
 

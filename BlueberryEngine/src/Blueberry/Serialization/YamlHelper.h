@@ -1,5 +1,7 @@
 #pragma once
 
+#include <rapidyaml\ryml.h>
+
 namespace Blueberry
 {
 	class YamlHelper

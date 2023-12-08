@@ -23,7 +23,10 @@ namespace Blueberry
 
 		Color,
 
-		Object
+		Object,
+		ObjectRef,
+		ObjectPointerArray,
+		ObjectRefArray
 	};
 
 	class ClassDB
@@ -101,7 +104,7 @@ namespace Blueberry
 	{
 		std::size_t id = ObjectType::Type;
 		std::size_t parentId = ObjectType::ParentType;
-		std::string name = TO_STRING(ObjectType);
+		std::string name = ObjectType::TypeName;
 		Ref<Object>(*createFunction)() = &ClassDB::Create<ObjectType>;
 
 		if (s_Classes.count(id) == 0)
@@ -117,7 +120,7 @@ namespace Blueberry
 	{
 		std::size_t id = ObjectType::Type;
 		std::size_t parentId = ObjectType::ParentType;
-		std::string name = TO_STRING(ObjectType);
+		std::string name = ObjectType::TypeName;
 
 		if (s_Classes.count(id) == 0)
 		{

@@ -7,17 +7,20 @@
 
 namespace DirectX::SimpleMath
 {
-	size_t to_chars(ryml::substr buf, Blueberry::Vector2 v);
-	bool from_chars(ryml::csubstr buf, Blueberry::Vector2 *v);
+	size_t to_chars(ryml::substr buf, Vector2 v);
+	bool from_chars(ryml::csubstr buf, Vector2 *v);
 
-	size_t to_chars(ryml::substr buf, Blueberry::Vector3 v);
-	bool from_chars(ryml::csubstr buf, Blueberry::Vector3 *v);
+	size_t to_chars(ryml::substr buf, Vector3 v);
+	bool from_chars(ryml::csubstr buf, Vector3 *v);
 
-	size_t to_chars(ryml::substr buf, Blueberry::Vector4 v);
-	bool from_chars(ryml::csubstr buf, Blueberry::Vector4 *v);
+	size_t to_chars(ryml::substr buf, Vector4 v);
+	bool from_chars(ryml::csubstr buf, Vector4 *v);
 
-	size_t to_chars(ryml::substr buf, Blueberry::Quaternion q);
-	bool from_chars(ryml::csubstr buf, Blueberry::Quaternion *q);
+	size_t to_chars(ryml::substr buf, Quaternion q);
+	bool from_chars(ryml::csubstr buf, Quaternion *q);
+
+	size_t to_chars(ryml::substr buf, Color c);
+	bool from_chars(ryml::csubstr buf, Color *c);
 }
 
 namespace Blueberry

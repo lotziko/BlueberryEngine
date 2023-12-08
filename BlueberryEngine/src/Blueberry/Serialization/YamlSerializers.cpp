@@ -42,6 +42,16 @@ namespace DirectX::SimpleMath
 	{
 		size_t ret = ryml::unformat(buf, "{{}, {}, {}, {}}", q->x, q->y, q->z, q->w); return ret != ryml::yml::npos;
 	}
+
+	size_t to_chars(ryml::substr buf, Color c)
+	{
+		return ryml::format(buf, "{{}, {}, {}, {}}", c.x, c.y, c.z, c.w);
+	}
+
+	bool from_chars(ryml::csubstr buf, Color *c)
+	{
+		size_t ret = ryml::unformat(buf, "{{}, {}, {}, {}}", c->x, c->y, c->z, c->w); return ret != ryml::yml::npos;
+	}
 }
 
 namespace Blueberry

@@ -14,10 +14,7 @@ namespace Blueberry
 	public:
 		Entity() = default;
 
-		Entity(const std::string& name)
-		{
-			SetName(name);
-		}
+		Entity(const std::string& name);
 
 		template<class ComponentType, typename... Args>
 		void AddComponent(Args&&... params);
@@ -26,9 +23,9 @@ namespace Blueberry
 		void AddComponent(Ref<ComponentType> component);
 
 		template<class ComponentType>
-		ComponentType* GetComponent();
+		const Ref<ComponentType> GetComponent();
 
-		std::vector<Ref<Component>> GetComponents();
+		std::vector<Ref<Component>>& GetComponents();
 
 		template<class ComponentType>
 		bool HasComponent();
@@ -38,9 +35,7 @@ namespace Blueberry
 
 		inline std::size_t GetId();
 
-		virtual std::string ToString() const final;
-
-		Transform* GetTransform();
+		Ref<Transform>& GetTransform();
 		Scene* GetScene();
 
 		static void BindProperties();
@@ -56,7 +51,7 @@ namespace Blueberry
 
 		std::size_t m_Id;
 
-		Transform* m_Transform;
+		Ref<Transform> m_Transform;
 		Scene* m_Scene;
 
 		friend class Scene;
@@ -111,17 +106,17 @@ namespace Blueberry
 	}
 
 	template<class ComponentType>
-	inline ComponentType* Entity::GetComponent()
+	inline const Ref<ComponentType> Entity::GetComponent()
 	{
 		for (auto && component : m_Components)
 		{
 			if (component->IsClassType(ComponentType::Type))
 			{
-				return dynamic_cast<ComponentType*>(component.get());
+				return std::dynamic_pointer_cast<ComponentType>(component);
 			}
 		}
 
-		return Ref<ComponentType>().get();
+		return Ref<ComponentType>();
 	}
 
 	template<class ComponentType>

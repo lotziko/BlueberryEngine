@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include "Blueberry\Serialization\YamlSerializers.h"
 #include "Blueberry\Core\Guid.h"
 
 namespace Blueberry
@@ -16,9 +15,11 @@ namespace Blueberry
 public:                                                                     \
     static const std::size_t Type;											\
     static const std::size_t ParentType;									\
+	static const std::string TypeName;										\
 public:																		\
     virtual bool IsClassType( const std::size_t classType ) const override;	\
 	virtual std::size_t GetType() const override;							\
+	virtual std::string GetTypeName() const override;						\
 
 //********************************************************************************
 // OBJECT_DEFINITION
@@ -29,6 +30,7 @@ public:																		\
 #define OBJECT_DEFINITION( parentclass, childclass )												\
 const std::size_t childclass::Type = std::hash< std::string >()( TO_STRING( childclass ) );			\
 const std::size_t childclass::ParentType = std::hash< std::string >()( TO_STRING( parentclass ) );	\
+const std::string childclass::TypeName = TO_STRING( childclass );									\
 bool childclass::IsClassType( const std::size_t classType ) const									\
 {																									\
     if ( classType == childclass::Type )															\
@@ -39,6 +41,10 @@ std::size_t childclass::GetType() const																\
 {																									\
 	return childclass::Type;																		\
 }																									\
+std::string childclass::GetTypeName() const															\
+{																									\
+	return childclass::TypeName;																	\
+}																									\
 
 	using ObjectId = uint64_t;
 
@@ -47,11 +53,12 @@ std::size_t childclass::GetType() const																\
 	public:
 		static const std::size_t Type;
 		static const std::size_t ParentType;
+		static const std::string TypeName;
 
 	public:
 		virtual bool IsClassType(const std::size_t classType) const;
 		virtual std::size_t GetType() const;
-		virtual std::string ToString() const;
+		virtual std::string GetTypeName() const;
 		ObjectId GetObjectId() const;
 		Guid& GetGuid() const;
 

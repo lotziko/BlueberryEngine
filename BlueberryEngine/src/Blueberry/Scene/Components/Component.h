@@ -16,7 +16,7 @@ namespace Blueberry
 
 		static void BindProperties();
 
-	private:
+	protected:
 		Entity* m_Entity;
 
 		friend class Entity;

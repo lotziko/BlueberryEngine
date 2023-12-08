@@ -3,6 +3,7 @@
 #include "AssetImporter.h"
 #include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Serialization\YamlHelper.h"
+#include "Blueberry\Serialization\YamlSerializers.h"
 #include "Blueberry\Serialization\Serializer.h"
 
 namespace Blueberry

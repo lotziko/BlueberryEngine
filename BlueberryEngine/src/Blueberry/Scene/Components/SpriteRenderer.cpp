@@ -2,6 +2,7 @@
 #include "SpriteRenderer.h"
 
 #include "Blueberry\Core\GlobalServices.h"
+#include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\Material.h"
@@ -48,12 +49,10 @@ namespace Blueberry
 		m_Material = material;
 	}
 
-	std::string SpriteRenderer::ToString() const
-	{
-		return "SpriteRenderer";
-	}
-
 	void SpriteRenderer::BindProperties()
 	{
+		BEGIN_OBJECT_BINDING(SpriteRenderer)
+		BIND_FIELD("m_Color", &SpriteRenderer::m_Color, BindingType::Color)
+		END_OBJECT_BINDING()
 	}
 }

@@ -7,6 +7,7 @@ namespace Blueberry
 {
 	const std::size_t Object::Type = std::hash<std::string>()(TO_STRING(Object));
 	const std::size_t Object::ParentType = 0;
+	const std::string Object::TypeName = "Object";
 
 	std::map<ObjectId, Ref<Object>> ObjectDB::s_Objects = std::map<ObjectId, Ref<Object>>();
 	std::map<ObjectId, Guid> ObjectDB::s_ObjectIdToGuid = std::map<ObjectId, Guid>();
@@ -22,9 +23,9 @@ namespace Blueberry
 		return Type;
 	}
 
-	std::string Object::ToString() const
+	std::string Object::GetTypeName() const
 	{
-		return "Object";
+		return TypeName;
 	}
 
 	ObjectId Object::GetObjectId() const

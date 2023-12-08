@@ -30,12 +30,12 @@ namespace Blueberry
 		Entity* entity = static_cast<Entity*>(object);
 		std::vector<Ref<Component>> components = entity->GetComponents();
 
-		ImGui::Text(entity->ToString().c_str());
+		ImGui::Text(entity->GetTypeName().c_str());
 
 		for (auto component : components)
 		{
 			std::size_t type = component->GetType();
-			std::string name = component->ToString();
+			std::string name = component->GetTypeName();
 			ObjectInspector* inspector = ObjectInspectorDB::GetInspector(type);
 
 			if (inspector != nullptr)

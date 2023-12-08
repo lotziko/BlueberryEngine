@@ -13,29 +13,31 @@ namespace Blueberry
 
 	void Scene::Serialize(Serializer& serializer)
 	{
-		for (auto entity : m_Entities)
+		for (auto& entity : m_Entities)
 		{
-			serializer.Serialize(entity);
-			for (auto component : entity->GetComponents())
+			serializer.AddObject(entity.get());
+			for (auto& component : entity->GetComponents())
 			{
-				serializer.Serialize(component);
+				serializer.AddObject(component.get());
 			}
 		}
+		serializer.Serialize();
 	}
 
-	void Scene::Deserialize(ryml::NodeRef& root)
+	void Scene::Deserialize(Serializer& serializer)
 	{
-		//ryml::NodeRef entitiesNode = node["m_Entities"];
-		//for (auto entityNode : entitiesNode)
-		//{
-		//	auto k = entityNode.key();// TODO store all objects as one list and deserialize them after creating
-		//	bool b = entityNode.has_key_anchor();// Use tree root in node argument and remove tree from context
-		//	auto anchor = entityNode.key_anchor();
-		//	FileId fileId = std::stoull(std::string(anchor.data(), anchor.len));
-		//	Ref<Entity> entity = CreateEntity("Entity");
-		//	context.AddObject(fileId, entity->GetObjectId());
-		//	entity->Deserialize(context, entityNode);
-		//}
+		for (auto& node : serializer.GetRoot())
+		{
+			serializer.AddObject(node);
+		}
+		serializer.Deserialize();
+		for (auto& object : serializer.GetDeserializedObjects())
+		{
+			if (object->IsClassType(Entity::Type))
+			{
+				AddEntity(std::dynamic_pointer_cast<Entity>(object));
+			}
+		}
 	}
 
 	bool Scene::Initialize()
@@ -74,6 +76,15 @@ namespace Blueberry
 		}
 
 		return entity;
+	}
+
+	void Scene::AddEntity(Ref<Entity>& entity)
+	{
+		entity->m_Scene = this;
+		entity->m_Transform = entity->GetComponent<Transform>();
+		entity->m_Id = m_MaxEntityId;
+		++m_MaxEntityId;
+		m_Entities.emplace_back(entity);
 	}
 
 	void Scene::DestroyEntity(Entity* entity)

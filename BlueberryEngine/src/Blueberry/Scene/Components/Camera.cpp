@@ -8,11 +8,6 @@ namespace Blueberry
 {
 	OBJECT_DEFINITION(Component, Camera)
 
-	std::string Camera::ToString() const
-	{
-		return "Camera";
-	}
-
 	void Camera::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(Camera)
