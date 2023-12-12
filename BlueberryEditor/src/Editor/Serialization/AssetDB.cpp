@@ -2,17 +2,14 @@
 #include "AssetDB.h"
 
 #include "Editor\Serialization\AssetImporter.h"
-#include "Blueberry\Serialization\Serializer.h"
+#include "Editor\Serialization\YamlSerializer.h"
 #include "rapidyaml\ryml.h"
-
-#include <fstream>
 
 namespace Blueberry
 {
 	std::map<std::string, long long> AssetDB::s_PathModifyCache = std::map<std::string, long long>();
 	std::map<std::string, std::size_t> AssetDB::s_ImporterTypes = std::map<std::string, std::size_t>();
 	std::map<Guid, Ref<AssetImporter>> AssetDB::s_Importers = std::map<Guid, Ref<AssetImporter>>();
-	//std::map<Guid, Ref<Object>> AssetDB::s_ImportedObjects = std::map<Guid, Ref<Object>>();
 
 	void AssetDB::ImportAll()
 	{
@@ -27,6 +24,16 @@ namespace Blueberry
 		Import(std::filesystem::path(path));
 	}
 
+	std::string AssetDB::GetAssetDataPath(Object* object, const char* extension)
+	{
+		std::filesystem::path dataPath = Path::GetDataPath();
+		if (!std::filesystem::exists(dataPath))
+		{
+			std::filesystem::create_directories(dataPath);
+		}
+		return dataPath.append(object->GetGuid().ToString().append(extension)).string();
+	}
+
 	bool AssetDB::HasAssetWithGuidInData(const Guid& guid)
 	{
 		auto dataPath = Path::GetDataPath();
@@ -34,24 +41,11 @@ namespace Blueberry
 		return std::filesystem::exists(dataPath);
 	}
 
-	void AssetDB::SaveAssetObject(Ref<Object> object)
+	void AssetDB::SaveAssetObject(Object* object)
 	{
-		auto dataPath = Path::GetDataPath();
-
-		if (!std::filesystem::exists(dataPath))
-		{
-			std::filesystem::create_directories(dataPath);
-		}
-
-		dataPath.append(object->GetGuid().ToString().append(".yaml"));
-
-		ryml::Tree tree;
-		ryml::NodeRef root = tree.rootref();
-		root |= ryml::MAP;
-		Serializer serializer(root);
-		serializer.AddObject(object.get());
-		serializer.Serialize();
-		YamlHelper::Save(tree, dataPath.string());
+		YamlSerializer serializer;
+		serializer.AddObject(object);
+		serializer.Serialize(GetAssetDataPath(object, ".yaml"));
 	}
 
 	void AssetDB::Import(const std::filesystem::path& path)

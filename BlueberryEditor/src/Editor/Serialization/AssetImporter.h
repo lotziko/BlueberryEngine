@@ -27,7 +27,6 @@ namespace Blueberry
 
 	private:
 		Guid m_Guid;
-		std::string m_Type;
 		std::string m_Path;
 		std::string m_MetaPath;
 	};

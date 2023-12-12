@@ -26,6 +26,7 @@ namespace Blueberry
 		t.read(buffer, length);
 		t.close();
 		tree = ryml::parse_in_arena(ryml::to_csubstr(buffer));
+		tree.resolve_tags();
 		delete[] buffer;
 	}
 }

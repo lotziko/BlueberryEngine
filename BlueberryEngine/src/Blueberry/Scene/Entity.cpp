@@ -2,7 +2,6 @@
 #include "Entity.h"
 
 #include "Blueberry\Core\ClassDB.h"
-#include "Blueberry\Serialization\YamlHelper.h"
 #include "Blueberry\Scene\Scene.h"
 
 namespace Blueberry

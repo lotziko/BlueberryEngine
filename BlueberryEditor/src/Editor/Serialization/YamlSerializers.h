@@ -4,6 +4,7 @@
 #include "Blueberry\Math\Math.h"
 #include "Blueberry\Core\Guid.h"
 #include "Blueberry\Tools\ByteConverter.h"
+#include "Blueberry\Graphics\Structs.h"
 
 namespace DirectX::SimpleMath
 {
@@ -27,4 +28,6 @@ namespace Blueberry
 {
 	size_t to_chars(ryml::substr buf, Blueberry::Guid val);
 	bool from_chars(ryml::csubstr buf, Blueberry::Guid *v);
+
+	size_t to_chars(ryml::substr buf, Blueberry::ByteData val);
 }

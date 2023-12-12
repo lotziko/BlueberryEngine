@@ -14,8 +14,8 @@ namespace Blueberry
 	public:
 		Scene();
 
-		void Serialize(Serializer& serializer);
-		void Deserialize(Serializer& serializer);
+		void Serialize(Serializer& serializer, const std::string& path);
+		void Deserialize(Serializer& serializer, const std::string& path);
 
 		bool Initialize();
 

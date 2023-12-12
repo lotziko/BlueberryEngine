@@ -10,7 +10,11 @@ project "BlueberryEditor"
 	files
 	{
 		"src/**.h",
-		"src/**.cpp"
+		"src/**.cpp",
+		"vendor/stb/**.h",
+		"vendor/stb/**.cpp",
+		"vendor/rapidyaml/**.h",
+		"vendor/rapidyaml/**.cpp"
 	}
 
 	includedirs

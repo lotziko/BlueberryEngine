@@ -55,6 +55,11 @@ namespace Blueberry
 		END_OBJECT_BINDING()
 	}
 
+	void ObjectDB::AddObjectGuid(const ObjectId& id, const Guid& guid)
+	{
+		s_ObjectIdToGuid.insert({ id, guid });
+	}
+
 	void ObjectDB::DestroyObject(Ref<Object>& object)
 	{
 		ObjectId id = object->GetObjectId();

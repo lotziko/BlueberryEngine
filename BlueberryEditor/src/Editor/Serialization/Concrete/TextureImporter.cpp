@@ -5,6 +5,7 @@
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Editor\Serialization\AssetDB.h"
 #include "stb\stb_image.h"
+#include "Blueberry\Tools\FileHelper.h"
 
 namespace Blueberry
 {
@@ -31,20 +32,20 @@ namespace Blueberry
 
 			stbi_set_flip_vertically_on_load(1);
 			data = stbi_load(path.c_str(), &width, &height, &channels, 4);
+			size_t dataSize = width * height * 4;
 
 			TextureProperties properties;
 
 			properties.width = width;
 			properties.height = height;
 			properties.data = data;
-			properties.dataSize = width * height * 4;
+			properties.dataSize = dataSize;
 			properties.isRenderTarget = false;
 
 			Ref<Texture2D> object = AssetDB::CreateAssetObject<Texture2D>(guid, properties);
-			AssetDB::SaveAssetObject(object);
+			AssetDB::SaveAssetObject(object.get());
 
-			//i'm not sure if asset should stay at memory
-			//stbi_image_free(data);
+			stbi_image_free(data);
 		}
 	}
 }

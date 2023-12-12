@@ -11,7 +11,7 @@ namespace Blueberry
 	{
 	}
 
-	void Scene::Serialize(Serializer& serializer)
+	void Scene::Serialize(Serializer& serializer, const std::string& path)
 	{
 		for (auto& entity : m_Entities)
 		{
@@ -21,16 +21,12 @@ namespace Blueberry
 				serializer.AddObject(component.get());
 			}
 		}
-		serializer.Serialize();
+		serializer.Serialize(path);
 	}
 
-	void Scene::Deserialize(Serializer& serializer)
+	void Scene::Deserialize(Serializer& serializer, const std::string& path)
 	{
-		for (auto& node : serializer.GetRoot())
-		{
-			serializer.AddObject(node);
-		}
-		serializer.Deserialize();
+		serializer.Deserialize(path);
 		for (auto& object : serializer.GetDeserializedObjects())
 		{
 			if (object->IsClassType(Entity::Type))

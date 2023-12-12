@@ -13,19 +13,13 @@ project "BlueberryEngine"
 	files
 	{
 		"src/**.h",
-		"src/**.cpp",
-		"vendor/stb/**.h",
-		"vendor/stb/**.cpp",
-		"vendor/rapidyaml/**.h",
-		"vendor/rapidyaml/**.cpp"
+		"src/**.cpp"
 	}
 
 	includedirs
 	{
 		"src",
-		"%{IncludeDir.imgui}",
-		"%{IncludeDir.stb}",
-		"%{IncludeDir.rapidyaml}"
+		"%{IncludeDir.imgui}"
 	}
 
 	links

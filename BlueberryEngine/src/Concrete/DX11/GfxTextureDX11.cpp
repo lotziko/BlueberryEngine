@@ -1,8 +1,6 @@
 #include "bbpch.h"
 #include "GfxTextureDX11.h"
 
-#include "stb\stb_image.h"
-
 namespace Blueberry
 {
 	GfxTextureDX11::GfxTextureDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext) : m_Device(device), m_DeviceContext(deviceContext)

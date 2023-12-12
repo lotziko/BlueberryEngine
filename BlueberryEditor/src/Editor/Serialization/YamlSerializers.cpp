@@ -70,4 +70,11 @@ namespace Blueberry
 		ByteConverter::HexStringToBytes(dst, v->data, sizeof(dst));
 		return true;
 	}
+
+	size_t to_chars(ryml::substr buf, Blueberry::ByteData val)
+	{
+		char* dst = new char[val.size * 2];
+		ByteConverter::BytesToHexString(val.data, dst, val.size);
+		return ryml::format(buf, ryml::substr(dst, val.size));
+	}
 }

@@ -15,6 +15,7 @@ namespace Blueberry
 		Int,
 		Float,
 		String,
+		ByteData,
 
 		Vector2,
 		Vector3,

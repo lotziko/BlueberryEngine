@@ -2,10 +2,10 @@
 #include "EditorSceneManager.h"
 
 #include "Blueberry\Scene\Scene.h"
-#include "Blueberry\Serialization\YamlHelper.h"
-#include "Blueberry\Serialization\Serializer.h"
 
 #include "Editor\Path.h"
+#include "Editor\Serialization\YamlSerializer.h"
+#include "Editor\Serialization\YamlHelper.h"
 
 namespace Blueberry
 {
@@ -37,30 +37,18 @@ namespace Blueberry
 			s_Scene->Destroy();
 		}
 
-		std::filesystem::path scenePath = Path::GetAssetsPath();
-		scenePath.append("Test.scene");
-
-		ryml::Tree tree;
-		YamlHelper::Load(tree, scenePath.string());
-		ryml::NodeRef root = tree.rootref();
-		Serializer serializer(root);
-
 		s_Scene = CreateRef<Scene>();
 		s_Scene->Initialize();
 
-		s_Scene->Deserialize(serializer);
+		YamlSerializer serializer;
+		std::filesystem::path scenePath = Path::GetAssetsPath();
+		s_Scene->Deserialize(serializer, scenePath.append("Test.scene").string());
 	}
 
 	void EditorSceneManager::Save()
 	{
-		ryml::Tree tree;
-		ryml::NodeRef root = tree.rootref();
-		root |= ryml::MAP;
-		Serializer serializer(root);
-		s_Scene->Serialize(serializer);
-
 		std::filesystem::path scenePath = Path::GetAssetsPath();
-		scenePath.append("Test.scene");
-		YamlHelper::Save(tree, scenePath.string());
+		YamlSerializer serializer;
+		s_Scene->Serialize(serializer, scenePath.append("Test.scene").string());
 	}
 }

@@ -2,6 +2,7 @@
 
 #include "Blueberry\Core\Object.h"
 #include "Blueberry\Graphics\GfxTexture.h"
+#include "Blueberry\Graphics\Structs.h"
 
 namespace Blueberry
 {
@@ -13,27 +14,17 @@ namespace Blueberry
 		Texture() = default;
 		virtual ~Texture() = default;
 
-		inline UINT GetWidth() const
-		{
-			return m_Texture->GetWidth();
-		}
-
-		inline UINT GetHeight() const
-		{
-			return m_Texture->GetHeight();
-		}
-
-		inline void* GetHandle()
-		{
-			return m_Texture->GetHandle();
-		}
+		const UINT& GetWidth();
+		const UINT& GetHeight();
+		void* GetHandle();
 
 		static void BindProperties();
 
 	protected:
 		Ref<GfxTexture> m_Texture;
-		BYTE* m_RawData;
-		size_t m_RawDataSize;
+		UINT m_Width;
+		UINT m_Height;
+		ByteData m_RawData;
 
 		friend class Material;
 	};
