@@ -2,6 +2,9 @@
 #include "ProjectBrowser.h"
 
 #include "Editor\Path.h"
+#include "Editor\Serialization\AssetImporter.h"
+#include "Editor\Serialization\AssetDB.h"
+#include "Editor\EditorSceneManager.h"
 #include "imgui\imgui.h"
 
 namespace Blueberry
@@ -26,6 +29,7 @@ namespace Blueberry
 		for (auto& it : std::filesystem::directory_iterator(m_CurrentDirectory))
 		{
 			const auto& path = it.path();
+			auto pathString = path.string();
 			auto extension = path.extension();
 			auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
 
@@ -42,6 +46,27 @@ namespace Blueberry
 				{
 					// TODO make it select AssetImporter
 				}
+
+				if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+				{
+					AssetImporter* importer = AssetDB::GetImporter(pathString);
+					if (importer != nullptr)
+					{
+						std::string stringPath = importer->GetFilePath();
+						std::filesystem::path filePath = stringPath;
+						if (filePath.extension() == ".scene")
+						{
+							EditorSceneManager::Load(stringPath);
+						}
+					}
+				}
+
+				/*if (ImGui::BeginDragDropSource())
+				{
+					ImGui::SetDragDropPayload("ASSET_OBJECT", &path, sizeof(std::filesystem::path));
+					ImGui::Text("%ws", relativePath.replace_extension().c_str());
+					ImGui::EndDragDropSource();
+				}*/
 			}
 		}
 

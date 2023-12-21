@@ -24,10 +24,10 @@ namespace Blueberry
 		bool Initialize(D3D11_SUBRESOURCE_DATA* subresourceData, bool isRenderTarget);
 
 	private:
-		ComRef<ID3D11Texture2D> m_Texture;
-		ComRef<ID3D11ShaderResourceView> m_ResourceView;
-		ComRef<ID3D11SamplerState> m_SamplerState;
-		ComRef<ID3D11RenderTargetView> m_RenderTargetView;
+		ComPtr<ID3D11Texture2D> m_Texture;
+		ComPtr<ID3D11ShaderResourceView> m_ResourceView;
+		ComPtr<ID3D11SamplerState> m_SamplerState;
+		ComPtr<ID3D11RenderTargetView> m_RenderTargetView;
 
 		UINT m_Width;
 		UINT m_Height;

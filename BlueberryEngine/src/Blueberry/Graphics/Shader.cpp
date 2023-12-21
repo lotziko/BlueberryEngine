@@ -12,11 +12,6 @@ namespace Blueberry
 		g_GraphicsDevice->CreateShader(shaderPath, m_Shader);
 	}
 
-	Ref<Shader> Shader::Create(std::wstring shaderPath)
-	{
-		return ObjectDB::CreateObject<Shader>(shaderPath);
-	}
-
 	void Shader::BindProperties()
 	{
 	}

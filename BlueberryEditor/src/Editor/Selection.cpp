@@ -3,11 +3,11 @@
 
 namespace Blueberry
 {
-	Object* Selection::s_ActiveObject = nullptr;
+	WeakObjectPtr<Object> Selection::s_ActiveObject = nullptr;
 
 	Object* Selection::GetActiveObject()
 	{
-		return s_ActiveObject;
+		return s_ActiveObject.Get();
 	}
 
 	void Selection::SetActiveObject(Object* object)

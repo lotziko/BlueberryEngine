@@ -13,7 +13,6 @@ namespace Blueberry
 
 	public:
 		Mesh() = default;
-		Mesh(const VertexLayout& layout, const UINT& vertexCount, const UINT& indexCount);
 
 		const UINT& GetVertexCount();
 		const UINT& GetIndexCount();
@@ -23,13 +22,13 @@ namespace Blueberry
 		const Topology& GetTopology();
 		void SetTopology(const Topology& topology);
 
-		static Ref<Mesh> Create(const VertexLayout& layout, const UINT& vertexCount, const UINT& indexCount);
+		static Mesh* Create(const VertexLayout& layout, const UINT& vertexCount, const UINT& indexCount);
 
 		static void BindProperties();
 
 	private:
-		Ref<GfxVertexBuffer> m_VertexBuffer;
-		Ref<GfxIndexBuffer> m_IndexBuffer;
+		GfxVertexBuffer* m_VertexBuffer;
+		GfxIndexBuffer* m_IndexBuffer;
 
 		UINT m_VertexCount;
 		UINT m_IndexCount;

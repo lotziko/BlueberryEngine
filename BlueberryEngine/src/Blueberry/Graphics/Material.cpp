@@ -9,26 +9,23 @@ namespace Blueberry
 {
 	OBJECT_DEFINITION(Object, Material)
 
-	Material::Material(const Ref<Shader>& shader)
+	Material* Material::Create(Shader* shader)
 	{
-		m_Shader = shader;
+		Material* material = Object::Create<Material>();
+		material->m_Shader = shader;
+		return material;
 	}
 
-	Ref<Material> Material::Create(const Ref<Shader>& shader)
-	{
-		return ObjectDB::CreateObject<Material>(shader);
-	}
-
-	void Material::SetTexture(std::size_t id, const Ref<Texture>& texture)
+	void Material::SetTexture(std::size_t id, Texture* texture)
 	{
 		if (m_Textures.count(id) == 0)
 		{
-			m_Textures.insert({ id, texture });
+			m_Textures.insert({ id, WeakObjectPtr<Texture>(texture) });
 			FillGfxTextures();
 		}
 	}
 
-	void Material::SetTexture(std::string name, const Ref<Texture>& texture)
+	void Material::SetTexture(std::string name, Texture* texture)
 	{
 		SetTexture(std::hash<std::string>()(name), texture);
 	}
@@ -40,10 +37,10 @@ namespace Blueberry
 	void Material::FillGfxTextures()
 	{
 		m_GfxTextures.clear();
-		std::map<std::size_t, Ref<Texture>>::iterator it;
+		std::map<std::size_t, WeakObjectPtr<Texture>>::iterator it;
 		for (it = m_Textures.begin(); it != m_Textures.end(); it++)
 		{
-			m_GfxTextures.emplace_back(std::make_pair(it->first, it->second->m_Texture.get()));
+			m_GfxTextures.emplace_back(std::make_pair(it->first, it->second.Get()->m_Texture));
 		}
 	}
 }

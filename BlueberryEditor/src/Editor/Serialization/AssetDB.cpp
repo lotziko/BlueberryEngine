@@ -1,15 +1,17 @@
 #include "bbpch.h"
 #include "AssetDB.h"
 
+#include "Blueberry\Core\ObjectDB.h"
 #include "Editor\Serialization\AssetImporter.h"
 #include "Editor\Serialization\YamlSerializer.h"
+#include "Editor\Serialization\Concrete\DefaultImporter.h"
 #include "rapidyaml\ryml.h"
 
 namespace Blueberry
 {
 	std::map<std::string, long long> AssetDB::s_PathModifyCache = std::map<std::string, long long>();
 	std::map<std::string, std::size_t> AssetDB::s_ImporterTypes = std::map<std::string, std::size_t>();
-	std::map<Guid, Ref<AssetImporter>> AssetDB::s_Importers = std::map<Guid, Ref<AssetImporter>>();
+	std::map<std::string, AssetImporter*> AssetDB::s_Importers = std::map<std::string, AssetImporter*>();
 
 	void AssetDB::ImportAll()
 	{
@@ -24,6 +26,16 @@ namespace Blueberry
 		Import(std::filesystem::path(path));
 	}
 
+	AssetImporter* AssetDB::GetImporter(const std::string& path)
+	{
+		auto& importerIt = s_Importers.find(path);
+		if (importerIt != s_Importers.end())
+		{
+			return importerIt->second;
+		}
+		return nullptr;
+	}
+
 	std::string AssetDB::GetAssetDataPath(Object* object, const char* extension)
 	{
 		std::filesystem::path dataPath = Path::GetDataPath();
@@ -31,7 +43,7 @@ namespace Blueberry
 		{
 			std::filesystem::create_directories(dataPath);
 		}
-		return dataPath.append(object->GetGuid().ToString().append(extension)).string();
+		return dataPath.append(ObjectDB::GetGuid(object).ToString().append(extension)).string();
 	}
 
 	bool AssetDB::HasAssetWithGuidInData(const Guid& guid)
@@ -75,7 +87,7 @@ namespace Blueberry
 		metaPath += ".meta";
 		auto metaPathString = metaPath.string();
 
-		Ref<AssetImporter> importer;
+		AssetImporter* importer;
 		if (!std::filesystem::exists(metaPath))
 		{
 			// Create new meta file
@@ -86,8 +98,8 @@ namespace Blueberry
 			}
 			else
 			{
-				BB_ERROR(std::string() << "AssetImporter for extension " << extensionString << " does not exist.");
-				return;
+				importer = AssetImporter::Create(DefaultImporter::Type, pathString, metaPathString);
+				BB_INFO(std::string() << "AssetImporter for extension " << extensionString << " does not exist and default importer was created.");
 			}
 		}
 		else
@@ -95,7 +107,7 @@ namespace Blueberry
 			// Create importer from meta file
 			importer = AssetImporter::Load(pathString, metaPathString);
 		}
-		s_Importers.insert({ importer->GetGuid(), importer });
+		s_Importers.insert({ metaPathString, importer });
 	}
 
 	void AssetDB::Register(const std::string& extension, const std::size_t& importerType)

@@ -15,12 +15,10 @@ namespace Blueberry
 		Shader() = default;
 		Shader(std::wstring shaderPath);
 
-		static Ref<Shader> Create(std::wstring shaderPath);
-
 		static void BindProperties();
 
 	private:
-		Ref<GfxShader> m_Shader;
+		GfxShader* m_Shader;
 
 		friend struct GfxDrawingOperation;
 	};

@@ -21,7 +21,7 @@ namespace Blueberry
 		static void BindProperties();
 
 	protected:
-		Ref<GfxTexture> m_Texture;
+		GfxTexture* m_Texture;
 		UINT m_Width;
 		UINT m_Height;
 		ByteData m_RawData;

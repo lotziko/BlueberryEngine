@@ -24,13 +24,13 @@ namespace Blueberry
 		virtual void SetViewport(int x, int y, int width, int height) = 0;
 		virtual void ResizeBackbuffer(int width, int height) = 0;
 
-		virtual bool CreateShader(const std::wstring& shaderPath, Ref<GfxShader>& shader) = 0;
-		virtual bool CreateShader(const std::wstring& vertexShaderPath, const std::wstring& pixelShaderPath, Ref<GfxShader>& shader) = 0;
-		virtual bool CreateVertexBuffer(const VertexLayout& layout, const UINT& vertexCount, Ref<GfxVertexBuffer>& buffer) = 0;
-		virtual bool CreateIndexBuffer(const UINT& indexCount, Ref<GfxIndexBuffer>& buffer) = 0;
-		virtual bool CreateConstantBuffer(const UINT& byteSize, Ref<GfxConstantBuffer>& buffer) = 0;
-		virtual bool CreateTexture(const TextureProperties& properties, Ref<GfxTexture>& texture) const = 0;
-		virtual bool CreateImGuiRenderer(Ref<ImGuiRenderer>& renderer) const = 0;
+		virtual bool CreateShader(const std::wstring& shaderPath, GfxShader*& shader) = 0;
+		virtual bool CreateShader(const std::wstring& vertexShaderPath, const std::wstring& pixelShaderPath, GfxShader*& shader) = 0;
+		virtual bool CreateVertexBuffer(const VertexLayout& layout, const UINT& vertexCount, GfxVertexBuffer*& buffer) = 0;
+		virtual bool CreateIndexBuffer(const UINT& indexCount, GfxIndexBuffer*& buffer) = 0;
+		virtual bool CreateConstantBuffer(const UINT& byteSize, GfxConstantBuffer*& buffer) = 0;
+		virtual bool CreateTexture(const TextureProperties& properties, GfxTexture*& texture) const = 0;
+		virtual bool CreateImGuiRenderer(ImGuiRenderer*& renderer) const = 0;
 		
 		virtual void SetRenderTarget(GfxTexture* renderTexture) = 0;
 		virtual void SetGlobalConstantBuffer(const std::size_t& id, GfxConstantBuffer* buffer) = 0;

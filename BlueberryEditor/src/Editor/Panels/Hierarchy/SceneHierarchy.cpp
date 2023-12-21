@@ -17,17 +17,17 @@ namespace Blueberry
 	{
 		ImGui::Begin("Hierarchy");
 
-		Ref<Scene> scene = EditorSceneManager::GetScene();
+		Scene* scene = EditorSceneManager::GetScene();
 
 		if (scene != nullptr)
 		{
-			std::vector<Ref<Entity>> entities = std::vector<Ref<Entity>>(scene->GetEntities());
+			std::vector<WeakObjectPtr<Entity>> entities = std::vector<WeakObjectPtr<Entity>>(scene->GetEntities());
 
 			for (auto entity : entities)
 			{
-				if (entity != nullptr && entity->GetTransform()->GetParent() == nullptr)
+				if (entity.IsValid() && entity.Get()->GetTransform()->GetParent() == nullptr)
 				{
-					DrawEntity(entity.get());
+					DrawEntity(entity.Get());
 				}
 			}
 
@@ -66,6 +66,7 @@ namespace Blueberry
 		{
 			DrawCreateEntity();
 			DrawDestroyEntity(entity);
+			DrawRenameEntity(entity);
 			ImGui::EndPopup();
 		}
 
@@ -87,7 +88,7 @@ namespace Blueberry
 	{
 		if (ImGui::MenuItem("Create Empty Entity"))
 		{
-			Ref<Entity> entity = EditorSceneManager::GetScene()->CreateEntity("Empty Entity");
+			Entity* entity = EditorSceneManager::GetScene()->CreateEntity("Empty Entity");
 
 			Object* selectedObject = Selection::GetActiveObject();
 			if (selectedObject != nullptr && selectedObject->IsClassType(Entity::Type))
@@ -106,6 +107,14 @@ namespace Blueberry
 			{
 				Selection::SetActiveObject(nullptr);
 			}
+		}
+	}
+
+	void SceneHierarchy::DrawRenameEntity(Entity* entity)
+	{
+		if (ImGui::MenuItem("Rename Entity"))
+		{
+
 		}
 	}
 }

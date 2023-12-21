@@ -29,22 +29,22 @@ namespace Blueberry
 		m_Color = color;
 	}
 
-	const Ref<Texture2D>& SpriteRenderer::GetTexture()
+	Texture2D* SpriteRenderer::GetTexture()
 	{
-		return m_Texture;
+		return m_Texture.Get();
 	}
 
-	void SpriteRenderer::SetTexture(const Ref<Texture2D>& texture)
+	void SpriteRenderer::SetTexture(Texture2D* texture)
 	{
 		m_Texture = texture;
 	}
 
-	const Ref<Material>& SpriteRenderer::GetMaterial()
+	Material* SpriteRenderer::GetMaterial()
 	{
-		return m_Material;
+		return m_Material.Get();
 	}
 
-	void SpriteRenderer::SetMaterial(const Ref<Material>& material)
+	void SpriteRenderer::SetMaterial(Material* material)
 	{
 		m_Material = material;
 	}

@@ -17,8 +17,8 @@ namespace Blueberry
 
 		void Save();
 		
-		static Ref<AssetImporter> Create(const size_t& type, const std::string& path, const std::string& metaPath);
-		static Ref<AssetImporter> Load(const std::string& path, const std::string& metaPath);
+		static AssetImporter* Create(const size_t& type, const std::string& path, const std::string& metaPath);
+		static AssetImporter* Load(const std::string& path, const std::string& metaPath);
 
 		static void BindProperties();
 		

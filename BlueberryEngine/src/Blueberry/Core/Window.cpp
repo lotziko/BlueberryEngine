@@ -5,8 +5,8 @@
 
 namespace Blueberry
 {
-	Scope<Window> Window::Create(const WindowProperties& properties)
+	Window* Window::Create(const WindowProperties& properties)
 	{
-		return CreateScope<WindowsWindow>(properties);
+		return new WindowsWindow(properties);
 	}
 }

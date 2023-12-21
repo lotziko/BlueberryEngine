@@ -28,7 +28,7 @@ namespace Blueberry
 	void EntityInspector::Draw(Object* object)
 	{
 		Entity* entity = static_cast<Entity*>(object);
-		std::vector<Ref<Component>> components = entity->GetComponents();
+		std::vector<Component*> components = entity->GetComponents();
 
 		ImGui::Text(entity->GetTypeName().c_str());
 
@@ -47,7 +47,7 @@ namespace Blueberry
 
 				if (ImGui::CollapsingHeader(headerId))
 				{
-					inspector->Draw(component.get());
+					inspector->Draw(component);
 				}
 
 				if (ImGui::IsItemHovered() && ImGui::IsMouseDown(1))
@@ -84,7 +84,7 @@ namespace Blueberry
 
 				if (ImGui::Selectable(info.second.name.c_str()))
 				{
-					entity->AddComponent(std::dynamic_pointer_cast<Component>(info.second.createInstance()));
+					entity->AddComponent((Component*)info.second.createInstance());
 				}
 			}
 

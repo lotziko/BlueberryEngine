@@ -8,14 +8,6 @@ namespace Blueberry
 {
 	OBJECT_DEFINITION(Object, Mesh)
 
-	Mesh::Mesh(const VertexLayout& layout, const UINT& vertexCount, const UINT& indexCount)
-	{
-		g_GraphicsDevice->CreateVertexBuffer(layout, vertexCount, m_VertexBuffer);
-		g_GraphicsDevice->CreateIndexBuffer(indexCount, m_IndexBuffer);
-		m_VertexCount = vertexCount;
-		m_IndexCount = indexCount;
-	}
-
 	const UINT& Mesh::GetVertexCount()
 	{
 		return m_VertexCount;
@@ -46,9 +38,14 @@ namespace Blueberry
 		m_Topology = topology;
 	}
 
-	Ref<Mesh> Mesh::Create(const VertexLayout& layout, const UINT& vertexCount, const UINT& indexCount)
+	Mesh* Mesh::Create(const VertexLayout& layout, const UINT& vertexCount, const UINT& indexCount)
 	{
-		return ObjectDB::CreateObject<Mesh>(layout, vertexCount, indexCount);
+		Mesh* mesh = Object::Create<Mesh>();
+		g_GraphicsDevice->CreateVertexBuffer(layout, vertexCount, mesh->m_VertexBuffer);
+		g_GraphicsDevice->CreateIndexBuffer(indexCount, mesh->m_IndexBuffer);
+		mesh->m_VertexCount = vertexCount;
+		mesh->m_IndexCount = indexCount;
+		return mesh;
 	}
 
 	void Mesh::BindProperties()

@@ -14,7 +14,7 @@ namespace Blueberry
 
 		bool Initialize(const VertexLayout& layout, const UINT& vertexCount);
 	private:
-		ComRef<ID3D11Buffer> m_Buffer = nullptr;
+		ComPtr<ID3D11Buffer> m_Buffer = nullptr;
 
 		ID3D11Device* m_Device;
 		ID3D11DeviceContext* m_DeviceContext;
@@ -35,7 +35,7 @@ namespace Blueberry
 
 		bool Initialize(const UINT& indexCount);
 	private:
-		ComRef<ID3D11Buffer> m_Buffer = nullptr;
+		ComPtr<ID3D11Buffer> m_Buffer = nullptr;
 
 		ID3D11Device* m_Device;
 		ID3D11DeviceContext* m_DeviceContext;
@@ -52,7 +52,7 @@ namespace Blueberry
 
 		bool Initialize(const UINT& byteCount);
 	private:
-		ComRef<ID3D11Buffer> m_Buffer = nullptr;
+		ComPtr<ID3D11Buffer> m_Buffer = nullptr;
 
 		ID3D11Device* m_Device;
 		ID3D11DeviceContext* m_DeviceContext;

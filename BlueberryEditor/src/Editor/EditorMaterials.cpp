@@ -7,19 +7,19 @@
 
 namespace Blueberry
 {
-	Ref<Material> EditorMaterials::s_EditorGridMaterial = nullptr;
+	Material* EditorMaterials::s_EditorGridMaterial = nullptr;
 	bool EditorMaterials::s_EditorGridMaterialTriedToLoad = false;
 
 	Material* EditorMaterials::GetEditorGridMaterial()
 	{
 		if (s_EditorGridMaterialTriedToLoad == false)
 		{
-			Ref<Shader> shaderRef;
+			Shader* shaderRef;
 			//g_AssetManager->Load<Shader>("assets/EditorGrid", shaderRef);
 			s_EditorGridMaterial = Material::Create(shaderRef);
 			s_EditorGridMaterialTriedToLoad = true;
 		}
 
-		return s_EditorGridMaterial.get();
+		return s_EditorGridMaterial;
 	}
 }

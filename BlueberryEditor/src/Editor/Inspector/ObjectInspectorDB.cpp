@@ -14,7 +14,12 @@ namespace Blueberry
 
 	ObjectInspector* ObjectInspectorDB::GetInspector(const std::size_t& id)
 	{
-		return s_Inspectors.find(id)->second;
+		auto inspectorIt = s_Inspectors.find(id);
+		if (inspectorIt != s_Inspectors.end())
+		{
+			return inspectorIt->second;
+		}
+		return nullptr;
 	}
 
 	void ObjectInspectorDB::Register(const std::size_t& id, ObjectInspector* inspector)

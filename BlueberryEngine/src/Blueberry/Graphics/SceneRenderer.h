@@ -10,8 +10,8 @@ namespace Blueberry
 	class SceneRenderer
 	{
 	public:
-		static void Draw(const Ref<Scene>& scene);
-		static void Draw(const Ref<Scene>& scene, Camera* camera);
-		static void Draw(const Ref<Scene>& scene, const Matrix& viewMatrix, const Matrix& projectionMatrix);
+		static void Draw(Scene* scene);
+		static void Draw(Scene* scene, Camera* camera);
+		static void Draw(Scene* scene, const Matrix& viewMatrix, const Matrix& projectionMatrix);
 	};
 }

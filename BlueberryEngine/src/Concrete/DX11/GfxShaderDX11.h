@@ -16,13 +16,13 @@ namespace Blueberry
 		bool InitializeVertexLayout();
 
 	private:
-		ComRef<ID3D11VertexShader> m_VertexShader = nullptr;
-		ComRef<ID3D10Blob> m_VertexShaderBuffer = nullptr;
+		ComPtr<ID3D11VertexShader> m_VertexShader = nullptr;
+		ComPtr<ID3D10Blob> m_VertexShaderBuffer = nullptr;
 
-		ComRef<ID3D11PixelShader> m_PixelShader = nullptr;
-		ComRef<ID3D10Blob> m_PixelShaderBuffer = nullptr;
+		ComPtr<ID3D11PixelShader> m_PixelShader = nullptr;
+		ComPtr<ID3D10Blob> m_PixelShaderBuffer = nullptr;
 
-		ComRef<ID3D11InputLayout> m_InputLayout;
+		ComPtr<ID3D11InputLayout> m_InputLayout;
 
 		ID3D11Device* m_Device;
 		ID3D11DeviceContext* m_DeviceContext;

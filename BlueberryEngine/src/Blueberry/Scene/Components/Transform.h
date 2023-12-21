@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Component.h"
+#include "Blueberry\Core\WeakObjectPtr.h"
 
 namespace Blueberry
 {
@@ -18,9 +19,9 @@ namespace Blueberry
 		const Vector3& GetLocalScale();
 		const Vector3 GetLocalEulerRotation() const;
 
-		const Ref<Transform>& GetParent() const;
+		const Transform* GetParent() const;
 
-		const std::vector<Ref<Transform>>& GetChildren() const;
+		const std::vector<Transform*> GetChildren() const;
 		const std::size_t GetChildrenCount() const;
 
 		void SetLocalPosition(const Vector3& position);
@@ -28,7 +29,7 @@ namespace Blueberry
 		void SetLocalEulerRotation(const Vector3& euler);
 		void SetLocalScale(const Vector3& scale);
 
-		void SetParent(Ref<Transform>& parent);
+		void SetParent(Transform* parent);
 
 		void Update();
 
@@ -42,8 +43,8 @@ namespace Blueberry
 	private:
 		bool m_IsDirty = true;
 
-		Ref<Transform> m_Parent;
-		std::vector<Ref<Transform>> m_Children;
+		WeakObjectPtr<Transform> m_Parent;
+		std::vector<WeakObjectPtr<Transform>> m_Children;
 
 		Matrix m_LocalToWorldMatrix;
 		Matrix m_LocalMatrix;

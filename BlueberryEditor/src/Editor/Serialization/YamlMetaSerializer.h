@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Blueberry\Core\Guid.h"
 #include "Editor\Serialization\YamlSerializer.h"
 
 namespace Blueberry

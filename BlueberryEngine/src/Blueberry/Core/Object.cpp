@@ -2,17 +2,24 @@
 #include "Object.h"
 
 #include "Blueberry\Core\ClassDB.h"
+#include "Blueberry\Core\ObjectDB.h"
 
 namespace Blueberry
 {
 	const std::size_t Object::Type = std::hash<std::string>()(TO_STRING(Object));
 	const std::size_t Object::ParentType = 0;
 	const std::string Object::TypeName = "Object";
-
-	std::map<ObjectId, Ref<Object>> ObjectDB::s_Objects = std::map<ObjectId, Ref<Object>>();
-	std::map<ObjectId, Guid> ObjectDB::s_ObjectIdToGuid = std::map<ObjectId, Guid>();
-	ObjectId ObjectDB::s_MaxId = 0;
 	
+	Object::Object()
+	{
+		ObjectDB::AllocateId(this);
+	}
+
+	Object::~Object()
+	{
+		ObjectDB::FreeId(this);
+	}
+
 	bool Object::IsClassType(const std::size_t classType) const
 	{
 		return classType == Type;
@@ -33,11 +40,6 @@ namespace Blueberry
 		return m_ObjectId;
 	}
 
-	Guid& Object::GetGuid() const
-	{
-		return ObjectDB::s_ObjectIdToGuid.find(m_ObjectId)->second;
-	}
-
 	const std::string& Object::GetName()
 	{
 		return m_Name;
@@ -55,22 +57,8 @@ namespace Blueberry
 		END_OBJECT_BINDING()
 	}
 
-	void ObjectDB::AddObjectGuid(const ObjectId& id, const Guid& guid)
+	void Object::Destroy(Object* object)
 	{
-		s_ObjectIdToGuid.insert({ id, guid });
-	}
-
-	void ObjectDB::DestroyObject(Ref<Object>& object)
-	{
-		ObjectId id = object->GetObjectId();
-		s_Objects.erase(id);
-		s_ObjectIdToGuid.erase(id);
-	}
-
-	void ObjectDB::DestroyObject(Object* object)
-	{
-		ObjectId id = object->GetObjectId();
-		s_Objects.erase(id);
-		s_ObjectIdToGuid.erase(id);
+		delete object;
 	}
 }

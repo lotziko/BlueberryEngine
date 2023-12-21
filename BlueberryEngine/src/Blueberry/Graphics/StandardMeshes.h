@@ -10,6 +10,6 @@ namespace Blueberry
 		static Mesh* GetFullscreen();
 
 	private:
-		static Ref<Mesh> s_FullscreenMesh;
+		static Mesh* s_FullscreenMesh;
 	};
 }

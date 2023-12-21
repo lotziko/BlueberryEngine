@@ -42,8 +42,8 @@ namespace Blueberry
 			properties.dataSize = dataSize;
 			properties.isRenderTarget = false;
 
-			Ref<Texture2D> object = AssetDB::CreateAssetObject<Texture2D>(guid, properties);
-			AssetDB::SaveAssetObject(object.get());
+			Texture2D* object = Texture2D::Create(properties);
+			AssetDB::SaveAssetObject(object);
 
 			stbi_image_free(data);
 		}

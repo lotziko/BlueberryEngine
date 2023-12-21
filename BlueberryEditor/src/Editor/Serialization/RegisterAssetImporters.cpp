@@ -5,6 +5,7 @@
 
 #include "Editor\Serialization\AssetDB.h"
 #include "Editor\Serialization\Concrete\TextureImporter.h"
+#include "Editor\Serialization\Concrete\DefaultImporter.h"
 
 namespace Blueberry
 {
@@ -12,6 +13,7 @@ namespace Blueberry
 	{
 		REGISTER_ABSTRACT_CLASS(AssetImporter);
 		REGISTER_CLASS(TextureImporter);
+		REGISTER_CLASS(DefaultImporter);
 
 		REGISTER_ASSET_IMPORTER(".png", TextureImporter::Type);
 	}

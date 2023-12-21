@@ -28,6 +28,6 @@ namespace Blueberry
 		virtual int GetWidth() const = 0;
 		virtual int GetHeight() const = 0;
 
-		static Scope<Window> Create(const WindowProperties& properties);
+		static Window* Create(const WindowProperties& properties);
 	};
 }

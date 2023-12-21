@@ -10,9 +10,9 @@ namespace Blueberry
 
 	public:
 		Texture2D() = default;
-		Texture2D(const TextureProperties& properties);
+		virtual ~Texture2D() = default;
 
-		static Ref<Texture2D> Create(const TextureProperties& properties);
+		static Texture2D* Create(const TextureProperties& properties);
 
 		static void BindProperties();
 	};

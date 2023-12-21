@@ -24,10 +24,10 @@ namespace Blueberry
 
 		Color,
 
-		Object,
-		ObjectRef,
-		ObjectPointerArray,
-		ObjectRefArray
+		ObjectPtr,
+		ObjectWeakPtr,
+		ObjectPtrArray,
+		ObjectWeakPtrArray
 	};
 
 	class ClassDB
@@ -65,7 +65,7 @@ namespace Blueberry
 		{
 			std::string name;
 			std::size_t parentId;
-			Ref<Object>(*createInstance)() = nullptr;
+			Object*(*createInstance)() = nullptr;
 			std::vector<FieldInfo> fields;
 			std::vector<PropertyInfo> properties;
 		};
@@ -83,9 +83,9 @@ namespace Blueberry
 
 	private:
 		template<class ObjectType>
-		static Ref<Object> Create()
+		static Object* Create()
 		{
-			return ObjectDB::CreateObject<ObjectType>();
+			return Object::Create<ObjectType>();
 		}
 
 	private:
@@ -106,7 +106,7 @@ namespace Blueberry
 		std::size_t id = ObjectType::Type;
 		std::size_t parentId = ObjectType::ParentType;
 		std::string name = ObjectType::TypeName;
-		Ref<Object>(*createFunction)() = &ClassDB::Create<ObjectType>;
+		Object*(*createFunction)() = &ClassDB::Create<ObjectType>;
 
 		if (s_Classes.count(id) == 0)
 		{

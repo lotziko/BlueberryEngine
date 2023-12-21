@@ -3,11 +3,11 @@
 
 #include "imgui\imgui.h"
 
-bool ImGui::DragVector3(const std::string& label, Blueberry::Vector3& vector)
+bool ImGui::DragVector3(const char* label, Blueberry::Vector3& vector)
 {
-	ImGui::PushID(label.c_str());
+	ImGui::PushID(label);
 
-	ImGui::Text(label.c_str());
+	ImGui::Text(label);
 	ImGui::SameLine();
 	ImGui::SetCursorPosX(100);
 
@@ -25,11 +25,11 @@ bool ImGui::DragVector3(const std::string& label, Blueberry::Vector3& vector)
 	return false;
 }
 
-bool ImGui::ColorEdit(const std::string& label, Blueberry::Color& color)
+bool ImGui::ColorEdit(const char* label, Blueberry::Color& color)
 {
-	ImGui::PushID(label.c_str());
+	ImGui::PushID(label);
 
-	ImGui::Text(label.c_str());
+	ImGui::Text(label);
 	ImGui::SameLine();
 	ImGui::SetCursorPosX(100);
 

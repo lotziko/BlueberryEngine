@@ -21,11 +21,10 @@ namespace Blueberry
 		Vector3 GetCameraPosition();
 		float GetCameraOrthographicSize();
 
-		void DrawSceneSave();
 		void DrawScene(const float width, const float height);
 
 	private:
-		Ref<GfxTexture> m_SceneRenderTarget;
+		GfxTexture* m_SceneRenderTarget;
 		SceneCamera m_Camera;
 
 		Vector3 m_Position = Vector3(0, 0, 0);

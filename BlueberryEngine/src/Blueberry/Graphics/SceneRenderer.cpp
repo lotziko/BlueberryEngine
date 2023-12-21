@@ -6,7 +6,7 @@
 
 namespace Blueberry
 {
-	void SceneRenderer::Draw(const Ref<Scene>& scene)
+	void SceneRenderer::Draw(Scene* scene)
 	{
 		//Update cameras and render
 		{
@@ -25,12 +25,12 @@ namespace Blueberry
 	}
 
 
-	void SceneRenderer::Draw(const Ref<Scene>& scene, Camera* camera)
+	void SceneRenderer::Draw(Scene* scene, Camera* camera)
 	{
 		Draw(scene, camera->GetViewMatrix(), camera->GetProjectionMatrix());
 	}
 
-	void SceneRenderer::Draw(const Ref<Scene>& scene, const Matrix& viewMatrix, const Matrix& projectionMatrix)
+	void SceneRenderer::Draw(Scene* scene, const Matrix& viewMatrix, const Matrix& projectionMatrix)
 	{
 		//Update transforms
 		{

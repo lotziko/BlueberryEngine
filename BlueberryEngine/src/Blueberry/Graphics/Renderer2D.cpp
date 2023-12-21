@@ -98,7 +98,7 @@ namespace Blueberry
 		Flush();
 	}
 
-	void Renderer2D::Draw(const Matrix& transform, const Ref<Texture2D>& texture, const Ref<Material>& material, const Color& color)
+	void Renderer2D::Draw(const Matrix& transform, Texture2D* texture, Material* material, const Color& color)
 	{
 		if (m_QuadIndexCount >= MAX_INDICES)
 			Flush();
@@ -138,7 +138,7 @@ namespace Blueberry
 		m_QuadIndexCount += 6;
 	}
 
-	void Renderer2D::DrawImmediate(const Vector3& position, const Vector2& size, const Ref<Texture2D>& texture, const Ref<Material>& material, const Color& color)
+	void Renderer2D::DrawImmediate(const Vector3& position, const Vector2& size, Texture2D* texture, Material* material, const Color& color)
 	{
 		if (m_QuadIndexCount > 0)
 			Flush();
@@ -153,8 +153,8 @@ namespace Blueberry
 		
 		m_VertexBuffer->SetData(m_VertexData, m_QuadIndexCount / 6 * 4);
 		
-		g_GraphicsDevice->SetGlobalConstantBuffer(std::hash<std::string>()("PerDrawData"), m_ConstantBuffer.get());
-		g_GraphicsDevice->Draw(GfxDrawingOperation(m_VertexBuffer.get(), m_IndexBuffer.get(), m_Material.get(), m_QuadIndexCount, Topology::TriangleList));
+		g_GraphicsDevice->SetGlobalConstantBuffer(std::hash<std::string>()("PerDrawData"), m_ConstantBuffer);
+		g_GraphicsDevice->Draw(GfxDrawingOperation(m_VertexBuffer, m_IndexBuffer, m_Material.Get(), m_QuadIndexCount, Topology::TriangleList));
 
 		m_QuadIndexCount = 0;
 		m_VertexDataPtr = m_VertexData;

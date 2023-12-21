@@ -13,9 +13,17 @@ namespace Blueberry
 		SetName(name);
 	}
 
-	std::vector<Ref<Component>>& Entity::GetComponents()
+	std::vector<Component*> Entity::GetComponents()
 	{
-		return m_Components;
+		std::vector<Component*> components;
+		for (auto component : m_Components)
+		{
+			if (component.IsValid())
+			{
+				components.emplace_back(component.Get());
+			}
+		}
+		return components;
 	}
 
 	std::size_t Entity::GetId()
@@ -23,9 +31,9 @@ namespace Blueberry
 		return m_Id;
 	}
 
-	Ref<Transform>& Entity::GetTransform()
+	Transform* Entity::GetTransform()
 	{
-		return m_Transform;
+		return m_Transform.Get();
 	}
 
 	Scene* Entity::GetScene()
@@ -37,7 +45,7 @@ namespace Blueberry
 	{
 		BEGIN_OBJECT_BINDING(Entity)
 		BIND_FIELD("m_Name", &Entity::m_Name, BindingType::String)
-		BIND_FIELD("m_Components", &Entity::m_Components, BindingType::ObjectRefArray)
+		BIND_FIELD("m_Components", &Entity::m_Components, BindingType::ObjectWeakPtrArray)
 		END_OBJECT_BINDING()
 	}
 
@@ -57,8 +65,8 @@ namespace Blueberry
 	{
 		for (auto && componentSlot : m_Components)
 		{
-			RemoveComponentFromScene(componentSlot.get());
-			ObjectDB::DestroyObject(std::dynamic_pointer_cast<Object>(componentSlot));
+			RemoveComponentFromScene(componentSlot.Get());
+			Object::Destroy(componentSlot.Get());
 		}
 	}
 }

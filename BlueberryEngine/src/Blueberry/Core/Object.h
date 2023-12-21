@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include "Blueberry\Core\Guid.h"
 
 namespace Blueberry
 {
@@ -46,7 +45,7 @@ std::string childclass::GetTypeName() const															\
 	return childclass::TypeName;																	\
 }																									\
 
-	using ObjectId = uint64_t;
+	using ObjectId = int32_t;
 
 	class Object
 	{
@@ -56,16 +55,23 @@ std::string childclass::GetTypeName() const															\
 		static const std::string TypeName;
 
 	public:
+		Object();
+		~Object();
+
 		virtual bool IsClassType(const std::size_t classType) const;
 		virtual std::size_t GetType() const;
 		virtual std::string GetTypeName() const;
 		ObjectId GetObjectId() const;
-		Guid& GetGuid() const;
 
 		const std::string& GetName();
 		void SetName(const std::string& name);
 
 		static void BindProperties();
+
+		template<class ObjectType>
+		static ObjectType* Create();
+
+		static void Destroy(Object* object);
 
 	protected:
 		ObjectId m_ObjectId;
@@ -75,33 +81,10 @@ std::string childclass::GetTypeName() const															\
 		friend class Serializer;
 	};
 
-	class ObjectDB
+	template<class ObjectType>
+	inline ObjectType* Object::Create()
 	{
-	public:
-		template<class ObjectType, typename... Args>
-		static Ref<ObjectType> CreateObject(Args&&... params);
-		static void AddObjectGuid(const ObjectId& id, const Guid& guid);
-		static void DestroyObject(Ref<Object>& object);
-		static void DestroyObject(Object* object);
-
-	private:
-		static std::map<ObjectId, Ref<Object>> s_Objects;
-		static std::map<ObjectId, Guid> s_ObjectIdToGuid;
-		static ObjectId s_MaxId;
-
-		friend class Object;
-	};
-
-	template<class ObjectType, typename... Args>
-	inline Ref<ObjectType> ObjectDB::CreateObject(Args&&... params)
-	{
-		static_assert(std::is_base_of<Object, ObjectType>::value, "Type is not derived from Object.");
-
-		ObjectId id = ++s_MaxId;
-		auto& object = CreateRef<ObjectType>(std::forward<Args>(params)...);
-		object->m_ObjectId = id;
-		s_Objects.insert({ id, object });
-
+		ObjectType* object = new ObjectType();
 		return object;
 	}
 }

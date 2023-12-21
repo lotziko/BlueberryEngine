@@ -15,10 +15,10 @@ namespace Blueberry
 	{
 		for (auto& entity : m_Entities)
 		{
-			serializer.AddObject(entity.get());
-			for (auto& component : entity->GetComponents())
+			serializer.AddObject(entity.Get());
+			for (auto component : entity->GetComponents())
 			{
-				serializer.AddObject(component.get());
+				serializer.AddObject(component);
 			}
 		}
 		serializer.Serialize(path);
@@ -31,7 +31,7 @@ namespace Blueberry
 		{
 			if (object->IsClassType(Entity::Type))
 			{
-				AddEntity(std::dynamic_pointer_cast<Entity>(object));
+				AddEntity((Entity*)object);
 			}
 		}
 	}
@@ -45,17 +45,21 @@ namespace Blueberry
 	{
 		for (auto entity : m_Entities)
 		{
-			DestroyEntity(entity);
+			if (entity.IsValid())
+			{
+				DestroyEntity(entity.Get());
+			}
 		}
 	}
 
-	Ref<Entity> Scene::CreateEntity(const std::string& name = "Entity")
+	Entity* Scene::CreateEntity(const std::string& name = "Entity")
 	{
-		Ref<Entity> entity = ObjectDB::CreateObject<Entity>(name);
+		Entity* entity = Object::Create<Entity>();
 		entity->m_Scene = this;
+		entity->m_Name = name;
 
 		entity->AddComponent<Transform>();
-		entity->m_Transform = entity->GetComponent<Transform>();
+		entity->m_Transform = WeakObjectPtr<Transform>(entity->GetComponent<Transform>());
 
 		if (m_EmptyEntityIds.size() > 0)
 		{
@@ -74,7 +78,7 @@ namespace Blueberry
 		return entity;
 	}
 
-	void Scene::AddEntity(Ref<Entity>& entity)
+	void Scene::AddEntity(Entity* entity)
 	{
 		entity->m_Scene = this;
 		entity->m_Transform = entity->GetComponent<Transform>();
@@ -88,16 +92,10 @@ namespace Blueberry
 		entity->Destroy();
 		m_Entities[entity->m_Id] = nullptr;
 		m_EmptyEntityIds.push(entity->m_Id);
-		ObjectDB::DestroyObject(entity);
+		Object::Destroy(entity);
 	}
 
-	void Scene::DestroyEntity(Ref<Entity>& entity)
-	{
-		DestroyEntity(entity.get());
-		entity.reset();
-	}
-
-	const std::vector<Ref<Entity>>& Scene::GetEntities()
+	const std::vector<WeakObjectPtr<Entity>>& Scene::GetEntities()
 	{
 		return m_Entities;
 	}

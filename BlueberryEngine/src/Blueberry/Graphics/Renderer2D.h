@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Blueberry\Math\Math.h"
+#include "Blueberry\Core\WeakObjectPtr.h"
 
 namespace Blueberry
 {
@@ -21,15 +22,15 @@ namespace Blueberry
 
 		void Begin(const Matrix& view, const Matrix& projection);
 		void End();
-		void Draw(const Matrix& transform, const Ref<Texture2D>& texture, const Ref<Material>& material, const Color& color);
-		void DrawImmediate(const Vector3& position, const Vector2& size, const Ref<Texture2D>& texture, const Ref<Material>& material, const Color& color);
+		void Draw(const Matrix& transform, Texture2D* texture, Material* material, const Color& color);
+		void DrawImmediate(const Vector3& position, const Vector2& size, Texture2D* texture, Material* material, const Color& color);
 		void Flush();
 
 	private:
-		Ref<Material> m_Material;
-		Ref<GfxVertexBuffer> m_VertexBuffer;
-		Ref<GfxIndexBuffer> m_IndexBuffer;
-		Ref<GfxConstantBuffer> m_ConstantBuffer;
+		WeakObjectPtr<Material> m_Material;
+		GfxVertexBuffer* m_VertexBuffer;
+		GfxIndexBuffer* m_IndexBuffer;
+		GfxConstantBuffer* m_ConstantBuffer;
 
 		float* m_VertexData = nullptr;
 		float* m_VertexDataPtr = nullptr;

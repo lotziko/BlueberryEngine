@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Blueberry\Core\Object.h"
+#include "Blueberry\Core\WeakObjectPtr.h"
 
 namespace Blueberry
 {
@@ -11,6 +12,6 @@ namespace Blueberry
 		static void SetActiveObject(Object* object);
 
 	private:
-		static Object* s_ActiveObject;
+		static WeakObjectPtr<Object> s_ActiveObject;
 	};
 }

@@ -19,17 +19,17 @@ namespace Blueberry
 		const Color& GetColor();
 		void SetColor(const Color& color);
 
-		const Ref<Texture2D>& GetTexture();
-		void SetTexture(const Ref<Texture2D>& texture);
+		Texture2D* GetTexture();
+		void SetTexture(Texture2D* texture);
 
-		const Ref<Material>& GetMaterial();
-		void SetMaterial(const Ref<Material>& material);
+		Material* GetMaterial();
+		void SetMaterial(Material* material);
 
 		static void BindProperties();
 
 	private:
 		Color m_Color;
-		Ref<Texture2D> m_Texture;
-		Ref<Material> m_Material;
+		WeakObjectPtr<Texture2D> m_Texture;
+		WeakObjectPtr<Material> m_Material;
 	};
 }

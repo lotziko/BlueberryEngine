@@ -16,7 +16,7 @@ namespace Blueberry
 		void PushLayer(Layer* layer);
 
 	private:
-		Scope<Window> m_Window;
+		Window* m_Window;
 		LayerStack m_LayerStack;
 	};
 }

@@ -21,13 +21,13 @@ namespace Blueberry
 		virtual void SetViewport(int x, int y, int width, int height) final;
 		virtual void ResizeBackbuffer(int width, int height) final;
 
-		virtual bool CreateShader(const std::wstring& shaderPath, Ref<GfxShader>& shader) final;
-		virtual bool CreateShader(const std::wstring& vertexShaderPath, const std::wstring& pixelShaderPath, Ref<GfxShader>& shader) final;
-		virtual bool CreateVertexBuffer(const VertexLayout& layout, const UINT& vertexCount, Ref<GfxVertexBuffer>& buffer) final;
-		virtual bool CreateIndexBuffer(const UINT& indexCount, Ref<GfxIndexBuffer>& buffer) final;
-		virtual bool CreateConstantBuffer(const UINT& byteCount, Ref<GfxConstantBuffer>& buffer) final;
-		virtual bool CreateTexture(const TextureProperties& properties, Ref<GfxTexture>& texture) const final;
-		virtual bool CreateImGuiRenderer(Ref<ImGuiRenderer>& renderer) const final;
+		virtual bool CreateShader(const std::wstring& shaderPath, GfxShader*& shader) final;
+		virtual bool CreateShader(const std::wstring& vertexShaderPath, const std::wstring& pixelShaderPath, GfxShader*& shader) final;
+		virtual bool CreateVertexBuffer(const VertexLayout& layout, const UINT& vertexCount, GfxVertexBuffer*& buffer) final;
+		virtual bool CreateIndexBuffer(const UINT& indexCount, GfxIndexBuffer*& buffer) final;
+		virtual bool CreateConstantBuffer(const UINT& byteCount, GfxConstantBuffer*& buffer) final;
+		virtual bool CreateTexture(const TextureProperties& properties, GfxTexture*& texture) const final;
+		virtual bool CreateImGuiRenderer(ImGuiRenderer*& renderer) const final;
 		
 		virtual void SetRenderTarget(GfxTexture* renderTexture) final;
 		virtual void SetGlobalConstantBuffer(const std::size_t& id, GfxConstantBuffer* buffer) final;
@@ -39,12 +39,12 @@ namespace Blueberry
 
 		HWND m_Hwnd;
 
-		ComRef<ID3D11Device> m_Device;
-		ComRef<ID3D11DeviceContext> m_DeviceContext;
-		ComRef<IDXGISwapChain> m_SwapChain;
-		ComRef<ID3D11RenderTargetView> m_RenderTargetView;
-		ComRef<ID3D11RasterizerState> m_RasterizerState;
-		ComRef<ID3D11DepthStencilState> m_DepthStencilState;
+		ComPtr<ID3D11Device> m_Device;
+		ComPtr<ID3D11DeviceContext> m_DeviceContext;
+		ComPtr<IDXGISwapChain> m_SwapChain;
+		ComPtr<ID3D11RenderTargetView> m_RenderTargetView;
+		ComPtr<ID3D11RasterizerState> m_RasterizerState;
+		ComPtr<ID3D11DepthStencilState> m_DepthStencilState;
 
 		GfxTextureDX11* m_BindedRenderTarget;
 		std::map<std::size_t, GfxConstantBufferDX11*> m_BindedConstantBuffers;

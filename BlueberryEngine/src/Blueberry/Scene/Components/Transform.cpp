@@ -15,11 +15,11 @@ namespace Blueberry
 
 	Transform::~Transform()
 	{
-		if (m_Parent != nullptr)
+		if (m_Parent.IsValid())
 		{
 			if (m_Parent->m_Children.size() > 0)
 			{
-				auto index = std::find_if(m_Parent->m_Children.begin(), m_Parent->m_Children.end(), [this](std::shared_ptr<Transform> const& i) { return i.get() == this; });
+				auto index = std::find_if(m_Parent->m_Children.begin(), m_Parent->m_Children.end(), [this](WeakObjectPtr<Transform> const& i) { return i.Get() == this; });
 				m_Parent->m_Children.erase(index);
 				m_Parent = nullptr;
 			}
@@ -57,14 +57,22 @@ namespace Blueberry
 		return m_LocalRotation.ToEuler();
 	}
 
-	const Ref<Transform>& Transform::GetParent() const
+	const Transform* Transform::GetParent() const
 	{
-		return m_Parent;
+		return m_Parent.Get();
 	}
 
-	const std::vector<Ref<Transform>>& Transform::GetChildren() const
+	const std::vector<Transform*> Transform::GetChildren() const
 	{
-		return m_Children;
+		std::vector<Transform*> children;
+		for (auto child : m_Children)
+		{
+			if (child.IsValid())
+			{
+				children.emplace_back(child.Get());
+			}
+		}
+		return children;
 	}
 
 	const std::size_t Transform::GetChildrenCount() const
@@ -96,7 +104,7 @@ namespace Blueberry
 		m_IsDirty = true;
 	}
 
-	void Transform::SetParent(Ref<Transform>& parent)
+	void Transform::SetParent(Transform* parent)
 	{
 		m_Parent = parent;
 		m_Parent->m_Children.emplace_back(this);
@@ -104,7 +112,7 @@ namespace Blueberry
 
 	void Transform::Update()
 	{
-		if (m_Parent == nullptr)
+		if (!m_Parent.IsValid())
 		{
 			RecalculateWorldMatrix(m_IsDirty);
 		}
@@ -118,12 +126,12 @@ namespace Blueberry
 	void Transform::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(Transform)
-		BIND_FIELD("m_Entity", &Transform::m_Entity, BindingType::Object)
+		BIND_FIELD("m_Entity", &Transform::m_Entity, BindingType::ObjectWeakPtr)
 		BIND_FIELD("m_LocalPosition", &Transform::m_LocalPosition, BindingType::Vector3)
 		BIND_FIELD("m_LocalRotation", &Transform::m_LocalRotation, BindingType::Quaternion)
 		BIND_FIELD("m_LocalScale", &Transform::m_LocalScale, BindingType::Vector3)
-		BIND_FIELD("m_Parent", &Transform::m_Parent, BindingType::ObjectRef)
-		BIND_FIELD("m_Children", &Transform::m_Children, BindingType::ObjectRefArray)
+		BIND_FIELD("m_Parent", &Transform::m_Parent, BindingType::ObjectWeakPtr)
+		BIND_FIELD("m_Children", &Transform::m_Children, BindingType::ObjectWeakPtrArray)
 		END_OBJECT_BINDING()
 	}
 
@@ -134,7 +142,7 @@ namespace Blueberry
 		if (dirty)
 		{
 			m_LocalMatrix = Matrix::CreateScale(m_LocalScale) * Matrix::CreateFromQuaternion(m_LocalRotation) * Matrix::CreateTranslation(m_LocalPosition);
-			m_LocalToWorldMatrix = m_Parent == nullptr ? m_LocalMatrix : (m_LocalMatrix * (m_Parent->m_LocalToWorldMatrix));
+			m_LocalToWorldMatrix = !m_Parent.IsValid() ? m_LocalMatrix : (m_LocalMatrix * (m_Parent->m_LocalToWorldMatrix));
 			m_IsDirty = false;
 		}
 

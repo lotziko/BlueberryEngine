@@ -7,7 +7,7 @@ namespace Blueberry
 
 	Entity* Component::GetEntity()
 	{
-		return m_Entity;
+		return m_Entity.Get();
 	}
 
 	void Component::BindProperties()

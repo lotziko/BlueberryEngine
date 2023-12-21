@@ -3,7 +3,7 @@
 
 #include "Editor\Path.h"
 #include "Editor\Serialization\YamlSerializer.h"
-#include "Blueberry\Core\Guid.h"
+#include "Blueberry\Core\ObjectDB.h"
 
 namespace Blueberry
 {
@@ -25,11 +25,13 @@ namespace Blueberry
 
 		static void Import(const std::string& path);
 
-		template<class ObjectType, typename... Args>
-		static Ref<ObjectType> CreateAssetObject(const Guid& guid, Args&&... params);
+		static AssetImporter* GetImporter(const std::string& path);
 
 		template<class ObjectType>
-		static Ref<ObjectType> LoadAssetObject(const Guid& guid);
+		static ObjectType* CreateAssetObject(const Guid& guid);
+
+		template<class ObjectType>
+		static ObjectType* LoadAssetObject(const Guid& guid);
 
 		static std::string GetAssetDataPath(Object* object, const char* extension);
 
@@ -45,20 +47,20 @@ namespace Blueberry
 	private:
 		static std::map<std::string, long long> s_PathModifyCache;
 		static std::map<std::string, std::size_t> s_ImporterTypes;
-		static std::map<Guid, Ref<AssetImporter>> s_Importers;
+		static std::map<std::string, AssetImporter*> s_Importers;
 	};
 
-	template<class ObjectType, typename... Args>
-	inline Ref<ObjectType> AssetDB::CreateAssetObject(const Guid& guid, Args&&... params)
+	template<class ObjectType>
+	inline ObjectType* AssetDB::CreateAssetObject(const Guid& guid)
 	{
 		static_assert(std::is_base_of<Object, ObjectType>::value, "Type is not derived from Object.");
-		Ref<ObjectType> object = ObjectDB::CreateObject<ObjectType>(std::forward<Args>(params)...);
-		ObjectDB::AddObjectGuid(object->GetObjectId(), guid);
+		ObjectType* object = Object::Create<ObjectType>();
+		ObjectDB::AssignGuid(object, guid);
 		return object;
 	}
 
 	template<class ObjectType>
-	inline Ref<ObjectType> AssetDB::LoadAssetObject(const Guid& guid)
+	inline ObjectType* AssetDB::LoadAssetObject(const Guid& guid)
 	{
 		YamlSerializer serializer;
 		std::filesystem::path dataPath = Path::GetDataPath();
@@ -66,8 +68,8 @@ namespace Blueberry
 		auto& deserializedObjects = serializer.GetDeserializedObjects();
 		if (deserializedObjects.size() > 0)
 		{
-			ObjectDB::AddObjectGuid(deserializedObjects[0]->GetObjectId(), guid);
-			return std::dynamic_pointer_cast<ObjectType>(deserializedObjects[0]);
+			ObjectDB::AssignGuid(deserializedObjects[0], guid);
+			return (ObjectType*)deserializedObjects[0];
 		}
 		return nullptr;
 	}

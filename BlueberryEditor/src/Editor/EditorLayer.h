@@ -29,8 +29,8 @@ namespace Blueberry
 		void DrawMenuBar();
 
 	private:
-		Ref<Scene> m_Scene;
-		Ref<ImGuiRenderer> m_ImGuiRenderer;
+		Scene* m_Scene;
+		ImGuiRenderer* m_ImGuiRenderer;
 
 		SceneHierarchy m_SceneHierarchy;
 		SceneInspector m_SceneInspector;

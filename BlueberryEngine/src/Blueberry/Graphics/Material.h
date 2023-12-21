@@ -1,4 +1,5 @@
 #pragma once
+#include "Blueberry\Core\WeakObjectPtr.h"
 
 namespace Blueberry
 {
@@ -12,12 +13,11 @@ namespace Blueberry
 
 	public:
 		Material() = default;
-		Material(const Ref<Shader>& shader);
 
-		static Ref<Material> Create(const Ref<Shader>& shader);
+		static Material* Create(Shader* shader);
 
-		void SetTexture(std::size_t id, const Ref<Texture>& texture);
-		void SetTexture(std::string name, const Ref<Texture>& texture);
+		void SetTexture(std::size_t id, Texture* texture);
+		void SetTexture(std::string name, Texture* texture);
 
 		static void BindProperties();
 
@@ -26,8 +26,8 @@ namespace Blueberry
 
 	private:
 		std::vector<std::pair<std::size_t, GfxTexture*>> m_GfxTextures;
-		std::map<std::size_t, Ref<Texture>> m_Textures;
-		Ref<Shader> m_Shader;
+		std::map<std::size_t, WeakObjectPtr<Texture>> m_Textures;
+		WeakObjectPtr<Shader> m_Shader;
 
 		friend struct GfxDrawingOperation;
 	};

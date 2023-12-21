@@ -31,7 +31,6 @@ namespace Blueberry
 	void SceneArea::DrawUI()
 	{
 		ImGui::Begin("Scene");
-		DrawSceneSave();
 		
 		ImGuiIO *io = &ImGui::GetIO();
 		ImVec2 mousePos = ImGui::GetMousePos();
@@ -107,32 +106,14 @@ namespace Blueberry
 		return result;
 	}
 
-	void SceneArea::DrawSceneSave()
-	{
-		if (ImGui::Button("Create"))
-		{
-			EditorSceneManager::CreateEmpty("");
-		}
-
-		if (ImGui::Button("Save"))
-		{
-			EditorSceneManager::Save();
-		}
-
-		if (ImGui::Button("Load"))
-		{
-			EditorSceneManager::Load("");
-		}
-	}
-
 	void SceneArea::DrawScene(const float width, const float height)
 	{
-		g_GraphicsDevice->SetRenderTarget(m_SceneRenderTarget.get());
+		g_GraphicsDevice->SetRenderTarget(m_SceneRenderTarget);
 		g_GraphicsDevice->SetViewport(0, 0, static_cast<int>(width), static_cast<int>(height));
 		g_GraphicsDevice->ClearColor({ 0.117f, 0.117f, 0.117f, 1 });
 		//g_GraphicsDevice->Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), EditorMaterials::GetEditorGridMaterial()));
 
-		Ref<Scene> scene = EditorSceneManager::GetScene();
+		Scene* scene = EditorSceneManager::GetScene();
 		if (scene != nullptr)
 		{
 			SceneRenderer::Draw(scene, m_Camera.GetViewMatrix(), m_Camera.GetProjectionMatrix());

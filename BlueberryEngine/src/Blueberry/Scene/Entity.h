@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Blueberry\Core\Object.h"
+#include "Blueberry\Core\WeakObjectPtr.h"
 
 namespace Blueberry
 {
@@ -16,26 +17,26 @@ namespace Blueberry
 
 		Entity(const std::string& name);
 
-		template<class ComponentType, typename... Args>
-		void AddComponent(Args&&... params);
+		template<class ComponentType>
+		void AddComponent();
 
 		template<class ComponentType>
-		void AddComponent(Ref<ComponentType> component);
+		void AddComponent(ComponentType* component);
 
 		template<class ComponentType>
-		const Ref<ComponentType> GetComponent();
+		ComponentType* GetComponent();
 
-		std::vector<Ref<Component>>& GetComponents();
+		std::vector<Component*> GetComponents();
 
 		template<class ComponentType>
 		bool HasComponent();
 
 		template<class ComponentType>
-		void RemoveComponent(Ref<ComponentType> component);
+		void RemoveComponent(ComponentType* component);
 
 		inline std::size_t GetId();
 
-		Ref<Transform>& GetTransform();
+		Transform* GetTransform();
 		Scene* GetScene();
 
 		static void BindProperties();
@@ -47,76 +48,80 @@ namespace Blueberry
 		void Destroy();
 
 	private:
-		std::vector<Ref<Component>> m_Components;
+		std::vector<WeakObjectPtr<Component>> m_Components;
 
 		std::size_t m_Id;
 
-		Ref<Transform> m_Transform;
+		WeakObjectPtr<Transform> m_Transform;
 		Scene* m_Scene;
 
 		friend class Scene;
 	};
 
-	template<class ComponentType, typename... Args>
-	inline void Entity::AddComponent(Args&&... params)
+	template<class ComponentType>
+	inline void Entity::AddComponent()
 	{
 		static_assert(std::is_base_of<Component, ComponentType>::value, "Type is not derived from Component.");
 
-		auto& componentToAdd = ObjectDB::CreateObject<ComponentType>(std::forward<Args>(params)...);
+		ComponentType* componentToAdd = Object::Create<ComponentType>();
+		WeakObjectPtr<Component> weakPtr((Component*)componentToAdd);
 
 		int index = 0;
-		for (auto && componentSlot : m_Components)
+		for (auto componentSlot : m_Components)
 		{
-			if (componentSlot == nullptr)
+			if (!componentSlot.IsValid())
 			{
-				componentSlot = std::move(componentToAdd);
+				componentSlot = std::move(weakPtr);
 				break;
 			}
 			++index;
 		}
 
-		componentToAdd->m_Entity = this;
-		AddComponentIntoScene(componentToAdd.get());
+		componentToAdd->m_Entity = WeakObjectPtr<Entity>(this);
+		AddComponentIntoScene(componentToAdd);
 		if (index >= m_Components.size())
 		{
-			m_Components.emplace_back(std::move(componentToAdd));
+			m_Components.emplace_back(std::move(weakPtr));
 		}
 	}
 
 	template<class ComponentType>
-	inline void Entity::AddComponent(Ref<ComponentType> component)
+	inline void Entity::AddComponent(ComponentType* component)
 	{
+		static_assert(std::is_base_of<Component, ComponentType>::value, "Type is not derived from Component.");
+
+		WeakObjectPtr<Component> weakPtr((Component*)component);
 		int index = 0;
-		for (auto && componentSlot : m_Components)
+		for (auto& componentSlot : m_Components)
 		{
-			if (componentSlot == nullptr)
+			if (!componentSlot.IsValid())
 			{
-				componentSlot = std::move(component);
+				componentSlot = std::move(weakPtr);
 				break;
 			}
 			++index;
 		}
 
-		component->m_Entity = this;
-		AddComponentIntoScene(component.get());
+		component->m_Entity = WeakObjectPtr<Entity>(this);
+		AddComponentIntoScene(component);
 		if (index >= m_Components.size())
 		{
-			m_Components.emplace_back(std::move(component));
+			m_Components.emplace_back(std::move(weakPtr));
 		}
 	}
 
 	template<class ComponentType>
-	inline const Ref<ComponentType> Entity::GetComponent()
+	inline ComponentType* Entity::GetComponent()
 	{
-		for (auto && component : m_Components)
+		for (auto& component : m_Components)
 		{
 			if (component->IsClassType(ComponentType::Type))
 			{
-				return std::dynamic_pointer_cast<ComponentType>(component);
+				return (ComponentType*)component.Get();
 			}
 		}
 
-		return Ref<ComponentType>();
+		return nullptr;
 	}
 
 	template<class ComponentType>
@@ -134,11 +139,11 @@ namespace Blueberry
 	}
 
 	template<class ComponentType>
-	inline void Entity::RemoveComponent(Ref<ComponentType> component)
+	inline void Entity::RemoveComponent(ComponentType* component)
 	{
-		RemoveComponentFromScene(component.get());
+		RemoveComponentFromScene(component);
 		auto& index = std::find(m_Components.begin(), m_Components.end(), component);
 		m_Components.erase(index);
-		ObjectDB::DestroyObject(component.get());
+		Object::Destroy(component);
 	}
 }

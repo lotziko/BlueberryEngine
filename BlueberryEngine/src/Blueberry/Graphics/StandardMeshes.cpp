@@ -5,7 +5,7 @@
 
 namespace Blueberry
 {
-	Ref<Mesh> StandardMeshes::s_FullscreenMesh = nullptr;
+	Mesh* StandardMeshes::s_FullscreenMesh = nullptr;
 
 	Mesh* StandardMeshes::GetFullscreen()
 	{
@@ -26,6 +26,6 @@ namespace Blueberry
 			s_FullscreenMesh->SetVertexData(vertices, 4);
 			s_FullscreenMesh->SetIndexData(indices, 6);
 		}
-		return s_FullscreenMesh.get();
+		return s_FullscreenMesh;
 	}
 }

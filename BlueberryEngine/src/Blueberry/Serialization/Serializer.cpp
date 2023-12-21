@@ -9,7 +9,7 @@ namespace Blueberry
 		m_ObjectsToSerialize.emplace_back(object);
 	}
 
-	std::vector<Ref<Object>>& Serializer::GetDeserializedObjects()
+	std::vector<Object*>& Serializer::GetDeserializedObjects()
 	{
 		return m_DeserializedObjects;
 	}
@@ -27,7 +27,7 @@ namespace Blueberry
 		return id;
 	}
 
-	Ref<Object> Serializer::GetObjectRef(const FileId& fileId)
+	Object* Serializer::GetObjectRef(const FileId& fileId)
 	{
 		auto idIt = m_FileIdToObject.find(fileId);
 		if (idIt != m_FileIdToObject.end())

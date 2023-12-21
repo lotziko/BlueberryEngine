@@ -10,7 +10,7 @@ namespace Blueberry
 {
 	GfxDrawingOperation::GfxDrawingOperation(GfxVertexBuffer* vertexBuffer, GfxIndexBuffer* indexBuffer, Material* material, const UINT& indexCount, const Topology& topology)
 	{
-		shader = material->m_Shader->m_Shader.get();
+		shader = material->m_Shader->m_Shader;
 		textures = &(material->m_GfxTextures);
 		this->vertexBuffer = vertexBuffer;
 		this->indexBuffer = indexBuffer;
@@ -18,11 +18,11 @@ namespace Blueberry
 		this->topology = topology;
 	}
 
-	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material, const UINT& indexCount) : GfxDrawingOperation(mesh->m_VertexBuffer.get(), mesh->m_IndexBuffer.get(), material, indexCount, mesh->GetTopology())
+	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material, const UINT& indexCount) : GfxDrawingOperation(mesh->m_VertexBuffer, mesh->m_IndexBuffer, material, indexCount, mesh->GetTopology())
 	{
 	}
 
-	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material) : GfxDrawingOperation(mesh->m_VertexBuffer.get(), mesh->m_IndexBuffer.get(), material, mesh->m_IndexCount, mesh->GetTopology())
+	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material) : GfxDrawingOperation(mesh->m_VertexBuffer, mesh->m_IndexBuffer, material, mesh->m_IndexCount, mesh->GetTopology())
 	{
 	}
 
