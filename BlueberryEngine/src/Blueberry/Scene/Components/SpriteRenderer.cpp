@@ -53,6 +53,7 @@ namespace Blueberry
 	{
 		BEGIN_OBJECT_BINDING(SpriteRenderer)
 		BIND_FIELD("m_Color", &SpriteRenderer::m_Color, BindingType::Color)
+		BIND_FIELD("m_Texture", &SpriteRenderer::m_Texture, BindingType::ObjectPtr)
 		END_OBJECT_BINDING()
 	}
 }

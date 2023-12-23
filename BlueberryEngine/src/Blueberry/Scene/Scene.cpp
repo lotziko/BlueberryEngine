@@ -59,7 +59,7 @@ namespace Blueberry
 		entity->m_Name = name;
 
 		entity->AddComponent<Transform>();
-		entity->m_Transform = WeakObjectPtr<Transform>(entity->GetComponent<Transform>());
+		entity->m_Transform = ObjectPtr<Transform>(entity->GetComponent<Transform>());
 
 		if (m_EmptyEntityIds.size() > 0)
 		{
@@ -95,7 +95,7 @@ namespace Blueberry
 		Object::Destroy(entity);
 	}
 
-	const std::vector<WeakObjectPtr<Entity>>& Scene::GetEntities()
+	const std::vector<ObjectPtr<Entity>>& Scene::GetEntities()
 	{
 		return m_Entities;
 	}

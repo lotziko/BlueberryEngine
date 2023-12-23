@@ -28,10 +28,10 @@ namespace Blueberry
 		void AddEntity(Entity* entity);
 		void DestroyEntity(Entity* entity);
 
-		const std::vector<WeakObjectPtr<Entity>>& GetEntities();
+		const std::vector<ObjectPtr<Entity>>& GetEntities();
 
 	private:
-		std::vector<WeakObjectPtr<Entity>> m_Entities;
+		std::vector<ObjectPtr<Entity>> m_Entities;
 		ComponentManager m_ComponentManager;
 
 		std::stack<std::size_t> m_EmptyEntityIds;

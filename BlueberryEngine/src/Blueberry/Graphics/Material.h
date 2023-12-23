@@ -1,5 +1,5 @@
 #pragma once
-#include "Blueberry\Core\WeakObjectPtr.h"
+#include "Blueberry\Core\ObjectPtr.h"
 
 namespace Blueberry
 {
@@ -26,8 +26,8 @@ namespace Blueberry
 
 	private:
 		std::vector<std::pair<std::size_t, GfxTexture*>> m_GfxTextures;
-		std::map<std::size_t, WeakObjectPtr<Texture>> m_Textures;
-		WeakObjectPtr<Shader> m_Shader;
+		std::map<std::size_t, ObjectPtr<Texture>> m_Textures;
+		ObjectPtr<Shader> m_Shader;
 
 		friend struct GfxDrawingOperation;
 	};

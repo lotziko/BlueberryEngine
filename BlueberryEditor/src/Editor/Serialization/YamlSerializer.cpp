@@ -2,7 +2,7 @@
 #include "YamlSerializer.h"
 
 #include "Blueberry\Core\ClassDB.h"
-#include "Blueberry\Core\WeakObjectPtr.h"
+#include "Blueberry\Core\ObjectPtr.h"
 #include "Editor\Serialization\YamlHelper.h"
 #include "Editor\Serialization\YamlSerializers.h"
 
@@ -89,48 +89,51 @@ namespace Blueberry
 				break;
 			case BindingType::ObjectPtr:
 			{
-				Object* objectValue = *value.Get<Object*>();
-				if (objectValue != nullptr)
-				{
-					objectNode[key] << GetFileId(objectValue);
-				}
-			}
-			break;
-			case BindingType::ObjectWeakPtr:
-			{
-				WeakObjectPtr<Object> objectRefValue = *value.Get<WeakObjectPtr<Object>>();
+				ObjectPtr<Object> objectRefValue = *value.Get<ObjectPtr<Object>>();
 				if (objectRefValue.IsValid())
 				{
-					objectNode[key] << GetFileId(objectRefValue.Get());
+					Object* object = objectRefValue.Get();
+					ObjectPtrData data;
+					if (ObjectDB::HasGuid(object))
+					{
+						data.fileId = 0;
+						data.isAsset = true;
+						data.guid = ObjectDB::GetGuid(object);
+					}
+					else
+					{
+						data.fileId = GetFileId(object);
+						data.isAsset = false;
+					}
+					objectNode[key] << data;
 				}
 			}
 			break;
 			case BindingType::ObjectPtrArray:
 			{
-				std::vector<Object*> arrayValue = *value.Get<std::vector<Object*>>();
+				std::vector<ObjectPtr<Object>> arrayValue = *value.Get<std::vector<ObjectPtr<Object>>>();
 				if (arrayValue.size() > 0)
 				{
 					ryml::NodeRef sequence = objectNode[key];
 					sequence |= ryml::SEQ;
-					for (Object* object : arrayValue)
+					for (ObjectPtr<Object>& objectRefValue : arrayValue)
 					{
-						sequence.append_child() << GetFileId(object);
-					}
-				}
-			}
-			break;
-			case BindingType::ObjectWeakPtrArray:
-			{
-				std::vector<WeakObjectPtr<Object>> arrayValue = *value.Get<std::vector<WeakObjectPtr<Object>>>();
-				if (arrayValue.size() > 0)
-				{
-					ryml::NodeRef sequence = objectNode[key];
-					sequence |= ryml::SEQ;
-					for (WeakObjectPtr<Object>& object : arrayValue)
-					{
-						if (object.IsValid())
+						if (objectRefValue.IsValid())
 						{
-							sequence.append_child() << GetFileId(object.Get());
+							Object* object = objectRefValue.Get();
+							ObjectPtrData data;
+							if (ObjectDB::HasGuid(object))
+							{
+								data.fileId = 0;
+								data.isAsset = true;
+								data.guid = ObjectDB::GetGuid(object);
+							}
+							else
+							{
+								data.fileId = GetFileId(object);
+								data.isAsset = false;
+							}
+							sequence.append_child() << data;
 						}
 					}
 				}
@@ -180,26 +183,38 @@ namespace Blueberry
 					break;
 				case BindingType::ObjectPtr:
 				{
-					FileId fileId;
-					objectNode[key] >> fileId;
-					*value.Get<Object*>() = GetObjectRef(fileId);
+					ObjectPtrData data;
+					objectNode[key] >> data;
+					Object* object;
+					if (data.isAsset)
+					{
+						object = ObjectDB::GetObject(data.guid);
+					}
+					else
+					{
+						object = GetObjectRef(data.fileId);
+					}
+					*value.Get<ObjectPtr<Object>>() = object;
 				}
 				break;
-				case BindingType::ObjectWeakPtr:
+				case BindingType::ObjectPtrArray:
 				{
 					FileId fileId;
-					objectNode[key] >> fileId;
-					*value.Get<WeakObjectPtr<Object>>() = GetObjectRef(fileId);
-				}
-				break;
-				case BindingType::ObjectWeakPtrArray:
-				{
-					FileId fileId;
-					std::vector<WeakObjectPtr<Object>>* refArrayPointer = value.Get<std::vector<WeakObjectPtr<Object>>>();
+					std::vector<ObjectPtr<Object>>* refArrayPointer = value.Get<std::vector<ObjectPtr<Object>>>();
 					for (auto& child : objectNode[key].cchildren())
 					{
-						child >> fileId;
-						refArrayPointer->emplace_back(GetObjectRef(fileId));
+						ObjectPtrData data;
+						child >> data;
+						Object* object;
+						if (data.isAsset)
+						{
+							object = ObjectDB::GetObject(data.guid);
+						}
+						else
+						{
+							object = GetObjectRef(data.fileId);
+						}
+						refArrayPointer->emplace_back(object);
 					}
 				}
 				break;

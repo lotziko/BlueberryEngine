@@ -20,7 +20,7 @@ namespace Blueberry
 	{
 		if (m_Textures.count(id) == 0)
 		{
-			m_Textures.insert({ id, WeakObjectPtr<Texture>(texture) });
+			m_Textures.insert({ id, ObjectPtr<Texture>(texture) });
 			FillGfxTextures();
 		}
 	}
@@ -37,7 +37,7 @@ namespace Blueberry
 	void Material::FillGfxTextures()
 	{
 		m_GfxTextures.clear();
-		std::map<std::size_t, WeakObjectPtr<Texture>>::iterator it;
+		std::map<std::size_t, ObjectPtr<Texture>>::iterator it;
 		for (it = m_Textures.begin(); it != m_Textures.end(); it++)
 		{
 			m_GfxTextures.emplace_back(std::make_pair(it->first, it->second.Get()->m_Texture));

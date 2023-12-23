@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Blueberry\Core\Object.h"
-#include "Blueberry\Core\WeakObjectPtr.h"
+#include "Blueberry\Core\ObjectPtr.h"
 
 namespace Blueberry
 {
@@ -48,11 +48,11 @@ namespace Blueberry
 		void Destroy();
 
 	private:
-		std::vector<WeakObjectPtr<Component>> m_Components;
+		std::vector<ObjectPtr<Component>> m_Components;
 
 		std::size_t m_Id;
 
-		WeakObjectPtr<Transform> m_Transform;
+		ObjectPtr<Transform> m_Transform;
 		Scene* m_Scene;
 
 		friend class Scene;
@@ -64,7 +64,7 @@ namespace Blueberry
 		static_assert(std::is_base_of<Component, ComponentType>::value, "Type is not derived from Component.");
 
 		ComponentType* componentToAdd = Object::Create<ComponentType>();
-		WeakObjectPtr<Component> weakPtr((Component*)componentToAdd);
+		ObjectPtr<Component> weakPtr((Component*)componentToAdd);
 
 		int index = 0;
 		for (auto componentSlot : m_Components)
@@ -77,7 +77,7 @@ namespace Blueberry
 			++index;
 		}
 
-		componentToAdd->m_Entity = WeakObjectPtr<Entity>(this);
+		componentToAdd->m_Entity = ObjectPtr<Entity>(this);
 		AddComponentIntoScene(componentToAdd);
 		if (index >= m_Components.size())
 		{
@@ -90,7 +90,7 @@ namespace Blueberry
 	{
 		static_assert(std::is_base_of<Component, ComponentType>::value, "Type is not derived from Component.");
 
-		WeakObjectPtr<Component> weakPtr((Component*)component);
+		ObjectPtr<Component> weakPtr((Component*)component);
 		int index = 0;
 		for (auto& componentSlot : m_Components)
 		{
@@ -102,7 +102,7 @@ namespace Blueberry
 			++index;
 		}
 
-		component->m_Entity = WeakObjectPtr<Entity>(this);
+		component->m_Entity = ObjectPtr<Entity>(this);
 		AddComponentIntoScene(component);
 		if (index >= m_Components.size())
 		{

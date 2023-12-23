@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Blueberry\Math\Math.h"
-#include "Blueberry\Core\WeakObjectPtr.h"
+#include "Blueberry\Core\ObjectPtr.h"
 
 namespace Blueberry
 {
@@ -27,7 +27,7 @@ namespace Blueberry
 		void Flush();
 
 	private:
-		WeakObjectPtr<Material> m_Material;
+		ObjectPtr<Material> m_Material;
 		GfxVertexBuffer* m_VertexBuffer;
 		GfxIndexBuffer* m_IndexBuffer;
 		GfxConstantBuffer* m_ConstantBuffer;

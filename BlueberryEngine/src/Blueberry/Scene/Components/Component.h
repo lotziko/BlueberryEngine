@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Blueberry\Core\Object.h"
-#include "Blueberry\Core\WeakObjectPtr.h"
+#include "Blueberry\Core\ObjectPtr.h"
 
 namespace Blueberry
 {
@@ -18,7 +18,7 @@ namespace Blueberry
 		static void BindProperties();
 
 	protected:
-		WeakObjectPtr<Entity> m_Entity;
+		ObjectPtr<Entity> m_Entity;
 
 		friend class Entity;
 	};

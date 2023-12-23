@@ -41,7 +41,7 @@ namespace Blueberry
 			if (inspector != nullptr)
 			{
 				const char* headerId = name.c_str();
-				const char* popupId = (name + "_popup").c_str();
+				const char* popupId = "InspectorPopup";
 
 				ImGui::PushID(headerId);
 
@@ -49,9 +49,6 @@ namespace Blueberry
 				{
 					inspector->Draw(component);
 				}
-
-				if (ImGui::IsItemHovered() && ImGui::IsMouseDown(1))
-					ImGui::OpenPopup(popupId);
 
 				if (ImGui::BeginPopup(popupId))
 				{
@@ -61,6 +58,8 @@ namespace Blueberry
 					}
 					ImGui::EndPopup();
 				}
+
+				ImGui::OpenPopupOnItemClick(popupId, ImGuiPopupFlags_MouseButtonRight);
 
 				ImGui::PopID();
 			}

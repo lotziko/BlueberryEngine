@@ -33,6 +33,7 @@ namespace Blueberry
 			auto extension = path.extension();
 			auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
 
+			ImGui::PushID(pathString.c_str());
 			if (it.is_directory())
 			{
 				if (ImGui::Button(relativePath.filename().string().c_str()))
@@ -42,15 +43,16 @@ namespace Blueberry
 			}
 			else if (extension == ".meta")
 			{
-				if (ImGui::Button(relativePath.stem().string().c_str()))
+				AssetImporter* importer = AssetDB::GetImporter(pathString);
+				if (importer != nullptr)
 				{
-					// TODO make it select AssetImporter
-				}
+					auto name = importer->GetName().c_str();
+					if (ImGui::Button(name))
+					{
+						// TODO make it select AssetImporter
+					}
 
-				if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-				{
-					AssetImporter* importer = AssetDB::GetImporter(pathString);
-					if (importer != nullptr)
+					if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 					{
 						std::string stringPath = importer->GetFilePath();
 						std::filesystem::path filePath = stringPath;
@@ -59,15 +61,20 @@ namespace Blueberry
 							EditorSceneManager::Load(stringPath);
 						}
 					}
-				}
 
-				/*if (ImGui::BeginDragDropSource())
-				{
-					ImGui::SetDragDropPayload("ASSET_OBJECT", &path, sizeof(std::filesystem::path));
-					ImGui::Text("%ws", relativePath.replace_extension().c_str());
-					ImGui::EndDragDropSource();
-				}*/
+					auto& objects = importer->GetImportedObjects();
+					if (objects.size() > 0)
+					{
+						if (ImGui::BeginDragDropSource())
+						{
+							ImGui::SetDragDropPayload("OBJECT_ID", &objects[0], sizeof(ObjectId));
+							ImGui::Text("%s", name);
+							ImGui::EndDragDropSource();
+						}
+					}
+				}
 			}
+			ImGui::PopID();
 		}
 
 		ImGui::End();

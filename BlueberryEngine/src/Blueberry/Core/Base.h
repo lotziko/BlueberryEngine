@@ -7,10 +7,13 @@ namespace Blueberry
 {
 	template<typename T>
 	using ComPtr = Microsoft::WRL::ComPtr<T>;
+
+	using byte = unsigned char;
 }
 
 #undef min
 #undef max
+#undef GetObject
 
 #define MAX_COMPONENTS 128
 #define INVALID_ID -1

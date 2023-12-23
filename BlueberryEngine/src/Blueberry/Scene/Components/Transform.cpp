@@ -19,7 +19,7 @@ namespace Blueberry
 		{
 			if (m_Parent->m_Children.size() > 0)
 			{
-				auto index = std::find_if(m_Parent->m_Children.begin(), m_Parent->m_Children.end(), [this](WeakObjectPtr<Transform> const& i) { return i.Get() == this; });
+				auto index = std::find_if(m_Parent->m_Children.begin(), m_Parent->m_Children.end(), [this](ObjectPtr<Transform> const& i) { return i.Get() == this; });
 				m_Parent->m_Children.erase(index);
 				m_Parent = nullptr;
 			}
@@ -126,12 +126,12 @@ namespace Blueberry
 	void Transform::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(Transform)
-		BIND_FIELD("m_Entity", &Transform::m_Entity, BindingType::ObjectWeakPtr)
+		BIND_FIELD("m_Entity", &Transform::m_Entity, BindingType::ObjectPtr)
 		BIND_FIELD("m_LocalPosition", &Transform::m_LocalPosition, BindingType::Vector3)
 		BIND_FIELD("m_LocalRotation", &Transform::m_LocalRotation, BindingType::Quaternion)
 		BIND_FIELD("m_LocalScale", &Transform::m_LocalScale, BindingType::Vector3)
-		BIND_FIELD("m_Parent", &Transform::m_Parent, BindingType::ObjectWeakPtr)
-		BIND_FIELD("m_Children", &Transform::m_Children, BindingType::ObjectWeakPtrArray)
+		BIND_FIELD("m_Parent", &Transform::m_Parent, BindingType::ObjectPtr)
+		BIND_FIELD("m_Children", &Transform::m_Children, BindingType::ObjectPtrArray)
 		END_OBJECT_BINDING()
 	}
 

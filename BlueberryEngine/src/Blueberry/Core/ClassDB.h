@@ -25,9 +25,7 @@ namespace Blueberry
 		Color,
 
 		ObjectPtr,
-		ObjectWeakPtr,
 		ObjectPtrArray,
-		ObjectWeakPtrArray
 	};
 
 	class ClassDB

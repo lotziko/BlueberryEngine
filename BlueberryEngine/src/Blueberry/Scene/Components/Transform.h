@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Component.h"
-#include "Blueberry\Core\WeakObjectPtr.h"
+#include "Blueberry\Core\ObjectPtr.h"
 
 namespace Blueberry
 {
@@ -43,8 +43,8 @@ namespace Blueberry
 	private:
 		bool m_IsDirty = true;
 
-		WeakObjectPtr<Transform> m_Parent;
-		std::vector<WeakObjectPtr<Transform>> m_Children;
+		ObjectPtr<Transform> m_Parent;
+		std::vector<ObjectPtr<Transform>> m_Children;
 
 		Matrix m_LocalToWorldMatrix;
 		Matrix m_LocalMatrix;

@@ -21,7 +21,7 @@ namespace Blueberry
 
 		if (scene != nullptr)
 		{
-			std::vector<WeakObjectPtr<Entity>> entities = std::vector<WeakObjectPtr<Entity>>(scene->GetEntities());
+			std::vector<ObjectPtr<Entity>> entities = std::vector<ObjectPtr<Entity>>(scene->GetEntities());
 
 			for (auto entity : entities)
 			{

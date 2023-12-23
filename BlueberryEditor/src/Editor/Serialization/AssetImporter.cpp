@@ -26,6 +26,11 @@ namespace Blueberry
 		return m_MetaPath;
 	}
 
+	const std::vector<ObjectId>& AssetImporter::GetImportedObjects()
+	{
+		return m_ImportedObjects;
+	}
+
 	void AssetImporter::Save()
 	{
 		YamlMetaSerializer serializer;
@@ -34,30 +39,32 @@ namespace Blueberry
 		serializer.Serialize(m_MetaPath);
 	}
 
-	AssetImporter* AssetImporter::Create(const size_t& type, const std::string& path, const std::string& metaPath)
+	AssetImporter* AssetImporter::Create(const size_t& type, const std::filesystem::path& path, const std::filesystem::path& metaPath)
 	{
 		auto info = ClassDB::GetInfo(type);
 		AssetImporter* importer = (AssetImporter*)info.createInstance();
 		importer->m_Guid = Guid::Create();
-		importer->m_Path = path;
-		importer->m_MetaPath = metaPath;
+		importer->m_Path = path.string();
+		importer->m_MetaPath = metaPath.string();
+		importer->m_Name = path.stem().string();
 		importer->Save();
 		importer->ImportData();
 		return importer;
 	}
 
-	AssetImporter* AssetImporter::Load(const std::string& path, const std::string& metaPath)
+	AssetImporter* AssetImporter::Load(const std::filesystem::path& path, const std::filesystem::path& metaPath)
 	{
 		YamlMetaSerializer serializer;
-		serializer.Deserialize(metaPath);
+		serializer.Deserialize(metaPath.string());
 
 		auto& deserializedObjects = serializer.GetDeserializedObjects();
 		if (deserializedObjects.size() > 0)
 		{
 			AssetImporter* importer = (AssetImporter*)deserializedObjects[0];
 			importer->m_Guid = serializer.GetGuid();
-			importer->m_Path = path;
-			importer->m_MetaPath = metaPath;
+			importer->m_Path = path.string();
+			importer->m_MetaPath = metaPath.string();
+			importer->m_Name = path.stem().string();
 			importer->ImportData();
 			return importer;
 		}
@@ -66,5 +73,10 @@ namespace Blueberry
 
 	void AssetImporter::BindProperties()
 	{
+	}
+
+	void AssetImporter::AddImportedObject(Object* object)
+	{
+		m_ImportedObjects.emplace_back(object->GetObjectId());
 	}
 }

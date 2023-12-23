@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Blueberry\Core\Object.h"
+#include "Blueberry\Core\Structs.h"
 #include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Graphics\Structs.h"
 
@@ -11,7 +12,6 @@ namespace Blueberry
 		OBJECT_DECLARATION(Texture)
 
 	public:
-		Texture() = default;
 		virtual ~Texture() = default;
 
 		const UINT& GetWidth();

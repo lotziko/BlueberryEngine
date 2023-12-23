@@ -77,7 +77,6 @@ namespace Blueberry
 			return;
 		}
 
-		auto pathString = path.string();
 		auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
 		auto relativePathString = relativePath.string();
 		
@@ -85,7 +84,6 @@ namespace Blueberry
 
 		auto metaPath = path;
 		metaPath += ".meta";
-		auto metaPathString = metaPath.string();
 
 		AssetImporter* importer;
 		if (!std::filesystem::exists(metaPath))
@@ -94,20 +92,20 @@ namespace Blueberry
 			auto importerTypeIt = s_ImporterTypes.find(extensionString);
 			if (importerTypeIt != s_ImporterTypes.end())
 			{
-				importer = AssetImporter::Create(importerTypeIt->second, pathString, metaPathString);
+				importer = AssetImporter::Create(importerTypeIt->second, path, metaPath);
 			}
 			else
 			{
-				importer = AssetImporter::Create(DefaultImporter::Type, pathString, metaPathString);
+				importer = AssetImporter::Create(DefaultImporter::Type, path, metaPath);
 				BB_INFO(std::string() << "AssetImporter for extension " << extensionString << " does not exist and default importer was created.");
 			}
 		}
 		else
 		{
 			// Create importer from meta file
-			importer = AssetImporter::Load(pathString, metaPathString);
+			importer = AssetImporter::Load(path, metaPath);
 		}
-		s_Importers.insert({ metaPathString, importer });
+		s_Importers.insert({ metaPath.string(), importer });
 	}
 
 	void AssetDB::Register(const std::string& extension, const std::size_t& importerType)

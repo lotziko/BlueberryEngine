@@ -29,7 +29,7 @@ namespace Blueberry
 
 	private:
 		Color m_Color;
-		WeakObjectPtr<Texture2D> m_Texture;
-		WeakObjectPtr<Material> m_Material;
+		ObjectPtr<Texture2D> m_Texture;
+		ObjectPtr<Material> m_Material;
 	};
 }

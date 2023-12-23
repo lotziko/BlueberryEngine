@@ -45,7 +45,7 @@ namespace Blueberry
 	{
 		BEGIN_OBJECT_BINDING(Entity)
 		BIND_FIELD("m_Name", &Entity::m_Name, BindingType::String)
-		BIND_FIELD("m_Components", &Entity::m_Components, BindingType::ObjectWeakPtrArray)
+		BIND_FIELD("m_Components", &Entity::m_Components, BindingType::ObjectPtrArray)
 		END_OBJECT_BINDING()
 	}
 

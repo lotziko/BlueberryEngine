@@ -44,8 +44,11 @@ namespace Blueberry
 
 		static void AssignGuid(Object* object, const Guid& guid);
 		static Guid GetGuid(Object* object);
+		static bool HasGuid(Object* object);
+		static Object* GetObject(const Guid& guid);
 	private:
 		static ChunkedObjectArray s_Array;
-		static std::map<ObjectId, Guid> s_Guids;
+		static std::map<ObjectId, Guid> s_ObjectIdToGuid;
+		static std::map<Guid, ObjectId> s_GuidToObjectId;
 	};
 }

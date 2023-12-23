@@ -3,10 +3,10 @@
 
 namespace Blueberry
 {
-	void FileHelper::Save(BYTE* data, const size_t& length, const std::string& path)
+	void FileHelper::Save(byte* data, const size_t& length, const std::string& path)
 	{
 		auto file = fopen(path.c_str(), "w");
-		fwrite(data, sizeof(BYTE) * length, 1, file);
+		fwrite(data, sizeof(byte) * length, 1, file);
 		fclose(file);
 	}
 }

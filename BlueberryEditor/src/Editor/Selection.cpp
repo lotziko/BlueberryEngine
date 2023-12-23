@@ -3,7 +3,7 @@
 
 namespace Blueberry
 {
-	WeakObjectPtr<Object> Selection::s_ActiveObject = nullptr;
+	ObjectPtr<Object> Selection::s_ActiveObject = nullptr;
 
 	Object* Selection::GetActiveObject()
 	{

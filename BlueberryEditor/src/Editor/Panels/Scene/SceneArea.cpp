@@ -32,6 +32,14 @@ namespace Blueberry
 	{
 		ImGui::Begin("Scene");
 		
+		if (EditorSceneManager::GetScene() != nullptr)
+		{
+			if (ImGui::Button("Save"))
+			{
+				EditorSceneManager::Save();
+			}
+		}
+		
 		ImGuiIO *io = &ImGui::GetIO();
 		ImVec2 mousePos = ImGui::GetMousePos();
 		ImVec2 pos = ImGui::GetCursorScreenPos();

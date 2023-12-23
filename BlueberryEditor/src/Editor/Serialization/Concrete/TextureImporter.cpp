@@ -19,9 +19,11 @@ namespace Blueberry
 	{
 		Guid guid = GetGuid();
 		// TODO check if dirty too
+
+		Texture2D* object;
 		if (AssetDB::HasAssetWithGuidInData(guid))
 		{
-			AssetDB::LoadAssetObject<Texture2D>(guid);
+			object = AssetDB::LoadAssetObject<Texture2D>(guid);
 		}
 		else
 		{
@@ -42,10 +44,13 @@ namespace Blueberry
 			properties.dataSize = dataSize;
 			properties.isRenderTarget = false;
 
-			Texture2D* object = Texture2D::Create(properties);
+			object = Texture2D::Create(properties);
+			ObjectDB::AssignGuid(object, guid);
 			AssetDB::SaveAssetObject(object);
 
 			stbi_image_free(data);
 		}
+		object->SetName(GetName());
+		AddImportedObject(object);
 	}
 }

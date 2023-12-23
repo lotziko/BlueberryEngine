@@ -4,7 +4,8 @@
 namespace Blueberry
 {
 	ChunkedObjectArray ObjectDB::s_Array = ChunkedObjectArray();
-	std::map<ObjectId, Guid> ObjectDB::s_Guids = std::map<ObjectId, Guid>();
+	std::map<ObjectId, Guid> ObjectDB::s_ObjectIdToGuid = std::map<ObjectId, Guid>();
+	std::map<Guid, ObjectId> ObjectDB::s_GuidToObjectId = std::map<Guid, ObjectId>();
 
 	ChunkedObjectArray::ChunkedObjectArray()
 	{
@@ -82,16 +83,33 @@ namespace Blueberry
 
 	void ObjectDB::AssignGuid(Object* object, const Guid& guid)
 	{
-		s_Guids.insert_or_assign(object->GetObjectId(), guid);
+		ObjectId objectId = object->GetObjectId();
+		s_ObjectIdToGuid.insert_or_assign(objectId, guid);
+		s_GuidToObjectId.insert_or_assign(guid, objectId);
 	}
 
 	Guid ObjectDB::GetGuid(Object* object)
 	{
-		auto guidIt = s_Guids.find(object->GetObjectId());
-		if (guidIt != s_Guids.end())
+		auto guidIt = s_ObjectIdToGuid.find(object->GetObjectId());
+		if (guidIt != s_ObjectIdToGuid.end())
 		{
 			return guidIt->second;
 		}
 		return Guid();
+	}
+
+	bool ObjectDB::HasGuid(Object* object)
+	{
+		return s_ObjectIdToGuid.count(object->GetObjectId()) > 0;
+	}
+
+	Object* ObjectDB::GetObject(const Guid& guid)
+	{
+		auto objectIdIt = s_GuidToObjectId.find(guid);
+		if (objectIdIt != s_GuidToObjectId.end())
+		{
+			return IdToObjectItem(objectIdIt->second)->object;
+		}
+		return nullptr;
 	}
 }
