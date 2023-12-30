@@ -21,8 +21,7 @@ namespace Blueberry
 		virtual void SetViewport(int x, int y, int width, int height) final;
 		virtual void ResizeBackbuffer(int width, int height) final;
 
-		virtual bool CreateShader(const std::wstring& shaderPath, GfxShader*& shader) final;
-		virtual bool CreateShader(const std::wstring& vertexShaderPath, const std::wstring& pixelShaderPath, GfxShader*& shader) final;
+		virtual bool CreateShader(void* vertexData, void* pixelData, GfxShader*& shader) final;
 		virtual bool CreateVertexBuffer(const VertexLayout& layout, const UINT& vertexCount, GfxVertexBuffer*& buffer) final;
 		virtual bool CreateIndexBuffer(const UINT& indexCount, GfxIndexBuffer*& buffer) final;
 		virtual bool CreateConstantBuffer(const UINT& byteCount, GfxConstantBuffer*& buffer) final;

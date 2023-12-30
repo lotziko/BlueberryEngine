@@ -7,6 +7,8 @@
 #include "Editor\EditorSceneManager.h"
 #include "imgui\imgui.h"
 
+#include "Blueberry\Graphics\Material.h"
+
 namespace Blueberry
 {
 	ProjectBrowser::ProjectBrowser()
@@ -75,6 +77,23 @@ namespace Blueberry
 				}
 			}
 			ImGui::PopID();
+		}
+
+		const char* popupId = "ProjectPopup";
+		if (ImGui::BeginPopup(popupId))
+		{
+			if (ImGui::MenuItem("Material"))
+			{
+				Material* material = Object::Create<Material>();
+				AssetDB::SaveAssetObject(material, "Test.material");
+				AssetDB::ImportAll();
+			}
+			ImGui::EndPopup();
+		}
+
+		if (ImGui::IsMouseClicked(1))
+		{
+			ImGui::OpenPopup(popupId);
 		}
 
 		ImGui::End();

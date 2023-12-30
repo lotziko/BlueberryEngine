@@ -7,9 +7,16 @@ namespace Blueberry
 {
 	OBJECT_DEFINITION(Object, Shader)
 
-	Shader::Shader(std::wstring shaderPath)
+	void Shader::Initialize(void* vertexData, void* pixelData)
 	{
-		g_GraphicsDevice->CreateShader(shaderPath, m_Shader);
+		g_GraphicsDevice->CreateShader(vertexData, pixelData, m_Shader);
+	}
+
+	Shader* Shader::Create(void* vertexData, void* pixelData)
+	{
+		Shader* shader = Object::Create<Shader>();
+		shader->Initialize(vertexData, pixelData);
+		return shader;
 	}
 
 	void Shader::BindProperties()

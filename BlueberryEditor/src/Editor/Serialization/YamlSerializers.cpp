@@ -102,8 +102,9 @@ namespace Blueberry
 {
 	size_t to_chars(ryml::substr buf, Guid val)
 	{
-		char dst[32];
+		char dst[33];
 		ByteConverter::BytesToHexString(val.data, dst, sizeof(val.data));
+		dst[32] = '\0';
 		return ryml::format(buf, dst);
 	}
 
@@ -119,7 +120,15 @@ namespace Blueberry
 	{
 		char* dst = new char[val.size * 2];
 		ByteConverter::BytesToHexString(val.data, dst, val.size);
-		return ryml::format(buf, ryml::substr(dst, val.size));
+		return ryml::format(buf, ryml::substr(dst, val.size * 2));
+	}
+
+	bool from_chars(ryml::csubstr buf, Blueberry::ByteData* v)
+	{
+		size_t size = buf.size();
+		v->data = new byte[size / 2];
+		ByteConverter::HexStringToBytes(buf.data(), v->data, size);
+		return true;
 	}
 
 	void write(ryml::NodeRef* n, const ObjectPtrData& val)

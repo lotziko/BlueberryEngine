@@ -36,28 +36,38 @@ namespace Blueberry
 		return nullptr;
 	}
 
-	std::string AssetDB::GetAssetDataPath(Object* object, const char* extension)
+	std::string AssetDB::GetAssetCachedDataPath(Object* object, const char* extension)
 	{
-		std::filesystem::path dataPath = Path::GetDataPath();
+		std::filesystem::path dataPath = Path::GetAssetCachePath();
 		if (!std::filesystem::exists(dataPath))
 		{
 			std::filesystem::create_directories(dataPath);
 		}
-		return dataPath.append(ObjectDB::GetGuid(object).ToString().append(extension)).string();
+		return dataPath.append(ObjectDB::GetGuidFromObject(object).ToString().append(extension)).string();
 	}
 
 	bool AssetDB::HasAssetWithGuidInData(const Guid& guid)
 	{
-		auto dataPath = Path::GetDataPath();
+		auto dataPath = Path::GetAssetCachePath();
 		dataPath.append(guid.ToString().append(".yaml"));
 		return std::filesystem::exists(dataPath);
 	}
 
-	void AssetDB::SaveAssetObject(Object* object)
+	void AssetDB::SaveAssetObject(Object* object, const std::string& relativePath)
 	{
 		YamlSerializer serializer;
+		auto dataPath = Path::GetAssetsPath();
+		dataPath.append(relativePath);
 		serializer.AddObject(object);
-		serializer.Serialize(GetAssetDataPath(object, ".yaml"));
+		serializer.Serialize(dataPath.string());
+	}
+
+	void AssetDB::SaveAssetObjectToCache(Object* object)
+	{
+		// TODO binary serializer
+		YamlSerializer serializer;
+		serializer.AddObject(object);
+		serializer.Serialize(GetAssetCachedDataPath(object, ".yaml"));
 	}
 
 	void AssetDB::Import(const std::filesystem::path& path)
@@ -81,31 +91,49 @@ namespace Blueberry
 		auto relativePathString = relativePath.string();
 		
 		auto lastWriteTime = std::chrono::duration_cast<std::chrono::seconds>(std::filesystem::last_write_time(path).time_since_epoch()).count();
-
-		auto metaPath = path;
-		metaPath += ".meta";
-
-		AssetImporter* importer;
-		if (!std::filesystem::exists(metaPath))
+		auto lastWriteIt = s_PathModifyCache.find(relativePathString);
+		bool needsImport = false;
+		
+		if (lastWriteIt != s_PathModifyCache.end())
 		{
-			// Create new meta file
-			auto importerTypeIt = s_ImporterTypes.find(extensionString);
-			if (importerTypeIt != s_ImporterTypes.end())
+			if (lastWriteIt->second < lastWriteTime)
 			{
-				importer = AssetImporter::Create(importerTypeIt->second, path, metaPath);
-			}
-			else
-			{
-				importer = AssetImporter::Create(DefaultImporter::Type, path, metaPath);
-				BB_INFO(std::string() << "AssetImporter for extension " << extensionString << " does not exist and default importer was created.");
+				needsImport = true;
 			}
 		}
 		else
 		{
-			// Create importer from meta file
-			importer = AssetImporter::Load(path, metaPath);
+			needsImport = true;
 		}
-		s_Importers.insert({ metaPath.string(), importer });
+
+		if (needsImport)
+		{
+			auto metaPath = path;
+			metaPath += ".meta";
+
+			AssetImporter* importer;
+			if (!std::filesystem::exists(metaPath))
+			{
+				// Create new meta file
+				auto importerTypeIt = s_ImporterTypes.find(extensionString);
+				if (importerTypeIt != s_ImporterTypes.end())
+				{
+					importer = AssetImporter::Create(importerTypeIt->second, path, metaPath);
+				}
+				else
+				{
+					importer = AssetImporter::Create(DefaultImporter::Type, path, metaPath);
+					BB_INFO(std::string() << "AssetImporter for extension " << extensionString << " does not exist and default importer was created.");
+				}
+			}
+			else
+			{
+				// Create importer from meta file
+				importer = AssetImporter::Load(path, metaPath);
+			}
+			s_Importers.insert_or_assign(metaPath.string(), importer);
+			s_PathModifyCache.insert_or_assign(relativePathString, lastWriteTime);
+		}
 	}
 
 	void AssetDB::Register(const std::string& extension, const std::size_t& importerType)

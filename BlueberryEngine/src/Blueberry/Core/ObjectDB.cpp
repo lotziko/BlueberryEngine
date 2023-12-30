@@ -81,14 +81,28 @@ namespace Blueberry
 		return s_Array.GetObjectItem(id);
 	}
 
-	void ObjectDB::AssignGuid(Object* object, const Guid& guid)
+	void ObjectDB::AllocateIdToGuid(const ObjectId& id, const Guid& guid)
 	{
-		ObjectId objectId = object->GetObjectId();
-		s_ObjectIdToGuid.insert_or_assign(objectId, guid);
-		s_GuidToObjectId.insert_or_assign(guid, objectId);
+		s_ObjectIdToGuid.insert_or_assign(id, guid);
+		s_GuidToObjectId.insert_or_assign(guid, id);
 	}
 
-	Guid ObjectDB::GetGuid(Object* object)
+	void ObjectDB::AllocateIdToGuid(Object* object, const Guid& guid)
+	{
+		ObjectId objectId = object->GetObjectId();
+		AllocateIdToGuid(objectId, guid);
+	}
+
+	void ObjectDB::AllocateEmptyObjectWithGuid(const Guid& guid)
+	{
+		// TODO do something better
+		Object* object = new Object();
+		object->SetName("Missing");
+		ObjectDB::AllocateId(object);
+		AllocateIdToGuid(object->GetObjectId(), guid);
+	}
+
+	Guid ObjectDB::GetGuidFromObject(Object* object)
 	{
 		auto guidIt = s_ObjectIdToGuid.find(object->GetObjectId());
 		if (guidIt != s_ObjectIdToGuid.end())
@@ -103,12 +117,12 @@ namespace Blueberry
 		return s_ObjectIdToGuid.count(object->GetObjectId()) > 0;
 	}
 
-	Object* ObjectDB::GetObject(const Guid& guid)
+	Object* ObjectDB::GetObjectFromGuid(const Guid& guid)
 	{
 		auto objectIdIt = s_GuidToObjectId.find(guid);
 		if (objectIdIt != s_GuidToObjectId.end())
 		{
-			return IdToObjectItem(objectIdIt->second)->object;
+			return ObjectDB::IdToObjectItem(objectIdIt->second)->object;
 		}
 		return nullptr;
 	}

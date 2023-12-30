@@ -95,21 +95,10 @@ namespace Blueberry
 		m_DeviceContext->RSSetViewports(1, &viewport);
 	}
 
-	bool GfxDeviceDX11::CreateShader(const std::wstring& shaderPath, GfxShader*& shader)
+	bool GfxDeviceDX11::CreateShader(void* vertexData, void* pixelData, GfxShader*& shader)
 	{
 		auto dxShader = new GfxShaderDX11(m_Device.Get(), m_DeviceContext.Get());
-		if (!dxShader->Compile(shaderPath))
-		{
-			return false;
-		}
-		shader = dxShader;
-		return true;
-	}
-
-	bool GfxDeviceDX11::CreateShader(const std::wstring& vertexShaderPath, const std::wstring& pixelShaderPath, GfxShader*& shader)
-	{
-		auto dxShader = new GfxShaderDX11(m_Device.Get(), m_DeviceContext.Get());
-		if (!dxShader->Initialize(vertexShaderPath, pixelShaderPath))
+		if (!dxShader->Initialize(vertexData, pixelData))
 		{
 			return false;
 		}

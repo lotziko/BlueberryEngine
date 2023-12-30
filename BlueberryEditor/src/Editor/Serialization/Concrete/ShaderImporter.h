@@ -3,12 +3,12 @@
 
 namespace Blueberry
 {
-	class TextureImporter : public AssetImporter
+	class ShaderImporter : public AssetImporter
 	{
-		OBJECT_DECLARATION(TextureImporter)
+		OBJECT_DECLARATION(ShaderImporter)
 
 	public:
-		TextureImporter() = default;
+		ShaderImporter() = default;
 
 		static void BindProperties();
 
@@ -16,6 +16,6 @@ namespace Blueberry
 		virtual void ImportData() override;
 
 	private:
-		std::string GetTexturePath();
+		std::string GetShaderPath(const char* extension);
 	};
 }

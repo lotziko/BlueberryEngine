@@ -11,6 +11,8 @@ namespace Blueberry
 	public:
 		virtual ~Texture2D() = default;
 
+		void Initialize(const ByteData& byteData);
+
 		static Texture2D* Create(const TextureProperties& properties);
 
 		static void BindProperties();

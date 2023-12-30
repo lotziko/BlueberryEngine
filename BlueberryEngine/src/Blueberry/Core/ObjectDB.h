@@ -42,10 +42,12 @@ namespace Blueberry
 		static bool IsValid(Object* object);
 		static ObjectItem* IdToObjectItem(const ObjectId& id);
 
-		static void AssignGuid(Object* object, const Guid& guid);
-		static Guid GetGuid(Object* object);
+		static void AllocateIdToGuid(const ObjectId& id, const Guid& guid);
+		static void AllocateIdToGuid(Object* object, const Guid& guid);
+		static void AllocateEmptyObjectWithGuid(const Guid& guid);
+		static Guid GetGuidFromObject(Object* object);
 		static bool HasGuid(Object* object);
-		static Object* GetObject(const Guid& guid);
+		static Object* GetObjectFromGuid(const Guid& guid);
 	private:
 		static ChunkedObjectArray s_Array;
 		static std::map<ObjectId, Guid> s_ObjectIdToGuid;

@@ -6,8 +6,8 @@ namespace Blueberry
 {
 	struct ByteData
 	{
-		byte* data;
-		size_t size;
+		byte* data = nullptr;
+		size_t size = 0;
 	};
 
 	struct ObjectPtrData

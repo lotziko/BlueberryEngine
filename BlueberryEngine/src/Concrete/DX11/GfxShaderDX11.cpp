@@ -11,7 +11,7 @@ namespace Blueberry
 	bool GfxShaderDX11::Compile(const std::wstring& shaderPath)
 	{
 		UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
-
+		
 		HRESULT hr = D3DCompileFromFile(shaderPath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "Vertex", "vs_5_0", flags, 0, m_VertexShaderBuffer.GetAddressOf(), nullptr);
 		if (FAILED(hr))
 		{
@@ -46,6 +46,29 @@ namespace Blueberry
 
 		if (!InitializeVertexLayout())
 		{
+			return false;
+		}
+
+		return true;
+	}
+
+	bool GfxShaderDX11::Initialize(void* vertexData, void* pixelData)
+	{
+		m_VertexShaderBuffer.Attach((ID3D10Blob*)vertexData);
+		HRESULT hr = m_Device->CreateVertexShader(m_VertexShaderBuffer->GetBufferPointer(), m_VertexShaderBuffer->GetBufferSize(), NULL, m_VertexShader.GetAddressOf());
+		if (FAILED(hr))
+		{
+			std::string errorMsg = "Failed to create vertex shader from data.";
+			BB_ERROR(errorMsg);
+			return false;
+		}
+
+		m_PixelShaderBuffer.Attach((ID3D10Blob*)pixelData);
+		hr = m_Device->CreatePixelShader(m_PixelShaderBuffer->GetBufferPointer(), m_PixelShaderBuffer->GetBufferSize(), NULL, m_PixelShader.GetAddressOf());
+		if (FAILED(hr))
+		{
+			std::string errorMsg = "Failed to create pixel shader from data.";
+			BB_ERROR(errorMsg);
 			return false;
 		}
 

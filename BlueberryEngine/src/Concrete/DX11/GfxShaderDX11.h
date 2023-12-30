@@ -10,6 +10,7 @@ namespace Blueberry
 		virtual ~GfxShaderDX11() final = default;
 
 		bool Compile(const std::wstring& shaderPath);
+		bool Initialize(void* vertexData, void* pixelData);
 		bool Initialize(const std::wstring& vertexShaderPath, const std::wstring& pixelShaderPath);
 
 	private:

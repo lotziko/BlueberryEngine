@@ -8,14 +8,17 @@ namespace Blueberry
 {
 	OBJECT_DEFINITION(Texture, Texture2D)
 
+	void Texture2D::Initialize(const ByteData& byteData)
+	{
+		g_GraphicsDevice->CreateTexture({ m_Width, m_Height, byteData.data, byteData.size, false }, m_Texture);
+	}
+
 	Texture2D* Texture2D::Create(const TextureProperties& properties)
 	{
 		Texture2D* texture = Object::Create<Texture2D>();
-		g_GraphicsDevice->CreateTexture(properties, texture->m_Texture);
 		texture->m_Width = properties.width;
 		texture->m_Height = properties.height;
-		texture->m_RawData.data = reinterpret_cast<byte*>(properties.data);
-		texture->m_RawData.size = properties.dataSize;
+		texture->Initialize({ (byte*)properties.data, properties.dataSize });
 		return texture;
 	}
 

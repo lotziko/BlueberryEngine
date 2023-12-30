@@ -13,7 +13,9 @@ namespace Blueberry
 
 	public:
 		Shader() = default;
-		Shader(std::wstring shaderPath);
+
+		void Initialize(void* vertexData, void* pixelData);
+		static Shader* Create(void* vertexData, void* pixelData);
 
 		static void BindProperties();
 

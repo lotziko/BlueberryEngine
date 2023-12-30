@@ -28,9 +28,10 @@ namespace DirectX::SimpleMath
 namespace Blueberry
 {
 	size_t to_chars(ryml::substr buf, Blueberry::Guid val);
-	bool from_chars(ryml::csubstr buf, Blueberry::Guid *v);
+	bool from_chars(ryml::csubstr buf, Blueberry::Guid* v);
 
 	size_t to_chars(ryml::substr buf, Blueberry::ByteData val);
+	bool from_chars(ryml::csubstr buf, Blueberry::ByteData* v);
 
 	void write(ryml::NodeRef* n, const ObjectPtrData& val);
 	bool read(const ryml::ConstNodeRef& n, ObjectPtrData* val);

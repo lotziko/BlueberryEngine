@@ -33,10 +33,11 @@ namespace Blueberry
 		template<class ObjectType>
 		static ObjectType* LoadAssetObject(const Guid& guid);
 
-		static std::string GetAssetDataPath(Object* object, const char* extension);
+		static std::string GetAssetCachedDataPath(Object* object, const char* extension);
 
 		static bool HasAssetWithGuidInData(const Guid& guid);
-		static void SaveAssetObject(Object* object);
+		static void SaveAssetObject(Object* object, const std::string& relativePath);
+		static void SaveAssetObjectToCache(Object* object);
 
 	private:
 		static void Import(const std::filesystem::path& path);
@@ -55,7 +56,7 @@ namespace Blueberry
 	{
 		static_assert(std::is_base_of<Object, ObjectType>::value, "Type is not derived from Object.");
 		ObjectType* object = Object::Create<ObjectType>();
-		ObjectDB::AssignGuid(object, guid);
+		ObjectDB::AllocateIdToGuid(object, guid);
 		return object;
 	}
 
@@ -63,13 +64,15 @@ namespace Blueberry
 	inline ObjectType* AssetDB::LoadAssetObject(const Guid& guid)
 	{
 		YamlSerializer serializer;
-		std::filesystem::path dataPath = Path::GetDataPath();
+		std::filesystem::path dataPath = Path::GetAssetCachePath();
 		serializer.Deserialize(dataPath.append(guid.ToString().append(".yaml")).string());
 		auto& deserializedObjects = serializer.GetDeserializedObjects();
 		if (deserializedObjects.size() > 0)
 		{
-			ObjectDB::AssignGuid(deserializedObjects[0], guid);
-			return (ObjectType*)deserializedObjects[0];
+			Object* object = deserializedObjects[0];
+			ObjectDB::AllocateIdToGuid(object, guid);
+			object->Initialize();
+			return (ObjectType*)object;
 		}
 		return nullptr;
 	}

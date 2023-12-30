@@ -73,8 +73,14 @@ namespace Blueberry
 				objectNode[key] << *value.Get<std::string>();
 				break;
 			case BindingType::ByteData:
-				objectNode[key] << *value.Get<ByteData>();
-				break;
+			{
+				ByteData data = *value.Get<ByteData>();
+				if (data.size > 0)
+				{
+					objectNode[key] << data;
+				}
+			}
+			break;
 			case BindingType::Vector3:
 				objectNode[key] << *value.Get<Vector3>();
 				break;
@@ -90,23 +96,28 @@ namespace Blueberry
 			case BindingType::ObjectPtr:
 			{
 				ObjectPtr<Object> objectRefValue = *value.Get<ObjectPtr<Object>>();
+				ObjectPtrData data;
 				if (objectRefValue.IsValid())
 				{
 					Object* object = objectRefValue.Get();
-					ObjectPtrData data;
 					if (ObjectDB::HasGuid(object))
 					{
 						data.fileId = 0;
 						data.isAsset = true;
-						data.guid = ObjectDB::GetGuid(object);
+						data.guid = ObjectDB::GetGuidFromObject(object);
 					}
 					else
 					{
 						data.fileId = GetFileId(object);
 						data.isAsset = false;
 					}
-					objectNode[key] << data;
 				}
+				else
+				{
+					data.fileId = 0;
+					data.isAsset = false;
+				}
+				objectNode[key] << data;
 			}
 			break;
 			case BindingType::ObjectPtrArray:
@@ -118,23 +129,28 @@ namespace Blueberry
 					sequence |= ryml::SEQ;
 					for (ObjectPtr<Object>& objectRefValue : arrayValue)
 					{
+						ObjectPtrData data;
 						if (objectRefValue.IsValid())
 						{
 							Object* object = objectRefValue.Get();
-							ObjectPtrData data;
 							if (ObjectDB::HasGuid(object))
 							{
 								data.fileId = 0;
 								data.isAsset = true;
-								data.guid = ObjectDB::GetGuid(object);
+								data.guid = ObjectDB::GetGuidFromObject(object);
 							}
 							else
 							{
 								data.fileId = GetFileId(object);
 								data.isAsset = false;
 							}
-							sequence.append_child() << data;
 						}
+						else
+						{
+							data.fileId = 0;
+							data.isAsset = false;
+						}
+						sequence.append_child() << data;
 					}
 				}
 			}
@@ -169,6 +185,9 @@ namespace Blueberry
 				case BindingType::String:
 					objectNode[key] >> *value.Get<std::string>();
 					break;
+				case BindingType::ByteData:
+					objectNode[key] >> *value.Get<ByteData>();
+					break;
 				case BindingType::Vector3:
 					objectNode[key] >> *value.Get<Vector3>();
 					break;
@@ -186,13 +205,26 @@ namespace Blueberry
 					ObjectPtrData data;
 					objectNode[key] >> data;
 					Object* object;
+					
 					if (data.isAsset)
 					{
-						object = ObjectDB::GetObject(data.guid);
+						object = ObjectDB::GetObjectFromGuid(data.guid);
+						if (object == nullptr)
+						{
+							ObjectDB::AllocateEmptyObjectWithGuid(data.guid);
+							object = ObjectDB::GetObjectFromGuid(data.guid);
+						}
 					}
 					else
 					{
-						object = GetObjectRef(data.fileId);
+						if (data.fileId == 0)
+						{
+							object = nullptr;
+						}
+						else
+						{
+							object = GetObjectRef(data.fileId);
+						}
 					}
 					*value.Get<ObjectPtr<Object>>() = object;
 				}
@@ -206,13 +238,26 @@ namespace Blueberry
 						ObjectPtrData data;
 						child >> data;
 						Object* object;
+						
 						if (data.isAsset)
 						{
-							object = ObjectDB::GetObject(data.guid);
+							object = ObjectDB::GetObjectFromGuid(data.guid);
+							if (object == nullptr)
+							{
+								ObjectDB::AllocateEmptyObjectWithGuid(data.guid);
+								object = ObjectDB::GetObjectFromGuid(data.guid);
+							}
 						}
 						else
 						{
-							object = GetObjectRef(data.fileId);
+							if (data.fileId == 0)
+							{
+								object = nullptr;
+							}
+							else
+							{
+								object = GetObjectRef(data.fileId);
+							}
 						}
 						refArrayPointer->emplace_back(object);
 					}

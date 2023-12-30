@@ -28,7 +28,7 @@ project "BlueberryEditor"
 
 	links
 	{
-		"BlueberryEngine"
+		"BlueberryEngine",
 	}
 
 	filter "system:windows"

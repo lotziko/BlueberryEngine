@@ -4,6 +4,7 @@
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\Texture.h"
 #include "Blueberry\Graphics\GfxTexture.h"
+#include "Blueberry\Core\ClassDB.h"
 
 namespace Blueberry
 {
@@ -32,6 +33,9 @@ namespace Blueberry
 
 	void Material::BindProperties()
 	{
+		BEGIN_OBJECT_BINDING(Material)
+		BIND_FIELD("m_Shader", &Material::m_Shader, BindingType::ObjectPtr)
+		END_OBJECT_BINDING()
 	}
 
 	void Material::FillGfxTextures()
