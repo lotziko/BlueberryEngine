@@ -1,13 +1,14 @@
 #pragma once
 
-#include "Blueberry\Core\Base.h"
-#include "Blueberry\Scene\EnityComponent.h"
+#include "Blueberry\Core\ClassDB.h"
 
 namespace Blueberry
 {
 	class ObjectInspector
 	{
 	public:
-		virtual void Draw(Object* object) = 0;
+		virtual void Draw(Object* object);
+	private:
+		void DrawField(Object* object, FieldInfo& info);
 	};
 }

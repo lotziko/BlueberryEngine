@@ -1,5 +1,5 @@
 #pragma once
-#include "Editor\Serialization\AssetImporter.h"
+#include "Editor\Assets\AssetImporter.h"
 
 namespace Blueberry
 {

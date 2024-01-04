@@ -31,7 +31,12 @@ namespace Blueberry
 		{
 			if (object->IsClassType(Entity::Type))
 			{
-				AddEntity((Entity*)object);
+				Entity* entity = (Entity*)object;
+				AddEntity(entity);
+				for (auto& component : entity->GetComponents())
+				{
+					entity->AddComponentIntoScene(component);
+				}
 			}
 		}
 	}

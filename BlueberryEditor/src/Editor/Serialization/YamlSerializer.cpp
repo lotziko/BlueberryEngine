@@ -38,7 +38,7 @@ namespace Blueberry
 			{
 				ryml::csubstr key = node.key();
 				std::string typeName(key.str, key.size());
-				ClassDB::ClassInfo info = ClassDB::GetInfo(std::hash<std::string>()(typeName));
+				ClassDB::ClassInfo info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
 				Object* instance = info.createInstance();
 				m_FileIdToObject.insert({ fileId, instance });
 				m_DeserializedObjects.emplace_back(instance);
@@ -208,6 +208,7 @@ namespace Blueberry
 					
 					if (data.isAsset)
 					{
+						// TODO try import asset
 						object = ObjectDB::GetObjectFromGuid(data.guid);
 						if (object == nullptr)
 						{

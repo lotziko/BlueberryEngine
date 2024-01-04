@@ -2,7 +2,7 @@
 #include "ShaderImporter.h"
 
 #include "Blueberry\Graphics\Shader.h"
-#include "Editor\Serialization\AssetDB.h"
+#include "Editor\Assets\AssetDB.h"
 #include "Editor\ShaderProcessor.h"
 
 namespace Blueberry

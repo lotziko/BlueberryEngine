@@ -42,7 +42,7 @@ namespace Blueberry
 		ryml::ConstNodeRef node = root[1];
 		ryml::csubstr key = node.key();
 		std::string typeName(key.str, key.size());
-		ClassDB::ClassInfo info = ClassDB::GetInfo(std::hash<std::string>()(typeName));
+		ClassDB::ClassInfo info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
 		Object* instance = info.createInstance();
 		m_DeserializedObjects.emplace_back(instance);
 		DeserializeNode(root[1], instance);

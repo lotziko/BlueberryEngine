@@ -47,6 +47,7 @@ namespace Blueberry
 		static void AllocateEmptyObjectWithGuid(const Guid& guid);
 		static Guid GetGuidFromObject(Object* object);
 		static bool HasGuid(Object* object);
+		static bool HasGuid(const Guid& guid);
 		static Object* GetObjectFromGuid(const Guid& guid);
 	private:
 		static ChunkedObjectArray s_Array;

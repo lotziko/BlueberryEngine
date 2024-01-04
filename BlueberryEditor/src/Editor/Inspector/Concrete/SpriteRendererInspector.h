@@ -9,6 +9,6 @@ namespace Blueberry
 	public:
 		virtual ~SpriteRendererInspector() = default;
 
-		virtual void Draw(Object* object) override;
+		//virtual void Draw(Object* object) override;
 	};
 }

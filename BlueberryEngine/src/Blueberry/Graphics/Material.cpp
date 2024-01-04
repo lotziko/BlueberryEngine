@@ -34,7 +34,7 @@ namespace Blueberry
 	void Material::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(Material)
-		BIND_FIELD("m_Shader", &Material::m_Shader, BindingType::ObjectPtr)
+		BIND_FIELD(FieldInfo(TO_STRING(m_Shader), &Material::m_Shader, BindingType::ObjectPtr, Shader::Type))
 		END_OBJECT_BINDING()
 	}
 

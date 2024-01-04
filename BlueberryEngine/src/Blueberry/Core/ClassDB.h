@@ -28,35 +28,33 @@ namespace Blueberry
 		ObjectPtrArray,
 	};
 
+	struct FieldInfo
+	{
+		std::string name;
+		FieldBind* bind;
+		BindingType type;
+		std::size_t objectType;
+
+		template<class ObjectType, class FieldType>
+		FieldInfo(const std::string& name, FieldType ObjectType::* field, const BindingType& type);
+
+		template<class ObjectType, class FieldType>
+		FieldInfo(const std::string& name, FieldType ObjectType::* field, const BindingType& type, const std::size_t& objectType);
+	};
+
 	class ClassDB
 	{
 	public:
-		struct FieldInfo
-		{
-			std::string name;
-			FieldBind* bind;
-			BindingType type;
-		};
 
-		struct PropertyInfo
-		{
-			std::string name;
-			MethodBind* getter;
-			MethodBind* setter;
-			BindingType type;
-		};
-
-		template<class ObjectType>
 		struct BindingData
 		{
 			std::vector<FieldInfo> fieldInfos;
-			std::vector<PropertyInfo> propertyInfos;
 
-			template<typename Field>
-			BindingData& BindField(const std::string& name, Field field, const BindingType& type);
-
-			template<typename Getter, typename Setter>
-			BindingData& BindProperty(const std::string& name, Getter getter, Setter setter, const BindingType& type);
+			BindingData& BindField(FieldInfo info)
+			{
+				fieldInfos.emplace_back(std::move(info));
+				return *this;
+			}
 		};
 
 		struct ClassInfo
@@ -65,7 +63,6 @@ namespace Blueberry
 			std::size_t parentId;
 			Object*(*createInstance)() = nullptr;
 			std::vector<FieldInfo> fields;
-			std::vector<PropertyInfo> properties;
 		};
 
 		static const ClassInfo& GetInfo(const std::size_t&);
@@ -77,7 +74,7 @@ namespace Blueberry
 		template<class ObjectType>
 		static void RegisterAbstract();
 		template<class ObjectType>
-		static void Bind(BindingData<ObjectType> bindings);
+		static void Bind(BindingData bindings);
 
 	private:
 		template<class ObjectType>
@@ -90,12 +87,16 @@ namespace Blueberry
 		static std::map<std::size_t, ClassInfo> s_Classes;
 	};
 
+	constexpr auto GetFieldName(std::string_view name)
+	{
+		return name.substr(name.find_last_of(':') + 1);
+	}
+	
 	#define REGISTER_CLASS( classname ) ClassDB::Register<classname>();
 	#define REGISTER_ABSTRACT_CLASS( classname ) ClassDB::RegisterAbstract<classname>();
 
-	#define BEGIN_OBJECT_BINDING( classname ) ClassDB::Bind(ClassDB::BindingData<classname>()
-	#define BIND_FIELD( name, field, type ) .BindField<decltype(field)>(name, field, type)
-	#define BIND_PROPERTY( name, getter, setter, type ) .BindProperty<decltype(getter), decltype(setter)>(name, getter, setter, type)
+	#define BEGIN_OBJECT_BINDING( classname ) ClassDB::Bind<classname>(ClassDB::BindingData()
+	#define BIND_FIELD( fieldInfo ) .BindField(fieldInfo)
 	#define END_OBJECT_BINDING() );
 
 	template<class ObjectType>
@@ -130,7 +131,7 @@ namespace Blueberry
 	}
 
 	template<class ObjectType>
-	inline void ClassDB::Bind(BindingData<ObjectType> bindings)
+	inline void ClassDB::Bind(BindingData bindings)
 	{
 		auto classInfoIt = s_Classes.find(ObjectType::Type);
 		if (classInfoIt != s_Classes.end())
@@ -139,29 +140,16 @@ namespace Blueberry
 			{
 				classInfoIt->second.fields.emplace_back(info);
 			}
-
-			for (PropertyInfo info : bindings.propertyInfos)
-			{
-				classInfoIt->second.properties.emplace_back(info);
-			}
 		}
 	}
 
-	template<class ObjectType>
-	template<typename Field>
-	inline ClassDB::BindingData<ObjectType>& ClassDB::BindingData<ObjectType>::BindField(const std::string& name, Field field, const BindingType& type)
+	template<class ObjectType, class FieldType>
+	inline FieldInfo::FieldInfo(const std::string& name, FieldType ObjectType::* field, const BindingType& type) : name(name), bind(FieldBind::Create(reinterpret_cast<FieldType Object::*>(field))), type(type), objectType(0)
 	{
-		FieldInfo info = { name, FieldBind::Create<ObjectType>(field), type };
-		fieldInfos.emplace_back(std::move(info));
-		return *this;
 	}
 
-	template<class ObjectType>
-	template<typename Getter, typename Setter>
-	inline ClassDB::BindingData<ObjectType>& ClassDB::BindingData<ObjectType>::BindProperty(const std::string& name, Getter getter, Setter setter, const BindingType& type)
+	template<class ObjectType, class FieldType>
+	inline FieldInfo::FieldInfo(const std::string& name, FieldType ObjectType::* field, const BindingType& type, const std::size_t& objectType) : name(name), bind(FieldBind::Create(reinterpret_cast<FieldType Object::*>(field))), type(type), objectType(objectType)
 	{
-		PropertyInfo info = { name, MethodBind::Create<ObjectType>(getter), MethodBind::Create<ObjectType>(setter), type };
-		propertyInfos.emplace_back(std::move(info));
-		return *this;
 	}
 }

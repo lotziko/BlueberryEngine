@@ -1,6 +1,6 @@
 #include "bbpch.h"
 #include "Transform.h"
-
+#include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Core\ClassDB.h"
 
 namespace Blueberry
@@ -126,12 +126,12 @@ namespace Blueberry
 	void Transform::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(Transform)
-		BIND_FIELD("m_Entity", &Transform::m_Entity, BindingType::ObjectPtr)
-		BIND_FIELD("m_LocalPosition", &Transform::m_LocalPosition, BindingType::Vector3)
-		BIND_FIELD("m_LocalRotation", &Transform::m_LocalRotation, BindingType::Quaternion)
-		BIND_FIELD("m_LocalScale", &Transform::m_LocalScale, BindingType::Vector3)
-		BIND_FIELD("m_Parent", &Transform::m_Parent, BindingType::ObjectPtr)
-		BIND_FIELD("m_Children", &Transform::m_Children, BindingType::ObjectPtrArray)
+		BIND_FIELD(FieldInfo(TO_STRING(m_Entity), &Transform::m_Entity, BindingType::ObjectPtr, Entity::Type))
+		BIND_FIELD(FieldInfo(TO_STRING(m_LocalPosition), &Transform::m_LocalPosition, BindingType::Vector3))
+		BIND_FIELD(FieldInfo(TO_STRING(m_LocalRotation), &Transform::m_LocalRotation, BindingType::Quaternion))
+		BIND_FIELD(FieldInfo(TO_STRING(m_LocalScale), &Transform::m_LocalScale, BindingType::Vector3))
+		BIND_FIELD(FieldInfo(TO_STRING(m_Parent), &Transform::m_Parent, BindingType::ObjectPtr, Transform::Type))
+		BIND_FIELD(FieldInfo(TO_STRING(m_Children), &Transform::m_Children, BindingType::ObjectPtrArray, Transform::Type))
 		END_OBJECT_BINDING()
 	}
 

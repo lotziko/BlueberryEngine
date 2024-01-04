@@ -2,6 +2,7 @@
 
 #include "Object.h"
 #include "ObjectDB.h"
+#include "ClassDB.h"
 
 namespace Blueberry
 {
@@ -16,6 +17,7 @@ namespace Blueberry
 		ObjectType* operator->();
 
 		ObjectType* Get() const;
+		const size_t& GetType() const;
 		bool IsValid() const;
 		void Reset();
 
@@ -72,6 +74,12 @@ namespace Blueberry
 			return nullptr;
 		}
 		return m_Item != nullptr ? (ObjectType*)m_Item->object : nullptr;
+	}
+
+	template<class ObjectType>
+	inline const size_t& ObjectPtr<ObjectType>::GetType() const
+	{
+		return m_Type;
 	}
 
 	template<class ObjectType>

@@ -10,7 +10,7 @@ namespace Blueberry
 {
 	GfxDrawingOperation::GfxDrawingOperation(GfxVertexBuffer* vertexBuffer, GfxIndexBuffer* indexBuffer, Material* material, const UINT& indexCount, const Topology& topology)
 	{
-		shader = material->m_Shader->m_Shader;
+		shader = material->m_Shader.IsValid() ? material->m_Shader->m_Shader : nullptr;
 		textures = &(material->m_GfxTextures);
 		this->vertexBuffer = vertexBuffer;
 		this->indexBuffer = indexBuffer;

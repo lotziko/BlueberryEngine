@@ -44,8 +44,8 @@ namespace Blueberry
 	void Entity::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(Entity)
-		BIND_FIELD("m_Name", &Entity::m_Name, BindingType::String)
-		BIND_FIELD("m_Components", &Entity::m_Components, BindingType::ObjectPtrArray)
+		BIND_FIELD(FieldInfo(TO_STRING(m_Name), &Entity::m_Name, BindingType::String))
+		BIND_FIELD(FieldInfo(TO_STRING(m_Components), &Entity::m_Components, BindingType::ObjectPtrArray, Component::Type))
 		END_OBJECT_BINDING()
 	}
 

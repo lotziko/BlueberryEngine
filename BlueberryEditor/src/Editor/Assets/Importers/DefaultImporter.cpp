@@ -1,7 +1,7 @@
 #include "bbpch.h"
 #include "DefaultImporter.h"
 
-#include "Editor\Serialization\AssetDB.h"
+#include "Editor\Assets\AssetDB.h"
 
 namespace Blueberry
 {

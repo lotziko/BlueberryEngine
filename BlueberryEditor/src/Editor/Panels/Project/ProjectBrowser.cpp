@@ -2,12 +2,12 @@
 #include "ProjectBrowser.h"
 
 #include "Editor\Path.h"
-#include "Editor\Serialization\AssetImporter.h"
-#include "Editor\Serialization\AssetDB.h"
+#include "Editor\Assets\AssetImporter.h"
+#include "Editor\Assets\AssetDB.h"
 #include "Editor\EditorSceneManager.h"
-#include "imgui\imgui.h"
-
+#include "Editor\Selection.h"
 #include "Blueberry\Graphics\Material.h"
+#include "imgui\imgui.h"
 
 namespace Blueberry
 {
@@ -19,6 +19,10 @@ namespace Blueberry
 	void ProjectBrowser::DrawUI()
 	{
 		ImGui::Begin("Project");
+
+		ImVec2 mousePos = ImGui::GetMousePos();
+		ImVec2 pos = ImGui::GetCursorScreenPos();
+		ImVec2 size = ImGui::GetContentRegionAvail();
 
 		if (m_CurrentDirectory != Path::GetAssetsPath())
 		{
@@ -45,13 +49,13 @@ namespace Blueberry
 			}
 			else if (extension == ".meta")
 			{
-				AssetImporter* importer = AssetDB::GetImporter(pathString);
+				AssetImporter* importer = AssetDB::GetImporter(relativePath.string());
 				if (importer != nullptr)
 				{
-					auto name = importer->GetName().c_str();
-					if (ImGui::Button(name))
+					auto name = path.stem().string();
+					if (ImGui::Button(name.c_str()))
 					{
-						// TODO make it select AssetImporter
+						Selection::SetActiveObject(importer);
 					}
 
 					if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
@@ -70,7 +74,7 @@ namespace Blueberry
 						if (ImGui::BeginDragDropSource())
 						{
 							ImGui::SetDragDropPayload("OBJECT_ID", &objects[0], sizeof(ObjectId));
-							ImGui::Text("%s", name);
+							ImGui::Text("%s", importer->GetName().c_str());
 							ImGui::EndDragDropSource();
 						}
 					}
@@ -82,16 +86,20 @@ namespace Blueberry
 		const char* popupId = "ProjectPopup";
 		if (ImGui::BeginPopup(popupId))
 		{
+			if (ImGui::MenuItem("Scene"))
+			{
+				EditorSceneManager::CreateEmpty("");
+			}
 			if (ImGui::MenuItem("Material"))
 			{
 				Material* material = Object::Create<Material>();
-				AssetDB::SaveAssetObject(material, "Test.material");
+				AssetDB::CreateAsset(material, "Test.material");
 				AssetDB::ImportAll();
 			}
 			ImGui::EndPopup();
 		}
-
-		if (ImGui::IsMouseClicked(1))
+		
+		if (mousePos.x >= pos.x && mousePos.y >= pos.y && mousePos.x <= pos.x + size.x && mousePos.y <= pos.y + size.y && ImGui::IsMouseClicked(1))
 		{
 			ImGui::OpenPopup(popupId);
 		}

@@ -1,9 +1,10 @@
 #include "bbpch.h"
 #include "ImGuiHelper.h"
 
+#include "Blueberry\Core\ObjectPtr.h"
 #include "imgui\imgui.h"
 
-bool ImGui::DragVector3(const char* label, Blueberry::Vector3& vector)
+bool ImGui::DragVector3(const char* label, Blueberry::Vector3* v)
 {
 	ImGui::PushID(label);
 
@@ -11,12 +12,12 @@ bool ImGui::DragVector3(const char* label, Blueberry::Vector3& vector)
 	ImGui::SameLine();
 	ImGui::SetCursorPosX(100);
 
-	float vector3[3] = { vector.x, vector.y, vector.z };
+	float vector3[3] = { v->x, v->y, v->z };
 	if (ImGui::DragFloat3("##vector3", vector3, 0.1f))
 	{
-		vector.x = vector3[0];
-		vector.y = vector3[1];
-		vector.z = vector3[2];
+		v->x = vector3[0];
+		v->y = vector3[1];
+		v->z = vector3[2];
 
 		ImGui::PopID();
 		return true;
@@ -25,7 +26,7 @@ bool ImGui::DragVector3(const char* label, Blueberry::Vector3& vector)
 	return false;
 }
 
-bool ImGui::ColorEdit(const char* label, Blueberry::Color& color)
+bool ImGui::ColorEdit(const char* label, Blueberry::Color* v)
 {
 	ImGui::PushID(label);
 
@@ -33,19 +34,51 @@ bool ImGui::ColorEdit(const char* label, Blueberry::Color& color)
 	ImGui::SameLine();
 	ImGui::SetCursorPosX(100);
 
-	float color4[4] = { color.R(), color.G(), color.B(), color.A() };
+	float color4[4] = { v->R(), v->G(), v->B(), v->A() };
 	if (ImGui::ColorEdit4("##color4", color4))
 	{
-		color.R(color4[0]);
-		color.G(color4[1]);
-		color.B(color4[2]);
-		color.A(color4[3]);
+		v->R(color4[0]);
+		v->G(color4[1]);
+		v->B(color4[2]);
+		v->A(color4[3]);
 
 		ImGui::PopID();
 		return true;
 	}
 	ImGui::PopID();
 	return false;
+}
+
+bool ImGui::ObjectEdit(const char* label, Blueberry::ObjectPtr<Blueberry::Object>* v, const std::size_t& type)
+{
+	bool result = false;
+
+	ImGui::PushID(label);
+
+	ImGui::Text(label);
+	ImGui::SameLine();
+	ImGui::SetCursorPosX(100);
+
+	if (ImGui::BeginDragDropTarget())
+	{
+		const ImGuiPayload* payload = ImGui::GetDragDropPayload();
+		if (payload != nullptr && payload->IsDataType("OBJECT_ID"))
+		{
+			Blueberry::ObjectId* id = (Blueberry::ObjectId*)payload->Data;
+			Blueberry::ObjectItem* item = Blueberry::ObjectDB::IdToObjectItem(*id);
+
+			if (item != nullptr && item->object->IsClassType(type) && ImGui::AcceptDragDropPayload("OBJECT_ID"))
+			{
+				*v = item->object;
+				result = true;
+			}
+		}
+		ImGui::EndDragDropTarget();
+	}
+	ImGui::Text(v->IsValid() ? (*v)->GetName().c_str() : "None");
+
+	ImGui::PopID();
+	return result;
 }
 
 void ImGui::ApplyEditorDarkTheme()

@@ -2,6 +2,7 @@
 #include "EntityInspector.h"
 
 #include "Blueberry\Scene\Entity.h"
+#include "Blueberry\Scene\Components\Component.h"
 
 #include "imgui\imgui.h"
 #include "Blueberry\Core\ClassDB.h"

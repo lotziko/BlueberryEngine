@@ -12,15 +12,6 @@ namespace Blueberry
 	class AssetDB
 	{
 	public:
-		struct AssetImportData
-		{
-			std::filesystem::path relativePath;
-			std::string relativePathString;
-			long long lastWriteTime;
-			bool isDirectory;
-		};
-
-	public:
 		static void ImportAll();
 
 		static void Import(const std::string& path);
@@ -36,8 +27,11 @@ namespace Blueberry
 		static std::string GetAssetCachedDataPath(Object* object, const char* extension);
 
 		static bool HasAssetWithGuidInData(const Guid& guid);
-		static void SaveAssetObject(Object* object, const std::string& relativePath);
+		static void CreateAsset(Object* object, const std::string& relativePath);
 		static void SaveAssetObjectToCache(Object* object);
+		static void AddObjectToAsset(Object* object, const std::string& relativePath);
+		static void SetDirty(Object* object);
+		static void SaveAssets();
 
 	private:
 		static void Import(const std::filesystem::path& path);
@@ -48,7 +42,10 @@ namespace Blueberry
 	private:
 		static std::map<std::string, long long> s_PathModifyCache;
 		static std::map<std::string, std::size_t> s_ImporterTypes;
-		static std::map<std::string, AssetImporter*> s_Importers;
+		static std::map<std::string, AssetImporter*> s_ImportedData;
+
+		static std::vector<ObjectId> s_DirtyAssets;
+		static std::map<ObjectId, std::string> s_AssetRelativePathes;
 	};
 
 	template<class ObjectType>

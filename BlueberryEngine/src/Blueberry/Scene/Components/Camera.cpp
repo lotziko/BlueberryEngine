@@ -11,7 +11,7 @@ namespace Blueberry
 	void Camera::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(Camera)
-		BIND_FIELD("m_Name", &Camera::m_Name, BindingType::String)
+		BIND_FIELD(FieldInfo(TO_STRING(m_Name), &Camera::m_Name, BindingType::String))
 		END_OBJECT_BINDING()
 	}
 }

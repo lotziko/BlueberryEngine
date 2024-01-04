@@ -117,6 +117,11 @@ namespace Blueberry
 		return s_ObjectIdToGuid.count(object->GetObjectId()) > 0;
 	}
 
+	bool ObjectDB::HasGuid(const Guid& guid)
+	{
+		return s_GuidToObjectId.count(guid) > 0;
+	}
+
 	Object* ObjectDB::GetObjectFromGuid(const Guid& guid)
 	{
 		auto objectIdIt = s_GuidToObjectId.find(guid);

@@ -25,9 +25,9 @@ namespace Blueberry
 	void Texture2D::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(Texture2D)
-		BIND_FIELD("m_Width", &Texture2D::m_Width, BindingType::Int)
-		BIND_FIELD("m_Height", &Texture2D::m_Height, BindingType::Int)
-		BIND_FIELD("m_RawData", &Texture2D::m_RawData, BindingType::ByteData)
+		BIND_FIELD(FieldInfo(TO_STRING(m_Width), &Texture2D::m_Width, BindingType::Int))
+		BIND_FIELD(FieldInfo(TO_STRING(m_Height), &Texture2D::m_Height, BindingType::Int))
+		BIND_FIELD(FieldInfo(TO_STRING(m_RawData), &Texture2D::m_RawData, BindingType::ByteData))
 		END_OBJECT_BINDING()
 	}
 }

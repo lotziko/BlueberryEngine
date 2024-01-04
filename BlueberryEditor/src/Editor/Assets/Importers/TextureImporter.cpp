@@ -3,9 +3,9 @@
 
 #include "Blueberry\Graphics\Structs.h"
 #include "Blueberry\Graphics\Texture2D.h"
-#include "Editor\Serialization\AssetDB.h"
-#include "stb\stb_image.h"
 #include "Blueberry\Tools\FileHelper.h"
+#include "Editor\Assets\AssetDB.h"
+#include "stb\stb_image.h"
 
 namespace Blueberry
 {
@@ -21,7 +21,12 @@ namespace Blueberry
 		// TODO check if dirty too
 
 		Texture2D* object;
-		if (AssetDB::HasAssetWithGuidInData(guid))
+		if (ObjectDB::HasGuid(guid))
+		{
+			// TODO think how to deserialize into existing object
+			BB_INFO(std::string() << "Texture \"" << GetName() << "\" is already imported.");
+		}
+		else if (AssetDB::HasAssetWithGuidInData(guid))
 		{
 			object = AssetDB::LoadAssetObject<Texture2D>(guid);
 			byte* data;

@@ -13,7 +13,7 @@ namespace Blueberry
 		Transform* transform = static_cast<Transform*>(object);
 
 		Vector3 localPosition = transform->GetLocalPosition();
-		if (ImGui::DragVector3("Position", localPosition))
+		if (ImGui::DragVector3("Position", &localPosition))
 		{
 			transform->SetLocalPosition(localPosition);
 		}
@@ -25,7 +25,7 @@ namespace Blueberry
 			localRotation = m_TransformEulerCache[transformId];
 		}
 
-		if (ImGui::DragVector3("Rotation", localRotation))
+		if (ImGui::DragVector3("Rotation", &localRotation))
 		{
 			transform->SetLocalEulerRotation(ToRadians(localRotation));
 			if (ImGui::IsItemActive())
@@ -39,7 +39,7 @@ namespace Blueberry
 		}
 
 		Vector3 localScale = transform->GetLocalScale();
-		if (ImGui::DragVector3("Scale", localScale))
+		if (ImGui::DragVector3("Scale", &localScale))
 		{
 			transform->SetLocalScale(localScale);
 		}

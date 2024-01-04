@@ -6,7 +6,7 @@
 
 namespace Blueberry
 {
-	const std::size_t Object::Type = std::hash<std::string>()(TO_STRING(Object));
+	const std::size_t Object::Type = TO_OBJECT_TYPE(TO_STRING(Object));
 	const std::size_t Object::ParentType = 0;
 	const std::string Object::TypeName = "Object";
 	
@@ -53,7 +53,7 @@ namespace Blueberry
 	void Object::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(Object)
-		BIND_FIELD("m_Name", &Object::m_Name, BindingType::String)
+		BIND_FIELD(FieldInfo(TO_STRING(m_Name), &Object::m_Name, BindingType::String))
 		END_OBJECT_BINDING()
 	}
 

@@ -72,6 +72,11 @@ namespace Blueberry
 			return false;
 		}
 
+		if (!InitializeVertexLayout())
+		{
+			return false;
+		}
+
 		return true;
 	}
 

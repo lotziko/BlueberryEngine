@@ -1,6 +1,5 @@
 #include "bbpch.h"
 #include "ObjectInspectorDB.h"
-
 #include "ObjectInspector.h"
 
 namespace Blueberry
@@ -19,6 +18,14 @@ namespace Blueberry
 		{
 			return inspectorIt->second;
 		}
+		for (auto& inspector : s_Inspectors)
+		{
+			if (ClassDB::IsParent(id, inspector.first))
+			{
+				return inspector.second;
+			}
+		}
+
 		return nullptr;
 	}
 

@@ -12,8 +12,8 @@
 #include "imgui\imgui.h"
 #include "imgui\imgui_internal.h"
 
-#include "Editor\Serialization\RegisterAssetImporters.h"
-#include "Editor\Serialization\AssetDB.h"
+#include "Editor\Assets\RegisterAssetImporters.h"
+#include "Editor\Assets\AssetDB.h"
 
 #include <fstream>
 
@@ -112,7 +112,10 @@ namespace Blueberry
 		{
 			if (ImGui::BeginMenu("Test"))
 			{
-				ImGui::MenuItem("Test", "Ctrl+O");
+				if (ImGui::MenuItem("Save"))
+				{
+					AssetDB::SaveAssets();
+				}
 				ImGui::EndMenu();
 			}
 			ImGui::EndMainMenuBar();
