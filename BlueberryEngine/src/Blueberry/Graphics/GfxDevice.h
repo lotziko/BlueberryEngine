@@ -33,6 +33,7 @@ namespace Blueberry
 		
 		virtual void SetRenderTarget(GfxTexture* renderTexture) = 0;
 		virtual void SetGlobalConstantBuffer(const std::size_t& id, GfxConstantBuffer* buffer) = 0;
+		virtual void SetGlobalTexture(const std::size_t& id, GfxTexture* texture) = 0;
 		virtual void Draw(const GfxDrawingOperation& operation) const = 0;
 
 		virtual Matrix GetGPUMatrix(const Matrix& viewProjection) const = 0;

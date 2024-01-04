@@ -27,5 +27,6 @@ namespace Blueberry
 		ByteData m_RawData;
 
 		friend class Material;
+		friend class Renderer2D;
 	};
 }

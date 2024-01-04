@@ -57,6 +57,7 @@ namespace Blueberry
 		BIND_FIELD(FieldInfo(TO_STRING(m_Color), &SpriteRenderer::m_Color, BindingType::Color))
 		BIND_FIELD(FieldInfo(TO_STRING(m_Texture), &SpriteRenderer::m_Texture, BindingType::ObjectPtr, Texture::Type))
 		BIND_FIELD(FieldInfo(TO_STRING(m_Material), &SpriteRenderer::m_Material, BindingType::ObjectPtr, Material::Type))
+		BIND_FIELD(FieldInfo(TO_STRING(m_SortingOrder), &SpriteRenderer::m_SortingOrder, BindingType::Int))
 		END_OBJECT_BINDING()
 	}
 }

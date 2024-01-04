@@ -6,7 +6,7 @@
 namespace Blueberry
 {
 	OBJECT_DEFINITION(Object, Texture)
-		
+
 	const UINT& Texture::GetWidth()
 	{
 		return m_Width;

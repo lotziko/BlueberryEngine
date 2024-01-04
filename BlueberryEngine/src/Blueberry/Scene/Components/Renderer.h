@@ -10,5 +10,11 @@ namespace Blueberry
 
 	public:
 		static void BindProperties();
+
+		const int& GetSortingOrder();
+		void SetSortingOrder(const int& sortingOrder);
+
+	protected:
+		int m_SortingOrder = 0;
 	};
 }

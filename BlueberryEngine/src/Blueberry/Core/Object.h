@@ -4,7 +4,7 @@
 
 namespace Blueberry
 {
-#define TO_OBJECT_TYPE( classname ) std::hash<std::string>()(classname)
+#define TO_OBJECT_TYPE( classname ) TO_HASH( classname )
 
 //********************************************************************************
 // OBJECT_DECLARATION

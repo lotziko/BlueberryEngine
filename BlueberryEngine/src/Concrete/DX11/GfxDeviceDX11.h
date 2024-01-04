@@ -30,6 +30,7 @@ namespace Blueberry
 		
 		virtual void SetRenderTarget(GfxTexture* renderTexture) final;
 		virtual void SetGlobalConstantBuffer(const std::size_t& id, GfxConstantBuffer* buffer) final;
+		virtual void SetGlobalTexture(const std::size_t& id, GfxTexture* texture) final;
 		virtual void Draw(const GfxDrawingOperation& operation) const final;
 
 		virtual Matrix GetGPUMatrix(const Matrix& viewProjection) const final;
@@ -47,5 +48,6 @@ namespace Blueberry
 
 		GfxTextureDX11* m_BindedRenderTarget;
 		std::map<std::size_t, GfxConstantBufferDX11*> m_BindedConstantBuffers;
+		std::map<std::size_t, GfxTextureDX11*> m_BindedTextures;
 	};
 }

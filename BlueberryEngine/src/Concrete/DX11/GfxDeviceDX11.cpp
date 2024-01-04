@@ -174,11 +174,14 @@ namespace Blueberry
 
 	void GfxDeviceDX11::SetGlobalConstantBuffer(const std::size_t& id, GfxConstantBuffer* buffer)
 	{
-		if (m_BindedConstantBuffers.count(id) == 0)
-		{
-			auto dxConstantBuffer = static_cast<GfxConstantBufferDX11*>(buffer);
-			m_BindedConstantBuffers.insert({ id, dxConstantBuffer });
-		}
+		auto dxConstantBuffer = static_cast<GfxConstantBufferDX11*>(buffer);
+		m_BindedConstantBuffers.insert_or_assign(id, dxConstantBuffer);
+	}
+
+	void GfxDeviceDX11::SetGlobalTexture(const std::size_t& id, GfxTexture* texture)
+	{
+		auto dxTexture = static_cast<GfxTextureDX11*>(texture);
+		m_BindedTextures.insert_or_assign(id, dxTexture);
 	}
 
 	D3D11_PRIMITIVE_TOPOLOGY GetPrimitiveTopology(const Topology& topology)
@@ -221,6 +224,21 @@ namespace Blueberry
 			}
 		}
 
+		std::map<std::size_t, UINT>::iterator it;
+
+		auto textureMap = dxShader->m_TextureSlots;
+		for (it = textureMap.begin(); it != textureMap.end(); it++)
+		{
+			auto pair = m_BindedTextures.find(it->first);
+			if (pair != m_BindedTextures.end())
+			{
+				UINT slotIndex = it->second;
+				auto dxTexture = pair->second;
+				m_DeviceContext->PSSetShaderResources(slotIndex, 1, dxTexture->m_ResourceView.GetAddressOf());
+				m_DeviceContext->PSSetSamplers(slotIndex, 1, dxTexture->m_SamplerState.GetAddressOf());
+			}
+		}
+
 		auto dxVertexBuffer = static_cast<GfxVertexBufferDX11*>(operation.vertexBuffer);
 		m_DeviceContext->IASetVertexBuffers(0, 1, dxVertexBuffer->m_Buffer.GetAddressOf(), &dxVertexBuffer->m_Stride, &dxVertexBuffer->m_Offset);
 	
@@ -229,7 +247,6 @@ namespace Blueberry
 
 		auto bufferMap = dxShader->m_ConstantBufferSlots;
 		int offset = 0;
-		std::map<std::size_t, UINT>::iterator it;
 		for (it = bufferMap.begin(); it != bufferMap.end(); it++)
 		{
 			auto pair = m_BindedConstantBuffers.find(it->first);

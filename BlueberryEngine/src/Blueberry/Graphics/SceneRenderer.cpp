@@ -47,7 +47,7 @@ namespace Blueberry
 			for (auto component : scene->GetIterator<SpriteRenderer>())
 			{
 				auto spriteRenderer = static_cast<SpriteRenderer*>(component.second);
-				g_Renderer2D->Draw(spriteRenderer->GetEntity()->GetTransform()->GetLocalToWorldMatrix(), spriteRenderer->GetTexture(), spriteRenderer->GetMaterial(), spriteRenderer->GetColor());
+				g_Renderer2D->Draw(spriteRenderer->GetEntity()->GetTransform()->GetLocalToWorldMatrix(), spriteRenderer->GetTexture(), spriteRenderer->GetMaterial(), spriteRenderer->GetColor(), spriteRenderer->GetSortingOrder());
 			}
 			g_Renderer2D->End();
 		}

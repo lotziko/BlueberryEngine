@@ -57,6 +57,8 @@ namespace Blueberry
 		m_IndexBuffer->SetData(indexData, MAX_INDICES);
 		delete[] indexData;
 
+		m_DrawingDatas = new DrawingData[MAX_SPRITES];
+
 		if (!g_GraphicsDevice->CreateConstantBuffer(sizeof(CONSTANTS) * 1, m_ConstantBuffer))
 		{
 			return false;
@@ -78,6 +80,7 @@ namespace Blueberry
 	void Renderer2D::Shutdown()
 	{
 		delete[] m_VertexData;
+		delete[] m_DrawingDatas;
 	}
 
 	void Renderer2D::Begin(const Matrix& view, const Matrix& projection)
@@ -98,9 +101,9 @@ namespace Blueberry
 		Flush();
 	}
 
-	void Renderer2D::Draw(const Matrix& transform, Texture2D* texture, Material* material, const Color& color)
+	void Renderer2D::Draw(const Matrix& transform, Texture2D* texture, Material* material, const Color& color, const int& sortingOrder)
 	{
-		if (m_QuadIndexCount >= MAX_INDICES)
+		if (m_DrawingDataCount >= MAX_SPRITES)
 			Flush();
 
 		if (texture == nullptr)
@@ -113,49 +116,84 @@ namespace Blueberry
 			return;
 		}
 
-		m_Material = material;
-		material->SetTexture("_BaseMap", texture);
-
-		for (int i = 0; i < 4; i++)
-		{
-			auto position = Vector4::Transform(m_QuadVertexPositons[i] * Vector4(texture->GetWidth() / 32, texture->GetHeight() / 32, 1, 1), transform);
-
-			m_VertexDataPtr[0] = position.x;
-			m_VertexDataPtr[1] = position.y;
-			m_VertexDataPtr[2] = position.z;
-
-			m_VertexDataPtr[3] = color.x;
-			m_VertexDataPtr[4] = color.y;
-			m_VertexDataPtr[5] = color.z;
-			m_VertexDataPtr[6] = color.w;
-
-			m_VertexDataPtr[7] = m_QuadTextureCoords[i].x;
-			m_VertexDataPtr[8] = m_QuadTextureCoords[i].y;
-
-			m_VertexDataPtr += 9;
-		}
-
-		m_QuadIndexCount += 6;
+		m_DrawingDatas[m_DrawingDataCount] = { transform, texture, material, color, sortingOrder };
+		++m_DrawingDataCount;
 	}
 
 	void Renderer2D::DrawImmediate(const Vector3& position, const Vector2& size, Texture2D* texture, Material* material, const Color& color)
 	{
 		if (m_QuadIndexCount > 0)
 			Flush();
-		Draw(Matrix::CreateTranslation(position) * Matrix::CreateScale(size.x, size.y, 1), texture, material, color);
+		Draw(Matrix::CreateTranslation(position) * Matrix::CreateScale(size.x, size.y, 1), texture, material, color, 0);
 		Flush();
 	}
 
 	void Renderer2D::Flush()
 	{
-		if (m_QuadIndexCount == 0)
+		if (m_DrawingDataCount == 0)
 			return;
-		
-		m_VertexBuffer->SetData(m_VertexData, m_QuadIndexCount / 6 * 4);
-		
-		g_GraphicsDevice->SetGlobalConstantBuffer(std::hash<std::string>()("PerDrawData"), m_ConstantBuffer);
-		g_GraphicsDevice->Draw(GfxDrawingOperation(m_VertexBuffer, m_IndexBuffer, m_Material.Get(), m_QuadIndexCount, Topology::TriangleList));
 
+		std::sort(m_DrawingDatas, m_DrawingDatas + m_DrawingDataCount, SortBySortingOrder);
+
+		g_GraphicsDevice->SetGlobalConstantBuffer(std::hash<std::string>()("PerDrawData"), m_ConstantBuffer);
+
+		Material* currentMaterial = m_DrawingDatas->material;
+		Texture2D* currentTexture = m_DrawingDatas->texture;
+		for (int i = 0; i < m_DrawingDataCount; i++)
+		{
+			DrawingData data = m_DrawingDatas[i];
+			Matrix transform = data.transform;
+			Material* material = data.material;
+			Texture2D* texture = data.texture;
+			Color color = data.color;
+
+			if (material != currentMaterial || texture != currentTexture)
+			{
+				Flush(currentMaterial, currentTexture);
+				currentMaterial = material;
+				currentTexture = texture;
+			}
+			
+			for (int j = 0; j < 4; j++)
+			{
+				auto position = Vector4::Transform(m_QuadVertexPositons[j] * Vector4(texture->GetWidth() / 32, texture->GetHeight() / 32, 1, 1), transform);
+
+				m_VertexDataPtr[0] = position.x;
+				m_VertexDataPtr[1] = position.y;
+				m_VertexDataPtr[2] = position.z;
+
+				m_VertexDataPtr[3] = color.x;
+				m_VertexDataPtr[4] = color.y;
+				m_VertexDataPtr[5] = color.z;
+				m_VertexDataPtr[6] = color.w;
+
+				m_VertexDataPtr[7] = m_QuadTextureCoords[j].x;
+				m_VertexDataPtr[8] = m_QuadTextureCoords[j].y;
+
+				m_VertexDataPtr += 9;
+			}
+			m_QuadIndexCount += 6;
+		}
+
+		if (m_QuadIndexCount > 0)
+		{
+			Flush(currentMaterial, currentTexture);
+		}
+
+		m_DrawingDataCount = 0;
+	}
+
+	bool Renderer2D::SortBySortingOrder(DrawingData first, DrawingData second)
+	{
+		return first.sortingOrder < second.sortingOrder;
+	}
+
+	void Renderer2D::Flush(Material* material, Texture2D* texture)
+	{
+		static size_t baseMapId = TO_HASH("_BaseMap");
+		g_GraphicsDevice->SetGlobalTexture(baseMapId, texture->m_Texture);
+		m_VertexBuffer->SetData(m_VertexData, m_QuadIndexCount / 6 * 4);
+		g_GraphicsDevice->Draw(GfxDrawingOperation(m_VertexBuffer, m_IndexBuffer, material, m_QuadIndexCount, Topology::TriangleList));
 		m_QuadIndexCount = 0;
 		m_VertexDataPtr = m_VertexData;
 	}
