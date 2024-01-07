@@ -130,6 +130,8 @@ namespace Blueberry
 
 	void Renderer2D::Flush()
 	{
+		static size_t baseMapId = TO_HASH("_BaseMap");
+
 		if (m_DrawingDataCount == 0)
 			return;
 
@@ -137,27 +139,19 @@ namespace Blueberry
 
 		g_GraphicsDevice->SetGlobalConstantBuffer(std::hash<std::string>()("PerDrawData"), m_ConstantBuffer);
 
-		Material* currentMaterial = m_DrawingDatas->material;
-		Texture2D* currentTexture = m_DrawingDatas->texture;
+		// TODO non rectangle sprites
+		// Fill vertices
 		for (int i = 0; i < m_DrawingDataCount; i++)
 		{
 			DrawingData data = m_DrawingDatas[i];
 			Matrix transform = data.transform;
-			Material* material = data.material;
 			Texture2D* texture = data.texture;
 			Color color = data.color;
 
-			if (material != currentMaterial || texture != currentTexture)
-			{
-				Flush(currentMaterial, currentTexture);
-				currentMaterial = material;
-				currentTexture = texture;
-			}
-			
 			for (int j = 0; j < 4; j++)
 			{
 				auto position = Vector4::Transform(m_QuadVertexPositons[j] * Vector4(texture->GetWidth() / 32, texture->GetHeight() / 32, 1, 1), transform);
-
+				
 				m_VertexDataPtr[0] = position.x;
 				m_VertexDataPtr[1] = position.y;
 				m_VertexDataPtr[2] = position.z;
@@ -175,26 +169,44 @@ namespace Blueberry
 			m_QuadIndexCount += 6;
 		}
 
-		if (m_QuadIndexCount > 0)
+		m_VertexBuffer->SetData(m_VertexData, m_QuadIndexCount / 6 * 4);
+
+		// Draw quads
+		Material* currentMaterial = m_DrawingDatas->material;
+		Texture2D* currentTexture = m_DrawingDatas->texture;
+		UINT indexOffset = 0;
+		UINT indexCount = 0;
+		for (int i = 0; i < m_DrawingDataCount; i++)
 		{
-			Flush(currentMaterial, currentTexture);
+			DrawingData data = m_DrawingDatas[i];
+			Material* material = data.material;
+			Texture2D* texture = data.texture;
+			if (material != currentMaterial || texture != currentTexture)
+			{
+				g_GraphicsDevice->SetGlobalTexture(baseMapId, currentTexture->m_Texture);
+				g_GraphicsDevice->Draw(GfxDrawingOperation(m_VertexBuffer, m_IndexBuffer, currentMaterial, indexCount, indexOffset, Topology::TriangleList));
+
+				currentMaterial = material;
+				currentTexture = texture;
+				indexOffset += indexCount;
+				indexCount = 0;
+			}
+			indexCount += 6;
 		}
 
+		if (indexCount > 0)
+		{
+			g_GraphicsDevice->SetGlobalTexture(baseMapId, currentTexture->m_Texture);
+			g_GraphicsDevice->Draw(GfxDrawingOperation(m_VertexBuffer, m_IndexBuffer, currentMaterial, indexCount, indexOffset, Topology::TriangleList));
+		}
+
+		m_QuadIndexCount = 0;
+		m_VertexDataPtr = m_VertexData;
 		m_DrawingDataCount = 0;
 	}
 
 	bool Renderer2D::SortBySortingOrder(DrawingData first, DrawingData second)
 	{
 		return first.sortingOrder < second.sortingOrder;
-	}
-
-	void Renderer2D::Flush(Material* material, Texture2D* texture)
-	{
-		static size_t baseMapId = TO_HASH("_BaseMap");
-		g_GraphicsDevice->SetGlobalTexture(baseMapId, texture->m_Texture);
-		m_VertexBuffer->SetData(m_VertexData, m_QuadIndexCount / 6 * 4);
-		g_GraphicsDevice->Draw(GfxDrawingOperation(m_VertexBuffer, m_IndexBuffer, material, m_QuadIndexCount, Topology::TriangleList));
-		m_QuadIndexCount = 0;
-		m_VertexDataPtr = m_VertexData;
 	}
 }

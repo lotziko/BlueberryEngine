@@ -1,4 +1,5 @@
 #pragma once
+#include "Enums.h"
 
 namespace Blueberry
 {
@@ -8,6 +9,6 @@ namespace Blueberry
 		UINT height;
 		void* data;
 		size_t dataSize;
-		bool isRenderTarget;
+		TextureType type;
 	};
 }

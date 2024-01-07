@@ -17,15 +17,14 @@ namespace Blueberry
 	void ShaderImporter::ImportData()
 	{
 		Guid guid = GetGuid();
-		ShaderProcessor processor;
 		std::string vertexPath = GetShaderPath(".vertex");
 		std::string fragmentPath = GetShaderPath(".fragment");
 
 		Shader* object;
 		if (AssetDB::HasAssetWithGuidInData(guid))
 		{
-			void* vertex = processor.Load(vertexPath);
-			void* fragment = processor.Load(fragmentPath);
+			void* vertex = ShaderProcessor::Load(vertexPath);
+			void* fragment = ShaderProcessor::Load(fragmentPath);
 			object = AssetDB::LoadAssetObject<Shader>(guid);
 			object->Initialize(vertex, fragment);
 			BB_INFO(std::string() << "Shader \"" << GetName() << "\" imported from cache.");
@@ -33,8 +32,8 @@ namespace Blueberry
 		else
 		{
 			std::string path = GetFilePath();
-			void* vertex = processor.Compile(path, "Vertex", "vs_5_0", vertexPath);
-			void* fragment = processor.Compile(path, "Fragment", "ps_5_0", fragmentPath);
+			void* vertex = ShaderProcessor::Compile(path, "Vertex", "vs_5_0", vertexPath);
+			void* fragment = ShaderProcessor::Compile(path, "Fragment", "ps_5_0", fragmentPath);
 			object = Shader::Create(vertex, fragment);
 			ObjectDB::AllocateIdToGuid(object, guid);
 			AssetDB::SaveAssetObjectToCache(object);

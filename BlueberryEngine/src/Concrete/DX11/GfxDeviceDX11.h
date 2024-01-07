@@ -27,6 +27,8 @@ namespace Blueberry
 		virtual bool CreateConstantBuffer(const UINT& byteCount, GfxConstantBuffer*& buffer) final;
 		virtual bool CreateTexture(const TextureProperties& properties, GfxTexture*& texture) const final;
 		virtual bool CreateImGuiRenderer(ImGuiRenderer*& renderer) const final;
+
+		virtual void Copy(GfxTexture* source, GfxTexture* target, const Rectangle& area) const final;
 		
 		virtual void SetRenderTarget(GfxTexture* renderTexture) final;
 		virtual void SetGlobalConstantBuffer(const std::size_t& id, GfxConstantBuffer* buffer) final;

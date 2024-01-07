@@ -2,6 +2,13 @@
 
 namespace Blueberry
 {
+	enum TextureType
+	{
+		Resource,
+		RenderTarget,
+		Staging
+	};
+
 	enum Topology
 	{
 		Unknown,

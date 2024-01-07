@@ -31,6 +31,11 @@ project "BlueberryEditor"
 		"BlueberryEngine",
 	}
 
+	postbuildcommands
+	{
+		"{COPY} %{wks.location}/BlueberryEditor/assets %{cfg.targetdir}/assets"
+	}
+
 	filter "system:windows"
 
 	filter "configurations:Debug"

@@ -12,8 +12,8 @@ namespace Blueberry
 
 	struct GfxDrawingOperation
 	{
-		GfxDrawingOperation(GfxVertexBuffer* vertexBuffer, GfxIndexBuffer* indexBuffer, Material* material, const UINT& indexCount, const Topology& topology);
-		GfxDrawingOperation(Mesh* mesh, Material* material, const UINT& indexCount);
+		GfxDrawingOperation(GfxVertexBuffer* vertexBuffer, GfxIndexBuffer* indexBuffer, Material* material, const UINT& indexCount, const UINT& indexOffset, const Topology& topology);
+		GfxDrawingOperation(Mesh* mesh, Material* material, const UINT& indexCount, const UINT& indexOffset);
 		GfxDrawingOperation(Mesh* mesh, Material* material);
 
 		bool IsValid() const;
@@ -24,5 +24,6 @@ namespace Blueberry
 		GfxIndexBuffer* indexBuffer;
 		Topology topology;
 		UINT indexCount;
+		UINT indexOffset;
 	};
 }

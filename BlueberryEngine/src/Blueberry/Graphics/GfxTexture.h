@@ -11,6 +11,8 @@ namespace Blueberry
 		virtual UINT GetHeight() const = 0;
 		virtual void* GetHandle() = 0;
 
+		virtual void GetPixel(char* dst) = 0;
+
 		virtual void SetData(void* data) = 0;
 	};
 }

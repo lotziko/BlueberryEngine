@@ -16,12 +16,14 @@ namespace Blueberry
 		virtual UINT GetHeight() const override;
 		virtual void* GetHandle() override;
 
+		virtual void GetPixel(char* dst) override;
+
 		virtual void SetData(void* data) override;
 
 		void Clear(const Color& color);
 
 	private:
-		bool Initialize(D3D11_SUBRESOURCE_DATA* subresourceData, bool isRenderTarget);
+		bool Initialize(D3D11_SUBRESOURCE_DATA* subresourceData, const TextureProperties& properties);
 
 	private:
 		ComPtr<ID3D11Texture2D> m_Texture;

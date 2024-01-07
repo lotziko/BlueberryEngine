@@ -8,21 +8,22 @@
 
 namespace Blueberry
 {
-	GfxDrawingOperation::GfxDrawingOperation(GfxVertexBuffer* vertexBuffer, GfxIndexBuffer* indexBuffer, Material* material, const UINT& indexCount, const Topology& topology)
+	GfxDrawingOperation::GfxDrawingOperation(GfxVertexBuffer* vertexBuffer, GfxIndexBuffer* indexBuffer, Material* material, const UINT& indexCount, const UINT& indexOffset, const Topology& topology)
 	{
 		shader = material->m_Shader.IsValid() ? material->m_Shader->m_Shader : nullptr;
 		textures = &(material->m_GfxTextures);
 		this->vertexBuffer = vertexBuffer;
 		this->indexBuffer = indexBuffer;
 		this->indexCount = indexCount;
+		this->indexOffset = indexOffset;
 		this->topology = topology;
 	}
 
-	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material, const UINT& indexCount) : GfxDrawingOperation(mesh->m_VertexBuffer, mesh->m_IndexBuffer, material, indexCount, mesh->GetTopology())
+	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material, const UINT& indexCount, const UINT& indexOffset) : GfxDrawingOperation(mesh->m_VertexBuffer, mesh->m_IndexBuffer, material, indexCount, indexOffset, mesh->GetTopology())
 	{
 	}
 
-	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material) : GfxDrawingOperation(mesh->m_VertexBuffer, mesh->m_IndexBuffer, material, mesh->m_IndexCount, mesh->GetTopology())
+	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material) : GfxDrawingOperation(mesh->m_VertexBuffer, mesh->m_IndexBuffer, material, mesh->m_IndexCount, 0, mesh->GetTopology())
 	{
 	}
 

@@ -19,11 +19,11 @@ namespace Blueberry
 			subresourceData.pSysMem = properties.data;
 			subresourceData.SysMemPitch = properties.width * 4;
 
-			return Initialize(&subresourceData, properties.isRenderTarget);
+			return Initialize(&subresourceData, properties);
 		}
 		else
 		{
-			return Initialize(nullptr, properties.isRenderTarget);
+			return Initialize(nullptr, properties);
 		}
 	}
 
@@ -42,6 +42,20 @@ namespace Blueberry
 		return m_ResourceView.Get();
 	}
 
+	void GfxTextureDX11::GetPixel(char* dst)
+	{
+		// TODO handle different texture formats
+		if (m_Width != 1 && m_Height != 1)
+		{
+			return;
+		}
+		D3D11_MAPPED_SUBRESOURCE mappedTexture;
+		ZeroMemory(&mappedTexture, sizeof(D3D11_MAPPED_SUBRESOURCE));
+		m_DeviceContext->Map(m_Texture.Get(), 0, D3D11_MAP_READ, 0, &mappedTexture);
+		memcpy(dst, mappedTexture.pData, sizeof(char) * 4);
+		m_DeviceContext->Unmap(m_Texture.Get(), 0);
+	}
+
 	void GfxTextureDX11::SetData(void* data)
 	{
 	}
@@ -51,7 +65,7 @@ namespace Blueberry
 		m_DeviceContext->ClearRenderTargetView(m_RenderTargetView.Get(), color);
 	}
 
-	bool GfxTextureDX11::Initialize(D3D11_SUBRESOURCE_DATA* subresourceData, bool isRenderTarget)
+	bool GfxTextureDX11::Initialize(D3D11_SUBRESOURCE_DATA* subresourceData, const TextureProperties& properties)
 	{
 		D3D11_TEXTURE2D_DESC textureDesc;
 		ZeroMemory(&textureDesc, sizeof(D3D11_TEXTURE2D_DESC));
@@ -61,9 +75,26 @@ namespace Blueberry
 		textureDesc.MipLevels = textureDesc.ArraySize = 1;
 		textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 		textureDesc.SampleDesc.Count = 1;
-		textureDesc.Usage = D3D11_USAGE_DEFAULT;
-		textureDesc.BindFlags = isRenderTarget ? (D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET) : D3D11_BIND_SHADER_RESOURCE;
-		textureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		
+		switch (properties.type)
+		{
+		case TextureType::Resource:
+			textureDesc.Usage = D3D11_USAGE_DEFAULT;
+			textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+			textureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+			break;
+		case TextureType::RenderTarget:
+			textureDesc.Usage = D3D11_USAGE_DEFAULT;
+			textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+			textureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+			break;
+		case TextureType::Staging:
+			textureDesc.Usage = D3D11_USAGE_STAGING;
+			textureDesc.BindFlags = 0;
+			textureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+			break;
+		}
+
 		textureDesc.MiscFlags = 0;
 
 		HRESULT hr = m_Device->CreateTexture2D(&textureDesc, subresourceData, m_Texture.GetAddressOf());
@@ -73,34 +104,37 @@ namespace Blueberry
 			return false;
 		}
 
-		hr = m_Device->CreateShaderResourceView(m_Texture.Get(), nullptr, m_ResourceView.GetAddressOf());
-		if (FAILED(hr))
+		if (properties.type != TextureType::Staging)
 		{
-			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create shader resource view."));
-			return false;
+			hr = m_Device->CreateShaderResourceView(m_Texture.Get(), nullptr, m_ResourceView.GetAddressOf());
+			if (FAILED(hr))
+			{
+				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create shader resource view."));
+				return false;
+			}
+
+			D3D11_SAMPLER_DESC samplerDesc;
+			ZeroMemory(&samplerDesc, sizeof(D3D11_SAMPLER_DESC));
+
+			samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+			samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+			samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+			samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+			samplerDesc.MipLODBias = 0.0f;
+			samplerDesc.MaxAnisotropy = 1;
+			samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+			samplerDesc.MinLOD = -FLT_MAX;
+			samplerDesc.MaxLOD = FLT_MAX;
+
+			hr = m_Device->CreateSamplerState(&samplerDesc, m_SamplerState.GetAddressOf());
+			if (FAILED(hr))
+			{
+				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create sampler state."));
+				return false;
+			}
 		}
 
-		D3D11_SAMPLER_DESC samplerDesc;
-		ZeroMemory(&samplerDesc, sizeof(D3D11_SAMPLER_DESC));
-
-		samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-		samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-		samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-		samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-		samplerDesc.MipLODBias = 0.0f;
-		samplerDesc.MaxAnisotropy = 1;
-		samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-		samplerDesc.MinLOD = -FLT_MAX;
-		samplerDesc.MaxLOD = FLT_MAX;
-
-		hr = m_Device->CreateSamplerState(&samplerDesc, m_SamplerState.GetAddressOf());
-		if (FAILED(hr))
-		{
-			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create sampler state."));
-			return false;
-		}
-
-		if (isRenderTarget)
+		if (properties.type == TextureType::RenderTarget)
 		{
 			D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
 			ZeroMemory(&renderTargetViewDesc, sizeof(D3D11_RENDER_TARGET_VIEW_DESC));

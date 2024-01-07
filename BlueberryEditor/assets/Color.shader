@@ -8,7 +8,7 @@ struct Attributes
 struct Varyings
 {
 	float4 positionCS : SV_POSITION;
-	float2 texcoord : TEXCOORD0;
+	float4 color : COLOR;
 };
 
 cbuffer PerDrawData : register(b0)
@@ -19,12 +19,12 @@ cbuffer PerDrawData : register(b0)
 Varyings Vertex(Attributes input)
 {
 	Varyings output;
-	output.positionCS = float4(input.positionOS, 1.0f);
-	output.texcoord = input.texcoord;
+	output.positionCS = mul(float4(input.positionOS, 1.0f), viewProjectionMatrix);
+	output.color = input.color;
 	return output;
 }
 
 float4 Fragment(Varyings input) : SV_TARGET
 {
-	return float4(0, 0, 0, 0);
+	return input.color;
 }

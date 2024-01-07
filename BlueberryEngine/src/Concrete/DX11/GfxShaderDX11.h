@@ -18,10 +18,10 @@ namespace Blueberry
 
 	private:
 		ComPtr<ID3D11VertexShader> m_VertexShader = nullptr;
-		ComPtr<ID3D10Blob> m_VertexShaderBuffer = nullptr;
+		ComPtr<ID3DBlob> m_VertexShaderBuffer = nullptr;
 
 		ComPtr<ID3D11PixelShader> m_PixelShader = nullptr;
-		ComPtr<ID3D10Blob> m_PixelShaderBuffer = nullptr;
+		ComPtr<ID3DBlob> m_PixelShaderBuffer = nullptr;
 
 		ComPtr<ID3D11InputLayout> m_InputLayout;
 

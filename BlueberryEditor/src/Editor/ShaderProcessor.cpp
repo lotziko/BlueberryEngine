@@ -8,26 +8,30 @@ namespace Blueberry
 	{
 		UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
 
-		ComPtr<ID3D10Blob> shader;
-		HRESULT hr = D3DCompileFromFile(StringConverter::StringToWide(path).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, entryPoint, model, flags, 0, shader.GetAddressOf(), nullptr);
+		ComPtr<ID3DBlob> shader;
+		ComPtr<ID3DBlob> error;
+		HRESULT hr = D3DCompileFromFile(StringConverter::StringToWide(path).c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, entryPoint, model, flags, 0, shader.GetAddressOf(), error.GetAddressOf());
 		if (FAILED(hr))
 		{
-			std::string errorMsg = "Failed to compile shader: " + std::string(path.begin(), path.end());
-			BB_ERROR(errorMsg);
+			BB_ERROR("Failed to compile shader: " + std::string(path.begin(), path.end()));
+			BB_ERROR((char*)error->GetBufferPointer());
+			error->Release();
 			return nullptr;
 		}
-		D3DWriteBlobToFile(shader.Get(), StringConverter::StringToWide(blobPath).c_str(), true);
+		if (blobPath.length() > 0)
+		{
+			D3DWriteBlobToFile(shader.Get(), StringConverter::StringToWide(blobPath).c_str(), true);
+		}
 		return shader.Detach();
 	}
 
 	void* ShaderProcessor::Load(const std::string& path)
 	{
-		ComPtr<ID3D10Blob> shader;
+		ComPtr<ID3DBlob> shader;
 		HRESULT hr = D3DReadFileToBlob(StringConverter::StringToWide(path).c_str(), shader.GetAddressOf());
 		if (FAILED(hr))
 		{
-			std::string errorMsg = "Failed to load shader: " + std::string(path.begin(), path.end());
-			BB_ERROR(errorMsg);
+			BB_ERROR("Failed to load shader: " + std::string(path.begin(), path.end()));
 			return nullptr;
 		}
 		return shader.Detach();

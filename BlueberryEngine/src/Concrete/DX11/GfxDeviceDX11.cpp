@@ -157,6 +157,19 @@ namespace Blueberry
 		return true;
 	}
 
+	void GfxDeviceDX11::Copy(GfxTexture* source, GfxTexture* target, const Rectangle& area) const
+	{
+		D3D11_BOX src;
+		src.left = area.x;
+		src.top = area.y;
+		src.right = area.x + area.width;
+		src.bottom = area.y + area.height;
+		src.front = 0;
+		src.back = 1;
+
+		m_DeviceContext->CopySubresourceRegion(static_cast<GfxTextureDX11*>(target)->m_Texture.Get(), 0, 0, 0, 0, static_cast<GfxTextureDX11*>(source)->m_Texture.Get(), 0, &src);
+	}
+
 	void GfxDeviceDX11::SetRenderTarget(GfxTexture* renderTexture)
 	{
 		if (renderTexture == nullptr)
@@ -259,7 +272,7 @@ namespace Blueberry
 
 		m_DeviceContext->RSSetState(m_RasterizerState.Get());
 		m_DeviceContext->OMSetDepthStencilState(m_DepthStencilState.Get(), 0);
-		m_DeviceContext->DrawIndexed(operation.indexCount, 0, 0);
+		m_DeviceContext->DrawIndexed(operation.indexCount, operation.indexOffset, 0);
 	}
 
 	Matrix GfxDeviceDX11::GetGPUMatrix(const Matrix& viewProjection) const

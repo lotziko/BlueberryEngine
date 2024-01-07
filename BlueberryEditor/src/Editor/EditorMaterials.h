@@ -7,10 +7,10 @@ namespace Blueberry
 	class EditorMaterials
 	{
 	public:
-		static Material* GetEditorGridMaterial();
+		static Material* GetEditorColorMaterial();
 
 	private:
-		static Material* s_EditorGridMaterial;
-		static bool s_EditorGridMaterialTriedToLoad;
+		static Material* s_EditorColorMaterial;
+		static bool s_EditorColorMaterialTriedToLoad;
 	};
 }

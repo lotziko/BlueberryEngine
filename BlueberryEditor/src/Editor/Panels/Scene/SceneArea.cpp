@@ -24,7 +24,7 @@ namespace Blueberry
 		properties.width = 1920;
 		properties.height = 1080;
 		properties.data = nullptr;
-		properties.isRenderTarget = true;
+		properties.type = TextureType::RenderTarget;
 		g_GraphicsDevice->CreateTexture(properties, m_SceneRenderTarget);
 	}
 
@@ -85,6 +85,12 @@ namespace Blueberry
 			{
 				m_IsDragging = false;
 			}
+		}
+
+		// Selection
+		if (ImGui::IsMouseClicked(0) && mousePos.x >= pos.x && mousePos.y >= pos.y && mousePos.x <= pos.x + size.x && mousePos.y <= pos.y + size.y)
+		{
+			m_ObjectPicker.Pick(EditorSceneManager::GetScene(), m_Camera, (int)(mousePos.x - pos.x), (int)(mousePos.y - pos.y), size.x, size.y);
 		}
 
 		DrawScene(size.x, size.y);
