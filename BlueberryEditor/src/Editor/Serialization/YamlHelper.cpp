@@ -15,18 +15,15 @@ namespace Blueberry
 	
 	void YamlHelper::Load(ryml::Tree& tree, const std::string& path)
 	{
-		// https://stackoverflow.com/questions/2602013/read-whole-ascii-file-into-c-stdstring
-		std::ifstream t;
-		int length;
-		t.open(path.c_str());
-		t.seekg(0, std::ios::end);
-		length = t.tellg();
-		t.seekg(0, std::ios::beg);
-		char* buffer = new char[length];
-		t.read(buffer, length);
-		t.close();
-		tree = ryml::parse_in_arena(ryml::to_csubstr(buffer));
+		auto file = fopen(path.c_str(), "r");
+		fseek(file, 0, SEEK_END);
+		size_t length = ftell(file);
+		rewind(file);
+		char* data = (char*)malloc(sizeof(char) * length);
+		fread(data, sizeof(char) * length, 1, file);
+		fclose(file);
+		tree = ryml::parse_in_arena(ryml::csubstr(data, length));
 		tree.resolve_tags();
-		delete[] buffer;
+		delete[] data;
 	}
 }
