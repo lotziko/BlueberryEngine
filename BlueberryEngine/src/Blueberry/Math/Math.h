@@ -47,4 +47,22 @@ namespace Blueberry
 	{
 		return a < b ? a : b;
 	}
+
+	inline Vector3 MultiplyPoint(Matrix matrix, Vector3 point)
+	{
+		Vector4 pointToTransform = Vector4(point.x, point.y, point.z, 1.0f);
+		pointToTransform = Vector4::Transform(pointToTransform, matrix);
+		pointToTransform.w = 1 / pointToTransform.w;
+		pointToTransform.x *= pointToTransform.w;
+		pointToTransform.y *= pointToTransform.w;
+		pointToTransform.z *= pointToTransform.w;
+		return Vector3(pointToTransform.x, pointToTransform.y, pointToTransform.z);
+	}
+
+	inline Vector3 MultiplyVector(Matrix matrix, Vector3 vector)
+	{
+		Vector4 vectorToTransform = Vector4(vector.x, vector.y, vector.z, 0.0f);
+		vectorToTransform = Vector4::Transform(vectorToTransform, matrix);
+		return Vector3(vectorToTransform.x, vectorToTransform.y, vectorToTransform.z);
+	}
 }

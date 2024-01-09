@@ -28,6 +28,15 @@ namespace Blueberry
 		return m_IsOrthographic;
 	}
 
+	void BaseCamera::SetOrthographic(const bool& isOrthographic)
+	{
+		if (m_IsOrthographic != isOrthographic)
+		{
+			m_IsOrthographic = isOrthographic;
+			m_IsProjectionDirty = true;
+		}
+	}
+
 	const float& BaseCamera::GetOrthographicSize()
 	{
 		return m_OrthographicSize;
@@ -54,18 +63,32 @@ namespace Blueberry
 		}
 	}
 
-	const void BaseCamera::SetPixelsPerUnit(const float& pixelsPerUnit)
+	const float& BaseCamera::GetAspectRatio()
 	{
-		if (m_PixelsPerUnit != pixelsPerUnit)
+		return m_AspectRatio;
+	}
+
+	void BaseCamera::SetAspectRatio(const float& aspectRatio)
+	{
+		if (m_AspectRatio != aspectRatio)
 		{
-			m_PixelsPerUnit = pixelsPerUnit;
+			m_AspectRatio = aspectRatio;
 			m_IsProjectionDirty = true;
 		}
 	}
 
-	const float& BaseCamera::GetAspectRatio()
+	const float& BaseCamera::GetFieldOfView()
 	{
-		return m_AspectRatio;
+		return m_FieldOfView;
+	}
+
+	void BaseCamera::SetFieldOfView(const float& fieldOfView)
+	{
+		if (m_FieldOfView != fieldOfView)
+		{
+			m_FieldOfView = fieldOfView;
+			m_IsProjectionDirty = true;
+		}
 	}
 
 	const Vector3& BaseCamera::GetPosition()
@@ -159,6 +182,7 @@ namespace Blueberry
 
 	Vector3 BaseCamera::ScreenToWorldPoint(Vector3 position)
 	{
+		// Based on https://github.com/tezheng/UH5/blob/master/src/UnityEngine/Render/Camera.cs
 		if (m_IsViewDirty)
 		{
 			RecalculateView();
@@ -215,6 +239,10 @@ namespace Blueberry
 		if (m_IsOrthographic)
 		{
 			m_ProjectionMatrix = Matrix::CreateOrthographic((m_OrthographicSize * 2 * m_AspectRatio), (m_OrthographicSize * 2), m_ZNearPlane, m_ZFarPlane);
+		}
+		else
+		{
+			m_ProjectionMatrix = Matrix::CreatePerspectiveFieldOfView(ToRadians(m_FieldOfView), m_AspectRatio, m_ZNearPlane, m_ZFarPlane);
 		}
 		m_ViewProjectionMatrix = m_ViewMatrix * m_ProjectionMatrix;
 		m_InverseViewProjectionMatrix = m_ViewProjectionMatrix.Invert();

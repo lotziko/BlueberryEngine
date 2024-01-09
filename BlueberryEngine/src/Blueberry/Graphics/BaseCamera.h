@@ -13,6 +13,7 @@ namespace Blueberry
 		const Matrix& GetViewMatrix();
 
 		const bool& IsOrthographic();
+		void SetOrthographic(const bool& isOrthographic);
 
 		const float& GetOrthographicSize();
 		const void SetOrthographicSize(const float& size);
@@ -20,9 +21,11 @@ namespace Blueberry
 		const Vector2& GetPixelSize();
 		const void SetPixelSize(const Vector2& pixelSize);
 
-		const void SetPixelsPerUnit(const float& pixelsPerUnit);
-
 		const float& GetAspectRatio();
+		void SetAspectRatio(const float& aspectRatio);
+
+		const float& GetFieldOfView();
+		void SetFieldOfView(const float& fieldOfView);
 
 		const Vector3& GetPosition();
 		void SetPosition(const Vector3& position);
@@ -56,8 +59,8 @@ namespace Blueberry
 		bool m_IsOrthographic = true;
 		float m_OrthographicSize = 5;
 		Vector2 m_PixelSize = Vector2(480, 320);
-		float m_PixelsPerUnit = 32;
 		
+		float m_FieldOfView = 60;
 		float m_AspectRatio = 16.0f / 9.0f;
 
 		Vector3 m_Direction = Vector3(0, 0, -1);
