@@ -1,9 +1,9 @@
 #include "bbpch.h"
 #include "SceneArea.h"
 
-#include "Blueberry\Core\GlobalServices.h"
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Graphics\SceneRenderer.h"
+#include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\GfxTexture.h"
 
 #include "Editor\EditorSceneManager.h"
@@ -11,7 +11,6 @@
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
 
-#include "Editor\EditorMaterials.h"
 #include "SceneAreaMovement.h"
 
 #include "imgui\imgui.h"
@@ -25,7 +24,7 @@ namespace Blueberry
 		properties.height = 1080;
 		properties.data = nullptr;
 		properties.type = TextureType::RenderTarget;
-		g_GraphicsDevice->CreateTexture(properties, m_SceneRenderTarget);
+		GfxDevice::CreateTexture(properties, m_SceneRenderTarget);
 	}
 
 	void SceneArea::DrawUI()
@@ -265,16 +264,16 @@ namespace Blueberry
 
 	void SceneArea::DrawScene(const float width, const float height)
 	{
-		g_GraphicsDevice->SetRenderTarget(m_SceneRenderTarget);
-		g_GraphicsDevice->SetViewport(0, 0, static_cast<int>(width), static_cast<int>(height));
-		g_GraphicsDevice->ClearColor({ 0.117f, 0.117f, 0.117f, 1 });
+		GfxDevice::SetRenderTarget(m_SceneRenderTarget);
+		GfxDevice::SetViewport(0, 0, static_cast<int>(width), static_cast<int>(height));
+		GfxDevice::ClearColor({ 0.117f, 0.117f, 0.117f, 1 });
 
 		Scene* scene = EditorSceneManager::GetScene();
 		if (scene != nullptr)
 		{
 			SceneRenderer::Draw(scene, m_Camera.GetViewMatrix(), m_Camera.GetProjectionMatrix());
 		}
-		g_GraphicsDevice->SetRenderTarget(nullptr);
+		GfxDevice::SetRenderTarget(nullptr);
 	}
 
 	void SceneArea::LookAt(const Vector3& point, const Quaternion& direction, const float& newSize, const bool& isOrthographic)

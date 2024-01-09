@@ -39,28 +39,10 @@ namespace Blueberry
 		~EventDispatcher() = default;
 
 	public:
-		void AddCallback(const EventType& type, EventCallback&& callback);
-		void Invoke(Event& event) const;
+		static void AddCallback(const EventType& type, EventCallback&& callback);
+		static void Invoke(Event& event);
 
 	private:
-		std::map<EventType, std::vector<EventCallback>> m_Observers;
+		static std::map<EventType, std::vector<EventCallback>> m_Observers;
 	};
-
-	inline void EventDispatcher::AddCallback(const EventType& type, EventCallback&& callback)
-	{
-		m_Observers[type].emplace_back(callback);
-	}
-
-	inline void EventDispatcher::Invoke(Event& event) const
-	{
-		EventType type = event.GetEventType();
-
-		if (m_Observers.find(type) == m_Observers.end())
-			return;
-
-		auto&& observers = m_Observers.at(type);
-
-		for (auto&& observer : observers)
-			observer(event);
-	}
 }

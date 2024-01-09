@@ -1,7 +1,7 @@
 #include "bbpch.h"
 #include "SceneRenderer.h"
 
-#include "Blueberry\Core\GlobalServices.h"
+#include "Blueberry\Graphics\Renderer2D.h"
 #include "Blueberry\Scene\Scene.h"
 
 namespace Blueberry
@@ -43,13 +43,13 @@ namespace Blueberry
 		
 		//Draw sprites
 		{
-			g_Renderer2D->Begin(viewMatrix, projectionMatrix);
+			Renderer2D::Begin(viewMatrix, projectionMatrix);
 			for (auto component : scene->GetIterator<SpriteRenderer>())
 			{
 				auto spriteRenderer = static_cast<SpriteRenderer*>(component.second);
-				g_Renderer2D->Draw(spriteRenderer->GetEntity()->GetTransform()->GetLocalToWorldMatrix(), spriteRenderer->GetTexture(), spriteRenderer->GetMaterial(), spriteRenderer->GetColor(), spriteRenderer->GetSortingOrder());
+				Renderer2D::Draw(spriteRenderer->GetEntity()->GetTransform()->GetLocalToWorldMatrix(), spriteRenderer->GetTexture(), spriteRenderer->GetMaterial(), spriteRenderer->GetColor(), spriteRenderer->GetSortingOrder());
 			}
-			g_Renderer2D->End();
+			Renderer2D::End();
 		}
 	}
 }

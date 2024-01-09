@@ -1,14 +1,14 @@
 #include "bbpch.h"
 #include "SceneObjectPicker.h"
 
-#include "Editor\Assets\EditorAssets.h"
 #include "Editor\Selection.h"
+#include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Graphics\BaseCamera.h"
 #include "Blueberry\Graphics\Renderer2D.h"
 #include "Blueberry\Graphics\Material.h"
+#include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Scene\Scene.h"
-#include "Blueberry\Core\GlobalServices.h"
 
 namespace Blueberry
 {
@@ -19,15 +19,15 @@ namespace Blueberry
 		properties.height = 1080;
 		properties.data = nullptr;
 		properties.type = TextureType::RenderTarget;
-		g_GraphicsDevice->CreateTexture(properties, m_SceneRenderTarget);
+		GfxDevice::CreateTexture(properties, m_SceneRenderTarget);
 
 		properties.width = 1;
 		properties.height = 1;
 		properties.data = nullptr;
 		properties.type = TextureType::Staging;
-		g_GraphicsDevice->CreateTexture(properties, m_StagingRenderTarget);
+		GfxDevice::CreateTexture(properties, m_StagingRenderTarget);
 
-		m_SpriteObjectPickerMaterial = Material::Create((Shader*)EditorAssets::Load("assets/SpriteObjectPicker.shader"));
+		m_SpriteObjectPickerMaterial = Material::Create((Shader*)AssetLoader::Load("assets/SpriteObjectPicker.shader"));
 	}
 
 	void SceneObjectPicker::Pick(Scene* scene, BaseCamera& camera, const int& positionX, const int& positionY, const int& viewportWidth, const int& viewportHeight)
@@ -41,19 +41,19 @@ namespace Blueberry
 		char pixel[4];
 		int index = 1;
 
-		g_GraphicsDevice->SetRenderTarget(m_SceneRenderTarget);
-		g_GraphicsDevice->SetViewport(0, 0, viewportWidth, viewportHeight);
-		g_GraphicsDevice->ClearColor({ 0, 0, 0, 0 });
-		g_Renderer2D->Begin(camera.GetViewMatrix(), camera.GetProjectionMatrix());
+		GfxDevice::SetRenderTarget(m_SceneRenderTarget);
+		GfxDevice::SetViewport(0, 0, viewportWidth, viewportHeight);
+		GfxDevice::ClearColor({ 0, 0, 0, 0 });
+		Renderer2D::Begin(camera.GetViewMatrix(), camera.GetProjectionMatrix());
 		for (auto component : scene->GetIterator<SpriteRenderer>())
 		{
 			auto spriteRenderer = static_cast<SpriteRenderer*>(component.second);
-			g_Renderer2D->Draw(spriteRenderer->GetEntity()->GetTransform()->GetLocalToWorldMatrix(), spriteRenderer->GetTexture(), m_SpriteObjectPickerMaterial, Color((float)index / 255.0f, 0, 0), spriteRenderer->GetSortingOrder());
+			Renderer2D::Draw(spriteRenderer->GetEntity()->GetTransform()->GetLocalToWorldMatrix(), spriteRenderer->GetTexture(), m_SpriteObjectPickerMaterial, Color((float)index / 255.0f, 0, 0), spriteRenderer->GetSortingOrder());
 			++index;
 		}
-		g_Renderer2D->End();
-		g_GraphicsDevice->SetRenderTarget(nullptr);
-		g_GraphicsDevice->Copy(m_SceneRenderTarget, m_StagingRenderTarget, area);
+		Renderer2D::End();
+		GfxDevice::SetRenderTarget(nullptr);
+		GfxDevice::Copy(m_SceneRenderTarget, m_StagingRenderTarget, area);
 		m_StagingRenderTarget->GetPixel(pixel);
 
 		if (pixel[0] > 0)

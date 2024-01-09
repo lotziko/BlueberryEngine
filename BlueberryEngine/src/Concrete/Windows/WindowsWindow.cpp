@@ -1,7 +1,6 @@
 #include "bbpch.h"
 #include "WindowsWindow.h"
 
-#include "Blueberry\Core\GlobalServices.h"
 #include "Blueberry\Events\WindowEvent.h"
 #include "Blueberry\Events\KeyEvent.h"
 
@@ -169,21 +168,21 @@ namespace Blueberry
 		{
 			unsigned char key = static_cast<unsigned char>(wParam);
 			KeyPressedEvent event(key);
-			g_EventDispatcher->Invoke(event);
+			EventDispatcher::Invoke(event);
 			return 0;
 		}
 		case WM_KEYUP:
 		{
 			unsigned char key = static_cast<unsigned char>(wParam);
 			KeyReleasedEvent event(key);
-			g_EventDispatcher->Invoke(event);
+			EventDispatcher::Invoke(event);
 			return 0;
 		}
 		case WM_CHAR:
 		{
 			unsigned char ch = static_cast<unsigned char>(wParam);
 			KeyTypedEvent event(ch);
-			g_EventDispatcher->Invoke(event);
+			EventDispatcher::Invoke(event);
 			return 0;
 		}
 		case WM_SIZE:
@@ -196,7 +195,7 @@ namespace Blueberry
 				m_Height = height;
 
 				WindowResizeEvent event(width, height);
-				g_EventDispatcher->Invoke(event);
+				EventDispatcher::Invoke(event);
 			}
 			return 0;
 		}

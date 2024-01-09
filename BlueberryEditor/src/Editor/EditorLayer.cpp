@@ -1,7 +1,7 @@
 #include "bbpch.h"
 #include "EditorLayer.h"
 
-#include "Blueberry\Core\GlobalServices.h"
+#include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\SceneRenderer.h"
 #include "Blueberry\Graphics\ImGuiRenderer.h"
 #include "Blueberry\Math\Math.h"
@@ -33,7 +33,7 @@ namespace Blueberry
 
 		m_ProjectBrowser = ProjectBrowser();
 
-		if (g_GraphicsDevice->CreateImGuiRenderer(m_ImGuiRenderer))
+		if (GfxDevice::CreateImGuiRenderer(m_ImGuiRenderer))
 		{
 			ImGuiIO& io = ImGui::GetIO(); (void)io;
 			io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -42,24 +42,24 @@ namespace Blueberry
 			ImGui::LoadDefaultEditorFonts();
 		}
 
-		g_EventDispatcher->AddCallback(EventType::WindowResize, BIND_EVENT(EditorLayer::OnResizeEvent));
+		EventDispatcher::AddCallback(EventType::WindowResize, BIND_EVENT(EditorLayer::OnResizeEvent));
 	}
 
 	void EditorLayer::OnDraw()
 	{
-		g_GraphicsDevice->ClearColor({ 0, 0, 0, 1 });
+		GfxDevice::ClearColor({ 0, 0, 0, 1 });
 
 		m_ImGuiRenderer->Begin();
 		DrawDockSpace();
 		m_ImGuiRenderer->End();
 
-		g_GraphicsDevice->SwapBuffers();
+		GfxDevice::SwapBuffers();
 	}
 
 	void EditorLayer::OnResizeEvent(const Event& event)
 	{
 		auto resizeEvent = static_cast<const WindowResizeEvent&>(event);
-		g_GraphicsDevice->ResizeBackbuffer(resizeEvent.GetWidth(), resizeEvent.GetHeight());
+		GfxDevice::ResizeBackbuffer(resizeEvent.GetWidth(), resizeEvent.GetHeight());
 	}
 
 	void EditorLayer::DrawDockSpace()

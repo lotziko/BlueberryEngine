@@ -10,32 +10,34 @@ namespace Blueberry
 	class GfxDeviceDX11 final : public GfxDevice
 	{
 	public:
-		GfxDeviceDX11();
+		GfxDeviceDX11() = default;
 		~GfxDeviceDX11() = default;
 
-		virtual bool Initialize(int width, int height, void* data) final;
+	protected:
+		virtual bool InitializeImpl(int width, int height, void* data) final;
 
-		virtual void ClearColor(const Color& color) const final;
-		virtual void SwapBuffers() const final;
+		virtual void ClearColorImpl(const Color& color) const final;
+		virtual void SwapBuffersImpl() const final;
 
-		virtual void SetViewport(int x, int y, int width, int height) final;
-		virtual void ResizeBackbuffer(int width, int height) final;
+		virtual void SetViewportImpl(int x, int y, int width, int height) final;
+		virtual void ResizeBackbufferImpl(int width, int height) final;
 
-		virtual bool CreateShader(void* vertexData, void* pixelData, GfxShader*& shader) final;
-		virtual bool CreateVertexBuffer(const VertexLayout& layout, const UINT& vertexCount, GfxVertexBuffer*& buffer) final;
-		virtual bool CreateIndexBuffer(const UINT& indexCount, GfxIndexBuffer*& buffer) final;
-		virtual bool CreateConstantBuffer(const UINT& byteCount, GfxConstantBuffer*& buffer) final;
-		virtual bool CreateTexture(const TextureProperties& properties, GfxTexture*& texture) const final;
-		virtual bool CreateImGuiRenderer(ImGuiRenderer*& renderer) const final;
+		virtual bool CreateShaderImpl(void* vertexData, void* pixelData, GfxShader*& shader) final;
+		virtual bool CreateVertexBufferImpl(const VertexLayout& layout, const UINT& vertexCount, GfxVertexBuffer*& buffer) final;
+		virtual bool CreateIndexBufferImpl(const UINT& indexCount, GfxIndexBuffer*& buffer) final;
+		virtual bool CreateConstantBufferImpl(const UINT& byteCount, GfxConstantBuffer*& buffer) final;
+		virtual bool CreateTextureImpl(const TextureProperties& properties, GfxTexture*& texture) const final;
+		virtual bool CreateImGuiRendererImpl(ImGuiRenderer*& renderer) const final;
 
-		virtual void Copy(GfxTexture* source, GfxTexture* target, const Rectangle& area) const final;
+		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Rectangle& area) const final;
 		
-		virtual void SetRenderTarget(GfxTexture* renderTexture) final;
-		virtual void SetGlobalConstantBuffer(const std::size_t& id, GfxConstantBuffer* buffer) final;
-		virtual void SetGlobalTexture(const std::size_t& id, GfxTexture* texture) final;
-		virtual void Draw(const GfxDrawingOperation& operation) const final;
+		virtual void SetRenderTargetImpl(GfxTexture* renderTexture) final;
+		virtual void SetGlobalConstantBufferImpl(const std::size_t& id, GfxConstantBuffer* buffer) final;
+		virtual void SetGlobalTextureImpl(const std::size_t& id, GfxTexture* texture) final;
+		virtual void DrawImpl(const GfxDrawingOperation& operation) const final;
 
-		virtual Matrix GetGPUMatrix(const Matrix& viewProjection) const final;
+		virtual Matrix GetGPUMatrixImpl(const Matrix& viewProjection) const final;
+
 	private:
 		bool InitializeDirectX(HWND hwnd, int width, int height);
 

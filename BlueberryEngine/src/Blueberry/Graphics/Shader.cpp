@@ -1,7 +1,7 @@
 #include "bbpch.h"
 #include "Shader.h"
 
-#include "Blueberry\Core\GlobalServices.h"
+#include "Blueberry\Graphics\GfxDevice.h"
 
 namespace Blueberry
 {
@@ -9,7 +9,7 @@ namespace Blueberry
 
 	void Shader::Initialize(void* vertexData, void* pixelData)
 	{
-		g_GraphicsDevice->CreateShader(vertexData, pixelData, m_Shader);
+		GfxDevice::CreateShader(vertexData, pixelData, m_Shader);
 	}
 
 	Shader* Shader::Create(void* vertexData, void* pixelData)

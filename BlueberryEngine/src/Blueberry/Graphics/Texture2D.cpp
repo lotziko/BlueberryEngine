@@ -1,7 +1,7 @@
 #include "bbpch.h"
 #include "Texture2D.h"
 
-#include "Blueberry\Core\GlobalServices.h"
+#include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Core\ClassDB.h"
 
 namespace Blueberry
@@ -10,7 +10,7 @@ namespace Blueberry
 
 	void Texture2D::Initialize(const ByteData& byteData)
 	{
-		g_GraphicsDevice->CreateTexture({ m_Width, m_Height, byteData.data, byteData.size, TextureType::Resource }, m_Texture);
+		GfxDevice::CreateTexture({ m_Width, m_Height, byteData.data, byteData.size, TextureType::Resource }, m_Texture);
 	}
 
 	Texture2D* Texture2D::Create(const TextureProperties& properties)

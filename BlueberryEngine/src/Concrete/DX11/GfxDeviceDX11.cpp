@@ -9,11 +9,7 @@
 
 namespace Blueberry
 {
-	GfxDeviceDX11::GfxDeviceDX11()
-	{
-	}
-
-	bool GfxDeviceDX11::Initialize(int width, int height, void* data)
+	bool GfxDeviceDX11::InitializeImpl(int width, int height, void* data)
 	{
 		if (!InitializeDirectX(*(static_cast<HWND*>(data)), width, height))
 			return false;
@@ -21,7 +17,7 @@ namespace Blueberry
 		return true;
 	}
 
-	void GfxDeviceDX11::ClearColor(const Color& color) const
+	void GfxDeviceDX11::ClearColorImpl(const Color& color) const
 	{
 		if (m_BindedRenderTarget == nullptr)
 		{
@@ -33,12 +29,12 @@ namespace Blueberry
 		}
 	}
 
-	void GfxDeviceDX11::SwapBuffers() const
+	void GfxDeviceDX11::SwapBuffersImpl() const
 	{
 		m_SwapChain->Present(1, NULL);
 	}
 
-	void GfxDeviceDX11::SetViewport(int x, int y, int width, int height)
+	void GfxDeviceDX11::SetViewportImpl(int x, int y, int width, int height)
 	{
 		D3D11_VIEWPORT viewport;
 		ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
@@ -51,7 +47,7 @@ namespace Blueberry
 		m_DeviceContext->RSSetViewports(1, &viewport);
 	}
 
-	void GfxDeviceDX11::ResizeBackbuffer(int width, int height)
+	void GfxDeviceDX11::ResizeBackbufferImpl(int width, int height)
 	{
 		m_DeviceContext->OMSetRenderTargets(0, 0, 0);
 		m_RenderTargetView->Release();
@@ -95,7 +91,7 @@ namespace Blueberry
 		m_DeviceContext->RSSetViewports(1, &viewport);
 	}
 
-	bool GfxDeviceDX11::CreateShader(void* vertexData, void* pixelData, GfxShader*& shader)
+	bool GfxDeviceDX11::CreateShaderImpl(void* vertexData, void* pixelData, GfxShader*& shader)
 	{
 		auto dxShader = new GfxShaderDX11(m_Device.Get(), m_DeviceContext.Get());
 		if (!dxShader->Initialize(vertexData, pixelData))
@@ -106,7 +102,7 @@ namespace Blueberry
 		return true;
 	}
 
-	bool GfxDeviceDX11::CreateVertexBuffer(const VertexLayout& layout, const UINT& vertexCount, GfxVertexBuffer*& buffer)
+	bool GfxDeviceDX11::CreateVertexBufferImpl(const VertexLayout& layout, const UINT& vertexCount, GfxVertexBuffer*& buffer)
 	{
 		auto dxBuffer = new GfxVertexBufferDX11(m_Device.Get(), m_DeviceContext.Get());
 		if (!dxBuffer->Initialize(layout, vertexCount))
@@ -117,7 +113,7 @@ namespace Blueberry
 		return true;
 	}
 
-	bool GfxDeviceDX11::CreateIndexBuffer(const UINT& indexCount, GfxIndexBuffer*& buffer)
+	bool GfxDeviceDX11::CreateIndexBufferImpl(const UINT& indexCount, GfxIndexBuffer*& buffer)
 	{
 		auto dxBuffer = new GfxIndexBufferDX11(m_Device.Get(), m_DeviceContext.Get());
 		if (!dxBuffer->Initialize(indexCount))
@@ -128,7 +124,7 @@ namespace Blueberry
 		return true;
 	}
 
-	bool GfxDeviceDX11::CreateConstantBuffer(const UINT& byteSize, GfxConstantBuffer*& buffer)
+	bool GfxDeviceDX11::CreateConstantBufferImpl(const UINT& byteSize, GfxConstantBuffer*& buffer)
 	{
 		auto dxBuffer = new GfxConstantBufferDX11(m_Device.Get(), m_DeviceContext.Get());
 		if (!dxBuffer->Initialize(byteSize))
@@ -139,7 +135,7 @@ namespace Blueberry
 		return true;
 	}
 
-	bool GfxDeviceDX11::CreateTexture(const TextureProperties& properties, GfxTexture*& texture) const
+	bool GfxDeviceDX11::CreateTextureImpl(const TextureProperties& properties, GfxTexture*& texture) const
 	{
 		auto dxTexture = new GfxTextureDX11(m_Device.Get(), m_DeviceContext.Get());
 		if (!dxTexture->Create(properties))
@@ -150,14 +146,14 @@ namespace Blueberry
 		return true;
 	}
 
-	bool GfxDeviceDX11::CreateImGuiRenderer(ImGuiRenderer*& renderer) const
+	bool GfxDeviceDX11::CreateImGuiRendererImpl(ImGuiRenderer*& renderer) const
 	{
 		auto dxRenderer = new ImGuiRendererDX11(m_Hwnd, m_Device.Get(), m_DeviceContext.Get());
 		renderer = dxRenderer;
 		return true;
 	}
 
-	void GfxDeviceDX11::Copy(GfxTexture* source, GfxTexture* target, const Rectangle& area) const
+	void GfxDeviceDX11::CopyImpl(GfxTexture* source, GfxTexture* target, const Rectangle& area) const
 	{
 		D3D11_BOX src;
 		src.left = area.x;
@@ -170,7 +166,7 @@ namespace Blueberry
 		m_DeviceContext->CopySubresourceRegion(static_cast<GfxTextureDX11*>(target)->m_Texture.Get(), 0, 0, 0, 0, static_cast<GfxTextureDX11*>(source)->m_Texture.Get(), 0, &src);
 	}
 
-	void GfxDeviceDX11::SetRenderTarget(GfxTexture* renderTexture)
+	void GfxDeviceDX11::SetRenderTargetImpl(GfxTexture* renderTexture)
 	{
 		if (renderTexture == nullptr)
 		{
@@ -185,13 +181,13 @@ namespace Blueberry
 		}
 	}
 
-	void GfxDeviceDX11::SetGlobalConstantBuffer(const std::size_t& id, GfxConstantBuffer* buffer)
+	void GfxDeviceDX11::SetGlobalConstantBufferImpl(const std::size_t& id, GfxConstantBuffer* buffer)
 	{
 		auto dxConstantBuffer = static_cast<GfxConstantBufferDX11*>(buffer);
 		m_BindedConstantBuffers.insert_or_assign(id, dxConstantBuffer);
 	}
 
-	void GfxDeviceDX11::SetGlobalTexture(const std::size_t& id, GfxTexture* texture)
+	void GfxDeviceDX11::SetGlobalTextureImpl(const std::size_t& id, GfxTexture* texture)
 	{
 		auto dxTexture = static_cast<GfxTextureDX11*>(texture);
 		m_BindedTextures.insert_or_assign(id, dxTexture);
@@ -208,7 +204,7 @@ namespace Blueberry
 		}
 	}
 
-	void GfxDeviceDX11::Draw(const GfxDrawingOperation& operation) const
+	void GfxDeviceDX11::DrawImpl(const GfxDrawingOperation& operation) const
 	{
 		if (!operation.IsValid())
 		{
@@ -275,7 +271,7 @@ namespace Blueberry
 		m_DeviceContext->DrawIndexed(operation.indexCount, operation.indexOffset, 0);
 	}
 
-	Matrix GfxDeviceDX11::GetGPUMatrix(const Matrix& viewProjection) const
+	Matrix GfxDeviceDX11::GetGPUMatrixImpl(const Matrix& viewProjection) const
 	{
 		Matrix copy;
 		viewProjection.Transpose(copy);

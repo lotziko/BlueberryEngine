@@ -1,7 +1,7 @@
 #include "bbpch.h"
 #include "Mesh.h"
 
-#include "Blueberry\Core\GlobalServices.h"
+#include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\GfxBuffer.h"
 
 namespace Blueberry
@@ -41,8 +41,8 @@ namespace Blueberry
 	Mesh* Mesh::Create(const VertexLayout& layout, const UINT& vertexCount, const UINT& indexCount)
 	{
 		Mesh* mesh = Object::Create<Mesh>();
-		g_GraphicsDevice->CreateVertexBuffer(layout, vertexCount, mesh->m_VertexBuffer);
-		g_GraphicsDevice->CreateIndexBuffer(indexCount, mesh->m_IndexBuffer);
+		GfxDevice::CreateVertexBuffer(layout, vertexCount, mesh->m_VertexBuffer);
+		GfxDevice::CreateIndexBuffer(indexCount, mesh->m_IndexBuffer);
 		mesh->m_VertexCount = vertexCount;
 		mesh->m_IndexCount = indexCount;
 		return mesh;

@@ -1,7 +1,6 @@
 #include "bbpch.h"
 #include "SpriteRenderer.h"
 
-#include "Blueberry\Core\GlobalServices.h"
 #include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\Shader.h"
