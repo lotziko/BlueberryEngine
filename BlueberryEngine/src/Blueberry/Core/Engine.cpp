@@ -5,6 +5,7 @@
 #include "Blueberry\Scene\RegisterSceneTypes.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\Renderer2D.h"
+#include "Blueberry\Graphics\Gizmos.h"
 #include "Blueberry\Graphics\RegisterGraphicsTypes.h"
 
 #include "Blueberry\Core\Layer.h"
@@ -21,6 +22,11 @@ namespace Blueberry
 		}
 
 		if (!Renderer2D::Initialize())
+		{
+			return false;
+		}
+
+		if (!Gizmos::Initialize())
 		{
 			return false;
 		}
