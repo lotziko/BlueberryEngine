@@ -19,10 +19,12 @@ namespace Blueberry
 		static bool Initialize(int width, int height, void* data);
 
 		static void ClearColor(const Color& color);
+		static void ClearDepth(const float& depth);
 		static void SwapBuffers();
 
 		static void SetViewport(int x, int y, int width, int height);
 		static void ResizeBackbuffer(int width, int height);
+		static void SetSurfaceType(const SurfaceType& type);
 
 		static bool CreateShader(void* vertexData, void* pixelData, GfxShader*& shader);
 		static bool CreateVertexBuffer(const VertexLayout& layout, const UINT& vertexCount, GfxVertexBuffer*& buffer);
@@ -33,7 +35,7 @@ namespace Blueberry
 
 		static void Copy(GfxTexture* source, GfxTexture* target, const Rectangle& area);
 
-		static void SetRenderTarget(GfxTexture* renderTexture);
+		static void SetRenderTarget(GfxTexture* renderTexture, GfxTexture* depthStencilTexture = nullptr);
 		static void SetGlobalConstantBuffer(const std::size_t& id, GfxConstantBuffer* buffer);
 		static void SetGlobalTexture(const std::size_t& id, GfxTexture* texture);
 		static void Draw(const GfxDrawingOperation& operation);
@@ -44,10 +46,12 @@ namespace Blueberry
 		virtual bool InitializeImpl(int width, int height, void* data) = 0;
 
 		virtual void ClearColorImpl(const Color& color) const = 0;
+		virtual void ClearDepthImpl(const float& depth) const = 0;
 		virtual void SwapBuffersImpl() const = 0;
 
 		virtual void SetViewportImpl(int x, int y, int width, int height) = 0;
 		virtual void ResizeBackbufferImpl(int width, int height) = 0;
+		virtual void SetSurfaceTypeImpl(const SurfaceType& type) = 0;
 
 		virtual bool CreateShaderImpl(void* vertexData, void* pixelData, GfxShader*& shader) = 0;
 		virtual bool CreateVertexBufferImpl(const VertexLayout& layout, const UINT& vertexCount, GfxVertexBuffer*& buffer) = 0;
@@ -58,7 +62,7 @@ namespace Blueberry
 		
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Rectangle& area) const = 0;
 
-		virtual void SetRenderTargetImpl(GfxTexture* renderTexture) = 0;
+		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture) = 0;
 		virtual void SetGlobalConstantBufferImpl(const std::size_t& id, GfxConstantBuffer* buffer) = 0;
 		virtual void SetGlobalTextureImpl(const std::size_t& id, GfxTexture* texture) = 0;
 		virtual void DrawImpl(const GfxDrawingOperation& operation) const = 0;

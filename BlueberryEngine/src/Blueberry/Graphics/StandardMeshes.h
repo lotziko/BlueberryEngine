@@ -8,8 +8,10 @@ namespace Blueberry
 	{
 	public:
 		static Mesh* GetFullscreen();
+		static Mesh* GetPlane();
 
 	private:
-		static Mesh* s_FullscreenMesh;
+		static inline Mesh* s_FullscreenMesh = nullptr;
+		static inline Mesh* s_PlaneMesh = nullptr;
 	};
 }

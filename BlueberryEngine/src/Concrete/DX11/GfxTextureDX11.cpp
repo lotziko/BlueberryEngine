@@ -60,9 +60,14 @@ namespace Blueberry
 	{
 	}
 
-	void GfxTextureDX11::Clear(const Color& color)
+	DXGI_FORMAT GetFormat(const TextureFormat& format)
 	{
-		m_DeviceContext->ClearRenderTargetView(m_RenderTargetView.Get(), color);
+		switch (format)
+		{
+		case TextureFormat::None: return DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
+		case TextureFormat::R8G8B8A8_UNorm: return DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
+		case TextureFormat::D24_UNorm: return DXGI_FORMAT::DXGI_FORMAT_D24_UNORM_S8_UINT;
+		}
 	}
 
 	bool GfxTextureDX11::Initialize(D3D11_SUBRESOURCE_DATA* subresourceData, const TextureProperties& properties)
@@ -73,7 +78,7 @@ namespace Blueberry
 		textureDesc.Width = m_Width;
 		textureDesc.Height = m_Height;
 		textureDesc.MipLevels = textureDesc.ArraySize = 1;
-		textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		textureDesc.Format = GetFormat(properties.format);
 		textureDesc.SampleDesc.Count = 1;
 		
 		switch (properties.type)
@@ -88,13 +93,18 @@ namespace Blueberry
 			textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
 			textureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 			break;
+		case TextureType::DepthStencil:
+			textureDesc.Usage = D3D11_USAGE_DEFAULT;
+			textureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+			textureDesc.CPUAccessFlags = 0;
+			break;
 		case TextureType::Staging:
 			textureDesc.Usage = D3D11_USAGE_STAGING;
 			textureDesc.BindFlags = 0;
 			textureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 			break;
 		}
-
+		
 		textureDesc.MiscFlags = 0;
 
 		HRESULT hr = m_Device->CreateTexture2D(&textureDesc, subresourceData, m_Texture.GetAddressOf());
@@ -104,7 +114,7 @@ namespace Blueberry
 			return false;
 		}
 
-		if (properties.type != TextureType::Staging)
+		if (properties.type != TextureType::Staging && properties.type != TextureType::DepthStencil)
 		{
 			hr = m_Device->CreateShaderResourceView(m_Texture.Get(), nullptr, m_ResourceView.GetAddressOf());
 			if (FAILED(hr))
@@ -147,6 +157,23 @@ namespace Blueberry
 			if (FAILED(hr))
 			{
 				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create render target view."));
+				return false;
+			}
+		}
+
+		if (properties.type == TextureType::DepthStencil)
+		{
+			D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
+			ZeroMemory(&depthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
+
+			depthStencilViewDesc.Format = GetFormat(properties.format);
+			depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+			depthStencilViewDesc.Texture2D.MipSlice = 0;
+
+			hr = m_Device->CreateDepthStencilView(m_Texture.Get(), &depthStencilViewDesc, m_DepthStencilView.GetAddressOf());
+			if (FAILED(hr))
+			{
+				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create depth stencil view."));
 				return false;
 			}
 		}

@@ -10,11 +10,6 @@
 
 namespace Blueberry
 {
-	struct CONSTANTS
-	{
-		Matrix viewProjectionMatrix;
-	};
-
 	static Vector4 s_QuadVertexPositons[4];
 	static Vector2 s_QuadTextureCoords[4];
 
@@ -62,11 +57,6 @@ namespace Blueberry
 
 		s_DrawingDatas = new DrawingData[MAX_SPRITES];
 
-		if (!GfxDevice::CreateConstantBuffer(sizeof(CONSTANTS) * 1, s_ConstantBuffer))
-		{
-			return false;
-		}
-
 		s_QuadVertexPositons[0] = { -0.5f, -0.5f, 0.0f, 1.0f };
 		s_QuadVertexPositons[1] = { -0.5f, 0.5f, 0.0f, 1.0f };
 		s_QuadVertexPositons[2] = { 0.5f, 0.5f, 0.0f, 1.0f };
@@ -86,15 +76,8 @@ namespace Blueberry
 		delete[] s_DrawingDatas;
 	}
 
-	void Renderer2D::Begin(const Matrix& view, const Matrix& projection)
+	void Renderer2D::Begin()
 	{
-		CONSTANTS constants[] =
-		{
-			{ GfxDevice::GetGPUMatrix(view * projection) }
-		};
-
-		s_ConstantBuffer->SetData(reinterpret_cast<char*>(&constants), sizeof(constants));
-
 		s_QuadIndexCount = 0;
 		s_VertexDataPtr = s_VertexData;
 	}
@@ -139,8 +122,6 @@ namespace Blueberry
 			return;
 
 		std::sort(s_DrawingDatas, s_DrawingDatas + s_DrawingDataCount, SortBySortingOrder);
-
-		GfxDevice::SetGlobalConstantBuffer(std::hash<std::string>()("PerDrawData"), s_ConstantBuffer);
 
 		// TODO non rectangle sprites
 		// Fill vertices

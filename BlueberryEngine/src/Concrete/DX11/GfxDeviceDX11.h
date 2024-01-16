@@ -17,10 +17,12 @@ namespace Blueberry
 		virtual bool InitializeImpl(int width, int height, void* data) final;
 
 		virtual void ClearColorImpl(const Color& color) const final;
+		virtual void ClearDepthImpl(const float& depth) const final;
 		virtual void SwapBuffersImpl() const final;
 
 		virtual void SetViewportImpl(int x, int y, int width, int height) final;
 		virtual void ResizeBackbufferImpl(int width, int height) final;
+		virtual void SetSurfaceTypeImpl(const SurfaceType& type) final;
 
 		virtual bool CreateShaderImpl(void* vertexData, void* pixelData, GfxShader*& shader) final;
 		virtual bool CreateVertexBufferImpl(const VertexLayout& layout, const UINT& vertexCount, GfxVertexBuffer*& buffer) final;
@@ -31,7 +33,7 @@ namespace Blueberry
 
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Rectangle& area) const final;
 		
-		virtual void SetRenderTargetImpl(GfxTexture* renderTexture) final;
+		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture) final;
 		virtual void SetGlobalConstantBufferImpl(const std::size_t& id, GfxConstantBuffer* buffer) final;
 		virtual void SetGlobalTextureImpl(const std::size_t& id, GfxTexture* texture) final;
 		virtual void DrawImpl(const GfxDrawingOperation& operation) const final;
@@ -48,9 +50,15 @@ namespace Blueberry
 		ComPtr<IDXGISwapChain> m_SwapChain;
 		ComPtr<ID3D11RenderTargetView> m_RenderTargetView;
 		ComPtr<ID3D11RasterizerState> m_RasterizerState;
-		ComPtr<ID3D11DepthStencilState> m_DepthStencilState;
+
+		ComPtr<ID3D11DepthStencilState> m_OpaqueDepthStencilState;
+		ComPtr<ID3D11BlendState> m_OpaqueBlendState;
+
+		ComPtr<ID3D11DepthStencilState> m_TransparentDepthStencilState;
+		ComPtr<ID3D11BlendState> m_TransparentBlendState;
 
 		GfxTextureDX11* m_BindedRenderTarget;
+		GfxTextureDX11* m_BindedDepthStencil;
 		std::map<std::size_t, GfxConstantBufferDX11*> m_BindedConstantBuffers;
 		std::map<std::size_t, GfxTextureDX11*> m_BindedTextures;
 	};

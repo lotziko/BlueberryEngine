@@ -49,6 +49,8 @@ namespace Blueberry
 
 	private:
 		GfxTexture* m_SceneRenderTarget;
+		GfxTexture* m_SceneDepthStencil;
+		Material* m_GridMaterial;
 		SceneCamera m_Camera;
 		SceneObjectPicker m_ObjectPicker;
 

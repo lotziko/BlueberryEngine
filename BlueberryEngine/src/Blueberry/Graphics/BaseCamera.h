@@ -11,6 +11,10 @@ namespace Blueberry
 	public:
 		const Matrix& GetProjectionMatrix();
 		const Matrix& GetViewMatrix();
+		const Matrix& GetViewProjectionMatrix();
+		const Matrix& GetInverseProjectionMatrix();
+		const Matrix& GetInverseViewMatrix();
+		const Matrix& GetInverseViewProjectionMatrix();
 
 		const bool& IsOrthographic();
 		void SetOrthographic(const bool& isOrthographic);
@@ -49,6 +53,7 @@ namespace Blueberry
 	protected:
 		Matrix m_ProjectionMatrix;
 		Matrix m_ViewMatrix;
+		Matrix m_InverseProjectionMatrix;
 		Matrix m_InverseViewMatrix;
 		Matrix m_ViewProjectionMatrix;
 		Matrix m_InverseViewProjectionMatrix;

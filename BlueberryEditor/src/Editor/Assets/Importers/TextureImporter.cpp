@@ -54,6 +54,7 @@ namespace Blueberry
 			properties.data = data;
 			properties.dataSize = dataSize;
 			properties.type = TextureType::Resource;
+			properties.format = TextureFormat::R8G8B8A8_UNorm;
 
 			object = Texture2D::Create(properties);
 			ObjectDB::AllocateIdToGuid(object, guid);

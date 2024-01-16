@@ -28,6 +28,11 @@ namespace Blueberry
 		s_Instance->ClearColorImpl(color);
 	}
 
+	void GfxDevice::ClearDepth(const float& depth)
+	{
+		s_Instance->ClearDepthImpl(depth);
+	}
+
 	void GfxDevice::SwapBuffers()
 	{
 		s_Instance->SwapBuffersImpl();
@@ -41,6 +46,11 @@ namespace Blueberry
 	void GfxDevice::ResizeBackbuffer(int width, int height)
 	{
 		s_Instance->ResizeBackbufferImpl(width, height);
+	}
+
+	void GfxDevice::SetSurfaceType(const SurfaceType& type)
+	{
+		s_Instance->SetSurfaceTypeImpl(type);
 	}
 
 	bool GfxDevice::CreateShader(void* vertexData, void* pixelData, GfxShader*& shader)
@@ -78,9 +88,9 @@ namespace Blueberry
 		s_Instance->CopyImpl(source, target, area);
 	}
 
-	void GfxDevice::SetRenderTarget(GfxTexture* renderTexture)
+	void GfxDevice::SetRenderTarget(GfxTexture* renderTexture, GfxTexture* depthStencilTexture)
 	{
-		s_Instance->SetRenderTargetImpl(renderTexture);
+		s_Instance->SetRenderTargetImpl(renderTexture, depthStencilTexture);
 	}
 
 	void GfxDevice::SetGlobalConstantBuffer(const std::size_t& id, GfxConstantBuffer* buffer)

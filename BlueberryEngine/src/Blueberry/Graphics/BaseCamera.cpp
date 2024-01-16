@@ -23,6 +23,56 @@ namespace Blueberry
 		return m_ViewMatrix;
 	}
 
+	const Matrix& BaseCamera::GetViewProjectionMatrix()
+	{
+		if (m_IsViewDirty)
+		{
+			RecalculateView();
+			m_IsViewDirty = false;
+		}
+		if (m_IsProjectionDirty)
+		{
+			RecalculateProjection();
+			m_IsProjectionDirty = false;
+		}
+		return m_ViewProjectionMatrix;
+	}
+
+	const Matrix& BaseCamera::GetInverseProjectionMatrix()
+	{
+		if (m_IsProjectionDirty)
+		{
+			RecalculateProjection();
+			m_IsProjectionDirty = false;
+		}
+		return m_InverseProjectionMatrix;
+	}
+
+	const Matrix& BaseCamera::GetInverseViewMatrix()
+	{
+		if (m_IsViewDirty)
+		{
+			RecalculateView();
+			m_IsViewDirty = false;
+		}
+		return m_InverseViewMatrix;
+	}
+
+	const Matrix& BaseCamera::GetInverseViewProjectionMatrix()
+	{
+		if (m_IsViewDirty)
+		{
+			RecalculateView();
+			m_IsViewDirty = false;
+		}
+		if (m_IsProjectionDirty)
+		{
+			RecalculateProjection();
+			m_IsProjectionDirty = false;
+		}
+		return m_InverseViewProjectionMatrix;
+	}
+
 	const bool& BaseCamera::IsOrthographic()
 	{
 		return m_IsOrthographic;
@@ -244,6 +294,7 @@ namespace Blueberry
 		{
 			m_ProjectionMatrix = Matrix::CreatePerspectiveFieldOfView(ToRadians(m_FieldOfView), m_AspectRatio, m_ZNearPlane, m_ZFarPlane);
 		}
+		m_InverseProjectionMatrix = m_ProjectionMatrix.Invert();
 		m_ViewProjectionMatrix = m_ViewMatrix * m_ProjectionMatrix;
 		m_InverseViewProjectionMatrix = m_ViewProjectionMatrix.Invert();
 	}

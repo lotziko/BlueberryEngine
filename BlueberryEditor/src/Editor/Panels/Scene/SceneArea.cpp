@@ -10,6 +10,9 @@
 
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
+#include "Blueberry\Graphics\Material.h"
+#include "Blueberry\Graphics\PerDrawDataConstantBuffer.h"
+#include "Blueberry\Assets\AssetLoader.h"
 
 #include "SceneAreaMovement.h"
 
@@ -24,7 +27,49 @@ namespace Blueberry
 		properties.height = 1080;
 		properties.data = nullptr;
 		properties.type = TextureType::RenderTarget;
+		properties.format = TextureFormat::R8G8B8A8_UNorm;
 		GfxDevice::CreateTexture(properties, m_SceneRenderTarget);
+
+		properties.type = TextureType::DepthStencil;
+		properties.format = TextureFormat::D24_UNorm;
+		GfxDevice::CreateTexture(properties, m_SceneDepthStencil);
+
+		m_GridMaterial = Material::Create((Shader*)AssetLoader::Load("assets/Grid.shader"));
+	}
+
+	Vector3 GetMotion(const Quaternion& rotation)
+	{
+		Vector3 motion = Vector3::Zero;
+		if (ImGui::IsKeyDown(ImGuiKey_D))
+		{
+			motion += Vector3::Transform(Vector3::Right, rotation);
+		}
+		else if (ImGui::IsKeyDown(ImGuiKey_A))
+		{
+			motion += Vector3::Transform(Vector3::Left, rotation);
+		}
+		if (ImGui::IsKeyDown(ImGuiKey_E))
+		{
+			motion += Vector3::Transform(Vector3::Up, rotation);
+		}
+		else if (ImGui::IsKeyDown(ImGuiKey_Q))
+		{
+			motion += Vector3::Transform(Vector3::Down, rotation);
+		}
+		if (ImGui::IsKeyDown(ImGuiKey_W))
+		{
+			motion += Vector3::Transform(Vector3::Forward, rotation);
+		}
+		else if (ImGui::IsKeyDown(ImGuiKey_S))
+		{
+			motion += Vector3::Transform(Vector3::Backward, rotation);
+		}
+
+		if (ImGui::IsKeyDown(ImGuiKey_LeftShift))
+		{
+			motion *= 4;
+		}
+		return motion;
 	}
 
 	void SceneArea::DrawUI()
@@ -59,30 +104,8 @@ namespace Blueberry
 		ImVec2 pos = ImGui::GetCursorScreenPos();
 		ImVec2 size = ImGui::GetContentRegionAvail();
 		
-		if (ImGui::IsKeyDown(ImGuiKey_D))
-		{
-			m_Position += Vector3::Transform(Vector3::Right, m_Rotation);
-		}
-		else if (ImGui::IsKeyDown(ImGuiKey_A))
-		{
-			m_Position += Vector3::Transform(Vector3::Left, m_Rotation);
-		}
-		if (ImGui::IsKeyDown(ImGuiKey_E))
-		{
-			m_Position += Vector3::Transform(Vector3::Up, m_Rotation);
-		}
-		else if (ImGui::IsKeyDown(ImGuiKey_Q))
-		{
-			m_Position += Vector3::Transform(Vector3::Down, m_Rotation);
-		}
-		if (ImGui::IsKeyDown(ImGuiKey_W))
-		{
-			m_Position += Vector3::Transform(Vector3::Forward, m_Rotation);
-		}
-		else if (ImGui::IsKeyDown(ImGuiKey_S))
-		{
-			m_Position += Vector3::Transform(Vector3::Backward, m_Rotation);
-		}
+		// Motion
+		m_Position += GetMotion(m_Rotation);
 
 		// Zoom
 		float mouseWheelDelta = io->MouseWheel;
@@ -126,8 +149,6 @@ namespace Blueberry
 		{
 			m_ObjectPicker.Pick(EditorSceneManager::GetScene(), m_Camera, (int)(mousePos.x - pos.x), (int)(mousePos.y - pos.y), size.x, size.y);
 		}
-
-		//SceneAreaMovement::HandleDrag(this, Vector2(10, 10));
 
 		SetupCamera(size.x, size.y);
 		DrawScene(size.x, size.y);
@@ -264,15 +285,22 @@ namespace Blueberry
 
 	void SceneArea::DrawScene(const float width, const float height)
 	{
-		GfxDevice::SetRenderTarget(m_SceneRenderTarget);
+		PerDrawConstantBuffer::BindData(&m_Camera);
+
+		GfxDevice::SetRenderTarget(m_SceneRenderTarget, m_SceneDepthStencil);
 		GfxDevice::SetViewport(0, 0, static_cast<int>(width), static_cast<int>(height));
 		GfxDevice::ClearColor({ 0.117f, 0.117f, 0.117f, 1 });
+		GfxDevice::ClearDepth(1.0f);
 
+		GfxDevice::SetSurfaceType(SurfaceType::Opaque);
 		Scene* scene = EditorSceneManager::GetScene();
 		if (scene != nullptr)
 		{
-			SceneRenderer::Draw(scene, m_Camera.GetViewMatrix(), m_Camera.GetProjectionMatrix());
+			SceneRenderer::Draw(scene, &m_Camera);
 		}
+		
+		GfxDevice::SetSurfaceType(SurfaceType::DepthTransparent);
+		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_GridMaterial));
 		GfxDevice::SetRenderTarget(nullptr);
 	}
 

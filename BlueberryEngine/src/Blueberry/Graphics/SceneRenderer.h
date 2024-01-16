@@ -5,13 +5,12 @@
 namespace Blueberry
 {
 	class Scene;
-	class Camera;
+	class BaseCamera;
 
 	class SceneRenderer
 	{
 	public:
 		static void Draw(Scene* scene);
-		static void Draw(Scene* scene, Camera* camera);
-		static void Draw(Scene* scene, const Matrix& viewMatrix, const Matrix& projectionMatrix);
+		static void Draw(Scene* scene, BaseCamera* camera);
 	};
 }

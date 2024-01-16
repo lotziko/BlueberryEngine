@@ -10,11 +10,6 @@
 
 namespace Blueberry
 {
-	struct CONSTANTS
-	{
-		Matrix viewProjectionMatrix;
-	};
-
 	static const UINT MAX_LINES = 1024;
 	static const UINT MAX_VERTICES = MAX_LINES * 2;
 	static const UINT MAX_INDICES = MAX_LINES * 2;
@@ -57,23 +52,11 @@ namespace Blueberry
 
 		s_Lines = new Line[MAX_LINES];
 
-		if (!GfxDevice::CreateConstantBuffer(sizeof(CONSTANTS) * 1, s_ConstantBuffer))
-		{
-			return false;
-		}
-
 		return true;
 	}
 
-	void Gizmos::Begin(const Matrix& view, const Matrix& projection)
+	void Gizmos::Begin()
 	{
-		CONSTANTS constants[] =
-		{
-			{ GfxDevice::GetGPUMatrix(view * projection) }
-		};
-
-		s_ConstantBuffer->SetData(reinterpret_cast<char*>(&constants), sizeof(constants));
-
 		s_LineCount = 0;
 		s_VertexDataPtr = s_VertexData;
 	}
@@ -129,7 +112,6 @@ namespace Blueberry
 
 		s_VertexBuffer->SetData(s_VertexData, s_LineCount * 2);
 
-		GfxDevice::SetGlobalConstantBuffer(std::hash<std::string>()("PerDrawData"), s_ConstantBuffer);
 		GfxDevice::Draw(GfxDrawingOperation(s_VertexBuffer, s_IndexBuffer, s_LineMaterial, s_LineCount * 2, 0, Topology::LineList));
 	}
 }

@@ -10,5 +10,6 @@ namespace Blueberry
 		void* data;
 		size_t dataSize;
 		TextureType type;
+		TextureFormat format;
 	};
 }

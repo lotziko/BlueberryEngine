@@ -19,6 +19,7 @@ namespace Blueberry
 		properties.height = 1080;
 		properties.data = nullptr;
 		properties.type = TextureType::RenderTarget;
+		properties.format = TextureFormat::R8G8B8A8_UNorm;
 		GfxDevice::CreateTexture(properties, m_SceneRenderTarget);
 
 		properties.width = 1;
@@ -44,7 +45,7 @@ namespace Blueberry
 		GfxDevice::SetRenderTarget(m_SceneRenderTarget);
 		GfxDevice::SetViewport(0, 0, viewportWidth, viewportHeight);
 		GfxDevice::ClearColor({ 0, 0, 0, 0 });
-		Renderer2D::Begin(camera.GetViewMatrix(), camera.GetProjectionMatrix());
+		Renderer2D::Begin();
 		for (auto component : scene->GetIterator<SpriteRenderer>())
 		{
 			auto spriteRenderer = static_cast<SpriteRenderer*>(component.second);

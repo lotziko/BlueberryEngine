@@ -10,7 +10,7 @@ namespace Blueberry
 
 	void Texture2D::Initialize(const ByteData& byteData)
 	{
-		GfxDevice::CreateTexture({ m_Width, m_Height, byteData.data, byteData.size, TextureType::Resource }, m_Texture);
+		GfxDevice::CreateTexture({ m_Width, m_Height, byteData.data, byteData.size, TextureType::Resource, TextureFormat::R8G8B8A8_UNorm }, m_Texture);
 	}
 
 	Texture2D* Texture2D::Create(const TextureProperties& properties)

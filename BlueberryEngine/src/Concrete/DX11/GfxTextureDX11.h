@@ -20,8 +20,6 @@ namespace Blueberry
 
 		virtual void SetData(void* data) override;
 
-		void Clear(const Color& color);
-
 	private:
 		bool Initialize(D3D11_SUBRESOURCE_DATA* subresourceData, const TextureProperties& properties);
 
@@ -30,6 +28,7 @@ namespace Blueberry
 		ComPtr<ID3D11ShaderResourceView> m_ResourceView;
 		ComPtr<ID3D11SamplerState> m_SamplerState;
 		ComPtr<ID3D11RenderTargetView> m_RenderTargetView;
+		ComPtr<ID3D11DepthStencilView> m_DepthStencilView;
 
 		UINT m_Width;
 		UINT m_Height;

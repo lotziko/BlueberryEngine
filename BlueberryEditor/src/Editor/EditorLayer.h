@@ -5,7 +5,6 @@
 
 #include "Editor\Panels\Hierarchy\SceneHierarchy.h"
 #include "Editor\Panels\Inspector\SceneInspector.h"
-#include "Editor\Panels\Scene\SceneArea.h"
 #include "Editor\Panels\Project\ProjectBrowser.h"
 
 namespace Blueberry
@@ -13,6 +12,7 @@ namespace Blueberry
 	class Scene;
 	class Camera;
 	class Texture;
+	class SceneArea;
 	class ImGuiRenderer;
 
 	class EditorLayer : public Layer
@@ -34,7 +34,7 @@ namespace Blueberry
 
 		SceneHierarchy m_SceneHierarchy;
 		SceneInspector m_SceneInspector;
-		SceneArea m_SceneArea;
+		SceneArea* m_SceneArea;
 		ProjectBrowser m_ProjectBrowser;
 	};
 }

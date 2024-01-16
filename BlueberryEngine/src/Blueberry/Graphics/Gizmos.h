@@ -12,7 +12,7 @@ namespace Blueberry
 	public:
 		static bool Initialize();
 
-		static void Begin(const Matrix& view, const Matrix& projection);
+		static void Begin();
 		static void End();
 		static void SetColor(const Color& color);
 		static void DrawLine(const Vector3& start, const Vector3& end);
@@ -32,7 +32,6 @@ namespace Blueberry
 
 		static inline GfxVertexBuffer* s_VertexBuffer = nullptr;
 		static inline GfxIndexBuffer* s_IndexBuffer = nullptr;
-		static inline GfxConstantBuffer* s_ConstantBuffer = nullptr;
 
 		static inline float* s_VertexData = nullptr;
 		static inline float* s_VertexDataPtr = nullptr;

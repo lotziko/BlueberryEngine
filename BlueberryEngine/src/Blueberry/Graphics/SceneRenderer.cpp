@@ -24,13 +24,7 @@ namespace Blueberry
 		}
 	}
 
-
-	void SceneRenderer::Draw(Scene* scene, Camera* camera)
-	{
-		Draw(scene, camera->GetViewMatrix(), camera->GetProjectionMatrix());
-	}
-
-	void SceneRenderer::Draw(Scene* scene, const Matrix& viewMatrix, const Matrix& projectionMatrix)
+	void SceneRenderer::Draw(Scene* scene, BaseCamera* camera)
 	{
 		//Update transforms
 		{
@@ -43,7 +37,7 @@ namespace Blueberry
 		
 		//Draw sprites
 		{
-			Renderer2D::Begin(viewMatrix, projectionMatrix);
+			Renderer2D::Begin();
 			for (auto component : scene->GetIterator<SpriteRenderer>())
 			{
 				auto spriteRenderer = static_cast<SpriteRenderer*>(component.second);

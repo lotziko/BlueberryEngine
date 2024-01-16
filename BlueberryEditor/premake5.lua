@@ -33,7 +33,7 @@ project "BlueberryEditor"
 
 	postbuildcommands
 	{
-		"{COPY} %{wks.location}/BlueberryEditor/assets %{cfg.targetdir}/assets"
+		"{COPYDIR} %{wks.location}/BlueberryEditor/assets %{cfg.targetdir}/assets"
 	}
 
 	filter "system:windows"

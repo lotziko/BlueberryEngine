@@ -8,6 +8,7 @@
 
 #include "Editor\Misc\ImGuiHelper.h"
 #include "Editor\Inspector\RegisterObjectInspectors.h"
+#include "Editor\Panels\Scene\SceneArea.h"
 
 #include "imgui\imgui.h"
 #include "imgui\imgui_internal.h"
@@ -29,7 +30,7 @@ namespace Blueberry
 		m_SceneHierarchy = SceneHierarchy();
 		m_SceneInspector = SceneInspector();
 
-		m_SceneArea = SceneArea();
+		m_SceneArea = new SceneArea();
 
 		m_ProjectBrowser = ProjectBrowser();
 
@@ -99,7 +100,7 @@ namespace Blueberry
 
 			m_SceneHierarchy.DrawUI();
 			m_SceneInspector.DrawUI();
-			m_SceneArea.DrawUI();
+			m_SceneArea->DrawUI();
 			m_ProjectBrowser.DrawUI();
 
 			ImGui::End();

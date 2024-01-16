@@ -20,7 +20,7 @@ namespace Blueberry
 		static bool Initialize();
 		static void Shutdown();
 
-		static void Begin(const Matrix& view, const Matrix& projection);
+		static void Begin();
 		static void End();
 		static void Draw(const Matrix& transform, Texture2D* texture, Material* material, const Color& color, const int& sortingOrder);
 		static void DrawImmediate(const Vector3& position, const Vector2& size, Texture2D* texture, Material* material, const Color& color);
@@ -41,7 +41,6 @@ namespace Blueberry
 	private:
 		static inline GfxVertexBuffer* s_VertexBuffer = nullptr;
 		static inline GfxIndexBuffer* s_IndexBuffer = nullptr;
-		static inline GfxConstantBuffer* s_ConstantBuffer = nullptr;
 
 		static inline float* s_VertexData = nullptr;
 		static inline float* s_VertexDataPtr = nullptr;

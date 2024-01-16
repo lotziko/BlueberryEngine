@@ -152,7 +152,7 @@ namespace Blueberry
 			ID3D11ShaderReflectionConstantBuffer* constantBufferReflection = vertexShaderReflection->GetConstantBufferByIndex(i);
 			D3D11_SHADER_BUFFER_DESC shaderBufferDesc;
 			constantBufferReflection->GetDesc(&shaderBufferDesc);
-			m_ConstantBufferSlots.insert({ std::hash<std::string>()(std::string(shaderBufferDesc.Name)), i });
+			m_VertexConstantBufferSlots.insert({ TO_HASH(std::string(shaderBufferDesc.Name)), i });
 		}
 
 		ID3D11ShaderReflection* pixelShaderReflection;
@@ -166,6 +166,16 @@ namespace Blueberry
 		D3D11_SHADER_DESC pixelShaderDesc;
 		pixelShaderReflection->GetDesc(&pixelShaderDesc);
 
+		constantBufferCount = pixelShaderDesc.ConstantBuffers;
+
+		for (UINT i = 0; i < constantBufferCount; i++)
+		{
+			ID3D11ShaderReflectionConstantBuffer* constantBufferReflection = pixelShaderReflection->GetConstantBufferByIndex(i);
+			D3D11_SHADER_BUFFER_DESC shaderBufferDesc;
+			constantBufferReflection->GetDesc(&shaderBufferDesc);
+			m_PixelConstantBufferSlots.insert({ TO_HASH(std::string(shaderBufferDesc.Name)), i });
+		}
+
 		unsigned int resourceBindingCount = pixelShaderDesc.BoundResources;
 
 		for (int i = 0; i < resourceBindingCount; i++)
@@ -174,7 +184,7 @@ namespace Blueberry
 			pixelShaderReflection->GetResourceBindingDesc(i, &inputBindDesc);
 			if (inputBindDesc.Type == D3D_SIT_TEXTURE)
 			{
-				m_TextureSlots.insert({ std::hash<std::string>()(std::string(inputBindDesc.Name)), inputBindDesc.BindPoint });
+				m_TextureSlots.insert({ TO_HASH(std::string(inputBindDesc.Name)), inputBindDesc.BindPoint });
 			}
 		}
 
