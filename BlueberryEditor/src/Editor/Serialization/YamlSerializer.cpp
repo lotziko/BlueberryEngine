@@ -2,6 +2,7 @@
 #include "YamlSerializer.h"
 
 #include "Blueberry\Core\ClassDB.h"
+#include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Core\ObjectPtr.h"
 #include "Editor\Serialization\YamlHelper.h"
 #include "Editor\Serialization\YamlSerializers.h"
@@ -41,7 +42,7 @@ namespace Blueberry
 				ClassDB::ClassInfo info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
 				Object* instance = info.createInstance();
 				m_FileIdToObject.insert({ fileId, instance });
-				m_DeserializedObjects.emplace_back(instance);
+				m_DeserializedObjects.emplace_back(std::pair { instance, fileId});
 				deserializedNodes.emplace_back(i, instance);
 			}
 		}
@@ -102,9 +103,10 @@ namespace Blueberry
 					Object* object = objectRefValue.Get();
 					if (ObjectDB::HasGuid(object))
 					{
-						data.fileId = 0;
+						auto pair = ObjectDB::GetGuidAndFileIdFromObject(object);
+						data.fileId = pair.second;
 						data.isAsset = true;
-						data.guid = ObjectDB::GetGuidFromObject(object);
+						data.guid = pair.first;
 					}
 					else
 					{
@@ -135,9 +137,10 @@ namespace Blueberry
 							Object* object = objectRefValue.Get();
 							if (ObjectDB::HasGuid(object))
 							{
-								data.fileId = 0;
+								auto pair = ObjectDB::GetGuidAndFileIdFromObject(object);
+								data.fileId = pair.second;
 								data.isAsset = true;
-								data.guid = ObjectDB::GetGuidFromObject(object);
+								data.guid = pair.first;
 							}
 							else
 							{
@@ -208,12 +211,15 @@ namespace Blueberry
 					
 					if (data.isAsset)
 					{
-						// TODO try import asset
-						object = ObjectDB::GetObjectFromGuid(data.guid);
+						object = ObjectDB::GetObjectFromGuid(data.guid, data.fileId);
 						if (object == nullptr)
 						{
-							ObjectDB::AllocateEmptyObjectWithGuid(data.guid);
-							object = ObjectDB::GetObjectFromGuid(data.guid);
+							object = AssetLoader::Load(data.guid, data.fileId);
+							if (object == nullptr)
+							{
+								ObjectDB::AllocateEmptyObjectWithGuid(data.guid, data.fileId);
+								object = ObjectDB::GetObjectFromGuid(data.guid, data.fileId);
+							}
 						}
 					}
 					else
@@ -232,7 +238,6 @@ namespace Blueberry
 				break;
 				case BindingType::ObjectPtrArray:
 				{
-					FileId fileId;
 					std::vector<ObjectPtr<Object>>* refArrayPointer = value.Get<std::vector<ObjectPtr<Object>>>();
 					for (auto& child : objectNode[key].cchildren())
 					{
@@ -242,11 +247,11 @@ namespace Blueberry
 						
 						if (data.isAsset)
 						{
-							object = ObjectDB::GetObjectFromGuid(data.guid);
+							object = ObjectDB::GetObjectFromGuid(data.guid, data.fileId);
 							if (object == nullptr)
 							{
-								ObjectDB::AllocateEmptyObjectWithGuid(data.guid);
-								object = ObjectDB::GetObjectFromGuid(data.guid);
+								ObjectDB::AllocateEmptyObjectWithGuid(data.guid, data.fileId);
+								object = ObjectDB::GetObjectFromGuid(data.guid, data.fileId);
 							}
 						}
 						else

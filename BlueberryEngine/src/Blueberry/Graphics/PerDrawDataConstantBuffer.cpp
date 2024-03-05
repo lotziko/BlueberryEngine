@@ -1,7 +1,6 @@
 #include "bbpch.h"
 #include "PerDrawDataConstantBuffer.h"
 
-#include "BaseCamera.h"
 #include "GfxDevice.h"
 #include "GfxBuffer.h"
 
@@ -9,16 +8,10 @@ namespace Blueberry
 {
 	struct CONSTANTS
 	{
-		Matrix viewMatrix;
-		Matrix projectionMatrix;
-		Matrix viewProjectionMatrix;
-		Matrix inverseViewMatrix;
-		Matrix inverseProjectionMatrix;
-		Matrix inverseViewProjectionMatrix;
-		Vector4 cameraPositionWS;
+		Matrix modelMatrix;
 	};
 
-	void PerDrawConstantBuffer::BindData(BaseCamera* camera)
+	void PerDrawConstantBuffer::BindData(const Matrix& localToWorldMatrix)
 	{
 		static size_t perDrawDataId = TO_HASH("PerDrawData");
 
@@ -27,25 +20,11 @@ namespace Blueberry
 			GfxDevice::CreateConstantBuffer(sizeof(CONSTANTS) * 1, s_ConstantBuffer);
 		}
 
-		const Matrix& view = GfxDevice::GetGPUMatrix(camera->GetViewMatrix());
-		const Matrix& projection = GfxDevice::GetGPUMatrix(camera->GetProjectionMatrix());
-		const Matrix& viewProjection = GfxDevice::GetGPUMatrix(camera->GetViewProjectionMatrix());
-		const Matrix& inverseView = GfxDevice::GetGPUMatrix(camera->GetInverseViewMatrix());
-		const Matrix& inverseProjection = GfxDevice::GetGPUMatrix(camera->GetInverseProjectionMatrix());
-		const Matrix& inverseViewProjection = GfxDevice::GetGPUMatrix(camera->GetInverseViewProjectionMatrix());
-		const Vector4& position = Vector4(camera->GetPosition());
+		const Matrix& modelMatrix = GfxDevice::GetGPUMatrix(localToWorldMatrix);
 
-		CONSTANTS constants[] =
+		CONSTANTS constants =
 		{
-			{
-				view,
-				projection,
-				viewProjection,
-				inverseView,
-				inverseProjection,
-				inverseViewProjection,
-				position
-			}
+			modelMatrix
 		};
 
 		s_ConstantBuffer->SetData(reinterpret_cast<char*>(&constants), sizeof(constants));

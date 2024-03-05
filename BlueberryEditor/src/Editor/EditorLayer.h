@@ -21,6 +21,7 @@ namespace Blueberry
 		EditorLayer() = default;
 
 		virtual void OnAttach() override;
+		virtual void OnDetach() override;
 		virtual void OnDraw() override;
 		virtual void OnResizeEvent(const Event& event);
 
@@ -29,12 +30,12 @@ namespace Blueberry
 		void DrawMenuBar();
 
 	private:
-		Scene* m_Scene;
-		ImGuiRenderer* m_ImGuiRenderer;
+		Scene* m_Scene = nullptr;
+		ImGuiRenderer* m_ImGuiRenderer = nullptr;
 
-		SceneHierarchy m_SceneHierarchy;
-		SceneInspector m_SceneInspector;
-		SceneArea* m_SceneArea;
-		ProjectBrowser m_ProjectBrowser;
+		SceneHierarchy* m_SceneHierarchy = nullptr;
+		SceneInspector* m_SceneInspector = nullptr;
+		SceneArea* m_SceneArea = nullptr;
+		ProjectBrowser* m_ProjectBrowser = nullptr;
 	};
 }

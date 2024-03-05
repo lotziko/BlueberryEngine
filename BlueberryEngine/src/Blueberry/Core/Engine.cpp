@@ -15,6 +15,7 @@ namespace Blueberry
 	bool Engine::Initialize(const WindowProperties& properties)
 	{
 		m_Window = Window::Create(properties);
+		m_LayerStack = new LayerStack();
 
 		if (!GfxDevice::Initialize(properties.Width, properties.Height, m_Window->GetHandle()))
 		{
@@ -37,6 +38,15 @@ namespace Blueberry
 		return true;
 	}
 
+	void Engine::Shutdown()
+	{
+		Gizmos::Shutdown();
+		Renderer2D::Shutdown();
+		GfxDevice::Shutdown();
+		delete m_LayerStack;
+		delete m_Window;
+	}
+
 	bool Engine::ProcessMessages()
 	{
 		return m_Window->ProcessMessages();
@@ -48,13 +58,13 @@ namespace Blueberry
 
 	void Engine::Draw()
 	{
-		for (Layer* layer : m_LayerStack)
+		for (Layer* layer : *m_LayerStack)
 			layer->OnDraw();
 	}
 
 	void Engine::PushLayer(Layer* layer)
 	{
-		m_LayerStack.PushLayer(layer);
+		m_LayerStack->PushLayer(layer);
 		layer->OnAttach();
 	}
 }

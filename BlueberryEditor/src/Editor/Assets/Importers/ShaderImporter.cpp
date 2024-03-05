@@ -21,13 +21,17 @@ namespace Blueberry
 		std::string fragmentPath = GetShaderPath(".fragment");
 
 		Shader* object;
+		if (ObjectDB::HasGuid(guid))
+		{
+			BB_INFO("Shader \"" << GetName() << "\" is already imported.");
+		}
 		if (AssetDB::HasAssetWithGuidInData(guid))
 		{
 			void* vertex = ShaderProcessor::Load(vertexPath);
 			void* fragment = ShaderProcessor::Load(fragmentPath);
 			object = AssetDB::LoadAssetObject<Shader>(guid);
 			object->Initialize(vertex, fragment);
-			BB_INFO(std::string() << "Shader \"" << GetName() << "\" imported from cache.");
+			BB_INFO("Shader \"" << GetName() << "\" imported from cache.");
 		}
 		else
 		{
@@ -35,12 +39,12 @@ namespace Blueberry
 			void* vertex = ShaderProcessor::Compile(path, "Vertex", "vs_5_0", vertexPath);
 			void* fragment = ShaderProcessor::Compile(path, "Fragment", "ps_5_0", fragmentPath);
 			object = Shader::Create(vertex, fragment);
-			ObjectDB::AllocateIdToGuid(object, guid);
+			ObjectDB::AllocateIdToGuid(object, guid, 1);
 			AssetDB::SaveAssetObjectToCache(object);
-			BB_INFO(std::string() << "Shader \"" << GetName() << "\" imported and compiled from: " + path);
+			BB_INFO("Shader \"" << GetName() << "\" imported and compiled from: " + path);
 		}
 		object->SetName(GetName());
-		AddImportedObject(object);
+		AddImportedObject(object, 1);
 	}
 
 	std::string ShaderImporter::GetShaderPath(const char* extension)

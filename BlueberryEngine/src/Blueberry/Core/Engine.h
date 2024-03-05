@@ -9,6 +9,7 @@ namespace Blueberry
 	{
 	public:
 		bool Initialize(const WindowProperties& properties);
+		void Shutdown();
 		bool ProcessMessages();
 		void Update();
 		void Draw();
@@ -17,6 +18,6 @@ namespace Blueberry
 
 	private:
 		Window* m_Window;
-		LayerStack m_LayerStack;
+		LayerStack* m_LayerStack;
 	};
 }

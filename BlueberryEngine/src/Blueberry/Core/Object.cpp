@@ -50,6 +50,16 @@ namespace Blueberry
 		m_Name = name;
 	}
 
+	const bool& Object::IsValid()
+	{
+		return m_IsValid;
+	}
+
+	void Object::SetValid(const bool& valid)
+	{
+		m_IsValid = valid;
+	}
+
 	void Object::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(Object)

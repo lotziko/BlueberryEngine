@@ -10,7 +10,7 @@ namespace Blueberry
 {
 	GfxDrawingOperation::GfxDrawingOperation(GfxVertexBuffer* vertexBuffer, GfxIndexBuffer* indexBuffer, Material* material, const UINT& indexCount, const UINT& indexOffset, const Topology& topology)
 	{
-		shader = material->m_Shader.IsValid() ? material->m_Shader->m_Shader : nullptr;
+		shader = (material->m_Shader.IsValid() && material->m_Shader->IsValid()) ? material->m_Shader->m_Shader : nullptr;
 		textures = &(material->m_GfxTextures);
 		this->vertexBuffer = vertexBuffer;
 		this->indexBuffer = indexBuffer;
@@ -23,8 +23,27 @@ namespace Blueberry
 	{
 	}
 
-	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material) : GfxDrawingOperation(mesh->m_VertexBuffer, mesh->m_IndexBuffer, material, mesh->m_IndexCount, 0, mesh->GetTopology())
+	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material)
 	{
+		shader = (material->IsValid() && material->m_Shader.IsValid() && material->m_Shader->IsValid()) ? material->m_Shader->m_Shader : nullptr;
+		if (mesh != nullptr && mesh->IsValid() && mesh->GetVertexCount() > 0)
+		{
+			textures = &(material->m_GfxTextures);
+			vertexBuffer = mesh->m_VertexBuffer;
+			indexBuffer = mesh->m_IndexBuffer;
+			indexCount = mesh->m_IndexCount;
+			indexOffset = 0;
+			topology = mesh->GetTopology();
+		}
+		else
+		{
+			textures = {};
+			vertexBuffer = nullptr;
+			indexBuffer = nullptr;
+			indexCount = 0;
+			indexOffset = 0;
+			topology = Topology::Unknown;
+		}
 	}
 
 	bool GfxDrawingOperation::IsValid() const

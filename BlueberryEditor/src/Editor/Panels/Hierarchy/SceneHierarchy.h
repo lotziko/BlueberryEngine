@@ -8,6 +8,7 @@ namespace Blueberry
 	{
 	public:
 		SceneHierarchy() = default;
+		virtual ~SceneHierarchy() = default;
 
 		void DrawUI();
 

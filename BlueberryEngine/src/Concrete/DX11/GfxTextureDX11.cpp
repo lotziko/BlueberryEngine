@@ -7,6 +7,15 @@ namespace Blueberry
 	{
 	}
 
+	GfxTextureDX11::~GfxTextureDX11()
+	{
+		m_Texture = nullptr;
+		m_ResourceView = nullptr;
+		m_SamplerState = nullptr;
+		m_RenderTargetView = nullptr;
+		m_DepthStencilView = nullptr;
+	}
+
 	bool GfxTextureDX11::Create(const TextureProperties& properties)
 	{
 		m_Width = properties.width;
@@ -42,17 +51,17 @@ namespace Blueberry
 		return m_ResourceView.Get();
 	}
 
-	void GfxTextureDX11::GetPixel(char* dst)
+	void GfxTextureDX11::GetData(void* data)
 	{
-		// TODO handle different texture formats
-		if (m_Width != 1 && m_Height != 1)
-		{
-			return;
-		}
 		D3D11_MAPPED_SUBRESOURCE mappedTexture;
 		ZeroMemory(&mappedTexture, sizeof(D3D11_MAPPED_SUBRESOURCE));
-		m_DeviceContext->Map(m_Texture.Get(), 0, D3D11_MAP_READ, 0, &mappedTexture);
-		memcpy(dst, mappedTexture.pData, sizeof(char) * 4);
+		HRESULT hr = m_DeviceContext->Map(m_Texture.Get(), 0, D3D11_MAP_READ, 0, &mappedTexture);
+		if (FAILED(hr))
+		{
+			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to get texture data."));
+			return;
+		}
+		memcpy(data, mappedTexture.pData, m_Width * m_Height * sizeof(char) * 4); // TODO handle texture formats
 		m_DeviceContext->Unmap(m_Texture.Get(), 0);
 	}
 
@@ -70,6 +79,31 @@ namespace Blueberry
 		}
 	}
 
+	enum TextureType
+	{
+		Resource,
+		RenderTarget,
+		DepthStencil,
+		Staging
+	};
+
+	TextureType GetTextureType(const TextureProperties& properties)
+	{
+		if (properties.format == TextureFormat::D24_UNorm)
+		{
+			return TextureType::DepthStencil;
+		}
+		if (properties.isReadable)
+		{
+			return TextureType::Staging;
+		}
+		if (properties.isRenderTarget)
+		{
+			return TextureType::RenderTarget;
+		}
+		return TextureType::Resource;
+	}
+
 	bool GfxTextureDX11::Initialize(D3D11_SUBRESOURCE_DATA* subresourceData, const TextureProperties& properties)
 	{
 		D3D11_TEXTURE2D_DESC textureDesc;
@@ -80,8 +114,10 @@ namespace Blueberry
 		textureDesc.MipLevels = textureDesc.ArraySize = 1;
 		textureDesc.Format = GetFormat(properties.format);
 		textureDesc.SampleDesc.Count = 1;
-		
-		switch (properties.type)
+
+		TextureType type = GetTextureType(properties);
+
+		switch (type)
 		{
 		case TextureType::Resource:
 			textureDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -114,7 +150,7 @@ namespace Blueberry
 			return false;
 		}
 
-		if (properties.type != TextureType::Staging && properties.type != TextureType::DepthStencil)
+		if (type != TextureType::Staging && type != TextureType::DepthStencil)
 		{
 			hr = m_Device->CreateShaderResourceView(m_Texture.Get(), nullptr, m_ResourceView.GetAddressOf());
 			if (FAILED(hr))
@@ -144,7 +180,7 @@ namespace Blueberry
 			}
 		}
 
-		if (properties.type == TextureType::RenderTarget)
+		if (type == TextureType::RenderTarget)
 		{
 			D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
 			ZeroMemory(&renderTargetViewDesc, sizeof(D3D11_RENDER_TARGET_VIEW_DESC));
@@ -159,9 +195,10 @@ namespace Blueberry
 				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create render target view."));
 				return false;
 			}
+			return true;
 		}
 
-		if (properties.type == TextureType::DepthStencil)
+		if (type == TextureType::DepthStencil)
 		{
 			D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
 			ZeroMemory(&depthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
@@ -177,7 +214,6 @@ namespace Blueberry
 				return false;
 			}
 		}
-
 		return true;
 	}
 }

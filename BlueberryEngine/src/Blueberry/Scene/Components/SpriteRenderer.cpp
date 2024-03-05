@@ -3,21 +3,12 @@
 
 #include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Graphics\Texture2D.h"
-#include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Scene\Entity.h"
 
 namespace Blueberry
 {
 	OBJECT_DEFINITION(Renderer, SpriteRenderer)
-
-	SpriteRenderer::SpriteRenderer()
-	{
-		m_Color = Color(1, 1, 1, 1);
-		auto type = Texture2D::Type;
-		m_Texture = nullptr;
-		m_Material = nullptr;
-	}
 
 	const Color& SpriteRenderer::GetColor()
 	{

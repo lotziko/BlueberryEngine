@@ -30,7 +30,7 @@ namespace Blueberry
 	{
 	public:
 		GfxIndexBufferDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
-		virtual ~GfxIndexBufferDX11();
+		virtual ~GfxIndexBufferDX11() = default;
 		virtual void SetData(UINT* data, const UINT& indexCount) final;
 
 		bool Initialize(const UINT& indexCount);
@@ -47,12 +47,31 @@ namespace Blueberry
 	{
 	public:
 		GfxConstantBufferDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
-		virtual ~GfxConstantBufferDX11();
+		virtual ~GfxConstantBufferDX11() = default;
 		virtual void SetData(char* data, const UINT& byteCount) final;
 
 		bool Initialize(const UINT& byteCount);
 	private:
 		ComPtr<ID3D11Buffer> m_Buffer = nullptr;
+
+		ID3D11Device* m_Device;
+		ID3D11DeviceContext* m_DeviceContext;
+
+		friend class GfxDeviceDX11;
+	};
+
+	class GfxComputeBufferDX11 final : public GfxComputeBuffer
+	{
+	public:
+		GfxComputeBufferDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
+		virtual ~GfxComputeBufferDX11() = default;
+		virtual void GetData(char* data, const UINT& byteCount) final;
+		virtual void SetData(char* data, const UINT& byteCount) final;
+
+		bool Initialize(const UINT& elementCount, const UINT& elementSize);
+	private:
+		ComPtr<ID3D11Buffer> m_Buffer = nullptr;
+		ComPtr<ID3D11UnorderedAccessView> m_UnorderedAccessView = nullptr;
 
 		ID3D11Device* m_Device;
 		ID3D11DeviceContext* m_DeviceContext;

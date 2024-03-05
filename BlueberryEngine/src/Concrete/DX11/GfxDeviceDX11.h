@@ -25,9 +25,11 @@ namespace Blueberry
 		virtual void SetSurfaceTypeImpl(const SurfaceType& type) final;
 
 		virtual bool CreateShaderImpl(void* vertexData, void* pixelData, GfxShader*& shader) final;
+		virtual bool CreateComputeShaderImpl(void* computeData, GfxComputeShader*& shader) final;
 		virtual bool CreateVertexBufferImpl(const VertexLayout& layout, const UINT& vertexCount, GfxVertexBuffer*& buffer) final;
 		virtual bool CreateIndexBufferImpl(const UINT& indexCount, GfxIndexBuffer*& buffer) final;
 		virtual bool CreateConstantBufferImpl(const UINT& byteCount, GfxConstantBuffer*& buffer) final;
+		virtual bool CreateComputeBufferImpl(const UINT& elementCount, const UINT& elementSize, GfxComputeBuffer*& buffer) final;
 		virtual bool CreateTextureImpl(const TextureProperties& properties, GfxTexture*& texture) const final;
 		virtual bool CreateImGuiRendererImpl(ImGuiRenderer*& renderer) const final;
 
@@ -37,6 +39,8 @@ namespace Blueberry
 		virtual void SetGlobalConstantBufferImpl(const std::size_t& id, GfxConstantBuffer* buffer) final;
 		virtual void SetGlobalTextureImpl(const std::size_t& id, GfxTexture* texture) final;
 		virtual void DrawImpl(const GfxDrawingOperation& operation) const final;
+
+		virtual void DispatchImpl(GfxComputeShader*& shader, const UINT& threadGroupsX, const UINT& threadGroupsY, const UINT& threadGroupsZ) const final;
 
 		virtual Matrix GetGPUMatrixImpl(const Matrix& viewProjection) const final;
 

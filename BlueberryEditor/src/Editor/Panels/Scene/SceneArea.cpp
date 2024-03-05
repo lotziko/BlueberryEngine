@@ -11,7 +11,6 @@
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\Material.h"
-#include "Blueberry\Graphics\PerDrawDataConstantBuffer.h"
 #include "Blueberry\Assets\AssetLoader.h"
 
 #include "SceneAreaMovement.h"
@@ -22,19 +21,25 @@ namespace Blueberry
 {
 	SceneArea::SceneArea()
 	{
-		TextureProperties properties;
+		TextureProperties properties = {};
 		properties.width = 1920;
 		properties.height = 1080;
-		properties.data = nullptr;
-		properties.type = TextureType::RenderTarget;
+		properties.isRenderTarget = true;
 		properties.format = TextureFormat::R8G8B8A8_UNorm;
 		GfxDevice::CreateTexture(properties, m_SceneRenderTarget);
 
-		properties.type = TextureType::DepthStencil;
 		properties.format = TextureFormat::D24_UNorm;
 		GfxDevice::CreateTexture(properties, m_SceneDepthStencil);
 
 		m_GridMaterial = Material::Create((Shader*)AssetLoader::Load("assets/Grid.shader"));
+		m_ObjectPicker = new SceneObjectPicker(m_SceneDepthStencil);
+	}
+
+	SceneArea::~SceneArea()
+	{
+		delete m_SceneRenderTarget;
+		delete m_SceneDepthStencil;
+		delete m_ObjectPicker;
 	}
 
 	Vector3 GetMotion(const Quaternion& rotation)
@@ -147,14 +152,14 @@ namespace Blueberry
 		// Selection
 		if (ImGui::IsMouseClicked(0) && mousePos.x >= pos.x && mousePos.y >= pos.y && mousePos.x <= pos.x + size.x && mousePos.y <= pos.y + size.y)
 		{
-			m_ObjectPicker.Pick(EditorSceneManager::GetScene(), m_Camera, (int)(mousePos.x - pos.x), (int)(mousePos.y - pos.y), size.x, size.y);
+			m_ObjectPicker->Pick(EditorSceneManager::GetScene(), m_Camera, (int)(mousePos.x - pos.x), (int)(mousePos.y - pos.y), size.x, size.y);
 		}
 
 		SetupCamera(size.x, size.y);
 		DrawScene(size.x, size.y);
 
 		ImGui::GetWindowDrawList()->AddImage(m_SceneRenderTarget->GetHandle(), ImVec2(pos.x, pos.y), ImVec2(pos.x + size.x, pos.y + size.y), ImVec2(0, 0), ImVec2(size.x / m_SceneRenderTarget->GetWidth(), size.y / m_SceneRenderTarget->GetHeight()));
-
+		
 		ImGui::End();
 	}
 
@@ -285,8 +290,6 @@ namespace Blueberry
 
 	void SceneArea::DrawScene(const float width, const float height)
 	{
-		PerDrawConstantBuffer::BindData(&m_Camera);
-
 		GfxDevice::SetRenderTarget(m_SceneRenderTarget, m_SceneDepthStencil);
 		GfxDevice::SetViewport(0, 0, static_cast<int>(width), static_cast<int>(height));
 		GfxDevice::ClearColor({ 0.117f, 0.117f, 0.117f, 1 });
@@ -299,7 +302,7 @@ namespace Blueberry
 			SceneRenderer::Draw(scene, &m_Camera);
 		}
 		
-		GfxDevice::SetSurfaceType(SurfaceType::DepthTransparent);
+		GfxDevice::SetSurfaceType(SurfaceType::DepthTransparent); 
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_GridMaterial));
 		GfxDevice::SetRenderTarget(nullptr);
 	}

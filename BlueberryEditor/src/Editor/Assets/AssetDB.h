@@ -12,9 +12,10 @@ namespace Blueberry
 	class AssetDB
 	{
 	public:
-		static void ImportAll();
+		static void Refresh();
 
-		static void Import(const std::string& path);
+		static AssetImporter* Import(const std::string& relativePath);
+		static AssetImporter* Import(const Guid& guid);
 
 		static AssetImporter* GetImporter(const std::string& path);
 
@@ -29,23 +30,23 @@ namespace Blueberry
 		static bool HasAssetWithGuidInData(const Guid& guid);
 		static void CreateAsset(Object* object, const std::string& relativePath);
 		static void SaveAssetObjectToCache(Object* object);
-		static void AddObjectToAsset(Object* object, const std::string& relativePath);
 		static void SetDirty(Object* object);
 		static void SaveAssets();
 
 	private:
-		static void Import(const std::filesystem::path& path);
+		static AssetImporter* CreateImporter(const std::filesystem::path& path);
 
 	public:
 		static void Register(const std::string& extension, const std::size_t& importerType);
 
 	private:
-		static std::map<std::string, long long> s_PathModifyCache;
 		static std::map<std::string, std::size_t> s_ImporterTypes;
-		static std::map<std::string, AssetImporter*> s_ImportedData;
-
+		static std::map<std::string, AssetImporter*> s_Importers;
+		static std::map<Guid, std::string> s_GuidToPath;
 		static std::vector<ObjectId> s_DirtyAssets;
-		static std::map<ObjectId, std::string> s_AssetRelativePathes;
+
+		// Save these to disk
+		static std::map<std::string, long long> s_PathModifyCache;
 	};
 
 	template<class ObjectType>
@@ -57,6 +58,7 @@ namespace Blueberry
 		return object;
 	}
 
+	// Use inside importers only
 	template<class ObjectType>
 	inline ObjectType* AssetDB::LoadAssetObject(const Guid& guid)
 	{
@@ -66,8 +68,9 @@ namespace Blueberry
 		auto& deserializedObjects = serializer.GetDeserializedObjects();
 		if (deserializedObjects.size() > 0)
 		{
-			Object* object = deserializedObjects[0];
-			ObjectDB::AllocateIdToGuid(object, guid);
+			auto pair = deserializedObjects[0];
+			Object* object = pair.first;
+			ObjectDB::AllocateIdToGuid(object, guid, pair.second);
 			object->Initialize();
 			return (ObjectType*)object;
 		}

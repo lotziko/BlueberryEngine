@@ -44,7 +44,7 @@ namespace Blueberry
 		std::string typeName(key.str, key.size());
 		ClassDB::ClassInfo info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
 		Object* instance = info.createInstance();
-		m_DeserializedObjects.emplace_back(instance);
+		m_DeserializedObjects.emplace_back(std::pair { instance, 0 });
 		DeserializeNode(root[1], instance);
 	}
 }

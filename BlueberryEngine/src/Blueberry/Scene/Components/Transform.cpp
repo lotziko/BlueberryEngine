@@ -7,12 +7,6 @@ namespace Blueberry
 {
 	OBJECT_DEFINITION(Component, Transform)
 
-	Transform::Transform()
-	{
-		m_LocalScale = Vector3(1, 1, 1);
-		m_Parent = nullptr;
-	}
-
 	Transform::~Transform()
 	{
 		if (m_Parent.IsValid())

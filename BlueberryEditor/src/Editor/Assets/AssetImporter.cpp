@@ -41,9 +41,17 @@ namespace Blueberry
 		return m_RelativeMetaPath;
 	}
 
-	const std::vector<ObjectId>& AssetImporter::GetImportedObjects()
+	const std::map<FileId, ObjectId>& AssetImporter::GetImportedObjects()
 	{
 		return m_ImportedObjects;
+	}
+
+	void AssetImporter::ImportDataIfNeeded()
+	{
+		if (m_ImportedObjects.size() == 0)
+		{
+			ImportData();
+		}
 	}
 
 	void AssetImporter::Save()
@@ -63,7 +71,7 @@ namespace Blueberry
 		importer->m_RelativeMetaPath = relativeMetaPath.string();
 		importer->m_Name = relativePath.stem().string();
 		importer->Save();
-		importer->ImportData();
+		importer->ImportDataIfNeeded();
 		return importer;
 	}
 
@@ -77,12 +85,13 @@ namespace Blueberry
 		auto& deserializedObjects = serializer.GetDeserializedObjects();
 		if (deserializedObjects.size() > 0)
 		{
-			AssetImporter* importer = (AssetImporter*)deserializedObjects[0];
+			AssetImporter* importer = (AssetImporter*)deserializedObjects[0].first;
 			importer->m_Guid = serializer.GetGuid();
 			importer->m_RelativePath = relativePath.string();
 			importer->m_RelativeMetaPath = relativeMetaPath.string();
 			importer->m_Name = relativePath.stem().string();
-			importer->ImportData();
+			// Data will be imported when it's needed
+			//importer->ImportData();
 			return importer;
 		}
 		return nullptr;
@@ -92,9 +101,8 @@ namespace Blueberry
 	{
 	}
 
-	void AssetImporter::AddImportedObject(Object* object)
+	void AssetImporter::AddImportedObject(Object* object, const FileId& fileId)
 	{
-		m_ImportedObjects.emplace_back(object->GetObjectId());
-		AssetDB::AddObjectToAsset(object, GetRelativeFilePath());
+		m_ImportedObjects.insert_or_assign(fileId, object->GetObjectId());
 	}
 }

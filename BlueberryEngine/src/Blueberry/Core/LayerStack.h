@@ -8,7 +8,7 @@ namespace Blueberry
 	{
 	public:
 		LayerStack() = default;
-		~LayerStack();
+		virtual ~LayerStack();
 
 		void PushLayer(Layer* layer);
 		void PopLayer(Layer* layer);

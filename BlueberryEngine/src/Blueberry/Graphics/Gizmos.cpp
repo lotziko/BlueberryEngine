@@ -55,6 +55,15 @@ namespace Blueberry
 		return true;
 	}
 
+	void Gizmos::Shutdown()
+	{
+		Material::Destroy(s_LineMaterial);
+		delete s_VertexData;
+		delete s_Lines;
+		delete s_VertexBuffer;
+		delete s_IndexBuffer;
+	}
+
 	void Gizmos::Begin()
 	{
 		s_LineCount = 0;

@@ -22,4 +22,12 @@ namespace Blueberry
 		virtual ~GfxConstantBuffer() = default;
 		virtual void SetData(char* data, const UINT& byteCount) = 0;
 	};
+
+	class GfxComputeBuffer
+	{
+	public:
+		virtual ~GfxComputeBuffer() = default;
+		virtual void GetData(char* data, const UINT& byteCount) = 0;
+		virtual void SetData(char* data, const UINT& byteCount) = 0;
+	};
 }

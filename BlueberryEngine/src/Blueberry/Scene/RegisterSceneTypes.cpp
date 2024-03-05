@@ -8,6 +8,7 @@
 #include "Components\Transform.h"
 #include "Components\Renderer.h"
 #include "Components\SpriteRenderer.h"
+#include "Components\MeshRenderer.h"
 #include "Components\Camera.h"
 
 namespace Blueberry
@@ -20,6 +21,7 @@ namespace Blueberry
 		REGISTER_CLASS(Transform);
 		REGISTER_ABSTRACT_CLASS(Renderer);
 		REGISTER_CLASS(SpriteRenderer);
+		REGISTER_CLASS(MeshRenderer);
 		REGISTER_CLASS(Camera);
 	}
 }

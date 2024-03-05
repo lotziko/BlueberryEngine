@@ -11,7 +11,12 @@ struct Varyings
 	float4 color : COLOR;
 };
 
-cbuffer PerDrawData : register(b0)
+cbuffer PerDrawData
+{
+	float4x4 modelMatrix;
+}
+
+cbuffer PerCameraData
 {
 	float4x4 viewMatrix;
 	float4x4 projectionMatrix;

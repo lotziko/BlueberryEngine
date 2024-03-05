@@ -10,29 +10,50 @@
 
 namespace Blueberry
 {
-	std::map<std::string, long long> AssetDB::s_PathModifyCache = std::map<std::string, long long>();
 	std::map<std::string, std::size_t> AssetDB::s_ImporterTypes = std::map<std::string, std::size_t>();
-	std::map<std::string, AssetImporter*> AssetDB::s_ImportedData = std::map<std::string, AssetImporter*>();
+	std::map<std::string, AssetImporter*> AssetDB::s_Importers = std::map<std::string, AssetImporter*>();
+	
+	std::map<Guid, std::string> AssetDB::s_GuidToPath = std::map<Guid, std::string>();
+	std::map<std::string, long long> AssetDB::s_PathModifyCache = std::map<std::string, long long>();
 	std::vector<ObjectId> AssetDB::s_DirtyAssets = std::vector<ObjectId>();
-	std::map<ObjectId, std::string> AssetDB::s_AssetRelativePathes = std::map<ObjectId, std::string>();
 
-	void AssetDB::ImportAll()
+	void AssetDB::Refresh()
 	{
 		for (auto& it : std::filesystem::recursive_directory_iterator(Path::GetAssetsPath()))
 		{
-			Import(it.path());
+			AssetImporter* importer = CreateImporter(it.path());
+			if (importer != nullptr)
+			{
+				s_GuidToPath.insert_or_assign(importer->GetGuid(), importer->GetRelativeFilePath());
+			}
 		}
 	}
 
-	void AssetDB::Import(const std::string& path)
+	AssetImporter* AssetDB::Import(const std::string& relativePath)
 	{
-		Import(std::filesystem::path(path));
+		auto& dataIt = s_Importers.find(relativePath);
+		if (dataIt != s_Importers.end())
+		{
+			dataIt->second->ImportDataIfNeeded();
+			return dataIt->second;
+		}
+		return nullptr;
+	}
+
+	AssetImporter* AssetDB::Import(const Guid& guid)
+	{
+		auto pathIt = s_GuidToPath.find(guid);
+		if (pathIt != s_GuidToPath.end())
+		{
+			return Import(pathIt->second);
+		}
+		return nullptr;
 	}
 
 	AssetImporter* AssetDB::GetImporter(const std::string& relativePath)
 	{
-		auto& dataIt = s_ImportedData.find(relativePath);
-		if (dataIt != s_ImportedData.end())
+		auto& dataIt = s_Importers.find(relativePath);
+		if (dataIt != s_Importers.end())
 		{
 			return dataIt->second;
 		}
@@ -59,9 +80,15 @@ namespace Blueberry
 	void AssetDB::CreateAsset(Object* object, const std::string& relativePath)
 	{
 		Guid guid = Guid::Create();
-		ObjectDB::AllocateIdToGuid(object, guid);
-		s_DirtyAssets.emplace_back(object->GetObjectId());
-		s_AssetRelativePathes.insert_or_assign(object->GetObjectId(), relativePath);
+		ObjectDB::AllocateIdToGuid(object, guid, 1);
+
+		YamlSerializer serializer;
+		auto dataPath = Path::GetAssetsPath();
+		dataPath.append(relativePath);
+		serializer.AddObject(object);
+		serializer.Serialize(dataPath.string());
+		BB_INFO("Asset was saved to the path: " << relativePath);
+		Refresh();
 	}
 
 	void AssetDB::SaveAssetObjectToCache(Object* object)
@@ -70,11 +97,6 @@ namespace Blueberry
 		YamlSerializer serializer;
 		serializer.AddObject(object);
 		serializer.Serialize(GetAssetCachedDataPath(object, ".yaml"));
-	}
-
-	void AssetDB::AddObjectToAsset(Object* object, const std::string& relativePath)
-	{
-		s_AssetRelativePathes.insert_or_assign(object->GetObjectId(), relativePath);
 	}
 
 	void AssetDB::SetDirty(Object* object)
@@ -89,24 +111,25 @@ namespace Blueberry
 			ObjectItem* item = ObjectDB::IdToObjectItem(objectId);
 			if (item != nullptr && item->object != nullptr)
 			{
-				std::string relativePath = s_AssetRelativePathes.at(objectId);
+				auto pair = ObjectDB::GetGuidAndFileIdFromObject(item->object);
+				std::string relativePath = s_GuidToPath[pair.first];
 				YamlSerializer serializer;
 				auto dataPath = Path::GetAssetsPath();
 				dataPath.append(relativePath);
 				serializer.AddObject(item->object);
 				serializer.Serialize(dataPath.string());
+				BB_INFO("Asset was saved to the path: " << relativePath);
 			}
 		}
 		s_DirtyAssets.clear();
-		ImportAll();
 	}
 
-	void AssetDB::Import(const std::filesystem::path& path)
+	AssetImporter* AssetDB::CreateImporter(const std::filesystem::path& path)
 	{
 		// Skip directories and not existing pathes
 		if (!std::filesystem::exists(path) || std::filesystem::is_directory(path))
 		{
-			return;
+			return nullptr;
 		}
 
 		auto extension = path.extension();
@@ -115,7 +138,7 @@ namespace Blueberry
 		// Skip meta files
 		if (extensionString == ".meta")
 		{
-			return;
+			return nullptr;
 		}
 
 		auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
@@ -157,7 +180,7 @@ namespace Blueberry
 				else
 				{
 					importer = AssetImporter::Create(DefaultImporter::Type, relativePath, relativeMetaPath);
-					BB_INFO(std::string() << "AssetImporter for extension " << extensionString << " does not exist and default importer was created.");
+					BB_INFO("AssetImporter for extension " << extensionString << " does not exist and default importer was created.");
 				}
 			}
 			else
@@ -165,9 +188,11 @@ namespace Blueberry
 				// Create importer from meta file
 				importer = AssetImporter::Load(relativePath, relativeMetaPath);
 			}
-			s_ImportedData.insert_or_assign(relativeMetaPathString, importer);
+			s_Importers.insert_or_assign(relativePathString, importer);
 			s_PathModifyCache.insert_or_assign(relativePathString, lastWriteTime);
+			return importer;
 		}
+		return nullptr;
 	}
 
 	void AssetDB::Register(const std::string& extension, const std::size_t& importerType)

@@ -92,12 +92,12 @@ namespace Blueberry
 		if (s_DrawingDataCount >= MAX_SPRITES)
 			Flush();
 
-		if (texture == nullptr)
+		if (texture == nullptr || !texture->IsValid())
 		{
 			return;
 		}
 
-		if (material == nullptr)
+		if (material == nullptr || !material->IsValid())
 		{
 			return;
 		}

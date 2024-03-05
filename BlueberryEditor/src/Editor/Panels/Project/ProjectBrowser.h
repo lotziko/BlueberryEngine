@@ -8,10 +8,12 @@ namespace Blueberry
 	{
 	public:
 		ProjectBrowser();
+		virtual ~ProjectBrowser() = default;
 
 		void DrawUI();
 
 	private:
 		std::filesystem::path m_CurrentDirectory;
+		const char* m_OpenedModalPopupId = nullptr;
 	};
 }

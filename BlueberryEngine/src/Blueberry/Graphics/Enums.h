@@ -2,14 +2,6 @@
 
 namespace Blueberry
 {
-	enum TextureType
-	{
-		Resource,
-		RenderTarget,
-		DepthStencil,
-		Staging
-	};
-
 	enum TextureFormat
 	{
 		None,

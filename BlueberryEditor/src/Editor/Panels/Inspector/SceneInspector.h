@@ -8,6 +8,7 @@ namespace Blueberry
 	{
 	public:
 		SceneInspector() = default;
+		virtual ~SceneInspector() = default;
 
 		void DrawUI();
 	};

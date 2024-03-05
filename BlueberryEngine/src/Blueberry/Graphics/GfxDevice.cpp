@@ -23,6 +23,15 @@ namespace Blueberry
 		return s_Instance->InitializeImpl(width, height, data);
 	}
 
+	void GfxDevice::Shutdown()
+	{
+		if (s_Instance != nullptr)
+		{
+			delete s_Instance;
+			s_Instance = nullptr;
+		}
+	}
+
 	void GfxDevice::ClearColor(const Color& color)
 	{
 		s_Instance->ClearColorImpl(color);
@@ -58,6 +67,11 @@ namespace Blueberry
 		return s_Instance->CreateShaderImpl(vertexData, pixelData, shader);
 	}
 
+	bool GfxDevice::CreateComputeShader(void* computeData, GfxComputeShader*& shader)
+	{
+		return s_Instance->CreateComputeShaderImpl(computeData, shader);
+	}
+
 	bool GfxDevice::CreateVertexBuffer(const VertexLayout& layout, const UINT& vertexCount, GfxVertexBuffer*& buffer)
 	{
 		return s_Instance->CreateVertexBufferImpl(layout, vertexCount, buffer);
@@ -68,9 +82,14 @@ namespace Blueberry
 		return s_Instance->CreateIndexBufferImpl(indexCount, buffer);
 	}
 
-	bool GfxDevice::CreateConstantBuffer(const UINT& byteSize, GfxConstantBuffer*& buffer)
+	bool GfxDevice::CreateConstantBuffer(const UINT& byteCount, GfxConstantBuffer*& buffer)
 	{
-		return s_Instance->CreateConstantBufferImpl(byteSize, buffer);
+		return s_Instance->CreateConstantBufferImpl(byteCount, buffer);
+	}
+
+	bool GfxDevice::CreateComputeBuffer(const UINT& elementCount, const UINT& elementSize, GfxComputeBuffer*& buffer)
+	{
+		return s_Instance->CreateComputeBufferImpl(elementCount, elementSize, buffer);
 	}
 
 	bool GfxDevice::CreateTexture(const TextureProperties& properties, GfxTexture*& texture)
@@ -106,6 +125,11 @@ namespace Blueberry
 	void GfxDevice::Draw(const GfxDrawingOperation& operation)
 	{
 		s_Instance->DrawImpl(operation);
+	}
+
+	void GfxDevice::Dispatch(GfxComputeShader*& shader, const UINT& threadGroupsX, const UINT& threadGroupsY, const UINT& threadGroupsZ)
+	{
+		s_Instance->DispatchImpl(shader, threadGroupsX, threadGroupsY, threadGroupsZ);
 	}
 
 	Matrix GfxDevice::GetGPUMatrix(const Matrix& viewProjection)

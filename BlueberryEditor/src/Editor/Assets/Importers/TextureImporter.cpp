@@ -24,9 +24,11 @@ namespace Blueberry
 		if (ObjectDB::HasGuid(guid))
 		{
 			// TODO think how to deserialize into existing object
-			BB_INFO(std::string() << "Texture \"" << GetName() << "\" is already imported.");
+			BB_INFO("Texture \"" << GetName() << "\" is already imported.");
+			return;
 		}
-		else if (AssetDB::HasAssetWithGuidInData(guid))
+		else 
+		if (AssetDB::HasAssetWithGuidInData(guid))
 		{
 			object = AssetDB::LoadAssetObject<Texture2D>(guid);
 			byte* data;
@@ -34,7 +36,7 @@ namespace Blueberry
 			FileHelper::Load(data, length, GetTexturePath());
 			object->Initialize({ data, length });
 			delete[] data;
-			BB_INFO(std::string() << "Texture \"" << GetName() << "\" imported from cache.");
+			BB_INFO("Texture \"" << GetName() << "\" imported from cache.");
 		}
 		else
 		{
@@ -47,25 +49,24 @@ namespace Blueberry
 			data = stbi_load(path.c_str(), &width, &height, &channels, 4);
 			size_t dataSize = width * height * 4;
 
-			TextureProperties properties;
+			TextureProperties properties = {};
 
 			properties.width = width;
 			properties.height = height;
 			properties.data = data;
 			properties.dataSize = dataSize;
-			properties.type = TextureType::Resource;
 			properties.format = TextureFormat::R8G8B8A8_UNorm;
 
 			object = Texture2D::Create(properties);
-			ObjectDB::AllocateIdToGuid(object, guid);
+			ObjectDB::AllocateIdToGuid(object, guid, 1);
 			AssetDB::SaveAssetObjectToCache(object);
 			FileHelper::Save(data, dataSize, GetTexturePath());
 
 			stbi_image_free(data);
-			BB_INFO(std::string() << "Texture \"" << GetName() << "\" imported and created from: " + path);
+			BB_INFO("Texture \"" << GetName() << "\" imported and created from: " + path);
 		}
 		object->SetName(GetName());
-		AddImportedObject(object);
+		AddImportedObject(object, 1);
 	}
 
 	std::string TextureImporter::GetTexturePath()

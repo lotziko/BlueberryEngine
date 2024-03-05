@@ -2,6 +2,8 @@
 
 namespace Blueberry
 {
+	using FileId = uint64_t;
+
 	struct Guid
 	{
 	public:

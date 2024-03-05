@@ -8,7 +8,7 @@ namespace Blueberry
 	class PerDrawConstantBuffer
 	{
 	public:
-		static void BindData(BaseCamera* camera);
+		static void BindData(const Matrix& localToWorldMatrix);
 
 	private:
 		static inline GfxConstantBuffer* s_ConstantBuffer = nullptr;

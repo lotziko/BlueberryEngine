@@ -2,6 +2,9 @@
 #include "SceneRenderer.h"
 
 #include "Blueberry\Graphics\Renderer2D.h"
+#include "Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\PerCameraDataConstantBuffer.h"
+#include "Blueberry\Graphics\PerDrawDataConstantBuffer.h"
 #include "Blueberry\Scene\Scene.h"
 
 namespace Blueberry
@@ -26,6 +29,8 @@ namespace Blueberry
 
 	void SceneRenderer::Draw(Scene* scene, BaseCamera* camera)
 	{
+		PerCameraDataConstantBuffer::BindData(camera);
+
 		//Update transforms
 		{
 			for (auto component : scene->GetIterator<Transform>())
@@ -44,6 +49,16 @@ namespace Blueberry
 				Renderer2D::Draw(spriteRenderer->GetEntity()->GetTransform()->GetLocalToWorldMatrix(), spriteRenderer->GetTexture(), spriteRenderer->GetMaterial(), spriteRenderer->GetColor(), spriteRenderer->GetSortingOrder());
 			}
 			Renderer2D::End();
+		}
+
+		//Draw meshes
+		for (auto component : scene->GetIterator<MeshRenderer>())
+		{
+			auto meshRenderer = static_cast<MeshRenderer*>(component.second);
+			Mesh* mesh = meshRenderer->GetMesh();
+			Material* material = meshRenderer->GetMaterial();
+			PerDrawConstantBuffer::BindData(meshRenderer->GetEntity()->GetTransform()->GetLocalToWorldMatrix());
+			GfxDevice::Draw(GfxDrawingOperation(mesh, material));
 		}
 	}
 }

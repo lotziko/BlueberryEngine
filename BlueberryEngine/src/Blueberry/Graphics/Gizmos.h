@@ -11,6 +11,7 @@ namespace Blueberry
 	{
 	public:
 		static bool Initialize();
+		static void Shutdown();
 
 		static void Begin();
 		static void End();

@@ -9,7 +9,8 @@ namespace Blueberry
 		UINT height;
 		void* data;
 		size_t dataSize;
-		TextureType type;
+		bool isRenderTarget;
+		bool isReadable;
 		TextureFormat format;
 	};
 }

@@ -147,6 +147,7 @@ void ImGui::ApplyEditorDarkTheme()
 	style->TabBorderSize = 1.0f;
 	style->TabRounding = 0.0f;
 	style->WindowRounding = 4.0f;
+	style->WindowPadding = ImVec2(0.0f, 0.0f);
 }
 
 void ImGui::LoadDefaultEditorFonts()

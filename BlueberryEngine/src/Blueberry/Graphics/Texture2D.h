@@ -9,7 +9,7 @@ namespace Blueberry
 		OBJECT_DECLARATION(Texture2D)
 		
 	public:
-		virtual ~Texture2D() = default;
+		~Texture2D();
 
 		void Initialize(const ByteData& byteData);
 

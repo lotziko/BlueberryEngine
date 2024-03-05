@@ -14,7 +14,10 @@ project "BlueberryEditor"
 		"vendor/stb/**.h",
 		"vendor/stb/**.cpp",
 		"vendor/rapidyaml/**.h",
-		"vendor/rapidyaml/**.cpp"
+		"vendor/rapidyaml/**.cpp",
+		"vendor/openfbx/**.h",
+		"vendor/openfbx/**.c",
+		"vendor/openfbx/**.cpp"
 	}
 
 	includedirs
@@ -23,7 +26,8 @@ project "BlueberryEditor"
 		"%{wks.location}/BlueberryEngine/src",
 		"%{IncludeDir.imgui}",
 		"%{IncludeDir.stb}",
-		"%{IncludeDir.rapidyaml}"
+		"%{IncludeDir.rapidyaml}",
+		"%{IncludeDir.openfbx}"
 	}
 
 	links

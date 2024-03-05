@@ -9,7 +9,7 @@ namespace Blueberry
 		m_ObjectsToSerialize.emplace_back(object);
 	}
 
-	std::vector<Object*>& Serializer::GetDeserializedObjects()
+	std::vector<std::pair<Object*, FileId>>& Serializer::GetDeserializedObjects()
 	{
 		return m_DeserializedObjects;
 	}

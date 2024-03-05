@@ -1,6 +1,7 @@
 #include "bbpch.h"
 #include "GfxDeviceDX11.h"
 #include "GfxShaderDX11.h"
+#include "GfxComputeShaderDX11.h"
 #include "GfxBufferDX11.h"
 #include "GfxTextureDX11.h"
 #include "ImGuiRendererDX11.h"
@@ -138,6 +139,17 @@ namespace Blueberry
 		return true;
 	}
 
+	bool GfxDeviceDX11::CreateComputeShaderImpl(void* computeData, GfxComputeShader*& shader)
+	{
+		auto dxShader = new GfxComputeShaderDX11(m_Device.Get(), m_DeviceContext.Get());
+		if (!dxShader->Initialize(computeData))
+		{
+			return false;
+		}
+		shader = dxShader;
+		return true;
+	}
+
 	bool GfxDeviceDX11::CreateVertexBufferImpl(const VertexLayout& layout, const UINT& vertexCount, GfxVertexBuffer*& buffer)
 	{
 		auto dxBuffer = new GfxVertexBufferDX11(m_Device.Get(), m_DeviceContext.Get());
@@ -160,10 +172,21 @@ namespace Blueberry
 		return true;
 	}
 
-	bool GfxDeviceDX11::CreateConstantBufferImpl(const UINT& byteSize, GfxConstantBuffer*& buffer)
+	bool GfxDeviceDX11::CreateConstantBufferImpl(const UINT& byteCount, GfxConstantBuffer*& buffer)
 	{
 		auto dxBuffer = new GfxConstantBufferDX11(m_Device.Get(), m_DeviceContext.Get());
-		if (!dxBuffer->Initialize(byteSize))
+		if (!dxBuffer->Initialize(byteCount))
+		{
+			return false;
+		}
+		buffer = dxBuffer;
+		return true;
+	}
+
+	bool GfxDeviceDX11::CreateComputeBufferImpl(const UINT& elementCount, const UINT& elementSize, GfxComputeBuffer*& buffer)
+	{
+		auto dxBuffer = new GfxComputeBufferDX11(m_Device.Get(), m_DeviceContext.Get());
+		if (!dxBuffer->Initialize(elementCount, elementSize))
 		{
 			return false;
 		}
@@ -302,30 +325,34 @@ namespace Blueberry
 		m_DeviceContext->IASetIndexBuffer(dxIndexBuffer->m_Buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
 		auto bufferMap = dxShader->m_VertexConstantBufferSlots;
-		int offset = 0;
 		for (it = bufferMap.begin(); it != bufferMap.end(); it++)
 		{
 			auto pair = m_BindedConstantBuffers.find(it->first);
 			if (pair != m_BindedConstantBuffers.end())
 			{
-				m_DeviceContext->VSSetConstantBuffers(offset, 1, pair->second->m_Buffer.GetAddressOf());
+				m_DeviceContext->VSSetConstantBuffers(it->second, 1, pair->second->m_Buffer.GetAddressOf());
 			}
-			++offset;
 		}
 
 		bufferMap = dxShader->m_PixelConstantBufferSlots;
-		offset = 0;
 		for (it = bufferMap.begin(); it != bufferMap.end(); it++)
 		{
 			auto pair = m_BindedConstantBuffers.find(it->first);
 			if (pair != m_BindedConstantBuffers.end())
 			{
-				m_DeviceContext->PSSetConstantBuffers(offset, 1, pair->second->m_Buffer.GetAddressOf());
+				m_DeviceContext->PSSetConstantBuffers(it->second, 1, pair->second->m_Buffer.GetAddressOf());
 			}
-			++offset;
 		}
 
 		m_DeviceContext->DrawIndexed(operation.indexCount, operation.indexOffset, 0);
+	}
+
+	void GfxDeviceDX11::DispatchImpl(GfxComputeShader*& shader, const UINT& threadGroupsX, const UINT& threadGroupsY, const UINT& threadGroupsZ) const
+	{
+		auto dxShader = static_cast<GfxComputeShaderDX11*>(shader);
+
+		m_DeviceContext->CSSetShader(dxShader->m_ComputeShader.Get(), NULL, 0);
+		m_DeviceContext->Dispatch(threadGroupsX, threadGroupsY, threadGroupsZ);
 	}
 
 	Matrix GfxDeviceDX11::GetGPUMatrixImpl(const Matrix& viewProjection) const

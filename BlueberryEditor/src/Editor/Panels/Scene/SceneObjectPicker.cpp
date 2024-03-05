@@ -12,23 +12,27 @@
 
 namespace Blueberry
 {
-	SceneObjectPicker::SceneObjectPicker()
+	SceneObjectPicker::SceneObjectPicker(GfxTexture* depthStencilTexture) : m_SceneDepthStencil(depthStencilTexture)
 	{
-		TextureProperties properties;
+		TextureProperties properties = {};
 		properties.width = 1920;
 		properties.height = 1080;
-		properties.data = nullptr;
-		properties.type = TextureType::RenderTarget;
+		properties.isRenderTarget = true;
 		properties.format = TextureFormat::R8G8B8A8_UNorm;
 		GfxDevice::CreateTexture(properties, m_SceneRenderTarget);
 
 		properties.width = 1;
 		properties.height = 1;
-		properties.data = nullptr;
-		properties.type = TextureType::Staging;
-		GfxDevice::CreateTexture(properties, m_StagingRenderTarget);
+		properties.isReadable = true;
+		GfxDevice::CreateTexture(properties, m_PixelRenderTarget);
 
 		m_SpriteObjectPickerMaterial = Material::Create((Shader*)AssetLoader::Load("assets/SpriteObjectPicker.shader"));
+	}
+
+	SceneObjectPicker::~SceneObjectPicker()
+	{
+		delete m_SceneRenderTarget;
+		delete m_PixelRenderTarget;
 	}
 
 	void SceneObjectPicker::Pick(Scene* scene, BaseCamera& camera, const int& positionX, const int& positionY, const int& viewportWidth, const int& viewportHeight)
@@ -42,9 +46,10 @@ namespace Blueberry
 		char pixel[4];
 		int index = 1;
 
-		GfxDevice::SetRenderTarget(m_SceneRenderTarget);
+		GfxDevice::SetRenderTarget(m_SceneRenderTarget, m_SceneDepthStencil);
 		GfxDevice::SetViewport(0, 0, viewportWidth, viewportHeight);
 		GfxDevice::ClearColor({ 0, 0, 0, 0 });
+		GfxDevice::ClearDepth(1.0f);
 		Renderer2D::Begin();
 		for (auto component : scene->GetIterator<SpriteRenderer>())
 		{
@@ -54,8 +59,8 @@ namespace Blueberry
 		}
 		Renderer2D::End();
 		GfxDevice::SetRenderTarget(nullptr);
-		GfxDevice::Copy(m_SceneRenderTarget, m_StagingRenderTarget, area);
-		m_StagingRenderTarget->GetPixel(pixel);
+		GfxDevice::Copy(m_SceneRenderTarget, m_PixelRenderTarget, area);
+		m_PixelRenderTarget->GetData(pixel);
 
 		if (pixel[0] > 0)
 		{

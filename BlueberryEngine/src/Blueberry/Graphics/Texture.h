@@ -21,10 +21,10 @@ namespace Blueberry
 		static void BindProperties();
 
 	protected:
-		GfxTexture* m_Texture;
-		UINT m_Width;
-		UINT m_Height;
-		ByteData m_RawData;
+		GfxTexture* m_Texture = nullptr;
+		UINT m_Width = 0;
+		UINT m_Height = 0;
+		ByteData m_RawData = {};
 
 		friend class Material;
 		friend class Renderer2D;

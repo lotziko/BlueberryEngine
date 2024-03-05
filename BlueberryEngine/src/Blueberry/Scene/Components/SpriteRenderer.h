@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Blueberry\Scene\Components\Component.h"
 #include "Renderer.h"
 
 namespace Blueberry
@@ -13,8 +12,8 @@ namespace Blueberry
 		OBJECT_DECLARATION(SpriteRenderer)
 
 	public:
-		SpriteRenderer();
-		~SpriteRenderer() = default;
+		SpriteRenderer() = default;
+		virtual ~SpriteRenderer() = default;
 
 		const Color& GetColor();
 		void SetColor(const Color& color);
@@ -28,7 +27,7 @@ namespace Blueberry
 		static void BindProperties();
 
 	private:
-		Color m_Color;
+		Color m_Color = Color(1, 1, 1, 1);
 		ObjectPtr<Texture2D> m_Texture;
 		ObjectPtr<Material> m_Material;
 	};

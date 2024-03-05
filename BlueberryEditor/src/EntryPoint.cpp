@@ -31,5 +31,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE	hInstance,
 		engine.Draw();
 		Sleep(1000 / 60);
 	}
+	engine.Shutdown();
 	return 0;
 }

@@ -29,9 +29,9 @@ namespace Blueberry
 		serializer.Deserialize(path);
 		for (auto& object : serializer.GetDeserializedObjects())
 		{
-			if (object->IsClassType(Entity::Type))
+			if (object.first->IsClassType(Entity::Type))
 			{
-				Entity* entity = (Entity*)object;
+				Entity* entity = (Entity*)object.first;
 				AddEntity(entity);
 				for (auto& component : entity->GetComponents())
 				{

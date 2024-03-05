@@ -12,7 +12,12 @@ struct Varyings
 	float2 texcoord : TEXCOORD0;
 };
 
-cbuffer PerDrawData : register(b0)
+cbuffer PerDrawData
+{
+	float4x4 modelMatrix;
+}
+
+cbuffer PerCameraData
 {
 	float4x4 viewMatrix;
 	float4x4 projectionMatrix;

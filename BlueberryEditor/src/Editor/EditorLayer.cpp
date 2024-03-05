@@ -23,16 +23,16 @@ namespace Blueberry
 	void EditorLayer::OnAttach()
 	{
 		RegisterAssetImporters();
-		AssetDB::ImportAll();
+		AssetDB::Refresh();
 
 		RegisterObjectInspectors();
 
-		m_SceneHierarchy = SceneHierarchy();
-		m_SceneInspector = SceneInspector();
+		m_SceneHierarchy = new SceneHierarchy();
+		m_SceneInspector = new SceneInspector();
 
 		m_SceneArea = new SceneArea();
 
-		m_ProjectBrowser = ProjectBrowser();
+		m_ProjectBrowser = new ProjectBrowser();
 
 		if (GfxDevice::CreateImGuiRenderer(m_ImGuiRenderer))
 		{
@@ -44,6 +44,14 @@ namespace Blueberry
 		}
 
 		EventDispatcher::AddCallback(EventType::WindowResize, BIND_EVENT(EditorLayer::OnResizeEvent));
+	}
+
+	void EditorLayer::OnDetach()
+	{
+		delete m_SceneHierarchy;
+		delete m_SceneInspector;
+		delete m_SceneArea;
+		delete m_ProjectBrowser;
 	}
 
 	void EditorLayer::OnDraw()
@@ -98,10 +106,10 @@ namespace Blueberry
 
 			DrawMenuBar();
 
-			m_SceneHierarchy.DrawUI();
-			m_SceneInspector.DrawUI();
+			m_SceneHierarchy->DrawUI();
+			m_SceneInspector->DrawUI();
 			m_SceneArea->DrawUI();
-			m_ProjectBrowser.DrawUI();
+			m_ProjectBrowser->DrawUI();
 
 			ImGui::End();
 		}

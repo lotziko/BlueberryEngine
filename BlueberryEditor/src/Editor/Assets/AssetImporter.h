@@ -17,8 +17,9 @@ namespace Blueberry
 		std::string GetMetaFilePath();
 		const std::string& GetRelativeFilePath();
 		const std::string& GetRelativeMetaFilePath();
-		const std::vector<ObjectId>& GetImportedObjects();
-
+		const std::map<FileId, ObjectId>& GetImportedObjects();
+		
+		void ImportDataIfNeeded();
 		void Save();
 		
 		static AssetImporter* Create(const size_t& type, const std::filesystem::path& relativePath, const std::filesystem::path& relativeMetaPath);
@@ -28,12 +29,12 @@ namespace Blueberry
 		
 	protected:
 		virtual void ImportData() = 0;
-		void AddImportedObject(Object* object);
+		void AddImportedObject(Object* object, const FileId& fileId);
 
 	private:
 		Guid m_Guid;
 		std::string m_RelativePath;
 		std::string m_RelativeMetaPath;
-		std::vector<ObjectId> m_ImportedObjects;
+		std::map<FileId, ObjectId> m_ImportedObjects;
 	};
 }

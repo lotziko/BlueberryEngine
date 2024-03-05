@@ -48,10 +48,6 @@ namespace Blueberry
 	{
 	}
 
-	GfxIndexBufferDX11::~GfxIndexBufferDX11()
-	{
-	}
-
 	void GfxIndexBufferDX11::SetData(UINT* data, const UINT& indexCount)
 	{
 		D3D11_MAPPED_SUBRESOURCE mappedBuffer;
@@ -90,10 +86,6 @@ namespace Blueberry
 	{
 	}
 
-	GfxConstantBufferDX11::~GfxConstantBufferDX11()
-	{
-	}
-
 	void GfxConstantBufferDX11::SetData(char* data, const UINT& byteCount)
 	{
 		D3D11_MAPPED_SUBRESOURCE mappedBuffer;
@@ -124,6 +116,49 @@ namespace Blueberry
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create constant buffer."));
 			return false;
 		}
+
+		return true;
+	}
+
+	GfxComputeBufferDX11::GfxComputeBufferDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext) : m_Device(device), m_DeviceContext(deviceContext)
+	{
+	}
+
+	void GfxComputeBufferDX11::GetData(char* data, const UINT& byteCount)
+	{
+
+	}
+
+	void GfxComputeBufferDX11::SetData(char* data, const UINT& byteCount)
+	{
+
+	}
+
+	bool GfxComputeBufferDX11::Initialize(const UINT& elementCount, const UINT& elementSize)
+	{
+		UINT byteCount = elementCount * elementSize;
+		D3D11_BUFFER_DESC computeBufferDesc;
+		ZeroMemory(&computeBufferDesc, sizeof(D3D11_BUFFER_DESC));
+
+		computeBufferDesc.ByteWidth = byteCount % 16 > 0 ? ((byteCount / 16) + 1) * 16 : byteCount;
+		computeBufferDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+		computeBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+		computeBufferDesc.StructureByteStride = elementSize;
+
+		HRESULT hr = m_Device->CreateBuffer(&computeBufferDesc, nullptr, m_Buffer.GetAddressOf());
+		if (FAILED(hr))
+		{
+			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create compute buffer."));
+			return false;
+		}
+
+		D3D11_UNORDERED_ACCESS_VIEW_DESC unorderedAccessViewDesc;
+		ZeroMemory(&unorderedAccessViewDesc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
+
+		unorderedAccessViewDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+		unorderedAccessViewDesc.Buffer.FirstElement = 0;
+		unorderedAccessViewDesc.Format = DXGI_FORMAT_UNKNOWN;
+		unorderedAccessViewDesc.Buffer.NumElements = elementCount;
 
 		return true;
 	}

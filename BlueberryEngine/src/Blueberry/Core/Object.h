@@ -67,6 +67,9 @@ std::string childclass::GetTypeName() const											\
 		const std::string& GetName();
 		void SetName(const std::string& name);
 
+		const bool& IsValid();
+		void SetValid(const bool& valid);
+
 		virtual void Initialize() {}
 
 		static void BindProperties();
@@ -79,6 +82,7 @@ std::string childclass::GetTypeName() const											\
 	protected:
 		ObjectId m_ObjectId;
 		std::string m_Name;
+		bool m_IsValid = true;
 
 		friend class ObjectDB;
 		friend class Serializer;

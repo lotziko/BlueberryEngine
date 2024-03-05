@@ -13,6 +13,7 @@ namespace Blueberry
 	{
 	public:
 		SceneArea();
+		virtual ~SceneArea();
 		
 		void DrawUI();
 
@@ -48,11 +49,11 @@ namespace Blueberry
 		void LookAt(const Vector3& point, const Quaternion& direction, const float& newSize, const bool& isOrthographic);
 
 	private:
-		GfxTexture* m_SceneRenderTarget;
-		GfxTexture* m_SceneDepthStencil;
+		GfxTexture* m_SceneRenderTarget = nullptr;
+		GfxTexture* m_SceneDepthStencil = nullptr;
 		Material* m_GridMaterial;
 		SceneCamera m_Camera;
-		SceneObjectPicker m_ObjectPicker;
+		SceneObjectPicker* m_ObjectPicker = nullptr;
 
 		Vector3 m_Position = Vector3(0, 0, 0);
 		Quaternion m_Rotation = Quaternion::Identity;

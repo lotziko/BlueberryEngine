@@ -10,7 +10,7 @@ namespace Blueberry
 		OBJECT_DECLARATION(Transform)
 
 	public:
-		Transform();
+		Transform() = default;
 		~Transform();
 		
 		const Matrix& GetLocalToWorldMatrix();
@@ -43,7 +43,7 @@ namespace Blueberry
 	private:
 		bool m_IsDirty = true;
 
-		ObjectPtr<Transform> m_Parent;
+		ObjectPtr<Transform> m_Parent = nullptr;
 		std::vector<ObjectPtr<Transform>> m_Children;
 
 		Matrix m_LocalToWorldMatrix;
@@ -51,6 +51,6 @@ namespace Blueberry
 
 		Vector3 m_LocalPosition;
 		Quaternion m_LocalRotation;
-		Vector3 m_LocalScale;
+		Vector3 m_LocalScale = Vector3(1, 1, 1);
 	};
 }

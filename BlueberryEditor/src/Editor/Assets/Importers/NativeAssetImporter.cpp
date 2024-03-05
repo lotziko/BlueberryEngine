@@ -18,7 +18,8 @@ namespace Blueberry
 		if (ObjectDB::HasGuid(guid))
 		{
 			// TODO think how to deserialize into existing object
-			BB_INFO(std::string() << "Asset \"" << GetName() << "\" is already imported.");
+			BB_INFO("Asset \"" << GetName() << "\" is already imported.");
+			return;
 		}
 		else
 		{
@@ -26,12 +27,13 @@ namespace Blueberry
 			serializer.Deserialize(GetFilePath());
 
 			auto& deserializedObjects = serializer.GetDeserializedObjects();
-			for (Object* object : deserializedObjects)
+			for (auto pair : deserializedObjects)
 			{
-				ObjectDB::AllocateIdToGuid(object, guid);
-				AddImportedObject(object);
-				object->SetName(GetName());
+				ObjectDB::AllocateIdToGuid(pair.first, guid, pair.second);
+				AddImportedObject(pair.first, pair.second);
+				pair.first->SetName(GetName());
 			}
+			BB_INFO("NativeAsset \"" << GetName() << "\" imported.");
 		}
 	}
 }
