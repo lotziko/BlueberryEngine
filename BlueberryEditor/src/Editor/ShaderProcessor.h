@@ -2,6 +2,12 @@
 
 namespace Blueberry
 {
+	class ShaderProcessorInclude : public ID3DInclude
+	{
+		HRESULT Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes) override;
+		HRESULT Close(LPCVOID pData) override;
+	};
+
 	class ShaderProcessor
 	{
 	public:

@@ -11,6 +11,7 @@ namespace Blueberry
 		{
 			Position2D,
 			Position3D,
+			Normal,
 			Float3Color,
 			Float4Color,
 			TextureCoord,

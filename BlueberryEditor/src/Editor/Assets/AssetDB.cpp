@@ -25,6 +25,31 @@ namespace Blueberry
 			if (importer != nullptr)
 			{
 				s_GuidToPath.insert_or_assign(importer->GetGuid(), importer->GetRelativeFilePath());
+				// Delete asset from cache if it dirty
+				auto lastWriteTime = std::chrono::duration_cast<std::chrono::seconds>(std::filesystem::last_write_time(importer->GetFilePath()).time_since_epoch()).count();
+				auto lastWriteIt = s_PathModifyCache.find(importer->GetRelativeFilePath());
+				bool needsClearing = false;
+
+				if (lastWriteIt != s_PathModifyCache.end())
+				{
+					if (lastWriteIt->second < lastWriteTime)
+					{
+						needsClearing = true;
+					}
+				}
+				else
+				{
+					needsClearing = true;
+				}
+				if (needsClearing)
+				{
+					Guid guid = importer->GetGuid();
+					if (HasAssetWithGuidInData(guid))
+					{
+						DeleteAssetFromData(guid);
+					}
+				}
+				s_PathModifyCache.insert_or_assign(importer->GetRelativeFilePath(), lastWriteTime);
 			}
 		}
 	}
@@ -104,6 +129,13 @@ namespace Blueberry
 		s_DirtyAssets.emplace_back(object->GetObjectId());
 	}
 
+	void AssetDB::DeleteAssetFromData(const Guid& guid)
+	{
+		auto dataPath = Path::GetAssetCachePath();
+		dataPath.append(guid.ToString().append(".yaml"));
+		std::filesystem::remove(dataPath);
+	}
+
 	void AssetDB::SaveAssets()
 	{
 		for (auto& objectId : s_DirtyAssets)
@@ -146,53 +178,32 @@ namespace Blueberry
 		auto relativeMetaPath = relativePath;
 		relativeMetaPath += ".meta";
 		auto relativeMetaPathString = relativeMetaPath.string();
-		
-		auto lastWriteTime = std::chrono::duration_cast<std::chrono::seconds>(std::filesystem::last_write_time(path).time_since_epoch()).count();
-		auto lastWriteIt = s_PathModifyCache.find(relativePathString);
-		bool needsImport = false;
-		
-		if (lastWriteIt != s_PathModifyCache.end())
+
+		auto metaPath = path;
+		metaPath += ".meta";
+
+		AssetImporter* importer;
+		if (!std::filesystem::exists(metaPath))
 		{
-			if (lastWriteIt->second < lastWriteTime)
+			// Create new meta file
+			auto importerTypeIt = s_ImporterTypes.find(extensionString);
+			if (importerTypeIt != s_ImporterTypes.end())
 			{
-				needsImport = true;
+				importer = AssetImporter::Create(importerTypeIt->second, relativePath, relativeMetaPath);
+			}
+			else
+			{
+				importer = AssetImporter::Create(DefaultImporter::Type, relativePath, relativeMetaPath);
+				BB_INFO("AssetImporter for extension " << extensionString << " does not exist and default importer was created.");
 			}
 		}
 		else
 		{
-			needsImport = true;
+			// Create importer from meta file
+			importer = AssetImporter::Load(relativePath, relativeMetaPath);
 		}
-
-		if (needsImport)
-		{
-			auto metaPath = path;
-			metaPath += ".meta";
-
-			AssetImporter* importer;
-			if (!std::filesystem::exists(metaPath))
-			{
-				// Create new meta file
-				auto importerTypeIt = s_ImporterTypes.find(extensionString);
-				if (importerTypeIt != s_ImporterTypes.end())
-				{
-					importer = AssetImporter::Create(importerTypeIt->second, relativePath, relativeMetaPath);
-				}
-				else
-				{
-					importer = AssetImporter::Create(DefaultImporter::Type, relativePath, relativeMetaPath);
-					BB_INFO("AssetImporter for extension " << extensionString << " does not exist and default importer was created.");
-				}
-			}
-			else
-			{
-				// Create importer from meta file
-				importer = AssetImporter::Load(relativePath, relativeMetaPath);
-			}
-			s_Importers.insert_or_assign(relativePathString, importer);
-			s_PathModifyCache.insert_or_assign(relativePathString, lastWriteTime);
-			return importer;
-		}
-		return nullptr;
+		s_Importers.insert_or_assign(relativePathString, importer);
+		return importer;
 	}
 
 	void AssetDB::Register(const std::string& extension, const std::size_t& importerType)

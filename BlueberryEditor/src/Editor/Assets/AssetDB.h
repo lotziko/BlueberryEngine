@@ -31,6 +31,7 @@ namespace Blueberry
 		static void CreateAsset(Object* object, const std::string& relativePath);
 		static void SaveAssetObjectToCache(Object* object);
 		static void SetDirty(Object* object);
+		static void DeleteAssetFromData(const Guid& guid);
 		static void SaveAssets();
 
 	private:

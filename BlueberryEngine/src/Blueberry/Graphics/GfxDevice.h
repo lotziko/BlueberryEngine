@@ -27,6 +27,7 @@ namespace Blueberry
 
 		static void SetViewport(int x, int y, int width, int height);
 		static void ResizeBackbuffer(int width, int height);
+		static void SetCullMode(const CullMode& mode);
 		static void SetSurfaceType(const SurfaceType& type);
 
 		static bool CreateShader(void* vertexData, void* pixelData, GfxShader*& shader);
@@ -58,6 +59,7 @@ namespace Blueberry
 
 		virtual void SetViewportImpl(int x, int y, int width, int height) = 0;
 		virtual void ResizeBackbufferImpl(int width, int height) = 0;
+		virtual void SetCullModeImpl(const CullMode& mode) = 0;
 		virtual void SetSurfaceTypeImpl(const SurfaceType& type) = 0;
 
 		virtual bool CreateShaderImpl(void* vertexData, void* pixelData, GfxShader*& shader) = 0;

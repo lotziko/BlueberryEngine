@@ -41,6 +41,7 @@ namespace Blueberry
 		static void FreeId(Object* object);
 		static bool IsValid(Object* object);
 		static ObjectItem* IdToObjectItem(const ObjectId& id);
+		static Object* GetObject(const ObjectId& id);
 
 		static void AllocateIdToGuid(const ObjectId& id, const Guid& guid, const FileId& fileId);
 		static void AllocateIdToGuid(Object* object, const Guid& guid, const FileId& fileId);

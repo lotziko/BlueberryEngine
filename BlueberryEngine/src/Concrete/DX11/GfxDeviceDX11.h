@@ -22,6 +22,7 @@ namespace Blueberry
 
 		virtual void SetViewportImpl(int x, int y, int width, int height) final;
 		virtual void ResizeBackbufferImpl(int width, int height) final;
+		virtual void SetCullModeImpl(const CullMode& mode) final;
 		virtual void SetSurfaceTypeImpl(const SurfaceType& type) final;
 
 		virtual bool CreateShaderImpl(void* vertexData, void* pixelData, GfxShader*& shader) final;
@@ -53,7 +54,9 @@ namespace Blueberry
 		ComPtr<ID3D11DeviceContext> m_DeviceContext;
 		ComPtr<IDXGISwapChain> m_SwapChain;
 		ComPtr<ID3D11RenderTargetView> m_RenderTargetView;
-		ComPtr<ID3D11RasterizerState> m_RasterizerState;
+
+		ComPtr<ID3D11RasterizerState> m_CullNoneRasterizerState;
+		ComPtr<ID3D11RasterizerState> m_CullFrontRasterizerState;
 
 		ComPtr<ID3D11DepthStencilState> m_OpaqueDepthStencilState;
 		ComPtr<ID3D11BlendState> m_OpaqueBlendState;

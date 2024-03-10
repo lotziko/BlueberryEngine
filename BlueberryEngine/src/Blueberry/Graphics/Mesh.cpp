@@ -38,14 +38,20 @@ namespace Blueberry
 
 	void Mesh::SetVertices(const Vector3* vertices, const UINT& vertexCount)
 	{
-		if (vertexCount > m_VertexCount)
+		if (m_Vertices == nullptr || vertexCount > m_VertexCount)
 		{
 			m_VertexCount = vertexCount;
-			for (int i = 0; i < vertexCount; i++)
-			{
-				m_Vertices = new Vector3[vertexCount];
-				memcpy(m_Vertices, vertices, sizeof(Vector3) * vertexCount);
-			}
+			m_Vertices = new Vector3[vertexCount];
+			memcpy(m_Vertices, vertices, sizeof(Vector3) * vertexCount);
+		}
+	}
+
+	void Mesh::SetNormals(const Vector3* normals, const UINT& vertexCount)
+	{
+		if (m_Normals == nullptr || vertexCount > m_VertexCount)
+		{
+			m_Normals = new Vector3[vertexCount];
+			memcpy(m_Normals, normals, sizeof(Vector3) * vertexCount);
 		}
 	}
 
@@ -92,6 +98,11 @@ namespace Blueberry
 			vertexBufferSize += m_VertexCount * sizeof(Vector3) / sizeof(float);
 			layout.Append(VertexLayout::ElementType::Position3D);
 		}
+		if (m_Normals != nullptr)
+		{
+			vertexBufferSize += m_VertexCount * sizeof(Vector3) / sizeof(float);
+			layout.Append(VertexLayout::ElementType::Normal);
+		}
 		for (int i = 0; i < 8; ++i)
 		{
 			if (m_UVs[i] != nullptr)
@@ -109,6 +120,7 @@ namespace Blueberry
 
 		float* bufferPointer = m_VertexData;
 		Vector3* vertexPointer = m_Vertices;
+		Vector3* normalPointer = m_Normals;
 		Vector2* uvPointer = m_UVs[0];
 
 		for (UINT i = 0; i < m_VertexCount; ++i)
@@ -116,6 +128,12 @@ namespace Blueberry
 			memcpy(bufferPointer, vertexPointer, sizeof(Vector3));
 			bufferPointer += 3;
 			vertexPointer += 1;
+			if (normalPointer != nullptr)
+			{
+				memcpy(bufferPointer, normalPointer, sizeof(Vector3));
+				bufferPointer += 3;
+				normalPointer += 1;
+			}
 			if (uvPointer != nullptr)
 			{
 				memcpy(bufferPointer, uvPointer, sizeof(Vector2));

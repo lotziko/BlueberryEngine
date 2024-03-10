@@ -25,7 +25,7 @@ namespace Blueberry
 
 	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material)
 	{
-		shader = (material->IsValid() && material->m_Shader.IsValid() && material->m_Shader->IsValid()) ? material->m_Shader->m_Shader : nullptr;
+		shader = (material != nullptr && material->IsValid() && material->m_Shader.IsValid() && material->m_Shader->IsValid()) ? material->m_Shader->m_Shader : nullptr;
 		if (mesh != nullptr && mesh->IsValid() && mesh->GetVertexCount() > 0)
 		{
 			textures = &(material->m_GfxTextures);

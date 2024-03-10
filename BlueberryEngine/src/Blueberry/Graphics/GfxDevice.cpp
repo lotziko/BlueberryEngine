@@ -57,6 +57,11 @@ namespace Blueberry
 		s_Instance->ResizeBackbufferImpl(width, height);
 	}
 
+	void GfxDevice::SetCullMode(const CullMode& mode)
+	{
+		s_Instance->SetCullModeImpl(mode);
+	}
+
 	void GfxDevice::SetSurfaceType(const SurfaceType& type)
 	{
 		s_Instance->SetSurfaceTypeImpl(type);

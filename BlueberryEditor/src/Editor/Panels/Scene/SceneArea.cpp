@@ -33,6 +33,10 @@ namespace Blueberry
 
 		m_GridMaterial = Material::Create((Shader*)AssetLoader::Load("assets/Grid.shader"));
 		m_ObjectPicker = new SceneObjectPicker(m_SceneDepthStencil);
+
+		// TODO save to config instead
+		m_Position = Vector3(0, 10, 0);
+		m_Rotation = Quaternion::CreateFromYawPitchRoll(0, ToRadians(-45), 0);
 	}
 
 	SceneArea::~SceneArea()
@@ -72,7 +76,11 @@ namespace Blueberry
 
 		if (ImGui::IsKeyDown(ImGuiKey_LeftShift))
 		{
-			motion *= 4;
+			motion *= 1;
+		}
+		else
+		{
+			motion *= 0.25;
 		}
 		return motion;
 	}
@@ -152,11 +160,12 @@ namespace Blueberry
 		// Selection
 		if (ImGui::IsMouseClicked(0) && mousePos.x >= pos.x && mousePos.y >= pos.y && mousePos.x <= pos.x + size.x && mousePos.y <= pos.y + size.y)
 		{
-			m_ObjectPicker->Pick(EditorSceneManager::GetScene(), m_Camera, (int)(mousePos.x - pos.x), (int)(mousePos.y - pos.y), size.x, size.y);
+			m_ObjectPicker->Pick(EditorSceneManager::GetScene(), m_Camera, (int)(mousePos.x - pos.x), (int)(mousePos.y - pos.y));
 		}
 
 		SetupCamera(size.x, size.y);
 		DrawScene(size.x, size.y);
+		m_ObjectPicker->DrawOutline(EditorSceneManager::GetScene(), m_Camera, m_SceneRenderTarget);
 
 		ImGui::GetWindowDrawList()->AddImage(m_SceneRenderTarget->GetHandle(), ImVec2(pos.x, pos.y), ImVec2(pos.x + size.x, pos.y + size.y), ImVec2(0, 0), ImVec2(size.x / m_SceneRenderTarget->GetWidth(), size.y / m_SceneRenderTarget->GetHeight()));
 		
@@ -279,13 +288,13 @@ namespace Blueberry
 		{
 			m_Camera.SetOrthographic(true);
 			m_Camera.SetOrthographicSize(GetCameraOrthographicSize());
-			m_Camera.SetPixelSize(Vector2(width, height));
 		}
 		else
 		{
 			m_Camera.SetOrthographic(false);
 			m_Camera.SetFieldOfView(60);
 		}
+		m_Camera.SetPixelSize(Vector2(width, height));
 	}
 
 	void SceneArea::DrawScene(const float width, const float height)
@@ -295,14 +304,16 @@ namespace Blueberry
 		GfxDevice::ClearColor({ 0.117f, 0.117f, 0.117f, 1 });
 		GfxDevice::ClearDepth(1.0f);
 
-		GfxDevice::SetSurfaceType(SurfaceType::Opaque);
+		GfxDevice::SetSurfaceType(SurfaceType_Opaque);
+		GfxDevice::SetCullMode(CullMode_Front);
 		Scene* scene = EditorSceneManager::GetScene();
 		if (scene != nullptr)
 		{
 			SceneRenderer::Draw(scene, &m_Camera);
 		}
 		
-		GfxDevice::SetSurfaceType(SurfaceType::DepthTransparent); 
+		GfxDevice::SetCullMode(CullMode_None);
+		GfxDevice::SetSurfaceType(SurfaceType_DepthTransparent); 
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_GridMaterial));
 		GfxDevice::SetRenderTarget(nullptr);
 	}

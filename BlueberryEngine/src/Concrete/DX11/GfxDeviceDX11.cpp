@@ -106,22 +106,33 @@ namespace Blueberry
 		m_DeviceContext->RSSetViewports(1, &viewport);
 	}
 
+	void GfxDeviceDX11::SetCullModeImpl(const CullMode& mode)
+	{
+		switch (mode)
+		{
+		case CullMode_None:
+			m_DeviceContext->RSSetState(m_CullNoneRasterizerState.Get());
+			break;
+		case CullMode_Front:
+			m_DeviceContext->RSSetState(m_CullFrontRasterizerState.Get());
+			break;
+		}
+	}
+
 	void GfxDeviceDX11::SetSurfaceTypeImpl(const SurfaceType& type)
 	{
-		m_DeviceContext->RSSetState(m_RasterizerState.Get());
-
 		const float blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
 		switch (type)
 		{
-		case SurfaceType::Opaque:
+		case SurfaceType_Opaque:
 			m_DeviceContext->OMSetDepthStencilState(m_OpaqueDepthStencilState.Get(), 0);
 			m_DeviceContext->OMSetBlendState(m_OpaqueBlendState.Get(), blendFactor, 0xffffffff);
 			break;
-		case SurfaceType::Transparent:
+		case SurfaceType_Transparent:
 			m_DeviceContext->OMSetDepthStencilState(m_TransparentDepthStencilState.Get(), 0);
 			m_DeviceContext->OMSetBlendState(m_TransparentBlendState.Get(), blendFactor, 0xffffffff);
 			break;
-		case SurfaceType::DepthTransparent:
+		case SurfaceType_DepthTransparent:
 			m_DeviceContext->OMSetDepthStencilState(m_OpaqueDepthStencilState.Get(), 0);
 			m_DeviceContext->OMSetBlendState(m_TransparentBlendState.Get(), blendFactor, 0xffffffff);
 			break;
@@ -440,17 +451,36 @@ namespace Blueberry
 
 		m_DeviceContext->RSSetViewports(1, &viewport);
 
-		D3D11_RASTERIZER_DESC rasterizerDesc;
-		ZeroMemory(&rasterizerDesc, sizeof(D3D11_RASTERIZER_DESC));
-
-		rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
-		rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
-
-		hr = m_Device->CreateRasterizerState(&rasterizerDesc, m_RasterizerState.GetAddressOf());
-		if (FAILED(hr))
+		// None
 		{
-			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create rasterizer state."));
-			return false;
+			D3D11_RASTERIZER_DESC rasterizerDesc;
+			ZeroMemory(&rasterizerDesc, sizeof(D3D11_RASTERIZER_DESC));
+
+			rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
+			rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
+
+			hr = m_Device->CreateRasterizerState(&rasterizerDesc, m_CullNoneRasterizerState.GetAddressOf());
+			if (FAILED(hr))
+			{
+				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create cull none rasterizer state."));
+				return false;
+			}
+		}
+
+		// Front
+		{
+			D3D11_RASTERIZER_DESC rasterizerDesc;
+			ZeroMemory(&rasterizerDesc, sizeof(D3D11_RASTERIZER_DESC));
+
+			rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
+			rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_FRONT;
+
+			hr = m_Device->CreateRasterizerState(&rasterizerDesc, m_CullFrontRasterizerState.GetAddressOf());
+			if (FAILED(hr))
+			{
+				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create cull front rasterizer state."));
+				return false;
+			}
 		}
 
 		// Opaque

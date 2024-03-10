@@ -1,3 +1,5 @@
+#include "Input.hlsl"
+
 struct Attributes
 {
 	float3 positionOS : POSITION;
@@ -15,22 +17,6 @@ struct Output
 {
 	float4 color : SV_TARGET;
 	float depth : SV_DEPTH;
-};
-
-cbuffer PerDrawData
-{
-	float4x4 modelMatrix;
-}
-
-cbuffer PerCameraData
-{
-	float4x4 viewMatrix;
-	float4x4 projectionMatrix;
-	float4x4 viewProjectionMatrix;
-	float4x4 inverseViewMatrix;
-	float4x4 inverseProjectionMatrix;
-	float4x4 inverseViewProjectionMatrix;
-	float4 cameraPositionWS;
 };
 
 // Based on https://asliceofrendering.com/scene%20helper/2020/01/05/InfiniteGrid/

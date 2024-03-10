@@ -1,27 +1,28 @@
 #include "Input.hlsl"
 
+cbuffer PerObjectData
+{
+	float objectId;
+}
+
 struct Attributes
 {
 	float3 positionOS : POSITION;
-	float4 color : COLOR;
-	float2 texcoord : TEXCOORD0;
 };
 
 struct Varyings
 {
 	float4 positionCS : SV_POSITION;
-	float4 color : COLOR;
 };
 
 Varyings Vertex(Attributes input)
 {
 	Varyings output;
-	output.positionCS = mul(float4(input.positionOS, 1.0f), viewProjectionMatrix);
-	output.color = input.color;
+	output.positionCS = mul(mul(float4(input.positionOS, 1.0f), modelMatrix), viewProjectionMatrix);
 	return output;
 }
 
 float4 Fragment(Varyings input) : SV_TARGET
 {
-	return input.color;
+	return float4(objectId, 0, 0, 1);
 }

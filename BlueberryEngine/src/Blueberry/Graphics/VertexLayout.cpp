@@ -15,6 +15,8 @@ namespace Blueberry
 			return sizeof(Vector2);
 		case ElementType::Position3D:
 			return sizeof(Vector3);
+		case ElementType::Normal:
+			return sizeof(Vector3);
 		case ElementType::Float3Color:
 			return sizeof(Vector3);
 		case ElementType::Float4Color:

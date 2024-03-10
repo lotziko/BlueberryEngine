@@ -19,6 +19,7 @@ namespace Blueberry
 		const UINT& GetIndexCount();
 		
 		void SetVertices(const Vector3* vertices, const UINT& vertexCount);
+		void SetNormals(const Vector3* normals, const UINT& vertexCount);
 		void SetIndices(const UINT* indices, const UINT& indexCount);
 		void SetUVs(const int& channel, const Vector2* uvs, const UINT& uvCount);
 
@@ -36,6 +37,7 @@ namespace Blueberry
 		GfxIndexBuffer* m_IndexBuffer;
 
 		Vector3* m_Vertices;
+		Vector3* m_Normals;
 		UINT* m_Indices;
 		Vector2* m_UVs[8] = {};
 

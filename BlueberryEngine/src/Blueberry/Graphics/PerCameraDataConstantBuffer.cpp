@@ -16,6 +16,7 @@ namespace Blueberry
 		Matrix inverseProjectionMatrix;
 		Matrix inverseViewProjectionMatrix;
 		Vector4 cameraPositionWS;
+		Vector4 cameraForwardDirectionWS;
 	};
 
 	void PerCameraDataConstantBuffer::BindData(BaseCamera* camera)
@@ -34,6 +35,7 @@ namespace Blueberry
 		const Matrix& inverseProjection = GfxDevice::GetGPUMatrix(camera->GetInverseProjectionMatrix());
 		const Matrix& inverseViewProjection = GfxDevice::GetGPUMatrix(camera->GetInverseViewProjectionMatrix());
 		const Vector4& position = Vector4(camera->GetPosition());
+		const Vector4& direction = Vector4(Vector3::Transform(Vector3::Forward, camera->GetRotation()));
 
 		CONSTANTS constants =
 		{
@@ -43,7 +45,8 @@ namespace Blueberry
 			inverseView,
 			inverseProjection,
 			inverseViewProjection,
-			position
+			position,
+			direction
 		};
 
 		s_ConstantBuffer->SetData(reinterpret_cast<char*>(&constants), sizeof(constants));

@@ -9,11 +9,17 @@ namespace Blueberry
 		D24_UNorm,
 	};
 
+	enum CullMode
+	{
+		CullMode_None,
+		CullMode_Front
+	};
+
 	enum SurfaceType
 	{
-		Opaque,
-		Transparent,
-		DepthTransparent
+		SurfaceType_Opaque,
+		SurfaceType_Transparent,
+		SurfaceType_DepthTransparent
 	};
 
 	enum Topology

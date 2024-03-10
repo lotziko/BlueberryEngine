@@ -81,6 +81,12 @@ namespace Blueberry
 		return s_Array.GetObjectItem(id);
 	}
 
+	Object* ObjectDB::GetObject(const ObjectId& id)
+	{
+		ObjectItem* item = s_Array.GetObjectItem(id);
+		return item == nullptr ? nullptr : item->object;
+	}
+
 	void ObjectDB::AllocateIdToGuid(const ObjectId& id, const Guid& guid, const FileId& fileId)
 	{
 		auto s = s_ObjectIdToGuid;

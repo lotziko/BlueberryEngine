@@ -71,7 +71,6 @@ namespace Blueberry
 		importer->m_RelativeMetaPath = relativeMetaPath.string();
 		importer->m_Name = relativePath.stem().string();
 		importer->Save();
-		importer->ImportDataIfNeeded();
 		return importer;
 	}
 

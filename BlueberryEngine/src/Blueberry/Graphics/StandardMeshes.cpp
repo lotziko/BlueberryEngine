@@ -18,10 +18,10 @@ namespace Blueberry
 			};
 			Vector2 uvs[] =
 			{
+				{ 0.0f, 1.0f }, // fullscreen meshes are flipped vertically
 				{ 0.0f, 0.0f },
-				{ 0.0f, 1.0f },
-				{ 1.0f, 1.0f },
 				{ 1.0f, 0.0f },
+				{ 1.0f, 1.0f },
 			};
 			UINT indices[] = { 0, 1, 2, 2, 3, 0 };
 			s_FullscreenMesh = Mesh::Create();
