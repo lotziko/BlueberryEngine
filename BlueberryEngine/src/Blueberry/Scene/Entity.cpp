@@ -65,7 +65,9 @@ namespace Blueberry
 	{
 		for (auto && componentSlot : m_Components)
 		{
+			BB_INFO(componentSlot->GetTypeName() << " is destroyed.");
 			RemoveComponentFromScene(componentSlot.Get());
+			componentSlot->Destroy();
 			Object::Destroy(componentSlot.Get());
 		}
 	}

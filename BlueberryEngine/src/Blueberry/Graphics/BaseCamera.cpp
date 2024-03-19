@@ -197,6 +197,16 @@ namespace Blueberry
 		}
 	}
 
+	BaseCamera* BaseCamera::GetCurrent()
+	{
+		return s_CurrentCamera;
+	}
+
+	void BaseCamera::SetCurrent(BaseCamera* camera)
+	{
+		s_CurrentCamera = camera;
+	}
+
 	Vector3 BaseCamera::WorldToScreenPoint(Vector3 position)
 	{
 		if (m_IsViewDirty)

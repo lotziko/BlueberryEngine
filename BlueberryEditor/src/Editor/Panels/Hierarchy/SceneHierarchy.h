@@ -15,7 +15,7 @@ namespace Blueberry
 	private:
 		void DrawEntity(Entity* entity);
 		void DrawCreateEntity();
-		void DrawDestroyEntity(Entity* entity);
+		void DrawDestroyEntity(Entity*& entity);
 		void DrawRenameEntity(Entity* entity);
 	};
 }

@@ -32,6 +32,27 @@ namespace Blueberry
 		std::vector<Component*> components = entity->GetComponents();
 
 		ImGui::Text(entity->GetTypeName().c_str());
+		
+		// Name
+		{
+			ImGui::Text("Name");
+			ImGui::SameLine();
+
+			static ObjectId entityId;
+			static char buf[256];
+			if (entity->GetObjectId() != entityId)
+			{
+				std::string name = entity->GetName();
+				strncpy(buf, name.c_str(), sizeof(buf) - 1);
+				entityId = entity->GetObjectId();
+			}
+
+			ImGui::InputText("##name", buf, 256);
+			if (ImGui::IsItemDeactivated())
+			{
+				entity->SetName(buf);
+			}
+		}
 
 		for (auto component : components)
 		{

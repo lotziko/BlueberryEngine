@@ -62,6 +62,30 @@ namespace Blueberry
 			Selection::SetActiveObject(entity);
 		}
 
+		if (ImGui::BeginDragDropSource())
+		{
+			ObjectId id = entity->GetObjectId();
+			ImGui::SetDragDropPayload("OBJECT_ID", &id, sizeof(ObjectId));
+			ImGui::Text("%s", entity->GetName().c_str());
+			ImGui::EndDragDropSource();
+		}
+
+		if (ImGui::BeginDragDropTarget())
+		{
+			const ImGuiPayload* payload = ImGui::GetDragDropPayload();
+			if (payload != nullptr && payload->IsDataType("OBJECT_ID"))
+			{
+				ObjectId* id = (ObjectId*)payload->Data;
+				Object* item = ObjectDB::GetObject(*id);
+
+				if (item != nullptr && item != entity && ImGui::AcceptDragDropPayload("OBJECT_ID"))
+				{
+					((Entity*)item)->GetTransform()->SetParent(entity->GetTransform());
+				}
+			}
+			ImGui::EndDragDropTarget();
+		}
+
 		if (ImGui::BeginPopupContextItem())
 		{
 			DrawCreateEntity();
@@ -70,11 +94,30 @@ namespace Blueberry
 			ImGui::EndPopup();
 		}
 
+		/*ImGui::SameLine();
+		if (Selection::GetActiveObject() == entity)
+		{
+			std::string buffer = entity->GetName();
+			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
+			if (ImGui::InputText("###rename", buffer.data(), buffer.size(), ImGuiInputTextFlags_AutoSelectAll))
+			{
+
+			}
+			ImGui::PopStyleVar();
+		}
+		else
+		{
+			ImGui::Text("%s", entity->GetName().c_str());
+		}*/
+
 		if (opened)
 		{
-			for (auto child : entity->GetTransform()->GetChildren())
+			if (entity != nullptr)
 			{
-				DrawEntity(child->GetEntity());
+				for (auto child : entity->GetTransform()->GetChildren())
+				{
+					DrawEntity(child->GetEntity());
+				}
 			}
 			//ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
 			//bool opened = ImGui::TreeNodeEx((void*)9817239, flags, entity->ToString().c_str());
@@ -98,7 +141,7 @@ namespace Blueberry
 		}
 	}
 
-	void SceneHierarchy::DrawDestroyEntity(Entity* entity)
+	void SceneHierarchy::DrawDestroyEntity(Entity*& entity)
 	{
 		if (ImGui::MenuItem("Delete Entity"))
 		{
@@ -107,6 +150,7 @@ namespace Blueberry
 			{
 				Selection::SetActiveObject(nullptr);
 			}
+			entity = nullptr;
 		}
 	}
 

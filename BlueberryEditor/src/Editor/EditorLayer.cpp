@@ -11,6 +11,7 @@
 #include "Editor\Panels\Scene\SceneArea.h"
 
 #include "imgui\imgui.h"
+#include "imgui\imguizmo.h"
 #include "imgui\imgui_internal.h"
 
 #include "Editor\Assets\RegisterAssetImporters.h"

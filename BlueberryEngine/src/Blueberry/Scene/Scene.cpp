@@ -59,12 +59,10 @@ namespace Blueberry
 
 	Entity* Scene::CreateEntity(const std::string& name = "Entity")
 	{
+		BB_INFO("Entity is created.")
 		Entity* entity = Object::Create<Entity>();
 		entity->m_Scene = this;
 		entity->m_Name = name;
-
-		entity->AddComponent<Transform>();
-		entity->m_Transform = ObjectPtr<Transform>(entity->GetComponent<Transform>());
 
 		if (m_EmptyEntityIds.size() > 0)
 		{
@@ -80,11 +78,15 @@ namespace Blueberry
 			m_Entities.emplace_back(entity);
 		}
 
+		entity->AddComponent<Transform>();
+		entity->m_Transform = ObjectPtr<Transform>(entity->GetComponent<Transform>());
+
 		return entity;
 	}
 
 	void Scene::AddEntity(Entity* entity)
 	{
+		BB_INFO("Entity is added.")
 		entity->m_Scene = this;
 		entity->m_Transform = entity->GetComponent<Transform>();
 		entity->m_Id = m_MaxEntityId;
@@ -94,6 +96,7 @@ namespace Blueberry
 
 	void Scene::DestroyEntity(Entity* entity)
 	{
+		BB_INFO("Entity is destroyed.")
 		entity->Destroy();
 		m_Entities[entity->m_Id] = nullptr;
 		m_EmptyEntityIds.push(entity->m_Id);

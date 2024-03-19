@@ -16,11 +16,10 @@ namespace Blueberry
 	void ModelImporter::ImportData()
 	{
 		Guid guid = GetGuid();
-
-		Mesh* object;
+		
 		if (AssetDB::HasAssetWithGuidInData(guid))
 		{
-			object = nullptr;
+			return;
 		}
 		else
 		{
@@ -49,13 +48,16 @@ namespace Blueberry
 
 			for (int meshId = 0; meshId < meshCount; ++meshId)
 			{
-				const ofbx::GeometryData& geom = (*scene->getMesh(meshId)).getGeometryData();
+				const ofbx::Mesh* mesh = scene->getMesh(meshId); 
+				const ofbx::GeometryData& geom = mesh->getGeometryData();
 				ofbx::Vec3Attributes positions = geom.getPositions();
 				ofbx::Vec3Attributes normals = geom.getNormals();
 				ofbx::Vec2Attributes uvs = geom.getUVs();
+				auto scale = mesh->getLocalScaling();
 
-				object = Mesh::Create();
-				ObjectDB::AllocateIdToGuid(object, guid, 1);
+				Mesh* object = Mesh::Create();
+				size_t id = TO_HASH(mesh->name);
+				ObjectDB::AllocateIdToGuid(object, guid, id);
 
 				std::vector<ofbx::Vec3> meshPositions;
 				std::vector<ofbx::Vec3> meshNormals;
@@ -90,10 +92,24 @@ namespace Blueberry
 
 						bool hasUvs = uvs.values != nullptr;
 
-						for (int i = polygon.from_vertex; i < polygon.from_vertex + polygon.vertex_count; ++i) 
+						if (polygon.vertex_count == 3)
 						{
-							int index = /*1 + */i + indicesOffset;
-							meshIndices.emplace_back(index);
+							meshIndices.emplace_back(polygon.from_vertex);
+							meshIndices.emplace_back(polygon.from_vertex + 1);
+							meshIndices.emplace_back(polygon.from_vertex + 2);
+						}
+						else if (polygon.vertex_count == 4)
+						{
+							meshIndices.emplace_back(polygon.from_vertex);
+							meshIndices.emplace_back(polygon.from_vertex + 1);
+							meshIndices.emplace_back(polygon.from_vertex + 2);
+							meshIndices.emplace_back(polygon.from_vertex);
+							meshIndices.emplace_back(polygon.from_vertex + 2);
+							meshIndices.emplace_back(polygon.from_vertex + 3);
+						}
+						else
+						{
+							// TODO
 						}
 					}
 				}
@@ -123,14 +139,15 @@ namespace Blueberry
 				object->SetUVs(0, (Vector2*)meshUVs.data(), meshUVs.size());
 				object->SetIndices((UINT*)meshIndices.data(), meshIndices.size());
 				object->Apply();
+
+				BB_INFO("Mesh \"" << mesh->name << "\" imported.");
+				object->SetName(mesh->name);
+				AddImportedObject(object, id);
 			}
 
 			scene->destroy();
 			delete[] content;
 			fclose(fp);
-			BB_INFO("Mesh \"" << GetName() << "\" imported.");
 		}
-		object->SetName(GetName());
-		AddImportedObject(object, 1);
 	}
 }

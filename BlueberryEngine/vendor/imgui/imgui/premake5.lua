@@ -14,6 +14,9 @@ project "ImGui"
 		"imgui.cpp",
 		"imgui_draw.cpp",
 
+        "imguizmo.h",
+        "imguizmo.cpp",
+
 		"imgui_tables.cpp",
 		"backends/imgui_impl_win32.h",
 		"backends/imgui_impl_win32.cpp",

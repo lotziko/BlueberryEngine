@@ -45,6 +45,8 @@ namespace Blueberry
 		float GetCameraOrthographicSize();
 
 		void SetupCamera(const float& width, const float& height);
+		void DrawControls();
+		void DrawGizmos(const Rectangle& viewport);
 		void DrawScene(const float width, const float height);
 		void LookAt(const Vector3& point, const Quaternion& direction, const float& newSize, const bool& isOrthographic);
 
@@ -63,6 +65,9 @@ namespace Blueberry
 		bool m_IsDragging = false;
 		bool m_IsOrthographic = false;
 		bool m_Is2DMode = false;
+
+		float m_GizmoSnapping[3] = { 1.0f, 45.0f, 1.0f };
+		int m_GizmoOperation = 7;
 
 		Viewport m_Viewport;
 	};

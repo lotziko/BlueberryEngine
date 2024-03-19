@@ -7,6 +7,7 @@
 #include "Blueberry\Graphics\GfxTexture.h"
 
 #include "Editor\EditorSceneManager.h"
+#include "Editor\Selection.h"
 
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
@@ -16,6 +17,7 @@
 #include "SceneAreaMovement.h"
 
 #include "imgui\imgui.h"
+#include "imgui\imguizmo.h"
 
 namespace Blueberry
 {
@@ -89,28 +91,7 @@ namespace Blueberry
 	{
 		ImGui::Begin("Scene");
 		
-		if (EditorSceneManager::GetScene() != nullptr)
-		{
-			if (ImGui::Button("Save"))
-			{
-				EditorSceneManager::Save();
-			}
-		}
-		
-		if (Is2DMode())
-		{
-			if (ImGui::Button("3D"))
-			{
-				Set2DMode(false);
-			}
-		}
-		else
-		{
-			if (ImGui::Button("2D"))
-			{
-				Set2DMode(true);
-			}
-		}
+		BaseCamera::SetCurrent(&m_Camera);
 
 		ImGuiIO *io = &ImGui::GetIO();
 		ImVec2 mousePos = ImGui::GetMousePos();
@@ -118,7 +99,10 @@ namespace Blueberry
 		ImVec2 size = ImGui::GetContentRegionAvail();
 		
 		// Motion
-		m_Position += GetMotion(m_Rotation);
+		if (ImGui::IsWindowFocused())
+		{
+			m_Position += GetMotion(m_Rotation);
+		}
 
 		// Zoom
 		float mouseWheelDelta = io->MouseWheel;
@@ -158,9 +142,18 @@ namespace Blueberry
 		}
 
 		// Selection
-		if (ImGui::IsMouseClicked(0) && mousePos.x >= pos.x && mousePos.y >= pos.y && mousePos.x <= pos.x + size.x && mousePos.y <= pos.y + size.y)
+		if (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered() && (!ImGuizmo::IsOver() || Selection::GetActiveObject() == nullptr))
 		{
-			m_ObjectPicker->Pick(EditorSceneManager::GetScene(), m_Camera, (int)(mousePos.x - pos.x), (int)(mousePos.y - pos.y));
+			if (ImGui::IsMouseClicked(0) && mousePos.x >= pos.x && mousePos.y >= pos.y && mousePos.x <= pos.x + size.x && mousePos.y <= pos.y + size.y)
+			{
+				m_ObjectPicker->Pick(EditorSceneManager::GetScene(), m_Camera, (int)(mousePos.x - pos.x), (int)(mousePos.y - pos.y));
+			}
+		}
+
+		// Focus window on right mouse button down
+		if (ImGui::IsWindowHovered() && ImGui::IsMouseDown(1))
+		{
+			ImGui::SetWindowFocus();
 		}
 
 		SetupCamera(size.x, size.y);
@@ -168,7 +161,9 @@ namespace Blueberry
 		m_ObjectPicker->DrawOutline(EditorSceneManager::GetScene(), m_Camera, m_SceneRenderTarget);
 
 		ImGui::GetWindowDrawList()->AddImage(m_SceneRenderTarget->GetHandle(), ImVec2(pos.x, pos.y), ImVec2(pos.x + size.x, pos.y + size.y), ImVec2(0, 0), ImVec2(size.x / m_SceneRenderTarget->GetWidth(), size.y / m_SceneRenderTarget->GetHeight()));
-		
+		DrawGizmos(Rectangle(pos.x, pos.y, size.x, size.y));
+		DrawControls();
+
 		ImGui::End();
 	}
 
@@ -295,6 +290,142 @@ namespace Blueberry
 			m_Camera.SetFieldOfView(60);
 		}
 		m_Camera.SetPixelSize(Vector2(width, height));
+	}
+
+	void SceneArea::DrawControls()
+	{
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.180f, 0.180f, 0.180f, 1.000f));
+		ImVec2 cursor = ImGui::GetCursorPos();
+		cursor.x += 5;
+		cursor.y += 5;
+		ImGui::SetCursorPos(cursor);
+
+		ImGui::BeginGroup();
+
+		if (EditorSceneManager::GetScene() != nullptr)
+		{
+			if (ImGui::Button("Save"))
+			{
+				EditorSceneManager::Save();
+			}
+			ImGui::SameLine();
+		}
+		
+		if (Is2DMode())
+		{
+			if (ImGui::Button("3D"))
+			{
+				Set2DMode(false);
+			}
+			ImGui::SameLine();
+		}
+		else
+		{
+			if (ImGui::Button("2D"))
+			{
+				Set2DMode(true);
+			}
+			ImGui::SameLine();
+		}
+
+		// Snapping
+		{
+			const char* popId = "Snap";
+			if (ImGui::Button("Snapping"))
+			{
+				ImGui::OpenPopup(popId);
+			}
+			ImGui::SameLine();
+
+			if (ImGui::BeginPopup(popId))
+			{
+				ImGui::InputFloat("##positionSnap", &m_GizmoSnapping[0]);
+				ImGui::InputFloat("##rotationSnap", &m_GizmoSnapping[1]);
+				ImGui::InputFloat("##scaleSnap", &m_GizmoSnapping[2]);
+				ImGui::EndPopup();
+			}
+
+			if (ImGui::Button("Position"))
+			{
+				m_GizmoOperation = ImGuizmo::OPERATION::TRANSLATE;
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Rotation"))
+			{
+				m_GizmoOperation = ImGuizmo::OPERATION::ROTATE;
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Scale"))
+			{
+				m_GizmoOperation = ImGuizmo::OPERATION::SCALE;
+			}
+		}
+
+		ImGui::EndGroup();
+
+		ImGui::PopStyleColor();
+	}
+
+	void SceneArea::DrawGizmos(const Rectangle& viewport)
+	{
+		Object* selectedObject = Selection::GetActiveObject();
+
+		if (selectedObject != nullptr)
+		{
+			if (selectedObject->GetType() == Entity::Type)
+			{
+				Transform* transform = ((Entity*)selectedObject)->GetTransform();
+				Matrix transformMatrix = Matrix::CreateScale(transform->GetLocalScale()) * Matrix::CreateFromQuaternion(transform->GetLocalRotation()) * Matrix::CreateTranslation(transform->GetLocalPosition());
+				Transform* parentTransform = transform->GetParent();
+				if (parentTransform != nullptr)
+				{
+					transformMatrix *= parentTransform->GetLocalToWorldMatrix();
+				}
+
+				ImGuizmo::SetDrawlist();
+				ImGuizmo::SetRect(viewport.x, viewport.y, viewport.width, viewport.height);
+				BaseCamera* camera = BaseCamera::GetCurrent();
+				if (camera != nullptr)
+				{
+					float snapping[3];
+					if (m_GizmoOperation == ImGuizmo::OPERATION::TRANSLATE)
+					{
+						snapping[0] = m_GizmoSnapping[0];
+						snapping[1] = m_GizmoSnapping[0];
+						snapping[2] = m_GizmoSnapping[0];
+					}
+					else if (m_GizmoOperation == ImGuizmo::OPERATION::ROTATE)
+					{
+						snapping[0] = m_GizmoSnapping[1];
+						snapping[1] = m_GizmoSnapping[1];
+						snapping[2] = m_GizmoSnapping[1];
+					}
+					else if (m_GizmoOperation == ImGuizmo::OPERATION::SCALE)
+					{
+						snapping[0] = m_GizmoSnapping[2];
+						snapping[1] = m_GizmoSnapping[2];
+						snapping[2] = m_GizmoSnapping[2];
+					}
+
+					if (ImGuizmo::Manipulate((float*)camera->GetViewMatrix().m, (float*)camera->GetProjectionMatrix().m, (ImGuizmo::OPERATION)m_GizmoOperation, ImGuizmo::MODE::LOCAL, (float*)transformMatrix.m, 0, snapping))
+					{
+						Vector3 scale;
+						Quaternion rotation;
+						Vector3 translation;
+
+						if (parentTransform != nullptr)
+						{
+							transformMatrix *= parentTransform->GetLocalToWorldMatrix().Invert();
+						}
+
+						transformMatrix.Decompose(scale, rotation, translation);
+						transform->SetLocalPosition(translation);
+						transform->SetLocalRotation(rotation);
+						transform->SetLocalScale(scale);
+					}
+				}
+			}
+		}
 	}
 
 	void SceneArea::DrawScene(const float width, const float height)

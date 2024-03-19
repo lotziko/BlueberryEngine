@@ -1,13 +1,14 @@
 #include "bbpch.h"
 #include "Transform.h"
 #include "Blueberry\Scene\Entity.h"
+#include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Core\ClassDB.h"
 
 namespace Blueberry
 {
 	OBJECT_DEFINITION(Component, Transform)
 
-	Transform::~Transform()
+	void Transform::Destroy()
 	{
 		if (m_Parent.IsValid())
 		{
@@ -16,6 +17,13 @@ namespace Blueberry
 				auto index = std::find_if(m_Parent->m_Children.begin(), m_Parent->m_Children.end(), [this](ObjectPtr<Transform> const& i) { return i.Get() == this; });
 				m_Parent->m_Children.erase(index);
 				m_Parent = nullptr;
+			}
+		}
+		for (auto child : m_Children)
+		{
+			if (child.IsValid())
+			{
+				child->GetEntity()->GetScene()->DestroyEntity(child->GetEntity());
 			}
 		}
 	}
@@ -51,7 +59,7 @@ namespace Blueberry
 		return m_LocalRotation.ToEuler();
 	}
 
-	const Transform* Transform::GetParent() const
+	Transform* Transform::GetParent() const
 	{
 		return m_Parent.Get();
 	}
@@ -100,6 +108,15 @@ namespace Blueberry
 
 	void Transform::SetParent(Transform* parent)
 	{
+		// TODO worldTransformStays
+		if (m_Parent.IsValid())
+		{
+			if (m_Parent->m_Children.size() > 0)
+			{
+				auto index = std::find_if(m_Parent->m_Children.begin(), m_Parent->m_Children.end(), [this](ObjectPtr<Transform> const& i) { return i.Get() == this; });
+				m_Parent->m_Children.erase(index);
+			}
+		}
 		m_Parent = parent;
 		m_Parent->m_Children.emplace_back(this);
 	}

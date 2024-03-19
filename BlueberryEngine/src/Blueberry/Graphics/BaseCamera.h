@@ -43,6 +43,9 @@ namespace Blueberry
 		const float& GetFarClipPlane();
 		void SetFarClipPlane(const float& farClip);
 
+		static BaseCamera* GetCurrent();
+		static void SetCurrent(BaseCamera* camera);
+
 		Vector3 WorldToScreenPoint(Vector3 position);
 		Vector3 ScreenToWorldPoint(Vector3 position);
 
@@ -51,6 +54,8 @@ namespace Blueberry
 		void RecalculateProjection();
 
 	protected:
+		inline static BaseCamera* s_CurrentCamera = nullptr;
+
 		Matrix m_ProjectionMatrix;
 		Matrix m_ViewMatrix;
 		Matrix m_InverseProjectionMatrix;

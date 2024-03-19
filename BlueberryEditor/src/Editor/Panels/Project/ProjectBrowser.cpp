@@ -103,7 +103,7 @@ namespace Blueberry
 			ImGui::EndPopup();
 		}
 		
-		if (mousePos.x >= pos.x && mousePos.y >= pos.y && mousePos.x <= pos.x + size.x && mousePos.y <= pos.y + size.y && ImGui::IsMouseClicked(1))
+		if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(1))
 		{
 			ImGui::OpenPopup(popupId);
 		}

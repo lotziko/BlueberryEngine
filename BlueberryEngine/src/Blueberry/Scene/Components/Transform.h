@@ -11,7 +11,9 @@ namespace Blueberry
 
 	public:
 		Transform() = default;
-		~Transform();
+		~Transform() = default;
+
+		virtual void Destroy() override;
 		
 		const Matrix& GetLocalToWorldMatrix();
 		const Vector3& GetLocalPosition();
@@ -19,7 +21,7 @@ namespace Blueberry
 		const Vector3& GetLocalScale();
 		const Vector3 GetLocalEulerRotation() const;
 
-		const Transform* GetParent() const;
+		Transform* GetParent() const;
 
 		const std::vector<Transform*> GetChildren() const;
 		const std::size_t GetChildrenCount() const;

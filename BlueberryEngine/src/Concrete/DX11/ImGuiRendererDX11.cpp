@@ -2,6 +2,7 @@
 #include "ImGuiRendererDX11.h"
 
 #include "imgui\imgui.h"
+#include "imgui\imguizmo.h"
 #include "imgui\backends\imgui_impl_win32.h"
 #include "imgui\backends\imgui_impl_dx11.h"
 
@@ -32,6 +33,7 @@ namespace Blueberry
 		ImGui_ImplDX11_NewFrame();
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
+		ImGuizmo::BeginFrame();
 	}
 
 	void ImGuiRendererDX11::End()
