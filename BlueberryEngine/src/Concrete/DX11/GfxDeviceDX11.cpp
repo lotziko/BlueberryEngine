@@ -106,39 +106,6 @@ namespace Blueberry
 		m_DeviceContext->RSSetViewports(1, &viewport);
 	}
 
-	void GfxDeviceDX11::SetCullModeImpl(const CullMode& mode)
-	{
-		switch (mode)
-		{
-		case CullMode_None:
-			m_DeviceContext->RSSetState(m_CullNoneRasterizerState.Get());
-			break;
-		case CullMode_Front:
-			m_DeviceContext->RSSetState(m_CullFrontRasterizerState.Get());
-			break;
-		}
-	}
-
-	void GfxDeviceDX11::SetSurfaceTypeImpl(const SurfaceType& type)
-	{
-		const float blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
-		switch (type)
-		{
-		case SurfaceType_Opaque:
-			m_DeviceContext->OMSetDepthStencilState(m_OpaqueDepthStencilState.Get(), 0);
-			m_DeviceContext->OMSetBlendState(m_OpaqueBlendState.Get(), blendFactor, 0xffffffff);
-			break;
-		case SurfaceType_Transparent:
-			m_DeviceContext->OMSetDepthStencilState(m_TransparentDepthStencilState.Get(), 0);
-			m_DeviceContext->OMSetBlendState(m_TransparentBlendState.Get(), blendFactor, 0xffffffff);
-			break;
-		case SurfaceType_DepthTransparent:
-			m_DeviceContext->OMSetDepthStencilState(m_OpaqueDepthStencilState.Get(), 0);
-			m_DeviceContext->OMSetBlendState(m_TransparentBlendState.Get(), blendFactor, 0xffffffff);
-			break;
-		}
-	}
-
 	bool GfxDeviceDX11::CreateShaderImpl(void* vertexData, void* pixelData, GfxShader*& shader)
 	{
 		auto dxShader = new GfxShaderDX11(m_Device.Get(), m_DeviceContext.Get());
@@ -285,12 +252,15 @@ namespace Blueberry
 		}
 	}
 
-	void GfxDeviceDX11::DrawImpl(const GfxDrawingOperation& operation) const
+	void GfxDeviceDX11::DrawImpl(const GfxDrawingOperation& operation)
 	{
 		if (!operation.IsValid())
 		{
 			return;
 		}
+
+		SetCullMode(operation.cullMode);
+		SetSurfaceType(operation.surfaceType);
 
 		// TODO check if shader variant/material/mesh is the same to skip some bindings
 		auto dxShader = static_cast<GfxShaderDX11*>(operation.shader);
@@ -557,11 +527,59 @@ namespace Blueberry
 			}
 		}
 
+		SetCullMode(CullMode::None);
+		SetSurfaceType(SurfaceType::Opaque);
+
 		m_BindedRenderTarget = nullptr;
 		m_BindedDepthStencil = nullptr;
 
 		BB_INFO("DirectX initialized successful.");
 
 		return true;
+	}
+
+	void GfxDeviceDX11::SetCullMode(const CullMode& mode)
+	{
+		if (mode == m_CullMode)
+		{
+			return;
+		}
+		m_CullMode = mode;
+
+		switch (mode)
+		{
+		case CullMode::None:
+			m_DeviceContext->RSSetState(m_CullNoneRasterizerState.Get());
+			break;
+		case CullMode::Front:
+			m_DeviceContext->RSSetState(m_CullFrontRasterizerState.Get());
+			break;
+		}
+	}
+
+	void GfxDeviceDX11::SetSurfaceType(const SurfaceType& type)
+	{
+		if (type == m_SurfaceType)
+		{
+			return;
+		}
+		m_SurfaceType = type;
+
+		const float blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
+		switch (type)
+		{
+		case SurfaceType::Opaque:
+			m_DeviceContext->OMSetDepthStencilState(m_OpaqueDepthStencilState.Get(), 0);
+			m_DeviceContext->OMSetBlendState(m_OpaqueBlendState.Get(), blendFactor, 0xffffffff);
+			break;
+		case SurfaceType::Transparent:
+			m_DeviceContext->OMSetDepthStencilState(m_TransparentDepthStencilState.Get(), 0);
+			m_DeviceContext->OMSetBlendState(m_TransparentBlendState.Get(), blendFactor, 0xffffffff);
+			break;
+		case SurfaceType::DepthTransparent:
+			m_DeviceContext->OMSetDepthStencilState(m_OpaqueDepthStencilState.Get(), 0);
+			m_DeviceContext->OMSetBlendState(m_TransparentBlendState.Get(), blendFactor, 0xffffffff);
+			break;
+		}
 	}
 }

@@ -81,6 +81,9 @@ namespace Blueberry
 					objectNode[key] << data;
 				}
 			}
+			case BindingType::Enum:
+				objectNode[key] << *value.Get<int>();
+				break;
 			break;
 			case BindingType::Vector3:
 				objectNode[key] << *value.Get<Vector3>();
@@ -159,6 +162,7 @@ namespace Blueberry
 			}
 			break;
 			default:
+				BB_INFO("Can't serialize field " << field.name);
 				continue;
 			}
 		}
@@ -190,6 +194,9 @@ namespace Blueberry
 					break;
 				case BindingType::ByteData:
 					objectNode[key] >> *value.Get<ByteData>();
+					break;
+				case BindingType::Enum:
+					objectNode[key] >> *value.Get<int>();
 					break;
 				case BindingType::Vector3:
 					objectNode[key] >> *value.Get<Vector3>();
@@ -270,6 +277,7 @@ namespace Blueberry
 				}
 				break;
 				default:
+					BB_INFO("Can't deserialize field " << field.name);
 					continue;
 				}
 			}

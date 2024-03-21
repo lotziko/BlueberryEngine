@@ -57,16 +57,6 @@ namespace Blueberry
 		s_Instance->ResizeBackbufferImpl(width, height);
 	}
 
-	void GfxDevice::SetCullMode(const CullMode& mode)
-	{
-		s_Instance->SetCullModeImpl(mode);
-	}
-
-	void GfxDevice::SetSurfaceType(const SurfaceType& type)
-	{
-		s_Instance->SetSurfaceTypeImpl(type);
-	}
-
 	bool GfxDevice::CreateShader(void* vertexData, void* pixelData, GfxShader*& shader)
 	{
 		return s_Instance->CreateShaderImpl(vertexData, pixelData, shader);

@@ -8,7 +8,9 @@ namespace Blueberry
 	class GfxTexture;
 	class GfxVertexBuffer;
 	class GfxIndexBuffer;
-	enum Topology;
+	enum class CullMode;
+	enum class SurfaceType;
+	enum class Topology;
 
 	struct GfxDrawingOperation
 	{
@@ -22,6 +24,8 @@ namespace Blueberry
 		std::vector<std::pair<std::size_t, GfxTexture*>>* textures;
 		GfxVertexBuffer* vertexBuffer;
 		GfxIndexBuffer* indexBuffer;
+		CullMode cullMode;
+		SurfaceType surfaceType;
 		Topology topology;
 		UINT indexCount;
 		UINT indexOffset;

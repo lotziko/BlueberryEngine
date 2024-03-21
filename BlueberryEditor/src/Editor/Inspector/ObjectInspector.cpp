@@ -32,7 +32,13 @@ namespace Blueberry
 		switch (info.type)
 		{
 		case BindingType::Int:
-			if (ImGui::DragInt(nameLabel, value.Get<int>()))
+			if (ImGui::IntEdit(nameLabel, value.Get<int>()))
+			{
+				hasChanged = true;
+			}
+			break;
+		case BindingType::Enum:
+			if (ImGui::EnumEdit(nameLabel, value.Get<int>(), static_cast<std::vector<std::string>*>(info.hintData)))
 			{
 				hasChanged = true;
 			}

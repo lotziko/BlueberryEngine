@@ -60,8 +60,11 @@ namespace Blueberry
 		GfxDevice::CreateTexture(properties, m_PixelRenderTarget);
 
 		m_SpriteObjectPickerMaterial = Material::Create((Shader*)AssetLoader::Load("assets/SpriteObjectPicker.shader"));
+		m_SpriteObjectPickerMaterial->SetSurfaceType(SurfaceType::Transparent);
 		m_MeshObjectPickerMaterial = Material::Create((Shader*)AssetLoader::Load("assets/MeshObjectPicker.shader"));
+		m_MeshObjectPickerMaterial->SetSurfaceType(SurfaceType::Transparent);
 		m_ObjectPickerOutlineMaterial = Material::Create((Shader*)AssetLoader::Load("assets/ObjectPickerOutline.shader"));
+		m_ObjectPickerOutlineMaterial->SetSurfaceType(SurfaceType::Transparent);
 	}
 
 	SceneObjectPicker::~SceneObjectPicker()

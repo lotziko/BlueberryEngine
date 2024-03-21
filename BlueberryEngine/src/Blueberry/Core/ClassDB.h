@@ -17,6 +17,8 @@ namespace Blueberry
 		String,
 		ByteData,
 
+		Enum,
+
 		Vector2,
 		Vector3,
 		Vector4,
@@ -24,8 +26,13 @@ namespace Blueberry
 
 		Color,
 
+		// Derived from Object
 		ObjectPtr,
 		ObjectPtrArray,
+
+		// Not derived from Object
+		Ptr,
+		PtrArray
 	};
 
 	struct FieldInfo
@@ -34,9 +41,13 @@ namespace Blueberry
 		FieldBind* bind;
 		BindingType type;
 		std::size_t objectType;
+		void* hintData;
 
 		template<class ObjectType, class FieldType>
 		FieldInfo(const std::string& name, FieldType ObjectType::* field, const BindingType& type);
+
+		template<class ObjectType, class FieldType>
+		FieldInfo(const std::string& name, FieldType ObjectType::* field, const BindingType& type, char* hintData);
 
 		template<class ObjectType, class FieldType>
 		FieldInfo(const std::string& name, FieldType ObjectType::* field, const BindingType& type, const std::size_t& objectType);
@@ -144,12 +155,35 @@ namespace Blueberry
 	}
 
 	template<class ObjectType, class FieldType>
-	inline FieldInfo::FieldInfo(const std::string& name, FieldType ObjectType::* field, const BindingType& type) : name(name), bind(FieldBind::Create(reinterpret_cast<FieldType Object::*>(field))), type(type), objectType(0)
+	inline FieldInfo::FieldInfo(const std::string& name, FieldType ObjectType::* field, const BindingType& type) : name(name), bind(FieldBind::Create(reinterpret_cast<FieldType Object::*>(field))), type(type), objectType(0), hintData(nullptr)
 	{
 	}
 
 	template<class ObjectType, class FieldType>
-	inline FieldInfo::FieldInfo(const std::string& name, FieldType ObjectType::* field, const BindingType& type, const std::size_t& objectType) : name(name), bind(FieldBind::Create(reinterpret_cast<FieldType Object::*>(field))), type(type), objectType(objectType)
+	inline FieldInfo::FieldInfo(const std::string& name, FieldType ObjectType::* field, const BindingType& type, char* hintData) : name(name), bind(FieldBind::Create(reinterpret_cast<FieldType Object::*>(field))), type(type), objectType(0)
+	{
+		if (type == BindingType::Enum)
+		{
+			std::string str(hintData);
+			// Based on https://sentry.io/answers/split-string-in-cpp/
+			// and https://stackoverflow.com/questions/19605720/error-in-strtok-split-using-c
+			auto names = new std::vector<std::string>();
+			std::string::size_type pos = 0, f;
+			while (((f = str.find(',', pos)) != std::string::npos)) 
+			{
+				names->push_back(str.substr(pos, f - pos));
+				pos = f + 1;
+			}
+			if (pos < str.size())
+			{
+				names->push_back(str.substr(pos));
+			}
+			this->hintData = names;
+		}
+	}
+
+	template<class ObjectType, class FieldType>
+	inline FieldInfo::FieldInfo(const std::string& name, FieldType ObjectType::* field, const BindingType& type, const std::size_t& objectType) : name(name), bind(FieldBind::Create(reinterpret_cast<FieldType Object::*>(field))), type(type), objectType(objectType), hintData(nullptr)
 	{
 	}
 }

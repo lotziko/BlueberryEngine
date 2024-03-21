@@ -79,7 +79,7 @@ namespace Blueberry
 		}
 	}
 
-	enum TextureType
+	enum class TextureType
 	{
 		Resource,
 		RenderTarget,

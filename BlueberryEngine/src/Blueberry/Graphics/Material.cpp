@@ -31,10 +31,32 @@ namespace Blueberry
 		SetTexture(std::hash<std::string>()(name), texture);
 	}
 
+	const CullMode& Material::GetCullMode()
+	{
+		return m_CullMode;
+	}
+
+	void Material::SetCullMode(const CullMode& mode)
+	{
+		m_CullMode = mode;
+	}
+
+	const SurfaceType& Material::GetSurfaceType()
+	{
+		return m_SurfaceType;
+	}
+
+	void Material::SetSurfaceType(const SurfaceType& type)
+	{
+		m_SurfaceType = type;
+	}
+
 	void Material::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(Material)
 		BIND_FIELD(FieldInfo(TO_STRING(m_Shader), &Material::m_Shader, BindingType::ObjectPtr, Shader::Type))
+		BIND_FIELD(FieldInfo(TO_STRING(m_CullMode), &Material::m_CullMode, BindingType::Enum, "None,Front,Back"))
+		BIND_FIELD(FieldInfo(TO_STRING(m_SurfaceType), &Material::m_SurfaceType, BindingType::Enum, "Opaque,Transparent,DepthTransparent"))
 		END_OBJECT_BINDING()
 	}
 

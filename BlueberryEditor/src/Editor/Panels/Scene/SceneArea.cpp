@@ -34,6 +34,8 @@ namespace Blueberry
 		GfxDevice::CreateTexture(properties, m_SceneDepthStencil);
 
 		m_GridMaterial = Material::Create((Shader*)AssetLoader::Load("assets/Grid.shader"));
+		m_GridMaterial->SetCullMode(CullMode::None);
+		m_GridMaterial->SetSurfaceType(SurfaceType::DepthTransparent);
 		m_ObjectPicker = new SceneObjectPicker(m_SceneDepthStencil);
 
 		// TODO save to config instead
@@ -435,16 +437,12 @@ namespace Blueberry
 		GfxDevice::ClearColor({ 0.117f, 0.117f, 0.117f, 1 });
 		GfxDevice::ClearDepth(1.0f);
 
-		GfxDevice::SetSurfaceType(SurfaceType_Opaque);
-		GfxDevice::SetCullMode(CullMode_Front);
 		Scene* scene = EditorSceneManager::GetScene();
 		if (scene != nullptr)
 		{
 			SceneRenderer::Draw(scene, &m_Camera);
 		}
 		
-		GfxDevice::SetCullMode(CullMode_None);
-		GfxDevice::SetSurfaceType(SurfaceType_DepthTransparent); 
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_GridMaterial));
 		GfxDevice::SetRenderTarget(nullptr);
 	}

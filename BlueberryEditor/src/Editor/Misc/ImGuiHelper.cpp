@@ -26,6 +26,54 @@ bool ImGui::DragVector3(const char* label, Blueberry::Vector3* v)
 	return false;
 }
 
+bool ImGui::EnumEdit(const char* label, int* v, const std::vector<std::string>* names)
+{
+	ImGui::PushID(label);
+
+	ImGui::Text(label);
+	ImGui::SameLine();
+	ImGui::SetCursorPosX(100);
+
+	if (ImGui::BeginCombo("##enum", names->at(*v).c_str()))
+	{
+		for (int i = 0; i < names->size(); i++)
+		{
+			bool isSelected = *v == i;
+			if (ImGui::Selectable(names->at(i).c_str(), isSelected))
+			{
+				*v = i;
+			}
+
+			if (isSelected)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+		ImGui::EndCombo();
+		ImGui::PopID();
+		return true;
+	}
+	ImGui::PopID();
+	return false;
+}
+
+bool ImGui::IntEdit(const char* label, int* v)
+{
+	ImGui::PushID(label);
+
+	ImGui::Text(label);
+	ImGui::SameLine();
+	ImGui::SetCursorPosX(100);
+
+	if (ImGui::DragInt("##int", v))
+	{
+		ImGui::PopID();
+		return true;
+	}
+	ImGui::PopID();
+	return false;
+}
+
 bool ImGui::ColorEdit(const char* label, Blueberry::Color* v)
 {
 	ImGui::PushID(label);

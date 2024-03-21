@@ -27,8 +27,6 @@ namespace Blueberry
 
 		static void SetViewport(int x, int y, int width, int height);
 		static void ResizeBackbuffer(int width, int height);
-		static void SetCullMode(const CullMode& mode);
-		static void SetSurfaceType(const SurfaceType& type);
 
 		static bool CreateShader(void* vertexData, void* pixelData, GfxShader*& shader);
 		static bool CreateComputeShader(void* computeData, GfxComputeShader*& shader);
@@ -59,8 +57,6 @@ namespace Blueberry
 
 		virtual void SetViewportImpl(int x, int y, int width, int height) = 0;
 		virtual void ResizeBackbufferImpl(int width, int height) = 0;
-		virtual void SetCullModeImpl(const CullMode& mode) = 0;
-		virtual void SetSurfaceTypeImpl(const SurfaceType& type) = 0;
 
 		virtual bool CreateShaderImpl(void* vertexData, void* pixelData, GfxShader*& shader) = 0;
 		virtual bool CreateComputeShaderImpl(void* computeData, GfxComputeShader*& shader) = 0;
@@ -76,7 +72,7 @@ namespace Blueberry
 		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture) = 0;
 		virtual void SetGlobalConstantBufferImpl(const std::size_t& id, GfxConstantBuffer* buffer) = 0;
 		virtual void SetGlobalTextureImpl(const std::size_t& id, GfxTexture* texture) = 0;
-		virtual void DrawImpl(const GfxDrawingOperation& operation) const = 0;
+		virtual void DrawImpl(const GfxDrawingOperation& operation) = 0;
 
 		virtual void DispatchImpl(GfxComputeShader*& shader, const UINT& threadGroupsX, const UINT& threadGroupsY, const UINT& threadGroupsZ) const = 0;
 

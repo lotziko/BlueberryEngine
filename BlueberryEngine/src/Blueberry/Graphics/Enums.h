@@ -2,27 +2,28 @@
 
 namespace Blueberry
 {
-	enum TextureFormat
+	enum class TextureFormat
 	{
 		None,
 		R8G8B8A8_UNorm,
 		D24_UNorm,
 	};
 
-	enum CullMode
+	enum class CullMode
 	{
-		CullMode_None,
-		CullMode_Front
+		None,
+		Front,
+		Back
 	};
 
-	enum SurfaceType
+	enum class SurfaceType
 	{
-		SurfaceType_Opaque,
-		SurfaceType_Transparent,
-		SurfaceType_DepthTransparent
+		Opaque,
+		Transparent,
+		DepthTransparent
 	};
 
-	enum Topology
+	enum class Topology
 	{
 		Unknown,
 		LineList,

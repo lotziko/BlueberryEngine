@@ -16,6 +16,8 @@ namespace Blueberry
 		this->indexBuffer = indexBuffer;
 		this->indexCount = indexCount;
 		this->indexOffset = indexOffset;
+		this->cullMode = material->m_CullMode;
+		this->surfaceType = material->m_SurfaceType;
 		this->topology = topology;
 	}
 
@@ -33,6 +35,8 @@ namespace Blueberry
 			indexBuffer = mesh->m_IndexBuffer;
 			indexCount = mesh->m_IndexCount;
 			indexOffset = 0;
+			cullMode = material->m_CullMode;
+			surfaceType = material->m_SurfaceType;
 			topology = mesh->GetTopology();
 		}
 		else
@@ -42,6 +46,8 @@ namespace Blueberry
 			indexBuffer = nullptr;
 			indexCount = 0;
 			indexOffset = 0;
+			cullMode = CullMode::None;
+			surfaceType = SurfaceType::Opaque;
 			topology = Topology::Unknown;
 		}
 	}

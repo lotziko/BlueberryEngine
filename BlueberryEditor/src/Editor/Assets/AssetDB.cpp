@@ -126,6 +126,11 @@ namespace Blueberry
 
 	void AssetDB::SetDirty(Object* object)
 	{
+		if (std::find(s_DirtyAssets.begin(), s_DirtyAssets.end(), object->GetObjectId()) != s_DirtyAssets.end())
+		{
+			return;
+		}
+
 		s_DirtyAssets.emplace_back(object->GetObjectId());
 	}
 

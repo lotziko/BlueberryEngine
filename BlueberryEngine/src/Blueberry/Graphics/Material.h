@@ -6,6 +6,8 @@ namespace Blueberry
 	class Texture;
 	class Shader;
 	class GfxTexture;
+	enum class CullMode;
+	enum class SurfaceType;
 
 	class Material : public Object
 	{
@@ -19,6 +21,12 @@ namespace Blueberry
 		void SetTexture(std::size_t id, Texture* texture);
 		void SetTexture(std::string name, Texture* texture);
 
+		const CullMode& GetCullMode();
+		void SetCullMode(const CullMode& mode);
+
+		const SurfaceType& GetSurfaceType();
+		void SetSurfaceType(const SurfaceType& type);
+
 		static void BindProperties();
 
 	private:
@@ -28,6 +36,8 @@ namespace Blueberry
 		std::vector<std::pair<std::size_t, GfxTexture*>> m_GfxTextures;
 		std::map<std::size_t, ObjectPtr<Texture>> m_Textures;
 		ObjectPtr<Shader> m_Shader;
+		CullMode m_CullMode;
+		SurfaceType m_SurfaceType;
 
 		friend struct GfxDrawingOperation;
 	};

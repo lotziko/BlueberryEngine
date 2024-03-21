@@ -22,8 +22,6 @@ namespace Blueberry
 
 		virtual void SetViewportImpl(int x, int y, int width, int height) final;
 		virtual void ResizeBackbufferImpl(int width, int height) final;
-		virtual void SetCullModeImpl(const CullMode& mode) final;
-		virtual void SetSurfaceTypeImpl(const SurfaceType& type) final;
 
 		virtual bool CreateShaderImpl(void* vertexData, void* pixelData, GfxShader*& shader) final;
 		virtual bool CreateComputeShaderImpl(void* computeData, GfxComputeShader*& shader) final;
@@ -39,7 +37,7 @@ namespace Blueberry
 		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture) final;
 		virtual void SetGlobalConstantBufferImpl(const std::size_t& id, GfxConstantBuffer* buffer) final;
 		virtual void SetGlobalTextureImpl(const std::size_t& id, GfxTexture* texture) final;
-		virtual void DrawImpl(const GfxDrawingOperation& operation) const final;
+		virtual void DrawImpl(const GfxDrawingOperation& operation) final;
 
 		virtual void DispatchImpl(GfxComputeShader*& shader, const UINT& threadGroupsX, const UINT& threadGroupsY, const UINT& threadGroupsZ) const final;
 
@@ -47,6 +45,9 @@ namespace Blueberry
 
 	private:
 		bool InitializeDirectX(HWND hwnd, int width, int height);
+
+		void SetCullMode(const CullMode& mode);
+		void SetSurfaceType(const SurfaceType& type);
 
 		HWND m_Hwnd;
 
@@ -68,5 +69,8 @@ namespace Blueberry
 		GfxTextureDX11* m_BindedDepthStencil;
 		std::map<std::size_t, GfxConstantBufferDX11*> m_BindedConstantBuffers;
 		std::map<std::size_t, GfxTextureDX11*> m_BindedTextures;
+
+		CullMode m_CullMode = (CullMode)-1;
+		SurfaceType m_SurfaceType = (SurfaceType)-1;
 	};
 }
