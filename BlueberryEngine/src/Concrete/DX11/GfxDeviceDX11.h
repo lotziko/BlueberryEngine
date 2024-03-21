@@ -58,6 +58,7 @@ namespace Blueberry
 
 		ComPtr<ID3D11RasterizerState> m_CullNoneRasterizerState;
 		ComPtr<ID3D11RasterizerState> m_CullFrontRasterizerState;
+		ComPtr<ID3D11RasterizerState> m_CullBackRasterizerState;
 
 		ComPtr<ID3D11DepthStencilState> m_OpaqueDepthStencilState;
 		ComPtr<ID3D11BlendState> m_OpaqueBlendState;
