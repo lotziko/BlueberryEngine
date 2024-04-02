@@ -11,7 +11,7 @@ namespace Blueberry
 		Variant(const ObjectType* data);
 
 		template<class ObjectType>
-		operator const ObjectType();
+		operator const ObjectType*();
 
 		template<class ObjectType>
 		ObjectType* Get();
@@ -27,9 +27,9 @@ namespace Blueberry
 	}
 
 	template<class ObjectType>
-	inline Variant::operator const ObjectType()
+	inline Variant::operator const ObjectType*()
 	{
-		return *(static_cast<ObjectType*>(m_Data));
+		return static_cast<ObjectType*>(m_Data);
 	}
 
 	template<class ObjectType>

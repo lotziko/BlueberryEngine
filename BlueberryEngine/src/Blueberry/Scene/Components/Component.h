@@ -16,7 +16,6 @@ namespace Blueberry
 		Entity* GetEntity();
 
 		static void BindProperties();
-		virtual void Destroy() { };
 
 	protected:
 		ObjectPtr<Entity> m_Entity;

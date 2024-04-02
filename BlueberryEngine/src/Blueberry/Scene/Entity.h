@@ -41,11 +41,11 @@ namespace Blueberry
 
 		static void BindProperties();
 
+		virtual void OnDestroy() override;
+
 	private:
 		void AddComponentIntoScene(Component* component);
 		void RemoveComponentFromScene(Component* component);
-
-		void Destroy();
 
 	private:
 		std::vector<ObjectPtr<Component>> m_Components;

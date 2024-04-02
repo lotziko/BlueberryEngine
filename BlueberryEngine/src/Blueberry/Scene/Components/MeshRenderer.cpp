@@ -33,9 +33,9 @@ namespace Blueberry
 	void MeshRenderer::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(MeshRenderer)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Entity), &MeshRenderer::m_Entity, BindingType::ObjectPtr, Entity::Type))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Mesh), &MeshRenderer::m_Mesh, BindingType::ObjectPtr, Mesh::Type))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Material), &MeshRenderer::m_Material, BindingType::ObjectPtr, Material::Type))
+		BIND_FIELD(FieldInfo(TO_STRING(m_Entity), &MeshRenderer::m_Entity, BindingType::ObjectPtr).SetObjectType(Entity::Type))
+		BIND_FIELD(FieldInfo(TO_STRING(m_Mesh), &MeshRenderer::m_Mesh, BindingType::ObjectPtr).SetObjectType(Mesh::Type))
+		BIND_FIELD(FieldInfo(TO_STRING(m_Material), &MeshRenderer::m_Material, BindingType::ObjectPtr).SetObjectType(Material::Type))
 		END_OBJECT_BINDING()
 	}
 }

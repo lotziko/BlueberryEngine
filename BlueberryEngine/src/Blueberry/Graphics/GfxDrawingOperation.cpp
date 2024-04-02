@@ -16,8 +16,11 @@ namespace Blueberry
 		this->indexBuffer = indexBuffer;
 		this->indexCount = indexCount;
 		this->indexOffset = indexOffset;
-		this->cullMode = material->m_CullMode;
-		this->surfaceType = material->m_SurfaceType;
+		auto& options = material->GetShaderOptions();
+		this->cullMode = options.GetCullMode();
+		this->blendSrc = options.GetBlendSrc();
+		this->blendDst = options.GetBlendDst();
+		this->zWrite = options.GetZWrite();
 		this->topology = topology;
 	}
 
@@ -35,8 +38,11 @@ namespace Blueberry
 			indexBuffer = mesh->m_IndexBuffer;
 			indexCount = mesh->m_IndexCount;
 			indexOffset = 0;
-			cullMode = material->m_CullMode;
-			surfaceType = material->m_SurfaceType;
+			auto& options = material->GetShaderOptions();
+			this->cullMode = options.GetCullMode();
+			this->blendSrc = options.GetBlendSrc();
+			this->blendDst = options.GetBlendDst();
+			this->zWrite = options.GetZWrite();
 			topology = mesh->GetTopology();
 		}
 		else
@@ -47,7 +53,9 @@ namespace Blueberry
 			indexCount = 0;
 			indexOffset = 0;
 			cullMode = CullMode::None;
-			surfaceType = SurfaceType::Opaque;
+			blendSrc = BlendMode::One;
+			blendDst = BlendMode::Zero;
+			zWrite = ZWrite::On;
 			topology = Topology::Unknown;
 		}
 	}

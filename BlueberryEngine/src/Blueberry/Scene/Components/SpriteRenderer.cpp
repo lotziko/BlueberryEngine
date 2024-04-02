@@ -43,10 +43,10 @@ namespace Blueberry
 	void SpriteRenderer::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(SpriteRenderer)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Entity), &SpriteRenderer::m_Entity, BindingType::ObjectPtr, Entity::Type))
+		BIND_FIELD(FieldInfo(TO_STRING(m_Entity), &SpriteRenderer::m_Entity, BindingType::ObjectPtr).SetObjectType(Entity::Type))
 		BIND_FIELD(FieldInfo(TO_STRING(m_Color), &SpriteRenderer::m_Color, BindingType::Color))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Texture), &SpriteRenderer::m_Texture, BindingType::ObjectPtr, Texture::Type))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Material), &SpriteRenderer::m_Material, BindingType::ObjectPtr, Material::Type))
+		BIND_FIELD(FieldInfo(TO_STRING(m_Texture), &SpriteRenderer::m_Texture, BindingType::ObjectPtr).SetObjectType(Texture::Type))
+		BIND_FIELD(FieldInfo(TO_STRING(m_Material), &SpriteRenderer::m_Material, BindingType::ObjectPtr).SetObjectType(Material::Type))
 		BIND_FIELD(FieldInfo(TO_STRING(m_SortingOrder), &SpriteRenderer::m_SortingOrder, BindingType::Int))
 		END_OBJECT_BINDING()
 	}

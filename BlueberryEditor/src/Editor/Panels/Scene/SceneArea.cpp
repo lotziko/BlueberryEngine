@@ -34,8 +34,6 @@ namespace Blueberry
 		GfxDevice::CreateTexture(properties, m_SceneDepthStencil);
 
 		m_GridMaterial = Material::Create((Shader*)AssetLoader::Load("assets/Grid.shader"));
-		m_GridMaterial->SetCullMode(CullMode::None);
-		m_GridMaterial->SetSurfaceType(SurfaceType::DepthTransparent);
 		m_ObjectPicker = new SceneObjectPicker(m_SceneDepthStencil);
 
 		// TODO save to config instead

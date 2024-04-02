@@ -13,7 +13,8 @@ namespace Blueberry
 	Material* Material::Create(Shader* shader)
 	{
 		Material* material = Object::Create<Material>();
-		material->m_Shader = shader;
+		material->SetShader(shader);
+		material->OnCreate();
 		return material;
 	}
 
@@ -31,32 +32,26 @@ namespace Blueberry
 		SetTexture(std::hash<std::string>()(name), texture);
 	}
 
-	const CullMode& Material::GetCullMode()
+	void Material::SetShader(Shader* shader)
 	{
-		return m_CullMode;
+		m_Shader = shader;
 	}
 
-	void Material::SetCullMode(const CullMode& mode)
+	const ShaderOptions& Material::GetShaderOptions()
 	{
-		m_CullMode = mode;
-	}
-
-	const SurfaceType& Material::GetSurfaceType()
-	{
-		return m_SurfaceType;
-	}
-
-	void Material::SetSurfaceType(const SurfaceType& type)
-	{
-		m_SurfaceType = type;
+		if (m_Shader.IsValid())
+		{
+			return m_Shader.Get()->GetOptions();
+		}
+		return ShaderOptions();
 	}
 
 	void Material::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(Material)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Shader), &Material::m_Shader, BindingType::ObjectPtr, Shader::Type))
-		BIND_FIELD(FieldInfo(TO_STRING(m_CullMode), &Material::m_CullMode, BindingType::Enum, "None,Front,Back"))
-		BIND_FIELD(FieldInfo(TO_STRING(m_SurfaceType), &Material::m_SurfaceType, BindingType::Enum, "Opaque,Transparent,DepthTransparent"))
+		BIND_FIELD(FieldInfo(TO_STRING(m_Shader), &Material::m_Shader, BindingType::ObjectPtr).SetObjectType(Shader::Type))
+		//BIND_FIELD(FieldInfo(TO_STRING(m_CullMode), &Material::m_CullMode, BindingType::Enum).SetHintData("None,Front,Back"))
+		//BIND_FIELD(FieldInfo(TO_STRING(m_SurfaceType), &Material::m_SurfaceType, BindingType::Enum).SetHintData("Opaque,Transparent,DepthTransparent"))
 		END_OBJECT_BINDING()
 	}
 

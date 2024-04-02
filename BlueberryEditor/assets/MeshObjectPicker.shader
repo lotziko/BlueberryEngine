@@ -1,28 +1,41 @@
-#include "Input.hlsl"
-
-cbuffer PerObjectData
+Shader
 {
-	float objectId;
-}
+	Options
+	{
+		BlendSrc One
+		BlendDst Zero
+		ZWrite On
+		Cull None
+	}
 
-struct Attributes
-{
-	float3 positionOS : POSITION;
-};
+	HLSLBEGIN
+	#include "Input.hlsl"
 
-struct Varyings
-{
-	float4 positionCS : SV_POSITION;
-};
+	cbuffer PerObjectData
+	{
+		float objectId;
+	}
 
-Varyings Vertex(Attributes input)
-{
-	Varyings output;
-	output.positionCS = mul(mul(float4(input.positionOS, 1.0f), modelMatrix), viewProjectionMatrix);
-	return output;
-}
+	struct Attributes
+	{
+		float3 positionOS : POSITION;
+	};
 
-float4 Fragment(Varyings input) : SV_TARGET
-{
-	return float4(objectId, 0, 0, 1);
+	struct Varyings
+	{
+		float4 positionCS : SV_POSITION;
+	};
+
+	Varyings Vertex(Attributes input)
+	{
+		Varyings output;
+		output.positionCS = mul(mul(float4(input.positionOS, 1.0f), modelMatrix), viewProjectionMatrix);
+		return output;
+	}
+
+	float4 Fragment(Varyings input) : SV_TARGET
+	{
+		return float4(objectId, 0, 0, 1);
+	}
+	HLSLEND
 }

@@ -260,7 +260,8 @@ namespace Blueberry
 		}
 
 		SetCullMode(operation.cullMode);
-		SetSurfaceType(operation.surfaceType);
+		SetBlendMode(operation.blendSrc, operation.blendDst);
+		SetZWrite(operation.zWrite);
 
 		// TODO check if shader variant/material/mesh is the same to skip some bindings
 		auto dxShader = static_cast<GfxShaderDX11*>(operation.shader);
@@ -544,7 +545,8 @@ namespace Blueberry
 		}
 
 		SetCullMode(CullMode::None);
-		SetSurfaceType(SurfaceType::Opaque);
+		SetBlendMode(BlendMode::One, BlendMode::Zero);
+		SetZWrite(ZWrite::On);
 
 		m_BindedRenderTarget = nullptr;
 		m_BindedDepthStencil = nullptr;
@@ -576,29 +578,41 @@ namespace Blueberry
 		}
 	}
 
-	void GfxDeviceDX11::SetSurfaceType(const SurfaceType& type)
+	void GfxDeviceDX11::SetBlendMode(const BlendMode& blendSrc, const BlendMode& blendDst)
 	{
-		if (type == m_SurfaceType)
+		if (blendSrc == m_BlendSrc && blendDst == m_BlendDst)
 		{
 			return;
 		}
-		m_SurfaceType = type;
+		m_BlendSrc = blendSrc;
+		m_BlendDst = blendDst;
 
 		const float blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
-		switch (type)
+		if (blendSrc == BlendMode::One && blendDst == BlendMode::Zero)
 		{
-		case SurfaceType::Opaque:
-			m_DeviceContext->OMSetDepthStencilState(m_OpaqueDepthStencilState.Get(), 0);
 			m_DeviceContext->OMSetBlendState(m_OpaqueBlendState.Get(), blendFactor, 0xffffffff);
-			break;
-		case SurfaceType::Transparent:
-			m_DeviceContext->OMSetDepthStencilState(m_TransparentDepthStencilState.Get(), 0);
+		}
+		else if (blendSrc == BlendMode::SrcAlpha && blendDst == BlendMode::OneMinusSrcAlpha)
+		{
 			m_DeviceContext->OMSetBlendState(m_TransparentBlendState.Get(), blendFactor, 0xffffffff);
-			break;
-		case SurfaceType::DepthTransparent:
+		}
+	}
+
+	void GfxDeviceDX11::SetZWrite(const ZWrite& zWrite)
+	{
+		if (zWrite == m_ZWrite)
+		{
+			return;
+		}
+		m_ZWrite = zWrite;
+
+		if (zWrite == ZWrite::On)
+		{
 			m_DeviceContext->OMSetDepthStencilState(m_OpaqueDepthStencilState.Get(), 0);
-			m_DeviceContext->OMSetBlendState(m_TransparentBlendState.Get(), blendFactor, 0xffffffff);
-			break;
+		}
+		else
+		{
+			m_DeviceContext->OMSetDepthStencilState(m_TransparentDepthStencilState.Get(), 0);
 		}
 	}
 }

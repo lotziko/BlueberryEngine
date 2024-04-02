@@ -79,6 +79,9 @@ std::string childclass::GetTypeName() const											\
 
 		static void Destroy(Object* object);
 
+		virtual void OnCreate() { };
+		virtual void OnDestroy() { };
+
 	protected:
 		ObjectId m_ObjectId;
 		std::string m_Name;

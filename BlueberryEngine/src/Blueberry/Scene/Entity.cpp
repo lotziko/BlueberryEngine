@@ -45,8 +45,19 @@ namespace Blueberry
 	{
 		BEGIN_OBJECT_BINDING(Entity)
 		BIND_FIELD(FieldInfo(TO_STRING(m_Name), &Entity::m_Name, BindingType::String))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Components), &Entity::m_Components, BindingType::ObjectPtrArray, Component::Type))
+		BIND_FIELD(FieldInfo(TO_STRING(m_Components), &Entity::m_Components, BindingType::ObjectPtrArray).SetObjectType(Component::Type))
 		END_OBJECT_BINDING()
+	}
+
+	void Entity::OnDestroy()
+	{
+		for (auto && componentSlot : m_Components)
+		{
+			BB_INFO(componentSlot->GetTypeName() << " is destroyed.");
+			RemoveComponentFromScene(componentSlot.Get());
+			componentSlot->OnDestroy();
+			Object::Destroy(componentSlot.Get());
+		}
 	}
 
 	void Entity::AddComponentIntoScene(Component* component)
@@ -59,16 +70,5 @@ namespace Blueberry
 	{
 		std::size_t type = component->GetType();
 		m_Scene->m_ComponentManager.RemoveComponent(this, component);
-	}
-
-	void Entity::Destroy()
-	{
-		for (auto && componentSlot : m_Components)
-		{
-			BB_INFO(componentSlot->GetTypeName() << " is destroyed.");
-			RemoveComponentFromScene(componentSlot.Get());
-			componentSlot->Destroy();
-			Object::Destroy(componentSlot.Get());
-		}
 	}
 }

@@ -103,17 +103,17 @@ namespace Blueberry
 				ObjectPtrData data;
 				if (objectRefValue.IsValid())
 				{
-					Object* object = objectRefValue.Get();
-					if (ObjectDB::HasGuid(object))
+					Object* dataObject = objectRefValue.Get();
+					if (ObjectDB::HasGuid(dataObject))
 					{
-						auto pair = ObjectDB::GetGuidAndFileIdFromObject(object);
+						auto pair = ObjectDB::GetGuidAndFileIdFromObject(dataObject);
 						data.fileId = pair.second;
 						data.isAsset = true;
 						data.guid = pair.first;
 					}
 					else
 					{
-						data.fileId = GetFileId(object);
+						data.fileId = GetFileId(dataObject);
 						data.isAsset = false;
 					}
 				}
@@ -137,17 +137,17 @@ namespace Blueberry
 						ObjectPtrData data;
 						if (objectRefValue.IsValid())
 						{
-							Object* object = objectRefValue.Get();
-							if (ObjectDB::HasGuid(object))
+							Object* dataObject = objectRefValue.Get();
+							if (ObjectDB::HasGuid(dataObject))
 							{
-								auto pair = ObjectDB::GetGuidAndFileIdFromObject(object);
+								auto pair = ObjectDB::GetGuidAndFileIdFromObject(dataObject);
 								data.fileId = pair.second;
 								data.isAsset = true;
 								data.guid = pair.first;
 							}
 							else
 							{
-								data.fileId = GetFileId(object);
+								data.fileId = GetFileId(dataObject);
 								data.isAsset = false;
 							}
 						}
@@ -214,18 +214,18 @@ namespace Blueberry
 				{
 					ObjectPtrData data;
 					objectNode[key] >> data;
-					Object* object;
+					Object* dataObject;
 					
 					if (data.isAsset)
 					{
-						object = ObjectDB::GetObjectFromGuid(data.guid, data.fileId);
-						if (object == nullptr)
+						dataObject = ObjectDB::GetObjectFromGuid(data.guid, data.fileId);
+						if (dataObject == nullptr)
 						{
-							object = AssetLoader::Load(data.guid, data.fileId);
-							if (object == nullptr)
+							dataObject = AssetLoader::Load(data.guid, data.fileId);
+							if (dataObject == nullptr)
 							{
 								ObjectDB::AllocateEmptyObjectWithGuid(data.guid, data.fileId);
-								object = ObjectDB::GetObjectFromGuid(data.guid, data.fileId);
+								dataObject = ObjectDB::GetObjectFromGuid(data.guid, data.fileId);
 							}
 						}
 					}
@@ -233,14 +233,14 @@ namespace Blueberry
 					{
 						if (data.fileId == 0)
 						{
-							object = nullptr;
+							dataObject = nullptr;
 						}
 						else
 						{
-							object = GetObjectRef(data.fileId);
+							dataObject = GetObjectRef(data.fileId);
 						}
 					}
-					*value.Get<ObjectPtr<Object>>() = object;
+					*value.Get<ObjectPtr<Object>>() = dataObject;
 				}
 				break;
 				case BindingType::ObjectPtrArray:
@@ -250,29 +250,29 @@ namespace Blueberry
 					{
 						ObjectPtrData data;
 						child >> data;
-						Object* object;
+						Object* dataObject;
 						
 						if (data.isAsset)
 						{
-							object = ObjectDB::GetObjectFromGuid(data.guid, data.fileId);
-							if (object == nullptr)
+							dataObject = ObjectDB::GetObjectFromGuid(data.guid, data.fileId);
+							if (dataObject == nullptr)
 							{
 								ObjectDB::AllocateEmptyObjectWithGuid(data.guid, data.fileId);
-								object = ObjectDB::GetObjectFromGuid(data.guid, data.fileId);
+								dataObject = ObjectDB::GetObjectFromGuid(data.guid, data.fileId);
 							}
 						}
 						else
 						{
 							if (data.fileId == 0)
 							{
-								object = nullptr;
+								dataObject = nullptr;
 							}
 							else
 							{
-								object = GetObjectRef(data.fileId);
+								dataObject = GetObjectRef(data.fileId);
 							}
 						}
-						refArrayPointer->emplace_back(object);
+						refArrayPointer->emplace_back(dataObject);
 					}
 				}
 				break;
@@ -282,5 +282,6 @@ namespace Blueberry
 				}
 			}
 		}
+		object->OnCreate();
 	}
 }

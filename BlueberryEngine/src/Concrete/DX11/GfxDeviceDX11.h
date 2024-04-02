@@ -47,7 +47,8 @@ namespace Blueberry
 		bool InitializeDirectX(HWND hwnd, int width, int height);
 
 		void SetCullMode(const CullMode& mode);
-		void SetSurfaceType(const SurfaceType& type);
+		void SetBlendMode(const BlendMode& blendSrc, const BlendMode& blendDst);
+		void SetZWrite(const ZWrite& zWrite);
 
 		HWND m_Hwnd;
 
@@ -72,6 +73,8 @@ namespace Blueberry
 		std::map<std::size_t, GfxTextureDX11*> m_BindedTextures;
 
 		CullMode m_CullMode = (CullMode)-1;
-		SurfaceType m_SurfaceType = (SurfaceType)-1;
+		BlendMode m_BlendSrc = (BlendMode)-1;
+		BlendMode m_BlendDst = (BlendMode)-1;
+		ZWrite m_ZWrite = (ZWrite)-1;
 	};
 }

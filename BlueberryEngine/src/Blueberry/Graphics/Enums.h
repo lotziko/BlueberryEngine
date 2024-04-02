@@ -16,6 +16,20 @@ namespace Blueberry
 		Back
 	};
 
+	enum class BlendMode
+	{
+		One,
+		Zero,
+		SrcAlpha,
+		OneMinusSrcAlpha
+	};
+
+	enum class ZWrite
+	{
+		Off,
+		On
+	};
+
 	enum class SurfaceType
 	{
 		Opaque,

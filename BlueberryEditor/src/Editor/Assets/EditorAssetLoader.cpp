@@ -30,9 +30,12 @@ namespace Blueberry
 		std::string extension = assetPath.extension().string();
 		if (extension == ".shader")
 		{
-			void* vertex = ShaderProcessor::Compile(path, "Vertex", "vs_5_0", "");
-			void* fragment = ShaderProcessor::Compile(path, "Fragment", "ps_5_0", "");
-			return Shader::Create(vertex, fragment);
+			std::string shaderData;
+			RawShaderOptions options;
+			ShaderProcessor::Process(path, shaderData, options);
+			void* vertex = ShaderProcessor::Compile(shaderData, "Vertex", "vs_5_0", "");
+			void* fragment = ShaderProcessor::Compile(shaderData, "Fragment", "ps_5_0", "");
+			return Shader::Create(vertex, fragment, options);
 		}
 		else if (extension == ".compute")
 		{

@@ -9,7 +9,8 @@ namespace Blueberry
 	class GfxVertexBuffer;
 	class GfxIndexBuffer;
 	enum class CullMode;
-	enum class SurfaceType;
+	enum class BlendMode;
+	enum class ZWrite;
 	enum class Topology;
 
 	struct GfxDrawingOperation
@@ -25,7 +26,9 @@ namespace Blueberry
 		GfxVertexBuffer* vertexBuffer;
 		GfxIndexBuffer* indexBuffer;
 		CullMode cullMode;
-		SurfaceType surfaceType;
+		BlendMode blendSrc;
+		BlendMode blendDst;
+		ZWrite zWrite;
 		Topology topology;
 		UINT indexCount;
 		UINT indexOffset;

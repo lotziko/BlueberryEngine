@@ -4,6 +4,7 @@
 #include "Blueberry\Core\Object.h"
 #include "Blueberry\Core\MethodBind.h"
 #include "Blueberry\Core\FieldBind.h"
+#include "Blueberry\Tools\StringHelper.h"
 
 namespace Blueberry
 {
@@ -39,6 +40,7 @@ namespace Blueberry
 	{
 		std::string name;
 		FieldBind* bind;
+		MethodBind* setter;
 		BindingType type;
 		std::size_t objectType;
 		void* hintData;
@@ -46,11 +48,19 @@ namespace Blueberry
 		template<class ObjectType, class FieldType>
 		FieldInfo(const std::string& name, FieldType ObjectType::* field, const BindingType& type);
 
+		FieldInfo SetHintData(char* hintData);
+		FieldInfo SetObjectType(const std::size_t& objectType);
 		template<class ObjectType, class FieldType>
+		FieldInfo SetSetter(void(ObjectType::* setter)(FieldType));
+
+		/*template<class ObjectType, class FieldType>
 		FieldInfo(const std::string& name, FieldType ObjectType::* field, const BindingType& type, char* hintData);
 
 		template<class ObjectType, class FieldType>
 		FieldInfo(const std::string& name, FieldType ObjectType::* field, const BindingType& type, const std::size_t& objectType);
+	
+		template<class ObjectType, class FieldType>
+		FieldInfo(const std::string& name, FieldType ObjectType::* field, void(ObjectType::* setter)(FieldType), const BindingType& type, const std::size_t& objectType);*/
 	};
 
 	class ClassDB
@@ -160,30 +170,36 @@ namespace Blueberry
 	}
 
 	template<class ObjectType, class FieldType>
+	inline FieldInfo FieldInfo::SetSetter(void(ObjectType::* setter)(FieldType))
+	{
+		this->setter = MethodBind::Create(reinterpret_cast<void(Object::*)(FieldType)>(setter));
+		return *this;
+	}
+
+	/*template<class ObjectType, class FieldType>
 	inline FieldInfo::FieldInfo(const std::string& name, FieldType ObjectType::* field, const BindingType& type, char* hintData) : name(name), bind(FieldBind::Create(reinterpret_cast<FieldType Object::*>(field))), type(type), objectType(0)
 	{
-		if (type == BindingType::Enum)
-		{
-			std::string str(hintData);
-			// Based on https://sentry.io/answers/split-string-in-cpp/
-			// and https://stackoverflow.com/questions/19605720/error-in-strtok-split-using-c
-			auto names = new std::vector<std::string>();
-			std::string::size_type pos = 0, f;
-			while (((f = str.find(',', pos)) != std::string::npos)) 
-			{
-				names->push_back(str.substr(pos, f - pos));
-				pos = f + 1;
-			}
-			if (pos < str.size())
-			{
-				names->push_back(str.substr(pos));
-			}
-			this->hintData = names;
-		}
+		
 	}
 
 	template<class ObjectType, class FieldType>
 	inline FieldInfo::FieldInfo(const std::string& name, FieldType ObjectType::* field, const BindingType& type, const std::size_t& objectType) : name(name), bind(FieldBind::Create(reinterpret_cast<FieldType Object::*>(field))), type(type), objectType(objectType), hintData(nullptr)
 	{
 	}
+
+	template<class ObjectType, class FieldType>
+	inline FieldInfo::FieldInfo(const std::string & name, FieldType ObjectType::* field, void(ObjectType::* setter)(FieldType), const BindingType & type, const std::size_t & objectType)
+	{
+	}*/
+
+	/*template<class ObjectType, class FieldType>
+	inline FieldInfo::FieldInfo(const std::string& name, FieldType ObjectType::* field, void(ObjectType::* setter)(FieldType), const BindingType& type, const std::size_t& objectType) :
+		name(name),
+		bind(FieldBind::Create(reinterpret_cast<FieldType Object::*>(field))),
+		setter(),
+		type(type),
+		objectType(objectType),
+		hintData(nullptr)
+	{
+	}*/
 }

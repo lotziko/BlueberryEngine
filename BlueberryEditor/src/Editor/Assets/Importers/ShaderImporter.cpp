@@ -36,9 +36,12 @@ namespace Blueberry
 		else
 		{
 			std::string path = GetFilePath();
-			void* vertex = ShaderProcessor::Compile(path, "Vertex", "vs_5_0", vertexPath);
-			void* fragment = ShaderProcessor::Compile(path, "Fragment", "ps_5_0", fragmentPath);
-			object = Shader::Create(vertex, fragment);
+			std::string shaderData;
+			RawShaderOptions options;
+			ShaderProcessor::Process(path, shaderData, options);
+			void* vertex = ShaderProcessor::Compile(shaderData, "Vertex", "vs_5_0", vertexPath);
+			void* fragment = ShaderProcessor::Compile(shaderData, "Fragment", "ps_5_0", fragmentPath);
+			object = Shader::Create(vertex, fragment, options);
 			ObjectDB::AllocateIdToGuid(object, guid, 1);
 			AssetDB::SaveAssetObjectToCache(object);
 			BB_INFO("Shader \"" << GetName() << "\" imported and compiled from: " + path);

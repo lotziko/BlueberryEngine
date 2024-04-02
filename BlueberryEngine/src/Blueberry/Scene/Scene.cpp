@@ -97,7 +97,7 @@ namespace Blueberry
 	void Scene::DestroyEntity(Entity* entity)
 	{
 		BB_INFO("Entity is destroyed.")
-		entity->Destroy();
+		entity->OnDestroy();
 		m_Entities[entity->m_Id] = nullptr;
 		m_EmptyEntityIds.push(entity->m_Id);
 		Object::Destroy(entity);
