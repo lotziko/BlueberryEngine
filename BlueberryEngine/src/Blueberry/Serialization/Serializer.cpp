@@ -1,5 +1,6 @@
 #include "bbpch.h"
 #include "Serializer.h"
+#include "Blueberry\Core\ObjectDB.h"
 
 namespace Blueberry
 {
@@ -16,6 +17,11 @@ namespace Blueberry
 
 	FileId Serializer::GetFileId(Object* object)
 	{
+		if (ObjectDB::HasGuid(object))
+		{
+			return ObjectDB::GetGuidAndFileIdFromObject(object).second;
+		}
+
 		auto idIt = m_ObjectToFileId.find(object);
 		if (idIt != m_ObjectToFileId.end())
 		{

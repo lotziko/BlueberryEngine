@@ -19,6 +19,20 @@ namespace Blueberry
 		
 		if (AssetDB::HasAssetWithGuidInData(guid))
 		{
+			// TODO multiple meshes in file
+			// TODO rewrite this, it makes allocateid too and add fileid serializing to yamlserializer
+			std::vector<Object*> objects = AssetDB::LoadAssetObjects(guid);
+			for (Object* object : objects)
+			{
+				if (object->IsClassType(Mesh::Type))
+				{
+					Mesh* mesh = static_cast<Mesh*>(object);
+					mesh->Apply();
+					std::string name = mesh->GetName();
+					AddImportedObject(mesh, TO_HASH(name));
+					BB_INFO("Mesh \"" << name << "\" imported from cache.");
+				}
+			}
 			return;
 		}
 		else
@@ -45,6 +59,8 @@ namespace Blueberry
 			ofbx::IScene* scene = ofbx::load((ofbx::u8*)content, fileSize, (ofbx::u16)flags);
 			int indicesOffset = 0;
 			int meshCount = scene->getMeshCount();
+
+			std::vector<Object*> objects;
 
 			for (int meshId = 0; meshId < meshCount; ++meshId)
 			{
@@ -143,8 +159,10 @@ namespace Blueberry
 				BB_INFO("Mesh \"" << mesh->name << "\" imported.");
 				object->SetName(mesh->name);
 				AddImportedObject(object, id);
+				objects.emplace_back(object);
 			}
 
+			AssetDB::SaveAssetObjectsToCache(objects);
 			scene->destroy();
 			delete[] content;
 			fclose(fp);

@@ -33,19 +33,24 @@ namespace Blueberry
 		static void BindProperties();
 
 	private:
+		VertexLayout GetLayout();
+
+	private:
 		GfxVertexBuffer* m_VertexBuffer;
 		GfxIndexBuffer* m_IndexBuffer;
+		bool m_BufferIsDirty = false;
 
 		Vector3* m_Vertices;
 		Vector3* m_Normals;
 		UINT* m_Indices;
 		Vector2* m_UVs[8] = {};
 
-		float* m_VertexData = nullptr;
-		UINT m_VertexDataSize = 0;
+		std::vector<float> m_VertexData;
+		std::vector<UINT> m_IndexData;
 
 		UINT m_VertexCount;
 		UINT m_IndexCount;
+		UINT m_ChannelFlags;
 
 		Topology m_Topology = Topology::TriangleList;
 

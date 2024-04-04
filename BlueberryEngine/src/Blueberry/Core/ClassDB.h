@@ -18,6 +18,9 @@ namespace Blueberry
 		String,
 		ByteData,
 
+		IntByteArray,
+		FloatByteArray,
+
 		Enum,
 
 		Vector2,

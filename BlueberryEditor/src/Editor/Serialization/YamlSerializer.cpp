@@ -81,6 +81,25 @@ namespace Blueberry
 					objectNode[key] << data;
 				}
 			}
+			break;
+			case BindingType::IntByteArray:
+			{
+				std::vector<int> data = *value.Get<std::vector<int>>();
+				ByteData byteData;
+				byteData.data = (byte*)data.data();
+				byteData.size = data.size() * sizeof(int);
+				objectNode[key] << byteData;
+			}
+			break;
+			case BindingType::FloatByteArray:
+			{
+				std::vector<float> data = *value.Get<std::vector<float>>();
+				ByteData byteData;
+				byteData.data = (byte*)data.data();
+				byteData.size = data.size() * sizeof(float);
+				objectNode[key] << byteData;
+			}
+			break;
 			case BindingType::Enum:
 				objectNode[key] << *value.Get<int>();
 				break;
@@ -195,6 +214,24 @@ namespace Blueberry
 				case BindingType::ByteData:
 					objectNode[key] >> *value.Get<ByteData>();
 					break;
+				case BindingType::IntByteArray:
+				{
+					ByteData byteData;
+					objectNode[key] >> byteData;
+					int* ptr = reinterpret_cast<int*>(byteData.data);
+					std::vector<int> data(ptr, ptr + byteData.size / sizeof(int));
+					*value.Get<std::vector<int>>() = data;
+				}
+				break;
+				case BindingType::FloatByteArray:
+				{
+					ByteData byteData;
+					objectNode[key] >> byteData;
+					float* ptr = reinterpret_cast<float*>(byteData.data);
+					std::vector<float> data(ptr, ptr + byteData.size / sizeof(float));
+					*value.Get<std::vector<float>>() = data;
+				}
+				break;
 				case BindingType::Enum:
 					objectNode[key] >> *value.Get<int>();
 					break;

@@ -7,6 +7,8 @@
 #include "Editor\Assets\Importers\DefaultImporter.h"
 #include "Editor\Assets\Importers\NativeAssetImporter.h"
 #include "rapidyaml\ryml.h"
+#include <fstream>
+#include <sstream>
 
 namespace Blueberry
 {
@@ -19,6 +21,7 @@ namespace Blueberry
 
 	void AssetDB::Refresh()
 	{
+		LoadModifyCache();
 		for (auto& it : std::filesystem::recursive_directory_iterator(Path::GetAssetsPath()))
 		{
 			AssetImporter* importer = CreateImporter(it.path());
@@ -50,6 +53,10 @@ namespace Blueberry
 					}
 				}
 				s_PathModifyCache.insert_or_assign(importer->GetRelativeFilePath(), lastWriteTime);
+				if (needsClearing)
+				{
+					SaveModifyCache();
+				}
 			}
 		}
 	}
@@ -85,6 +92,27 @@ namespace Blueberry
 		return nullptr;
 	}
 
+	std::vector<Object*> AssetDB::LoadAssetObjects(const Guid & guid)
+	{
+		YamlSerializer serializer;
+		std::filesystem::path dataPath = Path::GetAssetCachePath();
+		serializer.Deserialize(dataPath.append(guid.ToString().append(".yaml")).string());
+		auto& deserializedObjects = serializer.GetDeserializedObjects();
+		std::vector<Object*> objects(deserializedObjects.size());
+		if (deserializedObjects.size() > 0)
+		{
+			int i = 0;
+			for (auto& pair : deserializedObjects)
+			{
+				Object* object = pair.first;
+				ObjectDB::AllocateIdToGuid(object, guid, pair.second);
+				objects[i] = object;
+				++i;
+			}
+		}
+		return objects;
+	}
+
 	std::string AssetDB::GetAssetCachedDataPath(Object* object, const char* extension)
 	{
 		std::filesystem::path dataPath = Path::GetAssetCachePath();
@@ -116,12 +144,15 @@ namespace Blueberry
 		Refresh();
 	}
 
-	void AssetDB::SaveAssetObjectToCache(Object* object)
+	void AssetDB::SaveAssetObjectsToCache(const std::vector<Object*>& objects)
 	{
 		// TODO binary serializer
 		YamlSerializer serializer;
-		serializer.AddObject(object);
-		serializer.Serialize(GetAssetCachedDataPath(object, ".yaml"));
+		for (Object* object : objects)
+		{
+			serializer.AddObject(object);
+		}
+		serializer.Serialize(GetAssetCachedDataPath(objects[0], ".yaml"));
 	}
 
 	void AssetDB::SetDirty(Object* object)
@@ -209,6 +240,45 @@ namespace Blueberry
 		}
 		s_Importers.insert_or_assign(relativePathString, importer);
 		return importer;
+	}
+
+	void AssetDB::LoadModifyCache()
+	{
+		auto dataPath = Path::GetAssetCachePath();
+		dataPath.append("PathModifyCache.yaml");
+
+		if (std::filesystem::exists(dataPath))
+		{
+			std::ifstream input;
+			input.open(dataPath, std::ifstream::in);
+			std::string line;
+			while (std::getline(input, line))
+			{
+				int tabIndex = line.find('\t');
+				std::string path = line.substr(0, tabIndex);
+				long long time = std::stoll(line.substr(tabIndex + 1));
+				s_PathModifyCache.insert_or_assign(path, time);
+			}
+			input.close();
+		}
+	}
+
+	void AssetDB::SaveModifyCache()
+	{
+		auto dataPath = Path::GetAssetCachePath();
+		dataPath.append("PathModifyCache.yaml");
+
+		std::ofstream output;
+		output.open(dataPath, std::ofstream::out);
+		std::stringstream sstream;
+		for (auto& pair : s_PathModifyCache)
+		{
+			std::string path = pair.first;
+			long long time = pair.second;
+			sstream << path << "\t" << time << std::endl;
+		}
+		output << sstream.rdbuf();
+		output.close();
 	}
 
 	void AssetDB::Register(const std::string& extension, const std::size_t& importerType)

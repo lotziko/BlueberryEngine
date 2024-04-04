@@ -19,11 +19,10 @@ namespace Blueberry
 		fseek(file, 0, SEEK_END);
 		size_t length = ftell(file);
 		rewind(file);
-		char* data = (char*)malloc(sizeof(char) * length);
-		fread(data, sizeof(char) * length, 1, file);
+		std::string data(length, ' ');
+		fread(data.data(), sizeof(char) * length, 1, file);
 		fclose(file);
-		tree = ryml::parse_in_arena(ryml::csubstr(data, length));
+		tree = ryml::parse_in_arena(ryml::csubstr(data.data(), length));
 		tree.resolve_tags();
-		delete[] data;
 	}
 }

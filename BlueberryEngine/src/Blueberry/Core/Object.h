@@ -70,8 +70,6 @@ std::string childclass::GetTypeName() const											\
 		const bool& IsValid();
 		void SetValid(const bool& valid);
 
-		virtual void Initialize() {}
-
 		static void BindProperties();
 
 		template<class ObjectType>

@@ -29,9 +29,13 @@ namespace Blueberry
 		{
 			void* vertex = ShaderProcessor::Load(vertexPath);
 			void* fragment = ShaderProcessor::Load(fragmentPath);
-			object = AssetDB::LoadAssetObject<Shader>(guid);
-			object->Initialize(vertex, fragment);
-			BB_INFO("Shader \"" << GetName() << "\" imported from cache.");
+			std::vector<Object*> objects = AssetDB::LoadAssetObjects(guid);
+			if (objects.size() == 1 && objects[0]->IsClassType(Shader::Type))
+			{
+				object = static_cast<Shader*>(objects[0]);
+				object->Initialize(vertex, fragment);
+				BB_INFO("Shader \"" << GetName() << "\" imported from cache.");
+			}
 		}
 		else
 		{
@@ -43,7 +47,7 @@ namespace Blueberry
 			void* fragment = ShaderProcessor::Compile(shaderData, "Fragment", "ps_5_0", fragmentPath);
 			object = Shader::Create(vertex, fragment, options);
 			ObjectDB::AllocateIdToGuid(object, guid, 1);
-			AssetDB::SaveAssetObjectToCache(object);
+			AssetDB::SaveAssetObjectsToCache(std::vector<Object*> { object });
 			BB_INFO("Shader \"" << GetName() << "\" imported and compiled from: " + path);
 		}
 		object->SetName(GetName());

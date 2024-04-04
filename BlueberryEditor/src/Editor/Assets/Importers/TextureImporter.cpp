@@ -30,13 +30,17 @@ namespace Blueberry
 		else 
 		if (AssetDB::HasAssetWithGuidInData(guid))
 		{
-			object = AssetDB::LoadAssetObject<Texture2D>(guid);
-			byte* data;
-			size_t length;
-			FileHelper::Load(data, length, GetTexturePath());
-			object->Initialize({ data, length });
-			delete[] data;
-			BB_INFO("Texture \"" << GetName() << "\" imported from cache.");
+			std::vector<Object*> objects = AssetDB::LoadAssetObjects(guid);
+			if (objects.size() == 1 && objects[0]->IsClassType(Texture2D::Type))
+			{
+				object = static_cast<Texture2D*>(objects[0]);
+				byte* data;
+				size_t length;
+				FileHelper::Load(data, length, GetTexturePath());
+				object->Initialize({ data, length });
+				delete[] data;
+				BB_INFO("Texture \"" << GetName() << "\" imported from cache.");
+			}
 		}
 		else
 		{
@@ -59,7 +63,7 @@ namespace Blueberry
 
 			object = Texture2D::Create(properties);
 			ObjectDB::AllocateIdToGuid(object, guid, 1);
-			AssetDB::SaveAssetObjectToCache(object);
+			AssetDB::SaveAssetObjectsToCache(std::vector<Object*> { object });
 			FileHelper::Save(data, dataSize, GetTexturePath());
 
 			stbi_image_free(data);

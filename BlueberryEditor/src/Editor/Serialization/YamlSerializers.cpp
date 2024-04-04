@@ -127,6 +127,7 @@ namespace Blueberry
 	{
 		size_t size = buf.size();
 		v->data = new byte[size / 2];
+		v->size = size / (2 * sizeof(byte));
 		ByteConverter::HexStringToBytes(buf.data(), v->data, size);
 		return true;
 	}
