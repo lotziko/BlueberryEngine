@@ -6,6 +6,7 @@ namespace Blueberry
 	ChunkedObjectArray ObjectDB::s_Array = ChunkedObjectArray();
 	std::map<ObjectId, std::pair<Guid, FileId>> ObjectDB::s_ObjectIdToGuid = std::map<ObjectId, std::pair<Guid, FileId>>();
 	std::map<Guid, std::map<FileId, ObjectId>> ObjectDB::s_GuidToObjectId = std::map<Guid, std::map<FileId, ObjectId>>();
+	std::map<ObjectId, FileId> ObjectDB::s_ObjectIdToFileId = std::map<ObjectId, FileId>();
 
 	ChunkedObjectArray::ChunkedObjectArray()
 	{
@@ -87,11 +88,16 @@ namespace Blueberry
 		return item == nullptr ? nullptr : item->object;
 	}
 
+	void ObjectDB::AllocateIdToFileId(Object* object, const FileId& fileId)
+	{
+		s_ObjectIdToFileId.insert_or_assign(object->GetObjectId(), fileId);
+	}
+
 	void ObjectDB::AllocateIdToGuid(const ObjectId& id, const Guid& guid, const FileId& fileId)
 	{
-		auto s = s_ObjectIdToGuid;
 		s_ObjectIdToGuid.insert_or_assign(id, std::pair { guid, fileId });
 		s_GuidToObjectId[guid].insert_or_assign(fileId, id);
+		s_ObjectIdToFileId.insert_or_assign(id, fileId);
 	}
 
 	void ObjectDB::AllocateIdToGuid(Object* object, const Guid& guid, const FileId& fileId)
@@ -120,6 +126,16 @@ namespace Blueberry
 		return Guid();
 	}
 
+	FileId ObjectDB::GetFileIdFromObject(Object* object)
+	{
+		auto fileIdIt = s_ObjectIdToFileId.find(object->GetObjectId());
+		if (fileIdIt != s_ObjectIdToFileId.end())
+		{
+			return fileIdIt->second;
+		}
+		return 0;
+	}
+
 	std::pair<Guid, FileId> ObjectDB::GetGuidAndFileIdFromObject(Object* object)
 	{
 		auto guidIt = s_ObjectIdToGuid.find(object->GetObjectId());
@@ -128,6 +144,11 @@ namespace Blueberry
 			return guidIt->second;
 		}
 		return std::pair<Guid, FileId>();
+	}
+
+	bool ObjectDB::HasFileId(Object* object)
+	{
+		return s_ObjectIdToFileId.count(object->GetObjectId()) > 0;
 	}
 
 	bool ObjectDB::HasGuid(Object* object)

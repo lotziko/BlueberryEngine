@@ -1,6 +1,9 @@
 #include "bbpch.h"
 #include "ModelImporter.h"
 #include "Editor\Assets\AssetDB.h"
+#include "Blueberry\Scene\Entity.h"
+#include "Blueberry\Scene\Components\Transform.h"
+#include "Blueberry\Scene\Components\MeshRenderer.h"
 #include "Blueberry\Graphics\Mesh.h"
 #include "openfbx\ofbx.h"
 
@@ -21,16 +24,22 @@ namespace Blueberry
 		{
 			// TODO multiple meshes in file
 			// TODO rewrite this, it makes allocateid too and add fileid serializing to yamlserializer
-			std::vector<Object*> objects = AssetDB::LoadAssetObjects(guid);
-			for (Object* object : objects)
+			auto objects = AssetDB::LoadAssetObjects(guid);
+			for (auto& pair : objects)
 			{
+				Object* object = pair.first;
+				FileId id = pair.second;
+
 				if (object->IsClassType(Mesh::Type))
 				{
-					Mesh* mesh = static_cast<Mesh*>(object);
-					mesh->Apply();
-					std::string name = mesh->GetName();
-					AddImportedObject(mesh, TO_HASH(name));
-					BB_INFO("Mesh \"" << name << "\" imported from cache.");
+					(static_cast<Mesh*>(object))->Apply();
+					AddImportedObject(object, id);
+					BB_INFO("Mesh \"" << object->GetName() << "\" imported from cache.");
+				} 
+				else if (object->IsClassType(Entity::Type))
+				{
+					AddImportedObject(object, id);
+					BB_INFO("Entity \"" << object->GetName() << "\" imported from cache.");
 				}
 			}
 			return;
@@ -62,6 +71,19 @@ namespace Blueberry
 
 			std::vector<Object*> objects;
 
+			Transform* root = nullptr;
+			if (meshCount > 1)
+			{
+				Entity* entity = Object::Create<Entity>();
+				entity->SetName(GetName());
+				root = Object::Create<Transform>();
+				entity->AddComponent(root);
+				objects.emplace_back(entity);
+				size_t entityFileId = TO_HASH(std::string(GetName()).append("_Entity"));
+				ObjectDB::AllocateIdToGuid(entity, guid, entityFileId);
+				AddImportedObject(entity, entityFileId);
+			}
+
 			for (int meshId = 0; meshId < meshCount; ++meshId)
 			{
 				const ofbx::Mesh* mesh = scene->getMesh(meshId); 
@@ -69,11 +91,34 @@ namespace Blueberry
 				ofbx::Vec3Attributes positions = geom.getPositions();
 				ofbx::Vec3Attributes normals = geom.getNormals();
 				ofbx::Vec2Attributes uvs = geom.getUVs();
-				auto scale = mesh->getLocalScaling();
+
+				ofbx::DVec3 scale = mesh->getLocalScaling();
+				ofbx::DVec3 translation = mesh->getLocalTranslation();
+				ofbx::DVec3 rotation = mesh->getLocalRotation();
 
 				Mesh* object = Mesh::Create();
-				size_t id = TO_HASH(mesh->name);
-				ObjectDB::AllocateIdToGuid(object, guid, id);
+				size_t meshFileId = TO_HASH(mesh->name);
+				ObjectDB::AllocateIdToGuid(object, guid, meshFileId);
+
+				Entity* entity = Object::Create<Entity>();
+				Transform* transform = Object::Create<Transform>();
+				if (root != nullptr)
+				{
+					transform->SetParent(root);
+				}
+				transform->SetLocalPosition(Vector3(translation.x / scale.x, translation.y / scale.y, translation.z / scale.z));
+				transform->SetLocalRotation(Quaternion::CreateFromYawPitchRoll(ToRadians(rotation.y), ToRadians(rotation.x + 90), ToRadians(rotation.z)));
+				MeshRenderer* meshRenderer = Object::Create<MeshRenderer>();
+				meshRenderer->SetMesh(object);
+				// TODO material
+				entity->SetName(mesh->name);
+				entity->AddComponent(transform);
+				entity->AddComponent(meshRenderer);
+
+				size_t entityFileId = TO_HASH(std::string(mesh->name).append("_Entity"));
+				ObjectDB::AllocateIdToGuid(entity, guid, entityFileId);
+				AddImportedObject(entity, entityFileId);
+				objects.emplace_back(entity);
 
 				std::vector<ofbx::Vec3> meshPositions;
 				std::vector<ofbx::Vec3> meshNormals;
@@ -158,7 +203,7 @@ namespace Blueberry
 
 				BB_INFO("Mesh \"" << mesh->name << "\" imported.");
 				object->SetName(mesh->name);
-				AddImportedObject(object, id);
+				AddImportedObject(object, meshFileId);
 				objects.emplace_back(object);
 			}
 

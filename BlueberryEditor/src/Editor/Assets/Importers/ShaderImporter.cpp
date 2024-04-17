@@ -29,10 +29,10 @@ namespace Blueberry
 		{
 			void* vertex = ShaderProcessor::Load(vertexPath);
 			void* fragment = ShaderProcessor::Load(fragmentPath);
-			std::vector<Object*> objects = AssetDB::LoadAssetObjects(guid);
-			if (objects.size() == 1 && objects[0]->IsClassType(Shader::Type))
+			auto objects = AssetDB::LoadAssetObjects(guid);
+			if (objects.size() == 1 && objects[0].first->IsClassType(Shader::Type))
 			{
-				object = static_cast<Shader*>(objects[0]);
+				object = static_cast<Shader*>(objects[0].first);
 				object->Initialize(vertex, fragment);
 				BB_INFO("Shader \"" << GetName() << "\" imported from cache.");
 			}

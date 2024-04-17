@@ -87,6 +87,7 @@ namespace Blueberry
 			std::size_t parentId;
 			Object*(*createInstance)() = nullptr;
 			std::vector<FieldInfo> fields;
+			std::map<std::string, FieldInfo> fieldsMap;
 		};
 
 		static const ClassInfo& GetInfo(const std::size_t&);
@@ -163,6 +164,7 @@ namespace Blueberry
 			for (FieldInfo info : bindings.fieldInfos)
 			{
 				classInfoIt->second.fields.emplace_back(info);
+				classInfoIt->second.fieldsMap.insert_or_assign(info.name, info);
 			}
 		}
 	}

@@ -11,31 +11,30 @@ Shader
 	HLSLBEGIN
 	#include "Input.hlsl"
 
-	cbuffer PerObjectData
-	{
-		float4 objectId;
-	}
-
 	struct Attributes
 	{
 		float3 positionOS : POSITION;
+		float3 normalOS	: NORMAL;
 	};
 
 	struct Varyings
 	{
 		float4 positionCS : SV_POSITION;
+		float3 normalWS : TEXCOORD0;
 	};
 
 	Varyings Vertex(Attributes input)
 	{
 		Varyings output;
 		output.positionCS = mul(mul(float4(input.positionOS, 1.0f), modelMatrix), viewProjectionMatrix);
+		output.normalWS = normalize(mul(float4(input.normalOS, 0.0f), modelMatrix).xyz);
 		return output;
 	}
 
 	float4 Fragment(Varyings input) : SV_TARGET
 	{
-		return float4(objectId.r, objectId.g, 0, 1);
+		float lambert = dot(input.normalWS, -cameraForwardDirectionWS);
+		return float4(1.0 * lambert, 0.0, 1.0 * lambert, 1.0);
 	}
 	HLSLEND
 }

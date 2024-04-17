@@ -141,6 +141,29 @@ namespace Blueberry
 			}
 		}
 
+		// Prefab drop
+		ImGui::Dummy(size);
+		if (ImGui::BeginDragDropTarget())
+		{
+			const ImGuiPayload* payload = ImGui::GetDragDropPayload();
+			if (payload != nullptr && payload->IsDataType("OBJECT_ID"))
+			{
+				Blueberry::ObjectId* id = (Blueberry::ObjectId*)payload->Data;
+				Blueberry::ObjectItem* item = Blueberry::ObjectDB::IdToObjectItem(*id);
+
+				if (item != nullptr && item->object->IsClassType(Entity::Type) && ImGui::AcceptDragDropPayload("OBJECT_ID"))
+				{
+					Scene* scene = EditorSceneManager::GetScene();
+					if (scene != nullptr)
+					{
+						scene->AddEntity(static_cast<Entity*>(Object::Clone(item->object)));
+					}
+				}
+			}
+			ImGui::EndDragDropTarget();
+		}
+		ImGui::SetCursorScreenPos(pos);
+
 		// Selection
 		if (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered() && (!ImGuizmo::IsOver() || Selection::GetActiveObject() == nullptr))
 		{

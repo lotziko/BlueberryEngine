@@ -2,11 +2,11 @@
 #include "AssetDB.h"
 
 #include "Blueberry\Core\ObjectDB.h"
+#include "Blueberry\Serialization\BinarySerializer.h"
 #include "Editor\Assets\AssetImporter.h"
 #include "Editor\Serialization\YamlSerializer.h"
 #include "Editor\Assets\Importers\DefaultImporter.h"
 #include "Editor\Assets\Importers\NativeAssetImporter.h"
-#include "rapidyaml\ryml.h"
 #include <fstream>
 #include <sstream>
 
@@ -92,13 +92,13 @@ namespace Blueberry
 		return nullptr;
 	}
 
-	std::vector<Object*> AssetDB::LoadAssetObjects(const Guid & guid)
+	std::vector<std::pair<Object*, FileId>> AssetDB::LoadAssetObjects(const Guid& guid)
 	{
-		YamlSerializer serializer;
+		BinarySerializer/*YamlSerializer*/ serializer;
 		std::filesystem::path dataPath = Path::GetAssetCachePath();
-		serializer.Deserialize(dataPath.append(guid.ToString().append(".yaml")).string());
+		serializer.Deserialize(dataPath.append(guid.ToString()).string());
 		auto& deserializedObjects = serializer.GetDeserializedObjects();
-		std::vector<Object*> objects(deserializedObjects.size());
+		std::vector<std::pair<Object*, FileId>> objects(deserializedObjects.size());
 		if (deserializedObjects.size() > 0)
 		{
 			int i = 0;
@@ -106,27 +106,27 @@ namespace Blueberry
 			{
 				Object* object = pair.first;
 				ObjectDB::AllocateIdToGuid(object, guid, pair.second);
-				objects[i] = object;
+				objects[i] = std::pair { object, pair.second };
 				++i;
 			}
 		}
 		return objects;
 	}
 
-	std::string AssetDB::GetAssetCachedDataPath(Object* object, const char* extension)
+	std::string AssetDB::GetAssetCachedDataPath(Object* object)
 	{
 		std::filesystem::path dataPath = Path::GetAssetCachePath();
 		if (!std::filesystem::exists(dataPath))
 		{
 			std::filesystem::create_directories(dataPath);
 		}
-		return dataPath.append(ObjectDB::GetGuidFromObject(object).ToString().append(extension)).string();
+		return dataPath.append(ObjectDB::GetGuidFromObject(object).ToString()).string();
 	}
 
 	bool AssetDB::HasAssetWithGuidInData(const Guid& guid)
 	{
 		auto dataPath = Path::GetAssetCachePath();
-		dataPath.append(guid.ToString().append(".yaml"));
+		dataPath.append(guid.ToString());
 		return std::filesystem::exists(dataPath);
 	}
 
@@ -146,13 +146,12 @@ namespace Blueberry
 
 	void AssetDB::SaveAssetObjectsToCache(const std::vector<Object*>& objects)
 	{
-		// TODO binary serializer
-		YamlSerializer serializer;
+		BinarySerializer/*YamlSerializer*/ serializer;
 		for (Object* object : objects)
 		{
 			serializer.AddObject(object);
 		}
-		serializer.Serialize(GetAssetCachedDataPath(objects[0], ".yaml"));
+		serializer.Serialize(GetAssetCachedDataPath(objects[0]));
 	}
 
 	void AssetDB::SetDirty(Object* object)
@@ -168,7 +167,7 @@ namespace Blueberry
 	void AssetDB::DeleteAssetFromData(const Guid& guid)
 	{
 		auto dataPath = Path::GetAssetCachePath();
-		dataPath.append(guid.ToString().append(".yaml"));
+		dataPath.append(guid.ToString());
 		std::filesystem::remove(dataPath);
 	}
 
@@ -245,7 +244,7 @@ namespace Blueberry
 	void AssetDB::LoadModifyCache()
 	{
 		auto dataPath = Path::GetAssetCachePath();
-		dataPath.append("PathModifyCache.yaml");
+		dataPath.append("PathModifyCache");
 
 		if (std::filesystem::exists(dataPath))
 		{
@@ -266,7 +265,7 @@ namespace Blueberry
 	void AssetDB::SaveModifyCache()
 	{
 		auto dataPath = Path::GetAssetCachePath();
-		dataPath.append("PathModifyCache.yaml");
+		dataPath.append("PathModifyCache");
 
 		std::ofstream output;
 		output.open(dataPath, std::ofstream::out);

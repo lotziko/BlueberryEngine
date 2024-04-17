@@ -25,7 +25,7 @@ namespace Blueberry
 
 			for (auto entity : entities)
 			{
-				if (entity.IsValid() && entity.Get()->GetTransform()->GetParent() == nullptr)
+				if (entity.IsValid() && entity.Get()->GetTransform() != nullptr && entity.Get()->GetTransform()->GetParent() == nullptr)
 				{
 					DrawEntity(entity.Get());
 				}

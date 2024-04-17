@@ -47,18 +47,18 @@ Shader
 		float4 sample8 = _BaseMap.Sample(_BaseMap_Sampler, input.texcoord + float2(offset.x, -offset.y));
 		float4 sample9 = _BaseMap.Sample(_BaseMap_Sampler, input.texcoord - float2(offset.x, -offset.y));
 
-		if (sample1.r < 0.2)
+		if (sample1.r == 0)
 		{
 			return float4(1, 165.0 / 255.0, 0, 1) *
 				(
-					sample2.r > 0.2 ||
-					sample3.r > 0.2 ||
-					sample4.r > 0.2 ||
-					sample5.r > 0.2 ||
-					sample6.r > 0.2 ||
-					sample7.r > 0.2 ||
-					sample8.r > 0.2 ||
-					sample9.r > 0.2
+					sample2.r > 0 ||
+					sample3.r > 0 ||
+					sample4.r > 0 ||
+					sample5.r > 0 ||
+					sample6.r > 0 ||
+					sample7.r > 0 ||
+					sample8.r > 0 ||
+					sample9.r > 0
 				);
 		}
 

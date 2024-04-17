@@ -75,6 +75,7 @@ std::string childclass::GetTypeName() const											\
 		template<class ObjectType>
 		static ObjectType* Create();
 
+		static Object* Clone(Object* object);
 		static void Destroy(Object* object);
 
 		virtual void OnCreate() { };

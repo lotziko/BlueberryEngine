@@ -44,43 +44,68 @@ namespace Blueberry
 			ImGui::PushID(pathString.c_str());
 			if (it.is_directory())
 			{
-				if (ImGui::Button(relativePath.filename().string().c_str()))
+				bool opened = ImGui::TreeNodeEx((void*)&pathString, ImGuiTreeNodeFlags_Leaf, relativePath.filename().string().c_str());
+				if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 				{
 					m_CurrentDirectory /= path.filename();
+				}
+				if (opened)
+				{
+					ImGui::TreePop();
 				}
 			}
 			else if (extension == ".meta")
 			{
-				AssetImporter* importer = AssetDB::GetImporter(relativePath.stem().string());
+				AssetImporter* importer = AssetDB::GetImporter(relativePath.replace_extension("").string());
 				if (importer != nullptr)
 				{
 					auto name = path.stem().string();
-					if (ImGui::Button(name.c_str()))
-					{
-						Selection::SetActiveObject(importer);
-						importer->ImportDataIfNeeded();
-					}
+					auto importedObjects = importer->GetImportedObjects();
 
-					if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+					ImGuiTreeNodeFlags flags = importedObjects.size() > 0 ? ImGuiTreeNodeFlags_OpenOnArrow : ImGuiTreeNodeFlags_Leaf;
+					bool opened = ImGui::TreeNodeEx((void*)importer, flags, name.c_str());
+
+					if (ImGui::IsItemHovered())
 					{
-						std::string stringPath = importer->GetFilePath();
-						std::filesystem::path filePath = stringPath;
-						if (filePath.extension() == ".scene")
+						importer->ImportDataIfNeeded();
+
+						if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 						{
-							EditorSceneManager::Load(stringPath);
+							std::string stringPath = importer->GetFilePath();
+							std::filesystem::path filePath = stringPath;
+							if (filePath.extension() == ".scene")
+							{
+								EditorSceneManager::Load(stringPath);
+							}
 						}
 					}
 
-					if (ImGui::BeginDragDropSource())
+					if (opened)
 					{
-						importer->ImportDataIfNeeded();
-						auto& objects = importer->GetImportedObjects();
-						if (objects.size() > 0)
+						for (auto& pair : importedObjects)
 						{
-							ImGui::SetDragDropPayload("OBJECT_ID", &objects.begin()->second, sizeof(ObjectId));
-							ImGui::Text("%s", importer->GetName().c_str());
+							Object* object = ObjectDB::GetObject(pair.second);
+							bool opened = ImGui::TreeNodeEx((void*)object, ImGuiTreeNodeFlags_Leaf, object->GetName().c_str());
+							
+							if (ImGui::BeginDragDropSource())
+							{
+								ObjectId objectId = object->GetObjectId();
+								ImGui::SetDragDropPayload("OBJECT_ID", &objectId, sizeof(ObjectId));
+								ImGui::Text("%s", importer->GetName().c_str());
+								ImGui::EndDragDropSource();
+							}
+
+							if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+							{
+								Selection::SetActiveObject(importer);
+							}
+							
+							if (opened)
+							{
+								ImGui::TreePop();
+							}
 						}
-						ImGui::EndDragDropSource();
+						ImGui::TreePop();
 					}
 				}
 			}

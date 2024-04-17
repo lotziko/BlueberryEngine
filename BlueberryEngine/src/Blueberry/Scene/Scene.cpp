@@ -15,11 +15,8 @@ namespace Blueberry
 	{
 		for (auto& entity : m_Entities)
 		{
+			// Components are being added automatically
 			serializer.AddObject(entity.Get());
-			for (auto component : entity->GetComponents())
-			{
-				serializer.AddObject(component);
-			}
 		}
 		serializer.Serialize(path);
 	}
@@ -33,10 +30,6 @@ namespace Blueberry
 			{
 				Entity* entity = (Entity*)object.first;
 				AddEntity(entity);
-				for (auto& component : entity->GetComponents())
-				{
-					entity->AddComponentIntoScene(component);
-				}
 			}
 		}
 	}
@@ -92,6 +85,14 @@ namespace Blueberry
 		entity->m_Id = m_MaxEntityId;
 		++m_MaxEntityId;
 		m_Entities.emplace_back(entity);
+		for (auto& component : entity->GetComponents())
+		{
+			entity->AddComponentIntoScene(component);
+		}
+		for (auto& child : entity->m_Transform->GetChildren())
+		{
+			AddEntity(child->GetEntity());
+		}
 	}
 
 	void Scene::DestroyEntity(Entity* entity)

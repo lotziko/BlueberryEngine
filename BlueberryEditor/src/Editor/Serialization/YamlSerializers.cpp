@@ -137,7 +137,7 @@ namespace Blueberry
 		*n |= ryml::MAP;
 		*n |= ryml::_WIP_STYLE_FLOW_SL;
 		n->append_child() << ryml::key("fileId") << val.fileId;
-		if (val.isAsset)
+		if (val.guid.data[0] > 0)
 		{
 			n->append_child() << ryml::key("guid") << val.guid;
 		}
@@ -148,12 +148,11 @@ namespace Blueberry
 		n["fileId"] >> val->fileId;
 		if (n.has_child("guid"))
 		{
-			val->isAsset = true;
 			n["guid"] >> val->guid;
 		}
 		else
 		{
-			val->isAsset = false;
+			val->guid = {};
 		}
 		return true;
 	}

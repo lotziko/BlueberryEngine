@@ -13,7 +13,6 @@ namespace Blueberry
 	struct ObjectPtrData
 	{
 		FileId fileId;
-		bool isAsset;
 		Guid guid;
 	};
 }

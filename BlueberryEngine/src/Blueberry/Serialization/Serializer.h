@@ -1,4 +1,5 @@
 #pragma once
+#include "Blueberry\Core\Structs.h"
 
 namespace Blueberry
 {
@@ -14,14 +15,22 @@ namespace Blueberry
 		std::vector<std::pair<Object*, FileId>>& GetDeserializedObjects();
 
 	protected:
+		void AddAdditionalObject(Object* object);
+		void AddDeserializedObject(Object* object, const FileId& fileId);
+
+	protected:
 		FileId GetFileId(Object* object);
 		Object* GetObjectRef(const FileId& fileId);
 
+		Object* GetNextObjectToSerialize();
+		Object* GetPtrObject(const ObjectPtrData& data);
+		ObjectPtrData GetPtrData(Object* object);
+		FileId GenerateFileId();
+
 	protected:
 		std::vector<Object*> m_ObjectsToSerialize;
+		std::vector<Object*> m_AdditionalObjectsToSerialize;
 		std::vector<std::pair<Object*, FileId>> m_DeserializedObjects;
-		std::unordered_map<Object*, FileId> m_ObjectToFileId;
 		std::unordered_map<FileId, Object*> m_FileIdToObject;
-		FileId m_MaxId = 0;
 	};
 }

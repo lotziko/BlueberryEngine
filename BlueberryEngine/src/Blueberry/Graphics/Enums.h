@@ -6,6 +6,7 @@ namespace Blueberry
 	{
 		None,
 		R8G8B8A8_UNorm,
+		R8G8B8A8_UINT,
 		D24_UNorm,
 	};
 

@@ -23,9 +23,9 @@ namespace Blueberry
 		static ObjectType* CreateAssetObject(const Guid& guid);
 
 		// Use inside importers only
-		static std::vector<Object*> AssetDB::LoadAssetObjects(const Guid& guid);
+		static std::vector<std::pair<Object*, FileId>> AssetDB::LoadAssetObjects(const Guid& guid);
 
-		static std::string GetAssetCachedDataPath(Object* object, const char* extension);
+		static std::string GetAssetCachedDataPath(Object* object);
 
 		static bool HasAssetWithGuidInData(const Guid& guid);
 		static void CreateAsset(Object* object, const std::string& relativePath);

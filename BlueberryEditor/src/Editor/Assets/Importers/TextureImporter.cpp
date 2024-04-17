@@ -30,10 +30,10 @@ namespace Blueberry
 		else 
 		if (AssetDB::HasAssetWithGuidInData(guid))
 		{
-			std::vector<Object*> objects = AssetDB::LoadAssetObjects(guid);
-			if (objects.size() == 1 && objects[0]->IsClassType(Texture2D::Type))
+			auto objects = AssetDB::LoadAssetObjects(guid);
+			if (objects.size() == 1 && objects[0].first->IsClassType(Texture2D::Type))
 			{
-				object = static_cast<Texture2D*>(objects[0]);
+				object = static_cast<Texture2D*>(objects[0].first);
 				byte* data;
 				size_t length;
 				FileHelper::Load(data, length, GetTexturePath());

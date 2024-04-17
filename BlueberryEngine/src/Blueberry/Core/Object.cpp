@@ -3,6 +3,7 @@
 
 #include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Core\ObjectDB.h"
+#include "Blueberry\Core\ObjectCloner.h"
 
 namespace Blueberry
 {
@@ -65,6 +66,11 @@ namespace Blueberry
 		BEGIN_OBJECT_BINDING(Object)
 		BIND_FIELD(FieldInfo(TO_STRING(m_Name), &Object::m_Name, BindingType::String))
 		END_OBJECT_BINDING()
+	}
+
+	Object* Object::Clone(Object* object)
+	{
+		return ObjectCloner::Clone(object);
 	}
 
 	void Object::Destroy(Object* object)

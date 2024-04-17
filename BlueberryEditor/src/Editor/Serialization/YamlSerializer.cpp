@@ -14,7 +14,9 @@ namespace Blueberry
 		ryml::Tree tree;
 		ryml::NodeRef root = tree.rootref();
 		root |= ryml::MAP;
-		for (auto& object : m_ObjectsToSerialize)
+
+		Object* object;
+		while ((object = GetNextObjectToSerialize()) != nullptr)
 		{
 			ryml::NodeRef objectNode = root.append_child() << ryml::key(object->GetTypeName());
 			objectNode |= ryml::MAP;
@@ -41,8 +43,7 @@ namespace Blueberry
 				std::string typeName(key.str, key.size());
 				ClassDB::ClassInfo info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
 				Object* instance = info.createInstance();
-				m_FileIdToObject.insert({ fileId, instance });
-				m_DeserializedObjects.emplace_back(std::pair { instance, fileId});
+				AddDeserializedObject(instance, fileId);
 				deserializedNodes.emplace_back(i, instance);
 			}
 		}
@@ -119,27 +120,14 @@ namespace Blueberry
 			case BindingType::ObjectPtr:
 			{
 				ObjectPtr<Object> objectRefValue = *value.Get<ObjectPtr<Object>>();
-				ObjectPtrData data;
+				ObjectPtrData data = {};
 				if (objectRefValue.IsValid())
 				{
-					Object* dataObject = objectRefValue.Get();
-					if (ObjectDB::HasGuid(dataObject))
-					{
-						auto pair = ObjectDB::GetGuidAndFileIdFromObject(dataObject);
-						data.fileId = pair.second;
-						data.isAsset = true;
-						data.guid = pair.first;
-					}
-					else
-					{
-						data.fileId = GetFileId(dataObject);
-						data.isAsset = false;
-					}
+					data = GetPtrData(objectRefValue.Get());
 				}
 				else
 				{
 					data.fileId = 0;
-					data.isAsset = false;
 				}
 				objectNode[key] << data;
 			}
@@ -153,27 +141,14 @@ namespace Blueberry
 					sequence |= ryml::SEQ;
 					for (ObjectPtr<Object>& objectRefValue : arrayValue)
 					{
-						ObjectPtrData data;
+						ObjectPtrData data = {};
 						if (objectRefValue.IsValid())
 						{
-							Object* dataObject = objectRefValue.Get();
-							if (ObjectDB::HasGuid(dataObject))
-							{
-								auto pair = ObjectDB::GetGuidAndFileIdFromObject(dataObject);
-								data.fileId = pair.second;
-								data.isAsset = true;
-								data.guid = pair.first;
-							}
-							else
-							{
-								data.fileId = GetFileId(dataObject);
-								data.isAsset = false;
-							}
+							data = GetPtrData(objectRefValue.Get());
 						}
 						else
 						{
 							data.fileId = 0;
-							data.isAsset = false;
 						}
 						sequence.append_child() << data;
 					}
@@ -249,35 +224,9 @@ namespace Blueberry
 					break;
 				case BindingType::ObjectPtr:
 				{
-					ObjectPtrData data;
+					ObjectPtrData data = {};
 					objectNode[key] >> data;
-					Object* dataObject;
-					
-					if (data.isAsset)
-					{
-						dataObject = ObjectDB::GetObjectFromGuid(data.guid, data.fileId);
-						if (dataObject == nullptr)
-						{
-							dataObject = AssetLoader::Load(data.guid, data.fileId);
-							if (dataObject == nullptr)
-							{
-								ObjectDB::AllocateEmptyObjectWithGuid(data.guid, data.fileId);
-								dataObject = ObjectDB::GetObjectFromGuid(data.guid, data.fileId);
-							}
-						}
-					}
-					else
-					{
-						if (data.fileId == 0)
-						{
-							dataObject = nullptr;
-						}
-						else
-						{
-							dataObject = GetObjectRef(data.fileId);
-						}
-					}
-					*value.Get<ObjectPtr<Object>>() = dataObject;
+					*value.Get<ObjectPtr<Object>>() = GetPtrObject(data);
 				}
 				break;
 				case BindingType::ObjectPtrArray:
@@ -285,31 +234,9 @@ namespace Blueberry
 					std::vector<ObjectPtr<Object>>* refArrayPointer = value.Get<std::vector<ObjectPtr<Object>>>();
 					for (auto& child : objectNode[key].cchildren())
 					{
-						ObjectPtrData data;
+						ObjectPtrData data = {};
 						child >> data;
-						Object* dataObject;
-						
-						if (data.isAsset)
-						{
-							dataObject = ObjectDB::GetObjectFromGuid(data.guid, data.fileId);
-							if (dataObject == nullptr)
-							{
-								ObjectDB::AllocateEmptyObjectWithGuid(data.guid, data.fileId);
-								dataObject = ObjectDB::GetObjectFromGuid(data.guid, data.fileId);
-							}
-						}
-						else
-						{
-							if (data.fileId == 0)
-							{
-								dataObject = nullptr;
-							}
-							else
-							{
-								dataObject = GetObjectRef(data.fileId);
-							}
-						}
-						refArrayPointer->emplace_back(dataObject);
+						refArrayPointer->emplace_back(GetPtrObject(data));
 					}
 				}
 				break;

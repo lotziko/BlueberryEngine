@@ -62,12 +62,22 @@ namespace Blueberry
 
 	void Entity::AddComponentIntoScene(Component* component)
 	{
+		if (m_Scene == nullptr)
+		{
+			return;
+		}
+
 		std::size_t type = component->GetType();
 		m_Scene->m_ComponentManager.AddComponent(this, component);
 	}
 
 	void Entity::RemoveComponentFromScene(Component* component)
 	{
+		if (m_Scene == nullptr)
+		{
+			return;
+		}
+
 		std::size_t type = component->GetType();
 		m_Scene->m_ComponentManager.RemoveComponent(this, component);
 	}

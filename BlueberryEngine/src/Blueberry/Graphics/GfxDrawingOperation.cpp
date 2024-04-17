@@ -5,6 +5,7 @@
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\Texture.h"
 #include "Blueberry\Graphics\Mesh.h"
+#include "Blueberry\Graphics\DefaultMaterials.h"
 
 namespace Blueberry
 {
@@ -30,32 +31,33 @@ namespace Blueberry
 
 	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material)
 	{
-		shader = (material != nullptr && material->IsValid() && material->m_Shader.IsValid() && material->m_Shader->IsValid()) ? material->m_Shader->m_Shader : nullptr;
+		if (material == nullptr || !material->IsValid() || !material->m_Shader.IsValid() || !material->m_Shader->IsValid())
+		{
+			material = DefaultMaterials::GetError();
+		}
+		
+		shader = material->m_Shader->m_Shader;
+		textures = &(material->m_GfxTextures);
+		auto& options = material->GetShaderOptions();
+		this->cullMode = options.GetCullMode();
+		this->blendSrc = options.GetBlendSrc();
+		this->blendDst = options.GetBlendDst();
+		this->zWrite = options.GetZWrite();
+
 		if (mesh != nullptr && mesh->IsValid() && mesh->GetVertexCount() > 0)
 		{
-			textures = &(material->m_GfxTextures);
 			vertexBuffer = mesh->m_VertexBuffer;
 			indexBuffer = mesh->m_IndexBuffer;
 			indexCount = mesh->m_IndexCount;
 			indexOffset = 0;
-			auto& options = material->GetShaderOptions();
-			this->cullMode = options.GetCullMode();
-			this->blendSrc = options.GetBlendSrc();
-			this->blendDst = options.GetBlendDst();
-			this->zWrite = options.GetZWrite();
 			topology = mesh->GetTopology();
 		}
 		else
 		{
-			textures = {};
 			vertexBuffer = nullptr;
 			indexBuffer = nullptr;
 			indexCount = 0;
 			indexOffset = 0;
-			cullMode = CullMode::None;
-			blendSrc = BlendMode::One;
-			blendDst = BlendMode::Zero;
-			zWrite = ZWrite::On;
 			topology = Topology::Unknown;
 		}
 	}

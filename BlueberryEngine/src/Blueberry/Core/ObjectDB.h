@@ -43,11 +43,14 @@ namespace Blueberry
 		static ObjectItem* IdToObjectItem(const ObjectId& id);
 		static Object* GetObject(const ObjectId& id);
 
+		static void AllocateIdToFileId(Object* object, const FileId& fileId);
 		static void AllocateIdToGuid(const ObjectId& id, const Guid& guid, const FileId& fileId);
 		static void AllocateIdToGuid(Object* object, const Guid& guid, const FileId& fileId);
 		static void AllocateEmptyObjectWithGuid(const Guid& guid, const FileId& fileId);
 		static Guid GetGuidFromObject(Object* object);
+		static FileId GetFileIdFromObject(Object* object);
 		static std::pair<Guid, FileId> GetGuidAndFileIdFromObject(Object* object);
+		static bool HasFileId(Object* object);
 		static bool HasGuid(Object* object);
 		static bool HasGuid(const Guid& guid);
 		static Object* GetObjectFromGuid(const Guid& guid, const FileId& fileId);
@@ -55,5 +58,6 @@ namespace Blueberry
 		static ChunkedObjectArray s_Array;
 		static std::map<ObjectId, std::pair<Guid, FileId>> s_ObjectIdToGuid;
 		static std::map<Guid, std::map<FileId, ObjectId>> s_GuidToObjectId;
+		static std::map<ObjectId, FileId> s_ObjectIdToFileId;
 	};
 }
