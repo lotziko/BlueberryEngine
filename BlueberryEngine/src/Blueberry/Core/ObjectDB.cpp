@@ -111,7 +111,7 @@ namespace Blueberry
 		// TODO do something better
 		Object* object = new Object();
 		object->SetName("Missing");
-		object->SetValid(false);
+		object->SetAlive(false);
 		ObjectDB::AllocateId(object);
 		AllocateIdToGuid(object->GetObjectId(), guid, fileId);
 	}

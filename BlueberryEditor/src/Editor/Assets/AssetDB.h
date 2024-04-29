@@ -36,8 +36,6 @@ namespace Blueberry
 
 	private:
 		static AssetImporter* CreateImporter(const std::filesystem::path& path);
-		static void LoadModifyCache();
-		static void SaveModifyCache();
 
 	public:
 		static void Register(const std::string& extension, const std::size_t& importerType);
@@ -47,9 +45,6 @@ namespace Blueberry
 		static std::map<std::string, AssetImporter*> s_Importers;
 		static std::map<Guid, std::string> s_GuidToPath;
 		static std::vector<ObjectId> s_DirtyAssets;
-
-		// Save these to disk
-		static std::map<std::string, long long> s_PathModifyCache;
 	};
 
 	template<class ObjectType>

@@ -6,7 +6,9 @@
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\EditorSceneManager.h"
 #include "Editor\Selection.h"
+#include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Graphics\Material.h"
+#include "Blueberry\Graphics\Texture2D.h"
 #include "imgui\imgui.h"
 
 namespace Blueberry
@@ -14,102 +16,79 @@ namespace Blueberry
 	ProjectBrowser::ProjectBrowser()
 	{
 		m_CurrentDirectory = Path::GetAssetsPath();
+
+		m_FolderIcon = (Texture2D*)AssetLoader::Load("assets/icons/FolderIcon.png");
+		m_FbxIcon = (Texture2D*)AssetLoader::Load("assets/icons/FbxIcon.png");
+		m_FolderTree = FolderTree(m_CurrentDirectory.string());
 	}
 
 	void ProjectBrowser::DrawUI()
 	{
 		ImGui::Begin("Project");
 
-		ImVec2 mousePos = ImGui::GetMousePos();
-		ImVec2 pos = ImGui::GetCursorScreenPos();
-		ImVec2 size = ImGui::GetContentRegionAvail();
+		ImGuiTableFlags tableFlags = 0;
+		tableFlags |= ImGuiTableFlags_Resizable;
 
-		auto assetsPath = Path::GetAssetsPath();
+		if (ImGui::BeginTable("##ProjectTable", 2, tableFlags))
+		{
+			ImGui::TableNextRow();
+			ImGui::TableSetColumnIndex(0);
 
-		if (m_CurrentDirectory != assetsPath)
+			ImGui::BeginChild("##FoldersColumn", ImVec2(0, ImGui::GetContentRegionAvail().y - 2));
+			DrawFoldersTree();
+			ImGui::EndChild();
+
+			ImGui::TableSetColumnIndex(1);
+			ImGui::BeginChild("##CurrentFolderColumn", ImVec2(0, ImGui::GetContentRegionAvail().y - 2));
+			DrawCurrentFolder();
+			ImGui::EndChild();
+
+			ImGui::EndTable();
+		}
+		
+		ImGui::End();
+	}
+
+	void ProjectBrowser::DrawFoldersTree()
+	{
+		DrawFolderNode(m_FolderTree.GetRoot());
+	}
+
+	void ProjectBrowser::DrawFolderNode(const FolderTreeNode& node)
+	{
+		ImGuiTreeNodeFlags flags = node.children.size() > 0 ? ImGuiTreeNodeFlags_OpenOnArrow : ImGuiTreeNodeFlags_Leaf;
+		bool opened = ImGui::TreeNodeEx(node.name.c_str(), flags);
+
+		if (ImGui::IsItemClicked())
+		{
+			m_CurrentDirectory = node.path;
+		}
+
+		if (opened)
+		{
+			for (auto& child : node.children)
+			{
+				DrawFolderNode(child);
+			}
+			ImGui::TreePop();
+		}
+	}
+
+	void ProjectBrowser::DrawCurrentFolder()
+	{
+		//ImGui::NewLine();
+		/*if (m_CurrentDirectory != Path::GetAssetsPath())
 		{
 			if (ImGui::Button("Back"))
 			{
 				m_CurrentDirectory = m_CurrentDirectory.parent_path();
 			}
-		}
+			ImGui::NewLine();
+		}*/
 
 		for (auto& it : std::filesystem::directory_iterator(m_CurrentDirectory))
 		{
-			const auto path = it.path();
-			auto pathString = path.string();
-			auto extension = path.extension();
-			auto relativePath = std::filesystem::relative(path, assetsPath);
-
-			ImGui::PushID(pathString.c_str());
-			if (it.is_directory())
-			{
-				bool opened = ImGui::TreeNodeEx((void*)&pathString, ImGuiTreeNodeFlags_Leaf, relativePath.filename().string().c_str());
-				if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-				{
-					m_CurrentDirectory /= path.filename();
-				}
-				if (opened)
-				{
-					ImGui::TreePop();
-				}
-			}
-			else if (extension == ".meta")
-			{
-				AssetImporter* importer = AssetDB::GetImporter(relativePath.replace_extension("").string());
-				if (importer != nullptr)
-				{
-					auto name = path.stem().string();
-					auto importedObjects = importer->GetImportedObjects();
-
-					ImGuiTreeNodeFlags flags = importedObjects.size() > 0 ? ImGuiTreeNodeFlags_OpenOnArrow : ImGuiTreeNodeFlags_Leaf;
-					bool opened = ImGui::TreeNodeEx((void*)importer, flags, name.c_str());
-
-					if (ImGui::IsItemHovered())
-					{
-						importer->ImportDataIfNeeded();
-
-						if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-						{
-							std::string stringPath = importer->GetFilePath();
-							std::filesystem::path filePath = stringPath;
-							if (filePath.extension() == ".scene")
-							{
-								EditorSceneManager::Load(stringPath);
-							}
-						}
-					}
-
-					if (opened)
-					{
-						for (auto& pair : importedObjects)
-						{
-							Object* object = ObjectDB::GetObject(pair.second);
-							bool opened = ImGui::TreeNodeEx((void*)object, ImGuiTreeNodeFlags_Leaf, object->GetName().c_str());
-							
-							if (ImGui::BeginDragDropSource())
-							{
-								ObjectId objectId = object->GetObjectId();
-								ImGui::SetDragDropPayload("OBJECT_ID", &objectId, sizeof(ObjectId));
-								ImGui::Text("%s", importer->GetName().c_str());
-								ImGui::EndDragDropSource();
-							}
-
-							if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
-							{
-								Selection::SetActiveObject(importer);
-							}
-							
-							if (opened)
-							{
-								ImGui::TreePop();
-							}
-						}
-						ImGui::TreePop();
-					}
-				}
-			}
-			ImGui::PopID();
+			DrawFile(it);
 		}
 
 		const char* popId = "Delete?";
@@ -127,7 +106,7 @@ namespace Blueberry
 
 			ImGui::EndPopup();
 		}
-		
+
 		if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(1))
 		{
 			ImGui::OpenPopup(popupId);
@@ -163,7 +142,96 @@ namespace Blueberry
 		{
 			AssetDB::SaveAssets();
 		}
+	}
 
-		ImGui::End();
+	void ProjectBrowser::DrawFile(const std::filesystem::directory_entry& file)
+	{
+		const int cellSize = 90;
+		const int cellIconPadding = 8;
+
+		const auto path = file.path();
+		auto pathString = path.string();
+		auto extension = path.extension();
+		auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
+
+		ImGui::PushID(pathString.c_str());
+		ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 1.0f));
+		if (file.is_directory())
+		{
+			ImVec2 pos = ImGui::GetCursorScreenPos();
+			ImGui::Selectable(relativePath.filename().string().c_str(), false, 0, ImVec2(cellSize, cellSize));
+			ImGui::GetWindowDrawList()->AddImage(m_FolderIcon->GetHandle(), ImVec2(pos.x + cellIconPadding, pos.y), ImVec2(pos.x + cellSize - cellIconPadding, pos.y + cellSize - cellIconPadding * 2), ImVec2(0, 1), ImVec2(1, 0));
+
+			if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+			{
+				m_CurrentDirectory /= path.filename();
+			}
+		}
+		else if (extension == ".meta")
+		{
+			AssetImporter* importer = AssetDB::GetImporter(relativePath.replace_extension("").string());
+			if (importer != nullptr)
+			{
+				auto name = path.stem().string();
+				auto importedObjects = importer->GetImportedObjects();
+
+				//https://www.google.com/search?q=imgui+selectable&oq=imgui+selectable&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIGCAEQRRhB0gEIMjA0NGowajGoAgCwAgA&sourceid=chrome&ie=UTF-8
+				ImVec2 pos = ImGui::GetCursorScreenPos();
+				ImGui::Selectable(name.c_str(), false, 0, ImVec2(cellSize, cellSize));
+				ImGui::GetWindowDrawList()->AddImage(m_FbxIcon->GetHandle(), ImVec2(pos.x + cellIconPadding, pos.y), ImVec2(pos.x + cellSize - cellIconPadding, pos.y + cellSize - cellIconPadding * 2), ImVec2(0, 1), ImVec2(1, 0));
+
+				if (ImGui::IsItemHovered())
+				{
+					importer->ImportDataIfNeeded();
+
+					if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+					{
+						std::string stringPath = importer->GetFilePath();
+						std::filesystem::path filePath = stringPath;
+						if (filePath.extension() == ".scene")
+						{
+							EditorSceneManager::Load(stringPath);
+						}
+					}
+				}
+
+				/*if (opened)
+				{
+					for (auto& pair : importedObjects)
+					{
+						Object* object = ObjectDB::GetObject(pair.second);
+						bool opened = ImGui::TreeNodeEx((void*)object, ImGuiTreeNodeFlags_Leaf, object->GetName().c_str());
+
+						if (ImGui::BeginDragDropSource())
+						{
+							ObjectId objectId = object->GetObjectId();
+							ImGui::SetDragDropPayload("OBJECT_ID", &objectId, sizeof(ObjectId));
+							ImGui::Text("%s", importer->GetName().c_str());
+							ImGui::EndDragDropSource();
+						}
+
+						if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+						{
+							Selection::SetActiveObject(importer);
+						}
+
+						if (opened)
+						{
+							ImGui::TreePop();
+						}
+					}
+					ImGui::TreePop();
+				}*/
+			}
+		}
+
+		float visibleWidth = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
+		if (ImGui::GetItemRectMax().x + cellSize < visibleWidth)
+		{
+			ImGui::SameLine();
+		}
+
+		ImGui::PopID();
+		ImGui::PopStyleVar();
 	}
 }

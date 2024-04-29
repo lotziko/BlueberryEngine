@@ -3,7 +3,8 @@
 
 #include "Blueberry\Graphics\Shader.h"
 #include "Editor\Assets\AssetDB.h"
-#include "Editor\ShaderProcessor.h"
+#include "Editor\Assets\Processors\HLSLShaderParser.h"
+#include "Editor\Assets\Processors\HLSLShaderProcessor.h"
 
 namespace Blueberry
 {
@@ -20,6 +21,9 @@ namespace Blueberry
 		std::string vertexPath = GetShaderPath(".vertex");
 		std::string fragmentPath = GetShaderPath(".fragment");
 
+		HLSLShaderProcessor vertexProcessor;
+		HLSLShaderProcessor fragmentProcessor;
+
 		Shader* object;
 		if (ObjectDB::HasGuid(guid))
 		{
@@ -27,28 +31,34 @@ namespace Blueberry
 		}
 		if (AssetDB::HasAssetWithGuidInData(guid))
 		{
-			void* vertex = ShaderProcessor::Load(vertexPath);
-			void* fragment = ShaderProcessor::Load(fragmentPath);
+			vertexProcessor.LoadBlob(vertexPath);
+			fragmentProcessor.LoadBlob(fragmentPath);
 			auto objects = AssetDB::LoadAssetObjects(guid);
 			if (objects.size() == 1 && objects[0].first->IsClassType(Shader::Type))
 			{
 				object = static_cast<Shader*>(objects[0].first);
-				object->Initialize(vertex, fragment);
+				object->Initialize(vertexProcessor.GetShader(), fragmentProcessor.GetShader());
 				BB_INFO("Shader \"" << GetName() << "\" imported from cache.");
 			}
 		}
 		else
 		{
 			std::string path = GetFilePath();
-			std::string shaderData;
+			std::string shaderCode;
 			RawShaderOptions options;
-			ShaderProcessor::Process(path, shaderData, options);
-			void* vertex = ShaderProcessor::Compile(shaderData, "Vertex", "vs_5_0", vertexPath);
-			void* fragment = ShaderProcessor::Compile(shaderData, "Fragment", "ps_5_0", fragmentPath);
-			object = Shader::Create(vertex, fragment, options);
-			ObjectDB::AllocateIdToGuid(object, guid, 1);
-			AssetDB::SaveAssetObjectsToCache(std::vector<Object*> { object });
-			BB_INFO("Shader \"" << GetName() << "\" imported and compiled from: " + path);
+
+			if (HLSLShaderParser::Parse(path, shaderCode, options))
+			{
+				vertexProcessor.Compile(shaderCode, ShaderType::Vertex);
+				fragmentProcessor.Compile(shaderCode, ShaderType::Fragment);
+				vertexProcessor.SaveBlob(vertexPath);
+				fragmentProcessor.SaveBlob(fragmentPath);
+
+				object = Shader::Create(vertexProcessor.GetShader(), fragmentProcessor.GetShader(), options);
+				ObjectDB::AllocateIdToGuid(object, guid, 1);
+				AssetDB::SaveAssetObjectsToCache(std::vector<Object*> { object });
+				BB_INFO("Shader \"" << GetName() << "\" imported and compiled from: " + path);
+			}
 		}
 		object->SetName(GetName());
 		AddImportedObject(object, 1);

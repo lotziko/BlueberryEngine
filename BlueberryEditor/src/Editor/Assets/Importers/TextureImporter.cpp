@@ -1,11 +1,10 @@
 #include "bbpch.h"
 #include "TextureImporter.h"
 
-#include "Blueberry\Graphics\Structs.h"
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Tools\FileHelper.h"
 #include "Editor\Assets\AssetDB.h"
-#include "stb\stb_image.h"
+#include "Editor\Assets\Processors\PngTextureProcessor.h"
 
 namespace Blueberry
 {
@@ -46,27 +45,15 @@ namespace Blueberry
 		{
 			std::string path = GetFilePath();
 
-			stbi_uc* data = nullptr;
-			int width, height, channels;
-
-			stbi_set_flip_vertically_on_load(1);
-			data = stbi_load(path.c_str(), &width, &height, &channels, 4);
-			size_t dataSize = width * height * 4;
-
-			TextureProperties properties = {};
-
-			properties.width = width;
-			properties.height = height;
-			properties.data = data;
-			properties.dataSize = dataSize;
-			properties.format = TextureFormat::R8G8B8A8_UNorm;
+			PngTextureProcessor processor;
+			processor.Load(path);
+			TextureProperties properties = processor.GetProperties();
 
 			object = Texture2D::Create(properties);
 			ObjectDB::AllocateIdToGuid(object, guid, 1);
 			AssetDB::SaveAssetObjectsToCache(std::vector<Object*> { object });
-			FileHelper::Save(data, dataSize, GetTexturePath());
+			FileHelper::Save((byte*)properties.data, properties.dataSize, GetTexturePath());
 
-			stbi_image_free(data);
 			BB_INFO("Texture \"" << GetName() << "\" imported and created from: " + path);
 		}
 		object->SetName(GetName());

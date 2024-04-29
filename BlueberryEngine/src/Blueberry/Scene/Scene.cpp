@@ -2,7 +2,6 @@
 #include "Scene.h"
 
 #include "Blueberry\Serialization\Serializer.h"
-
 #include "Blueberry\Core\ClassDB.h"
 
 namespace Blueberry

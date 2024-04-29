@@ -51,14 +51,14 @@ namespace Blueberry
 		m_Name = name;
 	}
 
-	const bool& Object::IsValid()
+	const bool& Object::IsAlive()
 	{
-		return m_IsValid;
+		return m_IsAlive;
 	}
 
-	void Object::SetValid(const bool& valid)
+	void Object::SetAlive(const bool& alive)
 	{
-		m_IsValid = valid;
+		m_IsAlive = alive;
 	}
 
 	void Object::BindProperties()

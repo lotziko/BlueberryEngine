@@ -7,8 +7,7 @@
 #include "Editor\Serialization\YamlSerializer.h"
 #include "Editor\Assets\Importers\DefaultImporter.h"
 #include "Editor\Assets\Importers\NativeAssetImporter.h"
-#include <fstream>
-#include <sstream>
+#include "Editor\Assets\ModifyCache.h"
 
 namespace Blueberry
 {
@@ -16,12 +15,11 @@ namespace Blueberry
 	std::map<std::string, AssetImporter*> AssetDB::s_Importers = std::map<std::string, AssetImporter*>();
 	
 	std::map<Guid, std::string> AssetDB::s_GuidToPath = std::map<Guid, std::string>();
-	std::map<std::string, long long> AssetDB::s_PathModifyCache = std::map<std::string, long long>();
 	std::vector<ObjectId> AssetDB::s_DirtyAssets = std::vector<ObjectId>();
 
 	void AssetDB::Refresh()
 	{
-		LoadModifyCache();
+		ModifyCache::Load();
 		for (auto& it : std::filesystem::recursive_directory_iterator(Path::GetAssetsPath()))
 		{
 			AssetImporter* importer = CreateImporter(it.path());
@@ -30,12 +28,12 @@ namespace Blueberry
 				s_GuidToPath.insert_or_assign(importer->GetGuid(), importer->GetRelativeFilePath());
 				// Delete asset from cache if it dirty
 				auto lastWriteTime = std::chrono::duration_cast<std::chrono::seconds>(std::filesystem::last_write_time(importer->GetFilePath()).time_since_epoch()).count();
-				auto lastWriteIt = s_PathModifyCache.find(importer->GetRelativeFilePath());
+				auto lastWriteCacheTime = ModifyCache::Get(importer->GetRelativeFilePath());
 				bool needsClearing = false;
 
-				if (lastWriteIt != s_PathModifyCache.end())
+				if (lastWriteCacheTime > 0)
 				{
-					if (lastWriteIt->second < lastWriteTime)
+					if (lastWriteCacheTime < lastWriteTime)
 					{
 						needsClearing = true;
 					}
@@ -52,10 +50,10 @@ namespace Blueberry
 						DeleteAssetFromData(guid);
 					}
 				}
-				s_PathModifyCache.insert_or_assign(importer->GetRelativeFilePath(), lastWriteTime);
+				ModifyCache::Set(importer->GetRelativeFilePath(), lastWriteTime);
 				if (needsClearing)
 				{
-					SaveModifyCache();
+					ModifyCache::Save();
 				}
 			}
 		}
@@ -239,45 +237,6 @@ namespace Blueberry
 		}
 		s_Importers.insert_or_assign(relativePathString, importer);
 		return importer;
-	}
-
-	void AssetDB::LoadModifyCache()
-	{
-		auto dataPath = Path::GetAssetCachePath();
-		dataPath.append("PathModifyCache");
-
-		if (std::filesystem::exists(dataPath))
-		{
-			std::ifstream input;
-			input.open(dataPath, std::ifstream::in);
-			std::string line;
-			while (std::getline(input, line))
-			{
-				int tabIndex = line.find('\t');
-				std::string path = line.substr(0, tabIndex);
-				long long time = std::stoll(line.substr(tabIndex + 1));
-				s_PathModifyCache.insert_or_assign(path, time);
-			}
-			input.close();
-		}
-	}
-
-	void AssetDB::SaveModifyCache()
-	{
-		auto dataPath = Path::GetAssetCachePath();
-		dataPath.append("PathModifyCache");
-
-		std::ofstream output;
-		output.open(dataPath, std::ofstream::out);
-		std::stringstream sstream;
-		for (auto& pair : s_PathModifyCache)
-		{
-			std::string path = pair.first;
-			long long time = pair.second;
-			sstream << path << "\t" << time << std::endl;
-		}
-		output << sstream.rdbuf();
-		output.close();
 	}
 
 	void AssetDB::Register(const std::string& extension, const std::size_t& importerType)

@@ -2,10 +2,15 @@
 #include "EditorAssetLoader.h"
 
 #include <filesystem>
+
+#include "Blueberry\Graphics\Shader.h"
+#include "Blueberry\Graphics\Texture2D.h"
+
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Assets\AssetImporter.h"
-#include "Editor\ShaderProcessor.h"
-#include "Blueberry\Graphics\Shader.h"
+#include "Editor\Assets\Processors\HLSLShaderParser.h"
+#include "Editor\Assets\Processors\HLSLShaderProcessor.h"
+#include "Editor\Assets\Processors\PngTextureProcessor.h"
 
 namespace Blueberry
 {
@@ -30,16 +35,29 @@ namespace Blueberry
 		std::string extension = assetPath.extension().string();
 		if (extension == ".shader")
 		{
-			std::string shaderData;
+			std::string shaderCode;
 			RawShaderOptions options;
-			ShaderProcessor::Process(path, shaderData, options);
-			void* vertex = ShaderProcessor::Compile(shaderData, "Vertex", "vs_5_0", "");
-			void* fragment = ShaderProcessor::Compile(shaderData, "Fragment", "ps_5_0", "");
-			return Shader::Create(vertex, fragment, options);
+
+			if (HLSLShaderParser::Parse(path, shaderCode, options))
+			{
+				HLSLShaderProcessor vertexProcessor;
+				HLSLShaderProcessor fragmentProcessor;
+
+				vertexProcessor.Compile(shaderCode, ShaderType::Vertex);
+				fragmentProcessor.Compile(shaderCode, ShaderType::Fragment);
+
+				return Shader::Create(vertexProcessor.GetShader(), fragmentProcessor.GetShader(), options);
+			}
+			return nullptr;
+		}
+		else if (extension == ".png")
+		{
+			PngTextureProcessor processor;
+			processor.Load(path);
+			return Texture2D::Create(processor.GetProperties());
 		}
 		else if (extension == ".compute")
 		{
-			void* compute = ShaderProcessor::Compile(path, "Main", "cs_5_0", "");
 		}
 		return nullptr;
 	}

@@ -3,6 +3,7 @@
 #include <any>
 #include <vector>
 #include <map>
+#include <set>
 #include <queue>
 #include <stack>
 #include <string>
@@ -20,6 +21,7 @@
 #include "Blueberry\Tools\WindowsHelper.h"
 
 #include "Blueberry\Logging\Log.h"
+#include "Blueberry\Logging\TimeMeasurement.h"
 
 #include <d3d11_4.h>
 #include <dxgi1_6.h>
