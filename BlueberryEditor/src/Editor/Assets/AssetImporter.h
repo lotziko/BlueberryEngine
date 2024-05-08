@@ -18,7 +18,9 @@ namespace Blueberry
 		const std::string& GetRelativeFilePath();
 		const std::string& GetRelativeMetaFilePath();
 		const std::map<FileId, ObjectId>& GetImportedObjects();
-		
+		const FileId& GetMainObject();
+		const bool& IsImported();
+
 		void ImportDataIfNeeded();
 		void Save();
 		// TODO need a way to determine count of not imported assets in this importer
@@ -31,11 +33,15 @@ namespace Blueberry
 	protected:
 		virtual void ImportData() = 0;
 		void AddImportedObject(Object* object, const FileId& fileId);
+		void SetMainObject(const FileId& id);
 
 	private:
 		Guid m_Guid;
 		std::string m_RelativePath;
 		std::string m_RelativeMetaPath;
+		FileId m_MainObject;
 		std::map<FileId, ObjectId> m_ImportedObjects;
+
+		friend class ImporterInfoCache;
 	};
 }

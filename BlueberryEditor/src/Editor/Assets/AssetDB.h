@@ -14,16 +14,17 @@ namespace Blueberry
 	public:
 		static void Refresh();
 
-		static AssetImporter* Import(const std::string& relativePath);
-		static AssetImporter* Import(const Guid& guid);
+		//static AssetImporter* Import(const std::string& relativePath);
+		//static AssetImporter* Import(const Guid& guid);
 
 		static AssetImporter* GetImporter(const std::string& path);
+		static AssetImporter* GetImporter(const Guid& guid);
 
 		template<class ObjectType>
 		static ObjectType* CreateAssetObject(const Guid& guid);
 
 		// Use inside importers only
-		static std::vector<std::pair<Object*, FileId>> AssetDB::LoadAssetObjects(const Guid& guid);
+		static std::vector<std::pair<Object*, FileId>> AssetDB::LoadAssetObjects(const Guid& guid, const std::map<FileId, ObjectId>& existingObjects);
 
 		static std::string GetAssetCachedDataPath(Object* object);
 

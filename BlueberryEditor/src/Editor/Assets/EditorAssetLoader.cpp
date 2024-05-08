@@ -14,16 +14,26 @@
 
 namespace Blueberry
 {
-	Object* EditorAssetLoader::LoadImpl(const Guid& guid, const FileId& fileId)
+	void EditorAssetLoader::LoadImpl(const Guid& guid)
 	{
-		AssetImporter* importer = AssetDB::Import(guid);
+		AssetImporter* importer = AssetDB::GetImporter(guid);
 		if (importer != nullptr)
 		{
+			importer->ImportDataIfNeeded();
+		}
+	}
+
+	Object* EditorAssetLoader::LoadImpl(const Guid& guid, const FileId& fileId)
+	{
+		AssetImporter* importer = AssetDB::GetImporter(guid);
+		if (importer != nullptr)
+		{
+			importer->ImportDataIfNeeded();
 			auto importedObjects = importer->GetImportedObjects();
 			auto objectIt = importedObjects.find(fileId);
 			if (objectIt != importedObjects.end())
 			{
-				return ObjectDB::IdToObjectItem(objectIt->second)->object;
+				return ObjectDB::GetObject(objectIt->second);
 			}
 		}
 		return nullptr;

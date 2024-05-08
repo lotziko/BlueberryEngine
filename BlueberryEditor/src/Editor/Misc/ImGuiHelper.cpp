@@ -2,7 +2,9 @@
 #include "ImGuiHelper.h"
 
 #include "Blueberry\Core\ObjectPtr.h"
-#include "imgui\imgui.h"
+#include "Blueberry\Assets\AssetLoader.h"
+//#include "imgui\imgui.h"
+#include "imgui\imgui_internal.h"
 
 bool ImGui::DragVector3(const char* label, Blueberry::Vector3* v)
 {
@@ -113,11 +115,16 @@ bool ImGui::ObjectEdit(const char* label, Blueberry::ObjectPtr<Blueberry::Object
 		if (payload != nullptr && payload->IsDataType("OBJECT_ID"))
 		{
 			Blueberry::ObjectId* id = (Blueberry::ObjectId*)payload->Data;
-			Blueberry::ObjectItem* item = Blueberry::ObjectDB::IdToObjectItem(*id);
+			Blueberry::Object* object = Blueberry::ObjectDB::GetObject(*id);
 
-			if (item != nullptr && item->object->IsClassType(type) && ImGui::AcceptDragDropPayload("OBJECT_ID"))
+			if (object != nullptr && object->IsClassType(type) && ImGui::AcceptDragDropPayload("OBJECT_ID"))
 			{
-				*v = item->object;
+				if (object->GetState() == Blueberry::ObjectState::AwaitingLoading && Blueberry::ObjectDB::HasGuid(object))
+				{
+					Blueberry::AssetLoader::Load(Blueberry::ObjectDB::GetGuidFromObject(object));
+				}
+
+				*v = object;
 				result = true;
 			}
 		}

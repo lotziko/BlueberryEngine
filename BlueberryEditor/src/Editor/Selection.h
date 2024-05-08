@@ -9,9 +9,11 @@ namespace Blueberry
 	{
 	public:
 		static Object* GetActiveObject();
+		static bool IsActiveObject(Object* object);
+		static void AddActiveObject(Object* object);
 		static void SetActiveObject(Object* object);
 
 	private:
-		static ObjectPtr<Object> s_ActiveObject;
+		static std::set<ObjectId> s_ActiveObjects;
 	};
 }

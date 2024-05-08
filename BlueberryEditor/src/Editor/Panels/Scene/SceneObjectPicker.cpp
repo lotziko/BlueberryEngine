@@ -79,11 +79,11 @@ namespace Blueberry
 		delete m_PixelRenderTarget;
 	}
 
-	void SceneObjectPicker::Pick(Scene* scene, BaseCamera& camera, const int& positionX, const int& positionY)
+	Object* SceneObjectPicker::Pick(Scene* scene, BaseCamera& camera, const int& positionX, const int& positionY)
 	{
 		if (scene == nullptr)
 		{
-			return;
+			return nullptr;
 		}
 
 		Rectangle area = Rectangle(Min(Max(positionX, 0), camera.GetPixelSize().x), Min(Max(positionY, 0), camera.GetPixelSize().y), 1, 1);
@@ -129,11 +129,11 @@ namespace Blueberry
 		if (pixel[0] > 0 || pixel[1] > 0)
 		{
 			uint16_t index = (pixel[0] << 8) + (pixel[1]);
-			Selection::SetActiveObject(ObjectDB::GetObject(validObjects[index]));
+			return ObjectDB::GetObject(validObjects[index]);
 		}
 		else
 		{
-			Selection::SetActiveObject(nullptr);
+			return nullptr;
 		}
 	}
 
@@ -154,7 +154,7 @@ namespace Blueberry
 		Renderer2D::Begin();
 		for (auto component : scene->GetIterator<SpriteRenderer>())
 		{
-			if (component.second->GetEntity() == Selection::GetActiveObject())
+			if (Selection::IsActiveObject(component.second->GetEntity()))
 			{
 				auto spriteRenderer = static_cast<SpriteRenderer*>(component.second);
 				if (spriteRenderer->GetTexture() != nullptr)
@@ -167,7 +167,7 @@ namespace Blueberry
 
 		for (auto component : scene->GetIterator<MeshRenderer>())
 		{
-			if (component.second->GetEntity() == Selection::GetActiveObject())
+			if (Selection::IsActiveObject(component.second->GetEntity()))
 			{
 				auto meshRenderer = static_cast<MeshRenderer*>(component.second);
 				Mesh* mesh = meshRenderer->GetMesh();

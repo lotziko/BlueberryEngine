@@ -76,5 +76,6 @@ namespace Blueberry
 		BlendMode m_BlendSrc = (BlendMode)-1;
 		BlendMode m_BlendDst = (BlendMode)-1;
 		ZWrite m_ZWrite = (ZWrite)-1;
+		ObjectId m_MaterialId = 0;
 	};
 }

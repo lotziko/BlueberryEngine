@@ -15,7 +15,7 @@ namespace Blueberry
 	{
 		Guid guid = GetGuid();
 
-		if (ObjectDB::HasGuid(guid))
+		if (IsImported())
 		{
 			// TODO think how to deserialize into existing object
 			BB_INFO("Asset \"" << GetName() << "\" is already imported.");
@@ -24,14 +24,32 @@ namespace Blueberry
 		else
 		{
 			YamlSerializer serializer;
+			for (auto& object : GetImportedObjects())
+			{
+				Object* importedObject = ObjectDB::GetObject(object.second);
+				if (importedObject != nullptr)
+				{
+					serializer.AddObject(importedObject, object.first);
+				}
+			}
 			serializer.Deserialize(GetFilePath());
 
+			bool mainObjectIsSet = false;
 			auto& deserializedObjects = serializer.GetDeserializedObjects();
 			for (auto pair : deserializedObjects)
 			{
-				ObjectDB::AllocateIdToGuid(pair.first, guid, pair.second);
-				AddImportedObject(pair.first, pair.second);
-				pair.first->SetName(GetName());
+				Object* importedObject = pair.first;
+				FileId fileId = pair.second;
+
+				ObjectDB::AllocateIdToGuid(importedObject, guid, fileId);
+				AddImportedObject(importedObject, fileId);
+				importedObject->SetName(GetName());
+				importedObject->SetState(ObjectState::Default);
+				if (!mainObjectIsSet)
+				{
+					SetMainObject(fileId);
+					mainObjectIsSet = true;
+				}
 			}
 			BB_INFO("NativeAsset \"" << GetName() << "\" imported.");
 		}

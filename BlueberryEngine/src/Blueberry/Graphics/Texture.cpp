@@ -19,7 +19,11 @@ namespace Blueberry
 
 	void* Texture::GetHandle()
 	{
-		return m_Texture->GetHandle();
+		if (m_Texture != nullptr)
+		{
+			return m_Texture->GetHandle();
+		}
+		return nullptr;
 	}
 
 	void Texture::BindProperties()

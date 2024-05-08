@@ -53,7 +53,7 @@ namespace Blueberry
 			return;
 		}
 
-		ImGuiTreeNodeFlags flags = ((Selection::GetActiveObject() == entity) ? ImGuiTreeNodeFlags_Selected : 0) | (entity->GetTransform()->GetChildrenCount() > 0 ? ImGuiTreeNodeFlags_OpenOnArrow : ImGuiTreeNodeFlags_Leaf);
+		ImGuiTreeNodeFlags flags = ((Selection::IsActiveObject(entity)) ? ImGuiTreeNodeFlags_Selected : 0) | (entity->GetTransform()->GetChildrenCount() > 0 ? ImGuiTreeNodeFlags_OpenOnArrow : ImGuiTreeNodeFlags_Leaf);
 		flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
 
 		bool opened = ImGui::TreeNodeEx((void*)entity, flags, entity->GetName().c_str());
@@ -76,11 +76,11 @@ namespace Blueberry
 			if (payload != nullptr && payload->IsDataType("OBJECT_ID"))
 			{
 				ObjectId* id = (ObjectId*)payload->Data;
-				Object* item = ObjectDB::GetObject(*id);
+				Object* object = ObjectDB::GetObject(*id);
 
-				if (item != nullptr && item != entity && ImGui::AcceptDragDropPayload("OBJECT_ID"))
+				if (object != nullptr && object != entity && ImGui::AcceptDragDropPayload("OBJECT_ID"))
 				{
-					((Entity*)item)->GetTransform()->SetParent(entity->GetTransform());
+					((Entity*)object)->GetTransform()->SetParent(entity->GetTransform());
 				}
 			}
 			ImGui::EndDragDropTarget();

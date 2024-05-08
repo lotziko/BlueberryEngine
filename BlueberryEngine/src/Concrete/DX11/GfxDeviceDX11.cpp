@@ -264,67 +264,73 @@ namespace Blueberry
 		SetZWrite(operation.zWrite);
 
 		// TODO check if shader variant/material/mesh is the same to skip some bindings
-		auto dxShader = static_cast<GfxShaderDX11*>(operation.shader);
-		m_DeviceContext->IASetInputLayout(dxShader->m_InputLayout.Get());
-		m_DeviceContext->VSSetShader(dxShader->m_VertexShader.Get(), NULL, 0);
-		m_DeviceContext->PSSetShader(dxShader->m_PixelShader.Get(), NULL, 0);
-
-		m_DeviceContext->IASetPrimitiveTopology(GetPrimitiveTopology(operation.topology));
-
-		auto textureVector = operation.textures;
-		for (int i = 0; i < textureVector->size(); i++)
+		if (operation.materialId != m_MaterialId)
 		{
-			auto pair = textureVector->at(i);
-			auto dxTexture = static_cast<GfxTextureDX11*>(pair.second);
-			auto slot = dxShader->m_TextureSlots.find(pair.first);
-			if (slot != dxShader->m_TextureSlots.end())
+			m_MaterialId = operation.materialId;
+
+			auto dxShader = static_cast<GfxShaderDX11*>(operation.shader);
+			m_DeviceContext->IASetInputLayout(dxShader->m_InputLayout.Get());
+			m_DeviceContext->VSSetShader(dxShader->m_VertexShader.Get(), NULL, 0);
+			m_DeviceContext->PSSetShader(dxShader->m_PixelShader.Get(), NULL, 0);
+
+			m_DeviceContext->IASetPrimitiveTopology(GetPrimitiveTopology(operation.topology));
+
+			auto textureVector = operation.textures;
+			for (int i = 0; i < textureVector->size(); i++)
 			{
-				UINT slotIndex = slot->second;
-				m_DeviceContext->PSSetShaderResources(slotIndex, 1, dxTexture->m_ResourceView.GetAddressOf());
-				m_DeviceContext->PSSetSamplers(slotIndex, 1, dxTexture->m_SamplerState.GetAddressOf());
+				auto pair = textureVector->at(i);
+				auto dxTexture = static_cast<GfxTextureDX11*>(pair.second);
+				auto slot = dxShader->m_TextureSlots.find(pair.first);
+				if (slot != dxShader->m_TextureSlots.end())
+				{
+					UINT slotIndex = slot->second;
+					m_DeviceContext->PSSetShaderResources(slotIndex, 1, dxTexture->m_ResourceView.GetAddressOf());
+					m_DeviceContext->PSSetSamplers(slotIndex, 1, dxTexture->m_SamplerState.GetAddressOf());
+				}
+			}
+
+			std::map<std::size_t, UINT>::iterator it;
+
+			auto textureMap = dxShader->m_TextureSlots;
+			for (it = textureMap.begin(); it != textureMap.end(); it++)
+			{
+				auto pair = m_BindedTextures.find(it->first);
+				if (pair != m_BindedTextures.end())
+				{
+					UINT slotIndex = it->second;
+					auto dxTexture = pair->second;
+					m_DeviceContext->PSSetShaderResources(slotIndex, 1, dxTexture->m_ResourceView.GetAddressOf());
+					m_DeviceContext->PSSetSamplers(slotIndex, 1, dxTexture->m_SamplerState.GetAddressOf());
+				}
+			}
+
+			auto bufferMap = dxShader->m_VertexConstantBufferSlots;
+			for (it = bufferMap.begin(); it != bufferMap.end(); it++)
+			{
+				auto pair = m_BindedConstantBuffers.find(it->first);
+				if (pair != m_BindedConstantBuffers.end())
+				{
+					m_DeviceContext->VSSetConstantBuffers(it->second, 1, pair->second->m_Buffer.GetAddressOf());
+				}
+			}
+
+			bufferMap = dxShader->m_PixelConstantBufferSlots;
+			for (it = bufferMap.begin(); it != bufferMap.end(); it++)
+			{
+				auto pair = m_BindedConstantBuffers.find(it->first);
+				if (pair != m_BindedConstantBuffers.end())
+				{
+					m_DeviceContext->PSSetConstantBuffers(it->second, 1, pair->second->m_Buffer.GetAddressOf());
+				}
 			}
 		}
-
-		std::map<std::size_t, UINT>::iterator it;
-
-		auto textureMap = dxShader->m_TextureSlots;
-		for (it = textureMap.begin(); it != textureMap.end(); it++)
-		{
-			auto pair = m_BindedTextures.find(it->first);
-			if (pair != m_BindedTextures.end())
-			{
-				UINT slotIndex = it->second;
-				auto dxTexture = pair->second;
-				m_DeviceContext->PSSetShaderResources(slotIndex, 1, dxTexture->m_ResourceView.GetAddressOf());
-				m_DeviceContext->PSSetSamplers(slotIndex, 1, dxTexture->m_SamplerState.GetAddressOf());
-			}
-		}
-
+		
+		// TODO Check mesh too
 		auto dxVertexBuffer = static_cast<GfxVertexBufferDX11*>(operation.vertexBuffer);
 		m_DeviceContext->IASetVertexBuffers(0, 1, dxVertexBuffer->m_Buffer.GetAddressOf(), &dxVertexBuffer->m_Stride, &dxVertexBuffer->m_Offset);
 	
 		auto dxIndexBuffer = static_cast<GfxIndexBufferDX11*>(operation.indexBuffer);
 		m_DeviceContext->IASetIndexBuffer(dxIndexBuffer->m_Buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-
-		auto bufferMap = dxShader->m_VertexConstantBufferSlots;
-		for (it = bufferMap.begin(); it != bufferMap.end(); it++)
-		{
-			auto pair = m_BindedConstantBuffers.find(it->first);
-			if (pair != m_BindedConstantBuffers.end())
-			{
-				m_DeviceContext->VSSetConstantBuffers(it->second, 1, pair->second->m_Buffer.GetAddressOf());
-			}
-		}
-
-		bufferMap = dxShader->m_PixelConstantBufferSlots;
-		for (it = bufferMap.begin(); it != bufferMap.end(); it++)
-		{
-			auto pair = m_BindedConstantBuffers.find(it->first);
-			if (pair != m_BindedConstantBuffers.end())
-			{
-				m_DeviceContext->PSSetConstantBuffers(it->second, 1, pair->second->m_Buffer.GetAddressOf());
-			}
-		}
 
 		m_DeviceContext->DrawIndexed(operation.indexCount, operation.indexOffset, 0);
 	}

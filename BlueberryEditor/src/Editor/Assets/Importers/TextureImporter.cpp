@@ -20,23 +20,18 @@ namespace Blueberry
 		// TODO check if dirty too
 
 		Texture2D* object;
-		if (ObjectDB::HasGuid(guid))
-		{
-			// TODO think how to deserialize into existing object
-			BB_INFO("Texture \"" << GetName() << "\" is already imported.");
-			return;
-		}
-		else 
 		if (AssetDB::HasAssetWithGuidInData(guid))
 		{
-			auto objects = AssetDB::LoadAssetObjects(guid);
+			auto objects = AssetDB::LoadAssetObjects(guid, GetImportedObjects());
 			if (objects.size() == 1 && objects[0].first->IsClassType(Texture2D::Type))
 			{
 				object = static_cast<Texture2D*>(objects[0].first);
+				ObjectDB::AllocateIdToGuid(object, guid, objects[0].second);
 				byte* data;
 				size_t length;
 				FileHelper::Load(data, length, GetTexturePath());
 				object->Initialize({ data, length });
+				object->SetState(ObjectState::Default);
 				delete[] data;
 				BB_INFO("Texture \"" << GetName() << "\" imported from cache.");
 			}
@@ -58,6 +53,7 @@ namespace Blueberry
 		}
 		object->SetName(GetName());
 		AddImportedObject(object, 1);
+		SetMainObject(1);
 	}
 
 	std::string TextureImporter::GetTexturePath()

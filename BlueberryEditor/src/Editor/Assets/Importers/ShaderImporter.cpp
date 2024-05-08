@@ -25,19 +25,17 @@ namespace Blueberry
 		HLSLShaderProcessor fragmentProcessor;
 
 		Shader* object;
-		if (ObjectDB::HasGuid(guid))
-		{
-			BB_INFO("Shader \"" << GetName() << "\" is already imported.");
-		}
 		if (AssetDB::HasAssetWithGuidInData(guid))
 		{
 			vertexProcessor.LoadBlob(vertexPath);
 			fragmentProcessor.LoadBlob(fragmentPath);
-			auto objects = AssetDB::LoadAssetObjects(guid);
+			auto objects = AssetDB::LoadAssetObjects(guid, GetImportedObjects());
 			if (objects.size() == 1 && objects[0].first->IsClassType(Shader::Type))
 			{
 				object = static_cast<Shader*>(objects[0].first);
+				ObjectDB::AllocateIdToGuid(object, guid, objects[0].second);
 				object->Initialize(vertexProcessor.GetShader(), fragmentProcessor.GetShader());
+				object->SetState(ObjectState::Default);
 				BB_INFO("Shader \"" << GetName() << "\" imported from cache.");
 			}
 		}
@@ -62,6 +60,7 @@ namespace Blueberry
 		}
 		object->SetName(GetName());
 		AddImportedObject(object, 1);
+		SetMainObject(1);
 	}
 
 	std::string ShaderImporter::GetShaderPath(const char* extension)

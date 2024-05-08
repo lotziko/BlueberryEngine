@@ -9,6 +9,7 @@ namespace Blueberry
 	{
 	public:
 		void AddObject(Object* object);
+		void AddObject(Object* object, const FileId& fileId);
 		virtual void Serialize(const std::string& path) = 0;
 		virtual void Deserialize(const std::string& path) = 0;
 

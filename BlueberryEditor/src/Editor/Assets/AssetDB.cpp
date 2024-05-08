@@ -7,7 +7,8 @@
 #include "Editor\Serialization\YamlSerializer.h"
 #include "Editor\Assets\Importers\DefaultImporter.h"
 #include "Editor\Assets\Importers\NativeAssetImporter.h"
-#include "Editor\Assets\ModifyCache.h"
+#include "Editor\Assets\PathModifyCache.h"
+#include "Editor\Assets\ImporterInfoCache.h"
 
 namespace Blueberry
 {
@@ -17,9 +18,12 @@ namespace Blueberry
 	std::map<Guid, std::string> AssetDB::s_GuidToPath = std::map<Guid, std::string>();
 	std::vector<ObjectId> AssetDB::s_DirtyAssets = std::vector<ObjectId>();
 
+	// TODO import data always if it was found in project but not in cache instead of importing on mouse over icon
 	void AssetDB::Refresh()
 	{
-		ModifyCache::Load();
+		std::vector<AssetImporter*> importersToImport;
+		PathModifyCache::Load();
+		ImporterInfoCache::Load();
 		for (auto& it : std::filesystem::recursive_directory_iterator(Path::GetAssetsPath()))
 		{
 			AssetImporter* importer = CreateImporter(it.path());
@@ -28,8 +32,13 @@ namespace Blueberry
 				s_GuidToPath.insert_or_assign(importer->GetGuid(), importer->GetRelativeFilePath());
 				// Delete asset from cache if it dirty
 				auto lastWriteTime = std::chrono::duration_cast<std::chrono::seconds>(std::filesystem::last_write_time(importer->GetFilePath()).time_since_epoch()).count();
-				auto lastWriteCacheTime = ModifyCache::Get(importer->GetRelativeFilePath());
+				auto lastWriteCacheTime = PathModifyCache::Get(importer->GetRelativeFilePath());
 				bool needsClearing = false;
+
+				if (!ImporterInfoCache::Get(importer))
+				{
+					needsClearing = true;
+				}
 
 				if (lastWriteCacheTime > 0)
 				{
@@ -49,35 +58,21 @@ namespace Blueberry
 					{
 						DeleteAssetFromData(guid);
 					}
+					importersToImport.emplace_back(importer);
 				}
-				ModifyCache::Set(importer->GetRelativeFilePath(), lastWriteTime);
+				PathModifyCache::Set(importer->GetRelativeFilePath(), lastWriteTime);
 				if (needsClearing)
 				{
-					ModifyCache::Save();
+					PathModifyCache::Save();
 				}
 			}
 		}
-	}
-
-	AssetImporter* AssetDB::Import(const std::string& relativePath)
-	{
-		auto& dataIt = s_Importers.find(relativePath);
-		if (dataIt != s_Importers.end())
+		for (AssetImporter* importer : importersToImport)
 		{
-			dataIt->second->ImportDataIfNeeded();
-			return dataIt->second;
+			importer->ImportDataIfNeeded();
+			ImporterInfoCache::Set(importer);
 		}
-		return nullptr;
-	}
-
-	AssetImporter* AssetDB::Import(const Guid& guid)
-	{
-		auto pathIt = s_GuidToPath.find(guid);
-		if (pathIt != s_GuidToPath.end())
-		{
-			return Import(pathIt->second);
-		}
-		return nullptr;
+		ImporterInfoCache::Save();
 	}
 
 	AssetImporter* AssetDB::GetImporter(const std::string& relativePath)
@@ -90,10 +85,28 @@ namespace Blueberry
 		return nullptr;
 	}
 
-	std::vector<std::pair<Object*, FileId>> AssetDB::LoadAssetObjects(const Guid& guid)
+	AssetImporter* AssetDB::GetImporter(const Guid& guid)
+	{
+		auto pathIt = s_GuidToPath.find(guid);
+		if (pathIt != s_GuidToPath.end())
+		{
+			return GetImporter(pathIt->second);
+		}
+		return nullptr;
+	}
+
+	std::vector<std::pair<Object*, FileId>> AssetDB::LoadAssetObjects(const Guid& guid, const std::map<FileId, ObjectId>& existingObjects)
 	{
 		BinarySerializer/*YamlSerializer*/ serializer;
 		std::filesystem::path dataPath = Path::GetAssetCachePath();
+		for (auto& object : existingObjects)
+		{
+			Object* existingObject = ObjectDB::GetObject(object.second);
+			if (existingObject != nullptr)
+			{
+				serializer.AddObject(existingObject);
+			}
+		}
 		serializer.Deserialize(dataPath.append(guid.ToString()).string());
 		auto& deserializedObjects = serializer.GetDeserializedObjects();
 		std::vector<std::pair<Object*, FileId>> objects(deserializedObjects.size());
@@ -102,9 +115,7 @@ namespace Blueberry
 			int i = 0;
 			for (auto& pair : deserializedObjects)
 			{
-				Object* object = pair.first;
-				ObjectDB::AllocateIdToGuid(object, guid, pair.second);
-				objects[i] = std::pair { object, pair.second };
+				objects[i] = std::pair { pair.first, pair.second };
 				++i;
 			}
 		}
@@ -173,15 +184,15 @@ namespace Blueberry
 	{
 		for (auto& objectId : s_DirtyAssets)
 		{
-			ObjectItem* item = ObjectDB::IdToObjectItem(objectId);
-			if (item != nullptr && item->object != nullptr)
+			Object* object = ObjectDB::GetObject(objectId);
+			if (object != nullptr)
 			{
-				auto pair = ObjectDB::GetGuidAndFileIdFromObject(item->object);
+				auto pair = ObjectDB::GetGuidAndFileIdFromObject(object);
 				std::string relativePath = s_GuidToPath[pair.first];
 				YamlSerializer serializer;
 				auto dataPath = Path::GetAssetsPath();
 				dataPath.append(relativePath);
-				serializer.AddObject(item->object);
+				serializer.AddObject(object);
 				serializer.Serialize(dataPath.string());
 				BB_INFO("Asset was saved to the path: " << relativePath);
 			}
@@ -191,8 +202,8 @@ namespace Blueberry
 
 	AssetImporter* AssetDB::CreateImporter(const std::filesystem::path& path)
 	{
-		// Skip directories and not existing pathes
-		if (!std::filesystem::exists(path) || std::filesystem::is_directory(path))
+		// Skip not existing pathes
+		if (!std::filesystem::exists(path))
 		{
 			return nullptr;
 		}

@@ -46,9 +46,24 @@ namespace Blueberry
 		return m_ImportedObjects;
 	}
 
+	const FileId& AssetImporter::GetMainObject()
+	{
+		return m_MainObject;
+	}
+
+	const bool& AssetImporter::IsImported()
+	{
+		if (m_ImportedObjects.size() > 0)
+		{
+			Object* firstObject = ObjectDB::GetObject(m_ImportedObjects.begin()->second);
+			return firstObject->GetState() != ObjectState::AwaitingLoading;
+		}
+		return false;
+	}
+
 	void AssetImporter::ImportDataIfNeeded()
 	{
-		if (m_ImportedObjects.size() == 0)
+		if (!IsImported())
 		{
 			ImportData();
 		}
@@ -85,7 +100,8 @@ namespace Blueberry
 		if (deserializedObjects.size() > 0)
 		{
 			AssetImporter* importer = (AssetImporter*)deserializedObjects[0].first;
-			importer->m_Guid = serializer.GetGuid();
+			Guid guid = serializer.GetGuid();
+			importer->m_Guid = guid;
 			importer->m_RelativePath = relativePath.string();
 			importer->m_RelativeMetaPath = relativeMetaPath.string();
 			importer->m_Name = relativePath.stem().string();
@@ -103,5 +119,10 @@ namespace Blueberry
 	void AssetImporter::AddImportedObject(Object* object, const FileId& fileId)
 	{
 		m_ImportedObjects.insert_or_assign(fileId, object->GetObjectId());
+	}
+
+	void AssetImporter::SetMainObject(const FileId& id)
+	{
+		m_MainObject = id;
 	}
 }

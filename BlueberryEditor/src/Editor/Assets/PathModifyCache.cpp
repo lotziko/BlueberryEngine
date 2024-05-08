@@ -1,17 +1,17 @@
 #include "bbpch.h"
-#include "ModifyCache.h"
+#include "PathModifyCache.h"
 
 #include "Editor\Path.h"
 
 #include <fstream>
-#include <sstream>
 
-// TODO make it into an asset info cache containing also fileId of the main object and the list of fileIds in asset
+// TODO make it into an asset info cache containing also fileId of the main object and the list of fileIds+types in asset
+// On creating of importer create dummy objects with corresponding fileIds and then pass them to deserializer when needed
 namespace Blueberry
 {
-	std::map<std::string, long long> ModifyCache::s_PathModifyCache = std::map<std::string, long long>();
+	std::map<std::string, long long> PathModifyCache::s_PathModifyCache = std::map<std::string, long long>();
 
-	void ModifyCache::Load()
+	void PathModifyCache::Load()
 	{
 		auto dataPath = Path::GetAssetCachePath();
 		dataPath.append("PathModifyCache");
@@ -25,11 +25,11 @@ namespace Blueberry
 
 			for (size_t i = 0; i < cacheSize; ++i)
 			{
+				long long time;
 				size_t pathSize;
 				input.read((char*)&pathSize, sizeof(size_t));
 				std::string path(pathSize, ' ');
 				input.read(path.data(), pathSize);
-				long long time;
 				input.read((char*)&time, sizeof(long long));
 				s_PathModifyCache.insert_or_assign(path, time);
 			}
@@ -37,7 +37,7 @@ namespace Blueberry
 		}
 	}
 
-	void ModifyCache::Save()
+	void PathModifyCache::Save()
 	{
 		auto dataPath = Path::GetAssetCachePath();
 		dataPath.append("PathModifyCache");
@@ -59,7 +59,7 @@ namespace Blueberry
 		output.close();
 	}
 
-	long long ModifyCache::Get(const std::string& path)
+	long long PathModifyCache::Get(const std::string& path)
 	{
 		auto it = s_PathModifyCache.find(path);
 		if (it != s_PathModifyCache.end())
@@ -69,7 +69,7 @@ namespace Blueberry
 		return 0;
 	}
 
-	void ModifyCache::Set(const std::string& path, const long long& lastWriteTime)
+	void PathModifyCache::Set(const std::string& path, const long long& lastWriteTime)
 	{
 		s_PathModifyCache.insert_or_assign(path, lastWriteTime);
 	}

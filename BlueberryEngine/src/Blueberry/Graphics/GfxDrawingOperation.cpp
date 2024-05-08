@@ -11,8 +11,9 @@ namespace Blueberry
 {
 	GfxDrawingOperation::GfxDrawingOperation(GfxVertexBuffer* vertexBuffer, GfxIndexBuffer* indexBuffer, Material* material, const UINT& indexCount, const UINT& indexOffset, const Topology& topology)
 	{
-		shader = (material->m_Shader.IsValid() && material->m_Shader->IsAlive()) ? material->m_Shader->m_Shader : nullptr;
+		shader = (material->m_Shader.IsValid() && material->m_Shader->IsDefaultState()) ? material->m_Shader->m_Shader : nullptr;
 		textures = &(material->m_GfxTextures);
+		materialId = material->GetObjectId();
 		this->vertexBuffer = vertexBuffer;
 		this->indexBuffer = indexBuffer;
 		this->indexCount = indexCount;
@@ -31,20 +32,21 @@ namespace Blueberry
 
 	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material)
 	{
-		if (material == nullptr || !material->IsAlive() || !material->m_Shader.IsValid() || !material->m_Shader->IsAlive())
+		if (material == nullptr || !material->IsDefaultState() || !material->m_Shader.IsValid() || !material->m_Shader->IsDefaultState())
 		{
 			material = DefaultMaterials::GetError();
 		}
 		
 		shader = material->m_Shader->m_Shader;
 		textures = &(material->m_GfxTextures);
+		materialId = material->GetObjectId();
 		auto& options = material->GetShaderOptions();
 		this->cullMode = options.GetCullMode();
 		this->blendSrc = options.GetBlendSrc();
 		this->blendDst = options.GetBlendDst();
 		this->zWrite = options.GetZWrite();
 
-		if (mesh != nullptr && mesh->IsAlive() && mesh->GetVertexCount() > 0)
+		if (mesh != nullptr && mesh->IsDefaultState() && mesh->GetVertexCount() > 0)
 		{
 			vertexBuffer = mesh->m_VertexBuffer;
 			indexBuffer = mesh->m_IndexBuffer;

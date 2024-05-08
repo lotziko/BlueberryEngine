@@ -15,6 +15,11 @@ namespace Blueberry
 		m_ObjectsToSerialize.emplace_back(object);
 	}
 
+	void Serializer::AddObject(Object* object, const FileId& fileId)
+	{
+		m_FileIdToObject.insert({ fileId, object });
+	}
+
 	std::vector<std::pair<Object*, FileId>>& Serializer::GetDeserializedObjects()
 	{
 		return m_DeserializedObjects;
@@ -87,7 +92,7 @@ namespace Blueberry
 		if (data.guid.data[0] > 0)
 		{
 			result = ObjectDB::GetObjectFromGuid(data.guid, data.fileId);
-			if (result == nullptr)
+			if (result == nullptr || result->GetState() == ObjectState::AwaitingLoading)
 			{
 				result = AssetLoader::Load(data.guid, data.fileId);
 				if (result == nullptr)

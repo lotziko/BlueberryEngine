@@ -32,5 +32,6 @@ namespace Blueberry
 		Topology topology;
 		UINT indexCount;
 		UINT indexOffset;
+		ObjectId materialId;
 	};
 }

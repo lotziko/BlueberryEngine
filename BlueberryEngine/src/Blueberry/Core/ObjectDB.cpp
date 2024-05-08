@@ -110,8 +110,8 @@ namespace Blueberry
 	{
 		// TODO do something better
 		Object* object = new Object();
-		object->SetName("Missing");
-		object->SetAlive(false);
+		object->m_Name = "Missing";
+		object->m_State = ObjectState::Missing;
 		ObjectDB::AllocateId(object);
 		AllocateIdToGuid(object->GetObjectId(), guid, fileId);
 	}

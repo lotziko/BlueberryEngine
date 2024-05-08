@@ -7,10 +7,12 @@ namespace Blueberry
 	{
 	public:
 		static void Initialize(AssetLoader* loader);
+		static void Load(const Guid& guid);
 		static Object* Load(const Guid& guid, const FileId& fileId);
 		static Object* Load(const std::string& path);
 
 	protected:
+		virtual void LoadImpl(const Guid& guid) = 0;
 		virtual Object* LoadImpl(const Guid& guid, const FileId& fileId) = 0;
 		virtual Object* LoadImpl(const std::string& path) = 0;
 

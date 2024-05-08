@@ -149,14 +149,14 @@ namespace Blueberry
 			if (payload != nullptr && payload->IsDataType("OBJECT_ID"))
 			{
 				Blueberry::ObjectId* id = (Blueberry::ObjectId*)payload->Data;
-				Blueberry::ObjectItem* item = Blueberry::ObjectDB::IdToObjectItem(*id);
+				Blueberry::Object* object = Blueberry::ObjectDB::GetObject(*id);
 
-				if (item != nullptr && item->object->IsClassType(Entity::Type) && ImGui::AcceptDragDropPayload("OBJECT_ID"))
+				if (object != nullptr && object->IsClassType(Entity::Type) && ImGui::AcceptDragDropPayload("OBJECT_ID"))
 				{
 					Scene* scene = EditorSceneManager::GetScene();
 					if (scene != nullptr)
 					{
-						scene->AddEntity(static_cast<Entity*>(Object::Clone(item->object)));
+						scene->AddEntity(static_cast<Entity*>(Object::Clone(object)));
 					}
 				}
 			}
@@ -169,7 +169,15 @@ namespace Blueberry
 		{
 			if (ImGui::IsMouseClicked(0) && mousePos.x >= pos.x && mousePos.y >= pos.y && mousePos.x <= pos.x + size.x && mousePos.y <= pos.y + size.y)
 			{
-				m_ObjectPicker->Pick(EditorSceneManager::GetScene(), m_Camera, (int)(mousePos.x - pos.x), (int)(mousePos.y - pos.y));
+				Object* pickedObject = m_ObjectPicker->Pick(EditorSceneManager::GetScene(), m_Camera, (int)(mousePos.x - pos.x), (int)(mousePos.y - pos.y));
+				if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
+				{
+					Selection::AddActiveObject(pickedObject);
+				}
+				else
+				{
+					Selection::SetActiveObject(pickedObject);
+				}
 			}
 		}
 

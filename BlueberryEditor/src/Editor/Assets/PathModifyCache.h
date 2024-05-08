@@ -2,7 +2,7 @@
 
 namespace Blueberry
 {
-	class ModifyCache
+	class PathModifyCache
 	{
 	public:
 		static void Load();

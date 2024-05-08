@@ -10,12 +10,12 @@ namespace Blueberry
 	void AssetImporterInspector::Draw(Object* object)
 	{
 		AssetImporter* assetImporter = static_cast<AssetImporter*>(object);
+		assetImporter->ImportDataIfNeeded();
 		for (auto& object : assetImporter->GetImportedObjects())
 		{
-			ObjectItem* item = ObjectDB::IdToObjectItem(object.second);
-			if (item != nullptr)
+			Object* importedObject = ObjectDB::GetObject(object.second);
+			if (importedObject != nullptr)
 			{
-				Object* importedObject = item->object;
 				ObjectInspector* importedObjectInspector = ObjectInspectorDB::GetInspector(importedObject->GetType());
 				if (importedObjectInspector != nullptr)
 				{

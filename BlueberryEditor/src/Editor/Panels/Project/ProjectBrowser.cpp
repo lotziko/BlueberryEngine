@@ -18,7 +18,10 @@ namespace Blueberry
 		m_CurrentDirectory = Path::GetAssetsPath();
 
 		m_FolderIcon = (Texture2D*)AssetLoader::Load("assets/icons/FolderIcon.png");
+		m_FolderIconSmall = (Texture2D*)AssetLoader::Load("assets/icons/FolderIconSmall.png");
+		m_FolderIconSmallOpened = (Texture2D*)AssetLoader::Load("assets/icons/FolderIconSmallOpened.png");
 		m_FbxIcon = (Texture2D*)AssetLoader::Load("assets/icons/FbxIcon.png");
+
 		m_FolderTree = FolderTree(m_CurrentDirectory.string());
 	}
 
@@ -56,13 +59,22 @@ namespace Blueberry
 
 	void ProjectBrowser::DrawFolderNode(const FolderTreeNode& node)
 	{
-		ImGuiTreeNodeFlags flags = node.children.size() > 0 ? ImGuiTreeNodeFlags_OpenOnArrow : ImGuiTreeNodeFlags_Leaf;
-		bool opened = ImGui::TreeNodeEx(node.name.c_str(), flags);
+		ImGuiTreeNodeFlags flags = (node.children.size() > 0 ? ImGuiTreeNodeFlags_OpenOnArrow : ImGuiTreeNodeFlags_Leaf) | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_SpanFullWidth;
+		ImVec2 pos = ImGui::GetCursorScreenPos();
+		const char* label = node.name.c_str();
+		bool opened = ImGui::TreeNodeEx(label, flags, "");
 
 		if (ImGui::IsItemClicked())
 		{
 			m_CurrentDirectory = node.path;
 		}
+
+		ImGui::SameLine();
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 4);
+		ImGui::Image((opened && node.children.size() > 0) ? m_FolderIconSmallOpened->GetHandle() : m_FolderIconSmall->GetHandle(), ImVec2(16, 16), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::SameLine();
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 4);
+		ImGui::Text("%s", label);
 
 		if (opened)
 		{
@@ -76,19 +88,19 @@ namespace Blueberry
 
 	void ProjectBrowser::DrawCurrentFolder()
 	{
-		//ImGui::NewLine();
-		/*if (m_CurrentDirectory != Path::GetAssetsPath())
-		{
-			if (ImGui::Button("Back"))
-			{
-				m_CurrentDirectory = m_CurrentDirectory.parent_path();
-			}
-			ImGui::NewLine();
-		}*/
-
+		bool isAnyFileHovered = false;
 		for (auto& it : std::filesystem::directory_iterator(m_CurrentDirectory))
 		{
 			DrawFile(it);
+			if (ImGui::IsItemHovered())
+			{
+				isAnyFileHovered = true;
+			}
+		}
+
+		if (!isAnyFileHovered && ImGui::IsWindowHovered() && ImGui::IsMouseClicked(0))
+		{
+			Selection::SetActiveObject(nullptr);
 		}
 
 		const char* popId = "Delete?";
@@ -156,72 +168,67 @@ namespace Blueberry
 
 		ImGui::PushID(pathString.c_str());
 		ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 1.0f));
-		if (file.is_directory())
-		{
-			ImVec2 pos = ImGui::GetCursorScreenPos();
-			ImGui::Selectable(relativePath.filename().string().c_str(), false, 0, ImVec2(cellSize, cellSize));
-			ImGui::GetWindowDrawList()->AddImage(m_FolderIcon->GetHandle(), ImVec2(pos.x + cellIconPadding, pos.y), ImVec2(pos.x + cellSize - cellIconPadding, pos.y + cellSize - cellIconPadding * 2), ImVec2(0, 1), ImVec2(1, 0));
 
-			if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-			{
-				m_CurrentDirectory /= path.filename();
-			}
-		}
-		else if (extension == ".meta")
+		if (extension == ".meta")
 		{
 			AssetImporter* importer = AssetDB::GetImporter(relativePath.replace_extension("").string());
 			if (importer != nullptr)
 			{
 				auto name = path.stem().string();
 				auto importedObjects = importer->GetImportedObjects();
+				bool isDirectory = std::filesystem::is_directory(importer->GetFilePath());
 
 				//https://www.google.com/search?q=imgui+selectable&oq=imgui+selectable&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIGCAEQRRhB0gEIMjA0NGowajGoAgCwAgA&sourceid=chrome&ie=UTF-8
 				ImVec2 pos = ImGui::GetCursorScreenPos();
-				ImGui::Selectable(name.c_str(), false, 0, ImVec2(cellSize, cellSize));
-				ImGui::GetWindowDrawList()->AddImage(m_FbxIcon->GetHandle(), ImVec2(pos.x + cellIconPadding, pos.y), ImVec2(pos.x + cellSize - cellIconPadding, pos.y + cellSize - cellIconPadding * 2), ImVec2(0, 1), ImVec2(1, 0));
+				if (ImGui::Selectable(name.c_str(), Selection::IsActiveObject(importer), 0, ImVec2(cellSize, cellSize)))
+				{
+					if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
+					{
+						Selection::AddActiveObject(importer);
+					}
+					else
+					{
+						Selection::SetActiveObject(importer);
+					}
+				}
+				ImGui::GetWindowDrawList()->AddImage(isDirectory ? m_FolderIcon->GetHandle() :  m_FbxIcon->GetHandle(), ImVec2(pos.x + cellIconPadding, pos.y), ImVec2(pos.x + cellSize - cellIconPadding, pos.y + cellSize - cellIconPadding * 2), ImVec2(0, 1), ImVec2(1, 0));
 
 				if (ImGui::IsItemHovered())
 				{
-					importer->ImportDataIfNeeded();
-
-					if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+					if (isDirectory)
 					{
-						std::string stringPath = importer->GetFilePath();
-						std::filesystem::path filePath = stringPath;
-						if (filePath.extension() == ".scene")
+						if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 						{
-							EditorSceneManager::Load(stringPath);
+							std::filesystem::path directoryPath = importer->GetFilePath();
+							m_CurrentDirectory /= directoryPath.filename();
+						}
+					}
+					else
+					{
+						if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+						{
+							std::string stringPath = importer->GetFilePath();
+							std::filesystem::path filePath = stringPath;
+							if (filePath.extension() == ".scene")
+							{
+								EditorSceneManager::Load(stringPath);
+							}
 						}
 					}
 				}
 
-				/*if (opened)
+				// TODO main object, selection into OBJECT_ID and dropdown for multiple objects
+				if (ImGui::BeginDragDropSource())
 				{
-					for (auto& pair : importedObjects)
+					auto it = importer->GetImportedObjects().find(importer->GetMainObject());
+					if (it != importer->GetImportedObjects().end())
 					{
-						Object* object = ObjectDB::GetObject(pair.second);
-						bool opened = ImGui::TreeNodeEx((void*)object, ImGuiTreeNodeFlags_Leaf, object->GetName().c_str());
-
-						if (ImGui::BeginDragDropSource())
-						{
-							ObjectId objectId = object->GetObjectId();
-							ImGui::SetDragDropPayload("OBJECT_ID", &objectId, sizeof(ObjectId));
-							ImGui::Text("%s", importer->GetName().c_str());
-							ImGui::EndDragDropSource();
-						}
-
-						if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
-						{
-							Selection::SetActiveObject(importer);
-						}
-
-						if (opened)
-						{
-							ImGui::TreePop();
-						}
+						ObjectId objectId = it->second;
+						ImGui::SetDragDropPayload("OBJECT_ID", &objectId, sizeof(ObjectId));
+						ImGui::Text("%s", importer->GetName().c_str());
 					}
-					ImGui::TreePop();
-				}*/
+					ImGui::EndDragDropSource();
+				}
 			}
 		}
 

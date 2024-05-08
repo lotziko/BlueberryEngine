@@ -36,6 +36,11 @@ namespace Blueberry
 		return TypeName;
 	}
 
+	void Object::PopulateParentTypes(std::set<size_t>& types)
+	{
+		types.emplace(Object::Type);
+	}
+
 	ObjectId Object::GetObjectId() const
 	{
 		return m_ObjectId;
@@ -51,14 +56,19 @@ namespace Blueberry
 		m_Name = name;
 	}
 
-	const bool& Object::IsAlive()
+	const ObjectState& Object::GetState()
 	{
-		return m_IsAlive;
+		return m_State;
 	}
 
-	void Object::SetAlive(const bool& alive)
+	const bool Object::IsDefaultState()
 	{
-		m_IsAlive = alive;
+		return m_State == ObjectState::Default;
+	}
+
+	void Object::SetState(const ObjectState& state)
+	{
+		m_State = state;
 	}
 
 	void Object::BindProperties()

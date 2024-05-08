@@ -24,11 +24,13 @@ namespace Blueberry
 		{
 			// TODO multiple meshes in file
 			// TODO rewrite this, it makes allocateid too and add fileid serializing to yamlserializer
-			auto objects = AssetDB::LoadAssetObjects(guid);
+			auto objects = AssetDB::LoadAssetObjects(guid, GetImportedObjects());
 			for (auto& pair : objects)
 			{
 				Object* object = pair.first;
 				FileId id = pair.second;
+				ObjectDB::AllocateIdToGuid(object, guid, id);
+				object->SetState(ObjectState::Default);
 
 				if (object->IsClassType(Mesh::Type))
 				{
@@ -82,6 +84,7 @@ namespace Blueberry
 				size_t entityFileId = TO_HASH(std::string(GetName()).append("_Entity"));
 				ObjectDB::AllocateIdToGuid(entity, guid, entityFileId);
 				AddImportedObject(entity, entityFileId);
+				SetMainObject(entityFileId);
 			}
 
 			for (int meshId = 0; meshId < meshCount; ++meshId)
@@ -118,6 +121,10 @@ namespace Blueberry
 				size_t entityFileId = TO_HASH(std::string(mesh->name).append("_Entity"));
 				ObjectDB::AllocateIdToGuid(entity, guid, entityFileId);
 				AddImportedObject(entity, entityFileId);
+				if (root == nullptr)
+				{
+					SetMainObject(entityFileId);
+				}
 				objects.emplace_back(entity);
 
 				std::vector<ofbx::Vec3> meshPositions;

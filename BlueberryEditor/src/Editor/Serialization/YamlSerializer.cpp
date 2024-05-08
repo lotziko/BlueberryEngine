@@ -39,12 +39,22 @@ namespace Blueberry
 			FileId fileId;
 			if (node.has_key_tag() && ryml::from_chars(node.key_tag().trim("!"), &fileId))
 			{
-				ryml::csubstr key = node.key();
-				std::string typeName(key.str, key.size());
-				ClassDB::ClassInfo info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
-				Object* instance = info.createInstance();
-				AddDeserializedObject(instance, fileId);
-				deserializedNodes.emplace_back(i, instance);
+				auto it = m_FileIdToObject.find(fileId);
+				if (it == m_FileIdToObject.end())
+				{
+					ryml::csubstr key = node.key();
+					std::string typeName(key.str, key.size());
+					ClassDB::ClassInfo info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
+					Object* instance = info.createInstance();
+					AddDeserializedObject(instance, fileId);
+					deserializedNodes.emplace_back(i, instance);
+				}
+				else
+				{
+					Object* instance = it->second;
+					AddDeserializedObject(instance, fileId);
+					deserializedNodes.emplace_back(i, instance);
+				}
 			}
 		}
 		for (auto& pair : deserializedNodes)
