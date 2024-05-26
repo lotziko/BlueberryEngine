@@ -20,7 +20,7 @@ namespace Blueberry
 		// TODO iterate object fields and clone them too if they have references to objects inside
 
 		ClassDB::ClassInfo info = ClassDB::GetInfo(object->GetType());
-		Object* clone = info.createInstance();
+		Object* clone = (Object*)info.createInstance();
 		mapping.insert_or_assign(object->GetObjectId(), clone->GetObjectId());
 
 		Variant originalValue;

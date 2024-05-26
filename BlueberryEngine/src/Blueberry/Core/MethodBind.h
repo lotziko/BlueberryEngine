@@ -17,7 +17,7 @@ namespace Blueberry
 	class MethodBind
 	{
 	public:
-		virtual Variant Invoke(Object* target, Variant* arg) const = 0;
+		virtual Variant Invoke(void* target, Variant* arg) const = 0;
 
 		template<class ObjectType, class Arg>
 		static MethodBind* Create(void(ObjectType::*method)(Arg))
@@ -47,7 +47,7 @@ namespace Blueberry
 			m_Method = method;
 		}
 
-		virtual Variant Invoke(Object* target, Variant* arg) const override
+		virtual Variant Invoke(void* target, Variant* arg) const override
 		{
 			Arg* value = arg->Get<Arg>();
 			(static_cast<ObjectType*>(target)->*m_Method)(*value);

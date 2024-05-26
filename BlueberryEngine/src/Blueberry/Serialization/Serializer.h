@@ -1,5 +1,6 @@
 #pragma once
 #include "Blueberry\Core\Structs.h"
+#include "Blueberry\Core\ClassDB.h"
 
 namespace Blueberry
 {
@@ -7,6 +8,30 @@ namespace Blueberry
 
 	class Serializer
 	{
+	protected:
+		struct Context
+		{
+			void* ptr;
+			const ClassDB::ClassInfo& info;
+
+			static Context Create(Object* object, const size_t& type)
+			{
+				const ClassDB::ClassInfo& info = ClassDB::GetInfo(type);
+				return { object - info.offset, info };
+			}
+
+			static Context CreateNoOffset(Data* data, const size_t& type)
+			{
+				const ClassDB::ClassInfo& info = ClassDB::GetInfo(type);
+				return { data, info };
+			}
+
+			static Context Create(Data* data, const ClassDB::ClassInfo& info)
+			{
+				return { data - info.offset, info };
+			}
+		};
+
 	public:
 		void AddObject(Object* object);
 		void AddObject(Object* object, const FileId& fileId);

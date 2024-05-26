@@ -7,6 +7,8 @@
 #include "Blueberry\Core\Structs.h"
 #include <fstream>
 
+#include "Blueberry\Graphics\Shader.h"
+
 namespace Blueberry
 {
 	void BinarySerializer::Serialize(const std::string& path)
@@ -30,7 +32,7 @@ namespace Blueberry
 				headers.write(typeName.c_str(), typeNameSize);
 
 				objects.write((char*)&fileId, sizeof(FileId));
-				SerializeNode(objects, object);
+				SerializeNode(objects, Context::Create(object, object->GetType()));
 				++objectCount;
 			}
 
@@ -60,7 +62,7 @@ namespace Blueberry
 				input.read(typeName.data(), typeNameSize);
 
 				ClassDB::ClassInfo info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
-				Object* instance = info.createInstance();
+				Object* instance = (Object*)info.createInstance();
 				AddDeserializedObject(instance, fileId);
 			}
 
@@ -68,22 +70,23 @@ namespace Blueberry
 			{
 				FileId fileId;
 				input.read((char*)&fileId, sizeof(FileId));
-				DeserializeNode(input, m_FileIdToObject[fileId]);
+				Object* object = m_FileIdToObject[fileId];
+				DeserializeNode(input, Context::Create(object, object->GetType()));
 			}
 			input.close();
 		}
 	}
 
-	void BinarySerializer::SerializeNode(std::stringstream& output, Object* object)
+	void BinarySerializer::SerializeNode(std::stringstream& output, Context context)
 	{
 		Variant value;
-		auto fields = ClassDB::GetInfo(object->GetType()).fields;
+		auto fields = context.info.fields;
 		size_t fieldCount = fields.size();
 		output.write((char*)&fieldCount, sizeof(size_t));
 
 		for (auto& field : fields)
 		{
-			field.bind->Get(object, value);
+			field.bind->Get(context.ptr, value);
 			size_t fieldNameSize = field.name.size();
 			output.write((char*)&fieldNameSize, sizeof(size_t));
 			output.write(field.name.c_str(), fieldNameSize);
@@ -180,6 +183,30 @@ namespace Blueberry
 				}
 			}
 			break;
+			case BindingType::Data:
+			{
+				DataPtr<Data> dataValue = *value.Get<DataPtr<Data>>();
+				Data* data = dataValue.Get();
+				Context context = Context::CreateNoOffset(data, field.objectType);
+				SerializeNode(output, context);
+			}
+			break;
+			case BindingType::DataArray:
+			{
+				std::vector<DataPtr<Data>>* arrayValue = value.Get<std::vector<DataPtr<Data>>>();
+				size_t dataSize = arrayValue->size();
+				output.write((char*)&dataSize, sizeof(size_t));
+				if (dataSize > 0)
+				{
+					for (auto const& dataValue : *arrayValue)
+					{
+						Data* data = dataValue.Get();
+						Context context = Context::CreateNoOffset(data, field.objectType);
+						SerializeNode(output, context);
+					}
+				}
+			}
+			break;
 			default:
 				BB_INFO("Can't serialize field " << field.name);
 				continue;
@@ -187,13 +214,13 @@ namespace Blueberry
 		}
 	}
 
-	void BinarySerializer::DeserializeNode(std::ifstream& input, Object* object)
+	void BinarySerializer::DeserializeNode(std::ifstream& input, Context context)
 	{
 		Variant value;
 		size_t fieldCount;
 		input.read((char*)&fieldCount, sizeof(size_t));
 
-		auto fieldsMap = ClassDB::GetInfo(object->GetType()).fieldsMap;
+		auto fieldsMap = context.info.fieldsMap;
 		for (size_t i = 0; i < fieldCount; ++i)
 		{
 			size_t fieldNameSize;
@@ -205,7 +232,7 @@ namespace Blueberry
 			if (fieldIt != fieldsMap.end())
 			{
 				auto& field = fieldIt->second;
-				field.bind->Get(object, value);
+				field.bind->Get(context.ptr, value);
 
 				switch (field.type)
 				{
@@ -284,6 +311,30 @@ namespace Blueberry
 						ObjectPtrData data = {};
 						input.read((char*)&data, sizeof(ObjectPtrData));
 						refArrayPointer->emplace_back(GetPtrObject(data));
+					}
+				}
+				break;
+				case BindingType::Data:
+				{
+					const ClassDB::ClassInfo& info = ClassDB::GetInfo(field.objectType);
+					Data* instance = info.createDataInstance();
+					Context context = Context::Create(instance, info);
+					DeserializeNode(input, context);
+					*value.Get<DataPtr<Data>>() = context.ptr;
+				}
+				break;
+				case BindingType::DataArray:
+				{
+					size_t dataSize;
+					input.read((char*)&dataSize, sizeof(size_t));
+					ClassDB::ClassInfo info = ClassDB::GetInfo(field.objectType);
+					std::vector<DataPtr<Data>>* dataArrayPointer = value.Get<std::vector<DataPtr<Data>>>();
+					for (size_t i = 0; i < dataSize; ++i)
+					{
+						Data* instance = info.createDataInstance();
+						Context context = Context::Create(instance, info);
+						DeserializeNode(input, context);
+						dataArrayPointer->emplace_back(context.ptr);
 					}
 				}
 				break;

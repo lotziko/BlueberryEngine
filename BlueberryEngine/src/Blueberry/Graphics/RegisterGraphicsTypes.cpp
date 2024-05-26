@@ -16,7 +16,10 @@ namespace Blueberry
 		REGISTER_ABSTRACT_CLASS(Texture);
 		REGISTER_CLASS(Texture2D);
 		REGISTER_CLASS(Mesh);
+		REGISTER_DATA_CLASS(TextureParameterData);
+		REGISTER_DATA_CLASS(ShaderData);
 		REGISTER_CLASS(Shader);
+		REGISTER_DATA_CLASS(TextureData);
 		REGISTER_CLASS(Material);
 	}
 }

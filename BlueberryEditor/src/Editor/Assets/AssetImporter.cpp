@@ -41,7 +41,7 @@ namespace Blueberry
 		return m_RelativeMetaPath;
 	}
 
-	const std::map<FileId, ObjectId>& AssetImporter::GetImportedObjects()
+	const std::unordered_map<FileId, ObjectId>& AssetImporter::GetImportedObjects()
 	{
 		return m_ImportedObjects;
 	}

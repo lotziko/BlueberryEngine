@@ -14,6 +14,6 @@ namespace Blueberry
 		virtual void Draw(Object* object) override;
 
 	private:
-		std::map<std::intptr_t, Vector3> m_TransformEulerCache;
+		std::unordered_map<std::intptr_t, Vector3> m_TransformEulerCache;
 	};
 }

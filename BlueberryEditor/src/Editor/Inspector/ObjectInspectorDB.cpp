@@ -2,30 +2,33 @@
 #include "ObjectInspectorDB.h"
 #include "ObjectInspector.h"
 
+#include "Blueberry\Graphics\Shader.h"
+
 namespace Blueberry
 {
-	std::map<std::size_t, ObjectInspector*> ObjectInspectorDB::s_Inspectors = std::map<std::size_t, ObjectInspector*>();
+	std::unordered_map<std::size_t, ObjectInspector*> ObjectInspectorDB::s_Inspectors = std::unordered_map<std::size_t, ObjectInspector*>();
 
-	std::map<std::size_t, ObjectInspector*>& Blueberry::ObjectInspectorDB::GetInspectors()
+	std::unordered_map<std::size_t, ObjectInspector*>& Blueberry::ObjectInspectorDB::GetInspectors()
 	{
 		return s_Inspectors;
 	}
 
 	ObjectInspector* ObjectInspectorDB::GetInspector(const std::size_t& id)
 	{
-		auto inspectorIt = s_Inspectors.find(id);
-		if (inspectorIt != s_Inspectors.end())
+		std::size_t inheritsId = id;
+		while (true)
 		{
-			return inspectorIt->second;
-		}
-		for (auto& inspector : s_Inspectors)
-		{
-			if (ClassDB::IsParent(id, inspector.first))
+			auto inspectorIt = s_Inspectors.find(inheritsId);
+			if (inspectorIt != s_Inspectors.end())
 			{
-				return inspector.second;
+				return inspectorIt->second;
+			}
+			inheritsId = ClassDB::GetInfo(inheritsId).parentId;
+			if (inheritsId == 0)
+			{
+				break;
 			}
 		}
-
 		return nullptr;
 	}
 

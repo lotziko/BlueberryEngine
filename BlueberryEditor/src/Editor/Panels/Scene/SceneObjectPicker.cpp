@@ -88,7 +88,7 @@ namespace Blueberry
 
 		Rectangle area = Rectangle(Min(Max(positionX, 0), camera.GetPixelSize().x), Min(Max(positionY, 0), camera.GetPixelSize().y), 1, 1);
 		unsigned char pixel[4];
-		std::map<int, ObjectId> validObjects;
+		std::unordered_map<int, ObjectId> validObjects;
 		uint32_t index = 1;
 
 		GfxDevice::SetRenderTarget(m_SceneRenderTarget, m_SceneDepthStencil);

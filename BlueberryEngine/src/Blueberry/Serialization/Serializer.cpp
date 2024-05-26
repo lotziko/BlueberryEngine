@@ -39,7 +39,7 @@ namespace Blueberry
 	{
 		ObjectDB::AllocateIdToFileId(object, fileId);
 		m_FileIdToObject.insert_or_assign(fileId, object);
-		m_DeserializedObjects.emplace_back(std::pair{ object, fileId });
+		m_DeserializedObjects.emplace_back(std::make_pair(object, fileId));
 	}
 
 	FileId Serializer::GetFileId(Object* object)
@@ -122,15 +122,16 @@ namespace Blueberry
 		if (ObjectDB::HasGuid(object))
 		{
 			FileId fileId = ObjectDB::GetFileIdFromObject(object);
-			if (m_FileIdToObject.count(fileId) == 0)
+			auto fileIdIt = m_FileIdToObject.find(fileId);
+			if (fileIdIt != m_FileIdToObject.end() && fileIdIt->second == object)
+			{
+				result.fileId = fileId;
+			}
+			else
 			{
 				auto pair = ObjectDB::GetGuidAndFileIdFromObject(object);
 				result.guid = pair.first;
 				result.fileId = pair.second;
-			}
-			else
-			{
-				result.fileId = fileId;
 			}
 		}
 		else

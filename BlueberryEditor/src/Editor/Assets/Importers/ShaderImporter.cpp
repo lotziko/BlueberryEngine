@@ -43,16 +43,16 @@ namespace Blueberry
 		{
 			std::string path = GetFilePath();
 			std::string shaderCode;
-			RawShaderOptions options;
+			ShaderData data;
 
-			if (HLSLShaderParser::Parse(path, shaderCode, options))
+			if (HLSLShaderParser::Parse(path, shaderCode, data))
 			{
 				vertexProcessor.Compile(shaderCode, ShaderType::Vertex);
 				fragmentProcessor.Compile(shaderCode, ShaderType::Fragment);
 				vertexProcessor.SaveBlob(vertexPath);
 				fragmentProcessor.SaveBlob(fragmentPath);
 
-				object = Shader::Create(vertexProcessor.GetShader(), fragmentProcessor.GetShader(), options);
+				object = Shader::Create(vertexProcessor.GetShader(), fragmentProcessor.GetShader(), data);
 				ObjectDB::AllocateIdToGuid(object, guid, 1);
 				AssetDB::SaveAssetObjectsToCache(std::vector<Object*> { object });
 				BB_INFO("Shader \"" << GetName() << "\" imported and compiled from: " + path);

@@ -12,6 +12,7 @@
 #include <iterator>
 #include <sstream>
 #include <tuple>
+#include <regex>
 
 #include "Blueberry\Core\Base.h"
 #include "Blueberry\Core\Object.h"

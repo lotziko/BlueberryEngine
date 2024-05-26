@@ -15,6 +15,8 @@ namespace Blueberry
 
 		template<class ObjectType>
 		ObjectType* Get();
+
+		void* Get() { return m_Data; }
 		
 	private:
 		void* m_Data;

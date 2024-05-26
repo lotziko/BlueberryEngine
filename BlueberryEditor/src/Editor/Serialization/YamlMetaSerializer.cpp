@@ -28,7 +28,7 @@ namespace Blueberry
 			Object* object = m_ObjectsToSerialize[0];
 			ryml::NodeRef objectNode = root.append_child() << ryml::key(object->GetTypeName());
 			objectNode |= ryml::MAP;
-			SerializeNode(objectNode, object);
+			SerializeNode(objectNode, Context::Create(object, object->GetType()));
 		}
 		YamlHelper::Save(tree, path);
 	}
@@ -43,8 +43,8 @@ namespace Blueberry
 		ryml::csubstr key = node.key();
 		std::string typeName(key.str, key.size());
 		ClassDB::ClassInfo info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
-		Object* instance = info.createInstance();
-		m_DeserializedObjects.emplace_back(std::pair { instance, 0 });
-		DeserializeNode(root[1], instance);
+		Object* instance = (Object*)info.createInstance();
+		m_DeserializedObjects.emplace_back(std::make_pair(instance, 0));
+		DeserializeNode(root[1], Context::Create(instance, instance->GetType()));
 	}
 }

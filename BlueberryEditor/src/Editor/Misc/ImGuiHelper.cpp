@@ -3,7 +3,6 @@
 
 #include "Blueberry\Core\ObjectPtr.h"
 #include "Blueberry\Assets\AssetLoader.h"
-//#include "imgui\imgui.h"
 #include "imgui\imgui_internal.h"
 
 bool ImGui::DragVector3(const char* label, Blueberry::Vector3* v)
@@ -99,7 +98,7 @@ bool ImGui::ColorEdit(const char* label, Blueberry::Color* v)
 	return false;
 }
 
-bool ImGui::ObjectEdit(const char* label, Blueberry::ObjectPtr<Blueberry::Object>* v, const std::size_t& type)
+bool ImGui::ObjectEdit(const char* label, Blueberry::Object** v, const std::size_t& type)
 {
 	bool result = false;
 
@@ -130,10 +129,18 @@ bool ImGui::ObjectEdit(const char* label, Blueberry::ObjectPtr<Blueberry::Object
 		}
 		ImGui::EndDragDropTarget();
 	}
-	ImGui::Text(v->IsValid() ? (*v)->GetName().c_str() : "None");
+
+	Blueberry::Object* vObj = *v;
+	ImGui::Text((vObj != nullptr && Blueberry::ObjectDB::IsValid(vObj)) ? vObj->GetName().c_str() : "None");
 
 	ImGui::PopID();
 	return result;
+}
+
+bool ImGui::ObjectEdit(const char* label, Blueberry::ObjectPtr<Blueberry::Object>* v, const std::size_t& type)
+{
+	Blueberry::Object* object = v->Get();
+	return ObjectEdit(label, &object, type);
 }
 
 void ImGui::ApplyEditorDarkTheme()

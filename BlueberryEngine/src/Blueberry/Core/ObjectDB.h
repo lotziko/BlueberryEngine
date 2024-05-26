@@ -56,8 +56,8 @@ namespace Blueberry
 		static Object* GetObjectFromGuid(const Guid& guid, const FileId& fileId);
 	private:
 		static ChunkedObjectArray s_Array;
-		static std::map<ObjectId, std::pair<Guid, FileId>> s_ObjectIdToGuid;
-		static std::map<Guid, std::map<FileId, ObjectId>> s_GuidToObjectId;
-		static std::map<ObjectId, FileId> s_ObjectIdToFileId;
+		static std::unordered_map<ObjectId, std::pair<Guid, FileId>> s_ObjectIdToGuid;
+		static std::unordered_map<Guid, std::unordered_map<FileId, ObjectId>> s_GuidToObjectId;
+		static std::unordered_map<ObjectId, FileId> s_ObjectIdToFileId;
 	};
 }

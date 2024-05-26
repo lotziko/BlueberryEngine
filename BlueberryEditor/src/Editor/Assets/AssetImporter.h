@@ -17,7 +17,7 @@ namespace Blueberry
 		std::string GetMetaFilePath();
 		const std::string& GetRelativeFilePath();
 		const std::string& GetRelativeMetaFilePath();
-		const std::map<FileId, ObjectId>& GetImportedObjects();
+		const std::unordered_map<FileId, ObjectId>& GetImportedObjects();
 		const FileId& GetMainObject();
 		const bool& IsImported();
 
@@ -40,7 +40,7 @@ namespace Blueberry
 		std::string m_RelativePath;
 		std::string m_RelativeMetaPath;
 		FileId m_MainObject;
-		std::map<FileId, ObjectId> m_ImportedObjects;
+		std::unordered_map<FileId, ObjectId> m_ImportedObjects = {};
 
 		friend class ImporterInfoCache;
 	};

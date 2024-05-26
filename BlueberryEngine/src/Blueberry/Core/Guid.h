@@ -22,3 +22,14 @@ namespace Blueberry
 		uint64_t data[2];
 	};
 }
+
+// Based on https://stackoverflow.com/questions/17016175/c-unordered-map-using-a-custom-class-type-as-the-key
+// and https://stackoverflow.com/questions/37152892/existing-hash-function-for-uuid-t
+template <>
+struct std::hash<Blueberry::Guid>
+{
+	std::size_t operator()(const Blueberry::Guid& guid) const
+	{
+		return guid.data[0] ^ guid.data[1];
+	}
+};

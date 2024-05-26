@@ -18,11 +18,11 @@ namespace Blueberry
 		this->indexBuffer = indexBuffer;
 		this->indexCount = indexCount;
 		this->indexOffset = indexOffset;
-		auto& options = material->GetShaderOptions();
-		this->cullMode = options.GetCullMode();
-		this->blendSrc = options.GetBlendSrc();
-		this->blendDst = options.GetBlendDst();
-		this->zWrite = options.GetZWrite();
+		auto& data = *(material->GetShaderData());
+		this->cullMode = data.GetCullMode();
+		this->blendSrc = data.GetBlendSrc();
+		this->blendDst = data.GetBlendDst();
+		this->zWrite = data.GetZWrite();
 		this->topology = topology;
 	}
 
@@ -40,11 +40,11 @@ namespace Blueberry
 		shader = material->m_Shader->m_Shader;
 		textures = &(material->m_GfxTextures);
 		materialId = material->GetObjectId();
-		auto& options = material->GetShaderOptions();
-		this->cullMode = options.GetCullMode();
-		this->blendSrc = options.GetBlendSrc();
-		this->blendDst = options.GetBlendDst();
-		this->zWrite = options.GetZWrite();
+		auto& data = *(material->GetShaderData());
+		this->cullMode = data.GetCullMode();
+		this->blendSrc = data.GetBlendSrc();
+		this->blendDst = data.GetBlendDst();
+		this->zWrite = data.GetZWrite();
 
 		if (mesh != nullptr && mesh->IsDefaultState() && mesh->GetVertexCount() > 0)
 		{

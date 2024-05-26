@@ -110,6 +110,25 @@ void childclass::PopulateParentTypes(std::set<size_t>& types)						\
 		friend class Serializer;
 	};
 
+#define DATA_DECLARATION( classname )											\
+public:																			\
+    static const std::size_t Type;												\
+	static const std::string TypeName;											\
+
+#define DATA_DEFINITION( childclass )											\
+const std::size_t childclass::Type = TO_OBJECT_TYPE(TO_STRING(childclass));		\
+const std::string childclass::TypeName = TO_STRING(childclass);					\
+
+	class Data
+	{
+	public:
+		Data() = default;
+		~Data() = default;
+
+		static const std::size_t Type;
+		static const std::string TypeName;
+	};
+
 	template<class ObjectType>
 	inline ObjectType* Object::Create()
 	{

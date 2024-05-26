@@ -8,28 +8,59 @@
 
 namespace Blueberry
 {
+	DATA_DEFINITION(TextureData)
 	OBJECT_DEFINITION(Object, Material)
+
+	const std::string& TextureData::GetName()
+	{
+		return m_Name;
+	}
+
+	void TextureData::SetName(const std::string& name)
+	{
+		m_Name = name;
+	}
+
+	Texture* TextureData::GetTexture()
+	{
+		return m_Texture.Get();
+	}
+
+	void TextureData::SetTexture(Texture* texture)
+	{
+		m_Texture = texture;
+	}
+
+	void TextureData::BindProperties()
+	{
+		BEGIN_OBJECT_BINDING(TextureData)
+		BIND_FIELD(FieldInfo(TO_STRING(m_Name), &TextureData::m_Name, BindingType::String))
+		BIND_FIELD(FieldInfo(TO_STRING(m_Texture), &TextureData::m_Texture, BindingType::ObjectPtr).SetObjectType(Texture::Type))
+		END_OBJECT_BINDING()
+	}
 
 	Material* Material::Create(Shader* shader)
 	{
 		Material* material = Object::Create<Material>();
 		material->SetShader(shader);
+		material->ApplyShaderProperties();
 		material->OnCreate();
 		return material;
 	}
 
 	void Material::SetTexture(std::size_t id, Texture* texture)
 	{
-		if (m_Textures.count(id) == 0)
-		{
-			m_Textures.insert({ id, ObjectPtr<Texture>(texture) });
-			FillGfxTextures();
-		}
+		m_GfxTextures.insert_or_assign(id, texture->m_Texture);
 	}
 
 	void Material::SetTexture(std::string name, Texture* texture)
 	{
-		SetTexture(std::hash<std::string>()(name), texture);
+		SetTexture(TO_HASH(name), texture);
+	}
+
+	Shader* Material::GetShader()
+	{
+		return m_Shader.Get();
 	}
 
 	void Material::SetShader(Shader* shader)
@@ -37,31 +68,59 @@ namespace Blueberry
 		m_Shader = shader;
 	}
 
-	const ShaderOptions& Material::GetShaderOptions()
+	void Material::ApplyShaderProperties()
+	{
+		/*if (m_Shader.IsValid())
+		{
+			for (auto& textureParameter : m_Shader->GetData()->GetTextureParameters())
+			{
+				m_Textures.
+			}
+		}*/
+	}
+
+	const ShaderData* Material::GetShaderData()
 	{
 		if (m_Shader.IsValid())
 		{
-			return m_Shader.Get()->GetOptions();
+			return m_Shader.Get()->GetData();
 		}
-		return ShaderOptions();
+		return nullptr;
+	}
+
+	std::vector<DataPtr<TextureData>>& Material::GetTextureDatas()
+	{
+		return m_Textures;
+	}
+
+	void Material::AddTextureData(TextureData* data)
+	{
+		m_Textures.emplace_back(DataPtr<TextureData>(data));
+		FillGfxTextures();
 	}
 
 	void Material::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(Material)
 		BIND_FIELD(FieldInfo(TO_STRING(m_Shader), &Material::m_Shader, BindingType::ObjectPtr).SetObjectType(Shader::Type))
-		//BIND_FIELD(FieldInfo(TO_STRING(m_CullMode), &Material::m_CullMode, BindingType::Enum).SetHintData("None,Front,Back"))
-		//BIND_FIELD(FieldInfo(TO_STRING(m_SurfaceType), &Material::m_SurfaceType, BindingType::Enum).SetHintData("Opaque,Transparent,DepthTransparent"))
+		BIND_FIELD(FieldInfo(TO_STRING(m_Textures), &Material::m_Textures, BindingType::DataArray).SetObjectType(TextureData::Type))
 		END_OBJECT_BINDING()
+	}
+
+	void Material::OnCreate()
+	{
+		FillGfxTextures();
 	}
 
 	void Material::FillGfxTextures()
 	{
 		m_GfxTextures.clear();
-		std::map<std::size_t, ObjectPtr<Texture>>::iterator it;
-		for (it = m_Textures.begin(); it != m_Textures.end(); it++)
+		for (auto const& texture : m_Textures)
 		{
-			m_GfxTextures.emplace_back(std::make_pair(it->first, it->second.Get()->m_Texture));
+			if (texture.Get()->m_Texture.IsValid())
+			{
+				m_GfxTextures.insert_or_assign(TO_HASH(texture.Get()->m_Name), texture.Get()->m_Texture->m_Texture);
+			}
 		}
 	}
 }

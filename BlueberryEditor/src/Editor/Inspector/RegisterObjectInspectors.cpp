@@ -7,6 +7,7 @@
 #include "Concrete\TransformInspector.h"
 #include "Concrete\CameraInspector.h"
 #include "Concrete\SpriteRendererInspector.h"
+#include "Concrete\MaterialInspector.h"
 #include "Concrete\AssetImporterInspector.h"
 #include "Concrete\TextureImporterInspector.h"
 
@@ -18,6 +19,7 @@ namespace Blueberry
 		REGISTER_OBJECT_INSPECTOR(TransformInspector, Transform);
 		REGISTER_OBJECT_INSPECTOR(CameraInspector, Camera);
 		REGISTER_OBJECT_INSPECTOR(SpriteRendererInspector, SpriteRenderer);
+		REGISTER_OBJECT_INSPECTOR(MaterialInspector, Material);
 		REGISTER_OBJECT_INSPECTOR(AssetImporterInspector, AssetImporter);
 		REGISTER_OBJECT_INSPECTOR(TextureImporterInspector, TextureImporter);
 		REGISTER_OBJECT_INSPECTOR(ObjectInspector, Object);

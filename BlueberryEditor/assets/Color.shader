@@ -1,5 +1,10 @@
 Shader
 {
+	Properties
+	{
+		Texture2D _BaseMap = "white"
+	}
+
 	Options
 	{
 		BlendSrc One

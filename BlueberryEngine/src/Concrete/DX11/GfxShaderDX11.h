@@ -28,9 +28,9 @@ namespace Blueberry
 		ID3D11Device* m_Device;
 		ID3D11DeviceContext* m_DeviceContext;
 
-		std::map<std::size_t, UINT> m_VertexConstantBufferSlots;
-		std::map<std::size_t, UINT> m_PixelConstantBufferSlots;
-		std::map<std::size_t, UINT> m_TextureSlots;
+		std::unordered_map<std::size_t, UINT> m_VertexConstantBufferSlots;
+		std::unordered_map<std::size_t, UINT> m_PixelConstantBufferSlots;
+		std::unordered_map<std::size_t, UINT> m_TextureSlots;
 
 		friend class GfxDeviceDX11;
 	};

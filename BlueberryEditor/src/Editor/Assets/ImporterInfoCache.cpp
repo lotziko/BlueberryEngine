@@ -12,7 +12,7 @@
 
 namespace Blueberry
 {
-	std::map<Guid, ImporterInfoCache::ImporterInfo> ImporterInfoCache::m_ImporterInfoCache = std::map<Guid, ImporterInfoCache::ImporterInfo>();
+	std::unordered_map<Guid, ImporterInfoCache::ImporterInfo> ImporterInfoCache::m_ImporterInfoCache = std::unordered_map<Guid, ImporterInfoCache::ImporterInfo>();
 	
 	void ImporterInfoCache::Load()
 	{
@@ -72,7 +72,7 @@ namespace Blueberry
 				std::string name = std::get<2>(object);
 
 				ClassDB::ClassInfo info = ClassDB::GetInfo(type);
-				Object* importedObject = info.createInstance();
+				Object* importedObject = (Object*)info.createInstance();
 				importedObject->SetName(name);
 				importedObject->SetState(ObjectState::AwaitingLoading);
 				ObjectDB::AllocateIdToGuid(importedObject, importer->GetGuid(), fileId);

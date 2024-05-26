@@ -12,10 +12,10 @@
 
 namespace Blueberry
 {
-	std::map<std::string, std::size_t> AssetDB::s_ImporterTypes = std::map<std::string, std::size_t>();
-	std::map<std::string, AssetImporter*> AssetDB::s_Importers = std::map<std::string, AssetImporter*>();
+	std::unordered_map<std::string, std::size_t> AssetDB::s_ImporterTypes = std::unordered_map<std::string, std::size_t>();
+	std::unordered_map<std::string, AssetImporter*> AssetDB::s_Importers = std::unordered_map<std::string, AssetImporter*>();
 	
-	std::map<Guid, std::string> AssetDB::s_GuidToPath = std::map<Guid, std::string>();
+	std::unordered_map<Guid, std::string> AssetDB::s_GuidToPath = std::unordered_map<Guid, std::string>();
 	std::vector<ObjectId> AssetDB::s_DirtyAssets = std::vector<ObjectId>();
 
 	// TODO import data always if it was found in project but not in cache instead of importing on mouse over icon
@@ -95,7 +95,7 @@ namespace Blueberry
 		return nullptr;
 	}
 
-	std::vector<std::pair<Object*, FileId>> AssetDB::LoadAssetObjects(const Guid& guid, const std::map<FileId, ObjectId>& existingObjects)
+	std::vector<std::pair<Object*, FileId>> AssetDB::LoadAssetObjects(const Guid& guid, const std::unordered_map<FileId, ObjectId>& existingObjects)
 	{
 		BinarySerializer/*YamlSerializer*/ serializer;
 		std::filesystem::path dataPath = Path::GetAssetCachePath();
@@ -115,7 +115,7 @@ namespace Blueberry
 			int i = 0;
 			for (auto& pair : deserializedObjects)
 			{
-				objects[i] = std::pair { pair.first, pair.second };
+				objects[i] = std::make_pair(pair.first, pair.second);
 				++i;
 			}
 		}

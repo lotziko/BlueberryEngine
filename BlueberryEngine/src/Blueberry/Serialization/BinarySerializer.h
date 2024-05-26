@@ -11,7 +11,7 @@ namespace Blueberry
 		virtual void Deserialize(const std::string& path) override;
 
 	protected:
-		void SerializeNode(std::stringstream& output, Object* object);
-		void DeserializeNode(std::ifstream& input, Object* object);
+		void SerializeNode(std::stringstream& output, Context context);
+		void DeserializeNode(std::ifstream& input, Context context);
 	};
 }

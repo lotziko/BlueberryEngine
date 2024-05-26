@@ -275,10 +275,8 @@ namespace Blueberry
 
 			m_DeviceContext->IASetPrimitiveTopology(GetPrimitiveTopology(operation.topology));
 
-			auto textureVector = operation.textures;
-			for (int i = 0; i < textureVector->size(); i++)
+			for (auto& pair : *operation.textures)
 			{
-				auto pair = textureVector->at(i);
 				auto dxTexture = static_cast<GfxTextureDX11*>(pair.second);
 				auto slot = dxShader->m_TextureSlots.find(pair.first);
 				if (slot != dxShader->m_TextureSlots.end())
@@ -289,7 +287,7 @@ namespace Blueberry
 				}
 			}
 
-			std::map<std::size_t, UINT>::iterator it;
+			std::unordered_map<std::size_t, UINT>::iterator it;
 
 			auto textureMap = dxShader->m_TextureSlots;
 			for (it = textureMap.begin(); it != textureMap.end(); it++)

@@ -35,8 +35,8 @@ namespace Blueberry
 		ObjectPtrArray,
 
 		// Not derived from Object
-		Ptr,
-		PtrArray
+		Data,
+		DataArray
 	};
 
 	struct FieldInfo
@@ -55,15 +55,6 @@ namespace Blueberry
 		FieldInfo SetObjectType(const std::size_t& objectType);
 		template<class ObjectType, class FieldType>
 		FieldInfo SetSetter(void(ObjectType::* setter)(FieldType));
-
-		/*template<class ObjectType, class FieldType>
-		FieldInfo(const std::string& name, FieldType ObjectType::* field, const BindingType& type, char* hintData);
-
-		template<class ObjectType, class FieldType>
-		FieldInfo(const std::string& name, FieldType ObjectType::* field, const BindingType& type, const std::size_t& objectType);
-	
-		template<class ObjectType, class FieldType>
-		FieldInfo(const std::string& name, FieldType ObjectType::* field, void(ObjectType::* setter)(FieldType), const BindingType& type, const std::size_t& objectType);*/
 	};
 
 	class ClassDB
@@ -86,30 +77,41 @@ namespace Blueberry
 			std::string name;
 			std::size_t parentId;
 			Object*(*createInstance)() = nullptr;
+			Data*(*createDataInstance)() = nullptr;
+			bool isObject;
+			size_t offset;
 			std::vector<FieldInfo> fields;
-			std::map<std::string, FieldInfo> fieldsMap;
+			std::unordered_map<std::string, FieldInfo> fieldsMap;
 		};
 
 		static const ClassInfo& GetInfo(const std::size_t&);
-		static std::map<std::size_t, ClassInfo>& GetInfos();
+		static std::unordered_map<std::size_t, ClassInfo>& GetInfos();
 		static bool IsParent(const std::size_t& id, const std::size_t& parentId);
 
 		template<class ObjectType>
 		static void Register();
 		template<class ObjectType>
 		static void RegisterAbstract();
+		template <class ObjectType>
+		static void RegisterData();
 		template<class ObjectType>
 		static void Bind(BindingData bindings);
 
 	private:
 		template<class ObjectType>
-		static Object* Create()
+		static Object* CreateObject()
 		{
 			return Object::Create<ObjectType>();
 		}
 
+		template<class ObjectType>
+		static Data* CreateData()
+		{
+			return new ObjectType();
+		}
+
 	private:
-		static std::map<std::size_t, ClassInfo> s_Classes;
+		static std::unordered_map<std::size_t, ClassInfo> s_Classes;
 	};
 
 	constexpr auto GetFieldName(std::string_view name)
@@ -119,6 +121,7 @@ namespace Blueberry
 	
 	#define REGISTER_CLASS( classname ) ClassDB::Register<classname>();
 	#define REGISTER_ABSTRACT_CLASS( classname ) ClassDB::RegisterAbstract<classname>();
+	#define REGISTER_DATA_CLASS( classname ) ClassDB::RegisterData<classname>();
 
 	#define BEGIN_OBJECT_BINDING( classname ) ClassDB::Bind<classname>(ClassDB::BindingData()
 	#define BIND_FIELD( fieldInfo ) .BindField(fieldInfo)
@@ -130,11 +133,12 @@ namespace Blueberry
 		std::size_t id = ObjectType::Type;
 		std::size_t parentId = ObjectType::ParentType;
 		std::string name = ObjectType::TypeName;
-		Object*(*createFunction)() = &ClassDB::Create<ObjectType>;
+		Object*(*createFunction)() = &ClassDB::CreateObject<ObjectType>;
+		size_t offset = reinterpret_cast<char*>(static_cast<Object*>(reinterpret_cast<ObjectType*>(0x10000000))) - reinterpret_cast<char*>(0x10000000);
 
 		if (s_Classes.count(id) == 0)
 		{
-			s_Classes.insert({ id, { name, parentId, createFunction } });
+			s_Classes.insert({ id, { name, parentId, createFunction, nullptr, true, offset } });
 		}
 
 		ObjectType::BindProperties();
@@ -149,7 +153,24 @@ namespace Blueberry
 
 		if (s_Classes.count(id) == 0)
 		{
-			s_Classes.insert({ id, { name, parentId, nullptr } });
+			s_Classes.insert({ id, { name, parentId, nullptr, nullptr, true, 0 } });
+		}
+
+		ObjectType::BindProperties();
+	}
+
+	template<class ObjectType>
+	inline void ClassDB::RegisterData()
+	{
+		std::size_t id = ObjectType::Type;
+		std::size_t parentId = 0;
+		std::string name = ObjectType::TypeName;
+		Data*(*createFunction)() = &ClassDB::CreateData<ObjectType>;
+		size_t offset = reinterpret_cast<char*>(static_cast<Data*>(reinterpret_cast<ObjectType*>(0x10000000))) - reinterpret_cast<char*>(0x10000000);
+
+		if (s_Classes.count(id) == 0)
+		{
+			s_Classes.insert({ id, { name, parentId, nullptr, createFunction, false, offset } });
 		}
 
 		ObjectType::BindProperties();
@@ -170,41 +191,14 @@ namespace Blueberry
 	}
 
 	template<class ObjectType, class FieldType>
-	inline FieldInfo::FieldInfo(const std::string& name, FieldType ObjectType::* field, const BindingType& type) : name(name), bind(FieldBind::Create(reinterpret_cast<FieldType Object::*>(field))), type(type), objectType(0), hintData(nullptr)
+	inline FieldInfo::FieldInfo(const std::string& name, FieldType ObjectType::* field, const BindingType& type) : name(name), bind(FieldBind::Create(reinterpret_cast<FieldType ObjectType::*>(field))), type(type), objectType(0), hintData(nullptr)
 	{
 	}
 
 	template<class ObjectType, class FieldType>
 	inline FieldInfo FieldInfo::SetSetter(void(ObjectType::* setter)(FieldType))
 	{
-		this->setter = MethodBind::Create(reinterpret_cast<void(Object::*)(FieldType)>(setter));
+		this->setter = MethodBind::Create(reinterpret_cast<void(void::*)(FieldType)>(setter));
 		return *this;
 	}
-
-	/*template<class ObjectType, class FieldType>
-	inline FieldInfo::FieldInfo(const std::string& name, FieldType ObjectType::* field, const BindingType& type, char* hintData) : name(name), bind(FieldBind::Create(reinterpret_cast<FieldType Object::*>(field))), type(type), objectType(0)
-	{
-		
-	}
-
-	template<class ObjectType, class FieldType>
-	inline FieldInfo::FieldInfo(const std::string& name, FieldType ObjectType::* field, const BindingType& type, const std::size_t& objectType) : name(name), bind(FieldBind::Create(reinterpret_cast<FieldType Object::*>(field))), type(type), objectType(objectType), hintData(nullptr)
-	{
-	}
-
-	template<class ObjectType, class FieldType>
-	inline FieldInfo::FieldInfo(const std::string & name, FieldType ObjectType::* field, void(ObjectType::* setter)(FieldType), const BindingType & type, const std::size_t & objectType)
-	{
-	}*/
-
-	/*template<class ObjectType, class FieldType>
-	inline FieldInfo::FieldInfo(const std::string& name, FieldType ObjectType::* field, void(ObjectType::* setter)(FieldType), const BindingType& type, const std::size_t& objectType) :
-		name(name),
-		bind(FieldBind::Create(reinterpret_cast<FieldType Object::*>(field))),
-		setter(),
-		type(type),
-		objectType(objectType),
-		hintData(nullptr)
-	{
-	}*/
 }
