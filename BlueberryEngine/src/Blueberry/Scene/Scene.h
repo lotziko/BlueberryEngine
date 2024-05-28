@@ -28,14 +28,11 @@ namespace Blueberry
 		void AddEntity(Entity* entity);
 		void DestroyEntity(Entity* entity);
 
-		const std::vector<ObjectPtr<Entity>>& GetEntities();
+		const std::map<ObjectId, ObjectPtr<Entity>>& GetEntities();
 
 	private:
-		std::vector<ObjectPtr<Entity>> m_Entities;
+		std::map<ObjectId, ObjectPtr<Entity>> m_Entities;
 		ComponentManager m_ComponentManager;
-
-		std::stack<std::size_t> m_EmptyEntityIds;
-		std::size_t m_MaxEntityId = 0;
 
 		friend class Entity;
 	};

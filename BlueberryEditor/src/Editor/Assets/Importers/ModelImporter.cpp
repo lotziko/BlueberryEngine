@@ -153,7 +153,9 @@ namespace Blueberry
 							for (int i = polygon.from_vertex; i < polygon.from_vertex + polygon.vertex_count; ++i) 
 							{
 								ofbx::Vec3 n = normals.get(i);
+								ofbx::Vec2 u = uvs.get(i);
 								meshNormals.emplace_back(n);
+								meshUVs.emplace_back(u);
 							}
 						}
 

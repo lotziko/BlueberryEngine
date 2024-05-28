@@ -61,9 +61,18 @@ namespace Blueberry
 				std::string typeName(typeNameSize, ' ');
 				input.read(typeName.data(), typeNameSize);
 
-				ClassDB::ClassInfo info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
-				Object* instance = (Object*)info.createInstance();
-				AddDeserializedObject(instance, fileId);
+				auto it = m_FileIdToObject.find(fileId);
+				if (it == m_FileIdToObject.end())
+				{
+					ClassDB::ClassInfo info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
+					Object* instance = (Object*)info.createInstance();
+					AddDeserializedObject(instance, fileId);
+				}
+				else
+				{
+					Object* instance = it->second;
+					AddDeserializedObject(instance, fileId);
+				}
 			}
 
 			for (size_t i = 0; i < objectCount; ++i)
@@ -72,6 +81,7 @@ namespace Blueberry
 				input.read((char*)&fileId, sizeof(FileId));
 				Object* object = m_FileIdToObject[fileId];
 				DeserializeNode(input, Context::Create(object, object->GetType()));
+				object->OnCreate();
 			}
 			input.close();
 		}

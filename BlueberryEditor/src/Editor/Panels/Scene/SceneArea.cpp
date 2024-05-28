@@ -156,6 +156,7 @@ namespace Blueberry
 					Scene* scene = EditorSceneManager::GetScene();
 					if (scene != nullptr)
 					{
+						AssetLoader::Load(Blueberry::ObjectDB::GetGuidFromObject(object));
 						scene->AddEntity(static_cast<Entity*>(Object::Clone(object)));
 					}
 				}

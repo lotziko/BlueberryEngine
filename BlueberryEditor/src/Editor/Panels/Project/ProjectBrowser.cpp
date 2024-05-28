@@ -64,7 +64,7 @@ namespace Blueberry
 		const char* label = node.name.c_str();
 		bool opened = ImGui::TreeNodeEx(label, flags, "");
 
-		if (ImGui::IsItemClicked())
+		if (!ImGui::IsItemToggledOpen() && ImGui::IsItemClicked())
 		{
 			m_CurrentDirectory = node.path;
 		}
@@ -139,8 +139,11 @@ namespace Blueberry
 				std::string materialName(name);
 				materialName.append(".material");
 
+				auto relativePath = std::filesystem::relative(m_CurrentDirectory, Path::GetAssetsPath());
+				relativePath.append(materialName);
+
 				Material* material = Object::Create<Material>();
-				AssetDB::CreateAsset(material, materialName);
+				AssetDB::CreateAsset(material, relativePath.string());
 				AssetDB::SaveAssets();
 				AssetDB::Refresh();
 

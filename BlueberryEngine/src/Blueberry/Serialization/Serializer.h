@@ -58,5 +58,6 @@ namespace Blueberry
 		std::vector<Object*> m_AdditionalObjectsToSerialize;
 		std::vector<std::pair<Object*, FileId>> m_DeserializedObjects;
 		std::unordered_map<FileId, Object*> m_FileIdToObject;
+		std::set<FileId> m_AdditionalObjectsIds;
 	};
 }

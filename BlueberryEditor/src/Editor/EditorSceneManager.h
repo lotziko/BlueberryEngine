@@ -14,5 +14,6 @@ namespace Blueberry
 
 	private:
 		static Scene* s_Scene;
+		static std::string s_Path;
 	};
 }

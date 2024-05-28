@@ -139,7 +139,7 @@ namespace Blueberry
 
 	void SceneObjectPicker::DrawOutline(Scene* scene, BaseCamera& camera, GfxTexture* renderTarget)
 	{
-		static size_t baseMapId = TO_HASH("_BaseMap");
+		static size_t pickingTextureId = TO_HASH("_PickingTexture");
 
 		if (scene == nullptr)
 		{
@@ -182,7 +182,7 @@ namespace Blueberry
 		
 		GfxDevice::SetRenderTarget(renderTarget);
 		GfxDevice::SetViewport(0, 0, 1920, 1080);
-		GfxDevice::SetGlobalTexture(baseMapId, m_SceneRenderTarget);
+		GfxDevice::SetGlobalTexture(pickingTextureId, m_SceneRenderTarget);
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_ObjectPickerOutlineMaterial));
 		GfxDevice::SetRenderTarget(nullptr);
 	}

@@ -9,7 +9,7 @@ namespace Blueberry
 		m_Root = {};
 		m_Root.path = path;
 		m_Root.name = path.filename().string();
-		Populate(m_Root);
+		Populate(&m_Root);
 	}
 
 	const FolderTreeNode& FolderTree::GetRoot()
@@ -17,9 +17,9 @@ namespace Blueberry
 		return m_Root;
 	}
 
-	void FolderTree::Populate(FolderTreeNode& parent)
+	void FolderTree::Populate(FolderTreeNode* parent)
 	{
-		for (auto& it : std::filesystem::directory_iterator(parent.path))
+		for (auto& it : std::filesystem::directory_iterator(parent->path))
 		{
 			if (it.is_directory())
 			{
@@ -27,8 +27,8 @@ namespace Blueberry
 				FolderTreeNode child;
 				child.path = path;
 				child.name = path.filename().string();
-				parent.children.emplace_back(child);
-				Populate(child);
+				Populate(&child);
+				parent->children.emplace_back(child);
 			}
 		}
 	}

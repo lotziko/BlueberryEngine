@@ -275,16 +275,16 @@ namespace Blueberry
 
 			m_DeviceContext->IASetPrimitiveTopology(GetPrimitiveTopology(operation.topology));
 
-			for (auto& pair : *operation.textures)
+			for (int i = 0; i < 16; i++)
 			{
-				auto dxTexture = static_cast<GfxTextureDX11*>(pair.second);
-				auto slot = dxShader->m_TextureSlots.find(pair.first);
-				if (slot != dxShader->m_TextureSlots.end())
+				GfxTexture* texture = operation.textures[i];
+				if (texture == nullptr)
 				{
-					UINT slotIndex = slot->second;
-					m_DeviceContext->PSSetShaderResources(slotIndex, 1, dxTexture->m_ResourceView.GetAddressOf());
-					m_DeviceContext->PSSetSamplers(slotIndex, 1, dxTexture->m_SamplerState.GetAddressOf());
+					continue;
 				}
+				auto dxTexture = static_cast<GfxTextureDX11*>(texture);
+				m_DeviceContext->PSSetShaderResources(i, 1, dxTexture->m_ResourceView.GetAddressOf());
+				m_DeviceContext->PSSetSamplers(i, 1, dxTexture->m_SamplerState.GetAddressOf());
 			}
 
 			std::unordered_map<std::size_t, UINT>::iterator it;

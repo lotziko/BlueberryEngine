@@ -20,8 +20,8 @@ namespace Blueberry
 	class ComponentManager
 	{
 	public:
-		void AddComponent(Entity* entity, Component* component);
-		void RemoveComponent(Entity* entity, Component* component);
+		void AddComponent(Component* component);
+		void RemoveComponent(Component* component);
 
 		template<class ComponentType>
 		ComponentIterator GetIterator();
@@ -36,13 +36,13 @@ namespace Blueberry
 		return ComponentIterator(m_Components[ComponentType::Type]);
 	}
 
-	inline void ComponentManager::AddComponent(Entity* entity, Component* component)
+	inline void ComponentManager::AddComponent(Component* component)
 	{
-		m_Components[component->GetType()][entity->GetId()] = component;
+		m_Components[component->GetType()][component->GetObjectId()] = component;
 	}
 
-	inline void ComponentManager::RemoveComponent(Entity* entity, Component* component)
+	inline void ComponentManager::RemoveComponent(Component* component)
 	{
-		m_Components[component->GetType()].erase(entity->GetId());
+		m_Components[component->GetType()].erase(component->GetObjectId());
 	}
 }

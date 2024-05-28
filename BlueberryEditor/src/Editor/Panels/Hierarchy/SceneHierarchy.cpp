@@ -21,10 +21,11 @@ namespace Blueberry
 
 		if (scene != nullptr)
 		{
-			std::vector<ObjectPtr<Entity>> entities = std::vector<ObjectPtr<Entity>>(scene->GetEntities());
+			std::map<ObjectId, ObjectPtr<Entity>> entities = std::map<ObjectId, ObjectPtr<Entity>>(scene->GetEntities());
 
-			for (auto entity : entities)
+			for (auto& pair : entities)
 			{
+				auto entity = pair.second;
 				if (entity.IsValid() && entity.Get()->GetTransform() != nullptr && entity.Get()->GetTransform()->GetParent() == nullptr)
 				{
 					DrawEntity(entity.Get());

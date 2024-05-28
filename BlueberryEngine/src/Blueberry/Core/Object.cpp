@@ -36,11 +36,6 @@ namespace Blueberry
 		return TypeName;
 	}
 
-	void Object::PopulateParentTypes(std::set<size_t>& types)
-	{
-		types.emplace(Object::Type);
-	}
-
 	ObjectId Object::GetObjectId() const
 	{
 		return m_ObjectId;

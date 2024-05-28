@@ -21,8 +21,9 @@ namespace Blueberry
 
 		bool IsValid() const;
 
+		bool isValid = true;
 		GfxShader* shader;
-		std::unordered_map<std::size_t, GfxTexture*>* textures;
+		GfxTexture* textures[16] = {};
 		GfxVertexBuffer* vertexBuffer;
 		GfxIndexBuffer* indexBuffer;
 		CullMode cullMode;

@@ -12,10 +12,10 @@ namespace Blueberry
 
 	void Scene::Serialize(Serializer& serializer, const std::string& path)
 	{
-		for (auto& entity : m_Entities)
+		for (auto& pair : m_Entities)
 		{
 			// Components are being added automatically
-			serializer.AddObject(entity.Get());
+			serializer.AddObject(pair.second.Get());
 		}
 		serializer.Serialize(path);
 	}
@@ -40,35 +40,20 @@ namespace Blueberry
 
 	void Scene::Destroy()
 	{
-		for (auto entity : m_Entities)
+		ObjectPtr<Entity> entity;
+		while(m_Entities.size() > 0 && (entity = m_Entities.begin()->second).IsValid())
 		{
-			if (entity.IsValid())
-			{
-				DestroyEntity(entity.Get());
-			}
+			DestroyEntity(entity.Get());
 		}
 	}
 
 	Entity* Scene::CreateEntity(const std::string& name = "Entity")
 	{
-		BB_INFO("Entity is created.")
+		//BB_INFO("Entity is created.")
 		Entity* entity = Object::Create<Entity>();
 		entity->m_Scene = this;
 		entity->m_Name = name;
-
-		if (m_EmptyEntityIds.size() > 0)
-		{
-			std::size_t id = m_EmptyEntityIds.top();
-			entity->m_Id = id;
-			m_EmptyEntityIds.pop();
-			m_Entities[id] = entity;
-		}
-		else
-		{
-			entity->m_Id = m_MaxEntityId;
-			++m_MaxEntityId;
-			m_Entities.emplace_back(entity);
-		}
+		m_Entities[entity->GetObjectId()] = entity;
 
 		entity->AddComponent<Transform>();
 		entity->m_Transform = ObjectPtr<Transform>(entity->GetComponent<Transform>());
@@ -78,12 +63,11 @@ namespace Blueberry
 
 	void Scene::AddEntity(Entity* entity)
 	{
-		BB_INFO("Entity is added.")
+		//BB_INFO("Entity is added.")
 		entity->m_Scene = this;
 		entity->m_Transform = entity->GetComponent<Transform>();
-		entity->m_Id = m_MaxEntityId;
-		++m_MaxEntityId;
-		m_Entities.emplace_back(entity);
+		m_Entities[entity->GetObjectId()] = entity;
+
 		for (auto& component : entity->GetComponents())
 		{
 			entity->AddComponentIntoScene(component);
@@ -96,14 +80,17 @@ namespace Blueberry
 
 	void Scene::DestroyEntity(Entity* entity)
 	{
-		BB_INFO("Entity is destroyed.")
+		for (auto& child : entity->GetTransform()->GetChildren())
+		{
+			DestroyEntity(child->GetEntity());
+		}
+		//BB_INFO("Entity is destroyed.");
 		entity->OnDestroy();
-		m_Entities[entity->m_Id] = nullptr;
-		m_EmptyEntityIds.push(entity->m_Id);
+		m_Entities.erase(entity->GetObjectId());
 		Object::Destroy(entity);
 	}
 
-	const std::vector<ObjectPtr<Entity>>& Scene::GetEntities()
+	const std::map<ObjectId, ObjectPtr<Entity>>& Scene::GetEntities()
 	{
 		return m_Entities;
 	}

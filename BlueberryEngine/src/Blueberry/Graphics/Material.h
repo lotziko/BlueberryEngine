@@ -46,7 +46,7 @@ namespace Blueberry
 		Shader* GetShader();
 		void SetShader(Shader* shader);
 
-		void ApplyShaderProperties();
+		void ApplyProperties();
 
 		const ShaderData* GetShaderData();
 		std::vector<DataPtr<TextureData>>& GetTextureDatas();
@@ -60,7 +60,7 @@ namespace Blueberry
 		void FillGfxTextures();
 
 	private:
-		std::unordered_map<std::size_t, GfxTexture*> m_GfxTextures;
+		std::unordered_map<std::size_t, ObjectPtr<Texture>> m_TextureMap;
 		std::vector<DataPtr<TextureData>> m_Textures;
 		ObjectPtr<Shader> m_Shader;
 

@@ -20,7 +20,7 @@ namespace Blueberry
 		const FolderTreeNode& GetRoot();
 
 	private:
-		void Populate(FolderTreeNode& parent);
+		void Populate(FolderTreeNode* parent);
 
 	private:
 		FolderTreeNode m_Root;

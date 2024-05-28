@@ -43,14 +43,13 @@ namespace Blueberry
 	{
 		Material* material = Object::Create<Material>();
 		material->SetShader(shader);
-		material->ApplyShaderProperties();
 		material->OnCreate();
 		return material;
 	}
 
 	void Material::SetTexture(std::size_t id, Texture* texture)
 	{
-		m_GfxTextures.insert_or_assign(id, texture->m_Texture);
+		m_TextureMap.insert_or_assign(id, texture);
 	}
 
 	void Material::SetTexture(std::string name, Texture* texture)
@@ -68,15 +67,9 @@ namespace Blueberry
 		m_Shader = shader;
 	}
 
-	void Material::ApplyShaderProperties()
+	void Material::ApplyProperties()
 	{
-		/*if (m_Shader.IsValid())
-		{
-			for (auto& textureParameter : m_Shader->GetData()->GetTextureParameters())
-			{
-				m_Textures.
-			}
-		}*/
+		FillGfxTextures();
 	}
 
 	const ShaderData* Material::GetShaderData()
@@ -109,17 +102,17 @@ namespace Blueberry
 
 	void Material::OnCreate()
 	{
-		FillGfxTextures();
+		ApplyProperties();
 	}
 
 	void Material::FillGfxTextures()
 	{
-		m_GfxTextures.clear();
+		m_TextureMap.clear();
 		for (auto const& texture : m_Textures)
 		{
 			if (texture.Get()->m_Texture.IsValid())
 			{
-				m_GfxTextures.insert_or_assign(TO_HASH(texture.Get()->m_Name), texture.Get()->m_Texture->m_Texture);
+				m_TextureMap.insert_or_assign(TO_HASH(texture.Get()->m_Name), texture.Get()->m_Texture);
 			}
 		}
 	}

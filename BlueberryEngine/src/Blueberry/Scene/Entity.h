@@ -34,8 +34,6 @@ namespace Blueberry
 		template<class ComponentType>
 		void RemoveComponent(ComponentType* component);
 
-		inline std::size_t GetId();
-
 		Transform* GetTransform();
 		Scene* GetScene();
 
@@ -49,8 +47,6 @@ namespace Blueberry
 
 	private:
 		std::vector<ObjectPtr<Component>> m_Components;
-
-		std::size_t m_Id;
 
 		ObjectPtr<Transform> m_Transform;
 		Scene* m_Scene;

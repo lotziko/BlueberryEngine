@@ -27,9 +27,16 @@ namespace Blueberry
 
 	void Serializer::AddAdditionalObject(Object* object)
 	{
-		FileId fileId = GetFileId(object);
-		if (m_FileIdToObject.count(fileId) == 0)
+		auto it = std::find(m_ObjectsToSerialize.begin(), m_ObjectsToSerialize.end(), object);
+		if (it != m_ObjectsToSerialize.end())
 		{
+			return;
+		}
+
+		FileId fileId = GetFileId(object);
+		if (m_AdditionalObjectsIds.count(fileId) == 0)
+		{
+			m_AdditionalObjectsIds.insert(fileId);
 			m_FileIdToObject.insert_or_assign(fileId, object);
 			m_AdditionalObjectsToSerialize.emplace_back(object);
 		}

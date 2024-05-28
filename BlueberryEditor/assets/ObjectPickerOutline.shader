@@ -29,23 +29,23 @@ Shader
 		return output;
 	}
 
-	Texture2D _BaseMap : TEXTURE: register(t0);
-	SamplerState _BaseMap_Sampler : SAMPLER: register(s0);
+	Texture2D _PickingTexture : TEXTURE: register(t0);
+	SamplerState _PickingTexture_Sampler : SAMPLER: register(s0);
 
 	float4 Fragment(Varyings input) : SV_TARGET
 	{
 		float2 offset = float2(3.0 / 1920.0, 3.0 / 1080.0);
 
-		float4 sample1 = _BaseMap.Sample(_BaseMap_Sampler, input.texcoord);
+		float4 sample1 = _PickingTexture.Sample(_PickingTexture_Sampler, input.texcoord);
 
-		float4 sample2 = _BaseMap.Sample(_BaseMap_Sampler, input.texcoord + float2(offset.x, 0));
-		float4 sample3 = _BaseMap.Sample(_BaseMap_Sampler, input.texcoord - float2(offset.x, 0));
-		float4 sample4 = _BaseMap.Sample(_BaseMap_Sampler, input.texcoord + float2(0, offset.y));
-		float4 sample5 = _BaseMap.Sample(_BaseMap_Sampler, input.texcoord - float2(0, offset.y));
-		float4 sample6 = _BaseMap.Sample(_BaseMap_Sampler, input.texcoord + float2(offset.x, offset.y));
-		float4 sample7 = _BaseMap.Sample(_BaseMap_Sampler, input.texcoord - float2(offset.x, offset.y));
-		float4 sample8 = _BaseMap.Sample(_BaseMap_Sampler, input.texcoord + float2(offset.x, -offset.y));
-		float4 sample9 = _BaseMap.Sample(_BaseMap_Sampler, input.texcoord - float2(offset.x, -offset.y));
+		float4 sample2 = _PickingTexture.Sample(_PickingTexture_Sampler, input.texcoord + float2(offset.x, 0));
+		float4 sample3 = _PickingTexture.Sample(_PickingTexture_Sampler, input.texcoord - float2(offset.x, 0));
+		float4 sample4 = _PickingTexture.Sample(_PickingTexture_Sampler, input.texcoord + float2(0, offset.y));
+		float4 sample5 = _PickingTexture.Sample(_PickingTexture_Sampler, input.texcoord - float2(0, offset.y));
+		float4 sample6 = _PickingTexture.Sample(_PickingTexture_Sampler, input.texcoord + float2(offset.x, offset.y));
+		float4 sample7 = _PickingTexture.Sample(_PickingTexture_Sampler, input.texcoord - float2(offset.x, offset.y));
+		float4 sample8 = _PickingTexture.Sample(_PickingTexture_Sampler, input.texcoord + float2(offset.x, -offset.y));
+		float4 sample9 = _PickingTexture.Sample(_PickingTexture_Sampler, input.texcoord - float2(offset.x, -offset.y));
 
 		if (sample1.r == 0)
 		{

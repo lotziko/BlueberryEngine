@@ -26,11 +26,6 @@ namespace Blueberry
 		return components;
 	}
 
-	std::size_t Entity::GetId()
-	{
-		return m_Id;
-	}
-
 	Transform* Entity::GetTransform()
 	{
 		return m_Transform.Get();
@@ -53,10 +48,13 @@ namespace Blueberry
 	{
 		for (auto && componentSlot : m_Components)
 		{
-			BB_INFO(componentSlot->GetTypeName() << " is destroyed.");
-			RemoveComponentFromScene(componentSlot.Get());
-			componentSlot->OnDestroy();
-			Object::Destroy(componentSlot.Get());
+			if (componentSlot.IsValid())
+			{
+				//BB_INFO(componentSlot->GetTypeName() << " is destroyed.");
+				RemoveComponentFromScene(componentSlot.Get());
+				componentSlot->OnDestroy();
+				Object::Destroy(componentSlot.Get());
+			}
 		}
 	}
 
@@ -68,7 +66,7 @@ namespace Blueberry
 		}
 
 		std::size_t type = component->GetType();
-		m_Scene->m_ComponentManager.AddComponent(this, component);
+		m_Scene->m_ComponentManager.AddComponent(component);
 	}
 
 	void Entity::RemoveComponentFromScene(Component* component)
@@ -79,6 +77,6 @@ namespace Blueberry
 		}
 
 		std::size_t type = component->GetType();
-		m_Scene->m_ComponentManager.RemoveComponent(this, component);
+		m_Scene->m_ComponentManager.RemoveComponent(component);
 	}
 }

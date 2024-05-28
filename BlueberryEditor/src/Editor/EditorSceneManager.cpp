@@ -4,12 +4,15 @@
 #include "Blueberry\Scene\Scene.h"
 
 #include "Editor\Path.h"
+#include "Editor\Assets\AssetDB.h"
+#include "Editor\Assets\AssetImporter.h"
 #include "Editor\Serialization\YamlSerializer.h"
 #include "Editor\Serialization\YamlHelper.h"
 
 namespace Blueberry
 {
 	Scene* EditorSceneManager::s_Scene = nullptr;
+	std::string EditorSceneManager::s_Path = "";
 
 	void EditorSceneManager::CreateEmpty(const std::string& path)
 	{
@@ -42,12 +45,12 @@ namespace Blueberry
 
 		YamlSerializer serializer;
 		s_Scene->Deserialize(serializer, path);
+		s_Path = path;
 	}
 
 	void EditorSceneManager::Save()
 	{
-		std::filesystem::path scenePath = Path::GetAssetsPath();
 		YamlSerializer serializer;
-		s_Scene->Serialize(serializer, scenePath.append("Test.scene").string());
+		s_Scene->Serialize(serializer, s_Path);
 	}
 }

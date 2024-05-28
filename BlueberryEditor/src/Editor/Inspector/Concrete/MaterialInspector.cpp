@@ -22,6 +22,7 @@ namespace Blueberry
 		{
 			auto data = shader->GetData();
 			auto textureDatas = material->GetTextureDatas();
+			bool hasPropertyChanges = false;
 
 			for (auto const& textureParameter : data->GetTextureParameters())
 			{
@@ -42,6 +43,7 @@ namespace Blueberry
 					if (ImGui::ObjectEdit(textureParameter.Get()->GetName().c_str(), (Object**)&texture, Texture::Type))
 					{
 						textureProperty->SetTexture(texture);
+						hasPropertyChanges = true;
 					}
 				}
 				else
@@ -50,6 +52,11 @@ namespace Blueberry
 					textureProperty->SetName(textureParameter.Get()->GetName());
 					material->AddTextureData(textureProperty);
 				}
+			}
+
+			if (hasPropertyChanges)
+			{
+				material->ApplyProperties();
 			}
 		}
 

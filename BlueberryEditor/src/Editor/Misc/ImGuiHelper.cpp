@@ -140,7 +140,12 @@ bool ImGui::ObjectEdit(const char* label, Blueberry::Object** v, const std::size
 bool ImGui::ObjectEdit(const char* label, Blueberry::ObjectPtr<Blueberry::Object>* v, const std::size_t& type)
 {
 	Blueberry::Object* object = v->Get();
-	return ObjectEdit(label, &object, type);
+	if (ObjectEdit(label, &object, type))
+	{
+		*v = object;
+		return true;
+	}
+	return false;
 }
 
 void ImGui::ApplyEditorDarkTheme()

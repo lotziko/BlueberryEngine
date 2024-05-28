@@ -188,13 +188,17 @@ namespace Blueberry
 			if (object != nullptr)
 			{
 				auto pair = ObjectDB::GetGuidAndFileIdFromObject(object);
-				std::string relativePath = s_GuidToPath[pair.first];
-				YamlSerializer serializer;
-				auto dataPath = Path::GetAssetsPath();
-				dataPath.append(relativePath);
-				serializer.AddObject(object);
-				serializer.Serialize(dataPath.string());
-				BB_INFO("Asset was saved to the path: " << relativePath);
+				auto it = s_GuidToPath.find(pair.first);
+				if (it != s_GuidToPath.end())
+				{
+					std::string relativePath = s_GuidToPath[pair.first];
+					YamlSerializer serializer;
+					auto dataPath = Path::GetAssetsPath();
+					dataPath.append(relativePath);
+					serializer.AddObject(object);
+					serializer.Serialize(dataPath.string());
+					BB_INFO("Asset was saved to the path: " << relativePath);
+				}
 			}
 		}
 		s_DirtyAssets.clear();

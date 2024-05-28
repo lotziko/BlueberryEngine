@@ -19,13 +19,6 @@ namespace Blueberry
 				m_Parent = nullptr;
 			}
 		}
-		for (auto child : m_Children)
-		{
-			if (child.IsValid())
-			{
-				child->GetEntity()->GetScene()->DestroyEntity(child->GetEntity());
-			}
-		}
 	}
 
 	const Matrix& Transform::GetLocalToWorldMatrix()
