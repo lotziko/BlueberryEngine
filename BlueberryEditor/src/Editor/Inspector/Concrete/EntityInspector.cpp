@@ -34,7 +34,7 @@ namespace Blueberry
 		ImGui::Text(entity->GetTypeName().c_str());
 		
 		// Name
-		{
+	/*	{
 			ImGui::Text("Name");
 			ImGui::SameLine();
 
@@ -52,7 +52,7 @@ namespace Blueberry
 			{
 				entity->SetName(buf);
 			}
-		}
+		}*/
 
 		for (auto component : components)
 		{

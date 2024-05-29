@@ -17,5 +17,7 @@ namespace Blueberry
 		void DrawCreateEntity();
 		void DrawDestroyEntity(Entity*& entity);
 		void DrawRenameEntity(Entity* entity);
+
+		Entity* m_ActiveEntity;
 	};
 }

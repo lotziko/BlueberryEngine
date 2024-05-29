@@ -54,13 +54,27 @@ namespace Blueberry
 			return;
 		}
 
-		ImGuiTreeNodeFlags flags = ((Selection::IsActiveObject(entity)) ? ImGuiTreeNodeFlags_Selected : 0) | (entity->GetTransform()->GetChildrenCount() > 0 ? ImGuiTreeNodeFlags_OpenOnArrow : ImGuiTreeNodeFlags_Leaf);
-		flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
+		bool isEntityStartedRenaming = false;
 
-		bool opened = ImGui::TreeNodeEx((void*)entity, flags, entity->GetName().c_str());
-		if (ImGui::IsItemClicked())
+		ImGuiTreeNodeFlags flags = ((Selection::IsActiveObject(entity)) ? ImGuiTreeNodeFlags_Selected : 0) | (entity->GetTransform()->GetChildrenCount() > 0 ? ImGuiTreeNodeFlags_OpenOnArrow : ImGuiTreeNodeFlags_Leaf);
+		if (m_ActiveEntity != entity)
 		{
-			Selection::SetActiveObject(entity);
+			flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
+		}
+
+		bool opened = ImGui::TreeNodeEx((void*)entity, flags, "");
+		if (!ImGui::IsItemToggledOpen())
+		{
+			if (ImGui::IsItemClicked())
+			{
+				Selection::SetActiveObject(entity);
+			}
+
+			if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0) && Selection::IsActiveObject(entity))
+			{
+				m_ActiveEntity = entity;
+				isEntityStartedRenaming = true;
+			}
 		}
 
 		if (ImGui::BeginDragDropSource())
@@ -95,21 +109,34 @@ namespace Blueberry
 			ImGui::EndPopup();
 		}
 
-		/*ImGui::SameLine();
-		if (Selection::GetActiveObject() == entity)
+		ImGui::SameLine();
+		if (m_ActiveEntity == entity)
 		{
-			std::string buffer = entity->GetName();
-			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
-			if (ImGui::InputText("###rename", buffer.data(), buffer.size(), ImGuiInputTextFlags_AutoSelectAll))
-			{
+			static char buf[256];
 
+			if (isEntityStartedRenaming)
+			{
+				std::string name = entity->GetName();
+				strncpy(buf, name.c_str(), sizeof(buf) - 1);
+				ImGui::SetKeyboardFocusHere();
 			}
+
+			std::string name = entity->GetName();
+			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
+			ImGui::InputText("###rename", buf, 256, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+
+			if (ImGui::IsItemDeactivated())
+			{
+				m_ActiveEntity = nullptr;
+				entity->SetName(buf);
+			}
+
 			ImGui::PopStyleVar();
 		}
 		else
 		{
 			ImGui::Text("%s", entity->GetName().c_str());
-		}*/
+		}
 
 		if (opened)
 		{
@@ -120,10 +147,6 @@ namespace Blueberry
 					DrawEntity(child->GetEntity());
 				}
 			}
-			//ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-			//bool opened = ImGui::TreeNodeEx((void*)9817239, flags, entity->ToString().c_str());
-			//if (opened)
-			//	ImGui::TreePop();
 			ImGui::TreePop();
 		}
 	}
