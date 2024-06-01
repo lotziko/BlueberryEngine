@@ -53,6 +53,7 @@ namespace Blueberry
 		static bool HasFileId(Object* object);
 		static bool HasGuid(Object* object);
 		static bool HasGuid(const Guid& guid);
+		static bool HasGuidAndFileId(const Guid& guid, const FileId& fileId);
 		static Object* GetObjectFromGuid(const Guid& guid, const FileId& fileId);
 	private:
 		static ChunkedObjectArray s_Array;

@@ -64,7 +64,10 @@ namespace Blueberry
 		{
 			PngTextureProcessor processor;
 			processor.Load(path);
-			return Texture2D::Create(processor.GetProperties());
+			TextureProperties properties = processor.GetProperties();
+			properties.generateMipmaps = false;
+			properties.format = TextureFormat::R8G8B8A8_UNorm;
+			return Texture2D::Create(properties);
 		}
 		else if (extension == ".compute")
 		{

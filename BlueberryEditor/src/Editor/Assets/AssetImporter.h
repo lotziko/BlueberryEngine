@@ -21,6 +21,7 @@ namespace Blueberry
 		const FileId& GetMainObject();
 		const bool& IsImported();
 
+		void ResetImport();
 		void ImportDataIfNeeded();
 		void Save();
 		// TODO need a way to determine count of not imported assets in this importer

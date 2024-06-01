@@ -1,5 +1,6 @@
 #pragma once
 #include "Editor\Assets\AssetImporter.h"
+#include "Blueberry\Graphics\Enums.h"
 
 namespace Blueberry
 {
@@ -17,5 +18,9 @@ namespace Blueberry
 
 	private:
 		std::string GetTexturePath();
+
+		bool m_GenerateMipmaps = true;
+		WrapMode m_WrapMode = WrapMode::Clamp;
+		FilterMode m_FilterMode = FilterMode::Linear;
 	};
 }

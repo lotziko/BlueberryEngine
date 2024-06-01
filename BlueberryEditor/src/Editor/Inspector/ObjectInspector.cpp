@@ -31,6 +31,12 @@ namespace Blueberry
 		bool hasChanged = false;
 		switch (info.type)
 		{
+		case BindingType::Bool:
+			if (ImGui::BoolEdit(nameLabel, value.Get<bool>()))
+			{
+				hasChanged = true;
+			}
+			break;
 		case BindingType::Int:
 			if (ImGui::IntEdit(nameLabel, value.Get<int>()))
 			{

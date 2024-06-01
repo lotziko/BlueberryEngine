@@ -12,10 +12,17 @@ namespace Blueberry
 
 	void TextureImporter::BindProperties()
 	{
+		BEGIN_OBJECT_BINDING(TextureImporter)
+		BIND_FIELD(FieldInfo(TO_STRING(m_GenerateMipmaps), &TextureImporter::m_GenerateMipmaps, BindingType::Bool))
+		BIND_FIELD(FieldInfo(TO_STRING(m_WrapMode), &TextureImporter::m_WrapMode, BindingType::Enum).SetHintData("Repeat,Clamp"))
+		BIND_FIELD(FieldInfo(TO_STRING(m_FilterMode), &TextureImporter::m_FilterMode, BindingType::Enum).SetHintData("Linear,Point"))
+		END_OBJECT_BINDING()
 	}
 
 	void TextureImporter::ImportData()
 	{
+		static size_t TextureId = 1;
+
 		Guid guid = GetGuid();
 		// TODO check if dirty too
 
@@ -43,17 +50,35 @@ namespace Blueberry
 			PngTextureProcessor processor;
 			processor.Load(path);
 			TextureProperties properties = processor.GetProperties();
+			
+			properties.generateMipmaps = m_GenerateMipmaps;
+			properties.wrapMode = m_WrapMode;
+			properties.filterMode = m_FilterMode;
+			// TODO store in TextureImporter
+			properties.format = TextureFormat::R8G8B8A8_UNorm;
 
-			object = Texture2D::Create(properties);
-			ObjectDB::AllocateIdToGuid(object, guid, 1);
+			auto objects = GetImportedObjects();
+			auto it = objects.find(TextureId);
+			if (it != objects.end())
+			{
+				object = (Texture2D*)ObjectDB::GetObject(it->second);
+				object->Initialize(properties);
+				object->SetState(ObjectState::Default);
+			}
+			else
+			{
+				object = Texture2D::Create(properties);
+				ObjectDB::AllocateIdToGuid(object, guid, TextureId);
+			}
+
 			AssetDB::SaveAssetObjectsToCache(std::vector<Object*> { object });
 			FileHelper::Save((byte*)properties.data, properties.dataSize, GetTexturePath());
 
 			BB_INFO("Texture \"" << GetName() << "\" imported and created from: " + path);
 		}
 		object->SetName(GetName());
-		AddImportedObject(object, 1);
-		SetMainObject(1);
+		AddImportedObject(object, TextureId);
+		SetMainObject(TextureId);
 	}
 
 	std::string TextureImporter::GetTexturePath()

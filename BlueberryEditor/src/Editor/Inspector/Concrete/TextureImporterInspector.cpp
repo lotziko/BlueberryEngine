@@ -1,5 +1,6 @@
 #include "bbpch.h"
 #include "TextureImporterInspector.h"
+#include "Editor\Assets\AssetDB.h"
 #include "Editor\Assets\Importers\TextureImporter.h"
 #include "Blueberry\Graphics\Texture.h"
 #include "Blueberry\Core\ObjectDB.h"
@@ -11,6 +12,15 @@ namespace Blueberry
 	{
 		TextureImporter* textureImporter = static_cast<TextureImporter*>(object);
 		textureImporter->ImportDataIfNeeded();
+
+		ObjectInspector::Draw(object);
+
+		if (ImGui::Button("Save"))
+		{
+			AssetDB::SetDirty(object);
+			AssetDB::SaveAssets();
+		}
+
 		auto& objects = textureImporter->GetImportedObjects();
 		Texture* texture = static_cast<Texture*>(ObjectDB::GetObject(objects.begin()->second));
 		ImVec2 size = ImGui::GetContentRegionAvail();

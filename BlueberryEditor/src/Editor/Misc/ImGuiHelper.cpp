@@ -58,6 +58,23 @@ bool ImGui::EnumEdit(const char* label, int* v, const std::vector<std::string>* 
 	return false;
 }
 
+bool ImGui::BoolEdit(const char* label, bool* v)
+{
+	ImGui::PushID(label);
+
+	ImGui::Text(label);
+	ImGui::SameLine();
+	ImGui::SetCursorPosX(100);
+
+	if (ImGui::Checkbox("##bool", v))
+	{
+		ImGui::PopID();
+		return true;
+	}
+	ImGui::PopID();
+	return false;
+}
+
 bool ImGui::IntEdit(const char* label, int* v)
 {
 	ImGui::PushID(label);

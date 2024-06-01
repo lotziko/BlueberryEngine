@@ -78,6 +78,9 @@ namespace Blueberry
 
 			switch (field.type)
 			{
+			case BindingType::Bool:
+				objectNode[key] << *value.Get<bool>();
+				break;
 			case BindingType::Int:
 				objectNode[key] << *value.Get<int>();
 				break;
@@ -217,6 +220,9 @@ namespace Blueberry
 			{
 				switch (field.type)
 				{
+				case BindingType::Bool:
+					objectNode[key] >> *value.Get<bool>();
+					break;
 				case BindingType::Int:
 					objectNode[key] >> *value.Get<int>();
 					break;

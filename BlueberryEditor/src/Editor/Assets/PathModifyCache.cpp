@@ -9,7 +9,7 @@
 // On creating of importer create dummy objects with corresponding fileIds and then pass them to deserializer when needed
 namespace Blueberry
 {
-	std::unordered_map<std::string, long long> PathModifyCache::s_PathModifyCache = std::unordered_map<std::string, long long>();
+	std::unordered_map<std::string, WriteInfo> PathModifyCache::s_PathModifyCache = std::unordered_map<std::string, WriteInfo>();
 
 	void PathModifyCache::Load()
 	{
@@ -25,13 +25,14 @@ namespace Blueberry
 
 			for (size_t i = 0; i < cacheSize; ++i)
 			{
-				long long time;
+				WriteInfo writeInfo;
 				size_t pathSize;
 				input.read((char*)&pathSize, sizeof(size_t));
 				std::string path(pathSize, ' ');
 				input.read(path.data(), pathSize);
-				input.read((char*)&time, sizeof(long long));
-				s_PathModifyCache.insert_or_assign(path, time);
+				input.read((char*)&writeInfo.assetLastWrite, sizeof(long long));
+				input.read((char*)&writeInfo.metaLastWrite, sizeof(long long));
+				s_PathModifyCache.insert_or_assign(path, writeInfo);
 			}
 			input.close();
 		}
@@ -50,27 +51,29 @@ namespace Blueberry
 		for (auto& pair : s_PathModifyCache)
 		{
 			std::string path = pair.first;
-			long long time = pair.second;
+			long long assetLastWrite = pair.second.assetLastWrite;
+			long long metaLastWrite = pair.second.metaLastWrite;
 			size_t pathSize = path.size();
 			output.write((char*)&pathSize, sizeof(size_t));
 			output.write(path.data(), pathSize);
-			output.write((char*)&time, sizeof(long long));
+			output.write((char*)&assetLastWrite, sizeof(long long));
+			output.write((char*)&metaLastWrite, sizeof(long long));
 		}
 		output.close();
 	}
 
-	long long PathModifyCache::Get(const std::string& path)
+	WriteInfo PathModifyCache::Get(const std::string& path)
 	{
 		auto it = s_PathModifyCache.find(path);
 		if (it != s_PathModifyCache.end())
 		{
 			return it->second;
 		}
-		return 0;
+		return WriteInfo();
 	}
 
-	void PathModifyCache::Set(const std::string& path, const long long& lastWriteTime)
+	void PathModifyCache::Set(const std::string& path, const WriteInfo& writeInfo)
 	{
-		s_PathModifyCache.insert_or_assign(path, lastWriteTime);
+		s_PathModifyCache.insert_or_assign(path, writeInfo);
 	}
 }

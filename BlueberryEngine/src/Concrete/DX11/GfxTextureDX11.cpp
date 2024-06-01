@@ -80,6 +80,24 @@ namespace Blueberry
 		}
 	}
 
+	D3D11_TEXTURE_ADDRESS_MODE GetAdressMode(const WrapMode& wrapMode)
+	{
+		if (wrapMode == WrapMode::Clamp)
+		{
+			return D3D11_TEXTURE_ADDRESS_CLAMP;
+		}
+		return D3D11_TEXTURE_ADDRESS_WRAP;
+	}
+
+	D3D11_FILTER GetFilter(const FilterMode& filterMode)
+	{
+		if (filterMode == FilterMode::Linear)
+		{
+			return D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		}
+		return D3D11_FILTER_MIN_MAG_MIP_POINT;
+	}
+
 	enum class TextureType
 	{
 		Resource,
@@ -115,6 +133,7 @@ namespace Blueberry
 		textureDesc.MipLevels = textureDesc.ArraySize = 1;
 		textureDesc.Format = GetFormat(properties.format);
 		textureDesc.SampleDesc.Count = 1;
+		textureDesc.MiscFlags = 0;
 
 		TextureType type = GetTextureType(properties);
 
@@ -124,6 +143,12 @@ namespace Blueberry
 			textureDesc.Usage = D3D11_USAGE_DEFAULT;
 			textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 			textureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+			if (properties.generateMipmaps)
+			{
+				textureDesc.MipLevels = 0;
+				textureDesc.BindFlags |= D3D11_BIND_RENDER_TARGET;
+				textureDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+			}
 			break;
 		case TextureType::RenderTarget:
 			textureDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -141,10 +166,8 @@ namespace Blueberry
 			textureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 			break;
 		}
-		
-		textureDesc.MiscFlags = 0;
 
-		HRESULT hr = m_Device->CreateTexture2D(&textureDesc, subresourceData, m_Texture.GetAddressOf());
+		HRESULT hr = m_Device->CreateTexture2D(&textureDesc, properties.generateMipmaps ? nullptr : subresourceData, m_Texture.GetAddressOf());
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create texture."));
@@ -153,20 +176,44 @@ namespace Blueberry
 
 		if (type != TextureType::Staging && type != TextureType::DepthStencil)
 		{
-			hr = m_Device->CreateShaderResourceView(m_Texture.Get(), nullptr, m_ResourceView.GetAddressOf());
+			if (properties.generateMipmaps)
+			{
+				D3D11_SHADER_RESOURCE_VIEW_DESC resourceViewDesc;
+				ZeroMemory(&resourceViewDesc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
+
+				resourceViewDesc.Format = textureDesc.Format;
+				resourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+				resourceViewDesc.Texture2D.MostDetailedMip = 0;
+				resourceViewDesc.Texture2D.MipLevels = -1;
+
+				hr = m_Device->CreateShaderResourceView(m_Texture.Get(), &resourceViewDesc, m_ResourceView.GetAddressOf());
+			}
+			else
+			{
+				hr = m_Device->CreateShaderResourceView(m_Texture.Get(), nullptr, m_ResourceView.GetAddressOf());
+			}
+
 			if (FAILED(hr))
 			{
 				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create shader resource view."));
 				return false;
 			}
+			if (properties.generateMipmaps)
+			{
+				m_DeviceContext->UpdateSubresource(m_Texture.Get(), 0, 0, subresourceData->pSysMem, subresourceData->SysMemPitch, 0);
+				m_DeviceContext->GenerateMips(m_ResourceView.Get());
+			}
 
 			D3D11_SAMPLER_DESC samplerDesc;
 			ZeroMemory(&samplerDesc, sizeof(D3D11_SAMPLER_DESC));
 
-			samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
-			samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-			samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-			samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+			D3D11_TEXTURE_ADDRESS_MODE adress = GetAdressMode(properties.wrapMode);
+			D3D11_FILTER filter = GetFilter(properties.filterMode);
+
+			samplerDesc.Filter = filter;
+			samplerDesc.AddressU = adress;
+			samplerDesc.AddressV = adress;
+			samplerDesc.AddressW = adress;
 			samplerDesc.MipLODBias = 0.0f;
 			samplerDesc.MaxAnisotropy = 1;
 			samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;

@@ -161,6 +161,16 @@ namespace Blueberry
 		return s_GuidToObjectId.count(guid) > 0;
 	}
 
+	bool ObjectDB::HasGuidAndFileId(const Guid& guid, const FileId& fileId)
+	{
+		auto fileIdIt = s_GuidToObjectId.find(guid);
+		if (fileIdIt != s_GuidToObjectId.end())
+		{
+			return fileIdIt->second.count(fileId) > 0;
+		}
+		return false;
+	}
+
 	Object* ObjectDB::GetObjectFromGuid(const Guid& guid, const FileId& fileId)
 	{
 		auto fileIdIt = s_GuidToObjectId.find(guid);

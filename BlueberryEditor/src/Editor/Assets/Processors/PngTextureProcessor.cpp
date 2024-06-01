@@ -28,7 +28,6 @@ namespace Blueberry
 		properties.height = height;
 		properties.data = data;
 		properties.dataSize = dataSize;
-		properties.format = TextureFormat::R8G8B8A8_UNorm;
 
 		m_Properties = properties;
 	}

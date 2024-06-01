@@ -11,6 +11,9 @@ namespace Blueberry
 		size_t dataSize;
 		bool isRenderTarget;
 		bool isReadable;
+		bool generateMipmaps;
 		TextureFormat format;
+		WrapMode wrapMode;
+		FilterMode filterMode;
 	};
 }

@@ -2,6 +2,18 @@
 
 namespace Blueberry
 {
+	enum class WrapMode
+	{
+		Repeat,
+		Clamp
+	};
+
+	enum class FilterMode
+	{
+		Linear,
+		Point
+	};
+
 	enum class TextureFormat
 	{
 		None,

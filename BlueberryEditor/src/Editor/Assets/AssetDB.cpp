@@ -27,22 +27,24 @@ namespace Blueberry
 		for (auto& it : std::filesystem::recursive_directory_iterator(Path::GetAssetsPath()))
 		{
 			AssetImporter* importer = CreateImporter(it.path());
+
 			if (importer != nullptr)
 			{
 				s_GuidToPath.insert_or_assign(importer->GetGuid(), importer->GetRelativeFilePath());
 				// Delete asset from cache if it dirty
-				auto lastWriteTime = std::chrono::duration_cast<std::chrono::seconds>(std::filesystem::last_write_time(importer->GetFilePath()).time_since_epoch()).count();
-				auto lastWriteCacheTime = PathModifyCache::Get(importer->GetRelativeFilePath());
+				auto assetLastWriteTime = std::chrono::duration_cast<std::chrono::seconds>(std::filesystem::last_write_time(importer->GetFilePath()).time_since_epoch()).count();
+				auto metaLastWriteTime = std::chrono::duration_cast<std::chrono::seconds>(std::filesystem::last_write_time(importer->GetMetaFilePath()).time_since_epoch()).count();
+				auto lastWriteCacheInfo = PathModifyCache::Get(importer->GetRelativeFilePath());
 				bool needsClearing = false;
 
-				if (!ImporterInfoCache::Get(importer))
+				if (!ImporterInfoCache::Has(importer))
 				{
 					needsClearing = true;
 				}
 
-				if (lastWriteCacheTime > 0)
+				if (lastWriteCacheInfo.assetLastWrite > 0 || lastWriteCacheInfo.metaLastWrite > 0)
 				{
-					if (lastWriteCacheTime < lastWriteTime)
+					if (lastWriteCacheInfo.assetLastWrite < assetLastWriteTime || lastWriteCacheInfo.metaLastWrite < metaLastWriteTime)
 					{
 						needsClearing = true;
 					}
@@ -60,7 +62,7 @@ namespace Blueberry
 					}
 					importersToImport.emplace_back(importer);
 				}
-				PathModifyCache::Set(importer->GetRelativeFilePath(), lastWriteTime);
+				PathModifyCache::Set(importer->GetRelativeFilePath(), { assetLastWriteTime, metaLastWriteTime });
 				if (needsClearing)
 				{
 					PathModifyCache::Save();
@@ -199,6 +201,14 @@ namespace Blueberry
 					serializer.Serialize(dataPath.string());
 					BB_INFO("Asset was saved to the path: " << relativePath);
 				}
+				else if (object->IsClassType(AssetImporter::Type))
+				{
+					AssetImporter* importer = (AssetImporter*)object;
+					importer->Save();
+					importer->ResetImport();
+					// Maybe refresh always after save?
+					Refresh();
+				}
 			}
 		}
 		s_DirtyAssets.clear();
@@ -227,6 +237,12 @@ namespace Blueberry
 		relativeMetaPath += ".meta";
 		auto relativeMetaPathString = relativeMetaPath.string();
 
+		AssetImporter* existingImporter = GetImporter(relativePathString);
+		if (existingImporter != nullptr)
+		{
+			return existingImporter;
+		}
+
 		auto metaPath = path;
 		metaPath += ".meta";
 
@@ -249,6 +265,7 @@ namespace Blueberry
 		{
 			// Create importer from meta file
 			importer = AssetImporter::Load(relativePath, relativeMetaPath);
+			ImporterInfoCache::Get(importer);
 		}
 		s_Importers.insert_or_assign(relativePathString, importer);
 		return importer;

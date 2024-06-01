@@ -64,6 +64,7 @@ namespace Blueberry
 		static void Load();
 		static void Save();
 
+		static bool Has(AssetImporter* importer);
 		static bool Get(AssetImporter* importer);
 		static void Set(AssetImporter* importer);
 

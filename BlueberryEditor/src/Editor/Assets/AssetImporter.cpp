@@ -61,6 +61,15 @@ namespace Blueberry
 		return false;
 	}
 
+	void AssetImporter::ResetImport()
+	{
+		for (auto& pair : m_ImportedObjects)
+		{
+			Object* object = ObjectDB::GetObject(pair.second);
+			object->SetState(ObjectState::AwaitingLoading);
+		}
+	}
+
 	void AssetImporter::ImportDataIfNeeded()
 	{
 		if (!IsImported())
