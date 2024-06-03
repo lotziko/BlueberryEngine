@@ -89,6 +89,65 @@ namespace Blueberry
 		++s_LineCount;
 	}
 
+	void Gizmos::DrawBox(const Vector3& center, const Vector3& size)
+	{
+		if (s_LineCount + 12 >= MAX_LINES)
+			Flush();
+
+		float halfX = size.x * 0.5f;
+		float halfY = size.y * 0.5f;
+		float halfZ = size.z * 0.5f;
+
+		Vector3 c0 = Vector3(-halfX, -halfY, -halfZ);
+		Vector3 c1 = Vector3(halfX, -halfY, -halfZ);
+		Vector3 c2 = Vector3(halfX, -halfY, halfZ);
+		Vector3 c3 = Vector3(-halfX, -halfY, halfZ);
+
+		Vector3 c4 = Vector3(-halfX, halfY, -halfZ);
+		Vector3 c5 = Vector3(halfX, halfY, -halfZ);
+		Vector3 c6 = Vector3(halfX, halfY, halfZ);
+		Vector3 c7 = Vector3(-halfX, halfY, halfZ);
+
+		s_Lines[s_LineCount++] = { center + c0, center + c1, s_CurrentColor };
+		s_Lines[s_LineCount++] = { center + c1, center + c2, s_CurrentColor };
+		s_Lines[s_LineCount++] = { center + c2, center + c3, s_CurrentColor };
+		s_Lines[s_LineCount++] = { center + c3, center + c0, s_CurrentColor };
+
+		s_Lines[s_LineCount++] = { center + c4, center + c5, s_CurrentColor };
+		s_Lines[s_LineCount++] = { center + c5, center + c6, s_CurrentColor };
+		s_Lines[s_LineCount++] = { center + c6, center + c7, s_CurrentColor };
+		s_Lines[s_LineCount++] = { center + c7, center + c4, s_CurrentColor };
+
+		s_Lines[s_LineCount++] = { center + c0, center + c4, s_CurrentColor };
+		s_Lines[s_LineCount++] = { center + c1, center + c5, s_CurrentColor };
+		s_Lines[s_LineCount++] = { center + c2, center + c6, s_CurrentColor };
+		s_Lines[s_LineCount++] = { center + c3, center + c7, s_CurrentColor };
+	}
+
+	void Gizmos::DrawFrustum(const Frustum& frustum)
+	{
+		if (s_LineCount + 12 >= MAX_LINES)
+			Flush();
+
+		Vector3 corners[8];
+		frustum.GetCorners(corners);
+
+		s_Lines[s_LineCount++] = { corners[0], corners[1], s_CurrentColor };
+		s_Lines[s_LineCount++] = { corners[1], corners[2], s_CurrentColor };
+		s_Lines[s_LineCount++] = { corners[2], corners[3], s_CurrentColor };
+		s_Lines[s_LineCount++] = { corners[3], corners[0], s_CurrentColor };
+
+		s_Lines[s_LineCount++] = { corners[4], corners[5], s_CurrentColor };
+		s_Lines[s_LineCount++] = { corners[5], corners[6], s_CurrentColor };
+		s_Lines[s_LineCount++] = { corners[6], corners[7], s_CurrentColor };
+		s_Lines[s_LineCount++] = { corners[7], corners[4], s_CurrentColor };
+
+		s_Lines[s_LineCount++] = { corners[0], corners[4], s_CurrentColor };
+		s_Lines[s_LineCount++] = { corners[1], corners[5], s_CurrentColor };
+		s_Lines[s_LineCount++] = { corners[2], corners[6], s_CurrentColor };
+		s_Lines[s_LineCount++] = { corners[3], corners[7], s_CurrentColor };
+	}
+
 	void Gizmos::Flush()
 	{
 		for (int i = 0; i < s_LineCount; i++)

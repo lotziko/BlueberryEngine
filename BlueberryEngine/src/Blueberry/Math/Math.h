@@ -13,6 +13,8 @@ namespace Blueberry
 	using Color = DirectX::SimpleMath::Color;
 	using Rectangle = DirectX::SimpleMath::Rectangle;
 	using Viewport = DirectX::SimpleMath::Viewport;
+	using AABB = DirectX::BoundingBox;
+	using Frustum = DirectX::BoundingFrustum;
 
 	constexpr auto Pi = 3.1415926535f;
 	constexpr auto DegreeToRad = 57.29577951471995f;
@@ -64,5 +66,40 @@ namespace Blueberry
 		Vector4 vectorToTransform = Vector4(vector.x, vector.y, vector.z, 0.0f);
 		vectorToTransform = Vector4::Transform(vectorToTransform, matrix);
 		return Vector3(vectorToTransform.x, vectorToTransform.y, vectorToTransform.z);
+	}
+
+	inline DirectX::ContainmentType ContainsFlipped(const DirectX::BoundingFrustum& frustum, const DirectX::BoundingBox& box)
+	{
+		using XMVECTOR = DirectX::XMVECTOR;
+		// Load origin and orientation of the frustum.
+		XMVECTOR vOrigin = XMLoadFloat3(&frustum.Origin);
+		XMVECTOR vOrientation = XMLoadFloat4(&frustum.Orientation);
+
+		// Create 6 planes (do it inline to encourage use of registers)
+		XMVECTOR NearPlane = DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, frustum.Near); // Flipped
+		NearPlane = DirectX::Internal::XMPlaneTransform(NearPlane, vOrientation, vOrigin);
+		NearPlane = DirectX::XMPlaneNormalize(NearPlane);
+
+		XMVECTOR FarPlane = DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, frustum.Far); // Flipped
+		FarPlane = DirectX::Internal::XMPlaneTransform(FarPlane, vOrientation, vOrigin);
+		FarPlane = DirectX::XMPlaneNormalize(FarPlane);
+
+		XMVECTOR RightPlane = DirectX::XMVectorSet(1.0f, 0.0f, -frustum.RightSlope, 0.0f);
+		RightPlane = DirectX::Internal::XMPlaneTransform(RightPlane, vOrientation, vOrigin);
+		RightPlane = DirectX::XMPlaneNormalize(RightPlane);
+
+		XMVECTOR LeftPlane = DirectX::XMVectorSet(-1.0f, 0.0f, frustum.LeftSlope, 0.0f);
+		LeftPlane = DirectX::Internal::XMPlaneTransform(LeftPlane, vOrientation, vOrigin);
+		LeftPlane = DirectX::XMPlaneNormalize(LeftPlane);
+
+		XMVECTOR TopPlane = DirectX::XMVectorSet(0.0f, 1.0f, -frustum.TopSlope, 0.0f);
+		TopPlane = DirectX::Internal::XMPlaneTransform(TopPlane, vOrientation, vOrigin);
+		TopPlane = DirectX::XMPlaneNormalize(TopPlane);
+
+		XMVECTOR BottomPlane = DirectX::XMVectorSet(0.0f, -1.0f, frustum.BottomSlope, 0.0f);
+		BottomPlane = DirectX::Internal::XMPlaneTransform(BottomPlane, vOrientation, vOrigin);
+		BottomPlane = DirectX::XMPlaneNormalize(BottomPlane);
+
+		return box.ContainedBy(NearPlane, FarPlane, RightPlane, LeftPlane, TopPlane, BottomPlane);
 	}
 }

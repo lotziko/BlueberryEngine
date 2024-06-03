@@ -91,10 +91,22 @@ namespace DirectX::SimpleMath
 		n["a"] >> val->w;
 		return true;
 	}
+}
 
-	bool from_chars(ryml::csubstr buf, Color *c)
+namespace DirectX
+{
+	void write(ryml::NodeRef* n, const BoundingBox& val)
 	{
-		size_t ret = ryml::unformat(buf, "{{}, {}, {}, {}}", c->x, c->y, c->z, c->w); return ret != ryml::yml::npos;
+		*n |= ryml::MAP;
+		n->append_child() << ryml::key("m_Center") << (SimpleMath::Vector3)val.Center;
+		n->append_child() << ryml::key("m_Extents") << (SimpleMath::Vector3)val.Extents;
+	}
+
+	bool read(const ryml::ConstNodeRef& n, BoundingBox* val)
+	{
+		n["m_Center"].operator>><SimpleMath::Vector3>((SimpleMath::Vector3)val->Center);
+		n["m_Extents"].operator>><SimpleMath::Vector3>((SimpleMath::Vector3)val->Extents);
+		return true;
 	}
 }
 

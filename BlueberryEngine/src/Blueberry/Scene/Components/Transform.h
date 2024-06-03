@@ -36,6 +36,7 @@ namespace Blueberry
 		void Update();
 
 		const bool& IsDirty() const;
+		const size_t& GetRecalculationFrame() const;
 
 		static void BindProperties();
 
@@ -44,6 +45,7 @@ namespace Blueberry
 
 	private:
 		bool m_IsDirty = true;
+		size_t m_RecalculationFrame = 0;
 
 		ObjectPtr<Transform> m_Parent = nullptr;
 		std::vector<ObjectPtr<Transform>> m_Children;

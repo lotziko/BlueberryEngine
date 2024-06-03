@@ -9,6 +9,7 @@
 #include "Blueberry\Graphics\RegisterGraphicsTypes.h"
 
 #include "Blueberry\Core\Layer.h"
+#include "Blueberry\Core\Time.h"
 
 namespace Blueberry
 {
@@ -58,6 +59,7 @@ namespace Blueberry
 
 	void Engine::Draw()
 	{
+		Time::IncrementFrameCount();
 		for (Layer* layer : *m_LayerStack)
 			layer->OnDraw();
 	}

@@ -27,8 +27,8 @@ namespace Blueberry
 		Vector3,
 		Vector4,
 		Quaternion,
-
 		Color,
+		AABB,
 
 		// Derived from Object
 		ObjectPtr,

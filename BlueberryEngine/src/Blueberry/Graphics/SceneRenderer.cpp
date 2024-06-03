@@ -7,6 +7,8 @@
 #include "Blueberry\Graphics\PerDrawDataConstantBuffer.h"
 #include "Blueberry\Scene\Scene.h"
 
+#include "Blueberry\Graphics\Gizmos.h"
+
 namespace Blueberry
 {
 	void SceneRenderer::Draw(Scene* scene)
@@ -51,14 +53,25 @@ namespace Blueberry
 			Renderer2D::End();
 		}
 
+		Matrix view = camera->GetInverseViewMatrix();
+		Matrix projection = camera->GetProjectionMatrix();
+		Frustum frustum;
+		frustum.CreateFromMatrix(frustum, projection, true);
+		frustum.Transform(frustum, view);
+
 		//Draw meshes
 		for (auto component : scene->GetIterator<MeshRenderer>())
 		{
 			auto meshRenderer = static_cast<MeshRenderer*>(component.second);
-			Mesh* mesh = meshRenderer->GetMesh();
-			Material* material = meshRenderer->GetMaterial();
-			PerDrawConstantBuffer::BindData(meshRenderer->GetEntity()->GetTransform()->GetLocalToWorldMatrix());
-			GfxDevice::Draw(GfxDrawingOperation(mesh, material));
+			AABB bounds = meshRenderer->GetBounds();
+
+			if (frustum.Contains(bounds))
+			{
+				Mesh* mesh = meshRenderer->GetMesh();
+				Material* material = meshRenderer->GetMaterial();
+				PerDrawConstantBuffer::BindData(meshRenderer->GetEntity()->GetTransform()->GetLocalToWorldMatrix());
+				GfxDevice::Draw(GfxDrawingOperation(mesh, material));
+			}
 		}
 	}
 }

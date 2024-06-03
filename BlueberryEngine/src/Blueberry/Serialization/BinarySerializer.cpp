@@ -155,6 +155,9 @@ namespace Blueberry
 			case BindingType::Color:
 				output.write((char*)&(*value.Get<Color>()).x, 4 * sizeof(float));
 				break;
+			case BindingType::AABB:
+				output.write((char*)&(*value.Get<AABB>()).Center, 6 * sizeof(float));
+				break;
 			case BindingType::ObjectPtr:
 			{
 				ObjectPtr<Object> objectRefValue = *value.Get<ObjectPtr<Object>>();
@@ -303,6 +306,9 @@ namespace Blueberry
 					break;
 				case BindingType::Color:
 					input.read((char*)&(*value.Get<Vector3>()).x, 4 * sizeof(float));
+					break;
+				case BindingType::AABB:
+					input.read((char*)&(*value.Get<AABB>()).Center, 6 * sizeof(float));
 					break;
 				case BindingType::ObjectPtr:
 				{

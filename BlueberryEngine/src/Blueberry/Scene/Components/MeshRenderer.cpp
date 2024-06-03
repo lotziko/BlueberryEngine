@@ -6,6 +6,8 @@
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Scene\Entity.h"
 
+#include "Blueberry\Scene\Components\Transform.h"
+
 namespace Blueberry
 {
 	OBJECT_DEFINITION(Renderer, MeshRenderer)
@@ -28,6 +30,32 @@ namespace Blueberry
 	void MeshRenderer::SetMaterial(Material* material)
 	{
 		m_Material = material;
+	}
+
+	const AABB& MeshRenderer::GetBounds()
+	{
+		Transform* transform = GetEntity()->GetTransform();
+		size_t transformRecalculationFrame = transform->GetRecalculationFrame();
+		if (m_RecalculationFrame != transformRecalculationFrame)
+		{
+			AABB bounds = m_Mesh->GetBounds();
+			Matrix matrix = transform->GetLocalToWorldMatrix();
+
+			Vector3 corners[8];
+			bounds.GetCorners(corners);
+
+			for (int i = 0; i < 8; i++)
+			{
+				Vector3 corner = corners[i];
+				Vector3::Transform(corner, matrix, corners[i]);
+			}
+
+			AABB::CreateFromPoints(bounds, 8, corners, sizeof(Vector3));
+			BB_INFO("calcualted");
+			m_Bounds = bounds;
+			m_RecalculationFrame = transformRecalculationFrame;
+		}
+		return m_Bounds;
 	}
 
 	void MeshRenderer::BindProperties()

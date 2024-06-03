@@ -96,6 +96,11 @@ namespace Blueberry
 		m_Topology = topology;
 	}
 
+	const AABB& Mesh::GetBounds()
+	{
+		return m_Bounds;
+	}
+
 	void Mesh::Apply()
 	{
 		if (m_BufferIsDirty)
@@ -151,6 +156,8 @@ namespace Blueberry
 				m_IndexData.resize(m_IndexCount);
 			}
 			memcpy(m_IndexData.data(), m_Indices, m_IndexCount * sizeof(UINT));
+
+			AABB::CreateFromPoints(m_Bounds, m_VertexCount, m_Vertices, sizeof(Vector3));
 		}
 
 		// TODO handle old buffers instead
@@ -176,6 +183,7 @@ namespace Blueberry
 		BIND_FIELD(FieldInfo(TO_STRING(m_VertexCount), &Mesh::m_VertexCount, BindingType::Int))
 		BIND_FIELD(FieldInfo(TO_STRING(m_IndexCount), &Mesh::m_IndexCount, BindingType::Int))
 		BIND_FIELD(FieldInfo(TO_STRING(m_ChannelFlags), &Mesh::m_ChannelFlags, BindingType::Int))
+		BIND_FIELD(FieldInfo(TO_STRING(m_Bounds), &Mesh::m_Bounds, BindingType::AABB))
 		END_OBJECT_BINDING()
 	}
 

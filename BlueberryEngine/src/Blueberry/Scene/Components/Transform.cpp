@@ -127,6 +127,11 @@ namespace Blueberry
 		return m_IsDirty;
 	}
 
+	const size_t& Transform::GetRecalculationFrame() const
+	{
+		return m_RecalculationFrame;
+	}
+
 	void Transform::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(Transform)
@@ -148,6 +153,7 @@ namespace Blueberry
 			m_LocalMatrix = Matrix::CreateScale(m_LocalScale) * Matrix::CreateFromQuaternion(m_LocalRotation) * Matrix::CreateTranslation(m_LocalPosition);
 			m_LocalToWorldMatrix = !m_Parent.IsValid() ? m_LocalMatrix : (m_LocalMatrix * (m_Parent->m_LocalToWorldMatrix));
 			m_IsDirty = false;
+			m_RecalculationFrame = Time::GetFrameCount();
 		}
 
 		for (auto child : m_Children)

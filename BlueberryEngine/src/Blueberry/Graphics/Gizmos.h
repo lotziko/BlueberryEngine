@@ -17,6 +17,8 @@ namespace Blueberry
 		static void End();
 		static void SetColor(const Color& color);
 		static void DrawLine(const Vector3& start, const Vector3& end);
+		static void DrawBox(const Vector3& center, const Vector3& size);
+		static void DrawFrustum(const Frustum& frustum);
 		static void Flush();
 
 	private:

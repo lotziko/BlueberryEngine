@@ -38,6 +38,8 @@ namespace Blueberry
 		m_Height = properties.height;
 		m_MipCount = GetMipCount(properties.width, properties.height, properties.generateMipmaps);
 		m_Format = properties.format;
+		m_WrapMode = properties.wrapMode;
+		m_FilterMode = properties.filterMode;
 
 		if (m_Texture != nullptr)
 		{
@@ -57,6 +59,8 @@ namespace Blueberry
 		properties.dataSize = byteData.size;
 		properties.generateMipmaps = m_MipCount > 1;
 		properties.format = m_Format;
+		properties.wrapMode = m_WrapMode;
+		properties.filterMode = m_FilterMode;
 
 		if (m_Texture != nullptr)
 		{

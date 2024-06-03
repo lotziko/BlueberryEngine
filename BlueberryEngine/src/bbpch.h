@@ -16,6 +16,7 @@
 
 #include "Blueberry\Core\Base.h"
 #include "Blueberry\Core\Object.h"
+#include "Blueberry\Core\Time.h"
 #include "Blueberry\Math\Math.h"
 
 #include <Windows.h>

@@ -133,6 +133,9 @@ namespace Blueberry
 			case BindingType::Color:
 				objectNode[key] << *value.Get<Color>();
 				break;
+			case BindingType::AABB:
+
+				break;
 			case BindingType::ObjectPtr:
 			{
 				ObjectPtr<Object> objectRefValue = *value.Get<ObjectPtr<Object>>();

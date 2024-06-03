@@ -25,6 +25,12 @@ namespace DirectX::SimpleMath
 	bool read(const ryml::ConstNodeRef& n, Color* val);
 }
 
+namespace DirectX
+{
+	void write(ryml::NodeRef* n, const BoundingBox& val);
+	bool read(const ryml::ConstNodeRef& n, BoundingBox* val);
+}
+
 namespace Blueberry
 {
 	size_t to_chars(ryml::substr buf, Blueberry::Guid val);

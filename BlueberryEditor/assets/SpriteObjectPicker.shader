@@ -34,8 +34,8 @@ Shader
 		return output;
 	}
 
-	Texture2D _BaseMap : TEXTURE: register(t0);
-	SamplerState _BaseMap_Sampler : SAMPLER: register(s0);
+	Texture2D _BaseMap;
+	SamplerState _BaseMap_Sampler;
 
 	float4 Fragment(Varyings input) : SV_TARGET
 	{

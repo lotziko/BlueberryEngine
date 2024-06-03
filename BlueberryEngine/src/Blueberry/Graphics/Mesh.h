@@ -26,6 +26,8 @@ namespace Blueberry
 		const Topology& GetTopology();
 		void SetTopology(const Topology& topology);
 
+		const AABB& GetBounds();
+
 		void Apply();
 
 		static Mesh* Create();
@@ -51,6 +53,7 @@ namespace Blueberry
 		UINT m_VertexCount;
 		UINT m_IndexCount;
 		UINT m_ChannelFlags;
+		AABB m_Bounds;
 
 		Topology m_Topology = Topology::TriangleList;
 
