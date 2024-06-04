@@ -13,7 +13,7 @@ Shader
 
 	cbuffer PerObjectData
 	{
-		float4 objectId;
+		float4 _ObjectId;
 	}
 
 	struct Attributes
@@ -29,13 +29,13 @@ Shader
 	Varyings Vertex(Attributes input)
 	{
 		Varyings output;
-		output.positionCS = mul(mul(float4(input.positionOS, 1.0f), modelMatrix), viewProjectionMatrix);
+		output.positionCS = mul(mul(float4(input.positionOS, 1.0f), _ModelMatrix), _ViewProjectionMatrix);
 		return output;
 	}
 
 	float4 Fragment(Varyings input) : SV_TARGET
 	{
-		return float4(objectId.r, objectId.g, 0, 1);
+		return float4(_ObjectId.r, _ObjectId.g, 0, 1);
 	}
 	HLSLEND
 }

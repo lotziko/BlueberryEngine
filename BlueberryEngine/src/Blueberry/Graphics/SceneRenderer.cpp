@@ -5,6 +5,7 @@
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\PerCameraDataConstantBuffer.h"
 #include "Blueberry\Graphics\PerDrawDataConstantBuffer.h"
+#include "Blueberry\Graphics\PerCameraLightDataConstantBuffer.h"
 #include "Blueberry\Scene\Scene.h"
 
 #include "Blueberry\Graphics\Gizmos.h"
@@ -41,6 +42,18 @@ namespace Blueberry
 				transform->Update();
 			}
 		}
+
+		// Bind lights
+		{
+			std::vector<LightData> lights;
+			for (auto component : scene->GetIterator<Light>())
+			{
+				auto light = static_cast<Light*>(component.second);
+				auto transform = light->GetEntity()->GetTransform();
+				lights.emplace_back(LightData { transform, light });
+			}
+			PerCameraLightDataConstantBuffer::BindData(lights);
+		}
 		
 		//Draw sprites
 		{
@@ -73,5 +86,18 @@ namespace Blueberry
 				GfxDevice::Draw(GfxDrawingOperation(mesh, material));
 			}
 		}
+
+		{
+			PerDrawConstantBuffer::BindData(Matrix::Identity);
+			Gizmos::SetColor(Color(1, 1, 1, 1));
+			Gizmos::Begin();
+			for (auto component : scene->GetIterator<Light>())
+			{
+				auto light = static_cast<Light*>(component.second);
+				auto transform = light->GetEntity()->GetTransform();
+				Gizmos::DrawCircle(transform->GetLocalPosition(), light->GetRange());
+			}
+			Gizmos::End();
+		}		
 	}
 }

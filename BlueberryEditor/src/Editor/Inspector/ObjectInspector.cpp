@@ -43,6 +43,12 @@ namespace Blueberry
 				hasChanged = true;
 			}
 			break;
+		case BindingType::Float:
+			if (ImGui::FloatEdit(nameLabel, value.Get<float>()))
+			{
+				hasChanged = true;
+			}
+			break;
 		case BindingType::Enum:
 			if (ImGui::EnumEdit(nameLabel, value.Get<int>(), static_cast<std::vector<std::string>*>(info.hintData)))
 			{

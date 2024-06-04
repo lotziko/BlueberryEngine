@@ -32,7 +32,7 @@ Shader
 	Varyings Vertex(Attributes input)
 	{
 		Varyings output;
-		output.positionCS = mul(mul(float4(input.positionOS, 1.0f), modelMatrix), viewProjectionMatrix);
+		output.positionCS = mul(mul(float4(input.positionOS, 1.0f), _ModelMatrix), _ViewProjectionMatrix);
 		output.color = input.color;
 		return output;
 	}

@@ -10,6 +10,7 @@
 #include "Components\SpriteRenderer.h"
 #include "Components\MeshRenderer.h"
 #include "Components\Camera.h"
+#include "Components\Light.h"
 
 namespace Blueberry
 {
@@ -23,5 +24,6 @@ namespace Blueberry
 		REGISTER_CLASS(SpriteRenderer);
 		REGISTER_CLASS(MeshRenderer);
 		REGISTER_CLASS(Camera);
+		REGISTER_CLASS(Light);
 	}
 }

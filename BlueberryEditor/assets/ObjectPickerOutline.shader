@@ -29,8 +29,8 @@ Shader
 		return output;
 	}
 
-	Texture2D _PickingTexture : TEXTURE: register(t0);
-	SamplerState _PickingTexture_Sampler : SAMPLER: register(s0);
+	Texture2D _PickingTexture;
+	SamplerState _PickingTexture_Sampler;
 
 	float4 Fragment(Varyings input) : SV_TARGET
 	{

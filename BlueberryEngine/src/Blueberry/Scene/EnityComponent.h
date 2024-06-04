@@ -8,3 +8,4 @@
 #include "Components\SpriteRenderer.h"
 #include "Components\MeshRenderer.h"
 #include "Components\Camera.h"
+#include "Components\Light.h"

@@ -34,6 +34,11 @@ namespace Blueberry
 
 	const AABB& MeshRenderer::GetBounds()
 	{
+		if (!m_Mesh.IsValid())
+		{
+			return m_Bounds;
+		}
+
 		Transform* transform = GetEntity()->GetTransform();
 		size_t transformRecalculationFrame = transform->GetRecalculationFrame();
 		if (m_RecalculationFrame != transformRecalculationFrame)

@@ -75,6 +75,7 @@ namespace Blueberry
 		{
 		case TextureFormat::None: return DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
 		case TextureFormat::R8G8B8A8_UNorm: return DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
+		case TextureFormat::R8G8B8A8_UNorm_SRGB: return DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 		case TextureFormat::R8G8B8A8_UINT: return DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UINT;
 		case TextureFormat::D24_UNorm: return DXGI_FORMAT::DXGI_FORMAT_D24_UNORM_S8_UINT;
 		}

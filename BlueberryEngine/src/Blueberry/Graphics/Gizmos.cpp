@@ -124,6 +124,27 @@ namespace Blueberry
 		s_Lines[s_LineCount++] = { center + c3, center + c7, s_CurrentColor };
 	}
 
+	void Gizmos::DrawCircle(const Vector3& center, const float& radius)
+	{
+		int segmentCount = 36;
+
+		if (s_LineCount + segmentCount * 3 >= MAX_LINES)
+			Flush();
+
+		for (int i = 0; i < segmentCount; i++)
+		{
+			float x1 = sin(ToRadians((float)i / segmentCount * 360));
+			float y1 = cos(ToRadians((float)i / segmentCount * 360));
+
+			float x2 = sin(ToRadians((float)(i + 1) / segmentCount * 360));
+			float y2 = cos(ToRadians((float)(i + 1) / segmentCount * 360));
+
+			s_Lines[s_LineCount++] = { center + Vector3(x1 * radius, 0, y1 * radius), center + Vector3(x2 * radius, 0, y2 * radius), s_CurrentColor };
+			s_Lines[s_LineCount++] = { center + Vector3(x1 * radius, y1 * radius, 0), center + Vector3(x2 * radius, y2 * radius, 0), s_CurrentColor };
+			s_Lines[s_LineCount++] = { center + Vector3(0, x1 * radius, y1 * radius), center + Vector3(0, x2 * radius, y2 * radius), s_CurrentColor };
+		}
+	}
+
 	void Gizmos::DrawFrustum(const Frustum& frustum)
 	{
 		if (s_LineCount + 12 >= MAX_LINES)

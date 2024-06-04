@@ -26,14 +26,14 @@ Shader
 	Varyings Vertex(Attributes input)
 	{
 		Varyings output;
-		output.positionCS = mul(mul(float4(input.positionOS, 1.0f), modelMatrix), viewProjectionMatrix);
-		output.normalWS = normalize(mul(float4(input.normalOS, 0.0f), modelMatrix).xyz);
+		output.positionCS = mul(mul(float4(input.positionOS, 1.0f), _ModelMatrix), _ViewProjectionMatrix);
+		output.normalWS = normalize(mul(float4(input.normalOS, 0.0f), _ModelMatrix).xyz);
 		return output;
 	}
 
 	float4 Fragment(Varyings input) : SV_TARGET
 	{
-		float lambert = dot(input.normalWS, -cameraForwardDirectionWS);
+		float lambert = dot(input.normalWS, -_CameraForwardDirectionWS);
 		return float4(1.0 * lambert, 0.0, 1.0 * lambert, 1.0);
 	}
 	HLSLEND

@@ -92,6 +92,23 @@ bool ImGui::IntEdit(const char* label, int* v)
 	return false;
 }
 
+bool ImGui::FloatEdit(const char* label, float* v)
+{
+	ImGui::PushID(label);
+
+	ImGui::Text(label);
+	ImGui::SameLine();
+	ImGui::SetCursorPosX(100);
+
+	if (ImGui::DragFloat("##float", v))
+	{
+		ImGui::PopID();
+		return true;
+	}
+	ImGui::PopID();
+	return false;
+}
+
 bool ImGui::ColorEdit(const char* label, Blueberry::Color* v)
 {
 	ImGui::PushID(label);
