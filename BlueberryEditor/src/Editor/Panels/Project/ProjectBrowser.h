@@ -31,9 +31,7 @@ namespace Blueberry
 		FolderTree m_FolderTree;
 		const char* m_OpenedModalPopupId = nullptr;
 
-		Texture2D* m_FolderIcon;
 		Texture2D* m_FolderIconSmall;
 		Texture2D* m_FolderIconSmallOpened;
-		Texture2D* m_FbxIcon;
 	};
 }

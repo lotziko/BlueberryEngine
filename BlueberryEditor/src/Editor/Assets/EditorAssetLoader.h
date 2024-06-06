@@ -9,5 +9,8 @@ namespace Blueberry
 		virtual void LoadImpl(const Guid& guid) override;
 		virtual Object* LoadImpl(const Guid& guid, const FileId& fileId) override;
 		virtual Object* LoadImpl(const std::string& path) override;
+
+	private:
+		std::map<std::string, Object*> m_LoadedAssets;
 	};
 }

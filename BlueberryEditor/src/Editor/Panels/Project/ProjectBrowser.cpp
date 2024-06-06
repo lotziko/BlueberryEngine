@@ -17,11 +17,9 @@ namespace Blueberry
 	{
 		m_CurrentDirectory = Path::GetAssetsPath();
 
-		m_FolderIcon = (Texture2D*)AssetLoader::Load("assets/icons/FolderIcon.png");
 		m_FolderIconSmall = (Texture2D*)AssetLoader::Load("assets/icons/FolderIconSmall.png");
 		m_FolderIconSmallOpened = (Texture2D*)AssetLoader::Load("assets/icons/FolderIconSmallOpened.png");
-		m_FbxIcon = (Texture2D*)AssetLoader::Load("assets/icons/FbxIcon.png");
-
+		
 		m_FolderTree = FolderTree(m_CurrentDirectory.string());
 	}
 
@@ -197,7 +195,7 @@ namespace Blueberry
 					Selection::SetActiveObject(importer);
 				}
 			}
-			ImGui::GetWindowDrawList()->AddImage(isDirectory ? m_FolderIcon->GetHandle() : m_FbxIcon->GetHandle(), ImVec2(pos.x + cellIconPadding, pos.y), ImVec2(pos.x + cellSize - cellIconPadding, pos.y + cellSize - cellIconPadding * 2), ImVec2(0, 1), ImVec2(1, 0));
+			ImGui::GetWindowDrawList()->AddImage(((Texture*)importer->GetIcon())->GetHandle(), ImVec2(pos.x + cellIconPadding, pos.y), ImVec2(pos.x + cellSize - cellIconPadding, pos.y + cellSize - cellIconPadding * 2), ImVec2(0, 1), ImVec2(1, 0));
 
 			if (ImGui::IsItemHovered())
 			{

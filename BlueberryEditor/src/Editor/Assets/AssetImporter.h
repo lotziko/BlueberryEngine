@@ -5,6 +5,8 @@
 
 namespace Blueberry
 {
+	class Texture2D;
+
 	class AssetImporter : public Object
 	{
 		OBJECT_DECLARATION(AssetImporter)
@@ -20,6 +22,7 @@ namespace Blueberry
 		const std::unordered_map<FileId, ObjectId>& GetImportedObjects();
 		const FileId& GetMainObject();
 		const bool& IsImported();
+		const Texture2D* GetIcon();
 
 		void ResetImport();
 		void ImportDataIfNeeded();
@@ -35,6 +38,7 @@ namespace Blueberry
 		virtual void ImportData() = 0;
 		void AddImportedObject(Object* object, const FileId& fileId);
 		void SetMainObject(const FileId& id);
+		virtual std::string GetIconPath();
 
 	private:
 		Guid m_Guid;
@@ -42,6 +46,7 @@ namespace Blueberry
 		std::string m_RelativeMetaPath;
 		FileId m_MainObject;
 		std::unordered_map<FileId, ObjectId> m_ImportedObjects = {};
+		Texture2D* m_Icon = nullptr;
 
 		friend class ImporterInfoCache;
 	};

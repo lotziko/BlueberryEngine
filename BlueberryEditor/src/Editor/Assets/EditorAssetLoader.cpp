@@ -41,6 +41,12 @@ namespace Blueberry
 
 	Object* EditorAssetLoader::LoadImpl(const std::string& path)
 	{
+		auto it = m_LoadedAssets.find(path);
+		if (it != m_LoadedAssets.end())
+		{
+			return it->second;
+		}
+
 		std::filesystem::path assetPath = path;
 		std::string extension = assetPath.extension().string();
 		if (extension == ".shader")
@@ -56,7 +62,9 @@ namespace Blueberry
 				vertexProcessor.Compile(shaderCode, ShaderType::Vertex);
 				fragmentProcessor.Compile(shaderCode, ShaderType::Fragment);
 
-				return Shader::Create(vertexProcessor.GetShader(), fragmentProcessor.GetShader(), data);
+				Shader* shader = Shader::Create(vertexProcessor.GetShader(), fragmentProcessor.GetShader(), data);
+				m_LoadedAssets.insert_or_assign(path, shader);
+				return shader;
 			}
 			return nullptr;
 		}
@@ -67,7 +75,9 @@ namespace Blueberry
 			TextureProperties properties = processor.GetProperties();
 			properties.generateMipmaps = false;
 			properties.format = TextureFormat::R8G8B8A8_UNorm;
-			return Texture2D::Create(properties);
+			Texture2D* texture = Texture2D::Create(properties);
+			m_LoadedAssets.insert_or_assign(path, texture);
+			return texture;
 		}
 		else if (extension == ".compute")
 		{

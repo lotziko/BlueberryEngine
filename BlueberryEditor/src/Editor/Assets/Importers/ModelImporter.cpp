@@ -222,4 +222,9 @@ namespace Blueberry
 			fclose(fp);
 		}
 	}
+
+	std::string ModelImporter::GetIconPath()
+	{
+		return "assets/icons/FbxIcon.png";
+	}
 }

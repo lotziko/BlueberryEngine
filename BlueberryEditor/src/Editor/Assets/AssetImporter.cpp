@@ -2,6 +2,7 @@
 
 #include "AssetImporter.h"
 #include "Blueberry\Core\ClassDB.h"
+#include "Blueberry\Assets\AssetLoader.h"
 
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Serialization\YamlMetaSerializer.h"
@@ -61,6 +62,11 @@ namespace Blueberry
 		return false;
 	}
 
+	const Texture2D* AssetImporter::GetIcon()
+	{
+		return m_Icon;
+	}
+
 	void AssetImporter::ResetImport()
 	{
 		for (auto& pair : m_ImportedObjects)
@@ -94,6 +100,7 @@ namespace Blueberry
 		importer->m_RelativePath = relativePath.string();
 		importer->m_RelativeMetaPath = relativeMetaPath.string();
 		importer->m_Name = relativePath.stem().string();
+		importer->m_Icon = (Texture2D*)AssetLoader::Load(importer->GetIconPath());
 		importer->Save();
 		return importer;
 	}
@@ -114,6 +121,7 @@ namespace Blueberry
 			importer->m_RelativePath = relativePath.string();
 			importer->m_RelativeMetaPath = relativeMetaPath.string();
 			importer->m_Name = relativePath.stem().string();
+			importer->m_Icon = (Texture2D*)AssetLoader::Load(importer->GetIconPath());
 			// Data will be imported when it's needed
 			//importer->ImportData();
 			return importer;
@@ -133,5 +141,10 @@ namespace Blueberry
 	void AssetImporter::SetMainObject(const FileId& id)
 	{
 		m_MainObject = id;
+	}
+
+	std::string AssetImporter::GetIconPath()
+	{
+		return "assets/icons/FileIcon.png";
 	}
 }
