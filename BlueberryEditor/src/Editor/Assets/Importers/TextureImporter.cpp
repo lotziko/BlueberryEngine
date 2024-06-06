@@ -14,6 +14,7 @@ namespace Blueberry
 	{
 		BEGIN_OBJECT_BINDING(TextureImporter)
 		BIND_FIELD(FieldInfo(TO_STRING(m_GenerateMipmaps), &TextureImporter::m_GenerateMipmaps, BindingType::Bool))
+		BIND_FIELD(FieldInfo(TO_STRING(m_IsSRGB), &TextureImporter::m_IsSRGB, BindingType::Bool))
 		BIND_FIELD(FieldInfo(TO_STRING(m_WrapMode), &TextureImporter::m_WrapMode, BindingType::Enum).SetHintData("Repeat,Clamp"))
 		BIND_FIELD(FieldInfo(TO_STRING(m_FilterMode), &TextureImporter::m_FilterMode, BindingType::Enum).SetHintData("Linear,Point"))
 		END_OBJECT_BINDING()
@@ -55,7 +56,7 @@ namespace Blueberry
 			properties.wrapMode = m_WrapMode;
 			properties.filterMode = m_FilterMode;
 			// TODO store in TextureImporter
-			properties.format = TextureFormat::R8G8B8A8_UNorm;
+			properties.format = m_IsSRGB ? TextureFormat::R8G8B8A8_UNorm_SRGB : TextureFormat::R8G8B8A8_UNorm;
 
 			auto objects = GetImportedObjects();
 			auto it = objects.find(TextureId);

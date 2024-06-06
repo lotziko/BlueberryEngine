@@ -81,8 +81,8 @@ Shader
 		float gridScale = 1 * 0.1;
 		float2 uv = (positionWS * gridScale - floor(_CameraPositionWS * gridScale)).xz;
 
-		float gridA = ComputePristineGrid(uv, float2(0.005, 0.005)) * 0.25;
-		float gridB = ComputePristineGrid(uv * 10, float2(0.005, 0.005) * 10) * 0.075;
+		float gridA = ComputePristineGrid(uv, float2(0.0025, 0.0025)) * 0.25;
+		float gridB = ComputePristineGrid(uv * 10, float2(0.0025, 0.0025) * 10) * 0.075;
 		float depth = ComputeDepth(positionWS);
 
 		output.color = float4(1, 1, 1, max(gridA, gridB));

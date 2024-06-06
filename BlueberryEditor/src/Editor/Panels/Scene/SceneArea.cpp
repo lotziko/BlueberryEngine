@@ -27,13 +27,17 @@ namespace Blueberry
 		properties.width = 1920;
 		properties.height = 1080;
 		properties.isRenderTarget = true;
-		properties.format = TextureFormat::R8G8B8A8_UNorm;
+		properties.format = TextureFormat::R16G16B16A16_FLOAT;
 		GfxDevice::CreateTexture(properties, m_SceneRenderTarget);
+
+		properties.format = TextureFormat::R8G8B8A8_UNorm;
+		GfxDevice::CreateTexture(properties, m_SceneAreaRenderTarget);
 
 		properties.format = TextureFormat::D24_UNorm;
 		GfxDevice::CreateTexture(properties, m_SceneDepthStencil);
 
 		m_GridMaterial = Material::Create((Shader*)AssetLoader::Load("assets/Grid.shader"));
+		m_LinearToSRGBMaterial = Material::Create((Shader*)AssetLoader::Load("assets/LinearToSRGB.shader"));
 		m_ObjectPicker = new SceneObjectPicker(m_SceneDepthStencil);
 
 		// TODO save to config instead
@@ -44,6 +48,7 @@ namespace Blueberry
 	SceneArea::~SceneArea()
 	{
 		delete m_SceneRenderTarget;
+		delete m_SceneAreaRenderTarget;
 		delete m_SceneDepthStencil;
 		delete m_ObjectPicker;
 	}
@@ -191,9 +196,9 @@ namespace Blueberry
 		SetupCamera(size.x, size.y);
 		DrawScene(size.x, size.y);
 
-		m_ObjectPicker->DrawOutline(EditorSceneManager::GetScene(), m_Camera, m_SceneRenderTarget);
+		m_ObjectPicker->DrawOutline(EditorSceneManager::GetScene(), m_Camera, m_SceneAreaRenderTarget);
 
-		ImGui::GetWindowDrawList()->AddImage(m_SceneRenderTarget->GetHandle(), ImVec2(pos.x, pos.y), ImVec2(pos.x + size.x, pos.y + size.y), ImVec2(0, 0), ImVec2(size.x / m_SceneRenderTarget->GetWidth(), size.y / m_SceneRenderTarget->GetHeight()));
+		ImGui::GetWindowDrawList()->AddImage(m_SceneAreaRenderTarget->GetHandle(), ImVec2(pos.x, pos.y), ImVec2(pos.x + size.x, pos.y + size.y), ImVec2(0, 0), ImVec2(size.x / m_SceneRenderTarget->GetWidth(), size.y / m_SceneRenderTarget->GetHeight()));
 		DrawGizmos(Rectangle(pos.x, pos.y, size.x, size.y));
 		DrawControls();
 
@@ -463,9 +468,12 @@ namespace Blueberry
 
 	void SceneArea::DrawScene(const float width, const float height)
 	{
+		int viewportWidth = static_cast<int>(width);
+		int viewportHeight = static_cast<int>(height);
+
 		GfxDevice::SetRenderTarget(m_SceneRenderTarget, m_SceneDepthStencil);
-		GfxDevice::SetViewport(0, 0, static_cast<int>(width), static_cast<int>(height));
-		GfxDevice::ClearColor({ 0.117f, 0.117f, 0.117f, 1 });
+		GfxDevice::SetViewport(0, 0, viewportWidth, viewportHeight);
+		GfxDevice::ClearColor({ 0.0f, 0.0f, 0.0f, 0.0f });
 		GfxDevice::ClearDepth(1.0f);
 
 		Scene* scene = EditorSceneManager::GetScene();
@@ -474,6 +482,13 @@ namespace Blueberry
 			SceneRenderer::Draw(scene, &m_Camera);
 		}
 		
+		GfxDevice::SetRenderTarget(m_SceneAreaRenderTarget, m_SceneDepthStencil);
+		GfxDevice::ClearColor({ 0.117f, 0.117f, 0.117f, 1 });
+		GfxDevice::SetViewport(0, 0, 1920, 1080);
+		GfxDevice::SetGlobalTexture(TO_HASH("_ScreenTexture"), m_SceneRenderTarget);
+		// Gamma correction is done manually to avoid using SRGB swapchain in editor
+		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_LinearToSRGBMaterial));
+		GfxDevice::SetViewport(0, 0, viewportWidth, viewportHeight);
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_GridMaterial));
 		GfxDevice::SetRenderTarget(nullptr);
 	}

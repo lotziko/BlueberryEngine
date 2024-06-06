@@ -20,6 +20,7 @@ namespace Blueberry
 		const Quaternion& GetLocalRotation();
 		const Vector3& GetLocalScale();
 		const Vector3 GetLocalEulerRotation() const;
+		const Vector3 GetPosition();
 
 		Transform* GetParent() const;
 
@@ -56,5 +57,7 @@ namespace Blueberry
 		Vector3 m_LocalPosition;
 		Quaternion m_LocalRotation;
 		Vector3 m_LocalScale = Vector3(1, 1, 1);
+
+		Vector3 m_Position;
 	};
 }

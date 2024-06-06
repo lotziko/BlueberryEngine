@@ -109,33 +109,36 @@ namespace Blueberry
 			ImGui::EndPopup();
 		}
 
-		ImGui::SameLine();
-		if (m_ActiveEntity == entity)
+		if (entity != nullptr)
 		{
-			static char buf[256];
-
-			if (isEntityStartedRenaming)
+			ImGui::SameLine();
+			if (m_ActiveEntity == entity)
 			{
+				static char buf[256];
+
+				if (isEntityStartedRenaming)
+				{
+					std::string name = entity->GetName();
+					strncpy(buf, name.c_str(), sizeof(buf) - 1);
+					ImGui::SetKeyboardFocusHere();
+				}
+
 				std::string name = entity->GetName();
-				strncpy(buf, name.c_str(), sizeof(buf) - 1);
-				ImGui::SetKeyboardFocusHere();
+				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
+				ImGui::InputText("###rename", buf, 256, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+
+				if (ImGui::IsItemDeactivated())
+				{
+					m_ActiveEntity = nullptr;
+					entity->SetName(buf);
+				}
+
+				ImGui::PopStyleVar();
 			}
-
-			std::string name = entity->GetName();
-			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
-			ImGui::InputText("###rename", buf, 256, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
-
-			if (ImGui::IsItemDeactivated())
+			else
 			{
-				m_ActiveEntity = nullptr;
-				entity->SetName(buf);
+				ImGui::Text("%s", entity->GetName().c_str());
 			}
-
-			ImGui::PopStyleVar();
-		}
-		else
-		{
-			ImGui::Text("%s", entity->GetName().c_str());
 		}
 
 		if (opened)

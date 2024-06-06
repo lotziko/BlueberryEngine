@@ -110,10 +110,20 @@ namespace Blueberry
 		m_TextureMap.clear();
 		for (auto const& texture : m_Textures)
 		{
-			if (texture.Get()->m_Texture.IsValid())
+			TextureData* textureData = texture.Get();
+			ObjectPtr<Texture> texture;
+			if (textureData->m_Texture.IsValid())
 			{
-				m_TextureMap.insert_or_assign(TO_HASH(texture.Get()->m_Name), texture.Get()->m_Texture);
+				texture = textureData->m_Texture;
 			}
+			else
+			{
+				if (m_Shader.IsValid())
+				{
+					texture = (Texture*)m_Shader.Get()->GetData()->GetDefaultTexture(textureData->m_Name);
+				}
+			}
+			m_TextureMap.insert_or_assign(TO_HASH(textureData->m_Name), texture);
 		}
 	}
 }

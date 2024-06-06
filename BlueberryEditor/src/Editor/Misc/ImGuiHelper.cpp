@@ -238,6 +238,16 @@ void ImGui::ApplyEditorDarkTheme()
 	colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.000f, 0.000f, 0.000f, 0.586f);
 	colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.000f, 0.000f, 0.000f, 0.586f);
 
+	// Convert to SRGB
+	/*for (int i = 0; i < ImGuiCol_COUNT; i++)
+	{
+		ImVec4 color = colors[i];
+		color.x = powf(color.x, 2.2f);
+		color.y = powf(color.y, 2.2f);
+		color.z = powf(color.z, 2.2f);
+		colors[i] = color;
+	}*/
+
 	style->ChildRounding = 4.0f;
 	style->FrameBorderSize = 1.0f;
 	style->FrameRounding = 2.0f;

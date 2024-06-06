@@ -20,6 +20,9 @@ namespace Blueberry
 		const std::string& GetName() const;
 		void SetName(const std::string& name);
 
+		const std::string& GetDefaultTextureName() const;
+		void SetDefaultTextureName(const std::string& name);
+
 		const int& GetIndex() const;
 		void SetIndex(const int& index);
 
@@ -27,8 +30,11 @@ namespace Blueberry
 
 	private:
 		std::string m_Name;
+		std::string m_DefaultTextureName;
 		int m_Index;
 	};
+
+	class Texture2D;
 
 	class ShaderData : public Data
 	{
@@ -53,6 +59,8 @@ namespace Blueberry
 		const std::vector<DataPtr<TextureParameterData>>& GetTextureParameters() const;
 		void SetTextureParameters(const std::vector<DataPtr<TextureParameterData>>& parameters);
 
+		const Texture2D* GetDefaultTexture(const std::string& parameterName) const;
+
 		static void BindProperties();
 
 	private:
@@ -71,7 +79,7 @@ namespace Blueberry
 		Shader() = default;
 		virtual ~Shader() = default;
 
-		const ShaderData* GetData();
+		const ShaderData* GetData() const;
 
 		void Initialize(void* vertexData, void* pixelData);
 		void Initialize(void* vertexData, void* pixelData, const ShaderData& data);

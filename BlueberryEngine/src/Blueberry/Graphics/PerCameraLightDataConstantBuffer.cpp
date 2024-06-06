@@ -44,7 +44,7 @@ namespace Blueberry
 		for (int i = 0; i < lights.size(); i++)
 		{
 			LightData data = lights[i];
-			Vector3 position = data.transform->GetLocalPosition(); // TODO global position
+			Vector3 position = data.transform->GetPosition();
 			Color color = data.light->GetColor();
 			float intensity = data.light->GetIntensity();
 			float range = data.light->GetRange();

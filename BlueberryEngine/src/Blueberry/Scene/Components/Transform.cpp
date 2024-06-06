@@ -52,6 +52,17 @@ namespace Blueberry
 		return m_LocalRotation.ToEuler();
 	}
 
+	const Vector3 Transform::GetPosition()
+	{
+		if (m_IsDirty)
+		{
+			RecalculateWorldMatrix(true);
+			m_IsDirty = false;
+		}
+
+		return m_Position;
+	}
+
 	Transform* Transform::GetParent() const
 	{
 		return m_Parent.Get();
@@ -152,6 +163,7 @@ namespace Blueberry
 		{
 			m_LocalMatrix = Matrix::CreateScale(m_LocalScale) * Matrix::CreateFromQuaternion(m_LocalRotation) * Matrix::CreateTranslation(m_LocalPosition);
 			m_LocalToWorldMatrix = !m_Parent.IsValid() ? m_LocalMatrix : (m_LocalMatrix * (m_Parent->m_LocalToWorldMatrix));
+			m_Position = (Vector3)Vector4::Transform(Vector4(0, 0, 0, 1), m_LocalToWorldMatrix);
 			m_IsDirty = false;
 			m_RecalculationFrame = Time::GetFrameCount();
 		}

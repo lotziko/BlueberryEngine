@@ -89,9 +89,15 @@ namespace Blueberry
 	void ProjectBrowser::DrawCurrentFolder()
 	{
 		bool isAnyFileHovered = false;
-		for (auto& it : std::filesystem::directory_iterator(m_CurrentDirectory))
+
+		if (m_CurrentDirectory != m_PreviousDirectory)
 		{
-			DrawFile(it);
+			UpdateFiles();
+		}
+		
+		for (auto& path : m_CurrentDirectoryFiles)
+		{
+			DrawFile(path);
 			if (ImGui::IsItemHovered())
 			{
 				isAnyFileHovered = true;
@@ -159,12 +165,11 @@ namespace Blueberry
 		}
 	}
 
-	void ProjectBrowser::DrawFile(const std::filesystem::directory_entry& file)
+	void ProjectBrowser::DrawFile(const std::filesystem::path& path)
 	{
 		const int cellSize = 90;
 		const int cellIconPadding = 8;
 
-		const auto path = file.path();
 		auto pathString = path.string();
 		auto extension = path.extension();
 		auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
@@ -172,66 +177,63 @@ namespace Blueberry
 		ImGui::PushID(pathString.c_str());
 		ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 1.0f));
 
-		if (extension == ".meta")
+		AssetImporter* importer = AssetDB::GetImporter(relativePath.string());
+		if (importer != nullptr)
 		{
-			AssetImporter* importer = AssetDB::GetImporter(relativePath.replace_extension("").string());
-			if (importer != nullptr)
+			auto name = path.stem().string();
+			auto importedObjects = importer->GetImportedObjects();
+			bool isDirectory = std::filesystem::is_directory(path);
+
+			//https://www.google.com/search?q=imgui+selectable&oq=imgui+selectable&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIGCAEQRRhB0gEIMjA0NGowajGoAgCwAgA&sourceid=chrome&ie=UTF-8
+			ImVec2 pos = ImGui::GetCursorScreenPos();
+			if (ImGui::Selectable(name.c_str(), Selection::IsActiveObject(importer), 0, ImVec2(cellSize, cellSize)))
 			{
-				auto name = path.stem().string();
-				auto importedObjects = importer->GetImportedObjects();
-				bool isDirectory = std::filesystem::is_directory(importer->GetFilePath());
-
-				//https://www.google.com/search?q=imgui+selectable&oq=imgui+selectable&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIGCAEQRRhB0gEIMjA0NGowajGoAgCwAgA&sourceid=chrome&ie=UTF-8
-				ImVec2 pos = ImGui::GetCursorScreenPos();
-				if (ImGui::Selectable(name.c_str(), Selection::IsActiveObject(importer), 0, ImVec2(cellSize, cellSize)))
+				if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
 				{
-					if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
+					Selection::AddActiveObject(importer);
+				}
+				else
+				{
+					Selection::SetActiveObject(importer);
+				}
+			}
+			ImGui::GetWindowDrawList()->AddImage(isDirectory ? m_FolderIcon->GetHandle() : m_FbxIcon->GetHandle(), ImVec2(pos.x + cellIconPadding, pos.y), ImVec2(pos.x + cellSize - cellIconPadding, pos.y + cellSize - cellIconPadding * 2), ImVec2(0, 1), ImVec2(1, 0));
+
+			if (ImGui::IsItemHovered())
+			{
+				if (isDirectory)
+				{
+					if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 					{
-						Selection::AddActiveObject(importer);
-					}
-					else
-					{
-						Selection::SetActiveObject(importer);
+						std::filesystem::path directoryPath = importer->GetFilePath();
+						m_CurrentDirectory /= directoryPath.filename();
 					}
 				}
-				ImGui::GetWindowDrawList()->AddImage(isDirectory ? m_FolderIcon->GetHandle() :  m_FbxIcon->GetHandle(), ImVec2(pos.x + cellIconPadding, pos.y), ImVec2(pos.x + cellSize - cellIconPadding, pos.y + cellSize - cellIconPadding * 2), ImVec2(0, 1), ImVec2(1, 0));
-
-				if (ImGui::IsItemHovered())
+				else
 				{
-					if (isDirectory)
+					if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 					{
-						if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+						std::string stringPath = importer->GetFilePath();
+						std::filesystem::path filePath = stringPath;
+						if (filePath.extension() == ".scene")
 						{
-							std::filesystem::path directoryPath = importer->GetFilePath();
-							m_CurrentDirectory /= directoryPath.filename();
-						}
-					}
-					else
-					{
-						if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-						{
-							std::string stringPath = importer->GetFilePath();
-							std::filesystem::path filePath = stringPath;
-							if (filePath.extension() == ".scene")
-							{
-								EditorSceneManager::Load(stringPath);
-							}
+							EditorSceneManager::Load(stringPath);
 						}
 					}
 				}
+			}
 
-				// TODO main object, selection into OBJECT_ID and dropdown for multiple objects
-				if (ImGui::BeginDragDropSource())
+			// TODO main object, selection into OBJECT_ID and dropdown for multiple objects
+			if (ImGui::BeginDragDropSource())
+			{
+				auto it = importer->GetImportedObjects().find(importer->GetMainObject());
+				if (it != importer->GetImportedObjects().end())
 				{
-					auto it = importer->GetImportedObjects().find(importer->GetMainObject());
-					if (it != importer->GetImportedObjects().end())
-					{
-						ObjectId objectId = it->second;
-						ImGui::SetDragDropPayload("OBJECT_ID", &objectId, sizeof(ObjectId));
-						ImGui::Text("%s", importer->GetName().c_str());
-					}
-					ImGui::EndDragDropSource();
+					ObjectId objectId = it->second;
+					ImGui::SetDragDropPayload("OBJECT_ID", &objectId, sizeof(ObjectId));
+					ImGui::Text("%s", importer->GetName().c_str());
 				}
+				ImGui::EndDragDropSource();
 			}
 		}
 
@@ -243,5 +245,28 @@ namespace Blueberry
 
 		ImGui::PopID();
 		ImGui::PopStyleVar();
+	}
+
+	void ProjectBrowser::UpdateFiles()
+	{
+		m_PreviousDirectory = m_CurrentDirectory;
+		m_CurrentDirectoryFiles.clear();
+
+		for (auto& it : std::filesystem::directory_iterator(m_CurrentDirectory))
+		{
+			auto path = it.path();
+			if (it.is_directory() && path.extension() != ".meta")
+			{
+				m_CurrentDirectoryFiles.emplace_back(path);
+			}
+		}
+		for (auto& it : std::filesystem::directory_iterator(m_CurrentDirectory))
+		{
+			auto path = it.path();
+			if (!it.is_directory() && path.extension() != ".meta")
+			{
+				m_CurrentDirectoryFiles.emplace_back(path);
+			}
+		}
 	}
 }

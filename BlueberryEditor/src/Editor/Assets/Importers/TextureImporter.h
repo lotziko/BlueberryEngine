@@ -20,6 +20,7 @@ namespace Blueberry
 		std::string GetTexturePath();
 
 		bool m_GenerateMipmaps = true;
+		bool m_IsSRGB = true;
 		WrapMode m_WrapMode = WrapMode::Clamp;
 		FilterMode m_FilterMode = FilterMode::Linear;
 	};

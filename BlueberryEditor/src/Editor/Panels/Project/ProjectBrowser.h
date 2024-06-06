@@ -19,10 +19,15 @@ namespace Blueberry
 		void DrawFoldersTree();
 		void DrawFolderNode(const FolderTreeNode& node);
 		void DrawCurrentFolder();
-		void DrawFile(const std::filesystem::directory_entry& file);
+		void DrawFile(const std::filesystem::path& path);
+
+		void UpdateFiles();
 
 	private:
+		std::filesystem::path m_PreviousDirectory;
 		std::filesystem::path m_CurrentDirectory;
+		std::vector<std::filesystem::path> m_CurrentDirectoryFiles;
+
 		FolderTree m_FolderTree;
 		const char* m_OpenedModalPopupId = nullptr;
 

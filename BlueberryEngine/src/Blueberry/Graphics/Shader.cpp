@@ -4,6 +4,8 @@
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Core\ClassDB.h"
 
+#include "Blueberry\Graphics\DefaultTextures.h"
+
 namespace Blueberry
 {
 	DATA_DEFINITION(TextureParameterData)
@@ -20,6 +22,16 @@ namespace Blueberry
 		m_Name = name;
 	}
 
+	const std::string& TextureParameterData::GetDefaultTextureName() const
+	{
+		return m_DefaultTextureName;
+	}
+
+	void TextureParameterData::SetDefaultTextureName(const std::string& name)
+	{
+		m_DefaultTextureName = name;
+	}
+
 	const int& TextureParameterData::GetIndex() const
 	{
 		return m_Index;
@@ -34,6 +46,7 @@ namespace Blueberry
 	{
 		BEGIN_OBJECT_BINDING(TextureParameterData)
 		BIND_FIELD(FieldInfo(TO_STRING(m_Name), &TextureParameterData::m_Name, BindingType::String))
+		BIND_FIELD(FieldInfo(TO_STRING(m_DefaultTextureName), &TextureParameterData::m_DefaultTextureName, BindingType::String))
 		BIND_FIELD(FieldInfo(TO_STRING(m_Index), &TextureParameterData::m_Index, BindingType::Int))
 		END_OBJECT_BINDING()
 	}
@@ -88,6 +101,23 @@ namespace Blueberry
 		m_TextureParameters = parameters;
 	}
 
+	const Texture2D* ShaderData::GetDefaultTexture(const std::string& parameterName) const
+	{
+		for (auto& textureParameter : m_TextureParameters)
+		{
+			TextureParameterData* parameterData = textureParameter.Get();
+			if (parameterData->GetName() == parameterName)
+			{
+				std::string name = parameterData->GetDefaultTextureName();
+				if (name == "white")
+				{
+					return DefaultTextures::GetWhite();
+				}
+			}
+		}
+		return nullptr;
+	}
+
 	void ShaderData::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(ShaderData)
@@ -99,7 +129,7 @@ namespace Blueberry
 		END_OBJECT_BINDING()
 	}
 
-	const ShaderData* Shader::GetData()
+	const ShaderData* Shader::GetData() const
 	{
 		return m_Data.Get();
 	}

@@ -95,7 +95,7 @@ namespace Blueberry
 			{
 				auto light = static_cast<Light*>(component.second);
 				auto transform = light->GetEntity()->GetTransform();
-				Gizmos::DrawCircle(transform->GetLocalPosition(), light->GetRange());
+				Gizmos::DrawCircle(transform->GetPosition(), light->GetRange());
 			}
 			Gizmos::End();
 		}		

@@ -157,8 +157,13 @@ namespace Blueberry
 		{
 			if (rawProperty.second.first == "Texture2D")
 			{
+				std::string name = rawProperty.first;
+				std::string defaultTextureName = rawProperty.second.second;
+				defaultTextureName.erase(std::remove(defaultTextureName.begin(), defaultTextureName.end(), '\"'), defaultTextureName.end());
+
 				TextureParameterData* parameter = new TextureParameterData();
-				parameter->SetName(rawProperty.first);
+				parameter->SetName(name);
+				parameter->SetDefaultTextureName(defaultTextureName);
 				// TODO index
 				textureParameters.emplace_back(DataPtr<TextureParameterData>(parameter));
 			}
