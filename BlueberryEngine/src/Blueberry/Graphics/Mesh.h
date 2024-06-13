@@ -20,8 +20,11 @@ namespace Blueberry
 		
 		void SetVertices(const Vector3* vertices, const UINT& vertexCount);
 		void SetNormals(const Vector3* normals, const UINT& vertexCount);
+		void SetTangents(const Vector4* tangents, const UINT& vertexCount);
 		void SetIndices(const UINT* indices, const UINT& indexCount);
 		void SetUVs(const int& channel, const Vector2* uvs, const UINT& uvCount);
+
+		void GenerateTangents();
 
 		const Topology& GetTopology();
 		void SetTopology(const Topology& topology);
@@ -44,6 +47,7 @@ namespace Blueberry
 
 		Vector3* m_Vertices;
 		Vector3* m_Normals;
+		Vector4* m_Tangents;
 		UINT* m_Indices;
 		Vector2* m_UVs[8] = {};
 
@@ -58,5 +62,6 @@ namespace Blueberry
 		Topology m_Topology = Topology::TriangleList;
 
 		friend struct GfxDrawingOperation;
+		friend class TangentGenerator;
 	};
 }

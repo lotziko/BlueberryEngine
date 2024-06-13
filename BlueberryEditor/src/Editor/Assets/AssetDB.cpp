@@ -24,14 +24,14 @@ namespace Blueberry
 		std::vector<AssetImporter*> importersToImport;
 		PathModifyCache::Load();
 		ImporterInfoCache::Load();
+		
 		for (auto& it : std::filesystem::recursive_directory_iterator(Path::GetAssetsPath()))
 		{
-			AssetImporter* importer = CreateImporter(it.path());
-
+			AssetImporter* importer = CreateOrGetImporter(it.path());
 			if (importer != nullptr)
 			{
 				s_GuidToPath.insert_or_assign(importer->GetGuid(), importer->GetRelativeFilePath());
-				// Delete asset from cache if it dirty
+				// Delete asset from cache if it is dirty
 				auto assetLastWriteTime = std::chrono::duration_cast<std::chrono::seconds>(std::filesystem::last_write_time(importer->GetFilePath()).time_since_epoch()).count();
 				auto metaLastWriteTime = std::chrono::duration_cast<std::chrono::seconds>(std::filesystem::last_write_time(importer->GetMetaFilePath()).time_since_epoch()).count();
 				auto lastWriteCacheInfo = PathModifyCache::Get(importer->GetRelativeFilePath());
@@ -69,6 +69,7 @@ namespace Blueberry
 				}
 			}
 		}
+		
 		for (AssetImporter* importer : importersToImport)
 		{
 			importer->ImportDataIfNeeded();
@@ -96,7 +97,7 @@ namespace Blueberry
 		}
 		return nullptr;
 	}
-
+	
 	std::vector<std::pair<Object*, FileId>> AssetDB::LoadAssetObjects(const Guid& guid, const std::unordered_map<FileId, ObjectId>& existingObjects)
 	{
 		BinarySerializer/*YamlSerializer*/ serializer;
@@ -214,7 +215,7 @@ namespace Blueberry
 		s_DirtyAssets.clear();
 	}
 
-	AssetImporter* AssetDB::CreateImporter(const std::filesystem::path& path)
+	AssetImporter* AssetDB::CreateOrGetImporter(const std::filesystem::path& path)
 	{
 		// Skip not existing pathes
 		if (!std::filesystem::exists(path))
@@ -253,18 +254,18 @@ namespace Blueberry
 			auto importerTypeIt = s_ImporterTypes.find(extensionString);
 			if (importerTypeIt != s_ImporterTypes.end())
 			{
-				importer = AssetImporter::Create(importerTypeIt->second, relativePath, relativeMetaPath);
+				importer = AssetImporter::CreateNew(importerTypeIt->second, relativePath, relativeMetaPath);
 			}
 			else
 			{
-				importer = AssetImporter::Create(DefaultImporter::Type, relativePath, relativeMetaPath);
+				importer = AssetImporter::CreateNew(DefaultImporter::Type, relativePath, relativeMetaPath);
 				BB_INFO("AssetImporter for extension " << extensionString << " does not exist and default importer was created.");
 			}
 		}
 		else
 		{
 			// Create importer from meta file
-			importer = AssetImporter::Load(relativePath, relativeMetaPath);
+			importer = AssetImporter::CreateFromMeta(relativePath, relativeMetaPath);
 			ImporterInfoCache::Get(importer);
 		}
 		s_Importers.insert_or_assign(relativePathString, importer);

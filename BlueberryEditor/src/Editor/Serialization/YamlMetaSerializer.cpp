@@ -43,8 +43,16 @@ namespace Blueberry
 		ryml::csubstr key = node.key();
 		std::string typeName(key.str, key.size());
 		ClassDB::ClassInfo info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
-		Object* instance = (Object*)info.createInstance();
-		m_DeserializedObjects.emplace_back(std::make_pair(instance, 0));
-		DeserializeNode(root[1], Context::Create(instance, instance->GetType()));
+		// Importer is only created during first deserialization
+		if (m_FileIdToObject.size() == 0)
+		{
+			Object* instance = (Object*)info.createInstance();
+			m_DeserializedObjects.emplace_back(std::make_pair(instance, 0));
+		}
+		else
+		{
+			Object* instance = m_FileIdToObject.begin()->second;
+			DeserializeNode(root[1], Context::Create(instance, instance->GetType()));
+		}
 	}
 }

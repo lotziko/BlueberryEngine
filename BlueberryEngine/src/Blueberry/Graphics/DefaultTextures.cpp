@@ -6,6 +6,19 @@
 
 namespace Blueberry
 {
+	Texture2D* DefaultTextures::GetTexture(const std::string& name)
+	{
+		if (name == "white")
+		{
+			return GetWhite();
+		}
+		if (name == "normal")
+		{
+			return GetNormal();
+		}
+		return nullptr;
+	}
+
 	Texture2D* DefaultTextures::GetWhite()
 	{
 		if (s_WhiteTexture == nullptr)
@@ -30,5 +43,34 @@ namespace Blueberry
 			s_WhiteTexture = Texture2D::Create(properties);
 		}
 		return s_WhiteTexture;
+	}
+
+	Texture2D* DefaultTextures::GetNormal()
+	{
+		if (s_NormalTexture == nullptr)
+		{
+			const int size = 2;
+			byte data[size * size * 4];
+			for (int i = 0; i < size * size * 4; i += 4)
+			{
+				data[i] = 127;
+				data[i + 1] = 127;
+				data[i + 2] = 255;
+				data[i + 3] = 255;
+			}
+
+			TextureProperties properties = {};
+
+			properties.width = size;
+			properties.height = size;
+			properties.data = data;
+			properties.dataSize = size * size * 4;
+			properties.format = TextureFormat::R8G8B8A8_UNorm;
+			properties.wrapMode = WrapMode::Repeat;
+			properties.filterMode = FilterMode::Point;
+
+			s_NormalTexture = Texture2D::Create(properties);
+		}
+		return s_NormalTexture;
 	}
 }

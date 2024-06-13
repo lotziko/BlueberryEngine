@@ -13,13 +13,16 @@ project "BlueberryEngine"
 	files
 	{
 		"src/**.h",
-		"src/**.cpp"
+		"src/**.cpp",
+		"vendor/mikktspace/**.h",
+		"vendor/mikktspace/**.cpp",
 	}
 
 	includedirs
 	{
 		"src",
-		"%{IncludeDir.imgui}"
+		"%{IncludeDir.imgui}",
+		"%{IncludeDir.mikktspace}"
 	}
 
 	links

@@ -33,7 +33,10 @@ namespace Blueberry
 			auto slot = shader->m_TextureSlots.find(pair.first);
 			if (slot != shader->m_TextureSlots.end())
 			{
-				textures[slot->second] = pair.second.Get()->m_Texture;
+				if (pair.second.IsValid())
+				{
+					textures[slot->second] = pair.second.Get()->m_Texture;
+				}
 			}
 		}
 

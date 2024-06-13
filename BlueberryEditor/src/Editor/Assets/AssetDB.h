@@ -14,9 +14,6 @@ namespace Blueberry
 	public:
 		static void Refresh();
 
-		//static AssetImporter* Import(const std::string& relativePath);
-		//static AssetImporter* Import(const Guid& guid);
-
 		static AssetImporter* GetImporter(const std::string& path);
 		static AssetImporter* GetImporter(const Guid& guid);
 
@@ -36,7 +33,7 @@ namespace Blueberry
 		static void SaveAssets();
 
 	private:
-		static AssetImporter* CreateImporter(const std::filesystem::path& path);
+		static AssetImporter* CreateOrGetImporter(const std::filesystem::path& path);
 
 	public:
 		static void Register(const std::string& extension, const std::size_t& importerType);

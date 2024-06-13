@@ -5,13 +5,16 @@
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\GfxBuffer.h"
 
+#include "mikktspace\mikktspace.h"
+
 namespace Blueberry
 {
 	OBJECT_DEFINITION(Object, Mesh)
 
 	const int VERTICES_BIT = 1;
 	const int NORMALS_BIT = 2;
-	const int UV0_BIT = 4;
+	const int TANGENTS_BIT = 4;
+	const int UV0_BIT = 8;
 
 	Mesh::~Mesh()
 	{
@@ -60,6 +63,17 @@ namespace Blueberry
 		}
 	}
 
+	void Mesh::SetTangents(const Vector4* tangents, const UINT& vertexCount)
+	{
+		if (m_Tangents == nullptr || vertexCount > m_VertexCount)
+		{
+			m_Tangents = new Vector4[vertexCount];
+			memcpy(m_Tangents, tangents, sizeof(Vector4) * vertexCount);
+			m_ChannelFlags |= TANGENTS_BIT;
+			m_BufferIsDirty = true;
+		}
+	}
+
 	void Mesh::SetIndices(const UINT* indices, const UINT& indexCount)
 	{
 		if (indexCount > m_IndexCount)
@@ -84,6 +98,94 @@ namespace Blueberry
 			m_ChannelFlags |= UV0_BIT;
 			m_BufferIsDirty = true;
 		}
+	}
+
+	// Based on https://www.turais.de/using-mikktspace-in-your-project/
+	class TangentGenerator
+	{
+	public:
+		void Generate(Mesh* mesh)
+		{
+			m_Iface.m_getNumFaces = GetNumFaces;
+			m_Iface.m_getNumVerticesOfFace = GetNumVerticesOfFace;
+
+			m_Iface.m_getNormal = GetNormal;
+			m_Iface.m_getPosition = GetPosition;
+			m_Iface.m_getTexCoord = GetTexCoords;
+			m_Iface.m_setTSpaceBasic = SetTspaceBasic;
+
+			m_Context.m_pInterface = &m_Iface;
+			m_Context.m_pUserData = mesh;
+
+			genTangSpaceDefault(&this->m_Context);
+		}
+
+	private:
+		static int GetNumFaces(const SMikkTSpaceContext* context)
+		{
+			Mesh* mesh = static_cast<Mesh*> (context->m_pUserData);
+			return mesh->m_IndexCount / 3;
+		}
+
+		static int GetNumVerticesOfFace(const SMikkTSpaceContext* context, int iFace)
+		{
+			Mesh* mesh = static_cast<Mesh*> (context->m_pUserData);
+			return 3;
+		}
+
+		static void GetPosition(const SMikkTSpaceContext* context, float outpos[], int iFace, int iVert)
+		{
+			Mesh* mesh = static_cast<Mesh*> (context->m_pUserData);
+			Vector3 position = mesh->m_Vertices[mesh->m_Indices[iFace * 3 + iVert]];
+
+			outpos[0] = position.x;
+			outpos[1] = position.y;
+			outpos[2] = position.z;
+		}
+
+		static void GetNormal(const SMikkTSpaceContext* context, float outnormal[], int iFace, int iVert)
+		{
+			Mesh* mesh = static_cast<Mesh*> (context->m_pUserData);
+			Vector3 normal = mesh->m_Normals[mesh->m_Indices[iFace * 3 + iVert]];
+
+			outnormal[0] = normal.x;
+			outnormal[1] = normal.y;
+			outnormal[2] = normal.z;
+		}
+
+		static void GetTexCoords(const SMikkTSpaceContext* context, float outuv[], int iFace, int iVert)
+		{
+			Mesh* mesh = static_cast<Mesh*> (context->m_pUserData);
+			Vector2 uv = mesh->m_UVs[0][mesh->m_Indices[iFace * 3 + iVert]];
+
+			outuv[0] = uv.x;
+			outuv[1] = uv.y;
+		}
+
+		static void SetTspaceBasic(const SMikkTSpaceContext *context, const float tangentu[], float fSign, int iFace, int iVert)
+		{
+			Vector4 tangent;
+			tangent.x = tangentu[0];
+			tangent.y = tangentu[1];
+			tangent.z = tangentu[2];
+			tangent.w = fSign;
+
+			Mesh* mesh = static_cast<Mesh*> (context->m_pUserData);
+			mesh->m_Tangents[mesh->m_Indices[iFace * 3 + iVert]] = tangent;
+		}
+
+	private:
+		SMikkTSpaceInterface m_Iface = {};
+		SMikkTSpaceContext m_Context = {};
+	};
+	
+	void Mesh::GenerateTangents()
+	{
+		m_Tangents = new Vector4[m_VertexCount];
+		TangentGenerator generator;
+		generator.Generate(this);
+		m_ChannelFlags |= TANGENTS_BIT;
+		m_BufferIsDirty = true;
 	}
 
 	const Topology& Mesh::GetTopology()
@@ -114,6 +216,10 @@ namespace Blueberry
 			{
 				vertexBufferSize += m_VertexCount * sizeof(Vector3) / sizeof(float);
 			}
+			if (m_Tangents != nullptr)
+			{
+				vertexBufferSize += m_VertexCount * sizeof(Vector4) / sizeof(float);
+			}
 			for (int i = 0; i < 8; ++i)
 			{
 				if (m_UVs[i] != nullptr)
@@ -130,6 +236,7 @@ namespace Blueberry
 			float* bufferPointer = m_VertexData.data();
 			Vector3* vertexPointer = m_Vertices;
 			Vector3* normalPointer = m_Normals;
+			Vector4* tangentPointer = m_Tangents;
 			Vector2* uvPointer = m_UVs[0];
 
 			for (UINT i = 0; i < m_VertexCount; ++i)
@@ -142,6 +249,12 @@ namespace Blueberry
 					memcpy(bufferPointer, normalPointer, sizeof(Vector3));
 					bufferPointer += 3;
 					normalPointer += 1;
+				}
+				if (tangentPointer != nullptr)
+				{
+					memcpy(bufferPointer, tangentPointer, sizeof(Vector4));
+					bufferPointer += 4;
+					tangentPointer += 1;
 				}
 				if (uvPointer != nullptr)
 				{
@@ -197,6 +310,10 @@ namespace Blueberry
 		if (m_ChannelFlags & NORMALS_BIT)
 		{
 			layout.Append(VertexLayout::ElementType::Normal);
+		}
+		if (m_ChannelFlags & TANGENTS_BIT)
+		{
+			layout.Append(VertexLayout::ElementType::Tangent);
 		}
 		if (m_ChannelFlags & UV0_BIT)
 		{

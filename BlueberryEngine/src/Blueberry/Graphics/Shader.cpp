@@ -101,23 +101,6 @@ namespace Blueberry
 		m_TextureParameters = parameters;
 	}
 
-	const Texture2D* ShaderData::GetDefaultTexture(const std::string& parameterName) const
-	{
-		for (auto& textureParameter : m_TextureParameters)
-		{
-			TextureParameterData* parameterData = textureParameter.Get();
-			if (parameterData->GetName() == parameterName)
-			{
-				std::string name = parameterData->GetDefaultTextureName();
-				if (name == "white")
-				{
-					return DefaultTextures::GetWhite();
-				}
-			}
-		}
-		return nullptr;
-	}
-
 	void ShaderData::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(ShaderData)

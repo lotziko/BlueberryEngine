@@ -87,7 +87,7 @@ namespace Blueberry
 			}
 		}
 
-		{
+		/*{
 			PerDrawConstantBuffer::BindData(Matrix::Identity);
 			Gizmos::SetColor(Color(1, 1, 1, 1));
 			Gizmos::Begin();
@@ -98,6 +98,6 @@ namespace Blueberry
 				Gizmos::DrawCircle(transform->GetPosition(), light->GetRange());
 			}
 			Gizmos::End();
-		}		
+		}		*/
 	}
 }

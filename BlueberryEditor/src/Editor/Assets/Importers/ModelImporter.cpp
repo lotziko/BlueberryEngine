@@ -5,15 +5,53 @@
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Components\MeshRenderer.h"
 #include "Blueberry\Graphics\Mesh.h"
-#include "openfbx\ofbx.h"
+#include "Blueberry\Graphics\Material.h"
+
+#include "fbxsdk.h"
 
 namespace Blueberry
 {
+	DATA_DEFINITION(ModelMaterialData)
 	OBJECT_DEFINITION(AssetImporter, ModelImporter)
+
+	const std::string& ModelMaterialData::GetName()
+	{
+		return m_Name;
+	}
+
+	void ModelMaterialData::SetName(const std::string& name)
+	{
+		m_Name = name;
+	}
+
+	Material* ModelMaterialData::GetMaterial()
+	{
+		return m_Material.Get();
+	}
+
+	void ModelMaterialData::SetMaterial(Material* material)
+	{
+		m_Material = material;
+	}
+
+	void ModelMaterialData::BindProperties()
+	{
+		BEGIN_OBJECT_BINDING(ModelMaterialData)
+		BIND_FIELD(FieldInfo(TO_STRING(m_Name), &ModelMaterialData::m_Name, BindingType::String))
+		BIND_FIELD(FieldInfo(TO_STRING(m_Material), &ModelMaterialData::m_Material, BindingType::ObjectPtr).SetObjectType(Material::Type))
+		END_OBJECT_BINDING()
+	}
+
+	const std::vector<DataPtr<ModelMaterialData>>& ModelImporter::GetMaterials()
+	{
+		return m_Materials;
+	}
 
 	void ModelImporter::BindProperties()
 	{
-
+		BEGIN_OBJECT_BINDING(ModelImporter)
+		BIND_FIELD(FieldInfo(TO_STRING(m_Materials), &ModelImporter::m_Materials, BindingType::DataArray).SetObjectType(ModelMaterialData::Type))
+		END_OBJECT_BINDING()
 	}
 
 	void ModelImporter::ImportData()
@@ -48,31 +86,26 @@ namespace Blueberry
 		}
 		else
 		{
-			FILE* fp = fopen(GetFilePath().c_str(), "rb");
-			fseek(fp, 0, SEEK_END);
-			long fileSize = ftell(fp);
-			fseek(fp, 0, SEEK_SET);
-			auto* content = new ofbx::u8[fileSize];
-			fread(content, 1, fileSize, fp);
+			// Based on https://www.youtube.com/watch?v=oIKnBVP2Jgg
+			fbxsdk::FbxManager* manager = fbxsdk::FbxManager::Create();
+			fbxsdk::FbxIOSettings* ios = fbxsdk::FbxIOSettings::Create(manager, IOSROOT);
+			manager->SetIOSettings(ios);
+			fbxsdk::FbxImporter* importer = fbxsdk::FbxImporter::Create(manager, "");
+			if (!importer->Initialize(GetFilePath().c_str(), -1, manager->GetIOSettings()))
+			{
+				BB_ERROR("Failed to initialize FBX importer: " << importer->GetStatus().GetErrorString());
+				return;
+			}
 
-			ofbx::LoadFlags flags =
-				ofbx::LoadFlags::IGNORE_BLEND_SHAPES |
-				ofbx::LoadFlags::IGNORE_CAMERAS |
-				ofbx::LoadFlags::IGNORE_LIGHTS |
-				ofbx::LoadFlags::IGNORE_SKIN |
-				ofbx::LoadFlags::IGNORE_BONES |
-				ofbx::LoadFlags::IGNORE_PIVOTS |
-				ofbx::LoadFlags::IGNORE_POSES |
-				ofbx::LoadFlags::IGNORE_VIDEOS |
-				ofbx::LoadFlags::IGNORE_LIMBS |
-				ofbx::LoadFlags::IGNORE_ANIMATIONS;
+			//Matrix rotationMatrix = Matrix::CreateRotationX(ToRadians(-90));
 
-			ofbx::IScene* scene = ofbx::load((ofbx::u8*)content, fileSize, (ofbx::u16)flags);
-			int indicesOffset = 0;
-			int meshCount = scene->getMeshCount();
+			fbxsdk::FbxScene* scene = fbxsdk::FbxScene::Create(manager, "scene");
+			importer->Import(scene);
+
+			fbxsdk::FbxNode* rootNode = scene->GetRootNode();
+			int meshCount = rootNode->GetChildCount();
 
 			std::vector<Object*> objects;
-
 			Transform* root = nullptr;
 			if (meshCount > 1)
 			{
@@ -86,140 +119,194 @@ namespace Blueberry
 				AddImportedObject(entity, entityFileId);
 				SetMainObject(entityFileId);
 			}
-
-			for (int meshId = 0; meshId < meshCount; ++meshId)
+			
+			for (int i = 0; i < meshCount; i++)
 			{
-				const ofbx::Mesh* mesh = scene->getMesh(meshId); 
-				const ofbx::GeometryData& geom = mesh->getGeometryData();
-				ofbx::Vec3Attributes positions = geom.getPositions();
-				ofbx::Vec3Attributes normals = geom.getNormals();
-				ofbx::Vec2Attributes uvs = geom.getUVs();
-
-				ofbx::DVec3 scale = mesh->getLocalScaling();
-				ofbx::DVec3 translation = mesh->getLocalTranslation();
-				ofbx::DVec3 rotation = mesh->getLocalRotation();
-
-				Mesh* object = Mesh::Create();
-				size_t meshFileId = TO_HASH(mesh->name);
-				ObjectDB::AllocateIdToGuid(object, guid, meshFileId);
-
-				Entity* entity = Object::Create<Entity>();
-				Transform* transform = Object::Create<Transform>();
-				if (root != nullptr)
+				fbxsdk::FbxNode* childNode = rootNode->GetChild(i);
+				if (childNode->GetLodGroup())
 				{
-					transform->SetParent(root);
+					continue;
 				}
-				transform->SetLocalPosition(Vector3(translation.x / scale.x, translation.y / scale.y, translation.z / scale.z));
-				transform->SetLocalRotation(Quaternion::CreateFromYawPitchRoll(ToRadians(rotation.y), ToRadians(rotation.x + 90), ToRadians(rotation.z)));
-				MeshRenderer* meshRenderer = Object::Create<MeshRenderer>();
-				meshRenderer->SetMesh(object);
-				// TODO material
-				entity->SetName(mesh->name);
-				entity->AddComponent(transform);
-				entity->AddComponent(meshRenderer);
-
-				size_t entityFileId = TO_HASH(std::string(mesh->name).append("_Entity"));
-				ObjectDB::AllocateIdToGuid(entity, guid, entityFileId);
-				AddImportedObject(entity, entityFileId);
-				if (root == nullptr)
+				if (fbxsdk::FbxMesh* fbxMesh = childNode->GetMesh())
 				{
-					SetMainObject(entityFileId);
-				}
-				objects.emplace_back(entity);
-
-				std::vector<ofbx::Vec3> meshPositions;
-				std::vector<ofbx::Vec3> meshNormals;
-				std::vector<ofbx::Vec2> meshUVs;
-				std::vector<UINT> meshIndices;
-
-				// Each material on the mesh has a partition (Unity submesh)
-				for (int partitionId = 0; partitionId < geom.getPartitionCount(); ++partitionId)
-				{
-					const ofbx::GeometryPartition& partition = geom.getPartition(partitionId);
-					for (int polygonId = 0; polygonId < partition.polygon_count; ++polygonId)
+					if (fbxMesh->RemoveBadPolygons() < 0)
 					{
-						const ofbx::GeometryPartition::Polygon& polygon = partition.polygons[polygonId];
+						continue;
+					}
 
-						for (int i = polygon.from_vertex; i < polygon.from_vertex + polygon.vertex_count; ++i) 
+					//fbxsdk::FbxGeometryConverter converter(manager);
+					//fbxMesh = static_cast<fbxsdk::FbxMesh*>(converter.Triangulate(fbxMesh, true));
+					if (fbxMesh == nullptr || fbxMesh->RemoveBadPolygons() < 0)
+					{
+						continue;
+					}
+
+					std::string meshName = childNode->GetName();
+					int polygonCount = fbxMesh->GetPolygonCount();
+					if (polygonCount <= 0)
+					{
+						continue;
+					}
+
+					Mesh* object = Mesh::Create();
+					size_t meshFileId = TO_HASH(meshName);
+					ObjectDB::AllocateIdToGuid(object, guid, meshFileId);
+
+					fbxsdk::FbxDouble3 fbxTranslation = childNode->LclTranslation.Get();
+					fbxsdk::FbxDouble3 fbxRotation = childNode->LclRotation.Get();
+					fbxsdk::FbxDouble3 fbxScale = childNode->LclScaling.Get();
+
+					Entity* entity = Object::Create<Entity>();
+					Transform* transform = Object::Create<Transform>();
+					if (root != nullptr)
+					{
+						transform->SetParent(root);
+					}
+					transform->SetLocalPosition(Vector3(fbxTranslation[0] / fbxScale[0], fbxTranslation[1] / fbxScale[1], fbxTranslation[2] / fbxScale[2]));
+					transform->SetLocalRotation(Quaternion::CreateFromYawPitchRoll(ToRadians(fbxRotation[1]), ToRadians(fbxRotation[0] + 90), ToRadians(fbxRotation[2])));
+
+					MeshRenderer* meshRenderer = Object::Create<MeshRenderer>();
+					meshRenderer->SetMesh(object);
+					// TODO material
+					entity->SetName(meshName);
+					entity->AddComponent(transform);
+					entity->AddComponent(meshRenderer);
+
+					size_t entityFileId = TO_HASH(std::string(meshName).append("_Entity"));
+					ObjectDB::AllocateIdToGuid(entity, guid, entityFileId);
+					AddImportedObject(entity, entityFileId);
+					if (root == nullptr)
+					{
+						SetMainObject(entityFileId);
+					}
+					objects.emplace_back(entity);
+
+					int fbxControlPointsCount = fbxMesh->GetControlPointsCount();
+					fbxsdk::FbxVector4* fbxControlPoints = fbxMesh->GetControlPoints();
+
+					fbxsdk::FbxArray<fbxsdk::FbxVector4> fbxNormals;
+					fbxMesh->GetPolygonVertexNormals(fbxNormals);
+
+					fbxsdk::FbxLayerElementArrayTemplate<fbxsdk::FbxVector4>* fbxTangents;
+					fbxMesh->GetTangents(&fbxTangents);
+
+					fbxsdk::FbxStringList fbxUvNames;
+					fbxMesh->GetUVSetNames(fbxUvNames);
+					fbxsdk::FbxArray<fbxsdk::FbxVector2> fbxUvs;
+					if (fbxUvNames.GetCount() > 0)
+					{
+						fbxMesh->GetPolygonVertexUVs(fbxUvNames[0], fbxUvs);
+					}
+
+					int verticesCount = fbxMesh->GetPolygonVertexCount();
+					Vector3* verticesNormalsTangentsUvs = new Vector3[verticesCount];
+
+					// Vertices
+					int* verticesPtr = fbxMesh->mPolygonVertices;
+					for (int i = 0, n = fbxMesh->mPolygonVertices.GetCount(); i < n; ++i, ++verticesPtr)
+					{
+						fbxsdk::FbxVector4 vertex = fbxControlPoints[*verticesPtr];
+						// Vector4 point = Vector4::Transform(Vector4(vertex[0], vertex[1], vertex[2], 1.0f), rotationMatrix);
+						verticesNormalsTangentsUvs[i] = Vector3(vertex[0], vertex[2], -vertex[1]);
+					}
+					object->SetVertices(verticesNormalsTangentsUvs, verticesCount);
+
+					// Indices
+					int indicesCount = 0;
+					fbxsdk::FbxMesh::PolygonDef* polygonPtr = fbxMesh->mPolygons;
+					for (int i = 0, n = fbxMesh->GetPolygonCount(); i < n; ++i, ++polygonPtr)
+					{
+						indicesCount += polygonPtr->mSize == 3 ? 3 : 6;
+					}
+					polygonPtr = fbxMesh->mPolygons;
+					UINT* indices = new UINT[indicesCount];
+					UINT* indicesPtr = indices;
+					for (int i = 0, n = fbxMesh->GetPolygonCount(); i < n; ++i, ++polygonPtr)
+					{
+						fbxsdk::FbxMesh::PolygonDef polygon = *polygonPtr;
+						if (polygon.mSize == 3)
 						{
-							ofbx::Vec3 v = positions.get(i);
-							meshPositions.emplace_back(v);
-						}
-
-						bool hasNormals = normals.values != nullptr;
-						if (hasNormals) {
-							// normals.indices might be different than positions.indices
-							// but normals.get(i) is normal for positions.get(i)
-							for (int i = polygon.from_vertex; i < polygon.from_vertex + polygon.vertex_count; ++i) 
-							{
-								ofbx::Vec3 n = normals.get(i);
-								ofbx::Vec2 u = uvs.get(i);
-								meshNormals.emplace_back(n);
-								meshUVs.emplace_back(u);
-							}
-						}
-
-
-						bool hasUvs = uvs.values != nullptr;
-
-						if (polygon.vertex_count == 3)
-						{
-							meshIndices.emplace_back(polygon.from_vertex);
-							meshIndices.emplace_back(polygon.from_vertex + 1);
-							meshIndices.emplace_back(polygon.from_vertex + 2);
-						}
-						else if (polygon.vertex_count == 4)
-						{
-							meshIndices.emplace_back(polygon.from_vertex);
-							meshIndices.emplace_back(polygon.from_vertex + 1);
-							meshIndices.emplace_back(polygon.from_vertex + 2);
-							meshIndices.emplace_back(polygon.from_vertex);
-							meshIndices.emplace_back(polygon.from_vertex + 2);
-							meshIndices.emplace_back(polygon.from_vertex + 3);
+							*indicesPtr++ = polygon.mIndex;
+							*indicesPtr++ = polygon.mIndex + 1;
+							*indicesPtr++ = polygon.mIndex + 2;
 						}
 						else
 						{
-							// TODO
+							*indicesPtr++ = polygon.mIndex;
+							*indicesPtr++ = polygon.mIndex + 1;
+							*indicesPtr++ = polygon.mIndex + 2;
+							*indicesPtr++ = polygon.mIndex;
+							*indicesPtr++ = polygon.mIndex + 2;
+							*indicesPtr++ = polygon.mIndex + 3;
 						}
 					}
+					object->SetIndices(indices, indicesCount);
+					delete[] indices;
+
+					// Normals
+					if (fbxNormals.Size() > 0)
+					{
+						for (int i = 0; i < verticesCount; ++i)
+						{
+							fbxsdk::FbxVector4 fbxNormal = fbxNormals[i];
+							//Vector4 direction = Vector4::Transform(Vector4(fbxNormal[0], fbxNormal[1], fbxNormal[2], 0.0f), rotationMatrix);
+							verticesNormalsTangentsUvs[i] = Vector3(fbxNormal[0], fbxNormal[2], -fbxNormal[1]);
+						}
+						object->SetNormals(verticesNormalsTangentsUvs, verticesCount);
+					}
+
+					// Uvs
+					Vector2* uvs = (Vector2*)verticesNormalsTangentsUvs;
+					if (fbxUvs.Size() > 0)
+					{
+						for (int i = 0; i < verticesCount; ++i)
+						{
+							fbxsdk::FbxVector2 fbxUv = fbxUvs[i];
+							uvs[i] = Vector2(fbxUv[0], fbxUv[1]);
+						}
+						object->SetUVs(0, uvs, verticesCount);
+					}
+					delete[] verticesNormalsTangentsUvs;
+
+					if (fbxUvs.Size() > 0)
+					{
+						object->GenerateTangents();
+					}
+					object->Apply();
+
+					for (int i = 0; i < childNode->GetMaterialCount(); i++)
+					{
+						fbxsdk::FbxSurfaceMaterial* fbxMaterial = childNode->GetMaterial(i);
+						std::string name = fbxMaterial->GetName();
+
+						auto index = std::find_if(m_Materials.begin(), m_Materials.end(), [name](DataPtr<ModelMaterialData> const& d) { return d.Get()->GetName() == name; });
+						if (index == m_Materials.end())
+						{
+							ModelMaterialData* data = new ModelMaterialData();
+							data->SetName(name);
+							m_Materials.emplace_back(data);
+						}
+						else
+						{
+							Material* material = index->Get()->GetMaterial();
+							if (material != nullptr)
+							{
+								meshRenderer->SetMaterial(material);
+							}
+						}
+					}
+
+					BB_INFO("Mesh \"" << meshName << "\" imported.");
+					object->SetName(meshName);
+					AddImportedObject(object, meshFileId);
+					objects.emplace_back(object);
 				}
-
-				// Rotate x axis
-				Vector3* verticesPtr = (Vector3*)meshPositions.data();
-				Vector3* normalsPtr = (Vector3*)meshNormals.data();
-				Matrix rotationMatrix = Matrix::CreateRotationX(ToRadians(-90));
-				Vector4 point = Vector4(0, 0, 0, 1);
-				Vector4 direction = Vector4::Zero;
-				for (int i = 0; i < meshPositions.size(); i++)
-				{
-					memcpy(&point, verticesPtr, sizeof(float) * 3);
-					point = Vector4::Transform(point, rotationMatrix);
-					memcpy(verticesPtr, &point, sizeof(float) * 3);
-
-					memcpy(&direction, normalsPtr, sizeof(float) * 3);
-					direction = Vector4::Transform(direction, rotationMatrix);
-					memcpy(normalsPtr, &direction, sizeof(float) * 3);
-
-					++verticesPtr;
-					++normalsPtr;
-				}
-
-				object->SetVertices((Vector3*)meshPositions.data(), meshPositions.size());
-				object->SetNormals((Vector3*)meshNormals.data(), meshNormals.size());
-				object->SetUVs(0, (Vector2*)meshUVs.data(), meshUVs.size());
-				object->SetIndices((UINT*)meshIndices.data(), meshIndices.size());
-				object->Apply();
-
-				BB_INFO("Mesh \"" << mesh->name << "\" imported.");
-				object->SetName(mesh->name);
-				AddImportedObject(object, meshFileId);
-				objects.emplace_back(object);
 			}
 
+			importer->Destroy();
+			manager->Destroy();
+
 			AssetDB::SaveAssetObjectsToCache(objects);
-			scene->destroy();
-			delete[] content;
-			fclose(fp);
 		}
 	}
 

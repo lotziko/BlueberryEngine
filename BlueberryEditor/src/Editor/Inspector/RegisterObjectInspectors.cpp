@@ -10,6 +10,7 @@
 #include "Concrete\MaterialInspector.h"
 #include "Concrete\AssetImporterInspector.h"
 #include "Concrete\TextureImporterInspector.h"
+#include "Concrete\ModelImporterInspector.h"
 
 namespace Blueberry
 {
@@ -22,6 +23,7 @@ namespace Blueberry
 		REGISTER_OBJECT_INSPECTOR(MaterialInspector, Material);
 		REGISTER_OBJECT_INSPECTOR(AssetImporterInspector, AssetImporter);
 		REGISTER_OBJECT_INSPECTOR(TextureImporterInspector, TextureImporter);
+		REGISTER_OBJECT_INSPECTOR(ModelImporterInspector, ModelImporter);
 		REGISTER_OBJECT_INSPECTOR(ObjectInspector, Object);
 	}
 }

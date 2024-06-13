@@ -59,8 +59,6 @@ namespace Blueberry
 		const std::vector<DataPtr<TextureParameterData>>& GetTextureParameters() const;
 		void SetTextureParameters(const std::vector<DataPtr<TextureParameterData>>& parameters);
 
-		const Texture2D* GetDefaultTexture(const std::string& parameterName) const;
-
 		static void BindProperties();
 
 	private:

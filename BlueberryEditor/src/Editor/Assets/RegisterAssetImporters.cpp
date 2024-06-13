@@ -19,6 +19,7 @@ namespace Blueberry
 		REGISTER_CLASS(ShaderImporter);
 		REGISTER_CLASS(DefaultImporter);
 		REGISTER_CLASS(NativeAssetImporter);
+		REGISTER_DATA_CLASS(ModelMaterialData);
 		REGISTER_CLASS(ModelImporter);
 		REGISTER_CLASS(FolderImporter);
 

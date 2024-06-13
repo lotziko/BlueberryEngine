@@ -15,9 +15,7 @@ project "BlueberryEditor"
 		"vendor/stb/**.cpp",
 		"vendor/rapidyaml/**.h",
 		"vendor/rapidyaml/**.cpp",
-		"vendor/openfbx/**.h",
-		"vendor/openfbx/**.c",
-		"vendor/openfbx/**.cpp"
+		"vendor/fbxsdk/include/**.h",
 	}
 
 	includedirs
@@ -27,17 +25,19 @@ project "BlueberryEditor"
 		"%{IncludeDir.imgui}",
 		"%{IncludeDir.stb}",
 		"%{IncludeDir.rapidyaml}",
-		"%{IncludeDir.openfbx}"
+		"%{IncludeDir.fbxsdk}",
 	}
 
 	links
 	{
 		"BlueberryEngine",
+		"%{LibraryDir.fbxsdk}",
 	}
 
 	postbuildcommands
 	{
-		"{COPYDIR} %{wks.location}/BlueberryEditor/assets %{cfg.targetdir}/assets"
+		"{COPYDIR} %{wks.location}/BlueberryEditor/assets %{cfg.targetdir}/assets",
+		"{COPYFILE} %{wks.location}/BlueberryEditor/vendor/fbxsdk/lib/vs2017/x64/release/libfbxsdk.dll %{cfg.targetdir}/libfbxsdk.dll"
 	}
 
 	filter "system:windows"

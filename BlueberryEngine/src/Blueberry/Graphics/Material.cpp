@@ -4,6 +4,7 @@
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\Texture.h"
 #include "Blueberry\Graphics\GfxTexture.h"
+#include "Blueberry\Graphics\DefaultTextures.h"
 #include "Blueberry\Core\ClassDB.h"
 
 namespace Blueberry
@@ -108,22 +109,22 @@ namespace Blueberry
 	void Material::FillGfxTextures()
 	{
 		m_TextureMap.clear();
+		if (m_Shader.IsValid() && m_Shader->GetState() == ObjectState::Default)
+		{
+			const ShaderData* shaderData = m_Shader->GetData();
+			for (auto& parameter : shaderData->GetTextureParameters())
+			{
+				TextureParameterData* data = parameter.Get();
+				m_TextureMap.insert_or_assign(TO_HASH(data->GetName()), (Texture*)DefaultTextures::GetTexture(data->GetDefaultTextureName()));
+			}
+		}
 		for (auto const& texture : m_Textures)
 		{
 			TextureData* textureData = texture.Get();
-			ObjectPtr<Texture> texture;
 			if (textureData->m_Texture.IsValid())
 			{
-				texture = textureData->m_Texture;
+				m_TextureMap.insert_or_assign(TO_HASH(textureData->m_Name), textureData->m_Texture);
 			}
-			else
-			{
-				if (m_Shader.IsValid())
-				{
-					texture = (Texture*)m_Shader.Get()->GetData()->GetDefaultTexture(textureData->m_Name);
-				}
-			}
-			m_TextureMap.insert_or_assign(TO_HASH(textureData->m_Name), texture);
 		}
 	}
 }

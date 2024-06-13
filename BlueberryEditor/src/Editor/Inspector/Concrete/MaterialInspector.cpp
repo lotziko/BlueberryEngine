@@ -18,7 +18,7 @@ namespace Blueberry
 			material->SetShader(shader);
 		}
 
-		if (shader != nullptr)
+		if (shader != nullptr && (shader->GetState() == ObjectState::Default))
 		{
 			auto data = shader->GetData();
 			auto textureDatas = material->GetTextureDatas();

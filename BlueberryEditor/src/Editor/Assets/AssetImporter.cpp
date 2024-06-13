@@ -78,6 +78,11 @@ namespace Blueberry
 
 	void AssetImporter::ImportDataIfNeeded()
 	{
+		if (GetState() == ObjectState::AwaitingLoading)
+		{
+			AssetImporter::LoadFromMeta(this);
+			SetState(ObjectState::Default);
+		}
 		if (!IsImported())
 		{
 			ImportData();
@@ -92,7 +97,7 @@ namespace Blueberry
 		serializer.Serialize(GetMetaFilePath());
 	}
 
-	AssetImporter* AssetImporter::Create(const size_t& type, const std::filesystem::path& relativePath, const std::filesystem::path& relativeMetaPath)
+	AssetImporter* AssetImporter::CreateNew(const size_t& type, const std::filesystem::path& relativePath, const std::filesystem::path& relativeMetaPath)
 	{
 		auto info = ClassDB::GetInfo(type);
 		AssetImporter* importer = (AssetImporter*)info.createInstance();
@@ -105,7 +110,7 @@ namespace Blueberry
 		return importer;
 	}
 
-	AssetImporter* AssetImporter::Load(const std::filesystem::path& relativePath, const std::filesystem::path& relativeMetaPath)
+	AssetImporter* AssetImporter::CreateFromMeta(const std::filesystem::path& relativePath, const std::filesystem::path& relativeMetaPath)
 	{
 		YamlMetaSerializer serializer;
 		auto dataPath = Path::GetAssetsPath();
@@ -122,11 +127,21 @@ namespace Blueberry
 			importer->m_RelativeMetaPath = relativeMetaPath.string();
 			importer->m_Name = relativePath.stem().string();
 			importer->m_Icon = (Texture2D*)AssetLoader::Load(importer->GetIconPath());
+			importer->SetState(ObjectState::AwaitingLoading);
 			// Data will be imported when it's needed
 			//importer->ImportData();
 			return importer;
 		}
 		return nullptr;
+	}
+
+	void AssetImporter::LoadFromMeta(AssetImporter* importer)
+	{
+		YamlMetaSerializer serializer;
+		serializer.AddObject(importer);
+		auto dataPath = Path::GetAssetsPath();
+		dataPath.append(importer->GetRelativeMetaFilePath());
+		serializer.Deserialize(dataPath.string());
 	}
 
 	void AssetImporter::BindProperties()
