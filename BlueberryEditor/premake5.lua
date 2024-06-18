@@ -16,6 +16,8 @@ project "BlueberryEditor"
 		"vendor/rapidyaml/**.h",
 		"vendor/rapidyaml/**.cpp",
 		"vendor/fbxsdk/include/**.h",
+		"vendor/directxtex/**.h",
+		"vendor/directxtex/**.cpp",
 	}
 
 	includedirs
@@ -26,6 +28,7 @@ project "BlueberryEditor"
 		"%{IncludeDir.stb}",
 		"%{IncludeDir.rapidyaml}",
 		"%{IncludeDir.fbxsdk}",
+		"%{IncludeDir.directxtex}",
 	}
 
 	links

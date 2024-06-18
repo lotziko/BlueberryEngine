@@ -16,6 +16,38 @@ namespace Blueberry
 		m_DepthStencilView = nullptr;
 	}
 
+	bool IsCompressed(DXGI_FORMAT format)
+	{
+		switch (format)
+		{
+		case DXGI_FORMAT_BC1_TYPELESS:
+		case DXGI_FORMAT_BC1_UNORM:
+		case DXGI_FORMAT_BC1_UNORM_SRGB:
+		case DXGI_FORMAT_BC2_TYPELESS:
+		case DXGI_FORMAT_BC2_UNORM:
+		case DXGI_FORMAT_BC2_UNORM_SRGB:
+		case DXGI_FORMAT_BC3_TYPELESS:
+		case DXGI_FORMAT_BC3_UNORM:
+		case DXGI_FORMAT_BC3_UNORM_SRGB:
+		case DXGI_FORMAT_BC4_TYPELESS:
+		case DXGI_FORMAT_BC4_UNORM:
+		case DXGI_FORMAT_BC4_SNORM:
+		case DXGI_FORMAT_BC5_TYPELESS:
+		case DXGI_FORMAT_BC5_UNORM:
+		case DXGI_FORMAT_BC5_SNORM:
+		case DXGI_FORMAT_BC6H_TYPELESS:
+		case DXGI_FORMAT_BC6H_UF16:
+		case DXGI_FORMAT_BC6H_SF16:
+		case DXGI_FORMAT_BC7_TYPELESS:
+		case DXGI_FORMAT_BC7_UNORM:
+		case DXGI_FORMAT_BC7_UNORM_SRGB:
+			return true;
+
+		default:
+			return false;
+		}
+	}
+
 	bool GfxTextureDX11::Create(const TextureProperties& properties)
 	{
 		m_Width = properties.width;
@@ -23,12 +55,35 @@ namespace Blueberry
 
 		if (properties.data != nullptr)
 		{
-			D3D11_SUBRESOURCE_DATA subresourceData;
+			if (IsCompressed((DXGI_FORMAT)properties.format))
+			{
+				D3D11_SUBRESOURCE_DATA* subresourceDatas = new D3D11_SUBRESOURCE_DATA[properties.mipCount];
+				int width = properties.width;
+				int height = properties.height;
+				char* ptr = (char*)properties.data;
+				for (int i = 0; i < properties.mipCount; ++i)
+				{
+					D3D11_SUBRESOURCE_DATA subresourceData;
+					subresourceData.pSysMem = ptr;
+					subresourceData.SysMemPitch = 16 * (width / 4);
+					subresourceData.SysMemSlicePitch = 0;
+					subresourceDatas[i] = subresourceData;
 
-			subresourceData.pSysMem = properties.data;
-			subresourceData.SysMemPitch = properties.width * 4;
+					ptr += subresourceData.SysMemPitch * (height / 4);
+					width /= 2;
+					height /= 2;
+				}
+				return Initialize(subresourceDatas, properties);
+			}
+			else
+			{
+				D3D11_SUBRESOURCE_DATA subresourceData;
 
-			return Initialize(&subresourceData, properties);
+				subresourceData.pSysMem = properties.data;
+				subresourceData.SysMemPitch = properties.width * 4;
+
+				return Initialize(&subresourceData, properties);
+			}
 		}
 		else
 		{
@@ -67,19 +122,6 @@ namespace Blueberry
 
 	void GfxTextureDX11::SetData(void* data)
 	{
-	}
-
-	DXGI_FORMAT GetFormat(const TextureFormat& format)
-	{
-		switch (format)
-		{
-		case TextureFormat::None: return DXGI_FORMAT::DXGI_FORMAT_UNKNOWN;
-		case TextureFormat::R8G8B8A8_UNorm: return DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM;
-		case TextureFormat::R8G8B8A8_UNorm_SRGB: return DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-		case TextureFormat::R16G16B16A16_FLOAT: return DXGI_FORMAT::DXGI_FORMAT_R16G16B16A16_FLOAT;
-		case TextureFormat::R8G8B8A8_UINT: return DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UINT;
-		case TextureFormat::D24_UNorm: return DXGI_FORMAT::DXGI_FORMAT_D24_UNORM_S8_UINT;
-		}
 	}
 
 	D3D11_TEXTURE_ADDRESS_MODE GetAdressMode(const WrapMode& wrapMode)
@@ -133,11 +175,13 @@ namespace Blueberry
 		textureDesc.Width = m_Width;
 		textureDesc.Height = m_Height;
 		textureDesc.MipLevels = textureDesc.ArraySize = 1;
-		textureDesc.Format = GetFormat(properties.format);
+		textureDesc.Format = (DXGI_FORMAT)properties.format;
 		textureDesc.SampleDesc.Count = 1;
 		textureDesc.MiscFlags = 0;
 
 		TextureType type = GetTextureType(properties);
+		bool compressed = IsCompressed(textureDesc.Format);
+		bool generateMipmaps = properties.mipCount > 1 && !compressed;
 
 		switch (type)
 		{
@@ -145,11 +189,15 @@ namespace Blueberry
 			textureDesc.Usage = D3D11_USAGE_DEFAULT;
 			textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 			textureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-			if (properties.generateMipmaps)
+			if (generateMipmaps)
 			{
 				textureDesc.MipLevels = 0;
 				textureDesc.BindFlags |= D3D11_BIND_RENDER_TARGET;
 				textureDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+			}
+			else if (compressed)
+			{
+				textureDesc.MipLevels = properties.mipCount;
 			}
 			break;
 		case TextureType::RenderTarget:
@@ -169,7 +217,7 @@ namespace Blueberry
 			break;
 		}
 
-		HRESULT hr = m_Device->CreateTexture2D(&textureDesc, properties.generateMipmaps ? nullptr : subresourceData, m_Texture.GetAddressOf());
+		HRESULT hr = m_Device->CreateTexture2D(&textureDesc, generateMipmaps ? nullptr : subresourceData, m_Texture.GetAddressOf());
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create texture."));
@@ -178,7 +226,7 @@ namespace Blueberry
 
 		if (type != TextureType::Staging && type != TextureType::DepthStencil)
 		{
-			if (properties.generateMipmaps)
+			if (generateMipmaps)
 			{
 				D3D11_SHADER_RESOURCE_VIEW_DESC resourceViewDesc;
 				ZeroMemory(&resourceViewDesc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
@@ -200,7 +248,7 @@ namespace Blueberry
 				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create shader resource view."));
 				return false;
 			}
-			if (properties.generateMipmaps)
+			if (generateMipmaps)
 			{
 				m_DeviceContext->UpdateSubresource(m_Texture.Get(), 0, 0, subresourceData->pSysMem, subresourceData->SysMemPitch, 0);
 				m_DeviceContext->GenerateMips(m_ResourceView.Get());
@@ -253,7 +301,7 @@ namespace Blueberry
 			D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
 			ZeroMemory(&depthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
 
-			depthStencilViewDesc.Format = GetFormat(properties.format);
+			depthStencilViewDesc.Format = (DXGI_FORMAT)properties.format;
 			depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 			depthStencilViewDesc.Texture2D.MipSlice = 0;
 

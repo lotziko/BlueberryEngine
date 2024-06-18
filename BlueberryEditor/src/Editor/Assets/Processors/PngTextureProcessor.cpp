@@ -1,39 +1,86 @@
 #include "bbpch.h"
 #include "PngTextureProcessor.h"
 
-#include "stb\stb_image.h"
+#include "Blueberry\Tools\StringConverter.h"
 
 namespace Blueberry
 {
+	ComPtr<ID3D11Device> PngTextureProcessor::s_Device = nullptr;
+
 	PngTextureProcessor::~PngTextureProcessor()
 	{
-		if (m_Data != nullptr)
+		if (m_ScratchImage.GetPixelsSize() > 0)
 		{
-			stbi_image_free(m_Data);
+			m_ScratchImage.Release();
 		}
 	}
 
-	void PngTextureProcessor::Load(const std::string& path)
+	void PngTextureProcessor::Load(const std::string& path, const bool& srgb, const bool& generateMips)
 	{
-		stbi_uc* data = nullptr;
-		int width, height, channels;
+		HRESULT hr = DirectX::LoadFromWICFile(StringConverter::StringToWide(path).c_str(), (srgb ? DirectX::WIC_FLAGS_DEFAULT_SRGB : DirectX::WIC_FLAGS_IGNORE_SRGB) | DirectX::WIC_FLAGS_FORCE_RGB, nullptr, m_ScratchImage);
+		if (FAILED(hr))
+		{
+			BB_ERROR("Failed to load texture from file.");
+			return;
+		}
+		DirectX::ScratchImage flippedScratchImage;
+		hr = DirectX::FlipRotate(m_ScratchImage.GetImages(), m_ScratchImage.GetImageCount(), m_ScratchImage.GetMetadata(), DirectX::TEX_FR_FLIP_VERTICAL, flippedScratchImage);
+		if (FAILED(hr))
+		{
+			BB_ERROR("Failed to flip texture.");
+			return;
+		}
+		m_ScratchImage = std::move(flippedScratchImage);
 
-		stbi_set_flip_vertically_on_load(1);
-		data = stbi_load(path.c_str(), &width, &height, &channels, 4);
-		size_t dataSize = width * height * 4;
+		DirectX::Image image = *m_ScratchImage.GetImages();
+		m_Properties = {};
+		m_Properties.width = image.width;
+		m_Properties.height = image.height;
+		m_Properties.mipCount = TextureProperties::GetMipCount(image.width, image.height, generateMips);
+	}
 
-		TextureProperties properties = {};
+	void PngTextureProcessor::Compress(const TextureFormat& format)
+	{
+		DXGI_FORMAT dxgiFormat = (DXGI_FORMAT)format;
+		const DirectX::Image* image = m_ScratchImage.GetImage(0, 0, 0);
+		if (DirectX::IsSRGB(image->format))
+		{
+			dxgiFormat = DirectX::MakeSRGB(dxgiFormat);
+		}
+		if (!DirectX::IsCompressed(dxgiFormat) || (image->width % 4 > 0) || (image->height % 4 > 0))
+		{
+			return;
+		}
+		if (m_Properties.mipCount > 3)
+		{
+			// Remove last mip levels to stay dividable by 4
+			m_Properties.mipCount -= 2;
+			DirectX::ScratchImage mipmappedScratchImage;
+			HRESULT hr = DirectX::GenerateMipMaps(*m_ScratchImage.GetImages(), DirectX::TEX_FILTER_FANT, m_Properties.mipCount, mipmappedScratchImage);
+			m_ScratchImage = std::move(mipmappedScratchImage);
+		}
 
-		properties.width = width;
-		properties.height = height;
-		properties.data = data;
-		properties.dataSize = dataSize;
+		if (s_Device == nullptr)
+		{
+			D3D11CreateDevice(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, D3D11_CREATE_DEVICE_DEBUG, NULL, 0, D3D11_SDK_VERSION, s_Device.GetAddressOf(), NULL, NULL);
+		}
 
-		m_Properties = properties;
+		DirectX::ScratchImage compressedScratchImage;
+		HRESULT hr = DirectX::Compress(s_Device.Get(), m_ScratchImage.GetImages(), m_ScratchImage.GetImageCount(), m_ScratchImage.GetMetadata(), dxgiFormat, DirectX::TEX_COMPRESS_DEFAULT, DirectX::TEX_THRESHOLD_DEFAULT, compressedScratchImage);
+		if (FAILED(hr))
+		{
+			BB_ERROR("Failed to compress texture.");
+			return;
+		}
+		m_ScratchImage = std::move(compressedScratchImage);
 	}
 
 	const TextureProperties& PngTextureProcessor::GetProperties()
 	{
+		DirectX::Image image = *m_ScratchImage.GetImages();
+		m_Properties.data = m_ScratchImage.GetPixels();
+		m_Properties.dataSize = m_ScratchImage.GetPixelsSize();
+		m_Properties.format = (TextureFormat)image.format;
 		return m_Properties;
 	}
 }

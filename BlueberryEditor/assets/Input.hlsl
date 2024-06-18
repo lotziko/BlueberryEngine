@@ -1,3 +1,6 @@
+#ifndef INPUT_INCLUDED
+#define INPUT_INCLUDED
+
 #define MAX_REALTIME_LIGHTS 128
 
 cbuffer PerDrawData
@@ -25,3 +28,5 @@ cbuffer PerCameraLightData
 	float4 _LightAttenuation[MAX_REALTIME_LIGHTS];
 	float4 _LightDirection[MAX_REALTIME_LIGHTS];
 };
+
+#endif

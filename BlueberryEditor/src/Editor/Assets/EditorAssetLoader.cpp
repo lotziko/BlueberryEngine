@@ -71,10 +71,8 @@ namespace Blueberry
 		else if (extension == ".png")
 		{
 			PngTextureProcessor processor;
-			processor.Load(path);
+			processor.Load(path, false, false);
 			TextureProperties properties = processor.GetProperties();
-			properties.generateMipmaps = false;
-			properties.format = TextureFormat::R8G8B8A8_UNorm;
 			Texture2D* texture = Texture2D::Create(properties);
 			m_LoadedAssets.insert_or_assign(path, texture);
 			return texture;

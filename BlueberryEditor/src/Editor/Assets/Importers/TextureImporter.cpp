@@ -49,14 +49,12 @@ namespace Blueberry
 			std::string path = GetFilePath();
 
 			PngTextureProcessor processor;
-			processor.Load(path);
+			processor.Load(path, m_IsSRGB, m_GenerateMipmaps);
+			processor.Compress(TextureFormat::BC7_UNORM);
 			TextureProperties properties = processor.GetProperties();
 			
-			properties.generateMipmaps = m_GenerateMipmaps;
 			properties.wrapMode = m_WrapMode;
 			properties.filterMode = m_FilterMode;
-			// TODO store in TextureImporter
-			properties.format = m_IsSRGB ? TextureFormat::R8G8B8A8_UNorm_SRGB : TextureFormat::R8G8B8A8_UNorm;
 
 			auto objects = GetImportedObjects();
 			auto it = objects.find(TextureId);

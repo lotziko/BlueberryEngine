@@ -16,12 +16,16 @@ namespace Blueberry
 
 	enum class TextureFormat
 	{
-		None,
-		R8G8B8A8_UNorm,
-		R8G8B8A8_UNorm_SRGB,
-		R16G16B16A16_FLOAT,
-		R8G8B8A8_UINT,
-		D24_UNorm,
+		None = 0,
+		R16G16B16A16_FLOAT = 10,
+		R8G8B8A8_UNorm = 28,
+		R8G8B8A8_UNorm_SRGB = 29,
+		R8G8B8A8_UINT = 30,
+		D24_UNorm = 45,
+		BC3_UNORM = 77,
+		BC3_UNORM_SRGB = 78,
+		BC7_UNORM = 98,
+		BC7_UNORM_SRGB = 99,
 	};
 
 	enum class CullMode

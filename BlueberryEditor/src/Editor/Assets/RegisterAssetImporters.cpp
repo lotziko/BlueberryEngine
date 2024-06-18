@@ -24,6 +24,8 @@ namespace Blueberry
 		REGISTER_CLASS(FolderImporter);
 
 		REGISTER_ASSET_IMPORTER(".png", TextureImporter::Type);
+		REGISTER_ASSET_IMPORTER(".tif", TextureImporter::Type);
+		REGISTER_ASSET_IMPORTER(".tiff", TextureImporter::Type);
 		REGISTER_ASSET_IMPORTER(".shader", ShaderImporter::Type);
 		REGISTER_ASSET_IMPORTER(".scene", DefaultImporter::Type);
 		REGISTER_ASSET_IMPORTER(".material", NativeAssetImporter::Type);

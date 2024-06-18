@@ -4,8 +4,6 @@
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Core\ClassDB.h"
 
-#include <cmath>
-
 namespace Blueberry
 {
 	OBJECT_DEFINITION(Texture, Texture2D)
@@ -18,25 +16,11 @@ namespace Blueberry
 		}
 	}
 
-	UINT GetMipCount(const UINT& width, const UINT& height, const bool& generateMips)
-	{
-		if (generateMips)
-		{
-			UINT mipCount = (UINT)log2(Max((float)width, (float)height));
-			// Based on https://stackoverflow.com/questions/108318/how-can-i-test-whether-a-number-is-a-power-of-2
-			if ((width & (width - 1)) == 0 && (height & (height - 1)) == 0)
-			{
-				return mipCount;
-			}
-		}
-		return 1;
-	}
-
 	void Texture2D::Initialize(const TextureProperties& properties)
 	{
 		m_Width = properties.width;
 		m_Height = properties.height;
-		m_MipCount = GetMipCount(properties.width, properties.height, properties.generateMipmaps);
+		m_MipCount = properties.mipCount;
 		m_Format = properties.format;
 		m_WrapMode = properties.wrapMode;
 		m_FilterMode = properties.filterMode;
@@ -57,7 +41,7 @@ namespace Blueberry
 		properties.height = m_Height;
 		properties.data = byteData.data;
 		properties.dataSize = byteData.size;
-		properties.generateMipmaps = m_MipCount > 1;
+		properties.mipCount = m_MipCount;
 		properties.format = m_Format;
 		properties.wrapMode = m_WrapMode;
 		properties.filterMode = m_FilterMode;
