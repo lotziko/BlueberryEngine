@@ -10,54 +10,55 @@ namespace Blueberry
 
 	Texture2D::~Texture2D()
 	{
-		if (m_RawData.data != nullptr)
+		if (m_Texture != nullptr)
 		{
-			delete[] m_RawData.data;
+			delete m_Texture;
 		}
 	}
 
-	void Texture2D::Initialize(const TextureProperties& properties)
+	void Texture2D::SetData(byte* data, const size_t& dataSize)
 	{
-		m_Width = properties.width;
-		m_Height = properties.height;
-		m_MipCount = properties.mipCount;
-		m_Format = properties.format;
-		m_WrapMode = properties.wrapMode;
-		m_FilterMode = properties.filterMode;
+		m_RawData.data = (byte*)data;
+	}
+
+	void Texture2D::Apply()
+	{
+		TextureProperties textureProperties = {};
+
+		textureProperties.width = m_Width;
+		textureProperties.height = m_Height;
+		textureProperties.data = m_RawData.data;
+		textureProperties.dataSize = m_RawData.size;
+		textureProperties.mipCount = m_MipCount;
+		textureProperties.format = m_Format;
+		textureProperties.wrapMode = m_WrapMode;
+		textureProperties.filterMode = m_FilterMode;
 
 		if (m_Texture != nullptr)
 		{
 			delete m_Texture;
 		}
 
-		GfxDevice::CreateTexture(properties, m_Texture);
+		GfxDevice::CreateTexture(textureProperties, m_Texture);
 	}
 
-	void Texture2D::Initialize(const ByteData& byteData)
+	Texture2D* Texture2D::Create(const UINT& width, const UINT& height, const UINT& mipCount, const TextureFormat& textureFormat, const WrapMode& wrapMode, const FilterMode& filterMode, Texture2D* existingTexture)
 	{
-		TextureProperties properties = {};
-
-		properties.width = m_Width;
-		properties.height = m_Height;
-		properties.data = byteData.data;
-		properties.dataSize = byteData.size;
-		properties.mipCount = m_MipCount;
-		properties.format = m_Format;
-		properties.wrapMode = m_WrapMode;
-		properties.filterMode = m_FilterMode;
-
-		if (m_Texture != nullptr)
+		Texture2D* texture = nullptr;
+		if (existingTexture != nullptr)
 		{
-			delete m_Texture;
+			texture = existingTexture;
 		}
-
-		GfxDevice::CreateTexture(properties, m_Texture);
-	}
-
-	Texture2D* Texture2D::Create(const TextureProperties& properties)
-	{
-		Texture2D* texture = Object::Create<Texture2D>();
-		texture->Initialize(properties);
+		else
+		{
+			texture = Object::Create<Texture2D>();
+		}
+		texture->m_Width = width;
+		texture->m_Height = height;
+		texture->m_MipCount = mipCount;
+		texture->m_Format = textureFormat;
+		texture->m_WrapMode = wrapMode;
+		texture->m_FilterMode = filterMode;
 		return texture;
 	}
 
@@ -70,7 +71,7 @@ namespace Blueberry
 		BIND_FIELD(FieldInfo(TO_STRING(m_Format), &Texture2D::m_Format, BindingType::Enum))
 		BIND_FIELD(FieldInfo(TO_STRING(m_WrapMode), &Texture2D::m_WrapMode, BindingType::Enum).SetHintData("Repeat,Clamp"))
 		BIND_FIELD(FieldInfo(TO_STRING(m_FilterMode), &Texture2D::m_FilterMode, BindingType::Enum).SetHintData("Linear,Point"))
-		BIND_FIELD(FieldInfo(TO_STRING(m_RawData), &Texture2D::m_RawData, BindingType::ByteData))
+		//BIND_FIELD(FieldInfo(TO_STRING(m_RawData), &Texture2D::m_RawData, BindingType::ByteData))
 		END_OBJECT_BINDING()
 	}
 }

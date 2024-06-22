@@ -16,6 +16,7 @@ namespace Blueberry
 
 		const UINT& GetWidth();
 		const UINT& GetHeight();
+		GfxTexture* Get();
 		void* GetHandle();
 
 		static void BindProperties();
@@ -32,6 +33,5 @@ namespace Blueberry
 
 		friend class Material;
 		friend struct GfxDrawingOperation;
-		friend class Renderer2D;
 	};
 }

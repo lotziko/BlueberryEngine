@@ -21,4 +21,19 @@ namespace Blueberry
 		}
 		return s_ErrorMaterial;
 	}
+
+	Material* DefaultMaterials::GetBlit()
+	{
+		if (s_BlitMaterial == nullptr)
+		{
+			Shader* shader = (Shader*)AssetLoader::Load("assets/Blit.shader");
+			if (shader == nullptr)
+			{
+				BB_ERROR("Failed to load blit shader.")
+					return false;
+			}
+			s_BlitMaterial = Material::Create(shader);
+		}
+		return s_BlitMaterial;
+	}
 }

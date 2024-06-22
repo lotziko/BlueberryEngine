@@ -8,8 +8,10 @@ namespace Blueberry
 	{
 	public:
 		static Material* GetError();
+		static Material* GetBlit();
 
 	private:
 		static inline Material* s_ErrorMaterial = nullptr;
+		static inline Material* s_BlitMaterial = nullptr;
 	};
 }

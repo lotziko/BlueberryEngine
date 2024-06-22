@@ -30,17 +30,9 @@ namespace Blueberry
 				data[i] = 255;
 			}
 
-			TextureProperties properties = {};
-
-			properties.width = size;
-			properties.height = size;
-			properties.data = data;
-			properties.dataSize = size * size * 4;
-			properties.format = TextureFormat::R8G8B8A8_UNorm_SRGB;
-			properties.wrapMode = WrapMode::Repeat;
-			properties.filterMode = FilterMode::Point;
-			
-			s_WhiteTexture = Texture2D::Create(properties);
+			s_WhiteTexture = Texture2D::Create(size, size, 1, TextureFormat::R8G8B8A8_UNorm_SRGB, WrapMode::Repeat, FilterMode::Point);
+			s_WhiteTexture->SetData(data, size * size * 4);
+			s_WhiteTexture->Apply();
 		}
 		return s_WhiteTexture;
 	}
@@ -58,18 +50,10 @@ namespace Blueberry
 				data[i + 2] = 255;
 				data[i + 3] = 255;
 			}
-
-			TextureProperties properties = {};
-
-			properties.width = size;
-			properties.height = size;
-			properties.data = data;
-			properties.dataSize = size * size * 4;
-			properties.format = TextureFormat::R8G8B8A8_UNorm;
-			properties.wrapMode = WrapMode::Repeat;
-			properties.filterMode = FilterMode::Point;
-
-			s_NormalTexture = Texture2D::Create(properties);
+			
+			s_NormalTexture = Texture2D::Create(size, size, 1, TextureFormat::R8G8B8A8_UNorm, WrapMode::Repeat, FilterMode::Point);
+			s_NormalTexture->SetData(data, size * size * 4);
+			s_NormalTexture->Apply();
 		}
 		return s_NormalTexture;
 	}

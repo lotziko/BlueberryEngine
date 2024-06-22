@@ -72,8 +72,10 @@ namespace Blueberry
 		{
 			PngTextureProcessor processor;
 			processor.Load(path, false, false);
-			TextureProperties properties = processor.GetProperties();
-			Texture2D* texture = Texture2D::Create(properties);
+			PngTextureProperties properties = processor.GetProperties();
+			Texture2D* texture = Texture2D::Create(properties.width, properties.height, properties.mipCount, properties.format);
+			texture->SetData((byte*)properties.data, properties.dataSize);
+			texture->Apply();
 			m_LoadedAssets.insert_or_assign(path, texture);
 			return texture;
 		}

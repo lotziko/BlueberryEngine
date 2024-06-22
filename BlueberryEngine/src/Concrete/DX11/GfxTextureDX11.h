@@ -20,7 +20,11 @@ namespace Blueberry
 		virtual void SetData(void* data) override;
 
 	private:
-		bool Initialize(D3D11_SUBRESOURCE_DATA* subresourceData, const TextureProperties& properties);
+		UINT GetQualityLevel(const DXGI_FORMAT& format, const UINT& antiAliasing);
+		bool InitializeResource(D3D11_SUBRESOURCE_DATA* subresourceData, const TextureProperties& properties);
+		bool InitializeRenderTarget(const TextureProperties& properties);
+		bool InitializeDepthStencil(const TextureProperties& properties);
+		bool InitializeStaging(const TextureProperties& properties);
 
 	private:
 		ComPtr<ID3D11Texture2D> m_Texture;

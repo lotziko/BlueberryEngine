@@ -6,7 +6,7 @@
 
 namespace Blueberry
 {
-	class GfxTexture;
+	class RenderTexture;
 	class Camera;
 
 	class SceneArea
@@ -51,11 +51,14 @@ namespace Blueberry
 		void LookAt(const Vector3& point, const Quaternion& direction, const float& newSize, const bool& isOrthographic);
 
 	private:
-		GfxTexture* m_SceneRenderTarget = nullptr;
-		GfxTexture* m_SceneAreaRenderTarget = nullptr;
-		GfxTexture* m_SceneDepthStencil = nullptr;
+		RenderTexture* m_ColorMSAARenderTarget = nullptr;
+		RenderTexture* m_DepthStencilMSAARenderTarget = nullptr;
+
+		RenderTexture* m_ColorRenderTarget = nullptr;
+		RenderTexture* m_DepthStencilRenderTarget = nullptr;
+		
 		Material* m_GridMaterial;
-		Material* m_LinearToSRGBMaterial;
+		Material* m_ResolveMSAAMaterial;
 		SceneCamera m_Camera;
 		SceneObjectPicker* m_ObjectPicker = nullptr;
 

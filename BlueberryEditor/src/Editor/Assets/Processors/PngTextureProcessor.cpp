@@ -36,7 +36,7 @@ namespace Blueberry
 		m_Properties = {};
 		m_Properties.width = image.width;
 		m_Properties.height = image.height;
-		m_Properties.mipCount = TextureProperties::GetMipCount(image.width, image.height, generateMips);
+		m_Properties.mipCount = GetMipCount(image.width, image.height, generateMips);
 	}
 
 	void PngTextureProcessor::Compress(const TextureFormat& format)
@@ -75,7 +75,7 @@ namespace Blueberry
 		m_ScratchImage = std::move(compressedScratchImage);
 	}
 
-	const TextureProperties& PngTextureProcessor::GetProperties()
+	const PngTextureProperties& PngTextureProcessor::GetProperties()
 	{
 		DirectX::Image image = *m_ScratchImage.GetImages();
 		m_Properties.data = m_ScratchImage.GetPixels();

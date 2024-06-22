@@ -17,6 +17,11 @@ namespace Blueberry
 		return m_Height;
 	}
 
+	GfxTexture* Texture::Get()
+	{
+		return m_Texture;
+	}
+
 	void* Texture::GetHandle()
 	{
 		if (m_Texture != nullptr)

@@ -167,7 +167,7 @@ namespace Blueberry
 			Texture2D* texture = data.texture;
 			if (material != currentMaterial || texture != currentTexture)
 			{
-				GfxDevice::SetGlobalTexture(baseMapId, currentTexture->m_Texture);
+				GfxDevice::SetGlobalTexture(baseMapId, currentTexture->Get());
 				GfxDevice::Draw(GfxDrawingOperation(s_VertexBuffer, s_IndexBuffer, currentMaterial, indexCount, indexOffset, Topology::TriangleList));
 
 				currentMaterial = material;
@@ -180,7 +180,7 @@ namespace Blueberry
 
 		if (indexCount > 0)
 		{
-			GfxDevice::SetGlobalTexture(baseMapId, currentTexture->m_Texture);
+			GfxDevice::SetGlobalTexture(baseMapId, currentTexture->Get());
 			GfxDevice::Draw(GfxDrawingOperation(s_VertexBuffer, s_IndexBuffer, currentMaterial, indexCount, indexOffset, Topology::TriangleList));
 		}
 

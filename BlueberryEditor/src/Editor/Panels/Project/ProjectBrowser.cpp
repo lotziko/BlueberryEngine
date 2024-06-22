@@ -11,6 +11,8 @@
 #include "Blueberry\Graphics\Texture2D.h"
 #include "imgui\imgui.h"
 
+#include "Editor\Assets\ThumbnailCache.h"
+
 namespace Blueberry
 {
 	ProjectBrowser::ProjectBrowser()
@@ -150,6 +152,7 @@ namespace Blueberry
 				AssetDB::CreateAsset(material, relativePath.string());
 				AssetDB::SaveAssets();
 				AssetDB::Refresh();
+				UpdateFiles();
 
 				m_OpenedModalPopupId = nullptr;
 				ImGui::CloseCurrentPopup();
@@ -195,7 +198,13 @@ namespace Blueberry
 					Selection::SetActiveObject(importer);
 				}
 			}
-			ImGui::GetWindowDrawList()->AddImage(((Texture*)importer->GetIcon())->GetHandle(), ImVec2(pos.x + cellIconPadding, pos.y), ImVec2(pos.x + cellSize - cellIconPadding, pos.y + cellSize - cellIconPadding * 2), ImVec2(0, 1), ImVec2(1, 0));
+
+			Texture* icon = ThumbnailCache::GetThumbnail(importer);
+			if (icon == nullptr)
+			{
+				icon = ((Texture*)importer->GetIcon());
+			}
+			ImGui::GetWindowDrawList()->AddImage(icon->GetHandle(), ImVec2(pos.x + cellIconPadding, pos.y), ImVec2(pos.x + cellSize - cellIconPadding, pos.y + cellSize - cellIconPadding * 2), ImVec2(0, 1), ImVec2(1, 0));
 
 			if (ImGui::IsItemHovered())
 			{

@@ -38,7 +38,8 @@ namespace Blueberry
 				byte* data;
 				size_t length;
 				FileHelper::Load(data, length, GetTexturePath());
-				object->Initialize({ data, length });
+				object->SetData(data, length);
+				object->Apply();
 				object->SetState(ObjectState::Default);
 				delete[] data;
 				BB_INFO("Texture \"" << GetName() << "\" imported from cache.");
@@ -51,24 +52,22 @@ namespace Blueberry
 			PngTextureProcessor processor;
 			processor.Load(path, m_IsSRGB, m_GenerateMipmaps);
 			processor.Compress(TextureFormat::BC7_UNORM);
-			TextureProperties properties = processor.GetProperties();
-			
-			properties.wrapMode = m_WrapMode;
-			properties.filterMode = m_FilterMode;
+			PngTextureProperties properties = processor.GetProperties();
 
 			auto objects = GetImportedObjects();
 			auto it = objects.find(TextureId);
 			if (it != objects.end())
 			{
-				object = (Texture2D*)ObjectDB::GetObject(it->second);
-				object->Initialize(properties);
+				object = Texture2D::Create(properties.width, properties.height, properties.mipCount, properties.format, m_WrapMode, m_FilterMode, (Texture2D*)ObjectDB::GetObject(it->second));
 				object->SetState(ObjectState::Default);
 			}
 			else
 			{
-				object = Texture2D::Create(properties);
+				object = Texture2D::Create(properties.width, properties.height, properties.mipCount, properties.format, m_WrapMode, m_FilterMode);
 				ObjectDB::AllocateIdToGuid(object, guid, TextureId);
 			}
+			object->SetData((byte*)properties.data, properties.dataSize);
+			object->Apply();
 
 			AssetDB::SaveAssetObjectsToCache(std::vector<Object*> { object });
 			FileHelper::Save((byte*)properties.data, properties.dataSize, GetTexturePath());

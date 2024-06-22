@@ -3,6 +3,7 @@
 
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Graphics\SceneRenderer.h"
+#include "Blueberry\Graphics\RenderTexture.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\GfxTexture.h"
 
@@ -23,22 +24,14 @@ namespace Blueberry
 {
 	SceneArea::SceneArea()
 	{
-		TextureProperties properties = {};
-		properties.width = 1920;
-		properties.height = 1080;
-		properties.isRenderTarget = true;
-		properties.format = TextureFormat::R16G16B16A16_FLOAT;
-		GfxDevice::CreateTexture(properties, m_SceneRenderTarget);
-
-		properties.format = TextureFormat::R8G8B8A8_UNorm;
-		GfxDevice::CreateTexture(properties, m_SceneAreaRenderTarget);
-
-		properties.format = TextureFormat::D24_UNorm;
-		GfxDevice::CreateTexture(properties, m_SceneDepthStencil);
+		m_ColorMSAARenderTarget = RenderTexture::Create(1920, 1080, 4, TextureFormat::R16G16B16A16_FLOAT);
+		m_DepthStencilMSAARenderTarget = RenderTexture::Create(1920, 1080, 4, TextureFormat::D24_UNorm);
+		m_ColorRenderTarget = RenderTexture::Create(1920, 1080, 1, TextureFormat::R8G8B8A8_UNorm);
+		m_DepthStencilRenderTarget = RenderTexture::Create(1920, 1080, 1, TextureFormat::D24_UNorm);
 
 		m_GridMaterial = Material::Create((Shader*)AssetLoader::Load("assets/Grid.shader"));
-		m_LinearToSRGBMaterial = Material::Create((Shader*)AssetLoader::Load("assets/LinearToSRGB.shader"));
-		m_ObjectPicker = new SceneObjectPicker(m_SceneDepthStencil);
+		m_ResolveMSAAMaterial = Material::Create((Shader*)AssetLoader::Load("assets/ResolveMSAA.shader"));
+		m_ObjectPicker = new SceneObjectPicker(m_DepthStencilRenderTarget->Get());
 
 		// TODO save to config instead
 		m_Position = Vector3(0, 10, 0);
@@ -47,9 +40,10 @@ namespace Blueberry
 
 	SceneArea::~SceneArea()
 	{
-		delete m_SceneRenderTarget;
-		delete m_SceneAreaRenderTarget;
-		delete m_SceneDepthStencil;
+		delete m_ColorMSAARenderTarget;
+		delete m_DepthStencilMSAARenderTarget;
+		delete m_ColorRenderTarget;
+		delete m_DepthStencilRenderTarget;
 		delete m_ObjectPicker;
 	}
 
@@ -196,9 +190,9 @@ namespace Blueberry
 		SetupCamera(size.x, size.y);
 		DrawScene(size.x, size.y);
 
-		m_ObjectPicker->DrawOutline(EditorSceneManager::GetScene(), m_Camera, m_SceneAreaRenderTarget);
+		m_ObjectPicker->DrawOutline(EditorSceneManager::GetScene(), m_Camera, m_ColorRenderTarget->Get());
 
-		ImGui::GetWindowDrawList()->AddImage(m_SceneAreaRenderTarget->GetHandle(), ImVec2(pos.x, pos.y), ImVec2(pos.x + size.x, pos.y + size.y), ImVec2(0, 0), ImVec2(size.x / m_SceneRenderTarget->GetWidth(), size.y / m_SceneRenderTarget->GetHeight()));
+		ImGui::GetWindowDrawList()->AddImage(m_ColorRenderTarget->GetHandle(), ImVec2(pos.x, pos.y), ImVec2(pos.x + size.x, pos.y + size.y), ImVec2(0, 0), ImVec2(size.x / m_ColorRenderTarget->GetWidth(), size.y / m_ColorRenderTarget->GetHeight()));
 		DrawGizmos(Rectangle(pos.x, pos.y, size.x, size.y));
 		DrawControls();
 
@@ -471,7 +465,7 @@ namespace Blueberry
 		int viewportWidth = static_cast<int>(width);
 		int viewportHeight = static_cast<int>(height);
 
-		GfxDevice::SetRenderTarget(m_SceneRenderTarget, m_SceneDepthStencil);
+		GfxDevice::SetRenderTarget(m_ColorMSAARenderTarget->Get(), m_DepthStencilMSAARenderTarget->Get());
 		GfxDevice::SetViewport(0, 0, viewportWidth, viewportHeight);
 		GfxDevice::ClearColor({ 0.0f, 0.0f, 0.0f, 0.0f });
 		GfxDevice::ClearDepth(1.0f);
@@ -482,12 +476,14 @@ namespace Blueberry
 			SceneRenderer::Draw(scene, &m_Camera);
 		}
 		
-		GfxDevice::SetRenderTarget(m_SceneAreaRenderTarget, m_SceneDepthStencil);
+		GfxDevice::SetRenderTarget(m_ColorRenderTarget->Get(), m_DepthStencilRenderTarget->Get());
 		GfxDevice::ClearColor({ 0.117f, 0.117f, 0.117f, 1 });
+		GfxDevice::ClearDepth(1.0f);
 		GfxDevice::SetViewport(0, 0, 1920, 1080);
-		GfxDevice::SetGlobalTexture(TO_HASH("_ScreenTexture"), m_SceneRenderTarget);
-		// Gamma correction is done manually to avoid using SRGB swapchain in editor
-		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_LinearToSRGBMaterial));
+		GfxDevice::SetGlobalTexture(TO_HASH("_ScreenColorTexture"), m_ColorMSAARenderTarget->Get());
+		GfxDevice::SetGlobalTexture(TO_HASH("_ScreenDepthStencilTexture"), m_DepthStencilMSAARenderTarget->Get());
+		// Gamma correction is done manually together with MSAA resolve to avoid using SRGB swapchain in editor
+		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_ResolveMSAAMaterial));
 		GfxDevice::SetViewport(0, 0, viewportWidth, viewportHeight);
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_GridMaterial));
 		GfxDevice::SetRenderTarget(nullptr);

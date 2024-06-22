@@ -38,11 +38,15 @@ namespace Blueberry
 		}
 	}
 
-	// TODO clear depth
-
 	void GfxDeviceDX11::SwapBuffersImpl() const
 	{
 		m_SwapChain->Present(1, NULL);
+
+		// Clear
+		ID3D11ShaderResourceView* emptySRV[1] = { nullptr };
+		ID3D11SamplerState* emptySampler[1] = { nullptr };
+		m_DeviceContext->PSSetShaderResources(0, 1, emptySRV);
+		m_DeviceContext->PSSetSamplers(0, 1, emptySampler);
 	}
 
 	void GfxDeviceDX11::SetViewportImpl(int x, int y, int width, int height)
@@ -433,6 +437,8 @@ namespace Blueberry
 
 			rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
 			rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
+			rasterizerDesc.MultisampleEnable = true;
+			rasterizerDesc.AntialiasedLineEnable = true;
 
 			hr = m_Device->CreateRasterizerState(&rasterizerDesc, m_CullNoneRasterizerState.GetAddressOf());
 			if (FAILED(hr))
@@ -449,6 +455,8 @@ namespace Blueberry
 
 			rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
 			rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_FRONT;
+			rasterizerDesc.MultisampleEnable = true;
+			rasterizerDesc.AntialiasedLineEnable = true;
 
 			hr = m_Device->CreateRasterizerState(&rasterizerDesc, m_CullFrontRasterizerState.GetAddressOf());
 			if (FAILED(hr))
@@ -465,6 +473,8 @@ namespace Blueberry
 
 			rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
 			rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
+			rasterizerDesc.MultisampleEnable = true;
+			rasterizerDesc.AntialiasedLineEnable = true;
 
 			hr = m_Device->CreateRasterizerState(&rasterizerDesc, m_CullBackRasterizerState.GetAddressOf());
 			if (FAILED(hr))
