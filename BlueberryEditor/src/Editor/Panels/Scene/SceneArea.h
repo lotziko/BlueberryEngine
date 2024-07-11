@@ -71,6 +71,9 @@ namespace Blueberry
 		bool m_IsOrthographic = false;
 		bool m_Is2DMode = false;
 
+		Scene* m_LastScene = nullptr;
+		bool m_SceneRedrawRequested = true;
+
 		float m_GizmoSnapping[3] = { 1.0f, 45.0f, 1.0f };
 		int m_GizmoOperation = 7;
 

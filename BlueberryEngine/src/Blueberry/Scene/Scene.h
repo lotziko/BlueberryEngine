@@ -14,9 +14,6 @@ namespace Blueberry
 	public:
 		Scene();
 
-		void Serialize(Serializer& serializer, const std::string& path);
-		void Deserialize(Serializer& serializer, const std::string& path);
-
 		bool Initialize();
 
 		template<class ComponentType>

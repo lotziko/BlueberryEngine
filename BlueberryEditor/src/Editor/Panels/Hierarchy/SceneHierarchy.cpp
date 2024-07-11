@@ -8,6 +8,7 @@
 
 #include "Editor\Selection.h"
 #include "Editor\EditorSceneManager.h"
+#include "Editor\Prefabs\PrefabManager.h"
 
 #include "imgui\imgui.h"
 
@@ -137,7 +138,16 @@ namespace Blueberry
 			}
 			else
 			{
+				bool isPrefab = PrefabManager::IsPrefabInstace(entity);
+				if (isPrefab)
+				{
+					ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 255, 0, 255));
+				}
 				ImGui::Text("%s", entity->GetName().c_str());
+				if (isPrefab)
+				{
+					ImGui::PopStyleColor();
+				}
 			}
 		}
 

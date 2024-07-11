@@ -10,29 +10,6 @@ namespace Blueberry
 	{
 	}
 
-	void Scene::Serialize(Serializer& serializer, const std::string& path)
-	{
-		for (auto& pair : m_Entities)
-		{
-			// Components are being added automatically
-			serializer.AddObject(pair.second.Get());
-		}
-		serializer.Serialize(path);
-	}
-
-	void Scene::Deserialize(Serializer& serializer, const std::string& path)
-	{
-		serializer.Deserialize(path);
-		for (auto& object : serializer.GetDeserializedObjects())
-		{
-			if (object.first->IsClassType(Entity::Type))
-			{
-				Entity* entity = (Entity*)object.first;
-				AddEntity(entity);
-			}
-		}
-	}
-
 	bool Scene::Initialize()
 	{
 		return true;

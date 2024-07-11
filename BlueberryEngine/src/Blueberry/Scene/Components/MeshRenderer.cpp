@@ -56,7 +56,6 @@ namespace Blueberry
 			}
 
 			AABB::CreateFromPoints(bounds, 8, corners, sizeof(Vector3));
-			BB_INFO("calcualted");
 			m_Bounds = bounds;
 			m_RecalculationFrame = transformRecalculationFrame;
 		}

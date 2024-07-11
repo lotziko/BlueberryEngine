@@ -9,6 +9,8 @@
 
 #include "Editor\EditorSceneManager.h"
 #include "Editor\Selection.h"
+#include "Editor\Prefabs\PrefabInstance.h"
+#include "Editor\Prefabs\PrefabManager.h"
 
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
@@ -100,7 +102,12 @@ namespace Blueberry
 		// Motion
 		if (ImGui::IsWindowFocused())
 		{
-			m_Position += GetMotion(m_Rotation);
+			Vector3 motion = GetMotion(m_Rotation);
+			m_Position += motion;
+			if (motion.LengthSquared() > 0)
+			{
+				m_SceneRedrawRequested = true;
+			}
 		}
 
 		// Zoom
@@ -110,6 +117,7 @@ namespace Blueberry
 			if (mousePos.x >= pos.x && mousePos.y >= pos.y && mousePos.x <= pos.x + size.x && mousePos.y <= pos.y + size.y)
 			{
 				SceneAreaMovement::HandleZoom(this, mouseWheelDelta, Vector2(mousePos.x - pos.x, size.y - (mousePos.y - pos.y)));
+				m_SceneRedrawRequested = true;
 			}
 		}
 
@@ -131,6 +139,7 @@ namespace Blueberry
 				SceneAreaMovement::HandleDrag(this, Vector2(dragDelta.x - m_PreviousDragDelta.x, dragDelta.y - m_PreviousDragDelta.y));
 				m_PreviousDragDelta = Vector2(dragDelta.x, dragDelta.y);
 			}
+			m_SceneRedrawRequested = true;
 		}
 		else
 		{
@@ -156,9 +165,10 @@ namespace Blueberry
 					if (scene != nullptr)
 					{
 						AssetLoader::Load(Blueberry::ObjectDB::GetGuidFromObject(object));
-						scene->AddEntity(static_cast<Entity*>(Object::Clone(object)));
+						scene->AddEntity(PrefabManager::CreateInstance((Entity*)object)->GetEntity());
 					}
 				}
+				m_SceneRedrawRequested = true;
 			}
 			ImGui::EndDragDropTarget();
 		}
@@ -178,6 +188,7 @@ namespace Blueberry
 				{
 					Selection::SetActiveObject(pickedObject);
 				}
+				m_SceneRedrawRequested = true;
 			}
 		}
 
@@ -187,10 +198,21 @@ namespace Blueberry
 			ImGui::SetWindowFocus();
 		}
 
-		SetupCamera(size.x, size.y);
-		DrawScene(size.x, size.y);
+		Scene* currentScene = EditorSceneManager::GetScene();
+		if (m_LastScene != currentScene)
+		{
+			m_SceneRedrawRequested = true;
+			m_LastScene = currentScene;
+		}
 
-		m_ObjectPicker->DrawOutline(EditorSceneManager::GetScene(), m_Camera, m_ColorRenderTarget->Get());
+		if (m_SceneRedrawRequested)
+		{
+			SetupCamera(size.x, size.y);
+			DrawScene(size.x, size.y);
+
+			m_ObjectPicker->DrawOutline(currentScene, m_Camera, m_ColorRenderTarget->Get());
+			m_SceneRedrawRequested = false;
+		}
 
 		ImGui::GetWindowDrawList()->AddImage(m_ColorRenderTarget->GetHandle(), ImVec2(pos.x, pos.y), ImVec2(pos.x + size.x, pos.y + size.y), ImVec2(0, 0), ImVec2(size.x / m_ColorRenderTarget->GetWidth(), size.y / m_ColorRenderTarget->GetHeight()));
 		DrawGizmos(Rectangle(pos.x, pos.y, size.x, size.y));

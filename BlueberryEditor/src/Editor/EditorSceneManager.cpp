@@ -8,6 +8,8 @@
 #include "Editor\Assets\AssetImporter.h"
 #include "Editor\Serialization\YamlSerializer.h"
 #include "Editor\Serialization\YamlHelper.h"
+#include "Editor\Prefabs\PrefabManager.h"
+#include "Editor\Prefabs\PrefabInstance.h"
 
 namespace Blueberry
 {
@@ -33,10 +35,54 @@ namespace Blueberry
 		return s_Scene;
 	}
 
+	void Serialize(Scene* scene, Serializer& serializer, const std::string& path)
+	{
+		for (auto& pair : scene->GetEntities())
+		{
+			// Components are being added automatically
+			Entity* entity = pair.second.Get();
+			PrefabInstance* prefabInstance = PrefabManager::GetInstance(entity);
+			if (prefabInstance != nullptr)
+			{
+				serializer.AddObject(prefabInstance);
+			}
+			else
+			{
+				serializer.AddObject(entity);
+			}
+		}
+		serializer.Serialize(path);
+	}
+
+	void Deserialize(Scene* scene, Serializer& serializer, const std::string& path)
+	{
+		serializer.Deserialize(path);
+		for (auto& object : serializer.GetDeserializedObjects())
+		{
+			if (object.first->IsClassType(Entity::Type))
+			{
+				Entity* entity = (Entity*)object.first;
+				scene->AddEntity(entity);
+			}
+			else if (object.first->IsClassType(PrefabInstance::Type))
+			{
+				scene->AddEntity(((PrefabInstance*)object.first)->GetEntity());
+			}
+		}
+	}
+
 	void EditorSceneManager::Load(const std::string& path)
 	{
 		if (s_Scene != nullptr)
 		{
+			for (auto& pair : s_Scene->GetEntities())
+			{
+				Entity* entity = pair.second.Get();
+				if (PrefabManager::IsPrefabInstace(entity))
+				{
+					Object::Destroy(entity);
+				}
+			}
 			s_Scene->Destroy();
 		}
 
@@ -44,13 +90,13 @@ namespace Blueberry
 		s_Scene->Initialize();
 
 		YamlSerializer serializer;
-		s_Scene->Deserialize(serializer, path);
+		Deserialize(s_Scene, serializer, path);
 		s_Path = path;
 	}
 
 	void EditorSceneManager::Save()
 	{
 		YamlSerializer serializer;
-		s_Scene->Serialize(serializer, s_Path);
+		Serialize(s_Scene, serializer, s_Path);
 	}
 }

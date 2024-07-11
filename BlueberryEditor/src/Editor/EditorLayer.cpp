@@ -14,6 +14,7 @@
 #include "imgui\imguizmo.h"
 #include "imgui\imgui_internal.h"
 
+#include "Editor\RegisterEditorTypes.h"
 #include "Editor\Assets\RegisterAssetImporters.h"
 #include "Editor\Assets\AssetDB.h"
 
@@ -23,6 +24,7 @@ namespace Blueberry
 {
 	void EditorLayer::OnAttach()
 	{
+		RegisterEditorTypes();
 		RegisterAssetImporters();
 		AssetDB::Refresh();
 
