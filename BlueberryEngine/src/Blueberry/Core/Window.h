@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Blueberry\Events\Event.h"
-
 namespace Blueberry
 {
 	struct WindowProperties

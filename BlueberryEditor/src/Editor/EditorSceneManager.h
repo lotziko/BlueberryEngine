@@ -1,8 +1,12 @@
 #pragma once
 
+#include "Blueberry\Events\Event.h"
+
 namespace Blueberry
 {
 	class Scene;
+
+	using SceneLoadEvent = Event<>;
 
 	class EditorSceneManager
 	{
@@ -12,8 +16,11 @@ namespace Blueberry
 		static void Load(const std::string& path);
 		static void Save();
 
+		static SceneLoadEvent GetSceneLoaded();
+
 	private:
 		static Scene* s_Scene;
 		static std::string s_Path;
+		static SceneLoadEvent s_SceneLoaded;
 	};
 }

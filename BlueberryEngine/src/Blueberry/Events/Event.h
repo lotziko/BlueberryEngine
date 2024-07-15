@@ -1,48 +1,86 @@
 #pragma once
 
-#include "Blueberry\Core\Base.h"
-#include <functional>
+#include "Blueberry\Core\Delegate.h"
 #include <map>
 
 namespace Blueberry
 {
-	enum class EventType
+	struct PairHash
 	{
-		None = 0,
-		WindowClose, WindowResize, WindowFocus, WindowLostFocus, WindowMoved,
-		KeyPressed, KeyReleased, KeyTyped,
-		MouseButtonPressed, MouseButtonReleased, MouseMoved, MouseScrolled
+		template <class T1, class T2>
+		std::size_t operator() (const std::pair<T1, T2> &v) const
+		{
+			return std::hash<T1>()(v.first) ^ std::hash<T2>()(v.second) << 1;
+		}
 	};
 
-#define EVENT_DECLARATION( type )															\
-	static EventType GetStaticType() { return EventType::type; }							\
-	virtual EventType GetEventType() const override { return GetStaticType(); }				\
-	virtual const char* GetName() const override { return #type; }							\
+	template<typename EventType = void>
+	class Event;
 
+	template<>
+	class Event<void>
+	{
+	public:
+		template <class OwnerObject, void(OwnerObject::*methodPtr)()>
+		void AddCallback(OwnerObject* const object);
+		template <class OwnerObject, void(OwnerObject::*methodPtr)()>
+		void RemoveCallback(OwnerObject* const object);
+		void Invoke();
+
+	private:
+		std::unordered_map<std::pair<uint64_t, uint64_t>, Delegate<>, PairHash> m_Callbacks;
+	};
+
+	template<class EventType>
 	class Event
 	{
 	public:
-		virtual ~Event() = default;
-		virtual EventType GetEventType() const = 0;
-		virtual const char* GetName() const = 0;
-		virtual std::string ToString() const { return GetName(); }
-	};
-
-	using EventCallback = std::function<void(const Event&)>;
-
-#define BIND_EVENT(fn) std::bind(&fn, this, std::placeholders::_1)
-
-	class EventDispatcher
-	{
-	public:
-		EventDispatcher() = default;
-		~EventDispatcher() = default;
-
-	public:
-		static void AddCallback(const EventType& type, EventCallback&& callback);
-		static void Invoke(Event& event);
+		template <class OwnerObject, void(OwnerObject::*methodPtr)(const EventType&)>
+		void AddCallback(OwnerObject* const object);
+		template <class OwnerObject, void(OwnerObject::*methodPtr)(const EventType&)>
+		void RemoveCallback(OwnerObject* const object);
+		void Invoke(EventType& event);
 
 	private:
-		static std::map<EventType, std::vector<EventCallback>> m_Observers;
+		std::unordered_map<std::pair<uint64_t, uint64_t>, Delegate<const EventType&>, PairHash> m_Callbacks;
 	};
+
+	template <class OwnerObject, void(OwnerObject::*methodPtr)()>
+	inline void Event<void>::AddCallback(OwnerObject* const object)
+	{
+		m_Callbacks.insert_or_assign(std::make_pair((uint64_t)&methodPtr, (uint64_t)object), Delegate<>::Create<OwnerObject, methodPtr>(object));
+	}
+
+	template <class OwnerObject, void(OwnerObject::*methodPtr)()>
+	inline void Event<void>::RemoveCallback(OwnerObject* const object)
+	{
+		m_Callbacks.erase(std::make_pair((uint64_t)&methodPtr, (uint64_t)object));
+	}
+
+	inline void Event<void>::Invoke()
+	{
+		for (auto& callback : m_Callbacks)
+			callback.second.Invoke();
+	}
+
+	template <class EventType>
+	template <class OwnerObject, void(OwnerObject::*methodPtr)(const EventType&)>
+	inline void Event<EventType>::AddCallback(OwnerObject* const object)
+	{
+		m_Callbacks.insert_or_assign(std::make_pair((uint64_t)&methodPtr, (uint64_t)object), Delegate<const EventType&>::Create<OwnerObject, methodPtr>(object));
+	}
+
+	template <class EventType>
+	template <class OwnerObject, void(OwnerObject::*methodPtr)(const EventType&)>
+	inline void Event<EventType>::RemoveCallback(OwnerObject* const object)
+	{
+		m_Callbacks.erase(std::make_pair((uint64_t)&methodPtr, (uint64_t)object));
+	}
+
+	template<class EventType>
+	inline void Event<EventType>::Invoke(EventType& event)
+	{
+		for (auto& callback : m_Callbacks)
+			callback.second.Invoke(event);
+	}
 }

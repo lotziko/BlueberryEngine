@@ -4,6 +4,7 @@
 namespace Blueberry
 {
 	std::set<ObjectId> Selection::s_ActiveObjects = std::set<ObjectId>();
+	SelectionChangeEvent Selection::s_SelectionChanged = {};
 
 	Object* Selection::GetActiveObject()
 	{
@@ -32,5 +33,11 @@ namespace Blueberry
 		{
 			s_ActiveObjects.insert(object->GetObjectId());
 		}
+		s_SelectionChanged.Invoke();
+	}
+
+	SelectionChangeEvent& Selection::GetSelectionChanged()
+	{
+		return s_SelectionChanged;
 	}
 }

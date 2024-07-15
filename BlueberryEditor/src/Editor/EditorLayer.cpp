@@ -5,6 +5,7 @@
 #include "Blueberry\Graphics\SceneRenderer.h"
 #include "Blueberry\Graphics\ImGuiRenderer.h"
 #include "Blueberry\Math\Math.h"
+#include "Blueberry\Events\WindowEvents.h"
 
 #include "Editor\Misc\ImGuiHelper.h"
 #include "Editor\Inspector\RegisterObjectInspectors.h"
@@ -45,8 +46,7 @@ namespace Blueberry
 			ImGui::ApplyEditorDarkTheme();
 			ImGui::LoadDefaultEditorFonts();
 		}
-
-		EventDispatcher::AddCallback(EventType::WindowResize, BIND_EVENT(EditorLayer::OnResizeEvent));
+		WindowEvents::GetWindowResized().AddCallback<EditorLayer, &EditorLayer::OnWindowResize>(this);
 	}
 
 	void EditorLayer::OnDetach()
@@ -55,6 +55,7 @@ namespace Blueberry
 		delete m_SceneInspector;
 		delete m_SceneArea;
 		delete m_ProjectBrowser;
+		WindowEvents::GetWindowResized().RemoveCallback<EditorLayer, &EditorLayer::OnWindowResize>(this);
 	}
 
 	void EditorLayer::OnDraw()
@@ -68,10 +69,9 @@ namespace Blueberry
 		GfxDevice::SwapBuffers();
 	}
 
-	void EditorLayer::OnResizeEvent(const Event& event)
+	void EditorLayer::OnWindowResize(const WindowResizeEventArgs& event)
 	{
-		auto resizeEvent = static_cast<const WindowResizeEvent&>(event);
-		GfxDevice::ResizeBackbuffer(resizeEvent.GetWidth(), resizeEvent.GetHeight());
+		GfxDevice::ResizeBackbuffer(event.GetWidth(), event.GetHeight());
 	}
 
 	void EditorLayer::DrawDockSpace()

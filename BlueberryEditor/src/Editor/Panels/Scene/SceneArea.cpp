@@ -24,6 +24,8 @@
 
 namespace Blueberry
 {
+	size_t SceneArea::s_SceneRedrawFrame = 0;
+
 	SceneArea::SceneArea()
 	{
 		m_ColorMSAARenderTarget = RenderTexture::Create(1920, 1080, 4, TextureFormat::R16G16B16A16_FLOAT);
@@ -38,6 +40,9 @@ namespace Blueberry
 		// TODO save to config instead
 		m_Position = Vector3(0, 10, 0);
 		m_Rotation = Quaternion::CreateFromYawPitchRoll(0, ToRadians(-45), 0);
+
+		Selection::GetSelectionChanged().AddCallback<SceneArea, &SceneArea::OnSelectionChange>(this);
+		EditorSceneManager::GetSceneLoaded().AddCallback<SceneArea, &SceneArea::OnSceneLoad>(this);
 	}
 
 	SceneArea::~SceneArea()
@@ -47,6 +52,9 @@ namespace Blueberry
 		delete m_ColorRenderTarget;
 		delete m_DepthStencilRenderTarget;
 		delete m_ObjectPicker;
+
+		Selection::GetSelectionChanged().RemoveCallback<SceneArea, &SceneArea::OnSelectionChange>(this);
+		EditorSceneManager::GetSceneLoaded().RemoveCallback<SceneArea, &SceneArea::OnSceneLoad>(this);
 	}
 
 	Vector3 GetMotion(const Quaternion& rotation)
@@ -106,7 +114,7 @@ namespace Blueberry
 			m_Position += motion;
 			if (motion.LengthSquared() > 0)
 			{
-				m_SceneRedrawRequested = true;
+				RequestRedrawAll();
 			}
 		}
 
@@ -117,7 +125,7 @@ namespace Blueberry
 			if (mousePos.x >= pos.x && mousePos.y >= pos.y && mousePos.x <= pos.x + size.x && mousePos.y <= pos.y + size.y)
 			{
 				SceneAreaMovement::HandleZoom(this, mouseWheelDelta, Vector2(mousePos.x - pos.x, size.y - (mousePos.y - pos.y)));
-				m_SceneRedrawRequested = true;
+				RequestRedrawAll();
 			}
 		}
 
@@ -139,7 +147,7 @@ namespace Blueberry
 				SceneAreaMovement::HandleDrag(this, Vector2(dragDelta.x - m_PreviousDragDelta.x, dragDelta.y - m_PreviousDragDelta.y));
 				m_PreviousDragDelta = Vector2(dragDelta.x, dragDelta.y);
 			}
-			m_SceneRedrawRequested = true;
+			RequestRedrawAll();
 		}
 		else
 		{
@@ -168,7 +176,7 @@ namespace Blueberry
 						scene->AddEntity(PrefabManager::CreateInstance((Entity*)object)->GetEntity());
 					}
 				}
-				m_SceneRedrawRequested = true;
+				RequestRedrawAll();
 			}
 			ImGui::EndDragDropTarget();
 		}
@@ -188,7 +196,6 @@ namespace Blueberry
 				{
 					Selection::SetActiveObject(pickedObject);
 				}
-				m_SceneRedrawRequested = true;
 			}
 		}
 
@@ -198,20 +205,13 @@ namespace Blueberry
 			ImGui::SetWindowFocus();
 		}
 
-		Scene* currentScene = EditorSceneManager::GetScene();
-		if (m_LastScene != currentScene)
-		{
-			m_SceneRedrawRequested = true;
-			m_LastScene = currentScene;
-		}
+		SetupCamera(size.x, size.y);
 
-		if (m_SceneRedrawRequested)
+		if (s_SceneRedrawFrame >= Time::GetFrameCount())
 		{
-			SetupCamera(size.x, size.y);
 			DrawScene(size.x, size.y);
 
-			m_ObjectPicker->DrawOutline(currentScene, m_Camera, m_ColorRenderTarget->Get());
-			m_SceneRedrawRequested = false;
+			m_ObjectPicker->DrawOutline(EditorSceneManager::GetScene(), m_Camera, m_ColorRenderTarget->Get());
 		}
 
 		ImGui::GetWindowDrawList()->AddImage(m_ColorRenderTarget->GetHandle(), ImVec2(pos.x, pos.y), ImVec2(pos.x + size.x, pos.y + size.y), ImVec2(0, 0), ImVec2(size.x / m_ColorRenderTarget->GetWidth(), size.y / m_ColorRenderTarget->GetHeight()));
@@ -296,6 +296,11 @@ namespace Blueberry
 		}
 	}
 
+	void SceneArea::RequestRedrawAll()
+	{
+		s_SceneRedrawFrame = Time::GetFrameCount() + 1;
+	}
+
 	Vector3 SceneArea::GetCameraPosition()
 	{
 		// GetCameraDistance() is inverted because of right handed coordinate system
@@ -343,7 +348,12 @@ namespace Blueberry
 			m_Camera.SetOrthographic(false);
 			m_Camera.SetFieldOfView(60);
 		}
-		m_Camera.SetPixelSize(Vector2(width, height));
+		Vector2 currentSize = m_Camera.GetPixelSize();
+		if (currentSize.x != width || currentSize.y != height)
+		{
+			m_Camera.SetPixelSize(Vector2(width, height));
+			RequestRedrawAll();
+		}
 	}
 
 	void SceneArea::DrawControls()
@@ -476,6 +486,7 @@ namespace Blueberry
 						transform->SetLocalPosition(translation);
 						transform->SetLocalRotation(rotation);
 						transform->SetLocalScale(scale);
+						RequestRedrawAll();
 					}
 				}
 			}
@@ -517,5 +528,15 @@ namespace Blueberry
 		m_Rotation = direction;
 		m_Size = newSize;
 		m_IsOrthographic = isOrthographic;
+	}
+
+	void SceneArea::OnSelectionChange()
+	{
+		RequestRedrawAll();
+	}
+
+	void SceneArea::OnSceneLoad()
+	{
+		RequestRedrawAll();
 	}
 }

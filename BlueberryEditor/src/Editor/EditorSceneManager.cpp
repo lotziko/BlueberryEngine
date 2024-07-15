@@ -15,6 +15,7 @@ namespace Blueberry
 {
 	Scene* EditorSceneManager::s_Scene = nullptr;
 	std::string EditorSceneManager::s_Path = "";
+	SceneLoadEvent EditorSceneManager::s_SceneLoaded = {};
 
 	void EditorSceneManager::CreateEmpty(const std::string& path)
 	{
@@ -28,6 +29,7 @@ namespace Blueberry
 		}
 
 		Save();
+		s_SceneLoaded.Invoke();
 	}
 
 	Scene* EditorSceneManager::GetScene()
@@ -92,11 +94,17 @@ namespace Blueberry
 		YamlSerializer serializer;
 		Deserialize(s_Scene, serializer, path);
 		s_Path = path;
+		s_SceneLoaded.Invoke();
 	}
 
 	void EditorSceneManager::Save()
 	{
 		YamlSerializer serializer;
 		Serialize(s_Scene, serializer, s_Path);
+	}
+
+	SceneLoadEvent EditorSceneManager::GetSceneLoaded()
+	{
+		return s_SceneLoaded;
 	}
 }

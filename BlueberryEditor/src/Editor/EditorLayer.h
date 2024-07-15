@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Blueberry\Core\Layer.h"
-#include "Blueberry\Events\WindowEvent.h"
 
 #include "Editor\Panels\Hierarchy\SceneHierarchy.h"
 #include "Editor\Panels\Inspector\SceneInspector.h"
@@ -14,6 +13,7 @@ namespace Blueberry
 	class Texture;
 	class SceneArea;
 	class ImGuiRenderer;
+	class WindowResizeEventArgs;
 
 	class EditorLayer : public Layer
 	{
@@ -23,7 +23,7 @@ namespace Blueberry
 		virtual void OnAttach() override;
 		virtual void OnDetach() override;
 		virtual void OnDraw() override;
-		virtual void OnResizeEvent(const Event& event);
+		virtual void OnWindowResize(const WindowResizeEventArgs& event);
 
 	private:
 		void DrawDockSpace();
