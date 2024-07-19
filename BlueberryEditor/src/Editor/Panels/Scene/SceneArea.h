@@ -54,6 +54,7 @@ namespace Blueberry
 
 		void OnSelectionChange();
 		void OnSceneLoad();
+		void OnWindowFocus();
 
 	private:
 		RenderTexture* m_ColorMSAARenderTarget = nullptr;

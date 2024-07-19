@@ -47,6 +47,7 @@ namespace Blueberry
 			ImGui::LoadDefaultEditorFonts();
 		}
 		WindowEvents::GetWindowResized().AddCallback<EditorLayer, &EditorLayer::OnWindowResize>(this);
+		WindowEvents::GetWindowFocused().AddCallback<EditorLayer, &EditorLayer::OnWindowFocus>(this);
 	}
 
 	void EditorLayer::OnDetach()
@@ -56,6 +57,7 @@ namespace Blueberry
 		delete m_SceneArea;
 		delete m_ProjectBrowser;
 		WindowEvents::GetWindowResized().RemoveCallback<EditorLayer, &EditorLayer::OnWindowResize>(this);
+		WindowEvents::GetWindowFocused().RemoveCallback<EditorLayer, &EditorLayer::OnWindowFocus>(this);
 	}
 
 	void EditorLayer::OnDraw()
@@ -72,6 +74,11 @@ namespace Blueberry
 	void EditorLayer::OnWindowResize(const WindowResizeEventArgs& event)
 	{
 		GfxDevice::ResizeBackbuffer(event.GetWidth(), event.GetHeight());
+	}
+
+	void EditorLayer::OnWindowFocus()
+	{
+		AssetDB::Refresh();
 	}
 
 	void EditorLayer::DrawDockSpace()

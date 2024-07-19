@@ -20,13 +20,16 @@ namespace Blueberry
 	};
 
 	using WindowResizeEvent = Event<WindowResizeEventArgs>;
+	using WindowFocusEvent = Event<>;
 
 	class WindowEvents
 	{
 	public:
 		static WindowResizeEvent& GetWindowResized();
+		static WindowFocusEvent& GetWindowFocused();
 
 	private:
 		static WindowResizeEvent s_WindowResized;
+		static WindowFocusEvent s_WindowFocused;
 	};
 }

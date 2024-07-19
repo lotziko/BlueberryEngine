@@ -198,6 +198,11 @@ namespace Blueberry
 			}
 			return 0;
 		}
+		case WM_SETFOCUS:
+		{
+			WindowEvents::GetWindowFocused().Invoke();
+			return 0;
+		}
 
 		default:
 			break;

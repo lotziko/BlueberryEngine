@@ -16,6 +16,7 @@
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Assets\AssetLoader.h"
+#include "Blueberry\Events\WindowEvents.h"
 
 #include "SceneAreaMovement.h"
 
@@ -43,6 +44,7 @@ namespace Blueberry
 
 		Selection::GetSelectionChanged().AddCallback<SceneArea, &SceneArea::OnSelectionChange>(this);
 		EditorSceneManager::GetSceneLoaded().AddCallback<SceneArea, &SceneArea::OnSceneLoad>(this);
+		WindowEvents::GetWindowFocused().AddCallback<SceneArea, &SceneArea::OnWindowFocus>(this);
 	}
 
 	SceneArea::~SceneArea()
@@ -55,6 +57,7 @@ namespace Blueberry
 
 		Selection::GetSelectionChanged().RemoveCallback<SceneArea, &SceneArea::OnSelectionChange>(this);
 		EditorSceneManager::GetSceneLoaded().RemoveCallback<SceneArea, &SceneArea::OnSceneLoad>(this);
+		WindowEvents::GetWindowFocused().RemoveCallback<SceneArea, &SceneArea::OnWindowFocus>(this);
 	}
 
 	Vector3 GetMotion(const Quaternion& rotation)
@@ -536,6 +539,11 @@ namespace Blueberry
 	}
 
 	void SceneArea::OnSceneLoad()
+	{
+		RequestRedrawAll();
+	}
+
+	void SceneArea::OnWindowFocus()
 	{
 		RequestRedrawAll();
 	}

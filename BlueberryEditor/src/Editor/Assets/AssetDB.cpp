@@ -59,6 +59,7 @@ namespace Blueberry
 					if (HasAssetWithGuidInData(guid))
 					{
 						DeleteAssetFromData(guid);
+						importer->ResetImport();
 					}
 					importersToImport.emplace_back(importer);
 				}

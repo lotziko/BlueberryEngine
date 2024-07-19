@@ -23,7 +23,8 @@ namespace Blueberry
 		virtual void OnAttach() override;
 		virtual void OnDetach() override;
 		virtual void OnDraw() override;
-		virtual void OnWindowResize(const WindowResizeEventArgs& event);
+		void OnWindowResize(const WindowResizeEventArgs& event);
+		void OnWindowFocus();
 
 	private:
 		void DrawDockSpace();
