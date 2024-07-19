@@ -17,7 +17,6 @@ namespace Blueberry
 
 	private:
 		static inline GfxTexture* s_ThumbnailRenderTarget = nullptr;
-		static inline GfxTexture* s_ThumbnailCopy = nullptr;
 		static std::unordered_map<ObjectId, Texture2D*> s_Thumbnails;
 	};
 }

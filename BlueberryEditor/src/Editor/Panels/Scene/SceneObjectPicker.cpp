@@ -59,14 +59,9 @@ namespace Blueberry
 		properties.width = 1920;
 		properties.height = 1080;
 		properties.isRenderTarget = true;
+		properties.isReadable = true;
 		properties.format = TextureFormat::R8G8B8A8_UNorm;
 		GfxDevice::CreateTexture(properties, m_SceneRenderTarget);
-
-		properties.width = 1;
-		properties.height = 1;
-		properties.format = TextureFormat::R8G8B8A8_UINT;
-		properties.isReadable = true;
-		GfxDevice::CreateTexture(properties, m_PixelRenderTarget);
 
 		m_SpriteObjectPickerMaterial = Material::Create((Shader*)AssetLoader::Load("assets/SpriteObjectPicker.shader"));
 		m_MeshObjectPickerMaterial = Material::Create((Shader*)AssetLoader::Load("assets/MeshObjectPicker.shader"));
@@ -76,7 +71,6 @@ namespace Blueberry
 	SceneObjectPicker::~SceneObjectPicker()
 	{
 		delete m_SceneRenderTarget;
-		delete m_PixelRenderTarget;
 	}
 
 	Object* SceneObjectPicker::Pick(Scene* scene, BaseCamera& camera, const int& positionX, const int& positionY)
@@ -123,8 +117,7 @@ namespace Blueberry
 		}
 
 		GfxDevice::SetRenderTarget(nullptr);
-		GfxDevice::Copy(m_SceneRenderTarget, m_PixelRenderTarget, area);
-		m_PixelRenderTarget->GetData(pixel);
+		GfxDevice::Read(m_SceneRenderTarget, pixel, area);
 
 		if (pixel[0] > 0 || pixel[1] > 0)
 		{

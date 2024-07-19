@@ -38,6 +38,7 @@ namespace Blueberry
 		static bool CreateImGuiRenderer(ImGuiRenderer*& renderer);
 
 		static void Copy(GfxTexture* source, GfxTexture* target, const Rectangle& area);
+		static void Read(GfxTexture* source, void* target, const Rectangle& area);
 
 		static void SetRenderTarget(GfxTexture* renderTexture, GfxTexture* depthStencilTexture = nullptr);
 		static void SetGlobalConstantBuffer(const std::size_t& id, GfxConstantBuffer* buffer);
@@ -68,6 +69,7 @@ namespace Blueberry
 		virtual bool CreateImGuiRendererImpl(ImGuiRenderer*& renderer) const = 0;
 		
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Rectangle& area) const = 0;
+		virtual void ReadImpl(GfxTexture* source, void* target, const Rectangle& area) const = 0;
 
 		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture) = 0;
 		virtual void SetGlobalConstantBufferImpl(const std::size_t& id, GfxConstantBuffer* buffer) = 0;

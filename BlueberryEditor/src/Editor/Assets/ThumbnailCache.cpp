@@ -38,11 +38,9 @@ namespace Blueberry
 			properties.width = THUMBNAIL_SIZE;
 			properties.height = THUMBNAIL_SIZE;
 			properties.isRenderTarget = true;
+			properties.isReadable = true;
 			properties.format = TextureFormat::R8G8B8A8_UNorm;
 			GfxDevice::CreateTexture(properties, s_ThumbnailRenderTarget);
-
-			properties.isReadable = true;
-			GfxDevice::CreateTexture(properties, s_ThumbnailCopy);
 		}
 
 		if (importer->IsClassType(TextureImporter::Type))
@@ -51,16 +49,14 @@ namespace Blueberry
 			{
 				static size_t blitTextureId = TO_HASH("_BlitTexture");
 
+				unsigned char data[THUMBNAIL_DATA_SIZE];
 				Texture2D* importedTexture = (Texture2D*)ObjectDB::GetObject(importer->GetImportedObjects().begin()->second);
 				GfxDevice::SetRenderTarget(s_ThumbnailRenderTarget);
 				GfxDevice::SetViewport(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
 				GfxDevice::SetGlobalTexture(blitTextureId, importedTexture->Get());
 				GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetBlit()));
-				GfxDevice::Copy(s_ThumbnailRenderTarget, s_ThumbnailCopy, Rectangle(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE));
+				GfxDevice::Read(s_ThumbnailRenderTarget, data, Rectangle(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE));
 				GfxDevice::SetRenderTarget(nullptr);
-
-				unsigned char data[THUMBNAIL_DATA_SIZE];
-				s_ThumbnailCopy->GetData(data);
 
 				Texture2D* thumbnail = Texture2D::Create(THUMBNAIL_SIZE, THUMBNAIL_SIZE);
 				thumbnail->SetData(data, THUMBNAIL_DATA_SIZE);

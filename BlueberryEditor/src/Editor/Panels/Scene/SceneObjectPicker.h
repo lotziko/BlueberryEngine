@@ -18,7 +18,6 @@ namespace Blueberry
 	private:
 		GfxTexture* m_SceneRenderTarget = nullptr;
 		GfxTexture* m_SceneDepthStencil = nullptr;
-		GfxTexture* m_PixelRenderTarget = nullptr;
 		Material* m_SpriteObjectPickerMaterial = nullptr;
 		Material* m_MeshObjectPickerMaterial = nullptr;
 		Material* m_ObjectPickerOutlineMaterial = nullptr;

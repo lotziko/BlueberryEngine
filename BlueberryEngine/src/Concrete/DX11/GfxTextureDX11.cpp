@@ -87,11 +87,7 @@ namespace Blueberry
 		}
 		else
 		{
-			if (properties.isReadable)
-			{
-				return InitializeStaging(properties);
-			}
-			else if (properties.isRenderTarget)
+			if (properties.isRenderTarget)
 			{
 				if (properties.format == TextureFormat::D24_UNorm)
 				{
@@ -119,20 +115,6 @@ namespace Blueberry
 	void* GfxTextureDX11::GetHandle()
 	{
 		return m_ResourceView.Get();
-	}
-
-	void GfxTextureDX11::GetData(void* data)
-	{
-		D3D11_MAPPED_SUBRESOURCE mappedTexture;
-		ZeroMemory(&mappedTexture, sizeof(D3D11_MAPPED_SUBRESOURCE));
-		HRESULT hr = m_DeviceContext->Map(m_Texture.Get(), 0, D3D11_MAP_READ, 0, &mappedTexture);
-		if (FAILED(hr))
-		{
-			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to get texture data."));
-			return;
-		}
-		memcpy(data, mappedTexture.pData, m_Width * m_Height * sizeof(char) * 4); // TODO handle texture formats
-		m_DeviceContext->Unmap(m_Texture.Get(), 0);
 	}
 
 	void GfxTextureDX11::SetData(void* data)
@@ -338,6 +320,30 @@ namespace Blueberry
 			return false;
 		}
 
+		if (properties.isReadable)
+		{
+			D3D11_TEXTURE2D_DESC textureDesc;
+			ZeroMemory(&textureDesc, sizeof(D3D11_TEXTURE2D_DESC));
+
+			textureDesc.Width = m_Width;
+			textureDesc.Height = m_Height;
+			textureDesc.MipLevels = textureDesc.ArraySize = 1;
+			textureDesc.Format = format;
+			textureDesc.SampleDesc.Count = 1;
+			textureDesc.MiscFlags = 0;
+
+			textureDesc.Usage = D3D11_USAGE_STAGING;
+			textureDesc.BindFlags = 0;
+			textureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+
+			HRESULT hr = m_Device->CreateTexture2D(&textureDesc, nullptr, m_StagingTexture.GetAddressOf());
+			if (FAILED(hr))
+			{
+				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create texture."));
+				return false;
+			}
+		}
+
 		return true;
 	}
 
@@ -434,32 +440,6 @@ namespace Blueberry
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create depth stencil view."));
-			return false;
-		}
-
-		return true;
-	}
-
-	bool GfxTextureDX11::InitializeStaging(const TextureProperties& properties)
-	{
-		D3D11_TEXTURE2D_DESC textureDesc;
-		ZeroMemory(&textureDesc, sizeof(D3D11_TEXTURE2D_DESC));
-
-		textureDesc.Width = m_Width;
-		textureDesc.Height = m_Height;
-		textureDesc.MipLevels = textureDesc.ArraySize = 1;
-		textureDesc.Format = (DXGI_FORMAT)properties.format;
-		textureDesc.SampleDesc.Count = 1;
-		textureDesc.MiscFlags = 0;
-
-		textureDesc.Usage = D3D11_USAGE_STAGING;
-		textureDesc.BindFlags = 0;
-		textureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-
-		HRESULT hr = m_Device->CreateTexture2D(&textureDesc, nullptr, m_Texture.GetAddressOf());
-		if (FAILED(hr))
-		{
-			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create texture."));
 			return false;
 		}
 

@@ -207,6 +207,30 @@ namespace Blueberry
 		m_DeviceContext->CopySubresourceRegion(static_cast<GfxTextureDX11*>(target)->m_Texture.Get(), 0, 0, 0, 0, static_cast<GfxTextureDX11*>(source)->m_Texture.Get(), 0, &src);
 	}
 
+	void GfxDeviceDX11::ReadImpl(GfxTexture* source, void* target, const Rectangle& area) const
+	{
+		auto dxTexture = static_cast<GfxTextureDX11*>(source);
+		m_DeviceContext->CopySubresourceRegion(dxTexture->m_StagingTexture.Get(), 0, 0, 0, 0, dxTexture->m_Texture.Get(), 0, NULL);
+		
+		D3D11_MAPPED_SUBRESOURCE mappedTexture;
+		ZeroMemory(&mappedTexture, sizeof(D3D11_MAPPED_SUBRESOURCE));
+		HRESULT hr = m_DeviceContext->Map(dxTexture->m_StagingTexture.Get(), 0, D3D11_MAP_READ, 0, &mappedTexture);
+		if (FAILED(hr))
+		{
+			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to get texture data."));
+			return;
+		}
+		// TODO handle texture formats
+		for (int i = 0; i < area.height; i++)
+		{
+			size_t pixelSize = sizeof(char) * 4;
+			size_t offset = ((area.y + i) * dxTexture->m_Width + area.x) * pixelSize;
+			char* copyPtr = static_cast<char*>(mappedTexture.pData) + offset;
+			memcpy(target, copyPtr, area.width * pixelSize);
+		}
+		m_DeviceContext->Unmap(dxTexture->m_StagingTexture.Get(), 0);
+	}
+
 	void GfxDeviceDX11::SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture)
 	{
 		if (renderTexture == nullptr)

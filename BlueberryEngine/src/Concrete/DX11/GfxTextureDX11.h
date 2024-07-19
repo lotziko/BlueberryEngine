@@ -16,7 +16,6 @@ namespace Blueberry
 		virtual UINT GetHeight() const override;
 		virtual void* GetHandle() override;
 
-		virtual void GetData(void* data) override;
 		virtual void SetData(void* data) override;
 
 	private:
@@ -24,7 +23,6 @@ namespace Blueberry
 		bool InitializeResource(D3D11_SUBRESOURCE_DATA* subresourceData, const TextureProperties& properties);
 		bool InitializeRenderTarget(const TextureProperties& properties);
 		bool InitializeDepthStencil(const TextureProperties& properties);
-		bool InitializeStaging(const TextureProperties& properties);
 
 	private:
 		ComPtr<ID3D11Texture2D> m_Texture;
@@ -32,6 +30,7 @@ namespace Blueberry
 		ComPtr<ID3D11SamplerState> m_SamplerState;
 		ComPtr<ID3D11RenderTargetView> m_RenderTargetView;
 		ComPtr<ID3D11DepthStencilView> m_DepthStencilView;
+		ComPtr<ID3D11Texture2D> m_StagingTexture;
 
 		UINT m_Width;
 		UINT m_Height;
