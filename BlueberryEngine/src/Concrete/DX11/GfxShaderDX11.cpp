@@ -178,7 +178,7 @@ namespace Blueberry
 
 		unsigned int resourceBindingCount = pixelShaderDesc.BoundResources;
 
-		for (int i = 0; i < resourceBindingCount; i++)
+		for (UINT i = 0; i < resourceBindingCount; i++)
 		{
 			D3D11_SHADER_INPUT_BIND_DESC inputBindDesc;
 			pixelShaderReflection->GetResourceBindingDesc(i, &inputBindDesc);

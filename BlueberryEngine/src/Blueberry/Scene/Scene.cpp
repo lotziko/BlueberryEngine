@@ -4,6 +4,8 @@
 #include "Blueberry\Serialization\Serializer.h"
 #include "Blueberry\Core\ClassDB.h"
 
+#include "Blueberry\Scene\Components\PhysicsBody.h"
+
 namespace Blueberry
 {
 	Scene::Scene()
@@ -13,6 +15,18 @@ namespace Blueberry
 	bool Scene::Initialize()
 	{
 		return true;
+	}
+
+	void Scene::Update(const float& deltaTime)
+	{
+		// Update physics
+		{
+			for (auto component : GetIterator<PhysicsBody>())
+			{
+				auto physicsBody = static_cast<PhysicsBody*>(component.second);
+				physicsBody->Update();
+			}
+		}
 	}
 
 	void Scene::Destroy()

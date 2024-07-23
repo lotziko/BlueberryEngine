@@ -19,6 +19,8 @@ namespace Blueberry
 		template<class ComponentType>
 		ComponentIterator GetIterator();
 
+		void Update(const float& deltaTime);
+
 		void Destroy();
 
 		Entity* CreateEntity(const std::string& name);

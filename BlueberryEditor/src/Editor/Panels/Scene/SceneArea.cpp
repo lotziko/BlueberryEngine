@@ -175,8 +175,11 @@ namespace Blueberry
 					Scene* scene = EditorSceneManager::GetScene();
 					if (scene != nullptr)
 					{
-						AssetLoader::Load(Blueberry::ObjectDB::GetGuidFromObject(object));
-						scene->AddEntity(PrefabManager::CreateInstance((Entity*)object)->GetEntity());
+						if (Blueberry::ObjectDB::HasGuid(object))
+						{
+							AssetLoader::Load(Blueberry::ObjectDB::GetGuidFromObject(object));
+							scene->AddEntity(PrefabManager::CreateInstance((Entity*)object)->GetEntity());
+						}
 					}
 				}
 				RequestRedrawAll();
@@ -369,7 +372,7 @@ namespace Blueberry
 
 		ImGui::BeginGroup();
 
-		if (EditorSceneManager::GetScene() != nullptr)
+		if (EditorSceneManager::GetScene() != nullptr && !EditorSceneManager::IsRunning())
 		{
 			if (ImGui::Button("Save"))
 			{

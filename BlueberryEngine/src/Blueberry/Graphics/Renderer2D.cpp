@@ -125,7 +125,7 @@ namespace Blueberry
 
 		// TODO non rectangle sprites
 		// Fill vertices
-		for (int i = 0; i < s_DrawingDataCount; i++)
+		for (UINT i = 0; i < s_DrawingDataCount; i++)
 		{
 			DrawingData data = s_DrawingDatas[i];
 			Matrix transform = data.transform;
@@ -134,7 +134,7 @@ namespace Blueberry
 
 			for (int j = 0; j < 4; j++)
 			{
-				auto position = Vector4::Transform(s_QuadVertexPositons[j] * Vector4(texture->GetWidth() / 32, texture->GetHeight() / 32, 1, 1), transform);
+				auto position = Vector4::Transform(s_QuadVertexPositons[j] * Vector4((float)texture->GetWidth() / 32, (float)texture->GetHeight() / 32, 1, 1), transform);
 				
 				s_VertexDataPtr[0] = position.x;
 				s_VertexDataPtr[1] = position.y;
@@ -160,7 +160,7 @@ namespace Blueberry
 		Texture2D* currentTexture = s_DrawingDatas->texture;
 		UINT indexOffset = 0;
 		UINT indexCount = 0;
-		for (int i = 0; i < s_DrawingDataCount; i++)
+		for (UINT i = 0; i < s_DrawingDataCount; i++)
 		{
 			DrawingData data = s_DrawingDatas[i];
 			Material* material = data.material;

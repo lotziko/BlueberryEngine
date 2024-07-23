@@ -81,9 +81,12 @@ namespace Blueberry
 			if (frustum.Contains(bounds))
 			{
 				Mesh* mesh = meshRenderer->GetMesh();
-				Material* material = meshRenderer->GetMaterial();
-				PerDrawConstantBuffer::BindData(meshRenderer->GetEntity()->GetTransform()->GetLocalToWorldMatrix());
-				GfxDevice::Draw(GfxDrawingOperation(mesh, material));
+				if (mesh != nullptr)
+				{
+					Material* material = meshRenderer->GetMaterial();
+					PerDrawConstantBuffer::BindData(meshRenderer->GetEntity()->GetTransform()->GetLocalToWorldMatrix());
+					GfxDevice::Draw(GfxDrawingOperation(mesh, material));
+				}
 			}
 		}
 

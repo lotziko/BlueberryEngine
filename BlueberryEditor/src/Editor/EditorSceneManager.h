@@ -16,11 +16,16 @@ namespace Blueberry
 		static void Load(const std::string& path);
 		static void Save();
 
+		static void Run();
+		static void Stop();
+		static const bool& IsRunning();
+
 		static SceneLoadEvent GetSceneLoaded();
 
 	private:
 		static Scene* s_Scene;
 		static std::string s_Path;
 		static SceneLoadEvent s_SceneLoaded;
+		static bool s_IsRunning;
 	};
 }

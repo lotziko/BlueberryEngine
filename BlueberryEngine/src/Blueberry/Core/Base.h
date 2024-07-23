@@ -16,6 +16,14 @@ namespace Blueberry
 		return std::make_shared<T>(std::forward<Args>(args)...);
 	}
 
+	template<typename T>
+	using UniquePtr = std::unique_ptr<T>;
+	template<typename T, typename ... Args>
+	constexpr UniquePtr<T> CreateUniquePtr(Args&& ... args)
+	{
+		return std::make_unique<T>(std::forward<Args>(args)...);
+	}
+
 	using byte = unsigned char;
 }
 

@@ -45,6 +45,11 @@ namespace Blueberry
 		return a > b ? a : b;
 	}
 
+	inline int Max(int a, int b)
+	{
+		return a > b ? a : b;
+	}
+
 	inline float Min(float a, float b)
 	{
 		return a < b ? a : b;

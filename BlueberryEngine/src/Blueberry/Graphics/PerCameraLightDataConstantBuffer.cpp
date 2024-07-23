@@ -40,7 +40,7 @@ namespace Blueberry
 		}
 
 		CONSTANTS constants;
-		constants.lightsCount = Vector4(lights.size(), 0.0f, 0.0f, 0.0f);
+		constants.lightsCount = Vector4((float)lights.size(), 0.0f, 0.0f, 0.0f);
 		for (int i = 0; i < lights.size(); i++)
 		{
 			LightData data = lights[i];

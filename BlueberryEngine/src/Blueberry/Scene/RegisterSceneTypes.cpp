@@ -11,6 +11,10 @@
 #include "Components\MeshRenderer.h"
 #include "Components\Camera.h"
 #include "Components\Light.h"
+#include "Components\PhysicsBody.h"
+#include "Components\Collider.h"
+#include "Components\BoxCollider.h"
+#include "Components\SphereCollider.h"
 
 namespace Blueberry
 {
@@ -25,5 +29,9 @@ namespace Blueberry
 		REGISTER_CLASS(MeshRenderer);
 		REGISTER_CLASS(Camera);
 		REGISTER_CLASS(Light);
+		REGISTER_CLASS(PhysicsBody);
+		REGISTER_ABSTRACT_CLASS(Collider);
+		REGISTER_CLASS(BoxCollider);
+		REGISTER_CLASS(SphereCollider);
 	}
 }

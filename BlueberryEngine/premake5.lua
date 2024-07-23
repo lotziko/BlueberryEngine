@@ -22,12 +22,14 @@ project "BlueberryEngine"
 	{
 		"src",
 		"%{IncludeDir.imgui}",
+		"%{IncludeDir.jolt}",
 		"%{IncludeDir.mikktspace}"
 	}
 
 	links
 	{
-		"Imgui"
+		"Imgui",
+		"Jolt"
 	}
 
 	filter "system:windows"

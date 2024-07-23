@@ -54,8 +54,8 @@ namespace Blueberry
 		D3D11_VIEWPORT viewport;
 		ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
 
-		viewport.TopLeftX = x;
-		viewport.TopLeftY = y;
+		viewport.TopLeftX = static_cast<FLOAT>(x);
+		viewport.TopLeftY = static_cast<FLOAT>(y);
 		viewport.Width = static_cast<FLOAT>(width);
 		viewport.Height = static_cast<FLOAT>(height);
 		viewport.MinDepth = 0.0f;
@@ -277,6 +277,7 @@ namespace Blueberry
 		case Topology::LineList:		return D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
 		case Topology::LineStrip:		return D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP;
 		case Topology::TriangleList:	return D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+		default:						return D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
 		}
 	}
 

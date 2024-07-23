@@ -171,7 +171,7 @@ namespace Blueberry
 
 	void Gizmos::Flush()
 	{
-		for (int i = 0; i < s_LineCount; i++)
+		for (UINT i = 0; i < s_LineCount; i++)
 		{
 			Line line = s_Lines[i];
 			Vector3 start = line.start;

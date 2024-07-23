@@ -106,7 +106,10 @@ namespace Blueberry
 		{
 			DrawCreateEntity();
 			DrawDestroyEntity(entity);
-			DrawRenameEntity(entity);
+			if (PrefabManager::IsPrefabInstance(entity))
+			{
+				DrawUnpackPrefabEntity(entity);
+			}
 			ImGui::EndPopup();
 		}
 
@@ -138,7 +141,7 @@ namespace Blueberry
 			}
 			else
 			{
-				bool isPrefab = PrefabManager::IsPrefabInstace(entity);
+				bool isPrefab = PrefabManager::IsPrefabInstance(entity);
 				if (isPrefab)
 				{
 					ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 255, 0, 255));
@@ -191,11 +194,11 @@ namespace Blueberry
 		}
 	}
 
-	void SceneHierarchy::DrawRenameEntity(Entity* entity)
+	void SceneHierarchy::DrawUnpackPrefabEntity(Entity* entity)
 	{
-		if (ImGui::MenuItem("Rename Entity"))
+		if (ImGui::MenuItem("Unpack prefab"))
 		{
-
+			PrefabManager::UnpackPrefabInstance(entity);
 		}
 	}
 }

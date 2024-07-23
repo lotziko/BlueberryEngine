@@ -16,6 +16,7 @@ namespace Blueberry
 	Scene* EditorSceneManager::s_Scene = nullptr;
 	std::string EditorSceneManager::s_Path = "";
 	SceneLoadEvent EditorSceneManager::s_SceneLoaded = {};
+	bool EditorSceneManager::s_IsRunning = false;
 
 	void EditorSceneManager::CreateEmpty(const std::string& path)
 	{
@@ -80,7 +81,7 @@ namespace Blueberry
 			for (auto& pair : s_Scene->GetEntities())
 			{
 				Entity* entity = pair.second.Get();
-				if (PrefabManager::IsPrefabInstace(entity))
+				if (PrefabManager::IsPrefabInstance(entity))
 				{
 					Object::Destroy(entity);
 				}
@@ -101,6 +102,30 @@ namespace Blueberry
 	{
 		YamlSerializer serializer;
 		Serialize(s_Scene, serializer, s_Path);
+	}
+
+	void EditorSceneManager::Run()
+	{
+		if (s_IsRunning)
+		{
+			return;
+		}
+		s_IsRunning = true;
+	}
+
+	void EditorSceneManager::Stop()
+	{
+		if (s_Scene == nullptr || !s_IsRunning)
+		{
+			return;
+		}
+		Load(s_Path);
+		s_IsRunning = false;
+	}
+
+	const bool& EditorSceneManager::IsRunning()
+	{
+		return s_IsRunning;
 	}
 
 	SceneLoadEvent EditorSceneManager::GetSceneLoaded()

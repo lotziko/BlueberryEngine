@@ -6,9 +6,11 @@
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\EditorSceneManager.h"
 #include "Editor\Selection.h"
+#include "Editor\Prefabs\PrefabManager.h"
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\Texture2D.h"
+#include "Blueberry\Scene\Entity.h"
 #include "imgui\imgui.h"
 
 #include "Editor\Assets\ThumbnailCache.h"
@@ -88,12 +90,33 @@ namespace Blueberry
 
 	void ProjectBrowser::DrawCurrentFolder()
 	{
+		ImVec2 pos = ImGui::GetCursorScreenPos();
+		ImVec2 size = ImGui::GetContentRegionAvail();
 		bool isAnyFileHovered = false;
 
 		if (m_CurrentDirectory != m_PreviousDirectory)
 		{
 			UpdateFiles();
 		}
+
+		// Prefab creating
+		ImGui::Dummy(size);
+		if (ImGui::BeginDragDropTarget())
+		{
+			const ImGuiPayload* payload = ImGui::GetDragDropPayload();
+			if (payload != nullptr && payload->IsDataType("OBJECT_ID"))
+			{
+				Blueberry::ObjectId* id = (Blueberry::ObjectId*)payload->Data;
+				Blueberry::Object* object = Blueberry::ObjectDB::GetObject(*id);
+				if (object != nullptr && object->IsClassType(Entity::Type) && ImGui::AcceptDragDropPayload("OBJECT_ID"))
+				{
+					PrefabManager::CreatePrefab(m_CurrentDirectory.string(), (Entity*)object);
+					UpdateFiles();
+				}
+			}
+			ImGui::EndDragDropTarget();
+		}
+		ImGui::SetCursorScreenPos(pos);
 		
 		for (auto& path : m_CurrentDirectoryFiles)
 		{

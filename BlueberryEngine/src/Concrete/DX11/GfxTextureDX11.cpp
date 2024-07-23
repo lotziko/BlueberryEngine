@@ -61,7 +61,7 @@ namespace Blueberry
 				int width = properties.width;
 				int height = properties.height;
 				char* ptr = (char*)properties.data;
-				for (int i = 0; i < properties.mipCount; ++i)
+				for (UINT i = 0; i < properties.mipCount; ++i)
 				{
 					D3D11_SUBRESOURCE_DATA subresourceData;
 					subresourceData.pSysMem = ptr;

@@ -3,12 +3,13 @@
 
 #include "Blueberry\Scene\Entity.h"
 #include "Editor\Prefabs\PrefabInstance.h"
+#include "Editor\Assets\AssetDB.h"
 
 namespace Blueberry
 {
 	std::unordered_map<ObjectId, ObjectId> PrefabManager::s_EntityToPrefabInstance = std::unordered_map<ObjectId, ObjectId>();
 
-	bool PrefabManager::IsPrefabInstace(Entity* entity)
+	bool PrefabManager::IsPrefabInstance(Entity* entity)
 	{
 		return s_EntityToPrefabInstance.count(entity->GetObjectId()) > 0;
 	}
@@ -37,5 +38,31 @@ namespace Blueberry
 
 		PrefabInstance* instance = PrefabInstance::Create(prefabEntity);
 		return instance;
+	}
+
+	void PrefabManager::CreatePrefab(const std::string& path, Entity* entity)
+	{
+		std::string prefabName(entity->GetName());
+		prefabName.append(".prefab");
+
+		auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
+		relativePath.append(prefabName);
+
+		AssetDB::CreateAsset(entity, relativePath.string());
+		AssetDB::SaveAssets();
+		AssetDB::Refresh();
+	}
+
+	void PrefabManager::UnpackPrefabInstance(Entity* entity)
+	{
+		auto it = s_EntityToPrefabInstance.find(entity->GetObjectId());
+		if (it != s_EntityToPrefabInstance.end())
+		{
+			Object* object = ObjectDB::GetObject(it->second);
+			PrefabInstance* instance = (PrefabInstance*)object;
+			instance->m_Entity = nullptr;
+			Object::Destroy(instance);
+			s_EntityToPrefabInstance.erase(it->first);
+		}
 	}
 }

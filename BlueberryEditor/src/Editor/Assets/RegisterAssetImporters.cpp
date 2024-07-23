@@ -29,6 +29,7 @@ namespace Blueberry
 		REGISTER_ASSET_IMPORTER(".shader", ShaderImporter::Type);
 		REGISTER_ASSET_IMPORTER(".scene", DefaultImporter::Type);
 		REGISTER_ASSET_IMPORTER(".material", NativeAssetImporter::Type);
+		REGISTER_ASSET_IMPORTER(".prefab", NativeAssetImporter::Type);
 		REGISTER_ASSET_IMPORTER(".fbx", ModelImporter::Type);
 		REGISTER_ASSET_IMPORTER("", FolderImporter::Type);
 	}
