@@ -69,6 +69,6 @@ namespace Blueberry
 		static void Set(AssetImporter* importer);
 
 	private:
-		static std::unordered_map<Guid, ImporterInfo> m_ImporterInfoCache;
+		static std::unordered_map<Guid, ImporterInfo> s_ImporterInfoCache;
 	};
 }

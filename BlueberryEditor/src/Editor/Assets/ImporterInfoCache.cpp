@@ -12,7 +12,7 @@
 
 namespace Blueberry
 {
-	std::unordered_map<Guid, ImporterInfoCache::ImporterInfo> ImporterInfoCache::m_ImporterInfoCache = std::unordered_map<Guid, ImporterInfoCache::ImporterInfo>();
+	std::unordered_map<Guid, ImporterInfoCache::ImporterInfo> ImporterInfoCache::s_ImporterInfoCache = std::unordered_map<Guid, ImporterInfoCache::ImporterInfo>();
 	
 	void ImporterInfoCache::Load()
 	{
@@ -32,7 +32,7 @@ namespace Blueberry
 				input.read((char*)&guid, sizeof(Guid));
 				ImporterInfo info = {};
 				info.Read(input);
-				m_ImporterInfoCache.insert_or_assign(guid, info);
+				s_ImporterInfoCache.insert_or_assign(guid, info);
 			}
 			input.close();
 		}
@@ -43,12 +43,12 @@ namespace Blueberry
 		auto dataPath = Path::GetAssetCachePath();
 		dataPath.append("ImporterInfoCache");
 
-		size_t cacheSize = m_ImporterInfoCache.size();
+		size_t cacheSize = s_ImporterInfoCache.size();
 		std::ofstream output;
 		output.open(dataPath, std::ofstream::binary);
 		output.write((char*)&cacheSize, sizeof(size_t));
 
-		for (auto& pair : m_ImporterInfoCache)
+		for (auto& pair : s_ImporterInfoCache)
 		{
 			Guid guid = pair.first;
 			ImporterInfo info = pair.second;
@@ -60,13 +60,13 @@ namespace Blueberry
 
 	bool ImporterInfoCache::Has(AssetImporter* importer)
 	{
-		return m_ImporterInfoCache.count(importer->GetGuid()) > 0;
+		return s_ImporterInfoCache.count(importer->GetGuid()) > 0;
 	}
 
 	bool ImporterInfoCache::Get(AssetImporter* importer)
 	{
-		auto it = m_ImporterInfoCache.find(importer->GetGuid());
-		if (it != m_ImporterInfoCache.end())
+		auto it = s_ImporterInfoCache.find(importer->GetGuid());
+		if (it != s_ImporterInfoCache.end())
 		{
 			ImporterInfo info = it->second;
 			Guid guid = importer->GetGuid();
@@ -108,6 +108,6 @@ namespace Blueberry
 				info.objects.emplace_back(std::tuple{ object.first, importedObject->GetType(), importedObject->GetName() });
 			}
 		}
-		m_ImporterInfoCache.insert_or_assign(guid, info);
+		s_ImporterInfoCache.insert_or_assign(guid, info);
 	}
 }

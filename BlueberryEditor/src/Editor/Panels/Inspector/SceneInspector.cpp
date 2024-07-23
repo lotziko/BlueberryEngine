@@ -1,6 +1,8 @@
 #include "bbpch.h"
 #include "SceneInspector.h"
 
+#include "InspectorExpandedItemsCache.h"
+
 #include "Blueberry\Scene\Scene.h"
 
 #include "Editor\Inspector\ObjectInspector.h"
@@ -11,6 +13,16 @@
 
 namespace Blueberry
 {
+	SceneInspector::SceneInspector()
+	{
+		InspectorExpandedItemsCache::Load();
+	}
+
+	SceneInspector::~SceneInspector()
+	{
+		InspectorExpandedItemsCache::Save();
+	}
+
 	void SceneInspector::DrawUI()
 	{
 		ImGui::Begin("Inspector");

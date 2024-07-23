@@ -8,6 +8,7 @@
 #include "Blueberry\Core\ClassDB.h"
 
 #include "Editor\Inspector\ObjectInspectorDB.h"
+#include "Editor\Panels\Inspector\InspectorExpandedItemsCache.h"
 
 namespace Blueberry
 {
@@ -67,7 +68,14 @@ namespace Blueberry
 
 				ImGui::PushID(headerId);
 
-				if (ImGui::CollapsingHeader(headerId))
+				ImGui::SetNextItemOpen(InspectorExpandedItemsCache::Get(name));
+				bool opened = ImGui::CollapsingHeader(headerId);
+				if (ImGui::IsItemToggledOpen())
+				{
+					InspectorExpandedItemsCache::Set(name, opened);
+				}
+
+				if (opened)
 				{
 					inspector->Draw(component);
 				}
