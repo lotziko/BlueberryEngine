@@ -15,6 +15,8 @@ namespace Blueberry
 
 		Entity* GetEntity();
 
+		virtual void OnBeginPlay() { };
+
 		static void BindProperties();
 
 	protected:

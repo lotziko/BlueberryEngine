@@ -13,5 +13,8 @@ namespace Blueberry
 
 	private:
 		virtual JPH::Shape* GetShape() override;
+
+	private:
+		Vector3 m_Size = Vector3::One;
 	};
 }

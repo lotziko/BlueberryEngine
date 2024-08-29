@@ -13,5 +13,8 @@ namespace Blueberry
 
 	private:
 		virtual JPH::Shape* GetShape() override;
+
+	private:
+		float m_Radius = 1.0f;
 	};
 }

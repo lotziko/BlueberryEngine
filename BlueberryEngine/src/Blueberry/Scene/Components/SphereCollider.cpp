@@ -14,11 +14,12 @@ namespace Blueberry
 	{
 		BEGIN_OBJECT_BINDING(SphereCollider)
 		BIND_FIELD(FieldInfo(TO_STRING(m_Entity), &SphereCollider::m_Entity, BindingType::ObjectPtr).SetObjectType(Entity::Type))
+		BIND_FIELD(FieldInfo(TO_STRING(m_Radius), &SphereCollider::m_Radius, BindingType::Float))
 		END_OBJECT_BINDING()
 	}
 
 	JPH::Shape* SphereCollider::GetShape()
 	{
-		return new JPH::SphereShape(1.0f);
+		return new JPH::SphereShape(m_Radius);
 	}
 }

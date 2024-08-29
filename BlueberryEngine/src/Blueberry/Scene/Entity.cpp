@@ -67,6 +67,7 @@ namespace Blueberry
 
 		std::size_t type = component->GetType();
 		m_Scene->m_ComponentManager.AddComponent(component);
+		m_Scene->m_CreatedComponents.emplace_back(component);
 	}
 
 	void Entity::RemoveComponentFromScene(Component* component)

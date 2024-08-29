@@ -14,11 +14,12 @@ namespace Blueberry
 	{
 		BEGIN_OBJECT_BINDING(BoxCollider)
 		BIND_FIELD(FieldInfo(TO_STRING(m_Entity), &BoxCollider::m_Entity, BindingType::ObjectPtr).SetObjectType(Entity::Type))
+		BIND_FIELD(FieldInfo(TO_STRING(m_Size), &BoxCollider::m_Size, BindingType::Vector3))
 		END_OBJECT_BINDING()
 	}
 
 	JPH::Shape* BoxCollider::GetShape()
 	{
-		return new JPH::BoxShape(JPH::RVec3(1.0f, 1.0f, 1.0f));
+		return new JPH::BoxShape(JPH::RVec3(m_Size.x, m_Size.y, m_Size.z));
 	}
 }

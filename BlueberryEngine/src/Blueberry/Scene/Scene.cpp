@@ -19,9 +19,18 @@ namespace Blueberry
 
 	void Scene::Update(const float& deltaTime)
 	{
+		if (m_CreatedComponents.size() > 0)
+		{
+			for (auto& component : m_CreatedComponents)
+			{
+				component->OnBeginPlay();
+			}
+			m_CreatedComponents.clear();
+		}
+
 		// Update physics
 		{
-			for (auto component : GetIterator<PhysicsBody>())
+			for (auto& component : GetIterator<PhysicsBody>())
 			{
 				auto physicsBody = static_cast<PhysicsBody*>(component.second);
 				physicsBody->Update();

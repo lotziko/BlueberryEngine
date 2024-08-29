@@ -31,6 +31,7 @@ namespace Blueberry
 
 	private:
 		std::map<ObjectId, ObjectPtr<Entity>> m_Entities;
+		std::vector<Component*> m_CreatedComponents;
 		ComponentManager m_ComponentManager;
 
 		friend class Entity;

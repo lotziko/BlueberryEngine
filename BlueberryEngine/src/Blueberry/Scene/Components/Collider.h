@@ -16,6 +16,8 @@ namespace Blueberry
 	private:
 		virtual JPH::Shape* GetShape() = 0;
 
+		virtual void OnBeginPlay() final;
+
 		friend class PhysicsBody;
 	};
 }

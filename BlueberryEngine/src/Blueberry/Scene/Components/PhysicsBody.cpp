@@ -8,8 +8,7 @@
 
 #include <Jolt\Jolt.h>
 #include <Jolt\Physics\PhysicsSystem.h>
-#include <Jolt\Physics\Collision\Shape\SphereShape.h>
-#include <Jolt\Physics\Collision\Shape\BoxShape.h>
+#include <Jolt\Physics\Collision\Shape\StaticCompoundShape.h>
 #include <Jolt\Physics\Body\BodyCreationSettings.h>
 
 namespace Blueberry
@@ -27,13 +26,35 @@ namespace Blueberry
 			m_Transform = GetEntity()->GetTransform();
 			Vector3 position = m_Transform->GetLocalPosition();
 			Quaternion rotation = m_Transform->GetLocalRotation();
-			Collider* collider = GetEntity()->GetComponent<Collider>();
-			if (collider != nullptr)
+			size_t collidersCount = m_Colliders.size();
+			if (collidersCount == 1)
 			{
 				JPH::Shape* shape;
-				shape = collider->GetShape();
+				shape = m_Colliders[0]->GetShape();
 				JPH::EMotionType motionType = (JPH::EMotionType)m_BodyType;
 				JPH::BodyCreationSettings settings(shape, JPH::RVec3(position.x, position.y, position.z), JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w), motionType, 1);
+				m_BodyId = bodyInterface.CreateAndAddBody(settings, JPH::EActivation::Activate);
+			}
+			else if (collidersCount > 1)
+			{
+				JPH::StaticCompoundShapeSettings* shapeSettings = new JPH::StaticCompoundShapeSettings();
+				Transform* bodyTransform = GetEntity()->GetTransform();
+				for (auto& collider : m_Colliders)
+				{
+					Transform* colliderTransform = collider->GetEntity()->GetTransform();
+					if (bodyTransform == colliderTransform)
+					{
+						shapeSettings->AddShape(JPH::Vec3::sZero(), JPH::Quat::sIdentity(), collider->GetShape());
+					}
+					else if (colliderTransform->GetParent() == bodyTransform)
+					{
+						Vector3 position = colliderTransform->GetLocalPosition();
+						Quaternion rotation = colliderTransform->GetLocalRotation();
+						shapeSettings->AddShape(JPH::Vec3(position.x, position.y, position.z), JPH::QuatArg(rotation.x, rotation.y, rotation.z, rotation.w), collider->GetShape());
+					}
+				}
+				JPH::EMotionType motionType = (JPH::EMotionType)m_BodyType;
+				JPH::BodyCreationSettings settings(shapeSettings, JPH::RVec3(position.x, position.y, position.z), JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w), motionType, 1);
 				m_BodyId = bodyInterface.CreateAndAddBody(settings, JPH::EActivation::Activate);
 			}
 			m_IsInitialized = true;
