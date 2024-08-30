@@ -6,6 +6,9 @@ namespace Blueberry
 {
 	class GfxTextureDX11;
 	class GfxConstantBufferDX11;
+	class GfxVertexShaderDX11;
+	class GfxGeometryShaderDX11;
+	class GfxFragmentShaderDX11;
 
 	class GfxDeviceDX11 final : public GfxDevice
 	{
@@ -23,7 +26,9 @@ namespace Blueberry
 		virtual void SetViewportImpl(int x, int y, int width, int height) final;
 		virtual void ResizeBackbufferImpl(int width, int height) final;
 
-		virtual bool CreateShaderImpl(void* vertexData, void* pixelData, GfxShader*& shader) final;
+		virtual bool CreateVertexShaderImpl(void* vertexData, GfxVertexShader*& shader) final;
+		virtual bool CreateGeometryShaderImpl(void* geometryData, GfxGeometryShader*& shader) final;
+		virtual bool CreateFragmentShaderImpl(void* fragmentData, GfxFragmentShader*& shader) final;
 		virtual bool CreateComputeShaderImpl(void* computeData, GfxComputeShader*& shader) final;
 		virtual bool CreateVertexBufferImpl(const VertexLayout& layout, const UINT& vertexCount, GfxVertexBuffer*& buffer) final;
 		virtual bool CreateIndexBufferImpl(const UINT& indexCount, GfxIndexBuffer*& buffer) final;
@@ -50,6 +55,7 @@ namespace Blueberry
 		void SetCullMode(const CullMode& mode);
 		void SetBlendMode(const BlendMode& blendSrc, const BlendMode& blendDst);
 		void SetZWrite(const ZWrite& zWrite);
+		void SetTopology(const Topology& topology);
 
 		HWND m_Hwnd;
 
@@ -71,12 +77,20 @@ namespace Blueberry
 		GfxTextureDX11* m_BindedRenderTarget;
 		GfxTextureDX11* m_BindedDepthStencil;
 		std::unordered_map<std::size_t, GfxConstantBufferDX11*> m_BindedConstantBuffers;
+		ID3D11Buffer* m_ConstantBuffers[8];
 		std::unordered_map<std::size_t, GfxTextureDX11*> m_BindedTextures;
+		ID3D11ShaderResourceView* m_ShaderResourceViews[16];
+		ID3D11SamplerState* m_Samplers[16];
 
 		CullMode m_CullMode = (CullMode)-1;
 		BlendMode m_BlendSrc = (BlendMode)-1;
 		BlendMode m_BlendDst = (BlendMode)-1;
 		ZWrite m_ZWrite = (ZWrite)-1;
+		Topology m_Topology = (Topology)-1;
+		
 		ObjectId m_MaterialId = 0;
+		GfxVertexShaderDX11* m_VertexShader = nullptr;
+		GfxGeometryShaderDX11* m_GeometryShader = nullptr;
+		GfxFragmentShaderDX11* m_FragmentShader = nullptr;
 	};
 }

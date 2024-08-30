@@ -18,44 +18,44 @@ namespace Blueberry
 	void ShaderImporter::ImportData()
 	{
 		Guid guid = GetGuid();
-		std::string vertexPath = GetShaderPath(".vertex");
-		std::string fragmentPath = GetShaderPath(".fragment");
 
 		HLSLShaderProcessor vertexProcessor;
+		HLSLShaderProcessor geometryProcessor;
 		HLSLShaderProcessor fragmentProcessor;
 
 		Shader* object;
 		if (AssetDB::HasAssetWithGuidInData(guid))
 		{
-			vertexProcessor.LoadBlob(vertexPath);
-			fragmentProcessor.LoadBlob(fragmentPath);
-			auto objects = AssetDB::LoadAssetObjects(guid, GetImportedObjects());
-			if (objects.size() == 1 && objects[0].first->IsClassType(Shader::Type))
+			HLSLShaderProcessor processor;
+			if (processor.LoadVariants(GetShaderFolder()))
 			{
-				object = static_cast<Shader*>(objects[0].first);
-				ObjectDB::AllocateIdToGuid(object, guid, objects[0].second);
-				object->Initialize(vertexProcessor.GetShader(), fragmentProcessor.GetShader());
-				object->SetState(ObjectState::Default);
-				BB_INFO("Shader \"" << GetName() << "\" imported from cache.");
+				auto objects = AssetDB::LoadAssetObjects(guid, GetImportedObjects());
+				if (objects.size() == 1 && objects[0].first->IsClassType(Shader::Type))
+				{
+					object = static_cast<Shader*>(objects[0].first);
+					ObjectDB::AllocateIdToGuid(object, guid, objects[0].second);
+					object->Initialize(processor.GetVariantsData());
+					object->SetState(ObjectState::Default);
+					BB_INFO("Shader \"" << GetName() << "\" imported from cache.");
+				}
 			}
 		}
 		else
 		{
 			std::string path = GetFilePath();
-			std::string shaderCode;
-			ShaderData data;
-
-			if (HLSLShaderParser::Parse(path, shaderCode, data))
+			HLSLShaderProcessor processor;
+			
+			if (processor.Compile(path))
 			{
-				vertexProcessor.Compile(shaderCode, ShaderType::Vertex);
-				fragmentProcessor.Compile(shaderCode, ShaderType::Fragment);
-				vertexProcessor.SaveBlob(vertexPath);
-				fragmentProcessor.SaveBlob(fragmentPath);
-
-				object = Shader::Create(vertexProcessor.GetShader(), fragmentProcessor.GetShader(), data);
+				processor.SaveVariants(GetShaderFolder());
+				object = Shader::Create(processor.GetVariantsData(), processor.GetShaderData());
 				ObjectDB::AllocateIdToGuid(object, guid, 1);
 				AssetDB::SaveAssetObjectsToCache(std::vector<Object*> { object });
 				BB_INFO("Shader \"" << GetName() << "\" imported and compiled from: " + path);
+			}
+			else
+			{
+				BB_ERROR("Shader \"" << GetName() << "\" failed to compile.");
 			}
 		}
 		object->SetName(GetName());
@@ -63,7 +63,7 @@ namespace Blueberry
 		SetMainObject(1);
 	}
 
-	std::string ShaderImporter::GetShaderPath(const char* extension)
+	std::string ShaderImporter::GetShaderFolder()
 	{
 		std::filesystem::path dataPath = Path::GetShaderCachePath();
 		dataPath.append(GetGuid().ToString());
@@ -71,6 +71,6 @@ namespace Blueberry
 		{
 			std::filesystem::create_directories(dataPath);
 		}
-		return dataPath.append(std::string("0").append(extension)).string();
+		return dataPath.string();
 	}
 }

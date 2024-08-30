@@ -4,7 +4,9 @@ namespace Blueberry
 {
 	class Mesh;
 	class Material;
-	class GfxShader;
+	class GfxVertexShader;
+	class GfxGeometryShader;
+	class GfxFragmentShader;
 	class GfxTexture;
 	class GfxVertexBuffer;
 	class GfxIndexBuffer;
@@ -22,8 +24,11 @@ namespace Blueberry
 		bool IsValid() const;
 
 		bool isValid = true;
-		GfxShader* shader;
-		GfxTexture* textures[16] = {};
+		GfxVertexShader* vertexShader;
+		GfxGeometryShader* geometryShader;
+		GfxFragmentShader* fragmentShader;
+		std::pair<size_t, GfxTexture*> textures[16] = {};
+		UINT textureCount;
 		GfxVertexBuffer* vertexBuffer;
 		GfxIndexBuffer* indexBuffer;
 		CullMode cullMode;

@@ -57,9 +57,19 @@ namespace Blueberry
 		s_Instance->ResizeBackbufferImpl(width, height);
 	}
 
-	bool GfxDevice::CreateShader(void* vertexData, void* pixelData, GfxShader*& shader)
+	bool GfxDevice::CreateVertexShader(void* vertexData, GfxVertexShader*& shader)
 	{
-		return s_Instance->CreateShaderImpl(vertexData, pixelData, shader);
+		return s_Instance->CreateVertexShaderImpl(vertexData, shader);
+	}
+
+	bool GfxDevice::CreateGeometryShader(void* geometryData, GfxGeometryShader*& shader)
+	{
+		return s_Instance->CreateGeometryShaderImpl(geometryData, shader);
+	}
+
+	bool GfxDevice::CreateFragmentShader(void* fragmentData, GfxFragmentShader*& shader)
+	{
+		return s_Instance->CreateFragmentShaderImpl(fragmentData, shader);
 	}
 
 	bool GfxDevice::CreateComputeShader(void* computeData, GfxComputeShader*& shader)

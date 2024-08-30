@@ -140,6 +140,20 @@ namespace Blueberry
 				output.write((char*)data.data(), data.size() * sizeof(float));
 			}
 			break;
+			case BindingType::StringArray:
+			{
+				std::vector<std::string> data = *value.Get<std::vector<std::string>>();
+				size_t dataSize = data.size();
+				output.write((char*)&dataSize, sizeof(size_t));
+				for (size_t i = 0; i < dataSize; ++i)
+				{
+					std::string string = data[i];
+					size_t stringSize = string.size();
+					output.write((char*)&stringSize, sizeof(size_t));
+					output.write(string.data(), stringSize);
+				}
+			}
+			break;
 			case BindingType::Enum:
 				output.write((char*)value.Get<int>(), sizeof(int));
 				break;
@@ -290,6 +304,21 @@ namespace Blueberry
 					std::vector<float> data(dataSize);
 					input.read((char*)data.data(), dataSize * sizeof(float));
 					*value.Get<std::vector<float>>() = data;
+				}
+				break;
+				case BindingType::StringArray:
+				{
+					size_t dataSize;
+					input.read((char*)&dataSize, sizeof(size_t));
+					std::vector<std::string> data(dataSize);
+					for (size_t i = 0; i < dataSize; ++i)
+					{
+						size_t stringSize;
+						input.read((char*)&stringSize, sizeof(size_t));
+						std::string string(stringSize, ' ');
+						input.read(string.data(), stringSize);
+					}
+					*value.Get<std::vector<std::string>>() = data;
 				}
 				break;
 				case BindingType::Enum:

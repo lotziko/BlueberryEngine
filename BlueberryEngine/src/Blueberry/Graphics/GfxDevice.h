@@ -11,7 +11,9 @@ namespace Blueberry
 	class GfxConstantBuffer;
 	class GfxComputeBuffer;
 	class GfxTexture;
-	class GfxShader;
+	class GfxVertexShader;
+	class GfxGeometryShader;
+	class GfxFragmentShader;
 	class GfxComputeShader;
 	class ImGuiRenderer;
 
@@ -28,7 +30,9 @@ namespace Blueberry
 		static void SetViewport(int x, int y, int width, int height);
 		static void ResizeBackbuffer(int width, int height);
 
-		static bool CreateShader(void* vertexData, void* pixelData, GfxShader*& shader);
+		static bool CreateVertexShader(void* vertexData, GfxVertexShader*& shader);
+		static bool CreateGeometryShader(void* geometryData, GfxGeometryShader*& shader);
+		static bool CreateFragmentShader(void* fragmentData, GfxFragmentShader*& shader);
 		static bool CreateComputeShader(void* computeData, GfxComputeShader*& shader);
 		static bool CreateVertexBuffer(const VertexLayout& layout, const UINT& vertexCount, GfxVertexBuffer*& buffer);
 		static bool CreateIndexBuffer(const UINT& indexCount, GfxIndexBuffer*& buffer);
@@ -59,7 +63,9 @@ namespace Blueberry
 		virtual void SetViewportImpl(int x, int y, int width, int height) = 0;
 		virtual void ResizeBackbufferImpl(int width, int height) = 0;
 
-		virtual bool CreateShaderImpl(void* vertexData, void* pixelData, GfxShader*& shader) = 0;
+		virtual bool CreateVertexShaderImpl(void* vertexData, GfxVertexShader*& shader) = 0;
+		virtual bool CreateGeometryShaderImpl(void* geometryData, GfxGeometryShader*& shader) = 0;
+		virtual bool CreateFragmentShaderImpl(void* fragmentData, GfxFragmentShader*& shader) = 0;
 		virtual bool CreateComputeShaderImpl(void* computeData, GfxComputeShader*& shader) = 0;
 		virtual bool CreateVertexBufferImpl(const VertexLayout& layout, const UINT& vertexCount, GfxVertexBuffer*& buffer) = 0;
 		virtual bool CreateIndexBufferImpl(const UINT& indexCount, GfxIndexBuffer*& buffer) = 0;

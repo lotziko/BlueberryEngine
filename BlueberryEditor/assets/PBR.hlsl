@@ -106,8 +106,11 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 		directSpecularTerm += CalculateDirectSpecular(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, distanceAttenuation, falloff, reflectance, geometricRoughness);
 	}
 
+	// TODO indirect
+	// * surfaceData.occlusion
+
 	directDiffuseTerm *= (1.0 - reflectance);
-	return (directDiffuseTerm * surfaceData.albedo + directSpecularTerm) * surfaceData.occlusion;
+	return (directDiffuseTerm * surfaceData.albedo + directSpecularTerm);
 }
 
 #endif

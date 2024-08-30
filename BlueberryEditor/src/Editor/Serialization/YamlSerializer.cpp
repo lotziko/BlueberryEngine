@@ -117,6 +117,20 @@ namespace Blueberry
 				objectNode[key] << byteData;
 			}
 			break;
+			case BindingType::StringArray:
+			{
+				std::vector<std::string> arrayValue = *value.Get<std::vector<std::string>>();
+				if (arrayValue.size() > 0)
+				{
+					ryml::NodeRef sequence = objectNode[key];
+					sequence |= ryml::SEQ;
+					for (auto stringValue : arrayValue)
+					{
+						sequence.append_child() << stringValue;
+					}
+				}
+			}
+			break;
 			case BindingType::Enum:
 				objectNode[key] << *value.Get<int>();
 				break;
@@ -132,9 +146,6 @@ namespace Blueberry
 				break;
 			case BindingType::Color:
 				objectNode[key] << *value.Get<Color>();
-				break;
-			case BindingType::AABB:
-
 				break;
 			case BindingType::ObjectPtr:
 			{
@@ -254,6 +265,17 @@ namespace Blueberry
 					float* ptr = reinterpret_cast<float*>(byteData.data);
 					std::vector<float> data(ptr, ptr + byteData.size / sizeof(float));
 					*value.Get<std::vector<float>>() = data;
+				}
+				break;
+				case BindingType::StringArray:
+				{
+					std::vector<std::string>* arrayPointer = value.Get<std::vector<std::string>>();
+					for (auto& child : objectNode[key].children())
+					{
+						std::string stringValue;
+						child >> stringValue;
+						arrayPointer->emplace_back(stringValue);
+					}
 				}
 				break;
 				case BindingType::Enum:

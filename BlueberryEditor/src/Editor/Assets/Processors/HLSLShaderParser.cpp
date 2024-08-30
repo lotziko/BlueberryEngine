@@ -2,6 +2,8 @@
 #include "HLSLShaderParser.h"
 
 #include "Blueberry\Tools\FileHelper.h"
+#include "Blueberry\Tools\StringHelper.h"
+#include "Editor\Assets\Processors\HLSLShaderProcessor.h"
 
 namespace Blueberry
 {
@@ -126,115 +128,151 @@ namespace Blueberry
 		return ZWrite::On;
 	}
 
-	void ParseShaderData(const std::map<std::string, std::string>& rawOptions, const std::map<std::string, std::pair<std::string, std::string>>& rawProperties, ShaderData& data)
+	void ParseProperties(const std::string& propertiesBlock, ShaderData& data)
 	{
-		auto& cullModeIt = rawOptions.find("Cull");
-		if (cullModeIt != rawOptions.end())
-		{
-			data.SetCullMode(ParseCullMode(cullModeIt->second));
-		}
-
-		auto& blendSrcIt = rawOptions.find("BlendSrc");
-		if (blendSrcIt != rawOptions.end())
-		{
-			data.SetBlendSrc(ParseBlendMode(blendSrcIt->second));
-		}
-
-		auto& blendDstIt = rawOptions.find("BlendDst");
-		if (blendSrcIt != rawOptions.end())
-		{
-			data.SetBlendDst(ParseBlendMode(blendDstIt->second));
-		}
-
-		auto& zWriteIt = rawOptions.find("ZWrite");
-		if (zWriteIt != rawOptions.end())
-		{
-			data.SetZWrite(ParseZWrite(zWriteIt->second));
-		}
+		std::regex propertyRegex("([\\w-]+)\\s*([\\w-]+)\\s*[\\=]\\s*(.*)[\r?\n]");
+		auto propertiesStart = std::sregex_iterator(propertiesBlock.begin(), propertiesBlock.end(), propertyRegex);
+		auto propertiesEnd = std::sregex_iterator();
 
 		std::vector<DataPtr<TextureParameterData>> textureParameters;
-		for (auto& rawProperty : rawProperties)
+		for (std::regex_iterator i = propertiesStart; i != propertiesEnd; ++i)
 		{
-			if (rawProperty.second.first == "Texture2D")
+			std::smatch match = *i;
+			if (match.size() == 4)
 			{
-				std::string name = rawProperty.first;
-				std::string defaultTextureName = rawProperty.second.second;
-				defaultTextureName.erase(std::remove(defaultTextureName.begin(), defaultTextureName.end(), '\"'), defaultTextureName.end());
+				std::string type = match[1];
+				std::string name = match[2];
+				std::string value = match[3];
 
-				TextureParameterData* parameter = new TextureParameterData();
-				parameter->SetName(name);
-				parameter->SetDefaultTextureName(defaultTextureName);
-				// TODO index
-				textureParameters.emplace_back(DataPtr<TextureParameterData>(parameter));
+				if (type == "Texture2D")
+				{
+					std::string defaultTextureName = value;
+					defaultTextureName.erase(std::remove(defaultTextureName.begin(), defaultTextureName.end(), '\"'), defaultTextureName.end());
+				
+					TextureParameterData* parameter = new TextureParameterData();
+					parameter->SetName(name);
+					parameter->SetDefaultTextureName(defaultTextureName);
+					textureParameters.emplace_back(DataPtr<TextureParameterData>(parameter));
+				}
 			}
 		}
 		data.SetTextureParameters(textureParameters);
 	}
 
-	bool HLSLShaderParser::Parse(const std::string& path, std::string& shaderCode, ShaderData& data)
+	void ParseRenderingParameters(const std::string& passBlock, PassData& passData)
 	{
-		std::string shaderData;
-		FileHelper::Load(shaderData, path);
+		std::smatch match;
+		std::regex cullRegex("Cull\\s*([\\w-]+)[\r?\n]");
+		if (std::regex_search(passBlock, match, cullRegex))
+		{
+			passData.SetCullMode(ParseCullMode(match[1]));
+		}
+
+		std::regex blendRegex("Blend\\s*([\\w-]+)\\s*([\\w-]+)[\r?\n]");
+		if (std::regex_search(passBlock, match, blendRegex))
+		{
+			passData.SetBlendSrc(ParseBlendMode(match[1]));
+			passData.SetBlendDst(ParseBlendMode(match[2]));
+		}
+
+		std::regex zWriteRegex("ZWrite\\s*([\\w-]+)[\r?\n]");
+		if (std::regex_search(passBlock, match, zWriteRegex))
+		{
+			passData.SetZWrite(ParseZWrite(match[1]));
+		}
+	}
+
+	void ParsePragmas(const std::string& codeBlock, PassData& passData, ShaderCompilationData::Pass& compilationPass)
+	{
+		// TODO do real preprocessing
+		std::smatch match;
+		std::regex vertexEntryPointRegex("#pragma\\s*vertex\\s*([\\w-]+)[\r?\n]");
+		if (std::regex_search(codeBlock, match, vertexEntryPointRegex))
+		{
+			compilationPass.vertexEntryPoint = match[1];
+		}
+
+		std::regex geometryEntryPointRegex("#pragma\\s*geometry\\s*([\\w-]+)[\r?\n]");
+		if (std::regex_search(codeBlock, match, geometryEntryPointRegex))
+		{
+			compilationPass.geometryEntryPoint = match[1];
+		}
+
+		std::regex fragmentEntryPointRegex("#pragma\\s*fragment\\s*([\\w-]+)[\r?\n]");
+		if (std::regex_search(codeBlock, match, fragmentEntryPointRegex))
+		{
+			compilationPass.fragmentEntryPoint = match[1];
+		}
+
+		std::regex parameterRegex("#pragma\\s*keyword_([\\w-]+)\\s*(.*)");
+		auto parametersStart = std::sregex_iterator(codeBlock.begin(), codeBlock.end(), parameterRegex);
+		auto parametersEnd = std::sregex_iterator();
+
+		for (std::regex_iterator i = parametersStart; i != parametersEnd; ++i)
+		{
+			std::smatch match = *i;
+			std::string type = match[1];
+			std::string keywords = match[2];
+
+			if (type == "local_vertex")
+			{
+				StringHelper::Split(keywords.c_str(), ' ', compilationPass.vertexKeywords);
+			}
+			else if (type == "local_fragment")
+			{
+				StringHelper::Split(keywords.c_str(), ' ', compilationPass.fragmentKeywords);
+			}
+		}
+		passData.SetVertexKeywords(compilationPass.vertexKeywords);
+		passData.SetFragmentKeywords(compilationPass.fragmentKeywords);
+	}
+
+	bool HLSLShaderParser::Parse(const std::string& path, ShaderData& shaderData, ShaderCompilationData& compilationData)
+	{
+		std::string shader;
+		FileHelper::Load(shader, path);
 
 		std::string shaderBlock;
-		if (ParseBlock(shaderData, "Shader", "{", "}", shaderBlock))
+		if (ParseBlock(shader, "Shader", "{", "}", shaderBlock))
 		{
-			std::string codeBlock;
-			if (ParseBlock(shaderBlock, "", "HLSLBEGIN", "HLSLEND", codeBlock))
+			// TODO multiple passes
+			std::string passBlock;
+			std::vector<DataPtr<PassData>> passes;
+			if (ParseBlock(shader, "Pass", "{", "}", passBlock))
 			{
-				shaderCode = codeBlock;
-			}
-			else
-			{
-				return false;
-			}
+				ShaderCompilationData::Pass compilationPass = {};
+				PassData passData = {};
 
-			std::map<std::string, std::string> options;
-			std::map<std::string, std::pair<std::string, std::string>> properties;
-
-			std::string optionsBlock;
-			if (ParseBlock(shaderBlock, "Options", "{", "}", optionsBlock))
-			{
-				// Based on https://www.geeksforgeeks.org/regex_iterator-function-in-c-stl/
-				std::regex optionRegex("([\\w-]+)\\s*([\\w-]+)[\r?\n]");
-				auto optionsStart = std::sregex_iterator(optionsBlock.begin(), optionsBlock.end(), optionRegex);
-				auto optionsEnd = std::sregex_iterator();
-
-				for (std::regex_iterator i = optionsStart; i != optionsEnd; ++i)
+				std::string codeBlock;
+				if (!ParseBlock(shaderBlock, "", "HLSLBEGIN", "HLSLEND", codeBlock))
 				{
-					std::smatch match = *i;
-					if (match.size() == 3)
-					{
-						options.insert_or_assign(match[1], match[2]);
-					}
+					return false;
 				}
-			}
 
-			std::string propertiesBlock;
-			if (ParseBlock(shaderBlock, "Properties", "{", "}", propertiesBlock))
-			{
-				std::regex optionRegex("([\\w-]+)\\s*([\\w-]+)\\s*[\\=]\\s*(.*)");
-				auto optionsStart = std::sregex_iterator(propertiesBlock.begin(), propertiesBlock.end(), optionRegex);
-				auto optionsEnd = std::sregex_iterator();
-
-				for (std::regex_iterator i = optionsStart; i != optionsEnd; ++i)
+				std::string propertiesBlock;
+				if (ParseBlock(shaderBlock, "Properties", "{", "}", propertiesBlock))
 				{
-					std::smatch match = *i;
-					if (match.size() == 4)
-					{
-						properties.insert_or_assign(match[2], std::make_pair(match[1], match[3]));
-					}
+					ParseProperties(propertiesBlock, shaderData);
 				}
-			}
 
-			ParseShaderData(options, properties, data);
-		}
-		else
-		{
-			shaderCode = shaderBlock;
+				ParseRenderingParameters(passBlock, passData);
+				ParsePragmas(codeBlock, passData, compilationPass);
+
+				size_t offset = 0;
+				while ((offset = codeBlock.find("#pragma")) != std::string::npos)
+				{
+					size_t end = codeBlock.find("\n", offset);
+					codeBlock.replace(offset, end - offset, " ");
+				}
+
+				compilationPass.shaderCode = codeBlock;
+				compilationData.passes.emplace_back(compilationPass);
+				passes.emplace_back(DataPtr<PassData>(new PassData(passData)));
+			}
+			shaderData.SetPasses(passes);
 			return true;
 		}
 
-		return true;
+		return false;
 	}
 }

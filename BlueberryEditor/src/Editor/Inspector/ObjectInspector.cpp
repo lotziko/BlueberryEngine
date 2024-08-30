@@ -55,6 +55,12 @@ namespace Blueberry
 				hasChanged = true;
 			}
 			break;
+		case BindingType::Vector3:
+			if (ImGui::DragVector3(nameLabel, value.Get<Vector3>()))
+			{
+				hasChanged = true;
+			}
+			break;
 		case BindingType::Color:
 			if (ImGui::ColorEdit(nameLabel, value.Get<Color>()))
 			{

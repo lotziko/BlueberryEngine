@@ -93,11 +93,54 @@ namespace Blueberry
 		FillGfxTextures();
 	}
 
+	void Material::SetKeyword(const std::string& keyword, const bool& enabled)
+	{
+		// TODO use an unordered_map
+		if (enabled)
+		{
+			m_ActiveKeywords.emplace_back(keyword);
+		}
+	}
+
+	const std::pair<UINT, UINT>& Material::GetKeywordFlags()
+	{
+		// TODO move into pipeline state
+		if (m_ActiveKeywords.size() == 0 || !m_Shader.IsValid())
+		{
+			return std::make_pair(0, 0);
+		}
+		auto pass = m_Shader.Get()->GetData()->GetPass(0);
+		auto vertexKeywords = pass->GetVertexKeywords();
+		auto fragmentKeywords = pass->GetFragmentKeywords();
+		UINT vertexFlags = 0;
+		UINT fragmentFlags = 0;
+		for (auto& keyword : m_ActiveKeywords)
+		{
+			for (int i = 0; i < vertexKeywords.size(); ++i)
+			{
+				if (vertexKeywords[i] == keyword)
+				{
+					vertexFlags |= 1 << i;
+				}
+			}
+			for (int i = 0; i < fragmentKeywords.size(); ++i)
+			{
+				if (fragmentKeywords[i] == keyword)
+				{
+					fragmentFlags |= 1 << i;
+					break;
+				}
+			}
+		}
+		return std::make_pair(vertexFlags, fragmentFlags);
+	}
+
 	void Material::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(Material)
 		BIND_FIELD(FieldInfo(TO_STRING(m_Shader), &Material::m_Shader, BindingType::ObjectPtr).SetObjectType(Shader::Type))
 		BIND_FIELD(FieldInfo(TO_STRING(m_Textures), &Material::m_Textures, BindingType::DataArray).SetObjectType(TextureData::Type))
+		BIND_FIELD(FieldInfo(TO_STRING(m_ActiveKeywords), &Material::m_ActiveKeywords, BindingType::StringArray))
 		END_OBJECT_BINDING()
 	}
 

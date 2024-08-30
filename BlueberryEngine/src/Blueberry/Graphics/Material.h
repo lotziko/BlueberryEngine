@@ -52,6 +52,10 @@ namespace Blueberry
 		std::vector<DataPtr<TextureData>>& GetTextureDatas();
 		void AddTextureData(TextureData* data);
 
+		void SetKeyword(const std::string& keyword, const bool& enabled);
+
+		const std::pair<UINT, UINT>& GetKeywordFlags();
+
 		static void BindProperties();
 
 		virtual void OnCreate() override final;
@@ -62,6 +66,7 @@ namespace Blueberry
 	private:
 		std::unordered_map<std::size_t, ObjectPtr<Texture>> m_TextureMap;
 		std::vector<DataPtr<TextureData>> m_Textures;
+		std::vector<std::string> m_ActiveKeywords;
 		ObjectPtr<Shader> m_Shader;
 
 		friend struct GfxDrawingOperation;

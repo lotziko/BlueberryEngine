@@ -4,55 +4,7 @@
 
 namespace Blueberry
 {
-	GfxShaderDX11::GfxShaderDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext) : m_Device(device), m_DeviceContext(deviceContext)
-	{
-	}
-
-	bool GfxShaderDX11::Compile(const std::wstring& shaderPath)
-	{
-		UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
-		
-		HRESULT hr = D3DCompileFromFile(shaderPath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "Vertex", "vs_5_0", flags, 0, m_VertexShaderBuffer.GetAddressOf(), nullptr);
-		if (FAILED(hr))
-		{
-			std::string errorMsg = "Failed to compile vertex shader: " + std::string(shaderPath.begin(), shaderPath.end());
-			BB_ERROR(errorMsg);
-			return false;
-		}
-	
-		hr = m_Device->CreateVertexShader(m_VertexShaderBuffer->GetBufferPointer(), m_VertexShaderBuffer->GetBufferSize(), NULL, m_VertexShader.GetAddressOf());
-		if (FAILED(hr))
-		{
-			std::string errorMsg = "Failed to create vertex shader: " + std::string(shaderPath.begin(), shaderPath.end());
-			BB_ERROR(errorMsg);
-			return false;
-		}
-
-		hr = D3DCompileFromFile(shaderPath.c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "Fragment", "ps_5_0", flags, 0, m_PixelShaderBuffer.GetAddressOf(), nullptr);
-		if (FAILED(hr))
-		{
-			std::string errorMsg = "Failed to compile pixel shader: " + std::string(shaderPath.begin(), shaderPath.end());
-			BB_ERROR(errorMsg);
-			return false;
-		}
-
-		hr = m_Device->CreatePixelShader(m_PixelShaderBuffer->GetBufferPointer(), m_PixelShaderBuffer->GetBufferSize(), NULL, m_PixelShader.GetAddressOf());
-		if (FAILED(hr))
-		{
-			std::string errorMsg = "Failed to create pixel shader: " + std::string(shaderPath.begin(), shaderPath.end());
-			BB_ERROR(errorMsg);
-			return false;
-		}
-
-		if (!InitializeVertexLayout())
-		{
-			return false;
-		}
-
-		return true;
-	}
-
-	bool GfxShaderDX11::Initialize(void* vertexData, void* pixelData)
+	bool GfxVertexShaderDX11::Initialize(ID3D11Device* device, void* vertexData)
 	{
 		if (vertexData == nullptr)
 		{
@@ -60,136 +12,39 @@ namespace Blueberry
 			return false;
 		}
 
-		m_VertexShaderBuffer.Attach((ID3DBlob*)vertexData);
-		HRESULT hr = m_Device->CreateVertexShader(m_VertexShaderBuffer->GetBufferPointer(), m_VertexShaderBuffer->GetBufferSize(), NULL, m_VertexShader.GetAddressOf());
+		m_ShaderBuffer.Attach((ID3DBlob*)vertexData);
+		HRESULT hr = device->CreateVertexShader(m_ShaderBuffer->GetBufferPointer(), m_ShaderBuffer->GetBufferSize(), NULL, m_Shader.GetAddressOf());
 		if (FAILED(hr))
 		{
 			BB_ERROR("Failed to create vertex shader from data.");
 			return false;
 		}
 
-		if (pixelData == nullptr)
-		{
-			BB_ERROR("Pixel data is empty.");
-			return false;
-		}
-
-		m_PixelShaderBuffer.Attach((ID3DBlob*)pixelData);
-		hr = m_Device->CreatePixelShader(m_PixelShaderBuffer->GetBufferPointer(), m_PixelShaderBuffer->GetBufferSize(), NULL, m_PixelShader.GetAddressOf());
-		if (FAILED(hr))
-		{
-			BB_ERROR("Failed to create pixel shader from data.");
-			return false;
-		}
-
-		if (!InitializeVertexLayout())
-		{
-			return false;
-		}
-
-		return true;
-	}
-
-	bool GfxShaderDX11::Initialize(const std::wstring& vertexShaderPath, const std::wstring& pixelShaderPath)
-	{
-		HRESULT hr = D3DReadFileToBlob(vertexShaderPath.c_str(), m_VertexShaderBuffer.GetAddressOf());
-		if (FAILED(hr))
-		{
-			std::string errorMsg = "Failed to load vertex shader: " + std::string(vertexShaderPath.begin(), vertexShaderPath.end());
-			BB_ERROR(errorMsg);
-			return false;
-		}
-
-		hr = m_Device->CreateVertexShader(m_VertexShaderBuffer->GetBufferPointer(), m_VertexShaderBuffer->GetBufferSize(), NULL, m_VertexShader.GetAddressOf());
-		if (FAILED(hr))
-		{
-			std::string errorMsg = "Failed to create vertex shader: " + std::string(vertexShaderPath.begin(), vertexShaderPath.end());
-			BB_ERROR(errorMsg);
-			return false;
-		}
-
-		hr = D3DReadFileToBlob(pixelShaderPath.c_str(), m_PixelShaderBuffer.GetAddressOf());
-		if (FAILED(hr))
-		{
-			std::string errorMsg = "Failed to load pixel shader: " + std::string(pixelShaderPath.begin(), pixelShaderPath.end());
-			BB_ERROR(errorMsg);
-			return false;
-		}
-
-		hr = m_Device->CreatePixelShader(m_PixelShaderBuffer->GetBufferPointer(), m_PixelShaderBuffer->GetBufferSize(), NULL, m_PixelShader.GetAddressOf());
-		if (FAILED(hr))
-		{
-			std::string errorMsg = "Failed to create pixel shader: " + std::string(pixelShaderPath.begin(), pixelShaderPath.end());
-			BB_ERROR(errorMsg);
-			return false;
-		}
-
-		if (!InitializeVertexLayout())
-		{
-			return false;
-		}
-
-		return true;
-	}
-
-	bool GfxShaderDX11::InitializeVertexLayout()
-	{
 		ID3D11ShaderReflection* vertexShaderReflection;
-		HRESULT hr = D3DReflect(m_VertexShaderBuffer->GetBufferPointer(), m_VertexShaderBuffer->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&vertexShaderReflection);
+		hr = D3DReflect(m_ShaderBuffer->GetBufferPointer(), m_ShaderBuffer->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&vertexShaderReflection);
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to get vertex shader reflection."));
 			return false;
 		}
 
+		// Slots
 		D3D11_SHADER_DESC vertexShaderDesc;
 		vertexShaderReflection->GetDesc(&vertexShaderDesc);
 
-		unsigned int constantBufferCount = vertexShaderDesc.ConstantBuffers;
+		UINT constantBufferCount = vertexShaderDesc.ConstantBuffers;
 
 		for (UINT i = 0; i < constantBufferCount; i++)
 		{
 			ID3D11ShaderReflectionConstantBuffer* constantBufferReflection = vertexShaderReflection->GetConstantBufferByIndex(i);
 			D3D11_SHADER_BUFFER_DESC shaderBufferDesc;
 			constantBufferReflection->GetDesc(&shaderBufferDesc);
-			m_VertexConstantBufferSlots.insert({ TO_HASH(std::string(shaderBufferDesc.Name)), i });
+			m_ConstantBufferSlots.insert({ TO_HASH(std::string(shaderBufferDesc.Name)), i });
 		}
 
-		ID3D11ShaderReflection* pixelShaderReflection;
-		hr = D3DReflect(m_PixelShaderBuffer->GetBufferPointer(), m_PixelShaderBuffer->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&pixelShaderReflection);
-		if (FAILED(hr))
-		{
-			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to get pixel shader reflection."));
-			return false;
-		}
-
-		D3D11_SHADER_DESC pixelShaderDesc;
-		pixelShaderReflection->GetDesc(&pixelShaderDesc);
-
-		constantBufferCount = pixelShaderDesc.ConstantBuffers;
-
-		for (UINT i = 0; i < constantBufferCount; i++)
-		{
-			ID3D11ShaderReflectionConstantBuffer* constantBufferReflection = pixelShaderReflection->GetConstantBufferByIndex(i);
-			D3D11_SHADER_BUFFER_DESC shaderBufferDesc;
-			constantBufferReflection->GetDesc(&shaderBufferDesc);
-			m_PixelConstantBufferSlots.insert({ TO_HASH(std::string(shaderBufferDesc.Name)), i });
-		}
-
-		unsigned int resourceBindingCount = pixelShaderDesc.BoundResources;
-
-		for (UINT i = 0; i < resourceBindingCount; i++)
-		{
-			D3D11_SHADER_INPUT_BIND_DESC inputBindDesc;
-			pixelShaderReflection->GetResourceBindingDesc(i, &inputBindDesc);
-			if (inputBindDesc.Type == D3D_SIT_TEXTURE)
-			{
-				m_TextureSlots.insert({ TO_HASH(std::string(inputBindDesc.Name)), inputBindDesc.BindPoint });
-			}
-		}
-
+		// Input layout
 		std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDescArray;
-		unsigned int parameterCount = vertexShaderDesc.InputParameters;
+		UINT parameterCount = vertexShaderDesc.InputParameters;
 
 		for (unsigned int i = 0; i < parameterCount; ++i)
 		{
@@ -230,11 +85,100 @@ namespace Blueberry
 			inputElementDescArray.push_back(inputElementDesc);
 		}
 
-		hr = m_Device->CreateInputLayout(&inputElementDescArray[0], parameterCount, m_VertexShaderBuffer->GetBufferPointer(), m_VertexShaderBuffer->GetBufferSize(), m_InputLayout.GetAddressOf());
+		hr = device->CreateInputLayout(&inputElementDescArray[0], parameterCount, m_ShaderBuffer->GetBufferPointer(), m_ShaderBuffer->GetBufferSize(), m_InputLayout.GetAddressOf());
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error creating input layout."));
 			return false;
+		}
+
+		return true;
+	}
+
+	bool GfxGeometryShaderDX11::Initialize(ID3D11Device* device, void* geometryData)
+	{
+		if (geometryData == nullptr)
+		{
+			BB_ERROR("Geometry data is empty.");
+			return false;
+		}
+
+		m_ShaderBuffer.Attach((ID3DBlob*)geometryData);
+		HRESULT hr = device->CreateGeometryShader(m_ShaderBuffer->GetBufferPointer(), m_ShaderBuffer->GetBufferSize(), NULL, m_Shader.GetAddressOf());
+		if (FAILED(hr))
+		{
+			BB_ERROR("Failed to create geometry shader from data.");
+			return false;
+		}
+
+		return true;
+	}
+
+	bool GfxFragmentShaderDX11::Initialize(ID3D11Device* device, void* fragmentData)
+	{
+		if (fragmentData == nullptr)
+		{
+			BB_ERROR("Fragment data is empty.");
+			return false;
+		}
+
+		m_ShaderBuffer.Attach((ID3DBlob*)fragmentData);
+		HRESULT hr = device->CreatePixelShader(m_ShaderBuffer->GetBufferPointer(), m_ShaderBuffer->GetBufferSize(), NULL, m_Shader.GetAddressOf());
+		if (FAILED(hr))
+		{
+			BB_ERROR("Failed to create fragment shader from data.");
+			return false;
+		}
+
+		// Slots
+		ID3D11ShaderReflection* pixelShaderReflection;
+		hr = D3DReflect(m_ShaderBuffer->GetBufferPointer(), m_ShaderBuffer->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&pixelShaderReflection);
+		if (FAILED(hr))
+		{
+			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to get pixel shader reflection."));
+			return false;
+		}
+
+		D3D11_SHADER_DESC pixelShaderDesc;
+		pixelShaderReflection->GetDesc(&pixelShaderDesc);
+
+		UINT constantBufferCount = pixelShaderDesc.ConstantBuffers;
+
+		for (UINT i = 0; i < constantBufferCount; i++)
+		{
+			ID3D11ShaderReflectionConstantBuffer* constantBufferReflection = pixelShaderReflection->GetConstantBufferByIndex(i);
+			D3D11_SHADER_BUFFER_DESC shaderBufferDesc;
+			constantBufferReflection->GetDesc(&shaderBufferDesc);
+			m_ConstantBufferSlots.insert({ TO_HASH(std::string(shaderBufferDesc.Name)), i });
+		}
+
+		unsigned int resourceBindingCount = pixelShaderDesc.BoundResources;
+
+		for (UINT i = 0; i < resourceBindingCount; i++)
+		{
+			D3D11_SHADER_INPUT_BIND_DESC inputBindDesc;
+			pixelShaderReflection->GetResourceBindingDesc(i, &inputBindDesc);
+			if (inputBindDesc.Type == D3D_SIT_TEXTURE)
+			{
+				UINT samplerSlot = -1;
+				if (inputBindDesc.NumSamples > 8)
+				{
+					for (UINT j = 0; j < resourceBindingCount; j++)
+					{
+						D3D11_SHADER_INPUT_BIND_DESC samplerInputBindDesc;
+						pixelShaderReflection->GetResourceBindingDesc(j, &samplerInputBindDesc);
+						if (samplerInputBindDesc.Type == D3D10_SIT_SAMPLER)
+						{
+							if (strncmp(samplerInputBindDesc.Name, inputBindDesc.Name, strlen(inputBindDesc.Name)) == 0)
+							{
+								samplerSlot = samplerInputBindDesc.BindPoint;
+								break;
+							}
+						}
+					}
+				}
+				m_TextureSlots.insert({ TO_HASH(std::string(inputBindDesc.Name)), std::make_pair(inputBindDesc.BindPoint, samplerSlot) });
+			}
 		}
 
 		return true;

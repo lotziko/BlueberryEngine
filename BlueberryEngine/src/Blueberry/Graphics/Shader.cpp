@@ -9,6 +9,7 @@
 namespace Blueberry
 {
 	DATA_DEFINITION(TextureParameterData)
+	DATA_DEFINITION(PassData)
 	DATA_DEFINITION(ShaderData)
 	OBJECT_DEFINITION(Object, Shader)
 
@@ -32,63 +33,98 @@ namespace Blueberry
 		m_DefaultTextureName = name;
 	}
 
-	const int& TextureParameterData::GetIndex() const
-	{
-		return m_Index;
-	}
-
-	void TextureParameterData::SetIndex(const int& index)
-	{
-		m_Index = index;
-	}
-
 	void TextureParameterData::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(TextureParameterData)
 		BIND_FIELD(FieldInfo(TO_STRING(m_Name), &TextureParameterData::m_Name, BindingType::String))
 		BIND_FIELD(FieldInfo(TO_STRING(m_DefaultTextureName), &TextureParameterData::m_DefaultTextureName, BindingType::String))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Index), &TextureParameterData::m_Index, BindingType::Int))
 		END_OBJECT_BINDING()
 	}
 
-	const CullMode& ShaderData::GetCullMode() const
+	const CullMode& PassData::GetCullMode() const
 	{
 		return m_CullMode;
 	}
 
-	void ShaderData::SetCullMode(const CullMode& cullMode)
+	void PassData::SetCullMode(const CullMode& cullMode)
 	{
 		m_CullMode = cullMode;
 	}
 
-	const BlendMode& ShaderData::GetBlendSrc() const
+	const BlendMode& PassData::GetBlendSrc() const
 	{
 		return m_SrcBlend;
 	}
 
-	void ShaderData::SetBlendSrc(const BlendMode& blendSrc)
+	void PassData::SetBlendSrc(const BlendMode& blendSrc)
 	{
 		m_SrcBlend = blendSrc;
 	}
 
-	const BlendMode& ShaderData::GetBlendDst() const
+	const BlendMode& PassData::GetBlendDst() const
 	{
 		return m_DstBlend;
 	}
 
-	void ShaderData::SetBlendDst(const BlendMode& blendDst)
+	void PassData::SetBlendDst(const BlendMode& blendDst)
 	{
 		m_DstBlend = blendDst;
 	}
 
-	const ZWrite& ShaderData::GetZWrite() const
+	const ZWrite& PassData::GetZWrite() const
 	{
 		return m_ZWrite;
 	}
 
-	void ShaderData::SetZWrite(const ZWrite& zWrite)
+	void PassData::SetZWrite(const ZWrite& zWrite)
 	{
 		m_ZWrite = zWrite;
+	}
+
+	const std::vector<std::string>& PassData::GetVertexKeywords() const
+	{
+		return m_VertexKeywords;
+	}
+
+	void PassData::SetVertexKeywords(const std::vector<std::string>& keywords)
+	{
+		m_VertexKeywords = keywords;
+	}
+
+	const std::vector<std::string>& PassData::GetFragmentKeywords() const
+	{
+		return m_FragmentKeywords;
+	}
+
+	void PassData::SetFragmentKeywords(const std::vector<std::string>& keywords)
+	{
+		m_FragmentKeywords = keywords;
+	}
+
+	void PassData::BindProperties()
+	{
+		BEGIN_OBJECT_BINDING(PassData)
+		BIND_FIELD(FieldInfo(TO_STRING(m_CullMode), &PassData::m_CullMode, BindingType::Enum))
+		BIND_FIELD(FieldInfo(TO_STRING(m_SrcBlend), &PassData::m_SrcBlend, BindingType::Enum))
+		BIND_FIELD(FieldInfo(TO_STRING(m_DstBlend), &PassData::m_DstBlend, BindingType::Enum))
+		BIND_FIELD(FieldInfo(TO_STRING(m_ZWrite), &PassData::m_ZWrite, BindingType::Enum))
+		BIND_FIELD(FieldInfo(TO_STRING(m_VertexKeywords), &PassData::m_VertexKeywords, BindingType::StringArray))
+		BIND_FIELD(FieldInfo(TO_STRING(m_FragmentKeywords), &PassData::m_FragmentKeywords, BindingType::StringArray))
+		END_OBJECT_BINDING()
+	}
+
+	const PassData* ShaderData::GetPass(const UINT& index) const
+	{
+		if (index < 0 || index > m_Passes.size())
+		{
+			return nullptr;
+		}
+		return m_Passes[index].Get();
+	}
+
+	void ShaderData::SetPasses(const std::vector<DataPtr<PassData>>& passes)
+	{
+		m_Passes = passes;
 	}
 
 	const std::vector<DataPtr<TextureParameterData>>& ShaderData::GetTextureParameters() const
@@ -104,10 +140,7 @@ namespace Blueberry
 	void ShaderData::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(ShaderData)
-		BIND_FIELD(FieldInfo(TO_STRING(m_CullMode), &ShaderData::m_CullMode, BindingType::Enum))
-		BIND_FIELD(FieldInfo(TO_STRING(m_SrcBlend), &ShaderData::m_SrcBlend, BindingType::Enum))
-		BIND_FIELD(FieldInfo(TO_STRING(m_DstBlend), &ShaderData::m_DstBlend, BindingType::Enum))
-		BIND_FIELD(FieldInfo(TO_STRING(m_ZWrite), &ShaderData::m_ZWrite, BindingType::Enum))
+		BIND_FIELD(FieldInfo(TO_STRING(m_Passes), &ShaderData::m_Passes, BindingType::DataArray).SetObjectType(PassData::Type))
 		BIND_FIELD(FieldInfo(TO_STRING(m_TextureParameters), &ShaderData::m_TextureParameters, BindingType::DataArray).SetObjectType(TextureParameterData::Type))
 		END_OBJECT_BINDING()
 	}
@@ -117,28 +150,42 @@ namespace Blueberry
 		return m_Data.Get();
 	}
 
-	void Shader::Initialize(void* vertexData, void* pixelData)
+	void Shader::Initialize(const VariantsData& variantsData)
 	{
-		GfxDevice::CreateShader(vertexData, pixelData, m_Shader);
+		int vertexShadersCount = variantsData.vertexShaderIndices.size();
+		m_VertexShaders.resize(vertexShadersCount);
+		for (int i = 0; i < vertexShadersCount; ++i)
+		{
+			GfxVertexShader* vertexShader;
+			GfxDevice::CreateVertexShader(variantsData.shaders[variantsData.vertexShaderIndices[i]], vertexShader);
+			m_VertexShaders[i] = vertexShader;
+		}
+
+		if (variantsData.geometryShaderIndex != -1)
+		{
+			GfxDevice::CreateGeometryShader(variantsData.shaders[variantsData.geometryShaderIndex], m_GeometryShader);
+		}
+
+		int fragmentShadersCount = variantsData.fragmentShaderIndices.size();
+		m_FragmentShaders.resize(fragmentShadersCount);
+		for (int i = 0; i < fragmentShadersCount; ++i)
+		{
+			GfxFragmentShader* fragmentShader;
+			GfxDevice::CreateFragmentShader(variantsData.shaders[variantsData.fragmentShaderIndices[i]], fragmentShader);
+			m_FragmentShaders[i] = fragmentShader;
+		}
 	}
 
-	void Shader::Initialize(void* vertexData, void* pixelData, const ShaderData& data)
+	void Shader::Initialize(const VariantsData& variantsData, const ShaderData& data)
 	{
-		GfxDevice::CreateShader(vertexData, pixelData, m_Shader);
+		Initialize(variantsData);
 		m_Data = new ShaderData(data);
 	}
 
-	Shader* Shader::Create(void* vertexData, void* pixelData)
+	Shader* Shader::Create(const VariantsData& variantsData, const ShaderData& shaderData)
 	{
 		Shader* shader = Object::Create<Shader>();
-		shader->Initialize(vertexData, pixelData);
-		return shader;
-	}
-
-	Shader* Shader::Create(void* vertexData, void* pixelData, const ShaderData& data)
-	{
-		Shader* shader = Object::Create<Shader>();
-		shader->Initialize(vertexData, pixelData, data);
+		shader->Initialize(variantsData, shaderData);
 		return shader;
 	}
 
@@ -147,5 +194,10 @@ namespace Blueberry
 		BEGIN_OBJECT_BINDING(Shader)
 		BIND_FIELD(FieldInfo(TO_STRING(m_Data), &Shader::m_Data, BindingType::Data).SetObjectType(ShaderData::Type))
 		END_OBJECT_BINDING()
+	}
+
+	const ShaderVariant Shader::GetVariant(const UINT& vertexKeywordFlags, const UINT& fragmentKeywordFlags)
+	{
+		return { m_VertexShaders[vertexKeywordFlags], m_GeometryShader, m_FragmentShaders[fragmentKeywordFlags] };
 	}
 }

@@ -52,17 +52,10 @@ namespace Blueberry
 		if (extension == ".shader")
 		{
 			std::string shaderCode;
-			ShaderData data;
-
-			if (HLSLShaderParser::Parse(path, shaderCode, data))
+			HLSLShaderProcessor processor;
+			if (processor.Compile(path))
 			{
-				HLSLShaderProcessor vertexProcessor;
-				HLSLShaderProcessor fragmentProcessor;
-
-				vertexProcessor.Compile(shaderCode, ShaderType::Vertex);
-				fragmentProcessor.Compile(shaderCode, ShaderType::Fragment);
-
-				Shader* shader = Shader::Create(vertexProcessor.GetShader(), fragmentProcessor.GetShader(), data);
+				Shader* shader = Shader::Create(processor.GetVariantsData(), processor.GetShaderData());
 				m_LoadedAssets.insert_or_assign(path, shader);
 				return shader;
 			}
