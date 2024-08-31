@@ -29,33 +29,12 @@ namespace Blueberry
 			return;
 		}
 
-		auto flags = material->GetKeywordFlags();
-		auto variant = material->m_Shader->GetVariant(flags.first, flags.second);
-		this->vertexShader = variant.vertexShader;
-		this->geometryShader = variant.geometryShader;
-		this->fragmentShader = variant.fragmentShader;
-		this->textureCount = 0;
-
-		for (auto& pair : material->m_TextureMap)
-		{
-			if (pair.second.IsValid())
-			{
-				textures[textureCount] = std::make_pair(pair.first, pair.second.Get()->m_Texture);
-				++textureCount;
-			}
-		}
-
-		auto& data = *(material->GetShaderData());
-		auto pass = data.GetPass(0);
-		if (pass == nullptr)
+		this->renderState = material->GetState(0);
+		if (this->renderState == nullptr)
 		{
 			isValid = false;
 			return;
 		}
-		this->cullMode = pass->GetCullMode();
-		this->blendSrc = pass->GetBlendSrc();
-		this->blendDst = pass->GetBlendDst();
-		this->zWrite = pass->GetZWrite();
 
 		this->vertexBuffer = vertexBuffer;
 		this->indexBuffer = indexBuffer;

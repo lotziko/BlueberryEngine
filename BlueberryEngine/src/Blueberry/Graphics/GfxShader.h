@@ -12,6 +12,7 @@ namespace Blueberry
 		std::unordered_map<std::size_t, std::pair<UINT, UINT>> m_TextureSlots;
 
 		friend struct GfxDrawingOperation;
+		friend class Material;
 	};
 	
 	class GfxVertexShader : public GfxShader

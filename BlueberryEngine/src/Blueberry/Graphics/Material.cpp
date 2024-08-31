@@ -70,7 +70,11 @@ namespace Blueberry
 
 	void Material::ApplyProperties()
 	{
-		FillGfxTextures();
+		if (m_Shader.IsValid())
+		{
+			m_PassCache.resize(m_Shader.Get()->GetData()->GetPassCount());
+		}
+		FillTextureMap();
 	}
 
 	const ShaderData* Material::GetShaderData()
@@ -90,7 +94,7 @@ namespace Blueberry
 	void Material::AddTextureData(TextureData* data)
 	{
 		m_Textures.emplace_back(DataPtr<TextureData>(data));
-		FillGfxTextures();
+		FillTextureMap();
 	}
 
 	void Material::SetKeyword(const std::string& keyword, const bool& enabled)
@@ -102,38 +106,110 @@ namespace Blueberry
 		}
 	}
 
-	const std::pair<UINT, UINT>& Material::GetKeywordFlags()
+	GfxRenderState* Material::GetState(const uint8_t& passIndex)
 	{
-		// TODO move into pipeline state
-		if (m_ActiveKeywords.size() == 0 || !m_Shader.IsValid())
+		GfxRenderState* passState = &m_PassCache[passIndex];
+		if (passState->isValid)
 		{
-			return std::make_pair(0, 0);
+			return passState;
 		}
-		auto pass = m_Shader.Get()->GetData()->GetPass(0);
-		auto vertexKeywords = pass->GetVertexKeywords();
-		auto fragmentKeywords = pass->GetFragmentKeywords();
+
+		if (!m_Shader.IsValid() || m_Shader->GetState() != ObjectState::Default)
+		{
+			return nullptr;
+		}
+
+		GfxRenderState newState = {};
+		auto shaderPass = m_Shader.Get()->GetData()->GetPass(passIndex);
+
 		UINT vertexFlags = 0;
 		UINT fragmentFlags = 0;
-		for (auto& keyword : m_ActiveKeywords)
+		if (m_ActiveKeywords.size() > 0)
 		{
-			for (int i = 0; i < vertexKeywords.size(); ++i)
+			auto vertexKeywords = shaderPass->GetVertexKeywords();
+			auto fragmentKeywords = shaderPass->GetFragmentKeywords();
+			for (auto& keyword : m_ActiveKeywords)
 			{
-				if (vertexKeywords[i] == keyword)
+				for (int i = 0; i < vertexKeywords.size(); ++i)
 				{
-					vertexFlags |= 1 << i;
+					if (vertexKeywords[i] == keyword)
+					{
+						vertexFlags |= 1 << i;
+					}
 				}
-			}
-			for (int i = 0; i < fragmentKeywords.size(); ++i)
-			{
-				if (fragmentKeywords[i] == keyword)
+				for (int i = 0; i < fragmentKeywords.size(); ++i)
 				{
-					fragmentFlags |= 1 << i;
-					break;
+					if (fragmentKeywords[i] == keyword)
+					{
+						fragmentFlags |= 1 << i;
+						break;
+					}
 				}
 			}
 		}
-		return std::make_pair(vertexFlags, fragmentFlags);
+		const ShaderVariant variant = m_Shader->GetVariant(vertexFlags, fragmentFlags);
+		newState.vertexShader = variant.vertexShader;
+		newState.geometryShader = variant.geometryShader;
+		newState.fragmentShader = variant.fragmentShader;
+
+		auto textureSlots = variant.fragmentShader->m_TextureSlots;
+		for (auto& slot : textureSlots)
+		{
+			auto it = m_TextureMap.find(slot.first);
+			if (it != m_TextureMap.end())
+			{
+				GfxRenderState::TextureInfo info = {};
+				info.texture = it->second.Get()->m_Texture;
+				info.textureSlot = slot.second.first;
+				info.samplerSlot = slot.second.second;
+				newState.fragmentTextures[newState.fragmentTextureCount] = info;
+				++newState.fragmentTextureCount;
+			}
+		}
+
+		newState.cullMode = shaderPass->GetCullMode();
+		newState.blendSrc = shaderPass->GetBlendSrc();
+		newState.blendDst = shaderPass->GetBlendDst();
+		newState.zWrite = shaderPass->GetZWrite();
+
+		newState.isValid = true;
+
+		m_PassCache[passIndex] = newState;
+		return passState;
 	}
+
+	//const std::pair<UINT, UINT>& Material::GetKeywordFlags()
+	//{
+	//	// TODO move into pipeline state
+	//	if (m_ActiveKeywords.size() == 0 || !m_Shader.IsValid())
+	//	{
+	//		return std::make_pair(0, 0);
+	//	}
+	//	auto pass = m_Shader.Get()->GetData()->GetPass(0);
+	//	auto vertexKeywords = pass->GetVertexKeywords();
+	//	auto fragmentKeywords = pass->GetFragmentKeywords();
+	//	UINT vertexFlags = 0;
+	//	UINT fragmentFlags = 0;
+	//	for (auto& keyword : m_ActiveKeywords)
+	//	{
+	//		for (int i = 0; i < vertexKeywords.size(); ++i)
+	//		{
+	//			if (vertexKeywords[i] == keyword)
+	//			{
+	//				vertexFlags |= 1 << i;
+	//			}
+	//		}
+	//		for (int i = 0; i < fragmentKeywords.size(); ++i)
+	//		{
+	//			if (fragmentKeywords[i] == keyword)
+	//			{
+	//				fragmentFlags |= 1 << i;
+	//				break;
+	//			}
+	//		}
+	//	}
+	//	return std::make_pair(vertexFlags, fragmentFlags);
+	//}
 
 	void Material::BindProperties()
 	{
@@ -149,7 +225,7 @@ namespace Blueberry
 		ApplyProperties();
 	}
 
-	void Material::FillGfxTextures()
+	void Material::FillTextureMap()
 	{
 		m_TextureMap.clear();
 		if (m_Shader.IsValid() && m_Shader->GetState() == ObjectState::Default)

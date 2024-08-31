@@ -317,6 +317,7 @@ namespace Blueberry
 						input.read((char*)&stringSize, sizeof(size_t));
 						std::string string(stringSize, ' ');
 						input.read(string.data(), stringSize);
+						data[i] = string;
 					}
 					*value.Get<std::vector<std::string>>() = data;
 				}

@@ -248,7 +248,8 @@ namespace Blueberry
 			size_t pixelSize = sizeof(char) * 4;
 			size_t offset = ((area.y + i) * dxTexture->m_Width + area.x) * pixelSize;
 			char* copyPtr = static_cast<char*>(mappedTexture.pData) + offset;
-			memcpy(target, copyPtr, area.width * pixelSize);
+			char* targetPtr = static_cast<char*>(target) + (area.width * pixelSize * i);
+			memcpy(targetPtr, copyPtr, area.width * pixelSize);
 		}
 		m_DeviceContext->Unmap(dxTexture->m_StagingTexture.Get(), 0);
 	}
@@ -310,9 +311,10 @@ namespace Blueberry
 			return;
 		}
 
-		SetCullMode(operation.cullMode);
-		SetBlendMode(operation.blendSrc, operation.blendDst);
-		SetZWrite(operation.zWrite);
+		GfxRenderState* renderState = operation.renderState;
+		SetCullMode(renderState->cullMode);
+		SetBlendMode(renderState->blendSrc, renderState->blendDst);
+		SetZWrite(renderState->zWrite);
 		SetTopology(operation.topology);
 
 		// TODO check if shader variant/material/mesh is the same to skip some bindings
@@ -321,7 +323,7 @@ namespace Blueberry
 		{
 			m_MaterialId = operation.materialId;
 
-			auto dxVertexShader = static_cast<GfxVertexShaderDX11*>(operation.vertexShader);
+			auto dxVertexShader = static_cast<GfxVertexShaderDX11*>(renderState->vertexShader);
 			if (dxVertexShader != m_VertexShader)
 			{
 				m_VertexShader = dxVertexShader;
@@ -345,7 +347,7 @@ namespace Blueberry
 				m_DeviceContext->VSSetConstantBuffers(0, 8, m_ConstantBuffers);
 			}
 
-			auto dxGeometryShader = static_cast<GfxGeometryShaderDX11*>(operation.geometryShader);
+			auto dxGeometryShader = static_cast<GfxGeometryShaderDX11*>(renderState->geometryShader);
 			if (dxGeometryShader != m_GeometryShader)
 			{
 				m_GeometryShader = dxGeometryShader;
@@ -353,7 +355,7 @@ namespace Blueberry
 				m_DeviceContext->GSSetShader(dxGeometryShader == nullptr ? NULL : dxGeometryShader->m_Shader.Get(), NULL, 0);
 			}
 
-			auto dxFragmentShader = static_cast<GfxFragmentShaderDX11*>(operation.fragmentShader);
+			auto dxFragmentShader = static_cast<GfxFragmentShaderDX11*>(renderState->fragmentShader);
 			if (dxFragmentShader != m_FragmentShader)
 			{
 				m_DeviceContext->PSSetShader(dxFragmentShader->m_Shader.Get(), NULL, 0);
@@ -378,20 +380,14 @@ namespace Blueberry
 
 				// Bind material textures
 				auto textureMap = dxFragmentShader->m_TextureSlots;
-				for (int i = 0; i < operation.textureCount; i++)
+				for (int i = 0; i < renderState->fragmentTextureCount; i++)
 				{
-					std::pair<size_t, GfxTexture*> texture = operation.textures[i];
-					auto it = textureMap.find(texture.first);
-					if (it != textureMap.end())
+					GfxRenderState::TextureInfo info = renderState->fragmentTextures[i];
+					auto dxTexture = static_cast<GfxTextureDX11*>(info.texture);
+					m_ShaderResourceViews[info.textureSlot] = dxTexture->m_ResourceView.Get();
+					if (info.samplerSlot != -1)
 					{
-						UINT textureSlotIndex = it->second.first;
-						UINT samplerSlotIndex = it->second.second;
-						auto dxTexture = static_cast<GfxTextureDX11*>(texture.second);
-						m_ShaderResourceViews[textureSlotIndex] = dxTexture->m_ResourceView.Get();
-						if (samplerSlotIndex != -1)
-						{
-							m_Samplers[samplerSlotIndex] = dxTexture->m_SamplerState.Get();
-						}
+						m_Samplers[info.samplerSlot] = dxTexture->m_SamplerState.Get();
 					}
 				}
 

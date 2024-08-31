@@ -130,7 +130,7 @@ namespace Blueberry
 					{
 						for (int j = 0; j < keywordCount; ++j)
 						{
-							keywords[j].Definition = i & j ? "1" : "0";
+							keywords[j].Definition = i & (j + 1) ? "1" : "0";
 						}
 
 						ComPtr<ID3DBlob> fragmentBlob;

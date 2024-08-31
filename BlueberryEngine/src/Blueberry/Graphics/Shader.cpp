@@ -122,6 +122,11 @@ namespace Blueberry
 		return m_Passes[index].Get();
 	}
 
+	const UINT& ShaderData::GetPassCount() const
+	{
+		return m_Passes.size();
+	}
+
 	void ShaderData::SetPasses(const std::vector<DataPtr<PassData>>& passes)
 	{
 		m_Passes = passes;

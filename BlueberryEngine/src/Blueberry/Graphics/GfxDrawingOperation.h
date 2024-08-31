@@ -8,12 +8,37 @@ namespace Blueberry
 	class GfxGeometryShader;
 	class GfxFragmentShader;
 	class GfxTexture;
+	class Texture;
 	class GfxVertexBuffer;
 	class GfxIndexBuffer;
 	enum class CullMode;
 	enum class BlendMode;
 	enum class ZWrite;
 	enum class Topology;
+
+	struct GfxRenderState
+	{
+		struct TextureInfo
+		{
+			GfxTexture* texture;
+			UINT textureSlot;
+			UINT samplerSlot;
+		};
+
+		GfxVertexShader* vertexShader;
+		GfxGeometryShader* geometryShader;
+		GfxFragmentShader* fragmentShader;
+
+		TextureInfo fragmentTextures[16];
+		UINT fragmentTextureCount;
+
+		CullMode cullMode;
+		BlendMode blendSrc;
+		BlendMode blendDst;
+		ZWrite zWrite;
+
+		bool isValid;
+	};
 
 	struct GfxDrawingOperation
 	{
@@ -24,17 +49,9 @@ namespace Blueberry
 		bool IsValid() const;
 
 		bool isValid = true;
-		GfxVertexShader* vertexShader;
-		GfxGeometryShader* geometryShader;
-		GfxFragmentShader* fragmentShader;
-		std::pair<size_t, GfxTexture*> textures[16] = {};
-		UINT textureCount;
+		GfxRenderState* renderState;
 		GfxVertexBuffer* vertexBuffer;
 		GfxIndexBuffer* indexBuffer;
-		CullMode cullMode;
-		BlendMode blendSrc;
-		BlendMode blendDst;
-		ZWrite zWrite;
 		Topology topology;
 		UINT indexCount;
 		UINT indexOffset;

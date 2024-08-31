@@ -1,6 +1,7 @@
 #pragma once
 #include "Blueberry\Core\ObjectPtr.h"
 #include "Blueberry\Graphics\Shader.h"
+#include "Blueberry\Graphics\GfxDrawingOperation.h"
 
 namespace Blueberry
 {
@@ -54,20 +55,22 @@ namespace Blueberry
 
 		void SetKeyword(const std::string& keyword, const bool& enabled);
 
-		const std::pair<UINT, UINT>& GetKeywordFlags();
+		GfxRenderState* GetState(const uint8_t& passIndex); // TODO pass + global keywords
 
 		static void BindProperties();
 
 		virtual void OnCreate() override final;
 
 	private:
-		void FillGfxTextures();
+		void FillTextureMap();
 
 	private:
 		std::unordered_map<std::size_t, ObjectPtr<Texture>> m_TextureMap;
 		std::vector<DataPtr<TextureData>> m_Textures;
 		std::vector<std::string> m_ActiveKeywords;
 		ObjectPtr<Shader> m_Shader;
+
+		std::vector<GfxRenderState> m_PassCache;
 
 		friend struct GfxDrawingOperation;
 	};

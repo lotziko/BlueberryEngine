@@ -78,6 +78,7 @@ namespace Blueberry
 		virtual ~ShaderData() = default;
 
 		const PassData* GetPass(const UINT& index) const;
+		const UINT& GetPassCount() const;
 		void SetPasses(const std::vector<DataPtr<PassData>>& passes);
 
 		const std::vector<DataPtr<TextureParameterData>>& GetTextureParameters() const;
@@ -135,5 +136,6 @@ namespace Blueberry
 		std::vector<GfxFragmentShader*> m_FragmentShaders;
 
 		friend struct GfxDrawingOperation;
+		friend class Material;
 	};
 }
