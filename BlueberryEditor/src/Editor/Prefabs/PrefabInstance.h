@@ -24,6 +24,10 @@ namespace Blueberry
 		static void BindProperties();
 
 	private:
+		void AddPrefabEntities(Entity* entity);
+		void RemovePrefabEntities(Entity* entity);
+
+	private:
 		ObjectPtr<Entity> m_Prefab;
 		ObjectPtr<Entity> m_Entity;
 

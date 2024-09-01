@@ -49,7 +49,7 @@ namespace Blueberry
 			{
 				serializer.AddObject(prefabInstance);
 			}
-			else
+			else if (!PrefabManager::IsPartOfPrefabInstance(entity))
 			{
 				serializer.AddObject(entity);
 			}
@@ -81,7 +81,7 @@ namespace Blueberry
 			for (auto& pair : s_Scene->GetEntities())
 			{
 				Entity* entity = pair.second.Get();
-				if (PrefabManager::IsPrefabInstance(entity))
+				if (PrefabManager::IsPartOfPrefabInstance(entity))
 				{
 					Object::Destroy(entity);
 				}

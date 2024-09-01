@@ -56,8 +56,6 @@ namespace Blueberry
 		m_Entities[entity->GetObjectId()] = entity;
 
 		entity->AddComponent<Transform>();
-		entity->m_Transform = ObjectPtr<Transform>(entity->GetComponent<Transform>());
-
 		return entity;
 	}
 
@@ -65,14 +63,13 @@ namespace Blueberry
 	{
 		//BB_INFO("Entity is added.")
 		entity->m_Scene = this;
-		entity->m_Transform = entity->GetComponent<Transform>();
 		m_Entities[entity->GetObjectId()] = entity;
 
 		for (auto& component : entity->GetComponents())
 		{
 			entity->AddComponentIntoScene(component);
 		}
-		for (auto& child : entity->m_Transform->GetChildren())
+		for (auto& child : entity->GetTransform()->GetChildren())
 		{
 			AddEntity(child->GetEntity());
 		}

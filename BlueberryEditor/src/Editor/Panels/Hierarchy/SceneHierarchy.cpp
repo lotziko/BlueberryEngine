@@ -105,11 +105,11 @@ namespace Blueberry
 		if (ImGui::BeginPopupContextItem())
 		{
 			DrawCreateEntity();
-			DrawDestroyEntity(entity);
-			if (PrefabManager::IsPrefabInstance(entity))
+			if (PrefabManager::IsPrefabInstanceRoot(entity))
 			{
 				DrawUnpackPrefabEntity(entity);
 			}
+			DrawDestroyEntity(entity);
 			ImGui::EndPopup();
 		}
 
@@ -141,7 +141,7 @@ namespace Blueberry
 			}
 			else
 			{
-				bool isPrefab = PrefabManager::IsPrefabInstance(entity);
+				bool isPrefab = PrefabManager::IsPartOfPrefabInstance(entity);
 				if (isPrefab)
 				{
 					ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 255, 0, 255));

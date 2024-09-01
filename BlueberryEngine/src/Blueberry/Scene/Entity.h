@@ -52,6 +52,7 @@ namespace Blueberry
 		Scene* m_Scene;
 
 		friend class Scene;
+		friend class Transform;
 	};
 
 	template<class ComponentType>

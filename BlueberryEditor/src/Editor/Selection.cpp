@@ -3,7 +3,7 @@
 
 namespace Blueberry
 {
-	std::set<ObjectId> Selection::s_ActiveObjects = std::set<ObjectId>();
+	std::unordered_set<ObjectId> Selection::s_ActiveObjects = std::unordered_set<ObjectId>();
 	SelectionChangeEvent Selection::s_SelectionChanged = {};
 
 	Object* Selection::GetActiveObject()

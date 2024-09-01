@@ -19,7 +19,7 @@ namespace Blueberry
 		static SelectionChangeEvent& GetSelectionChanged();
 
 	private:
-		static std::set<ObjectId> s_ActiveObjects;
+		static std::unordered_set<ObjectId> s_ActiveObjects;
 		static SelectionChangeEvent s_SelectionChanged;
 	};
 }

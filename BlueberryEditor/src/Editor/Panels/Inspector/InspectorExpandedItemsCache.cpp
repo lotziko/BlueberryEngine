@@ -7,7 +7,7 @@
 
 namespace Blueberry
 {
-	std::set<std::string> InspectorExpandedItemsCache::s_InspectorExpandedItemsCache = std::set<std::string>();
+	std::unordered_set<std::string> InspectorExpandedItemsCache::s_InspectorExpandedItemsCache = std::unordered_set<std::string>();
 
 	void InspectorExpandedItemsCache::Load()
 	{

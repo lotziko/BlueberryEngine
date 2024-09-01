@@ -13,6 +13,7 @@ namespace Blueberry
 		Transform() = default;
 		~Transform() = default;
 
+		virtual void OnCreate() override;
 		virtual void OnDestroy() override;
 		
 		const Matrix& GetLocalToWorldMatrix();

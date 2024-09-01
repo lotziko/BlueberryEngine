@@ -8,10 +8,16 @@
 namespace Blueberry
 {
 	std::unordered_map<ObjectId, ObjectId> PrefabManager::s_EntityToPrefabInstance = std::unordered_map<ObjectId, ObjectId>();
+	std::unordered_set<ObjectId> PrefabManager::s_PrefabEntities = std::unordered_set<ObjectId>();
 
-	bool PrefabManager::IsPrefabInstance(Entity* entity)
+	bool PrefabManager::IsPrefabInstanceRoot(Entity* entity)
 	{
 		return s_EntityToPrefabInstance.count(entity->GetObjectId()) > 0;
+	}
+
+	bool PrefabManager::IsPartOfPrefabInstance(Entity* entity)
+	{
+		return s_PrefabEntities.count(entity->GetObjectId()) > 0;
 	}
 
 	PrefabInstance* PrefabManager::GetInstance(Entity* entity)
@@ -60,6 +66,7 @@ namespace Blueberry
 		{
 			Object* object = ObjectDB::GetObject(it->second);
 			PrefabInstance* instance = (PrefabInstance*)object;
+			instance->RemovePrefabEntities(instance->m_Entity.Get());
 			instance->m_Entity = nullptr;
 			Object::Destroy(instance);
 			s_EntityToPrefabInstance.erase(it->first);

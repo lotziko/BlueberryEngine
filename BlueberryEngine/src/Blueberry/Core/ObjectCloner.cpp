@@ -106,6 +106,7 @@ namespace Blueberry
 				break;
 			}
 		}
+		clone->OnCreate();
 		return clone;
 	}
 }

@@ -8,6 +8,11 @@ namespace Blueberry
 {
 	OBJECT_DEFINITION(Component, Transform)
 
+	void Transform::OnCreate()
+	{
+		m_Entity->m_Transform = this;
+	}
+
 	void Transform::OnDestroy()
 	{
 		if (m_Parent.IsValid())

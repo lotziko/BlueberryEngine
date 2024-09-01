@@ -8,7 +8,8 @@ namespace Blueberry
 	class PrefabManager
 	{
 	public:
-		static bool IsPrefabInstance(Entity* entity);
+		static bool IsPrefabInstanceRoot(Entity* entity);
+		static bool IsPartOfPrefabInstance(Entity* entity);
 		static PrefabInstance* GetInstance(Entity* entity);
 		static PrefabInstance* CreateInstance(Entity* entity);
 
@@ -17,6 +18,7 @@ namespace Blueberry
 
 	private:
 		static std::unordered_map<ObjectId, ObjectId> s_EntityToPrefabInstance;
+		static std::unordered_set<ObjectId> s_PrefabEntities;
 
 		friend class PrefabInstance;
 	};
