@@ -111,6 +111,28 @@ namespace Blueberry
 			return false;
 		}
 
+		// Slots
+		ID3D11ShaderReflection* geometryShaderReflection;
+		hr = D3DReflect(m_ShaderBuffer->GetBufferPointer(), m_ShaderBuffer->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&geometryShaderReflection);
+		if (FAILED(hr))
+		{
+			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to get geometry shader reflection."));
+			return false;
+		}
+
+		D3D11_SHADER_DESC geometryShaderDesc;
+		geometryShaderReflection->GetDesc(&geometryShaderDesc);
+
+		UINT constantBufferCount = geometryShaderDesc.ConstantBuffers;
+
+		for (UINT i = 0; i < constantBufferCount; i++)
+		{
+			ID3D11ShaderReflectionConstantBuffer* constantBufferReflection = geometryShaderReflection->GetConstantBufferByIndex(i);
+			D3D11_SHADER_BUFFER_DESC shaderBufferDesc;
+			constantBufferReflection->GetDesc(&shaderBufferDesc);
+			m_ConstantBufferSlots.insert({ TO_HASH(std::string(shaderBufferDesc.Name)), i });
+		}
+
 		return true;
 	}
 

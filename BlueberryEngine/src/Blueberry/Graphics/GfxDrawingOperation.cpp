@@ -9,10 +9,10 @@
 
 namespace Blueberry
 {
-	GfxDrawingOperation::GfxDrawingOperation(GfxVertexBuffer* vertexBuffer, GfxIndexBuffer* indexBuffer, Material* material, const UINT& indexCount, const UINT& indexOffset, const Topology& topology)
+	GfxDrawingOperation::GfxDrawingOperation(GfxVertexBuffer* vertexBuffer, GfxIndexBuffer* indexBuffer, Material* material, const UINT& indexCount, const UINT& indexOffset, const UINT& vertexCount, const Topology& topology)
 	{
 		// TODO move into pipeline state
-		if (vertexBuffer == nullptr || indexBuffer == nullptr || indexCount == 0 || topology == Topology::Unknown)
+		if (vertexBuffer == nullptr || topology == Topology::Unknown)
 		{
 			isValid = false;
 			return;
@@ -40,15 +40,16 @@ namespace Blueberry
 		this->indexBuffer = indexBuffer;
 		this->indexCount = indexCount;
 		this->indexOffset = indexOffset;
+		this->vertexCount = vertexCount;
 		this->topology = topology;
 		this->materialId = material->GetObjectId();
 	}
 
-	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material, const UINT& indexCount, const UINT& indexOffset) : GfxDrawingOperation(mesh->m_VertexBuffer, mesh->m_IndexBuffer, material, indexCount, indexOffset, mesh->GetTopology())
+	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material, const UINT& indexCount, const UINT& indexOffset, const UINT& vertexCount) : GfxDrawingOperation(mesh->m_VertexBuffer, mesh->m_IndexBuffer, material, indexCount, indexOffset, vertexCount, mesh->GetTopology())
 	{
 	}
 
-	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material) : GfxDrawingOperation(mesh != nullptr && mesh->GetState() != ObjectState::Missing ? mesh->m_VertexBuffer : nullptr, mesh->m_IndexBuffer, material, mesh->m_IndexCount, 0, mesh->GetTopology())
+	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material) : GfxDrawingOperation(mesh != nullptr && mesh->GetState() != ObjectState::Missing ? mesh->m_VertexBuffer : nullptr, mesh->m_IndexBuffer, material, mesh->m_IndexCount, 0, mesh->m_VertexCount, mesh->GetTopology())
 	{
 	}
 

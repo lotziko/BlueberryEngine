@@ -90,17 +90,16 @@ namespace Blueberry
 			}
 		}
 
-		/*{
-			PerDrawConstantBuffer::BindData(Matrix::Identity);
-			Gizmos::SetColor(Color(1, 1, 1, 1));
-			Gizmos::Begin();
-			for (auto component : scene->GetIterator<Light>())
-			{
-				auto light = static_cast<Light*>(component.second);
-				auto transform = light->GetEntity()->GetTransform();
-				Gizmos::DrawCircle(transform->GetPosition(), light->GetRange());
-			}
-			Gizmos::End();
-		}		*/
+		PerDrawConstantBuffer::BindData(Matrix::Identity);
+		Gizmos::SetColor(Color(1, 1, 1, 1));
+		Gizmos::Begin();
+		for (auto component : scene->GetIterator<Light>())
+		{
+			auto light = static_cast<Light*>(component.second);
+			auto transform = light->GetEntity()->GetTransform();
+			PerDrawConstantBuffer::BindData(transform->GetLocalToWorldMatrix());
+			Gizmos::DrawCircle(Vector3::Zero, light->GetRange());
+		}
+		Gizmos::End();
 	}
 }

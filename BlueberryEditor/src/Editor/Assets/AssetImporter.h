@@ -21,7 +21,7 @@ namespace Blueberry
 		const std::string& GetRelativeMetaFilePath();
 		const std::unordered_map<FileId, ObjectId>& GetImportedObjects();
 		const FileId& GetMainObject();
-		const bool& IsImported();
+		const bool IsImported();
 		const Texture2D* GetIcon();
 
 		void ResetImport();

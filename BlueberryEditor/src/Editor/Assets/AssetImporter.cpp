@@ -52,10 +52,11 @@ namespace Blueberry
 		return m_MainObject;
 	}
 
-	const bool& AssetImporter::IsImported()
+	const bool AssetImporter::IsImported()
 	{
 		if (m_ImportedObjects.size() > 0)
 		{
+			// bool& SHOULD NOT be used here because it gives wrong result in release build
 			Object* firstObject = ObjectDB::GetObject(m_ImportedObjects.begin()->second);
 			return firstObject->GetState() != ObjectState::AwaitingLoading;
 		}

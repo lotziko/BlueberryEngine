@@ -297,6 +297,7 @@ namespace Blueberry
 		switch (topology)
 		{
 		case Topology::Unknown:			return D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
+		case Topology::PointList:		return D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
 		case Topology::LineList:		return D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
 		case Topology::LineStrip:		return D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP;
 		case Topology::TriangleList:	return D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
@@ -351,8 +352,28 @@ namespace Blueberry
 			if (dxGeometryShader != m_GeometryShader)
 			{
 				m_GeometryShader = dxGeometryShader;
+				
+				if (dxGeometryShader == nullptr)
+				{
+					m_DeviceContext->GSSetShader(NULL, NULL, 0);
+				}
+				else
+				{
+					m_DeviceContext->GSSetShader(dxGeometryShader->m_Shader.Get(), NULL, 0);
 
-				m_DeviceContext->GSSetShader(dxGeometryShader == nullptr ? NULL : dxGeometryShader->m_Shader.Get(), NULL, 0);
+					// Bind constant buffers
+					auto bufferMap = dxGeometryShader->m_ConstantBufferSlots;
+					for (auto it = bufferMap.begin(); it != bufferMap.end(); it++)
+					{
+						auto pair = m_BindedConstantBuffers.find(it->first);
+						if (pair != m_BindedConstantBuffers.end())
+						{
+							m_ConstantBuffers[it->second] = pair->second->m_Buffer.Get();
+						}
+					}
+
+					m_DeviceContext->GSSetConstantBuffers(0, 8, m_ConstantBuffers);
+				}
 			}
 
 			auto dxFragmentShader = static_cast<GfxFragmentShaderDX11*>(renderState->fragmentShader);
@@ -417,10 +438,16 @@ namespace Blueberry
 		auto dxVertexBuffer = static_cast<GfxVertexBufferDX11*>(operation.vertexBuffer);
 		m_DeviceContext->IASetVertexBuffers(0, 1, dxVertexBuffer->m_Buffer.GetAddressOf(), &dxVertexBuffer->m_Stride, &dxVertexBuffer->m_Offset);
 
-		auto dxIndexBuffer = static_cast<GfxIndexBufferDX11*>(operation.indexBuffer);
-		m_DeviceContext->IASetIndexBuffer(dxIndexBuffer->m_Buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-
-		m_DeviceContext->DrawIndexed(operation.indexCount, operation.indexOffset, 0);
+		if (operation.indexBuffer == nullptr)
+		{
+			m_DeviceContext->Draw(operation.vertexCount, 0);
+		}
+		else
+		{
+			auto dxIndexBuffer = static_cast<GfxIndexBufferDX11*>(operation.indexBuffer);
+			m_DeviceContext->IASetIndexBuffer(dxIndexBuffer->m_Buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+			m_DeviceContext->DrawIndexed(operation.indexCount, operation.indexOffset, 0);
+		}
 	}
 
 	void GfxDeviceDX11::DispatchImpl(GfxComputeShader*& shader, const UINT& threadGroupsX, const UINT& threadGroupsY, const UINT& threadGroupsZ) const

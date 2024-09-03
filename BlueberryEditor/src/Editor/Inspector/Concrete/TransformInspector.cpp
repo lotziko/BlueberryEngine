@@ -6,16 +6,20 @@
 #include "imgui\imgui.h"
 #include "Editor\Misc\ImGuiHelper.h"
 
+#include "Editor\Panels\Scene\SceneArea.h"
+
 namespace Blueberry
 {
 	void TransformInspector::Draw(Object* object)
 	{
 		Transform* transform = static_cast<Transform*>(object);
+		bool hasChange = false;
 
 		Vector3 localPosition = transform->GetLocalPosition();
 		if (ImGui::DragVector3("Position", &localPosition))
 		{
 			transform->SetLocalPosition(localPosition);
+			hasChange = true;
 		}
 
 		Vector3 localRotation = ToDegrees(transform->GetLocalEulerRotation());
@@ -36,12 +40,19 @@ namespace Blueberry
 			{
 				m_TransformEulerCache.erase(transformId);
 			}
+			hasChange = true;
 		}
 
 		Vector3 localScale = transform->GetLocalScale();
 		if (ImGui::DragVector3("Scale", &localScale))
 		{
 			transform->SetLocalScale(localScale);
+			hasChange = true;
+		}
+
+		if (hasChange)
+		{
+			SceneArea::RequestRedrawAll();
 		}
 	}
 }

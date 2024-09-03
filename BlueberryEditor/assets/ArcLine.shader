@@ -1,0 +1,75 @@
+Shader
+{
+	Pass
+	{
+		Blend One Zero
+		ZWrite Off
+		Cull None
+
+		HLSLBEGIN
+		#pragma vertex ArcLineVertex
+		#pragma geometry ArcLineGeometry
+		#pragma fragment ArcLineFragment
+
+		#include "Input.hlsl"
+
+		struct Attributes
+		{
+			float3 centerPositionOS		: POSITION;
+			float4 normalOSRadius		: NORMAL;
+			float4 fromPositionOSAngle	: TANGENT;
+		};
+
+		struct GeometryVaryings
+		{
+			float3 centerPositionOS		: POSITION;
+			float4 normalOSRadius		: TEXCOORD0;
+			float4 tangentOSAngle		: TEXCOORD1;
+			float3 bitangentOS			: TEXCOORD2;
+		};
+
+		struct FragmentVaryings
+		{
+			float4 positionCS : SV_POSITION;
+		};
+
+		GeometryVaryings ArcLineVertex(Attributes input)
+		{
+			GeometryVaryings output;
+			output.centerPositionOS = input.centerPositionOS;
+			output.normalOSRadius = input.normalOSRadius;
+			output.tangentOSAngle = float4(normalize(input.centerPositionOS.xyz - input.fromPositionOSAngle.xyz), input.fromPositionOSAngle.w);
+			output.bitangentOS = cross(output.normalOSRadius.xyz, output.tangentOSAngle.xyz);
+			return output;
+		}
+
+		[maxvertexcount(128)]
+		void ArcLineGeometry(point GeometryVaryings input[1], inout LineStream<FragmentVaryings> lineStream)
+		{
+			float3 center = input[0].centerPositionOS;
+			float3 normalOS = input[0].normalOSRadius.xyz;
+			float3 tangentOS = input[0].tangentOSAngle.xyz;
+			float3 bitangentOS = input[0].bitangentOS;
+			float radius = input[0].normalOSRadius.w;
+			float angle = input[0].tangentOSAngle.w;
+
+			float segments = 36.0;
+			for (int i = 0; i <= 36; ++i)
+			{
+				float u = sin(radians(i / segments * angle)) * radius;
+				float v = cos(radians(i / segments * angle)) * radius;
+
+				FragmentVaryings p1;
+				p1.positionCS = mul(mul(float4(center + tangentOS * u + bitangentOS * v, 1.0), _ModelMatrix), _ViewProjectionMatrix);
+				lineStream.Append(p1);
+			}
+			lineStream.RestartStrip();
+		}
+
+		float4 ArcLineFragment(FragmentVaryings input) : SV_TARGET
+		{
+			return float4(1, 1, 1, 1);
+		}
+		HLSLEND
+	}
+}

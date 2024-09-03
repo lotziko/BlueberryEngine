@@ -60,8 +60,9 @@ namespace Blueberry
 	enum class Topology
 	{
 		Unknown,
+		PointList,
 		LineList,
 		LineStrip,
-		TriangleList,
+		TriangleList
 	};
 }

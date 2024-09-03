@@ -7,6 +7,7 @@
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\VertexLayout.h"
+#include "Blueberry\Graphics\PerDrawDataConstantBuffer.h"
 
 namespace Blueberry
 {
@@ -16,41 +17,50 @@ namespace Blueberry
 
 	bool Gizmos::Initialize()
 	{
-		Shader* shader = (Shader*)AssetLoader::Load("assets/Color.shader");
-		if (shader == nullptr)
+		Shader* lineShader = (Shader*)AssetLoader::Load("assets/Color.shader");
+		if (lineShader == nullptr)
 		{
 			BB_ERROR("Failed to load gizmo line shader.")
 			return false;
 		}
-		s_LineMaterial = Material::Create(shader);
+		s_LineMaterial = Material::Create(lineShader);
 
-		VertexLayout layout = VertexLayout{}
+		Shader* arcShader = (Shader*)AssetLoader::Load("assets/ArcLine.shader");
+		if (arcShader == nullptr)
+		{
+			BB_ERROR("Failed to load gizmo arc shader.")
+				return false;
+		}
+		s_ArcMaterial = Material::Create(arcShader);
+
+		VertexLayout lineLayout = VertexLayout{}
 			.Append(VertexLayout::Position3D)
 			.Append(VertexLayout::Float4Color);
 
-		int size = layout.GetSize();
-		s_VertexData = new float[MAX_VERTICES * size / sizeof(float)];
+		int lineSize = lineLayout.GetSize();
+		s_LineVertexData = new float[MAX_VERTICES * lineSize / sizeof(float)];
 
-		if (!GfxDevice::CreateVertexBuffer(layout, MAX_VERTICES, s_VertexBuffer))
+		if (!GfxDevice::CreateVertexBuffer(lineLayout, MAX_VERTICES, s_LineVertexBuffer))
 		{
 			return false;
 		}
-
-		UINT* indexData = new UINT[MAX_INDICES];
-		for (UINT i = 0; i < MAX_INDICES; i += 2)
-		{
-			indexData[i + 0] = i + 0;
-			indexData[i + 1] = i + 1;
-		}
-
-		if (!GfxDevice::CreateIndexBuffer(MAX_INDICES, s_IndexBuffer))
-		{
-			return false;
-		}
-		s_IndexBuffer->SetData(indexData, MAX_INDICES);
-		delete[] indexData;
 
 		s_Lines = new Line[MAX_LINES];
+
+		VertexLayout arcLayout = VertexLayout{}
+			.Append(VertexLayout::Position3D)
+			.Append(VertexLayout::Float4Color)
+			.Append(VertexLayout::Tangent);
+
+		int arcSize = arcLayout.GetSize();
+		s_ArcVertexData = new float[MAX_VERTICES * arcSize / sizeof(float)];
+
+		if (!GfxDevice::CreateVertexBuffer(arcLayout, MAX_VERTICES, s_ArcVertexBuffer))
+		{
+			return false;
+		}
+
+		s_Arcs = new Arc[MAX_LINES];
 
 		return true;
 	}
@@ -58,21 +68,27 @@ namespace Blueberry
 	void Gizmos::Shutdown()
 	{
 		Material::Destroy(s_LineMaterial);
-		delete s_VertexData;
+		delete s_LineVertexData;
 		delete s_Lines;
-		delete s_VertexBuffer;
-		delete s_IndexBuffer;
+		delete s_LineVertexBuffer;
+		Material::Destroy(s_ArcMaterial);
+		delete s_ArcVertexData;
+		delete s_Arcs;
+		delete s_ArcVertexBuffer;
 	}
 
 	void Gizmos::Begin()
 	{
 		s_LineCount = 0;
-		s_VertexDataPtr = s_VertexData;
+		s_ArcCount = 0;
+		s_LineVertexDataPtr = s_LineVertexData;
+		s_ArcVertexDataPtr = s_ArcVertexData;
 	}
 
 	void Gizmos::End()
 	{
-		Flush();
+		FlushLines();
+		FlushArcs();
 	}
 
 	void Gizmos::SetColor(const Color& color)
@@ -80,10 +96,15 @@ namespace Blueberry
 		s_CurrentColor = color;
 	}
 
+	void Gizmos::SetMatrix(const Matrix& matrix)
+	{
+		PerDrawConstantBuffer::BindData(matrix);
+	}
+
 	void Gizmos::DrawLine(const Vector3& start, const Vector3& end)
 	{
 		if (s_LineCount >= MAX_LINES)
-			Flush();
+			FlushLines();
 
 		s_Lines[s_LineCount] = { start, end, s_CurrentColor };
 		++s_LineCount;
@@ -92,7 +113,7 @@ namespace Blueberry
 	void Gizmos::DrawBox(const Vector3& center, const Vector3& size)
 	{
 		if (s_LineCount + 12 >= MAX_LINES)
-			Flush();
+			FlushLines();
 
 		float halfX = size.x * 0.5f;
 		float halfY = size.y * 0.5f;
@@ -126,29 +147,18 @@ namespace Blueberry
 
 	void Gizmos::DrawCircle(const Vector3& center, const float& radius)
 	{
-		int segmentCount = 36;
+		if (s_ArcCount + 1 >= MAX_LINES)
+			FlushArcs();
 
-		if (s_LineCount + segmentCount * 3 >= MAX_LINES)
-			Flush();
-
-		for (int i = 0; i < segmentCount; i++)
-		{
-			float x1 = sin(ToRadians((float)i / segmentCount * 360));
-			float y1 = cos(ToRadians((float)i / segmentCount * 360));
-
-			float x2 = sin(ToRadians((float)(i + 1) / segmentCount * 360));
-			float y2 = cos(ToRadians((float)(i + 1) / segmentCount * 360));
-
-			s_Lines[s_LineCount++] = { center + Vector3(x1 * radius, 0, y1 * radius), center + Vector3(x2 * radius, 0, y2 * radius), s_CurrentColor };
-			s_Lines[s_LineCount++] = { center + Vector3(x1 * radius, y1 * radius, 0), center + Vector3(x2 * radius, y2 * radius, 0), s_CurrentColor };
-			s_Lines[s_LineCount++] = { center + Vector3(0, x1 * radius, y1 * radius), center + Vector3(0, x2 * radius, y2 * radius), s_CurrentColor };
-		}
+		s_Arcs[s_ArcCount++] = { center, Vector3(0, 1, 0), center - Vector3(0, 0, radius), radius, 360 };
+		s_Arcs[s_ArcCount++] = { center, Vector3(0, 0, 1), center - Vector3(0, radius, 0), radius, 360 };
+		s_Arcs[s_ArcCount++] = { center, Vector3(1, 0, 0), center - Vector3(0, 0, radius), radius, 360 };
 	}
 
 	void Gizmos::DrawFrustum(const Frustum& frustum)
 	{
 		if (s_LineCount + 12 >= MAX_LINES)
-			Flush();
+			FlushLines();
 
 		Vector3 corners[8];
 		frustum.GetCorners(corners);
@@ -169,8 +179,13 @@ namespace Blueberry
 		s_Lines[s_LineCount++] = { corners[3], corners[7], s_CurrentColor };
 	}
 
-	void Gizmos::Flush()
+	void Gizmos::FlushLines()
 	{
+		if (s_LineCount == 0)
+		{
+			return;
+		}
+
 		for (UINT i = 0; i < s_LineCount; i++)
 		{
 			Line line = s_Lines[i];
@@ -178,29 +193,67 @@ namespace Blueberry
 			Vector3 end = line.end;
 			Color color = line.color;
 
-			s_VertexDataPtr[0] = start.x;
-			s_VertexDataPtr[1] = start.y;
-			s_VertexDataPtr[2] = start.z;
+			s_LineVertexDataPtr[0] = start.x;
+			s_LineVertexDataPtr[1] = start.y;
+			s_LineVertexDataPtr[2] = start.z;
 
-			s_VertexDataPtr[3] = color.x;
-			s_VertexDataPtr[4] = color.y;
-			s_VertexDataPtr[5] = color.z;
-			s_VertexDataPtr[6] = color.w;
+			s_LineVertexDataPtr[3] = color.x;
+			s_LineVertexDataPtr[4] = color.y;
+			s_LineVertexDataPtr[5] = color.z;
+			s_LineVertexDataPtr[6] = color.w;
 
-			s_VertexDataPtr[7] = line.end.x;
-			s_VertexDataPtr[8] = line.end.y;
-			s_VertexDataPtr[9] = line.end.z;
+			s_LineVertexDataPtr[7] = line.end.x;
+			s_LineVertexDataPtr[8] = line.end.y;
+			s_LineVertexDataPtr[9] = line.end.z;
 
-			s_VertexDataPtr[10] = color.x;
-			s_VertexDataPtr[11] = color.y;
-			s_VertexDataPtr[12] = color.z;
-			s_VertexDataPtr[13] = color.w;
+			s_LineVertexDataPtr[10] = color.x;
+			s_LineVertexDataPtr[11] = color.y;
+			s_LineVertexDataPtr[12] = color.z;
+			s_LineVertexDataPtr[13] = color.w;
 
-			s_VertexDataPtr += 14;
+			s_LineVertexDataPtr += 14;
 		}
 
-		s_VertexBuffer->SetData(s_VertexData, s_LineCount * 2);
+		s_LineVertexBuffer->SetData(s_LineVertexData, s_LineCount * 2);
 
-		GfxDevice::Draw(GfxDrawingOperation(s_VertexBuffer, s_IndexBuffer, s_LineMaterial, s_LineCount * 2, 0, Topology::LineList));
+		GfxDevice::Draw(GfxDrawingOperation(s_LineVertexBuffer, nullptr, s_LineMaterial, 0, 0, s_LineCount * 2, Topology::LineList));
+	}
+
+	void Gizmos::FlushArcs()
+	{
+		if (s_ArcCount == 0)
+		{
+			return;
+		}
+
+		for (UINT i = 0; i < s_ArcCount; i++)
+		{
+			Arc arc = s_Arcs[i];
+			Vector3 center = arc.center;
+			Vector3 normal = arc.normal;
+			Vector3 from = arc.from;
+			float radius = arc.radius;
+			float angle = arc.angle;
+
+			s_ArcVertexDataPtr[0] = center.x;
+			s_ArcVertexDataPtr[1] = center.y;
+			s_ArcVertexDataPtr[2] = center.z;
+
+			s_ArcVertexDataPtr[3] = normal.x;
+			s_ArcVertexDataPtr[4] = normal.y;
+			s_ArcVertexDataPtr[5] = normal.z;
+			s_ArcVertexDataPtr[6] = radius;
+
+			s_ArcVertexDataPtr[7] = from.x;
+			s_ArcVertexDataPtr[8] = from.y;
+			s_ArcVertexDataPtr[9] = from.z;
+			s_ArcVertexDataPtr[10] = angle;
+
+			s_ArcVertexDataPtr += 11;
+		}
+
+		s_ArcVertexBuffer->SetData(s_ArcVertexData, s_ArcCount);
+
+		GfxDevice::Draw(GfxDrawingOperation(s_ArcVertexBuffer, nullptr, s_ArcMaterial, 0, 0, s_ArcCount, Topology::PointList));
 	}
 }

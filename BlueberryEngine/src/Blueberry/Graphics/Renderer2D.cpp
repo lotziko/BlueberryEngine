@@ -168,7 +168,7 @@ namespace Blueberry
 			if (material != currentMaterial || texture != currentTexture)
 			{
 				GfxDevice::SetGlobalTexture(baseMapId, currentTexture->Get());
-				GfxDevice::Draw(GfxDrawingOperation(s_VertexBuffer, s_IndexBuffer, currentMaterial, indexCount, indexOffset, Topology::TriangleList));
+				GfxDevice::Draw(GfxDrawingOperation(s_VertexBuffer, s_IndexBuffer, currentMaterial, indexCount, indexOffset, 0, Topology::TriangleList));
 
 				currentMaterial = material;
 				currentTexture = texture;
@@ -181,7 +181,7 @@ namespace Blueberry
 		if (indexCount > 0)
 		{
 			GfxDevice::SetGlobalTexture(baseMapId, currentTexture->Get());
-			GfxDevice::Draw(GfxDrawingOperation(s_VertexBuffer, s_IndexBuffer, currentMaterial, indexCount, indexOffset, Topology::TriangleList));
+			GfxDevice::Draw(GfxDrawingOperation(s_VertexBuffer, s_IndexBuffer, currentMaterial, indexCount, indexOffset, 0, Topology::TriangleList));
 		}
 
 		s_QuadIndexCount = 0;
