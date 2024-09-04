@@ -54,7 +54,7 @@ namespace Blueberry
 
 		void SetCullMode(const CullMode& mode);
 		void SetBlendMode(const BlendMode& blendSrc, const BlendMode& blendDst);
-		void SetZWrite(const ZWrite& zWrite);
+		void SetZTestAndZWrite(const ZTest& zTest, const ZWrite& zWrite);
 		void SetTopology(const Topology& topology);
 
 		HWND m_Hwnd;
@@ -68,11 +68,8 @@ namespace Blueberry
 		ComPtr<ID3D11RasterizerState> m_CullFrontRasterizerState;
 		ComPtr<ID3D11RasterizerState> m_CullBackRasterizerState;
 
-		ComPtr<ID3D11DepthStencilState> m_OpaqueDepthStencilState;
-		ComPtr<ID3D11BlendState> m_OpaqueBlendState;
-
-		ComPtr<ID3D11DepthStencilState> m_TransparentDepthStencilState;
-		ComPtr<ID3D11BlendState> m_TransparentBlendState;
+		std::unordered_map<std::size_t, ComPtr<ID3D11DepthStencilState>> m_DepthStencilStates;
+		std::unordered_map<std::size_t, ComPtr<ID3D11BlendState>> m_BlendStates;
 
 		GfxTextureDX11* m_BindedRenderTarget;
 		GfxTextureDX11* m_BindedDepthStencil;
@@ -83,9 +80,8 @@ namespace Blueberry
 		ID3D11SamplerState* m_Samplers[16];
 
 		CullMode m_CullMode = (CullMode)-1;
-		BlendMode m_BlendSrc = (BlendMode)-1;
-		BlendMode m_BlendDst = (BlendMode)-1;
-		ZWrite m_ZWrite = (ZWrite)-1;
+		std::size_t m_BlendKey = -1;
+		std::size_t m_ZTestZWriteKey = -1;
 		Topology m_Topology = (Topology)-1;
 		
 		ObjectId m_MaterialId = 0;

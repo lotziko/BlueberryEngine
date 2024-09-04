@@ -99,6 +99,10 @@ namespace Blueberry
 		{
 			return CullMode::Back;
 		}
+		else if (name == "None")
+		{
+			return CullMode::None;
+		}
 		return CullMode::None;
 	}
 
@@ -107,6 +111,10 @@ namespace Blueberry
 		if (name == "Zero")
 		{
 			return BlendMode::Zero;
+		}
+		else if (name == "One")
+		{
+			return BlendMode::One;
 		}
 		else if (name == "SrcAlpha")
 		{
@@ -117,6 +125,43 @@ namespace Blueberry
 			return BlendMode::OneMinusSrcAlpha;
 		}
 		return BlendMode::One;
+	}
+
+	ZTest ParseZTest(const std::string& name)
+	{
+		if (name == "Never")
+		{
+			return ZTest::Never;
+		}
+		else if (name == "Less")
+		{
+			return ZTest::Less;
+		}
+		else if (name == "Equal")
+		{
+			return ZTest::Equal;
+		}
+		else if (name == "LessEqual")
+		{
+			return ZTest::LessEqual;
+		}
+		else if (name == "Greater")
+		{
+			return ZTest::Greater;
+		}
+		else if (name == "NotEqual")
+		{
+			return ZTest::NotEqual;
+		}
+		else if (name == "GreaterEqual")
+		{
+			return ZTest::GreaterEqual;
+		}
+		else if (name == "Always")
+		{
+			return ZTest::Always;
+		}
+		return ZTest::LessEqual;
 	}
 
 	ZWrite ParseZWrite(const std::string& name)
@@ -173,6 +218,12 @@ namespace Blueberry
 		{
 			passData.SetBlendSrc(ParseBlendMode(match[1]));
 			passData.SetBlendDst(ParseBlendMode(match[2]));
+		}
+
+		std::regex zTestRegex("ZTest\\s*([\\w-]+)[\r?\n]");
+		if (std::regex_search(passBlock, match, zTestRegex))
+		{
+			passData.SetZTest(ParseZTest(match[1]));
 		}
 
 		std::regex zWriteRegex("ZWrite\\s*([\\w-]+)[\r?\n]");

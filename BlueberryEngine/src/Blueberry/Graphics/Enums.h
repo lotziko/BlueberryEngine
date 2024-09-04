@@ -50,6 +50,18 @@ namespace Blueberry
 		On
 	};
 
+	enum class ZTest
+	{
+		Never,
+		Less,
+		Equal,
+		LessEqual,
+		Greater,
+		NotEqual,
+		GreaterEqual,
+		Always
+	};
+
 	enum class SurfaceType
 	{
 		Opaque,

@@ -47,6 +47,9 @@ namespace Blueberry
 		const BlendMode& GetBlendDst() const;
 		void SetBlendDst(const BlendMode& blendDst);
 
+		const ZTest& GetZTest() const;
+		void SetZTest(const ZTest& zTest);
+
 		const ZWrite& GetZWrite() const;
 		void SetZWrite(const ZWrite& zWrite);
 
@@ -62,6 +65,7 @@ namespace Blueberry
 		CullMode m_CullMode = CullMode::Front;
 		BlendMode m_SrcBlend = BlendMode::One;
 		BlendMode m_DstBlend = BlendMode::Zero;
+		ZTest m_ZTest = ZTest::LessEqual;
 		ZWrite m_ZWrite = ZWrite::On;
 		std::vector<std::string> m_VertexKeywords;
 		std::vector<std::string> m_FragmentKeywords;

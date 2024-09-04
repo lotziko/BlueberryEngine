@@ -315,7 +315,7 @@ namespace Blueberry
 		GfxRenderState* renderState = operation.renderState;
 		SetCullMode(renderState->cullMode);
 		SetBlendMode(renderState->blendSrc, renderState->blendDst);
-		SetZWrite(renderState->zWrite);
+		SetZTestAndZWrite(renderState->zTest, renderState->zWrite);
 		SetTopology(operation.topology);
 
 		// TODO check if shader variant/material/mesh is the same to skip some bindings
@@ -597,83 +597,9 @@ namespace Blueberry
 			}
 		}
 
-		// Opaque
-		{
-			D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
-			ZeroMemory(&depthStencilDesc, sizeof(D3D11_DEPTH_STENCIL_DESC));
-
-			depthStencilDesc.DepthEnable = true;
-			depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-			depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
-
-			hr = m_Device->CreateDepthStencilState(&depthStencilDesc, m_OpaqueDepthStencilState.GetAddressOf());
-			if (FAILED(hr))
-			{
-				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create depth stencil state."));
-				return false;
-			}
-
-			D3D11_BLEND_DESC blendDesc;
-			ZeroMemory(&blendDesc, sizeof(D3D11_BLEND_DESC));
-
-			blendDesc.AlphaToCoverageEnable = false;
-			blendDesc.RenderTarget[0].BlendEnable = false;
-			blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
-			blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ZERO;
-			blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-			blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-			blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
-			blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-			blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-
-			hr = m_Device->CreateBlendState(&blendDesc, m_OpaqueBlendState.GetAddressOf());
-			if (FAILED(hr))
-			{
-				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create blend state."));
-				return false;
-			}
-		}
-
-		// Transparent
-		{
-			D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
-			ZeroMemory(&depthStencilDesc, sizeof(D3D11_DEPTH_STENCIL_DESC));
-
-			depthStencilDesc.DepthEnable = false;
-			depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-			depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
-
-			hr = m_Device->CreateDepthStencilState(&depthStencilDesc, m_TransparentDepthStencilState.GetAddressOf());
-			if (FAILED(hr))
-			{
-				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create depth stencil state."));
-				return false;
-			}
-
-			D3D11_BLEND_DESC blendDesc;
-			ZeroMemory(&blendDesc, sizeof(D3D11_BLEND_DESC));
-
-			blendDesc.AlphaToCoverageEnable = false;
-			blendDesc.RenderTarget[0].BlendEnable = true;
-			blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-			blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-			blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-			blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-			blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
-			blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-			blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-
-			hr = m_Device->CreateBlendState(&blendDesc, m_TransparentBlendState.GetAddressOf());
-			if (FAILED(hr))
-			{
-				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create blend state."));
-				return false;
-			}
-		}
-
 		SetCullMode(CullMode::None);
 		SetBlendMode(BlendMode::One, BlendMode::Zero);
-		SetZWrite(ZWrite::On);
+		SetZTestAndZWrite(ZTest::LessEqual, ZWrite::On);
 
 		m_BindedRenderTarget = nullptr;
 		m_BindedDepthStencil = nullptr;
@@ -705,42 +631,96 @@ namespace Blueberry
 		}
 	}
 
-	void GfxDeviceDX11::SetBlendMode(const BlendMode& blendSrc, const BlendMode& blendDst)
+	D3D11_BLEND GetBlend(const BlendMode& blend)
 	{
-		if (blendSrc == m_BlendSrc && blendDst == m_BlendDst)
+		switch (blend)
 		{
-			return;
-		}
-		m_BlendSrc = blendSrc;
-		m_BlendDst = blendDst;
-
-		const float blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
-		if (blendSrc == BlendMode::One && blendDst == BlendMode::Zero)
-		{
-			m_DeviceContext->OMSetBlendState(m_OpaqueBlendState.Get(), blendFactor, 0xffffffff);
-		}
-		else if (blendSrc == BlendMode::SrcAlpha && blendDst == BlendMode::OneMinusSrcAlpha)
-		{
-			m_DeviceContext->OMSetBlendState(m_TransparentBlendState.Get(), blendFactor, 0xffffffff);
+		case BlendMode::One: return D3D11_BLEND::D3D11_BLEND_ONE;
+		case BlendMode::Zero: return D3D11_BLEND::D3D11_BLEND_ZERO;
+		case BlendMode::SrcAlpha: return D3D11_BLEND::D3D11_BLEND_SRC_ALPHA;
+		case BlendMode::OneMinusSrcAlpha: return D3D11_BLEND::D3D11_BLEND_INV_SRC_ALPHA;
+		default: return D3D11_BLEND::D3D11_BLEND_ONE;
 		}
 	}
 
-	void GfxDeviceDX11::SetZWrite(const ZWrite& zWrite)
+	void GfxDeviceDX11::SetBlendMode(const BlendMode& blendSrc, const BlendMode& blendDst)
 	{
-		if (zWrite == m_ZWrite)
+		std::size_t key = (UINT)blendSrc << 8 | (UINT)blendDst << 16;
+		if (key == m_BlendKey)
 		{
 			return;
 		}
-		m_ZWrite = zWrite;
+		m_BlendKey = key;
 
-		if (zWrite == ZWrite::On)
+		ComPtr<ID3D11BlendState> state;
+		auto it = m_BlendStates.find(key);
+		if (it != m_BlendStates.end())
 		{
-			m_DeviceContext->OMSetDepthStencilState(m_OpaqueDepthStencilState.Get(), 0);
+			state = it->second;
 		}
 		else
 		{
-			m_DeviceContext->OMSetDepthStencilState(m_TransparentDepthStencilState.Get(), 0);
+			D3D11_BLEND_DESC blendDesc;
+			ZeroMemory(&blendDesc, sizeof(D3D11_BLEND_DESC));
+
+			D3D11_BLEND src = GetBlend(blendSrc);
+			D3D11_BLEND dst = GetBlend(blendDst);
+
+			blendDesc.AlphaToCoverageEnable = false;
+			blendDesc.RenderTarget[0].BlendEnable = true;
+			blendDesc.RenderTarget[0].SrcBlend = src;
+			blendDesc.RenderTarget[0].DestBlend = dst;
+			blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+			blendDesc.RenderTarget[0].SrcBlendAlpha = src;
+			blendDesc.RenderTarget[0].DestBlendAlpha = dst;
+			blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+			blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+			HRESULT hr = m_Device->CreateBlendState(&blendDesc, state.GetAddressOf());
+			if (FAILED(hr))
+			{
+				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create blend state."));
+				return;
+			}
+			m_BlendStates.insert_or_assign(key, state);
 		}
+		const float blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
+		m_DeviceContext->OMSetBlendState(state.Get(), blendFactor, 0xffffffff);
+	}
+
+	void GfxDeviceDX11::SetZTestAndZWrite(const ZTest& zTest, const ZWrite& zWrite)
+	{
+		std::size_t key = (UINT)zTest << 8 | (UINT)zWrite << 16;
+		if (key == m_ZTestZWriteKey)
+		{
+			return;
+		}
+		m_ZTestZWriteKey = key;
+
+		ComPtr<ID3D11DepthStencilState> state;
+		auto it = m_DepthStencilStates.find(key);
+		if (it != m_DepthStencilStates.end())
+		{
+			state = it->second;
+		}
+		else
+		{
+			D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
+			ZeroMemory(&depthStencilDesc, sizeof(D3D11_DEPTH_STENCIL_DESC));
+
+			depthStencilDesc.DepthEnable = true;
+			depthStencilDesc.DepthWriteMask = zWrite == ZWrite::On ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
+			depthStencilDesc.DepthFunc = (D3D11_COMPARISON_FUNC)((UINT)zTest + 1);
+
+			HRESULT hr = m_Device->CreateDepthStencilState(&depthStencilDesc, state.GetAddressOf());
+			if (FAILED(hr))
+			{
+				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create depth stencil state."));
+				return;
+			}
+			m_DepthStencilStates.insert_or_assign(key, state);
+		}
+		m_DeviceContext->OMSetDepthStencilState(state.Get(), 0);
 	}
 
 	void GfxDeviceDX11::SetTopology(const Topology& topology)

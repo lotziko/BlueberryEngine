@@ -513,6 +513,7 @@ namespace Blueberry
 		if (scene != nullptr)
 		{
 			SceneRenderer::Draw(scene, &m_Camera);
+			// TODO draw gizmos using inspectors
 		}
 		
 		GfxDevice::SetRenderTarget(m_ColorRenderTarget->Get(), m_DepthStencilRenderTarget->Get());

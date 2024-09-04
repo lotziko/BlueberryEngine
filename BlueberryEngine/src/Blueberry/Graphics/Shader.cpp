@@ -71,6 +71,16 @@ namespace Blueberry
 		m_DstBlend = blendDst;
 	}
 
+	const ZTest& PassData::GetZTest() const
+	{
+		return m_ZTest;
+	}
+
+	void PassData::SetZTest(const ZTest& zTest)
+	{
+		m_ZTest = zTest;
+	}
+
 	const ZWrite& PassData::GetZWrite() const
 	{
 		return m_ZWrite;

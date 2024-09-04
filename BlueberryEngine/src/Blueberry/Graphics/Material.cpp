@@ -170,6 +170,7 @@ namespace Blueberry
 		newState.cullMode = shaderPass->GetCullMode();
 		newState.blendSrc = shaderPass->GetBlendSrc();
 		newState.blendDst = shaderPass->GetBlendDst();
+		newState.zTest = shaderPass->GetZTest();
 		newState.zWrite = shaderPass->GetZWrite();
 
 		newState.isValid = true;

@@ -13,6 +13,7 @@ namespace Blueberry
 	class GfxIndexBuffer;
 	enum class CullMode;
 	enum class BlendMode;
+	enum class ZTest;
 	enum class ZWrite;
 	enum class Topology;
 
@@ -35,6 +36,7 @@ namespace Blueberry
 		CullMode cullMode;
 		BlendMode blendSrc;
 		BlendMode blendDst;
+		ZTest zTest;
 		ZWrite zWrite;
 
 		bool isValid;
