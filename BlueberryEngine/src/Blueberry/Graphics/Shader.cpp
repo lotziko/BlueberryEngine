@@ -51,24 +51,48 @@ namespace Blueberry
 		m_CullMode = cullMode;
 	}
 
-	const BlendMode& PassData::GetBlendSrc() const
+	const BlendMode& PassData::GetBlendSrcColor() const
 	{
-		return m_SrcBlend;
+		return m_SrcBlendColor;
+	}
+
+	const BlendMode& PassData::GetBlendSrcAlpha() const
+	{
+		return m_SrcBlendAlpha;
 	}
 
 	void PassData::SetBlendSrc(const BlendMode& blendSrc)
 	{
-		m_SrcBlend = blendSrc;
+		m_SrcBlendColor = blendSrc;
+		m_SrcBlendAlpha = blendSrc;
 	}
 
-	const BlendMode& PassData::GetBlendDst() const
+	void PassData::SetBlendSrc(const BlendMode& blendSrcColor, const BlendMode& blendSrcAlpha)
 	{
-		return m_DstBlend;
+		m_SrcBlendColor = blendSrcColor;
+		m_SrcBlendAlpha = blendSrcAlpha;
+	}
+
+	const BlendMode& PassData::GetBlendDstColor() const
+	{
+		return m_DstBlendColor;
+	}
+
+	const BlendMode& PassData::GetBlendDstAlpha() const
+	{
+		return m_DstBlendAlpha;
 	}
 
 	void PassData::SetBlendDst(const BlendMode& blendDst)
 	{
-		m_DstBlend = blendDst;
+		m_DstBlendColor = blendDst;
+		m_DstBlendAlpha = blendDst;
+	}
+
+	void PassData::SetBlendDst(const BlendMode& blendDstColor, const BlendMode& blendDstAlpha)
+	{
+		m_DstBlendColor = blendDstColor;
+		m_DstBlendAlpha = blendDstAlpha;
 	}
 
 	const ZTest& PassData::GetZTest() const
@@ -115,8 +139,10 @@ namespace Blueberry
 	{
 		BEGIN_OBJECT_BINDING(PassData)
 		BIND_FIELD(FieldInfo(TO_STRING(m_CullMode), &PassData::m_CullMode, BindingType::Enum))
-		BIND_FIELD(FieldInfo(TO_STRING(m_SrcBlend), &PassData::m_SrcBlend, BindingType::Enum))
-		BIND_FIELD(FieldInfo(TO_STRING(m_DstBlend), &PassData::m_DstBlend, BindingType::Enum))
+		BIND_FIELD(FieldInfo(TO_STRING(m_SrcBlendColor), &PassData::m_SrcBlendColor, BindingType::Enum))
+		BIND_FIELD(FieldInfo(TO_STRING(m_SrcBlendAlpha), &PassData::m_SrcBlendAlpha, BindingType::Enum))
+		BIND_FIELD(FieldInfo(TO_STRING(m_DstBlendColor), &PassData::m_DstBlendColor, BindingType::Enum))
+		BIND_FIELD(FieldInfo(TO_STRING(m_DstBlendAlpha), &PassData::m_DstBlendAlpha, BindingType::Enum))
 		BIND_FIELD(FieldInfo(TO_STRING(m_ZWrite), &PassData::m_ZWrite, BindingType::Enum))
 		BIND_FIELD(FieldInfo(TO_STRING(m_VertexKeywords), &PassData::m_VertexKeywords, BindingType::StringArray))
 		BIND_FIELD(FieldInfo(TO_STRING(m_FragmentKeywords), &PassData::m_FragmentKeywords, BindingType::StringArray))

@@ -2,6 +2,8 @@
 #include "SceneObjectPicker.h"
 
 #include "Editor\Selection.h"
+#include "Editor\Inspector\ObjectInspector.h"
+#include "Editor\Inspector\ObjectInspectorDB.h"
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Graphics\BaseCamera.h"
 #include "Blueberry\Graphics\Renderer2D.h"
@@ -113,6 +115,28 @@ namespace Blueberry
 				GfxDevice::Draw(GfxDrawingOperation(mesh, m_MeshObjectPickerMaterial));
 				validObjects[index] = meshRenderer->GetEntity()->GetObjectId();
 				++index;
+			}
+		}
+
+		Vector3 cameraDirection = Vector3::Transform(Vector3::Forward, camera.GetRotation());
+		for (auto& pair : scene->GetEntities())
+		{
+			Entity* entity = pair.second.Get();
+			for (auto& component : entity->GetComponents())
+			{
+				ObjectInspector* inspector = ObjectInspectorDB::GetInspector(component->GetType());
+				if (inspector->GetIconPath(component) != nullptr)
+				{
+					Transform* transform = entity->GetTransform();
+					Vector3 position = transform->GetPosition();
+					Matrix modelMatrix = Matrix::CreateScale(0.75f) * Matrix::CreateBillboard(position, position - cameraDirection, Vector3(0, -1, 0));
+					PerDrawConstantBuffer::BindData(modelMatrix);
+					PerObjectDataConstantBuffer::BindData(ConvertIndexToColor(index));
+					GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_MeshObjectPickerMaterial));
+					validObjects[index] = entity->GetObjectId();
+					++index;
+					break;
+				}
 			}
 		}
 

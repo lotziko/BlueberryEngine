@@ -7,10 +7,13 @@
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\GfxTexture.h"
 
+#include "Editor\Preferences.h"
 #include "Editor\EditorSceneManager.h"
 #include "Editor\Selection.h"
 #include "Editor\Prefabs\PrefabInstance.h"
 #include "Editor\Prefabs\PrefabManager.h"
+#include "Editor\Gizmos\GizmoRenderer.h"
+#include "Editor\Gizmos\IconRenderer.h"
 
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
@@ -409,25 +412,25 @@ namespace Blueberry
 
 			if (ImGui::BeginPopup(popId))
 			{
-				ImGui::InputFloat("##positionSnap", &m_GizmoSnapping[0]);
-				ImGui::InputFloat("##rotationSnap", &m_GizmoSnapping[1]);
-				ImGui::InputFloat("##scaleSnap", &m_GizmoSnapping[2]);
+				ImGui::InputFloat("##positionSnap", Preferences::GetGizmoSnapping());
+				ImGui::InputFloat("##rotationSnap", Preferences::GetGizmoSnapping() + 1);
+				ImGui::InputFloat("##scaleSnap", Preferences::GetGizmoSnapping() + 2);
 				ImGui::EndPopup();
 			}
 
 			if (ImGui::Button("Position"))
 			{
-				m_GizmoOperation = ImGuizmo::OPERATION::TRANSLATE;
+				Preferences::SetGizmoOperation(ImGuizmo::OPERATION::TRANSLATE);
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Rotation"))
 			{
-				m_GizmoOperation = ImGuizmo::OPERATION::ROTATE;
+				Preferences::SetGizmoOperation(ImGuizmo::OPERATION::ROTATE);
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Scale"))
 			{
-				m_GizmoOperation = ImGuizmo::OPERATION::SCALE;
+				Preferences::SetGizmoOperation(ImGuizmo::OPERATION::SCALE);
 			}
 		}
 
@@ -438,64 +441,13 @@ namespace Blueberry
 
 	void SceneArea::DrawGizmos(const Rectangle& viewport)
 	{
-		Object* selectedObject = Selection::GetActiveObject();
+		ImGuizmo::SetDrawlist();
+		ImGuizmo::SetRect(viewport.x, viewport.y, viewport.width, viewport.height);
 
-		if (selectedObject != nullptr)
+		Scene* scene = EditorSceneManager::GetScene();
+		if (scene != nullptr)
 		{
-			if (selectedObject->GetType() == Entity::Type)
-			{
-				Transform* transform = ((Entity*)selectedObject)->GetTransform();
-				Matrix transformMatrix = Matrix::CreateScale(transform->GetLocalScale()) * Matrix::CreateFromQuaternion(transform->GetLocalRotation()) * Matrix::CreateTranslation(transform->GetLocalPosition());
-				Transform* parentTransform = transform->GetParent();
-				if (parentTransform != nullptr)
-				{
-					transformMatrix *= parentTransform->GetLocalToWorldMatrix();
-				}
-
-				ImGuizmo::SetDrawlist();
-				ImGuizmo::SetRect(viewport.x, viewport.y, viewport.width, viewport.height);
-				BaseCamera* camera = BaseCamera::GetCurrent();
-				if (camera != nullptr)
-				{
-					float snapping[3];
-					if (m_GizmoOperation == ImGuizmo::OPERATION::TRANSLATE)
-					{
-						snapping[0] = m_GizmoSnapping[0];
-						snapping[1] = m_GizmoSnapping[0];
-						snapping[2] = m_GizmoSnapping[0];
-					}
-					else if (m_GizmoOperation == ImGuizmo::OPERATION::ROTATE)
-					{
-						snapping[0] = m_GizmoSnapping[1];
-						snapping[1] = m_GizmoSnapping[1];
-						snapping[2] = m_GizmoSnapping[1];
-					}
-					else if (m_GizmoOperation == ImGuizmo::OPERATION::SCALE)
-					{
-						snapping[0] = m_GizmoSnapping[2];
-						snapping[1] = m_GizmoSnapping[2];
-						snapping[2] = m_GizmoSnapping[2];
-					}
-
-					if (ImGuizmo::Manipulate((float*)camera->GetViewMatrix().m, (float*)camera->GetProjectionMatrix().m, (ImGuizmo::OPERATION)m_GizmoOperation, ImGuizmo::MODE::LOCAL, (float*)transformMatrix.m, 0, snapping))
-					{
-						Vector3 scale;
-						Quaternion rotation;
-						Vector3 translation;
-
-						if (parentTransform != nullptr)
-						{
-							transformMatrix *= parentTransform->GetLocalToWorldMatrix().Invert();
-						}
-
-						transformMatrix.Decompose(scale, rotation, translation);
-						transform->SetLocalPosition(translation);
-						transform->SetLocalRotation(rotation);
-						transform->SetLocalScale(scale);
-						RequestRedrawAll();
-					}
-				}
-			}
+			GizmoRenderer::Draw(scene, &m_Camera);
 		}
 	}
 
@@ -513,7 +465,6 @@ namespace Blueberry
 		if (scene != nullptr)
 		{
 			SceneRenderer::Draw(scene, &m_Camera);
-			// TODO draw gizmos using inspectors
 		}
 		
 		GfxDevice::SetRenderTarget(m_ColorRenderTarget->Get(), m_DepthStencilRenderTarget->Get());
@@ -526,6 +477,10 @@ namespace Blueberry
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_ResolveMSAAMaterial));
 		GfxDevice::SetViewport(0, 0, viewportWidth, viewportHeight);
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_GridMaterial));
+		if (scene != nullptr)
+		{
+			IconRenderer::Draw(scene, &m_Camera);
+		}
 		GfxDevice::SetRenderTarget(nullptr);
 	}
 

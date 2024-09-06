@@ -21,6 +21,8 @@
 #include "Editor\RegisterEditorTypes.h"
 #include "Editor\Assets\RegisterAssetImporters.h"
 #include "Editor\Assets\AssetDB.h"
+#include "Editor\Gizmos\Gizmos.h"
+#include "Editor\Gizmos\IconRenderer.h"
 
 #include <fstream>
 
@@ -49,6 +51,8 @@ namespace Blueberry
 			ImGui::ApplyEditorDarkTheme();
 			ImGui::LoadDefaultEditorFonts();
 		}
+		Gizmos::Initialize();
+		IconRenderer::Initialize();
 		WindowEvents::GetWindowResized().AddCallback<EditorLayer, &EditorLayer::OnWindowResize>(this);
 		WindowEvents::GetWindowFocused().AddCallback<EditorLayer, &EditorLayer::OnWindowFocus>(this);
 	}
@@ -59,6 +63,8 @@ namespace Blueberry
 		delete m_SceneInspector;
 		delete m_SceneArea;
 		delete m_ProjectBrowser;
+		Gizmos::Shutdown();
+		IconRenderer::Shutdown();
 		WindowEvents::GetWindowResized().RemoveCallback<EditorLayer, &EditorLayer::OnWindowResize>(this);
 		WindowEvents::GetWindowFocused().RemoveCallback<EditorLayer, &EditorLayer::OnWindowFocus>(this);
 	}

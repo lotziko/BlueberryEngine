@@ -18,6 +18,7 @@ cbuffer PerCameraData
 	float4x4 _InverseViewProjectionMatrix;
 	float4 _CameraPositionWS;
 	float4 _CameraForwardDirectionWS;
+	float4 _CameraNearFarClipPlane;
 };
 
 cbuffer PerCameraLightData

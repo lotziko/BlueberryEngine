@@ -212,9 +212,16 @@ namespace Blueberry
 		{
 			passData.SetCullMode(ParseCullMode(match[1]));
 		}
-
-		std::regex blendRegex("Blend\\s*([\\w-]+)\\s*([\\w-]+)[\r?\n]");
-		if (std::regex_search(passBlock, match, blendRegex))
+		
+		std::regex blendLongRegex("Blend\\s([\\w-]+)\\s([\\w-]+)\\s([\\w-]+)\\s([\\w-]+)[\r?\n]");
+		std::regex blendShortRegex("Blend\\s*([\\w-]+)\\s*([\\w-]+)[\r?\n]");
+		if (std::regex_search(passBlock, match, blendLongRegex))
+		{
+			// SrcColor SrcAlpha DstColor DstAlpha
+			passData.SetBlendSrc(ParseBlendMode(match[1]), ParseBlendMode(match[3]));
+			passData.SetBlendDst(ParseBlendMode(match[2]), ParseBlendMode(match[4]));
+		}
+		else if (std::regex_search(passBlock, match, blendShortRegex))
 		{
 			passData.SetBlendSrc(ParseBlendMode(match[1]));
 			passData.SetBlendDst(ParseBlendMode(match[2]));

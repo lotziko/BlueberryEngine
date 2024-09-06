@@ -51,6 +51,10 @@ namespace Blueberry
 	void Material::SetTexture(std::size_t id, Texture* texture)
 	{
 		m_TextureMap.insert_or_assign(id, texture);
+		for (auto& pass : m_PassCache)
+		{
+			pass.isValid = false;
+		}
 	}
 
 	void Material::SetTexture(std::string name, Texture* texture)
@@ -168,8 +172,10 @@ namespace Blueberry
 		}
 
 		newState.cullMode = shaderPass->GetCullMode();
-		newState.blendSrc = shaderPass->GetBlendSrc();
-		newState.blendDst = shaderPass->GetBlendDst();
+		newState.blendSrcColor = shaderPass->GetBlendSrcColor();
+		newState.blendSrcAlpha = shaderPass->GetBlendSrcAlpha();
+		newState.blendDstColor = shaderPass->GetBlendDstColor();
+		newState.blendDstAlpha = shaderPass->GetBlendDstAlpha();
 		newState.zTest = shaderPass->GetZTest();
 		newState.zWrite = shaderPass->GetZWrite();
 
@@ -178,39 +184,6 @@ namespace Blueberry
 		m_PassCache[passIndex] = newState;
 		return passState;
 	}
-
-	//const std::pair<UINT, UINT>& Material::GetKeywordFlags()
-	//{
-	//	// TODO move into pipeline state
-	//	if (m_ActiveKeywords.size() == 0 || !m_Shader.IsValid())
-	//	{
-	//		return std::make_pair(0, 0);
-	//	}
-	//	auto pass = m_Shader.Get()->GetData()->GetPass(0);
-	//	auto vertexKeywords = pass->GetVertexKeywords();
-	//	auto fragmentKeywords = pass->GetFragmentKeywords();
-	//	UINT vertexFlags = 0;
-	//	UINT fragmentFlags = 0;
-	//	for (auto& keyword : m_ActiveKeywords)
-	//	{
-	//		for (int i = 0; i < vertexKeywords.size(); ++i)
-	//		{
-	//			if (vertexKeywords[i] == keyword)
-	//			{
-	//				vertexFlags |= 1 << i;
-	//			}
-	//		}
-	//		for (int i = 0; i < fragmentKeywords.size(); ++i)
-	//		{
-	//			if (fragmentKeywords[i] == keyword)
-	//			{
-	//				fragmentFlags |= 1 << i;
-	//				break;
-	//			}
-	//		}
-	//	}
-	//	return std::make_pair(vertexFlags, fragmentFlags);
-	//}
 
 	void Material::BindProperties()
 	{

@@ -8,13 +8,11 @@
 #include "Blueberry\Graphics\PerCameraLightDataConstantBuffer.h"
 #include "Blueberry\Scene\Scene.h"
 
-#include "Blueberry\Graphics\Gizmos.h"
-
 namespace Blueberry
 {
 	void SceneRenderer::Draw(Scene* scene)
 	{
-		//Update cameras and render
+		// Update cameras and render
 		{
 			for (auto component : scene->GetIterator<Camera>())
 			{
@@ -34,7 +32,8 @@ namespace Blueberry
 	{
 		PerCameraDataConstantBuffer::BindData(camera);
 
-		//Update transforms
+		// TODO try to update in scene update
+		// Update transforms
 		{
 			for (auto component : scene->GetIterator<Transform>())
 			{
@@ -55,7 +54,7 @@ namespace Blueberry
 			PerCameraLightDataConstantBuffer::BindData(lights);
 		}
 		
-		//Draw sprites
+		// Draw sprites
 		{
 			Renderer2D::Begin();
 			for (auto component : scene->GetIterator<SpriteRenderer>())
@@ -72,7 +71,7 @@ namespace Blueberry
 		frustum.CreateFromMatrix(frustum, projection, true);
 		frustum.Transform(frustum, view);
 
-		//Draw meshes
+		// Draw meshes
 		for (auto component : scene->GetIterator<MeshRenderer>())
 		{
 			auto meshRenderer = static_cast<MeshRenderer*>(component.second);
@@ -89,17 +88,5 @@ namespace Blueberry
 				}
 			}
 		}
-
-		PerDrawConstantBuffer::BindData(Matrix::Identity);
-		Gizmos::SetColor(Color(1, 1, 1, 1));
-		Gizmos::Begin();
-		for (auto component : scene->GetIterator<Light>())
-		{
-			auto light = static_cast<Light*>(component.second);
-			auto transform = light->GetEntity()->GetTransform();
-			PerDrawConstantBuffer::BindData(transform->GetLocalToWorldMatrix());
-			Gizmos::DrawCircle(Vector3::Zero, light->GetRange());
-		}
-		Gizmos::End();
 	}
 }

@@ -21,7 +21,7 @@ namespace Blueberry
 		if (lineShader == nullptr)
 		{
 			BB_ERROR("Failed to load gizmo line shader.")
-			return false;
+				return false;
 		}
 		s_LineMaterial = Material::Create(lineShader);
 

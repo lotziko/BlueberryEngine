@@ -34,8 +34,10 @@ namespace Blueberry
 		UINT fragmentTextureCount;
 
 		CullMode cullMode;
-		BlendMode blendSrc;
-		BlendMode blendDst;
+		BlendMode blendSrcColor;
+		BlendMode blendSrcAlpha;
+		BlendMode blendDstColor;
+		BlendMode blendDstAlpha;
 		ZTest zTest;
 		ZWrite zWrite;
 

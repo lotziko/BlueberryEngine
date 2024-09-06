@@ -41,11 +41,15 @@ namespace Blueberry
 		const CullMode& GetCullMode() const;
 		void SetCullMode(const CullMode& cullMode);
 
-		const BlendMode& GetBlendSrc() const;
+		const BlendMode& GetBlendSrcColor() const;
+		const BlendMode& GetBlendSrcAlpha() const;
 		void SetBlendSrc(const BlendMode& blendSrc);
+		void SetBlendSrc(const BlendMode& blendSrcColor, const BlendMode& blendSrcAlpha);
 
-		const BlendMode& GetBlendDst() const;
+		const BlendMode& GetBlendDstColor() const;
+		const BlendMode& GetBlendDstAlpha() const;
 		void SetBlendDst(const BlendMode& blendDst);
+		void SetBlendDst(const BlendMode& blendDstColor, const BlendMode& blendDstAlpha);
 
 		const ZTest& GetZTest() const;
 		void SetZTest(const ZTest& zTest);
@@ -63,8 +67,10 @@ namespace Blueberry
 
 	private:
 		CullMode m_CullMode = CullMode::Front;
-		BlendMode m_SrcBlend = BlendMode::One;
-		BlendMode m_DstBlend = BlendMode::Zero;
+		BlendMode m_SrcBlendColor = BlendMode::One;
+		BlendMode m_DstBlendColor = BlendMode::Zero;
+		BlendMode m_SrcBlendAlpha = BlendMode::One;
+		BlendMode m_DstBlendAlpha = BlendMode::Zero;
 		ZTest m_ZTest = ZTest::LessEqual;
 		ZWrite m_ZWrite = ZWrite::On;
 		std::vector<std::string> m_VertexKeywords;

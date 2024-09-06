@@ -314,7 +314,7 @@ namespace Blueberry
 
 		GfxRenderState* renderState = operation.renderState;
 		SetCullMode(renderState->cullMode);
-		SetBlendMode(renderState->blendSrc, renderState->blendDst);
+		SetBlendMode(renderState->blendSrcColor, renderState->blendSrcAlpha, renderState->blendDstColor, renderState->blendDstAlpha);
 		SetZTestAndZWrite(renderState->zTest, renderState->zWrite);
 		SetTopology(operation.topology);
 
@@ -598,7 +598,7 @@ namespace Blueberry
 		}
 
 		SetCullMode(CullMode::None);
-		SetBlendMode(BlendMode::One, BlendMode::Zero);
+		SetBlendMode(BlendMode::One, BlendMode::Zero, BlendMode::One, BlendMode::Zero);
 		SetZTestAndZWrite(ZTest::LessEqual, ZWrite::On);
 
 		m_BindedRenderTarget = nullptr;
@@ -643,9 +643,9 @@ namespace Blueberry
 		}
 	}
 
-	void GfxDeviceDX11::SetBlendMode(const BlendMode& blendSrc, const BlendMode& blendDst)
+	void GfxDeviceDX11::SetBlendMode(const BlendMode& blendSrcColor, const BlendMode& blendSrcAlpha, const BlendMode& blendDstColor, const BlendMode& blendDstAlpha)
 	{
-		std::size_t key = (UINT)blendSrc << 8 | (UINT)blendDst << 16;
+		std::size_t key = (UINT)blendSrcColor << 8 | (UINT)blendSrcAlpha << 16 | (UINT)blendSrcColor << 24 | (UINT)blendSrcAlpha << 32;
 		if (key == m_BlendKey)
 		{
 			return;
@@ -663,16 +663,18 @@ namespace Blueberry
 			D3D11_BLEND_DESC blendDesc;
 			ZeroMemory(&blendDesc, sizeof(D3D11_BLEND_DESC));
 
-			D3D11_BLEND src = GetBlend(blendSrc);
-			D3D11_BLEND dst = GetBlend(blendDst);
+			D3D11_BLEND srcColor = GetBlend(blendSrcColor);
+			D3D11_BLEND srcAlpha = GetBlend(blendSrcAlpha);
+			D3D11_BLEND dstColor = GetBlend(blendDstAlpha);
+			D3D11_BLEND dstAlpha = GetBlend(blendDstAlpha);
 
 			blendDesc.AlphaToCoverageEnable = false;
 			blendDesc.RenderTarget[0].BlendEnable = true;
-			blendDesc.RenderTarget[0].SrcBlend = src;
-			blendDesc.RenderTarget[0].DestBlend = dst;
+			blendDesc.RenderTarget[0].SrcBlend = srcColor;
+			blendDesc.RenderTarget[0].DestBlend = dstColor;
 			blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-			blendDesc.RenderTarget[0].SrcBlendAlpha = src;
-			blendDesc.RenderTarget[0].DestBlendAlpha = dst;
+			blendDesc.RenderTarget[0].SrcBlendAlpha = srcAlpha;
+			blendDesc.RenderTarget[0].DestBlendAlpha = dstAlpha;
 			blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 			blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 

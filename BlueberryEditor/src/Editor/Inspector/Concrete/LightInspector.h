@@ -2,19 +2,16 @@
 
 #include "Editor\Inspector\ObjectInspector.h"
 
-#include <map>
-
 namespace Blueberry
 {
-	class TransformInspector : public ObjectInspector
+	class LightInspector : public ObjectInspector
 	{
 	public:
-		virtual ~TransformInspector() = default;
+		LightInspector();
+		virtual ~LightInspector() = default;
 
+		virtual const char* GetIconPath(Object* object) override;
 		virtual void Draw(Object* object) override;
 		virtual void DrawScene(Object* object) override;
-
-	private:
-		std::unordered_map<std::intptr_t, Vector3> m_TransformEulerCache;
 	};
 }

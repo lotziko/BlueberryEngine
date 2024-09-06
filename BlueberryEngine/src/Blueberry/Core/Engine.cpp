@@ -5,7 +5,6 @@
 #include "Blueberry\Scene\RegisterSceneTypes.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\Renderer2D.h"
-#include "Blueberry\Graphics\Gizmos.h"
 #include "Blueberry\Graphics\RegisterGraphicsTypes.h"
 
 #include "Blueberry\Core\Layer.h"
@@ -28,11 +27,6 @@ namespace Blueberry
 			return false;
 		}
 
-		if (!Gizmos::Initialize())
-		{
-			return false;
-		}
-
 		RegisterSceneTypes();
 		RegisterGraphicsTypes();
 
@@ -41,7 +35,6 @@ namespace Blueberry
 
 	void Engine::Shutdown()
 	{
-		Gizmos::Shutdown();
 		Renderer2D::Shutdown();
 		GfxDevice::Shutdown();
 		delete m_LayerStack;

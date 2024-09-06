@@ -53,7 +53,7 @@ namespace Blueberry
 		bool InitializeDirectX(HWND hwnd, int width, int height);
 
 		void SetCullMode(const CullMode& mode);
-		void SetBlendMode(const BlendMode& blendSrc, const BlendMode& blendDst);
+		void SetBlendMode(const BlendMode& blendSrcColor, const BlendMode& blendSrcAlpha, const BlendMode& blendDstColor, const BlendMode& blendDstAlpha);
 		void SetZTestAndZWrite(const ZTest& zTest, const ZWrite& zWrite);
 		void SetTopology(const Topology& topology);
 

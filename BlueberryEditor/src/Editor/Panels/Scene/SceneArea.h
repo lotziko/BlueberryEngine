@@ -79,9 +79,6 @@ namespace Blueberry
 
 		static size_t s_SceneRedrawFrame;
 
-		float m_GizmoSnapping[3] = { 0.1f, 45.0f, 1.0f };
-		int m_GizmoOperation = 7;
-
 		Viewport m_Viewport;
 	};
 }

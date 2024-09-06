@@ -8,6 +8,11 @@
 
 namespace Blueberry
 {
+	const char* ObjectInspector::GetIconPath(Object* object)
+	{
+		return nullptr;
+	}
+
 	void ObjectInspector::Draw(Object* object)
 	{
 		auto info = ClassDB::GetInfo(object->GetType());
@@ -15,6 +20,10 @@ namespace Blueberry
 		{
 			DrawField(object, field);
 		}
+	}
+
+	void ObjectInspector::DrawScene(Object* object)
+	{
 	}
 
 	void ObjectInspector::DrawField(Object* object, FieldInfo& info)
