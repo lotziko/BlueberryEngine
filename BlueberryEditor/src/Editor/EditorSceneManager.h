@@ -20,7 +20,7 @@ namespace Blueberry
 		static void Stop();
 		static const bool& IsRunning();
 
-		static SceneLoadEvent GetSceneLoaded();
+		static SceneLoadEvent& GetSceneLoaded();
 
 	private:
 		static Scene* s_Scene;

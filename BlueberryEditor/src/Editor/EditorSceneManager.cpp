@@ -128,7 +128,7 @@ namespace Blueberry
 		return s_IsRunning;
 	}
 
-	SceneLoadEvent EditorSceneManager::GetSceneLoaded()
+	SceneLoadEvent& EditorSceneManager::GetSceneLoaded()
 	{
 		return s_SceneLoaded;
 	}

@@ -404,7 +404,7 @@ namespace Blueberry
 				for (int i = 0; i < renderState->fragmentTextureCount; i++)
 				{
 					GfxRenderState::TextureInfo info = renderState->fragmentTextures[i];
-					auto dxTexture = static_cast<GfxTextureDX11*>(info.texture);
+					auto dxTexture = static_cast<GfxTextureDX11*>(*info.texture);
 					m_ShaderResourceViews[info.textureSlot] = dxTexture->m_ResourceView.Get();
 					if (info.samplerSlot != -1)
 					{

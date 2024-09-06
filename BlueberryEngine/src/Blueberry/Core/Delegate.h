@@ -21,6 +21,15 @@ namespace Blueberry
 			return delegate;
 		}
 
+		template<void(*methodPtr)()>
+		static Delegate Create()
+		{
+			Delegate delegate;
+			delegate.m_Object = 0;
+			delegate.m_Method = &FunctionStub<methodPtr>;
+			return delegate;
+		}
+
 		void Invoke()
 		{
 			(*m_Method)(m_Object);
@@ -33,8 +42,14 @@ namespace Blueberry
 			return (static_cast<OwnerObject*>(object)->*methodPtr)();
 		}
 
+		template <void(*methodPtr)()>
+		static void FunctionStub(void*)
+		{
+			return (methodPtr)();
+		}
+
 	private:
-		using StubType = void(*)(void*);
+		using StubType = void(*)(void* m_Object);
 
 		void* m_Object;
 		StubType m_Method;
@@ -53,6 +68,15 @@ namespace Blueberry
 			return delegate;
 		}
 
+		template<void(*methodPtr)(Args...)>
+		static Delegate Create()
+		{
+			Delegate delegate;
+			delegate.m_Object = 0;
+			delegate.m_Method = &FunctionStub<methodPtr>;
+			return delegate;
+		}
+
 		void Invoke(Args&&... args)
 		{
 			(*m_Method)(m_Object, std::forward<Args>(args)...);
@@ -65,8 +89,14 @@ namespace Blueberry
 			return (static_cast<OwnerObject*>(object)->*methodPtr)(std::forward<Args>(args)...);
 		}
 
+		template <void(*methodPtr)(Args...)>
+		static void FunctionStub(void*, Args&&... args)
+		{
+			return (*methodPtr)(std::forward<Args>(args)...);
+		}
+
 	private:
-		using StubType = void(*)(void*, Args&&...);
+		using StubType = void(*)(void* m_Object, Args&&...);
 
 		void* m_Object;
 		StubType m_Method;

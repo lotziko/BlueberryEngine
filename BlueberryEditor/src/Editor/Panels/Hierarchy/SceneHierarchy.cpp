@@ -8,6 +8,7 @@
 
 #include "Editor\Selection.h"
 #include "Editor\EditorSceneManager.h"
+#include "Editor\EditorObjectManager.h"
 #include "Editor\Prefabs\PrefabManager.h"
 
 #include "imgui\imgui.h"
@@ -171,7 +172,7 @@ namespace Blueberry
 	{
 		if (ImGui::MenuItem("Create Empty Entity"))
 		{
-			Entity* entity = EditorSceneManager::GetScene()->CreateEntity("Empty Entity");
+			Entity* entity = EditorObjectManager::CreateEntity("Empty Entity");
 
 			Object* selectedObject = Selection::GetActiveObject();
 			if (selectedObject != nullptr && selectedObject->IsClassType(Entity::Type))
@@ -185,7 +186,7 @@ namespace Blueberry
 	{
 		if (ImGui::MenuItem("Delete Entity"))
 		{
-			EditorSceneManager::GetScene()->DestroyEntity(entity);
+			EditorObjectManager::DestroyEntity(entity);
 			if (Selection::GetActiveObject() == entity)
 			{
 				Selection::SetActiveObject(nullptr);

@@ -56,6 +56,7 @@ namespace Blueberry
 		m_Entities[entity->GetObjectId()] = entity;
 
 		entity->AddComponent<Transform>();
+		entity->m_Transform = entity->GetComponent<Transform>();
 		return entity;
 	}
 

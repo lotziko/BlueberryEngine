@@ -21,7 +21,7 @@ namespace Blueberry
 	{
 		struct TextureInfo
 		{
-			GfxTexture* texture;
+			GfxTexture** texture;
 			UINT textureSlot;
 			UINT samplerSlot;
 		};

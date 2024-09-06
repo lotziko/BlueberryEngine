@@ -52,9 +52,7 @@ namespace Blueberry
 		void DrawScene(const float width, const float height);
 		void LookAt(const Vector3& point, const Quaternion& direction, const float& newSize, const bool& isOrthographic);
 
-		void OnSelectionChange();
-		void OnSceneLoad();
-		void OnWindowFocus();
+		void RequestRedraw();
 
 	private:
 		RenderTexture* m_ColorMSAARenderTarget = nullptr;

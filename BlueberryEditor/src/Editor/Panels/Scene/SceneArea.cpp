@@ -9,6 +9,7 @@
 
 #include "Editor\Preferences.h"
 #include "Editor\EditorSceneManager.h"
+#include "Editor\EditorObjectManager.h"
 #include "Editor\Selection.h"
 #include "Editor\Prefabs\PrefabInstance.h"
 #include "Editor\Prefabs\PrefabManager.h"
@@ -45,9 +46,11 @@ namespace Blueberry
 		m_Position = Vector3(0, 10, 0);
 		m_Rotation = Quaternion::CreateFromYawPitchRoll(0, ToRadians(-45), 0);
 
-		Selection::GetSelectionChanged().AddCallback<SceneArea, &SceneArea::OnSelectionChange>(this);
-		EditorSceneManager::GetSceneLoaded().AddCallback<SceneArea, &SceneArea::OnSceneLoad>(this);
-		WindowEvents::GetWindowFocused().AddCallback<SceneArea, &SceneArea::OnWindowFocus>(this);
+		Selection::GetSelectionChanged().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
+		EditorSceneManager::GetSceneLoaded().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
+		WindowEvents::GetWindowFocused().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
+		EditorObjectManager::GetEntityCreated().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
+		EditorObjectManager::GetEntityDestroyed().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
 	}
 
 	SceneArea::~SceneArea()
@@ -58,9 +61,11 @@ namespace Blueberry
 		delete m_DepthStencilRenderTarget;
 		delete m_ObjectPicker;
 
-		Selection::GetSelectionChanged().RemoveCallback<SceneArea, &SceneArea::OnSelectionChange>(this);
-		EditorSceneManager::GetSceneLoaded().RemoveCallback<SceneArea, &SceneArea::OnSceneLoad>(this);
-		WindowEvents::GetWindowFocused().RemoveCallback<SceneArea, &SceneArea::OnWindowFocus>(this);
+		Selection::GetSelectionChanged().RemoveCallback<SceneArea, &SceneArea::RequestRedraw>(this);
+		EditorSceneManager::GetSceneLoaded().RemoveCallback<SceneArea, &SceneArea::RequestRedraw>(this);
+		WindowEvents::GetWindowFocused().RemoveCallback<SceneArea, &SceneArea::RequestRedraw>(this);
+		EditorObjectManager::GetEntityCreated().RemoveCallback<SceneArea, &SceneArea::RequestRedraw>(this);
+		EditorObjectManager::GetEntityDestroyed().RemoveCallback<SceneArea, &SceneArea::RequestRedraw>(this);
 	}
 
 	Vector3 GetMotion(const Quaternion& rotation)
@@ -492,17 +497,7 @@ namespace Blueberry
 		m_IsOrthographic = isOrthographic;
 	}
 
-	void SceneArea::OnSelectionChange()
-	{
-		RequestRedrawAll();
-	}
-
-	void SceneArea::OnSceneLoad()
-	{
-		RequestRedrawAll();
-	}
-
-	void SceneArea::OnWindowFocus()
+	void SceneArea::RequestRedraw()
 	{
 		RequestRedrawAll();
 	}

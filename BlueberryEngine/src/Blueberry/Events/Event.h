@@ -23,8 +23,12 @@ namespace Blueberry
 	public:
 		template <class OwnerObject, void(OwnerObject::*methodPtr)()>
 		void AddCallback(OwnerObject* const object);
+		template <void(*methodPtr)()>
+		void AddCallback();
 		template <class OwnerObject, void(OwnerObject::*methodPtr)()>
 		void RemoveCallback(OwnerObject* const object);
+		template <void(*methodPtr)()>
+		void RemoveCallback();
 		void Invoke();
 
 	private:
@@ -51,10 +55,22 @@ namespace Blueberry
 		m_Callbacks.insert_or_assign(std::make_pair((uint64_t)&methodPtr, (uint64_t)object), Delegate<>::Create<OwnerObject, methodPtr>(object));
 	}
 
+	template<void(*methodPtr)()>
+	inline void Event<void>::AddCallback()
+	{
+		m_Callbacks.insert_or_assign(std::make_pair((uint64_t)&methodPtr, 0), Delegate<>::Create<methodPtr>());
+	}
+
 	template <class OwnerObject, void(OwnerObject::*methodPtr)()>
 	inline void Event<void>::RemoveCallback(OwnerObject* const object)
 	{
 		m_Callbacks.erase(std::make_pair((uint64_t)&methodPtr, (uint64_t)object));
+	}
+
+	template <void(*methodPtr)()>
+	inline void Event<void>::RemoveCallback()
+	{
+		m_Callbacks.erase(std::make_pair((uint64_t)&methodPtr, 0));
 	}
 
 	inline void Event<void>::Invoke()

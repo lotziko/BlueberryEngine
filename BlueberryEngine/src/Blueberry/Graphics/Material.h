@@ -65,11 +65,11 @@ namespace Blueberry
 		void FillTextureMap();
 
 	private:
-		std::unordered_map<std::size_t, ObjectPtr<Texture>> m_TextureMap;
 		std::vector<DataPtr<TextureData>> m_Textures;
 		std::vector<std::string> m_ActiveKeywords;
 		ObjectPtr<Shader> m_Shader;
 
+		std::unordered_map<std::size_t, GfxTexture*> m_TextureMap;
 		std::vector<GfxRenderState> m_PassCache;
 
 		friend struct GfxDrawingOperation;
