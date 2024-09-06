@@ -227,9 +227,9 @@ namespace Blueberry
 
 			m_ObjectPicker->DrawOutline(EditorSceneManager::GetScene(), m_Camera, m_ColorRenderTarget->Get());
 		}
+		DrawGizmos(Rectangle(pos.x, pos.y, size.x, size.y));
 
 		ImGui::GetWindowDrawList()->AddImage(m_ColorRenderTarget->GetHandle(), ImVec2(pos.x, pos.y), ImVec2(pos.x + size.x, pos.y + size.y), ImVec2(0, 0), ImVec2(size.x / m_ColorRenderTarget->GetWidth(), size.y / m_ColorRenderTarget->GetHeight()));
-		DrawGizmos(Rectangle(pos.x, pos.y, size.x, size.y));
 		DrawControls();
 
 		ImGui::End();
@@ -444,16 +444,23 @@ namespace Blueberry
 		ImGui::PopStyleColor();
 	}
 
+	// TODO remove ImGuizmo and manually draw handles
 	void SceneArea::DrawGizmos(const Rectangle& viewport)
 	{
-		ImGuizmo::SetDrawlist();
+		ImDrawList* drawList = ImGui::GetForegroundDrawList();
+		drawList->PushClipRect(ImVec2(viewport.x, viewport.y), ImVec2(viewport.x + viewport.width, viewport.y + viewport.height));
+		ImGuizmo::SetDrawlist(drawList);
 		ImGuizmo::SetRect(viewport.x, viewport.y, viewport.width, viewport.height);
 
 		Scene* scene = EditorSceneManager::GetScene();
 		if (scene != nullptr)
 		{
+			GfxDevice::SetRenderTarget(m_ColorRenderTarget->Get(), m_DepthStencilRenderTarget->Get());
+			GfxDevice::SetViewport(0, 0, viewport.width, viewport.height);
 			GizmoRenderer::Draw(scene, &m_Camera);
+			GfxDevice::SetRenderTarget(nullptr);
 		}
+		drawList->PopClipRect();
 	}
 
 	void SceneArea::DrawScene(const float width, const float height)

@@ -4,6 +4,7 @@
 #include "Blueberry\Core\ClassDB.h"
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Misc\ImGuiHelper.h"
+#include "Editor\Panels\Scene\SceneArea.h"
 #include "imgui\imgui.h"
 
 namespace Blueberry
@@ -86,6 +87,7 @@ namespace Blueberry
 		if (hasChanged)
 		{
 			AssetDB::SetDirty(object);
+			SceneArea::RequestRedrawAll();
 		}
 	}
 }
