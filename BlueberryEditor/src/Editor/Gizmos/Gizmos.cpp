@@ -50,7 +50,8 @@ namespace Blueberry
 		VertexLayout arcLayout = VertexLayout{}
 			.Append(VertexLayout::Position3D)
 			.Append(VertexLayout::Float4Color)
-			.Append(VertexLayout::Tangent);
+			.Append(VertexLayout::Tangent)
+			.Append(VertexLayout::Float4Color);
 
 		int arcSize = arcLayout.GetSize();
 		s_ArcVertexData = new float[MAX_VERTICES * arcSize / sizeof(float)];
@@ -150,9 +151,9 @@ namespace Blueberry
 		if (s_ArcCount + 1 >= MAX_LINES)
 			FlushArcs();
 
-		s_Arcs[s_ArcCount++] = { center, Vector3(0, 1, 0), center - Vector3(0, 0, radius), radius, 360 };
-		s_Arcs[s_ArcCount++] = { center, Vector3(0, 0, 1), center - Vector3(0, radius, 0), radius, 360 };
-		s_Arcs[s_ArcCount++] = { center, Vector3(1, 0, 0), center - Vector3(0, 0, radius), radius, 360 };
+		s_Arcs[s_ArcCount++] = { center, Vector3(0, 1, 0), center - Vector3(0, 0, radius), radius, 360, s_CurrentColor };
+		s_Arcs[s_ArcCount++] = { center, Vector3(0, 0, 1), center - Vector3(0, radius, 0), radius, 360, s_CurrentColor };
+		s_Arcs[s_ArcCount++] = { center, Vector3(1, 0, 0), center - Vector3(0, 0, radius), radius, 360, s_CurrentColor };
 	}
 
 	void Gizmos::DrawFrustum(const Frustum& frustum)
@@ -234,6 +235,7 @@ namespace Blueberry
 			Vector3 from = arc.from;
 			float radius = arc.radius;
 			float angle = arc.angle;
+			Color color = arc.color;
 
 			s_ArcVertexDataPtr[0] = center.x;
 			s_ArcVertexDataPtr[1] = center.y;
@@ -249,7 +251,12 @@ namespace Blueberry
 			s_ArcVertexDataPtr[9] = from.z;
 			s_ArcVertexDataPtr[10] = angle;
 
-			s_ArcVertexDataPtr += 11;
+			s_ArcVertexDataPtr[11] = color.x;
+			s_ArcVertexDataPtr[12] = color.y;
+			s_ArcVertexDataPtr[13] = color.z;
+			s_ArcVertexDataPtr[14] = color.w;
+
+			s_ArcVertexDataPtr += 15;
 		}
 
 		s_ArcVertexBuffer->SetData(s_ArcVertexData, s_ArcCount);

@@ -10,6 +10,11 @@ namespace Blueberry
 {
 	OBJECT_DEFINITION(Collider, BoxCollider)
 
+	const Vector3& BoxCollider::GetSize()
+	{
+		return m_Size;
+	}
+
 	void BoxCollider::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(BoxCollider)

@@ -10,6 +10,11 @@ namespace Blueberry
 {
 	OBJECT_DEFINITION(Collider, SphereCollider)
 
+	const float& SphereCollider::GetRadius()
+	{
+		return m_Radius;
+	}
+
 	void SphereCollider::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(SphereCollider)

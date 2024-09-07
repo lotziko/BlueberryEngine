@@ -18,6 +18,7 @@ Shader
 			float3 centerPositionOS		: POSITION;
 			float4 normalOSRadius		: NORMAL;
 			float4 fromPositionOSAngle	: TANGENT;
+			float4 color				: COLOR;
 		};
 
 		struct GeometryVaryings
@@ -26,11 +27,13 @@ Shader
 			float4 normalOSRadius		: TEXCOORD0;
 			float4 tangentOSAngle		: TEXCOORD1;
 			float3 bitangentOS			: TEXCOORD2;
+			float4 color				: TEXCOORD3;
 		};
 
 		struct FragmentVaryings
 		{
-			float4 positionCS : SV_POSITION;
+			float4 positionCS	: SV_POSITION;
+			float4 color		: TEXCOORD0;
 		};
 
 		GeometryVaryings ArcLineVertex(Attributes input)
@@ -40,6 +43,7 @@ Shader
 			output.normalOSRadius = input.normalOSRadius;
 			output.tangentOSAngle = float4(normalize(input.centerPositionOS.xyz - input.fromPositionOSAngle.xyz), input.fromPositionOSAngle.w);
 			output.bitangentOS = cross(output.normalOSRadius.xyz, output.tangentOSAngle.xyz);
+			output.color = input.color;
 			return output;
 		}
 
@@ -52,6 +56,7 @@ Shader
 			float3 bitangentOS = input[0].bitangentOS;
 			float radius = input[0].normalOSRadius.w;
 			float angle = input[0].tangentOSAngle.w;
+			float4 color = input[0].color;
 
 			float segments = 36.0;
 			for (int i = 0; i <= 36; ++i)
@@ -61,6 +66,7 @@ Shader
 
 				FragmentVaryings p1;
 				p1.positionCS = mul(mul(float4(center + tangentOS * u + bitangentOS * v, 1.0), _ModelMatrix), _ViewProjectionMatrix);
+				p1.color = color;
 				lineStream.Append(p1);
 			}
 			lineStream.RestartStrip();
@@ -68,7 +74,7 @@ Shader
 
 		float4 ArcLineFragment(FragmentVaryings input) : SV_TARGET
 		{
-			return float4(1, 1, 1, 1);
+			return input.color;
 		}
 		HLSLEND
 	}

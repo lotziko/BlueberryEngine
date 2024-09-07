@@ -16,6 +16,7 @@ namespace Blueberry
 	{
 		PerCameraDataConstantBuffer::BindData(camera);
 
+		// TODO add cache and draw also child entities
 		Object* activeObject = Selection::GetActiveObject();
 		if (activeObject != nullptr)
 		{

@@ -9,6 +9,8 @@ namespace Blueberry
 		OBJECT_DECLARATION(SphereCollider)
 
 	public:
+		const float& GetRadius();
+
 		static void BindProperties();
 
 	private:

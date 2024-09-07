@@ -9,6 +9,8 @@ namespace Blueberry
 		OBJECT_DECLARATION(BoxCollider)
 
 	public:
+		const Vector3& GetSize();
+
 		static void BindProperties();
 
 	private:

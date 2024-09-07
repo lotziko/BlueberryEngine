@@ -41,6 +41,7 @@ namespace Blueberry
 			Vector3 from;
 			float radius;
 			float angle;
+			Color color;
 		};
 
 	private:
