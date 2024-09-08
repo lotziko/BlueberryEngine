@@ -12,6 +12,7 @@ namespace Blueberry
 	class Camera;
 	class Texture;
 	class SceneArea;
+	class GameView;
 	class ImGuiRenderer;
 	class WindowResizeEventArgs;
 
@@ -39,6 +40,7 @@ namespace Blueberry
 		SceneHierarchy* m_SceneHierarchy = nullptr;
 		SceneInspector* m_SceneInspector = nullptr;
 		SceneArea* m_SceneArea = nullptr;
+		GameView* m_GameView = nullptr;
 		ProjectBrowser* m_ProjectBrowser = nullptr;
 	};
 }

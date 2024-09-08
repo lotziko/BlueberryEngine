@@ -5,7 +5,7 @@
 #include "Editor\Inspector\ObjectInspector.h"
 #include "Editor\Inspector\ObjectInspectorDB.h"
 #include "Blueberry\Assets\AssetLoader.h"
-#include "Blueberry\Graphics\BaseCamera.h"
+#include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Graphics\Renderer2D.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\GfxDevice.h"
@@ -55,7 +55,7 @@ namespace Blueberry
 		static inline GfxConstantBuffer* s_ConstantBuffer = nullptr;
 	};
 
-	SceneObjectPicker::SceneObjectPicker(GfxTexture* depthStencilTexture) : m_SceneDepthStencil(depthStencilTexture)
+	SceneObjectPicker::SceneObjectPicker()
 	{
 		TextureProperties properties = {};
 		properties.width = 1920;
@@ -65,6 +65,10 @@ namespace Blueberry
 		properties.format = TextureFormat::R8G8B8A8_UNorm;
 		GfxDevice::CreateTexture(properties, m_SceneRenderTarget);
 
+		properties.isReadable = false;
+		properties.format = TextureFormat::D24_UNorm;
+		GfxDevice::CreateTexture(properties, m_SceneDepthStencil);
+
 		m_SpriteObjectPickerMaterial = Material::Create((Shader*)AssetLoader::Load("assets/SpriteObjectPicker.shader"));
 		m_MeshObjectPickerMaterial = Material::Create((Shader*)AssetLoader::Load("assets/MeshObjectPicker.shader"));
 		m_ObjectPickerOutlineMaterial = Material::Create((Shader*)AssetLoader::Load("assets/ObjectPickerOutline.shader"));
@@ -73,22 +77,23 @@ namespace Blueberry
 	SceneObjectPicker::~SceneObjectPicker()
 	{
 		delete m_SceneRenderTarget;
+		delete m_SceneDepthStencil;
 	}
 
-	Object* SceneObjectPicker::Pick(Scene* scene, BaseCamera& camera, const int& positionX, const int& positionY)
+	Object* SceneObjectPicker::Pick(Scene* scene, Camera* camera, const int& positionX, const int& positionY)
 	{
 		if (scene == nullptr)
 		{
 			return nullptr;
 		}
 
-		Rectangle area = Rectangle(Min(Max(positionX, 0), camera.GetPixelSize().x), Min(Max(positionY, 0), camera.GetPixelSize().y), 1, 1);
+		Rectangle area = Rectangle(Min(Max(positionX, 0), camera->GetPixelSize().x), Min(Max(positionY, 0), camera->GetPixelSize().y), 1, 1);
 		unsigned char pixel[4];
 		std::unordered_map<int, ObjectId> validObjects;
 		uint32_t index = 1;
 
 		GfxDevice::SetRenderTarget(m_SceneRenderTarget, m_SceneDepthStencil);
-		GfxDevice::SetViewport(0, 0, camera.GetPixelSize().x, camera.GetPixelSize().y);
+		GfxDevice::SetViewport(0, 0, camera->GetPixelSize().x, camera->GetPixelSize().y);
 		GfxDevice::ClearColor({ 0, 0, 0, 0 });
 		GfxDevice::ClearDepth(1.0f);
 		Renderer2D::Begin();
@@ -118,7 +123,7 @@ namespace Blueberry
 			}
 		}
 
-		Vector3 cameraDirection = Vector3::Transform(Vector3::Forward, camera.GetRotation());
+		Vector3 cameraDirection = Vector3::Transform(Vector3::Forward, camera->GetEntity()->GetTransform()->GetRotation());
 		for (auto& pair : scene->GetEntities())
 		{
 			Entity* entity = pair.second.Get();
@@ -154,7 +159,7 @@ namespace Blueberry
 		}
 	}
 
-	void SceneObjectPicker::DrawOutline(Scene* scene, BaseCamera& camera, GfxTexture* renderTarget)
+	void SceneObjectPicker::DrawOutline(Scene* scene, Camera* camera, GfxTexture* renderTarget)
 	{
 		static size_t pickingTextureId = TO_HASH("_PickingTexture");
 
@@ -164,7 +169,7 @@ namespace Blueberry
 		}
 
 		GfxDevice::SetRenderTarget(m_SceneRenderTarget);
-		GfxDevice::SetViewport(0, 0, camera.GetPixelSize().x, camera.GetPixelSize().y);
+		GfxDevice::SetViewport(0, 0, camera->GetPixelSize().x, camera->GetPixelSize().y);
 		GfxDevice::ClearColor({ 0, 0, 0, 0 });
 		GfxDevice::ClearDepth(1.0f);
 

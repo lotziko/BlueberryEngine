@@ -2,6 +2,7 @@
 #include "SceneAreaMovement.h"
 #include "SceneArea.h"
 #include "Editor\Misc\SceneHelper.h"
+#include "Blueberry\Scene\Components\Camera.h"
 
 namespace Blueberry
 {
@@ -89,8 +90,9 @@ namespace Blueberry
 	{
 		const float maxCameraSizeForWorldToScreen = 2.5E+7f;
 
-		BaseCamera* camera = area->GetCamera();
-		Vector3 previousPosition = camera->GetPosition();
+		Camera* camera = area->GetCamera();
+		Transform* transform = camera->GetEntity()->GetTransform();
+		Vector3 previousPosition = transform->GetPosition();
 		float previousNear = camera->GetNearClipPlane();
 		float previousFar = camera->GetFarClipPlane();
 		float size = area->GetSize();
@@ -101,15 +103,15 @@ namespace Blueberry
 
 		camera->SetNearClipPlane(clip.x);
 		camera->SetFarClipPlane(clip.y);
-		camera->SetPosition(Vector3::Zero);
+		transform->SetPosition(Vector3::Zero);
 
-		Vector3 position = Vector3::Transform(Vector3(0, 0, area->GetCameraDistance()), camera->GetRotation());
+		Vector3 position = Vector3::Transform(Vector3(0, 0, area->GetCameraDistance()), transform->GetRotation());
 		Vector3 screenPosition = camera->WorldToScreenPoint(position);
 		screenPosition += Vector3(delta.x, delta.y, 0);
 		Vector3 worldDelta = camera->ScreenToWorldPoint(screenPosition) - position;
 		worldDelta *= scale;
 
-		camera->SetPosition(previousPosition);
+		transform->SetPosition(previousPosition);
 		camera->SetNearClipPlane(previousNear);
 		camera->SetFarClipPlane(previousFar);
 

@@ -134,7 +134,9 @@ namespace Blueberry
 			case BindingType::Enum:
 				objectNode[key] << *value.Get<int>();
 				break;
-			break;
+			case BindingType::Vector2:
+				objectNode[key] << *value.Get<Vector2>();
+				break;
 			case BindingType::Vector3:
 				objectNode[key] << *value.Get<Vector3>();
 				break;
@@ -280,6 +282,9 @@ namespace Blueberry
 				break;
 				case BindingType::Enum:
 					objectNode[key] >> *value.Get<int>();
+					break;
+				case BindingType::Vector2:
+					objectNode[key] >> *value.Get<Vector2>();
 					break;
 				case BindingType::Vector3:
 					objectNode[key] >> *value.Get<Vector3>();

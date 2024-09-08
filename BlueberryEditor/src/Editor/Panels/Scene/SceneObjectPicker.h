@@ -2,7 +2,7 @@
 
 namespace Blueberry
 {
-	class BaseCamera;
+	class Camera;
 	class GfxTexture;
 	class Scene;
 	class Material;
@@ -10,11 +10,11 @@ namespace Blueberry
 	class SceneObjectPicker
 	{
 	public:
-		SceneObjectPicker(GfxTexture* depthStencilTexture);
+		SceneObjectPicker();
 		virtual ~SceneObjectPicker();
 
-		Object* Pick(Scene* scene, BaseCamera& camera, const int& positionX, const int& positionY);
-		void DrawOutline(Scene* scene, BaseCamera& camera, GfxTexture* renderTarget);
+		Object* Pick(Scene* scene, Camera* camera, const int& positionX, const int& positionY);
+		void DrawOutline(Scene* scene, Camera* camera, GfxTexture* renderTarget);
 	private:
 		GfxTexture* m_SceneRenderTarget = nullptr;
 		GfxTexture* m_SceneDepthStencil = nullptr;

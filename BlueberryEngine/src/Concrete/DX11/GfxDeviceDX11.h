@@ -9,6 +9,8 @@ namespace Blueberry
 	class GfxVertexShaderDX11;
 	class GfxGeometryShaderDX11;
 	class GfxFragmentShaderDX11;
+	class GfxVertexBufferDX11;
+	class GfxIndexBufferDX11;
 
 	class GfxDeviceDX11 final : public GfxDevice
 	{
@@ -79,14 +81,19 @@ namespace Blueberry
 		ID3D11ShaderResourceView* m_ShaderResourceViews[16];
 		ID3D11SamplerState* m_Samplers[16];
 
+		ObjectId m_MaterialId = 0;
+		uint32_t m_Crc = 0;
 		CullMode m_CullMode = (CullMode)-1;
 		std::size_t m_BlendKey = -1;
 		std::size_t m_ZTestZWriteKey = -1;
 		Topology m_Topology = (Topology)-1;
 		
-		ObjectId m_MaterialId = 0;
 		GfxVertexShaderDX11* m_VertexShader = nullptr;
 		GfxGeometryShaderDX11* m_GeometryShader = nullptr;
 		GfxFragmentShaderDX11* m_FragmentShader = nullptr;
+		GfxRenderState* m_RenderState = nullptr;
+
+		GfxVertexBufferDX11* m_VertexBuffer = nullptr;
+		GfxIndexBufferDX11* m_IndexBuffer = nullptr;
 	};
 }

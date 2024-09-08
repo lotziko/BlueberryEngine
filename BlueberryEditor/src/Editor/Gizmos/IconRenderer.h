@@ -5,7 +5,7 @@
 namespace Blueberry
 {
 	class Scene;
-	class BaseCamera;
+	class Camera;
 	class Texture2D;
 	class Material;
 	class Transform;
@@ -24,7 +24,7 @@ namespace Blueberry
 	public:
 		static bool Initialize();
 		static void Shutdown();
-		static void Draw(Scene* scene, BaseCamera* camera);
+		static void Draw(Scene* scene, Camera* camera);
 
 	private:
 		static void ClearCache();

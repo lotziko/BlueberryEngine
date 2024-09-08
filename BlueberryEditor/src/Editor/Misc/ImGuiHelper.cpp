@@ -5,6 +5,27 @@
 #include "Blueberry\Assets\AssetLoader.h"
 #include "imgui\imgui_internal.h"
 
+bool ImGui::DragVector2(const char* label, Blueberry::Vector2* v)
+{
+	ImGui::PushID(label);
+
+	ImGui::Text(label);
+	ImGui::SameLine();
+	ImGui::SetCursorPosX(100);
+
+	float vector2[2] = { v->x, v->y };
+	if (ImGui::DragFloat2("##vector2", vector2, 0.1f))
+	{
+		v->x = vector2[0];
+		v->y = vector2[1];
+
+		ImGui::PopID();
+		return true;
+	}
+	ImGui::PopID();
+	return false;
+}
+
 bool ImGui::DragVector3(const char* label, Blueberry::Vector3* v)
 {
 	ImGui::PushID(label);

@@ -1,10 +1,10 @@
 #include "bbpch.h"
 #include "SceneHelper.h"
-#include "Blueberry\Graphics\BaseCamera.h"
+#include "Blueberry\Scene\Components\Camera.h"
 
 namespace Blueberry
 {
-	Ray SceneHelper::GUIPointToWorldRay(const Vector2& position, BaseCamera* camera)
+	Ray SceneHelper::GUIPointToWorldRay(const Vector2& position, Camera* camera)
 	{
 		// Based on https://github.com/Unity-Technologies/UnityCsReference/blob/master/Editor/Mono/Handles/HandleUtility.cs
 		Vector2 viewportSize = camera->GetPixelSize();

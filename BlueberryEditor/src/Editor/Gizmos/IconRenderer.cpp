@@ -42,14 +42,14 @@ namespace Blueberry
 		delete s_IconMaterial;
 	}
 
-	void IconRenderer::Draw(Scene* scene, BaseCamera* camera)
+	void IconRenderer::Draw(Scene* scene, Camera* camera)
 	{
 		if (s_IconsCache.size() == 0)
 		{
 			GenerateCache(scene);
 		}
 
-		Vector3 cameraDirection = Vector3::Transform(Vector3::Forward, camera->GetRotation());
+		Vector3 cameraDirection = Vector3::Transform(Vector3::Forward, camera->GetEntity()->GetTransform()->GetRotation());
 
 		for (auto& info : s_IconsCache)
 		{

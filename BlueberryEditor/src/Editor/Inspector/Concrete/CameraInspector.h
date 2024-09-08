@@ -9,6 +9,8 @@ namespace Blueberry
 	public:
 		virtual ~CameraInspector() = default;
 
+		virtual const char* GetIconPath(Object* object) override;
 		virtual void Draw(Object* object) override;
+		virtual void DrawScene(Object* object) override;
 	};
 }

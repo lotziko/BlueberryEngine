@@ -9,6 +9,7 @@ namespace Blueberry
 
 namespace ImGui
 {
+	bool DragVector2(const char* label, Blueberry::Vector2* v);
 	bool DragVector3(const char* label, Blueberry::Vector3* v);
 	bool EnumEdit(const char* label, int* v, const std::vector<std::string>* names);
 	bool BoolEdit(const char* label, bool* v);

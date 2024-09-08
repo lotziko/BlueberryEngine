@@ -10,37 +10,9 @@
 
 namespace Blueberry
 {
-	void SceneRenderer::Draw(Scene* scene)
-	{
-		// Update cameras and render
-		{
-			for (auto component : scene->GetIterator<Camera>())
-			{
-				auto camera = static_cast<Camera*>(component.second);
-				auto transform = camera->GetEntity()->GetTransform();
-				if (transform->IsDirty())
-				{
-					camera->SetPosition(transform->GetLocalPosition());
-					camera->SetRotation(transform->GetLocalRotation());
-				}
-				Draw(scene, camera);
-			}
-		}
-	}
-
-	void SceneRenderer::Draw(Scene* scene, BaseCamera* camera)
+	void SceneRenderer::Draw(Scene* scene, Camera* camera)
 	{
 		PerCameraDataConstantBuffer::BindData(camera);
-
-		// TODO try to update in scene update
-		// Update transforms
-		{
-			for (auto component : scene->GetIterator<Transform>())
-			{
-				auto transform = static_cast<Transform*>(component.second);
-				transform->Update();
-			}
-		}
 
 		// Bind lights
 		{

@@ -12,7 +12,7 @@
 
 namespace Blueberry
 {
-	void GizmoRenderer::Draw(Scene* scene, BaseCamera* camera)
+	void GizmoRenderer::Draw(Scene* scene, Camera* camera)
 	{
 		PerCameraDataConstantBuffer::BindData(camera);
 

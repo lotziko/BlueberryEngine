@@ -13,6 +13,7 @@
 #include "Editor\Misc\ImGuiHelper.h"
 #include "Editor\Inspector\RegisterObjectInspectors.h"
 #include "Editor\Panels\Scene\SceneArea.h"
+#include "Editor\Panels\Game\GameView.h"
 
 #include "imgui\imgui.h"
 #include "imgui\imguizmo.h"
@@ -40,6 +41,7 @@ namespace Blueberry
 		m_SceneInspector = new SceneInspector();
 
 		m_SceneArea = new SceneArea();
+		m_GameView = new GameView();
 
 		m_ProjectBrowser = new ProjectBrowser();
 
@@ -62,6 +64,7 @@ namespace Blueberry
 		delete m_SceneHierarchy;
 		delete m_SceneInspector;
 		delete m_SceneArea;
+		delete m_GameView;
 		delete m_ProjectBrowser;
 		Gizmos::Shutdown();
 		IconRenderer::Shutdown();
@@ -194,6 +197,7 @@ namespace Blueberry
 			m_SceneHierarchy->DrawUI();
 			m_SceneInspector->DrawUI();
 			m_SceneArea->DrawUI();
+			m_GameView->DrawUI();
 			m_ProjectBrowser->DrawUI();
 
 			ImGui::End();

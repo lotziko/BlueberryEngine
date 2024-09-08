@@ -3,11 +3,11 @@
 namespace Blueberry
 {
 	class Scene;
-	class BaseCamera;
+	class Camera;
 
 	class GizmoRenderer
 	{
 	public:
-		static void Draw(Scene* scene, BaseCamera* camera);
+		static void Draw(Scene* scene, Camera* camera);
 	};
 }

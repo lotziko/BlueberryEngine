@@ -2,6 +2,7 @@
 #include "TransformInspector.h"
 
 #include "Blueberry\Scene\Components\Transform.h"
+#include "Blueberry\Scene\Components\Camera.h"
 
 #include "imgui\imgui.h"
 #include "imgui\imguizmo.h"
@@ -68,7 +69,7 @@ namespace Blueberry
 			transformMatrix *= parentTransform->GetLocalToWorldMatrix();
 		}
 		
-		BaseCamera* camera = BaseCamera::GetCurrent();
+		Camera* camera = Camera::GetCurrent();
 		if (camera != nullptr)
 		{
 			float snapping[3];

@@ -2,13 +2,13 @@
 
 namespace Blueberry
 {
-	class BaseCamera;
+	class Camera;
 	class GfxConstantBuffer;
 
 	class PerCameraDataConstantBuffer
 	{
 	public:
-		static void BindData(BaseCamera* camera);
+		static void BindData(Camera* camera);
 
 	private:
 		static inline GfxConstantBuffer* s_ConstantBuffer = nullptr;

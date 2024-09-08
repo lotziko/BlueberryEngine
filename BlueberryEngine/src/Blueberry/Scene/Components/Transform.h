@@ -22,6 +22,7 @@ namespace Blueberry
 		const Vector3& GetLocalScale();
 		const Vector3 GetLocalEulerRotation() const;
 		const Vector3 GetPosition();
+		const Quaternion GetRotation();
 
 		Transform* GetParent() const;
 
@@ -33,9 +34,10 @@ namespace Blueberry
 		void SetLocalEulerRotation(const Vector3& euler);
 		void SetLocalScale(const Vector3& scale);
 
-		void SetParent(Transform* parent);
+		void SetPosition(const Vector3& position);
+		void SetRotation(const Quaternion& rotation);
 
-		void Update();
+		void SetParent(Transform* parent);
 
 		const bool& IsDirty() const;
 		const size_t& GetRecalculationFrame() const;
@@ -43,7 +45,8 @@ namespace Blueberry
 		static void BindProperties();
 
 	private:
-		void RecalculateWorldMatrix(bool dirty);
+		void SetHierarchyDirty();
+		void RecalculateHierarchy();
 
 	private:
 		bool m_IsDirty = true;
@@ -53,6 +56,7 @@ namespace Blueberry
 		std::vector<ObjectPtr<Transform>> m_Children;
 
 		Matrix m_LocalToWorldMatrix;
+		Matrix m_WorldToLocalMatrix;
 		Matrix m_LocalMatrix;
 
 		Vector3 m_LocalPosition;
@@ -60,5 +64,7 @@ namespace Blueberry
 		Vector3 m_LocalScale = Vector3(1, 1, 1);
 
 		Vector3 m_Position;
+		Quaternion m_Rotation;
+		Vector3 m_Scale;
 	};
 }

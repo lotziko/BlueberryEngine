@@ -43,6 +43,7 @@ namespace Blueberry
 		this->vertexCount = vertexCount;
 		this->topology = topology;
 		this->materialId = material->GetObjectId();
+		this->materialCRC = material->GetCRC();
 	}
 
 	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material, const UINT& indexCount, const UINT& indexOffset, const UINT& vertexCount) : GfxDrawingOperation(mesh->m_VertexBuffer, mesh->m_IndexBuffer, material, indexCount, indexOffset, vertexCount, mesh->GetTopology())

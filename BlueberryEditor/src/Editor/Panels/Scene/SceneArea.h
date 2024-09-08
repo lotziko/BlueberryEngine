@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Blueberry\Math\Math.h"
-#include "SceneCamera.h"
 #include "SceneObjectPicker.h"
 
 namespace Blueberry
@@ -20,7 +19,7 @@ namespace Blueberry
 		float GetPerspectiveDistance(const float objectSize, const float fov);
 		float GetCameraDistance();
 
-		BaseCamera* GetCamera();
+		Camera* GetCamera();
 
 		Vector3 GetPosition();
 		void SetPosition(const Vector3& position);
@@ -55,15 +54,9 @@ namespace Blueberry
 		void RequestRedraw();
 
 	private:
-		RenderTexture* m_ColorMSAARenderTarget = nullptr;
-		RenderTexture* m_DepthStencilMSAARenderTarget = nullptr;
-
-		RenderTexture* m_ColorRenderTarget = nullptr;
-		RenderTexture* m_DepthStencilRenderTarget = nullptr;
-		
+		RenderTexture* m_RenderTarget = nullptr;
 		Material* m_GridMaterial;
-		Material* m_ResolveMSAAMaterial;
-		SceneCamera m_Camera;
+		Camera* m_Camera;
 		SceneObjectPicker* m_ObjectPicker = nullptr;
 
 		Vector3 m_Position = Vector3(0, 0, 0);
@@ -74,6 +67,9 @@ namespace Blueberry
 		bool m_IsDragging = false;
 		bool m_IsOrthographic = false;
 		bool m_Is2DMode = false;
+
+		Vector3 m_PreviousPosition;
+		Quaternion m_PreviousRotation;
 
 		static size_t s_SceneRedrawFrame;
 

@@ -313,6 +313,8 @@ namespace Blueberry
 		}
 
 		GfxRenderState* renderState = operation.renderState;
+		ObjectId materialId = operation.materialId;
+		uint32_t materialCRC = operation.materialCRC;
 		SetCullMode(renderState->cullMode);
 		SetBlendMode(renderState->blendSrcColor, renderState->blendSrcAlpha, renderState->blendDstColor, renderState->blendDstAlpha);
 		SetZTestAndZWrite(renderState->zTest, renderState->zWrite);
@@ -320,10 +322,8 @@ namespace Blueberry
 
 		// TODO check if shader variant/material/mesh is the same to skip some bindings
 
-		if (operation.materialId != m_MaterialId)
+		// Does not work when texture is switched for example in IconRenderer
 		{
-			m_MaterialId = operation.materialId;
-
 			auto dxVertexShader = static_cast<GfxVertexShaderDX11*>(renderState->vertexShader);
 			if (dxVertexShader != m_VertexShader)
 			{
@@ -331,21 +331,6 @@ namespace Blueberry
 
 				m_DeviceContext->IASetInputLayout(dxVertexShader->m_InputLayout.Get());
 				m_DeviceContext->VSSetShader(dxVertexShader->m_Shader.Get(), NULL, 0);
-
-				std::fill_n(m_ConstantBuffers, 8, nullptr);
-
-				// Bind constant buffers
-				auto bufferMap = dxVertexShader->m_ConstantBufferSlots;
-				for (auto it = bufferMap.begin(); it != bufferMap.end(); it++)
-				{
-					auto pair = m_BindedConstantBuffers.find(it->first);
-					if (pair != m_BindedConstantBuffers.end())
-					{
-						m_ConstantBuffers[it->second] = pair->second->m_Buffer.Get();
-					}
-				}
-
-				m_DeviceContext->VSSetConstantBuffers(0, 8, m_ConstantBuffers);
 			}
 
 			auto dxGeometryShader = static_cast<GfxGeometryShaderDX11*>(renderState->geometryShader);
@@ -360,9 +345,42 @@ namespace Blueberry
 				else
 				{
 					m_DeviceContext->GSSetShader(dxGeometryShader->m_Shader.Get(), NULL, 0);
+				}
+			}
+			
+			auto dxFragmentShader = static_cast<GfxFragmentShaderDX11*>(renderState->fragmentShader);
+			if (dxFragmentShader != m_FragmentShader)
+			{
+				m_FragmentShader = dxFragmentShader;
 
-					// Bind constant buffers
-					auto bufferMap = dxGeometryShader->m_ConstantBufferSlots;
+				m_DeviceContext->PSSetShader(dxFragmentShader->m_Shader.Get(), NULL, 0);
+			}
+
+			if (materialId != m_MaterialId || operation.materialCRC != m_Crc || renderState != m_RenderState)
+			{
+				m_MaterialId = materialId;
+				m_RenderState = renderState;
+				m_Crc = materialCRC;
+
+				std::fill_n(m_ConstantBuffers, 8, nullptr);
+
+				// Bind vertex constant buffers
+				auto bufferMap = dxVertexShader->m_ConstantBufferSlots;
+				for (auto it = bufferMap.begin(); it != bufferMap.end(); it++)
+				{
+					auto pair = m_BindedConstantBuffers.find(it->first);
+					if (pair != m_BindedConstantBuffers.end())
+					{
+						m_ConstantBuffers[it->second] = pair->second->m_Buffer.Get();
+					}
+				}
+
+				m_DeviceContext->VSSetConstantBuffers(0, 8, m_ConstantBuffers);
+
+				if (dxGeometryShader != nullptr)
+				{
+					// Bind geometry constant buffers
+					bufferMap = dxGeometryShader->m_ConstantBufferSlots;
 					for (auto it = bufferMap.begin(); it != bufferMap.end(); it++)
 					{
 						auto pair = m_BindedConstantBuffers.find(it->first);
@@ -374,17 +392,11 @@ namespace Blueberry
 
 					m_DeviceContext->GSSetConstantBuffers(0, 8, m_ConstantBuffers);
 				}
-			}
-
-			auto dxFragmentShader = static_cast<GfxFragmentShaderDX11*>(renderState->fragmentShader);
-			if (dxFragmentShader != m_FragmentShader)
-			{
-				m_DeviceContext->PSSetShader(dxFragmentShader->m_Shader.Get(), NULL, 0);
 
 				std::fill_n(m_ConstantBuffers, 8, nullptr);
 
-				// Bind constant buffers
-				auto bufferMap = dxFragmentShader->m_ConstantBufferSlots;
+				// Bind fragment constant buffers
+				bufferMap = dxFragmentShader->m_ConstantBufferSlots;
 				for (auto it = bufferMap.begin(); it != bufferMap.end(); it++)
 				{
 					auto pair = m_BindedConstantBuffers.find(it->first);
@@ -395,11 +407,11 @@ namespace Blueberry
 				}
 
 				m_DeviceContext->PSSetConstantBuffers(0, 8, m_ConstantBuffers);
-				
+
 				std::fill_n(m_ShaderResourceViews, 16, nullptr);
 				std::fill_n(m_Samplers, 16, nullptr);
 
-				// Bind material textures
+				// Bind fragment material textures
 				auto textureMap = dxFragmentShader->m_TextureSlots;
 				for (int i = 0; i < renderState->fragmentTextureCount; i++)
 				{
@@ -412,7 +424,7 @@ namespace Blueberry
 					}
 				}
 
-				// Bind global textures
+				// Bind fragment global textures
 				for (auto it = textureMap.begin(); it != textureMap.end(); it++)
 				{
 					auto pair = m_BindedTextures.find(it->first);
@@ -434,9 +446,12 @@ namespace Blueberry
 			}
 		}
 
-		// TODO Check mesh too
 		auto dxVertexBuffer = static_cast<GfxVertexBufferDX11*>(operation.vertexBuffer);
-		m_DeviceContext->IASetVertexBuffers(0, 1, dxVertexBuffer->m_Buffer.GetAddressOf(), &dxVertexBuffer->m_Stride, &dxVertexBuffer->m_Offset);
+		if (dxVertexBuffer != m_VertexBuffer)
+		{
+			m_VertexBuffer = dxVertexBuffer;
+			m_DeviceContext->IASetVertexBuffers(0, 1, dxVertexBuffer->m_Buffer.GetAddressOf(), &dxVertexBuffer->m_Stride, &dxVertexBuffer->m_Offset);
+		}
 
 		if (operation.indexBuffer == nullptr)
 		{
@@ -445,7 +460,11 @@ namespace Blueberry
 		else
 		{
 			auto dxIndexBuffer = static_cast<GfxIndexBufferDX11*>(operation.indexBuffer);
-			m_DeviceContext->IASetIndexBuffer(dxIndexBuffer->m_Buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+			if (dxIndexBuffer != m_IndexBuffer)
+			{
+				m_IndexBuffer = dxIndexBuffer;
+				m_DeviceContext->IASetIndexBuffer(dxIndexBuffer->m_Buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+			}
 			m_DeviceContext->DrawIndexed(operation.indexCount, operation.indexOffset, 0);
 		}
 	}

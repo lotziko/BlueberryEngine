@@ -61,5 +61,6 @@ namespace Blueberry
 		UINT indexOffset;
 		UINT vertexCount;
 		ObjectId materialId;
+		uint32_t materialCRC;
 	};
 }

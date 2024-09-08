@@ -6,6 +6,7 @@
 #include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Graphics\DefaultTextures.h"
 #include "Blueberry\Core\ClassDB.h"
+#include "Blueberry\Tools\CRCHelper.h"
 
 namespace Blueberry
 {
@@ -51,6 +52,7 @@ namespace Blueberry
 	void Material::SetTexture(std::size_t id, Texture* texture)
 	{
 		m_TextureMap.insert_or_assign(id, texture->m_Texture);
+		m_Crc = 0;
 	}
 
 	void Material::SetTexture(std::string name, Texture* texture)
@@ -179,6 +181,22 @@ namespace Blueberry
 
 		m_PassCache[passIndex] = newState;
 		return passState;
+	}
+
+	const uint32_t& Material::GetCRC()
+	{
+		if (m_Crc == 0)
+		{
+			for (auto& pair : m_TextureMap)
+			{
+				m_Crc = CRCHelper::Calculate(&pair, sizeof(std::pair<std::size_t, GfxTexture*>), m_Crc);
+			}
+			for (auto& keyword : m_ActiveKeywords)
+			{
+				m_Crc = CRCHelper::Calculate(&keyword, keyword.size(), m_Crc);
+			}
+		}
+		return m_Crc;
 	}
 
 	void Material::BindProperties()

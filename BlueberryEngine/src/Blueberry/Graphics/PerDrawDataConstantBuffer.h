@@ -2,7 +2,7 @@
 
 namespace Blueberry
 {
-	class BaseCamera;
+	class Camera;
 	class GfxConstantBuffer;
 
 	class PerDrawConstantBuffer
