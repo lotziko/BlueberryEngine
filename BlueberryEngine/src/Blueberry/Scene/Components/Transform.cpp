@@ -197,7 +197,7 @@ namespace Blueberry
 
 	void Transform::RecalculateHierarchy()
 	{
-		m_LocalMatrix = Matrix::CreateScale(m_LocalScale) * Matrix::CreateFromQuaternion(m_LocalRotation) * Matrix::CreateTranslation(m_LocalPosition);
+		m_LocalMatrix = CreateTRS(m_LocalPosition, m_LocalRotation, m_LocalScale);
 		m_IsDirty = false;
 		if (m_Parent.IsValid())
 		{

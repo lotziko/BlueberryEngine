@@ -41,7 +41,7 @@ Shader
 			GeometryVaryings output;
 			output.centerPositionOS = input.centerPositionOS;
 			output.normalOSRadius = input.normalOSRadius;
-			output.tangentOSAngle = float4(normalize(input.centerPositionOS.xyz - input.fromPositionOSAngle.xyz), input.fromPositionOSAngle.w);
+			output.tangentOSAngle = float4(normalize(input.fromPositionOSAngle.xyz), input.fromPositionOSAngle.w);
 			output.bitangentOS = cross(output.normalOSRadius.xyz, output.tangentOSAngle.xyz);
 			output.color = input.color;
 			return output;
@@ -61,9 +61,9 @@ Shader
 			float segments = 36.0;
 			for (int i = 0; i <= 36; ++i)
 			{
-				float u = sin(radians(i / segments * angle)) * radius;
-				float v = cos(radians(i / segments * angle)) * radius;
-
+				float u = cos(radians(i / segments * angle)) * radius;
+				float v = sin(radians(i / segments * angle)) * radius;
+				
 				FragmentVaryings p1;
 				p1.positionCS = mul(mul(float4(center + tangentOS * u + bitangentOS * v, 1.0), _ModelMatrix), _ViewProjectionMatrix);
 				p1.color = color;

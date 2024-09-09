@@ -15,6 +15,6 @@ namespace Blueberry
 		auto transform = collider->GetEntity()->GetTransform();
 		Gizmos::SetMatrix(transform->GetLocalToWorldMatrix());
 		Gizmos::SetColor(Color(0, 1, 0, 1));
-		Gizmos::DrawCircle(Vector3::Zero, collider->GetRadius());
+		Gizmos::DrawSphere(Vector3::Zero, collider->GetRadius());
 	}
 }

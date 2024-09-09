@@ -20,6 +20,8 @@ namespace Blueberry
 	constexpr auto DegreeToRad = 57.29577951471995f;
 	constexpr auto RadToDegree = 0.0174532925194444f;
 
+	const Vector3 ForwardVector = Vector3(0, 0, 1);
+
 	inline float ToDegrees(float radians)
 	{
 		return radians * DegreeToRad;
@@ -38,6 +40,11 @@ namespace Blueberry
 	inline Vector3 ToRadians(Vector3 degrees)
 	{
 		return Vector3(degrees.x * RadToDegree, degrees.y * RadToDegree, degrees.z * RadToDegree);
+	}
+
+	inline Matrix CreateTRS(Vector3 position, Quaternion rotation, Vector3 scale)
+	{
+		return Matrix::CreateScale(scale) * Matrix::CreateFromQuaternion(rotation) * Matrix::CreateTranslation(position);
 	}
 
 	inline float Max(float a, float b)
@@ -112,7 +119,7 @@ namespace Blueberry
 	{
 		if (generateMips)
 		{
-			UINT mipCount = (UINT)log2(Max((float)width, (float)height));
+			UINT mipCount = (UINT)log2(Min((float)width, (float)height));
 			// Based on https://stackoverflow.com/questions/108318/how-can-i-test-whether-a-number-is-a-power-of-2
 			if ((width & (width - 1)) == 0 && (height & (height - 1)) == 0)
 			{

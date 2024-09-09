@@ -111,6 +111,14 @@ namespace Blueberry
 		++s_LineCount;
 	}
 
+	void Gizmos::DrawArc(const Vector3& center, const Vector3& normal, const Vector3& from, const float& angle, const float& radius)
+	{
+		if (s_ArcCount + 1 >= MAX_LINES)
+			FlushArcs();
+
+		s_Arcs[s_ArcCount++] = { center, normal, from, radius, angle, s_CurrentColor };
+	}
+
 	void Gizmos::DrawBox(const Vector3& center, const Vector3& size)
 	{
 		if (s_LineCount + 12 >= MAX_LINES)
@@ -146,14 +154,27 @@ namespace Blueberry
 		s_Lines[s_LineCount++] = { center + c3, center + c7, s_CurrentColor };
 	}
 
-	void Gizmos::DrawCircle(const Vector3& center, const float& radius)
+	void Gizmos::DrawSphere(const Vector3& center, const float& radius)
 	{
-		if (s_ArcCount + 1 >= MAX_LINES)
+		if (s_ArcCount + 3 >= MAX_LINES)
 			FlushArcs();
 
 		s_Arcs[s_ArcCount++] = { center, Vector3(0, 1, 0), center - Vector3(0, 0, radius), radius, 360, s_CurrentColor };
 		s_Arcs[s_ArcCount++] = { center, Vector3(0, 0, 1), center - Vector3(0, radius, 0), radius, 360, s_CurrentColor };
 		s_Arcs[s_ArcCount++] = { center, Vector3(1, 0, 0), center - Vector3(0, 0, radius), radius, 360, s_CurrentColor };
+	}
+
+	void Gizmos::DrawDisc(const Vector3& center, const Vector3& normal, const float& radius)
+	{
+		if (s_ArcCount + 1 >= MAX_LINES)
+			FlushArcs();
+
+		Vector3 tangent = normal.Cross(Vector3::Up);
+		if (tangent.LengthSquared() < 0.001f)
+		{
+			tangent = normal.Cross(Vector3::Right);
+		}
+		s_Arcs[s_ArcCount++] = { center, normal, tangent, radius, 360, s_CurrentColor };
 	}
 
 	void Gizmos::DrawFrustum(const Frustum& frustum)

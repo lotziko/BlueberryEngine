@@ -92,6 +92,8 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 	float3 directDiffuseTerm = (float3)0;
 	float3 directSpecularTerm = (float3)0;
 
+	float3 indirectDiffuseTerm = float3(0.01, 0.01, 0.01);
+
 	for (int i = 0; i < int(_LightsCount.x); i++)
 	{
 		float4 lightPositionWS = _LightPosition[i];
@@ -99,18 +101,24 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 		float distanceSqr = dot(posToLight, posToLight);
 
 		float3 lightDirectionWS = normalize(posToLight);
+		float spotAttenuation = AngleAttenuation(lightDirectionWS, _LightDirection[i].xyz, _LightAttenuation[i].zw);
+
+		if (spotAttenuation <= 0.0)
+		{
+			continue;
+		}
+
 		float distanceAttenuation = DistanceAttenuation(distanceSqr, _LightAttenuation[i].xy);
 		float falloff = LightFalloff(distanceSqr);
 		float3 lightColor = _LightColor[i].rgb;
-		directDiffuseTerm += CalculateDirectDiffuse(inputData.normalWS, lightDirectionWS, lightColor, distanceAttenuation, falloff, diffuseExponent);
-		directSpecularTerm += CalculateDirectSpecular(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, distanceAttenuation, falloff, reflectance, geometricRoughness);
+		directDiffuseTerm += CalculateDirectDiffuse(inputData.normalWS, lightDirectionWS, lightColor, distanceAttenuation * spotAttenuation, falloff, diffuseExponent);
+		directSpecularTerm += CalculateDirectSpecular(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, distanceAttenuation * spotAttenuation, falloff, reflectance, geometricRoughness);
 	}
 
-	// TODO indirect
-	// * surfaceData.occlusion
-
 	directDiffuseTerm *= (1.0 - reflectance);
-	return (directDiffuseTerm * surfaceData.albedo + directSpecularTerm);
+	indirectDiffuseTerm *= (1.0 - reflectance);
+
+	return ((directDiffuseTerm + indirectDiffuseTerm * surfaceData.occlusion) * surfaceData.albedo + directSpecularTerm);
 }
 
 #endif
