@@ -32,6 +32,15 @@ namespace Blueberry
 
 			switch (field.type)
 			{
+			case BindingType::Bool:
+				*cloneValue.Get<bool>() = *originalValue.Get<bool>();
+				break;
+			case BindingType::Int:
+				*cloneValue.Get<int>() = *originalValue.Get<int>();
+				break;
+			case BindingType::Float:
+				*cloneValue.Get<float>() = *originalValue.Get<float>();
+				break;
 			case BindingType::String:
 				*cloneValue.Get<std::string>() = *originalValue.Get<std::string>();
 				break;
@@ -89,6 +98,12 @@ namespace Blueberry
 				}
 			}
 			break;
+			case BindingType::Enum:
+				*cloneValue.Get<int>() = *originalValue.Get<int>();
+				break;
+			case BindingType::Vector2:
+				*cloneValue.Get<Vector2>() = *originalValue.Get<Vector2>();
+				break;
 			case BindingType::Vector3:
 				*cloneValue.Get<Vector3>() = *originalValue.Get<Vector3>();
 				break;

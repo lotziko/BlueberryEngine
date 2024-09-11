@@ -10,6 +10,7 @@
 #include "Concrete\LightInspector.h"
 #include "Concrete\SphereColliderInspector.h"
 #include "Concrete\BoxColliderInspector.h"
+#include "Concrete\CharacterControllerInspector.h"
 #include "Concrete\MaterialInspector.h"
 #include "Concrete\AssetImporterInspector.h"
 #include "Concrete\TextureImporterInspector.h"
@@ -26,6 +27,7 @@ namespace Blueberry
 		REGISTER_OBJECT_INSPECTOR(LightInspector, Light);
 		REGISTER_OBJECT_INSPECTOR(SphereColliderInspector, SphereCollider);
 		REGISTER_OBJECT_INSPECTOR(BoxColliderInspector, BoxCollider);
+		REGISTER_OBJECT_INSPECTOR(CharacterControllerInspector, CharacterController);
 		REGISTER_OBJECT_INSPECTOR(MaterialInspector, Material);
 		REGISTER_OBJECT_INSPECTOR(AssetImporterInspector, AssetImporter);
 		REGISTER_OBJECT_INSPECTOR(TextureImporterInspector, TextureImporter);

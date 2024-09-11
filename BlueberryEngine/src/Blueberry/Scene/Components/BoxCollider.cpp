@@ -2,6 +2,7 @@
 #include "BoxCollider.h"
 
 #include "Blueberry\Scene\Entity.h"
+#include "Blueberry\Scene\Components\Transform.h"
 
 #include <Jolt\Jolt.h>
 #include <Jolt\Physics\Collision\Shape\BoxShape.h>
@@ -25,6 +26,8 @@ namespace Blueberry
 
 	JPH::Shape* BoxCollider::GetShape()
 	{
-		return new JPH::BoxShape(JPH::RVec3(m_Size.x, m_Size.y, m_Size.z));
+		Transform* transform = GetEntity()->GetTransform();
+		Vector3 scale = transform->GetLocalScale();
+		return new JPH::BoxShape(JPH::RVec3(m_Size.x * scale.x, m_Size.y * scale.y, m_Size.z * scale.z));
 	}
 }

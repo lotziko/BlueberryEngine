@@ -19,5 +19,6 @@ namespace Blueberry
 		static inline JPH::PhysicsSystem* s_PhysicsSystem = nullptr;
 
 		friend class PhysicsBody;
+		friend class CharacterController;
 	};
 }

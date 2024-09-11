@@ -21,6 +21,7 @@ namespace Blueberry
 		const Quaternion& GetLocalRotation();
 		const Vector3& GetLocalScale();
 		const Vector3 GetLocalEulerRotation() const;
+		const Vector3 GetLocalEulerRotationHint() const;
 		const Vector3 GetPosition();
 		const Quaternion GetRotation();
 
@@ -32,6 +33,7 @@ namespace Blueberry
 		void SetLocalPosition(const Vector3& position);
 		void SetLocalRotation(const Quaternion& rotation);
 		void SetLocalEulerRotation(const Vector3& euler);
+		void SetLocalEulerRotationHint(const Vector3& euler);
 		void SetLocalScale(const Vector3& scale);
 
 		void SetPosition(const Vector3& position);
@@ -62,6 +64,7 @@ namespace Blueberry
 		Vector3 m_LocalPosition;
 		Quaternion m_LocalRotation;
 		Vector3 m_LocalScale = Vector3(1, 1, 1);
+		Vector3 m_LocalRotationEulerHint;
 
 		Vector3 m_Position;
 		Quaternion m_Rotation;

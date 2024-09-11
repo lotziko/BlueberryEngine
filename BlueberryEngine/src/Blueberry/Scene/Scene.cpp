@@ -5,6 +5,7 @@
 #include "Blueberry\Core\ClassDB.h"
 
 #include "Blueberry\Scene\Components\PhysicsBody.h"
+#include "Blueberry\Scene\Components\CharacterController.h"
 
 namespace Blueberry
 {
@@ -34,6 +35,11 @@ namespace Blueberry
 			{
 				auto physicsBody = static_cast<PhysicsBody*>(component.second);
 				physicsBody->Update();
+			}
+			for (auto& component : GetIterator<CharacterController>())
+			{
+				auto characterController = static_cast<CharacterController*>(component.second);
+				characterController->Update();
 			}
 		}
 	}

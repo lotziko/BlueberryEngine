@@ -62,6 +62,11 @@ namespace Blueberry
 		return a < b ? a : b;
 	}
 
+	inline float Clamp(float a, float b, float v)
+	{
+		return v < a ? a : (v > b ? b : v);
+	}
+
 	inline Vector3 MultiplyPoint(Matrix matrix, Vector3 point)
 	{
 		Vector4 pointToTransform = Vector4(point.x, point.y, point.z, 1.0f);

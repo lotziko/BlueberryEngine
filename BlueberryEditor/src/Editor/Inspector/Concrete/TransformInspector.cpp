@@ -25,24 +25,10 @@ namespace Blueberry
 			hasChange = true;
 		}
 
-		Vector3 localRotation = ToDegrees(transform->GetLocalEulerRotation());
-		std::intptr_t transformId = reinterpret_cast<std::intptr_t>(transform);
-		if (m_TransformEulerCache.count(transformId) > 0)
-		{
-			localRotation = m_TransformEulerCache[transformId];
-		}
-
+		Vector3 localRotation = transform->GetLocalEulerRotationHint();
 		if (ImGui::DragVector3("Rotation", &localRotation))
 		{
-			transform->SetLocalEulerRotation(ToRadians(localRotation));
-			if (ImGui::IsItemActive())
-			{
-				m_TransformEulerCache[transformId] = localRotation;
-			}
-			else
-			{
-				m_TransformEulerCache.erase(transformId);
-			}
+			transform->SetLocalEulerRotationHint(localRotation);
 			hasChange = true;
 		}
 

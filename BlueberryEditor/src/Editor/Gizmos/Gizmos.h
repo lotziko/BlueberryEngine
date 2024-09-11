@@ -20,6 +20,7 @@ namespace Blueberry
 		static void DrawLine(const Vector3& start, const Vector3& end);
 		static void DrawArc(const Vector3& center, const Vector3& normal, const Vector3& from, const float& angle, const float& radius);
 		static void DrawBox(const Vector3& center, const Vector3& size);
+		static void DrawCapsule(const Vector3& center, const float& height, const float& radius);
 		static void DrawSphere(const Vector3& center, const float& radius);
 		static void DrawDisc(const Vector3& center, const Vector3& normal, const float& radius);
 		static void DrawFrustum(const Frustum& frustum);

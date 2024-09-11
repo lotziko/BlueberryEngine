@@ -56,6 +56,11 @@ namespace Blueberry
 		return m_LocalRotation.ToEuler();
 	}
 
+	const Vector3 Transform::GetLocalEulerRotationHint() const
+	{
+		return m_LocalRotationEulerHint;
+	}
+
 	const Vector3 Transform::GetPosition()
 	{
 		if (m_IsDirty)
@@ -113,7 +118,15 @@ namespace Blueberry
 
 	void Transform::SetLocalEulerRotation(const Vector3& euler)
 	{
-		m_LocalRotation = Quaternion::CreateFromYawPitchRoll(euler.x, euler.y, euler.z);
+		m_LocalRotation = Quaternion::CreateFromYawPitchRoll(euler.y, euler.x, euler.z);
+		SetHierarchyDirty();
+	}
+
+	void Transform::SetLocalEulerRotationHint(const Vector3& euler)
+	{
+		m_LocalRotationEulerHint = euler;
+		m_LocalRotation = Quaternion::CreateFromYawPitchRoll(ToRadians(euler.y), ToRadians(euler.x), ToRadians(euler.z));
+		m_LocalRotation.Normalize();
 		SetHierarchyDirty();
 	}
 
@@ -181,6 +194,7 @@ namespace Blueberry
 		BIND_FIELD(FieldInfo(TO_STRING(m_LocalPosition), &Transform::m_LocalPosition, BindingType::Vector3))
 		BIND_FIELD(FieldInfo(TO_STRING(m_LocalRotation), &Transform::m_LocalRotation, BindingType::Quaternion))
 		BIND_FIELD(FieldInfo(TO_STRING(m_LocalScale), &Transform::m_LocalScale, BindingType::Vector3))
+		BIND_FIELD(FieldInfo(TO_STRING(m_LocalRotationEulerHint), &Transform::m_LocalRotationEulerHint, BindingType::Vector3))
 		BIND_FIELD(FieldInfo(TO_STRING(m_Parent), &Transform::m_Parent, BindingType::ObjectPtr).SetObjectType(Transform::Type))
 		BIND_FIELD(FieldInfo(TO_STRING(m_Children), &Transform::m_Children, BindingType::ObjectPtrArray).SetObjectType(Transform::Type))
 		END_OBJECT_BINDING()

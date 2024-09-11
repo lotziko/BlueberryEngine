@@ -41,7 +41,7 @@ namespace Blueberry
 
 		Transform* transform = GetEntity()->GetTransform();
 		size_t transformRecalculationFrame = transform->GetRecalculationFrame();
-		if (m_RecalculationFrame != transformRecalculationFrame)
+		if (m_RecalculationFrame <= transformRecalculationFrame)
 		{
 			AABB bounds = m_Mesh->GetBounds();
 			Matrix matrix = transform->GetLocalToWorldMatrix();

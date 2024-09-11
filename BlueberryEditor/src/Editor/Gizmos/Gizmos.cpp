@@ -154,14 +154,34 @@ namespace Blueberry
 		s_Lines[s_LineCount++] = { center + c3, center + c7, s_CurrentColor };
 	}
 
+	void Gizmos::DrawCapsule(const Vector3& center, const float& height, const float& radius)
+	{
+		float halfHeight = height / 2;
+		float topHeight = center.y + halfHeight;
+		float bottomHeight = center.y - halfHeight;
+
+		DrawLine(Vector3(center.x - radius, topHeight, center.z), Vector3(center.x - radius, bottomHeight, center.z));
+		DrawLine(Vector3(center.x + radius, topHeight, center.z), Vector3(center.x + radius, bottomHeight, center.z));
+		DrawLine(Vector3(center.x, topHeight, center.z - radius), Vector3(center.x, bottomHeight, center.z - radius));
+		DrawLine(Vector3(center.x, topHeight, center.z + radius), Vector3(center.x, bottomHeight, center.z + radius));
+
+		DrawArc(Vector3(center.x, topHeight, center.z), -Vector3::UnitX, Vector3::UnitZ, 180, radius);
+		DrawArc(Vector3(center.x, topHeight, center.z), Vector3::UnitZ, Vector3::UnitX, 180, radius);
+		DrawArc(Vector3(center.x, bottomHeight, center.z), Vector3::UnitX, Vector3::UnitZ, 180, radius);
+		DrawArc(Vector3(center.x, bottomHeight, center.z), -Vector3::UnitZ, Vector3::UnitX, 180, radius);
+
+		DrawDisc(Vector3(center.x, topHeight, center.z), Vector3::UnitY, radius);
+		DrawDisc(Vector3(center.x, bottomHeight, center.z), Vector3::UnitY, radius);
+	}
+
 	void Gizmos::DrawSphere(const Vector3& center, const float& radius)
 	{
 		if (s_ArcCount + 3 >= MAX_LINES)
 			FlushArcs();
 
-		s_Arcs[s_ArcCount++] = { center, Vector3(0, 1, 0), center - Vector3(0, 0, radius), radius, 360, s_CurrentColor };
-		s_Arcs[s_ArcCount++] = { center, Vector3(0, 0, 1), center - Vector3(0, radius, 0), radius, 360, s_CurrentColor };
-		s_Arcs[s_ArcCount++] = { center, Vector3(1, 0, 0), center - Vector3(0, 0, radius), radius, 360, s_CurrentColor };
+		s_Arcs[s_ArcCount++] = { center, Vector3(0, 1, 0), Vector3::UnitX, radius, 360, s_CurrentColor };
+		s_Arcs[s_ArcCount++] = { center, Vector3(0, 0, 1), Vector3::UnitX, radius, 360, s_CurrentColor };
+		s_Arcs[s_ArcCount++] = { center, Vector3(1, 0, 0), Vector3::UnitZ, radius, 360, s_CurrentColor };
 	}
 
 	void Gizmos::DrawDisc(const Vector3& center, const Vector3& normal, const float& radius)

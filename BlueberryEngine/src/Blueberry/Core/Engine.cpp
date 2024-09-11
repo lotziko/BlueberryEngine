@@ -6,6 +6,7 @@
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\Renderer2D.h"
 #include "Blueberry\Graphics\DefaultRenderer.h"
+#include "Blueberry\Input\Input.h"
 #include "Blueberry\Graphics\RegisterGraphicsTypes.h"
 
 #include "Blueberry\Core\Layer.h"
@@ -29,6 +30,7 @@ namespace Blueberry
 		}
 
 		DefaultRenderer::Initialize();
+		Input::Initialize();
 
 		RegisterSceneTypes();
 		RegisterGraphicsTypes();
@@ -41,6 +43,7 @@ namespace Blueberry
 		Renderer2D::Shutdown();
 		GfxDevice::Shutdown();
 		DefaultRenderer::Shutdown();
+		Input::Shutdown();
 		delete m_LayerStack;
 		delete m_Window;
 	}

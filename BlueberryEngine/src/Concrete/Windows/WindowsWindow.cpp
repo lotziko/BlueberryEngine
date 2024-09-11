@@ -2,6 +2,7 @@
 #include "WindowsWindow.h"
 
 #include "Blueberry\Events\WindowEvents.h"
+#include "Blueberry\Events\InputEvents.h"
 
 #include "Blueberry\Tools\StringConverter.h"
 #include "imgui\imgui.h"
@@ -166,15 +167,15 @@ namespace Blueberry
 		case WM_KEYDOWN:
 		{
 			unsigned char key = static_cast<unsigned char>(wParam);
-			//KeyPressedEvent event(key);
-			//EventDispatcher::Invoke(event);
+			KeyEventArgs event(key);
+			InputEvents::GetKeyDown().Invoke(event);
 			return 0;
 		}
 		case WM_KEYUP:
 		{
 			unsigned char key = static_cast<unsigned char>(wParam);
-			//KeyReleasedEvent event(key);
-			//EventDispatcher::Invoke(event);
+			KeyEventArgs event(key);
+			InputEvents::GetKeyUp().Invoke(event);
 			return 0;
 		}
 		case WM_CHAR:

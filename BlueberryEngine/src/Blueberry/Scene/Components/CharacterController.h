@@ -1,0 +1,33 @@
+#pragma once
+
+#include "Blueberry\Scene\Components\Component.h"
+
+namespace Blueberry
+{
+	class Transform;
+
+	class CharacterController : public Component
+	{
+		OBJECT_DECLARATION(CharacterController)
+
+	public:
+		CharacterController() = default;
+		virtual ~CharacterController();
+
+		void Update();
+
+		const float& GetHeight();
+		const float& GetRadius();
+
+		static void BindProperties();
+
+	private:
+		float m_Height = 2.0f;
+		float m_Radius = 0.3f;
+
+		struct CharacterData;
+
+		Transform* m_Transform;
+		CharacterData* m_CharacterData;
+	};
+}
