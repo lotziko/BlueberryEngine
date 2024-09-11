@@ -167,22 +167,30 @@ namespace Blueberry
 		case WM_KEYDOWN:
 		{
 			unsigned char key = static_cast<unsigned char>(wParam);
-			KeyEventArgs event(key);
-			InputEvents::GetKeyDown().Invoke(event);
+			KeyEventArgs args(key);
+			InputEvents::GetKeyDown().Invoke(args);
 			return 0;
 		}
 		case WM_KEYUP:
 		{
 			unsigned char key = static_cast<unsigned char>(wParam);
-			KeyEventArgs event(key);
-			InputEvents::GetKeyUp().Invoke(event);
+			KeyEventArgs args(key);
+			InputEvents::GetKeyUp().Invoke(args);
 			return 0;
 		}
 		case WM_CHAR:
 		{
 			unsigned char ch = static_cast<unsigned char>(wParam);
-			//KeyTypedEvent event(ch);
-			//EventDispatcher::Invoke(event);
+			KeyEventArgs args(ch);
+			InputEvents::GetKeyTyped().Invoke(args);
+			return 0;
+		}
+		case WM_MOUSEMOVE:
+		{
+			int xPos = ((int)(short)LOWORD(lParam));
+			int yPos = ((int)(short)HIWORD(lParam));
+			MouseMoveEventArgs args(xPos, yPos);
+			InputEvents::GetMouseMoved().Invoke(args);
 			return 0;
 		}
 		case WM_SIZE:
@@ -194,8 +202,8 @@ namespace Blueberry
 				m_Width = width;
 				m_Height = height;
 
-				WindowResizeEventArgs event(width, height);
-				WindowEvents::GetWindowResized().Invoke(event);
+				WindowResizeEventArgs args(width, height);
+				WindowEvents::GetWindowResized().Invoke(args);
 			}
 			return 0;
 		}

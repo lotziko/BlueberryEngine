@@ -3,18 +3,18 @@
 
 namespace Blueberry
 {
-	FolderTree::FolderTree(const std::string& root)
+	const FolderTreeNode& FolderTree::GetRoot()
+	{
+		return m_Root;
+	}
+
+	void FolderTree::Update(const std::string& root)
 	{
 		std::filesystem::path path = root;
 		m_Root = {};
 		m_Root.path = path;
 		m_Root.name = path.filename().string();
 		Populate(&m_Root);
-	}
-
-	const FolderTreeNode& FolderTree::GetRoot()
-	{
-		return m_Root;
 	}
 
 	void FolderTree::Populate(FolderTreeNode* parent)

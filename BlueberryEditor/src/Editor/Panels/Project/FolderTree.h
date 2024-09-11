@@ -15,9 +15,9 @@ namespace Blueberry
 	{
 	public:
 		FolderTree() = default;
-		FolderTree(const std::string& root);
 
 		const FolderTreeNode& GetRoot();
+		void Update(const std::string& root);
 
 	private:
 		void Populate(FolderTreeNode* parent);

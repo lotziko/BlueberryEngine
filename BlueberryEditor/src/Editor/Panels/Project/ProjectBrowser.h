@@ -11,7 +11,7 @@ namespace Blueberry
 	{
 	public:
 		ProjectBrowser();
-		virtual ~ProjectBrowser() = default;
+		virtual ~ProjectBrowser();
 
 		void DrawUI();
 
@@ -21,6 +21,8 @@ namespace Blueberry
 		void DrawCurrentFolder();
 		void DrawFile(const std::filesystem::path& path);
 
+		void OnAssetDBRefresh();
+		void UpdateTree();
 		void UpdateFiles();
 
 	private:

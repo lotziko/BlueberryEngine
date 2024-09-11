@@ -60,9 +60,13 @@ namespace Blueberry
 				float movementSpeed = 5.0f;
 				float turnSpeed = 3.0f / 60;
 
-				Vector2 movementAxis = Vector2(Input::IsDown('D') ? 1 : 0 + Input::IsDown('A') ? -1 : 0, Input::IsDown('W') ? -1 : 0 + Input::IsDown('S') ? 1 : 0);
-				float turnAxis = Input::IsDown('Q') ? 1 : 0 + Input::IsDown('E') ? -1 : 0;
-				
+				Vector2 movementAxis = Vector2(Input::IsKeyDown('D') ? 1 : 0 + Input::IsKeyDown('A') ? -1 : 0, Input::IsKeyDown('W') ? -1 : 0 + Input::IsKeyDown('S') ? 1 : 0);
+				float turnAxis = Input::IsKeyDown('Q') ? 1 : 0 + Input::IsKeyDown('E') ? -1 : 0;
+				/*Vector2 mousePosition = Input::GetMousePosition();
+				static Vector2 previousMousePosition;
+				float turnAxis = -(mousePosition - previousMousePosition).x;
+				previousMousePosition = mousePosition;*/
+
 				Quaternion rotation = m_Transform->GetRotation();
 				Vector3 forward = Vector3::Transform(Vector3::UnitZ, rotation);
 				Vector3 right = Vector3::Transform(Vector3::UnitX, rotation);

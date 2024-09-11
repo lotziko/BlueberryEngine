@@ -18,6 +18,8 @@ namespace Blueberry
 	std::unordered_map<Guid, std::string> AssetDB::s_GuidToPath = std::unordered_map<Guid, std::string>();
 	std::vector<ObjectId> AssetDB::s_DirtyAssets = std::vector<ObjectId>();
 
+	AssetDBRefreshEvent AssetDB::s_AssetDBRefreshed = {};
+
 	// TODO import data always if it was found in project but not in cache instead of importing on mouse over icon
 	void AssetDB::Refresh()
 	{
@@ -77,6 +79,7 @@ namespace Blueberry
 			ImporterInfoCache::Set(importer);
 		}
 		ImporterInfoCache::Save();
+		s_AssetDBRefreshed.Invoke();
 	}
 
 	AssetImporter* AssetDB::GetImporter(const std::string& relativePath)
@@ -214,6 +217,11 @@ namespace Blueberry
 			}
 		}
 		s_DirtyAssets.clear();
+	}
+
+	AssetDBRefreshEvent& AssetDB::GetAssetDBRefreshed()
+	{
+		return s_AssetDBRefreshed;
 	}
 
 	AssetImporter* AssetDB::CreateOrGetImporter(const std::filesystem::path& path)

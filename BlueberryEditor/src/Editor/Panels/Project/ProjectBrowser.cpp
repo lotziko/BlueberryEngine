@@ -24,7 +24,13 @@ namespace Blueberry
 		m_FolderIconSmall = (Texture2D*)AssetLoader::Load("assets/icons/FolderIconSmall.png");
 		m_FolderIconSmallOpened = (Texture2D*)AssetLoader::Load("assets/icons/FolderIconSmallOpened.png");
 		
-		m_FolderTree = FolderTree(m_CurrentDirectory.string());
+		UpdateTree();
+		AssetDB::GetAssetDBRefreshed().AddCallback<ProjectBrowser, &ProjectBrowser::OnAssetDBRefresh>(this);
+	}
+
+	ProjectBrowser::~ProjectBrowser()
+	{
+		AssetDB::GetAssetDBRefreshed().RemoveCallback<ProjectBrowser, &ProjectBrowser::OnAssetDBRefresh>(this);
 	}
 
 	void ProjectBrowser::DrawUI()
@@ -136,6 +142,7 @@ namespace Blueberry
 		const char* popupId = "ProjectPopup";
 		if (ImGui::BeginPopup(popupId))
 		{
+			// TODO refactor
 			if (ImGui::MenuItem("Scene"))
 			{
 				EditorSceneManager::CreateEmpty("");
@@ -175,7 +182,6 @@ namespace Blueberry
 				AssetDB::CreateAsset(material, relativePath.string());
 				AssetDB::SaveAssets();
 				AssetDB::Refresh();
-				UpdateFiles();
 
 				m_OpenedModalPopupId = nullptr;
 				ImGui::CloseCurrentPopup();
@@ -275,6 +281,17 @@ namespace Blueberry
 
 		ImGui::PopID();
 		ImGui::PopStyleVar();
+	}
+
+	void ProjectBrowser::OnAssetDBRefresh()
+	{
+		UpdateTree();
+		UpdateFiles();
+	}
+
+	void ProjectBrowser::UpdateTree()
+	{
+		m_FolderTree.Update(Path::GetAssetsPath().string());
 	}
 
 	void ProjectBrowser::UpdateFiles()

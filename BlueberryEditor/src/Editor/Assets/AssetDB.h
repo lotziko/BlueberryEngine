@@ -4,10 +4,13 @@
 #include "Editor\Path.h"
 #include "Editor\Serialization\YamlSerializer.h"
 #include "Blueberry\Core\ObjectDB.h"
+#include "Blueberry\Events\Event.h"
 
 namespace Blueberry
 {
 	class AssetImporter;
+
+	using AssetDBRefreshEvent = Event<>;
 
 	class AssetDB
 	{
@@ -32,6 +35,8 @@ namespace Blueberry
 		static void DeleteAssetFromData(const Guid& guid);
 		static void SaveAssets();
 
+		static AssetDBRefreshEvent& GetAssetDBRefreshed();
+
 	private:
 		static AssetImporter* CreateOrGetImporter(const std::filesystem::path& path);
 
@@ -43,6 +48,7 @@ namespace Blueberry
 		static std::unordered_map<std::string, AssetImporter*> s_Importers;
 		static std::unordered_map<Guid, std::string> s_GuidToPath;
 		static std::vector<ObjectId> s_DirtyAssets;
+		static AssetDBRefreshEvent s_AssetDBRefreshed;
 	};
 
 	template<class ObjectType>
