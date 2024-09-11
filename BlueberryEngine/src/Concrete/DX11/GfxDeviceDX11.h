@@ -59,6 +59,8 @@ namespace Blueberry
 		void SetZTestAndZWrite(const ZTest& zTest, const ZWrite& zWrite);
 		void SetTopology(const Topology& topology);
 
+		const uint32_t& GetCRC();
+
 		HWND m_Hwnd;
 
 		ComPtr<ID3D11Device> m_Device;
@@ -82,7 +84,9 @@ namespace Blueberry
 		ID3D11SamplerState* m_Samplers[16];
 
 		ObjectId m_MaterialId = 0;
-		uint32_t m_Crc = 0;
+		uint32_t m_MaterialCrc = 0;
+		uint32_t m_GlobalCrc = 0;
+		uint32_t m_CurrentCrc = 0;
 		CullMode m_CullMode = (CullMode)-1;
 		std::size_t m_BlendKey = -1;
 		std::size_t m_ZTestZWriteKey = -1;

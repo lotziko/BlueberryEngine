@@ -7,6 +7,7 @@
 #include "ImGuiRendererDX11.h"
 #include "Blueberry\Graphics\Texture.h"
 #include "Blueberry\Graphics\Enums.h"
+#include "Blueberry\Tools\CRCHelper.h"
 
 namespace Blueberry
 {
@@ -284,12 +285,14 @@ namespace Blueberry
 	{
 		auto dxConstantBuffer = static_cast<GfxConstantBufferDX11*>(buffer);
 		m_BindedConstantBuffers.insert_or_assign(id, dxConstantBuffer);
+		m_CurrentCrc = 0;
 	}
 
 	void GfxDeviceDX11::SetGlobalTextureImpl(const std::size_t& id, GfxTexture* texture)
 	{
 		auto dxTexture = static_cast<GfxTextureDX11*>(texture);
 		m_BindedTextures.insert_or_assign(id, dxTexture);
+		m_CurrentCrc = 0;
 	}
 
 	D3D11_PRIMITIVE_TOPOLOGY GetPrimitiveTopology(const Topology& topology)
@@ -356,11 +359,12 @@ namespace Blueberry
 				m_DeviceContext->PSSetShader(dxFragmentShader->m_Shader.Get(), NULL, 0);
 			}
 
-			if (materialId != m_MaterialId || operation.materialCRC != m_Crc || renderState != m_RenderState)
+			if (materialId != m_MaterialId || operation.materialCRC != m_MaterialCrc || GetCRC() != m_GlobalCrc || renderState != m_RenderState)
 			{
 				m_MaterialId = materialId;
 				m_RenderState = renderState;
-				m_Crc = materialCRC;
+				m_MaterialCrc = materialCRC;
+				m_GlobalCrc = m_CurrentCrc;
 
 				std::fill_n(m_ConstantBuffers, 8, nullptr);
 
@@ -753,5 +757,21 @@ namespace Blueberry
 		m_Topology = topology;
 
 		m_DeviceContext->IASetPrimitiveTopology(GetPrimitiveTopology(topology));
+	}
+
+	const uint32_t& GfxDeviceDX11::GetCRC()
+	{
+		if (m_CurrentCrc == 0)
+		{
+			for (auto& pair : m_BindedTextures)
+			{
+				m_CurrentCrc = CRCHelper::Calculate(&pair, sizeof(std::pair<std::size_t, GfxTextureDX11*>), m_CurrentCrc);
+			}
+			for (auto& pair : m_BindedConstantBuffers)
+			{
+				m_CurrentCrc = CRCHelper::Calculate(&pair, sizeof(std::pair<std::size_t, GfxConstantBufferDX11*>), m_CurrentCrc);
+			}
+		}
+		return m_CurrentCrc;
 	}
 }

@@ -45,6 +45,13 @@ namespace Blueberry
 
 		if (importer->IsClassType(TextureImporter::Type))
 		{
+			Texture2D* thumbnail = Load(importer);
+			if (thumbnail != nullptr)
+			{
+				s_Thumbnails.insert_or_assign(importer->GetObjectId(), thumbnail);
+				return thumbnail;
+			}
+			importer->ImportDataIfNeeded();
 			if (importer->IsImported())
 			{
 				static size_t blitTextureId = TO_HASH("_BlitTexture");
@@ -63,15 +70,6 @@ namespace Blueberry
 				thumbnail->Apply();
 				s_Thumbnails.insert_or_assign(importer->GetObjectId(), thumbnail);
 				Save(importer, data);
-				return thumbnail;
-			}
-			else
-			{
-				Texture2D* thumbnail = Load(importer);
-				if (thumbnail != nullptr)
-				{
-					s_Thumbnails.insert_or_assign(importer->GetObjectId(), thumbnail);
-				}
 				return thumbnail;
 			}
 		}
