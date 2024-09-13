@@ -26,7 +26,9 @@ namespace Blueberry
 		PhysicsBody() = default;
 		~PhysicsBody() = default;
 
-		void Update();
+		virtual void OnEnable() final;
+		virtual void OnDisable() final;
+		virtual void OnUpdate() final;
 
 		static void BindProperties();
 

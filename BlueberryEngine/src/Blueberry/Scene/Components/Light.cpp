@@ -7,6 +7,16 @@ namespace Blueberry
 {
 	OBJECT_DEFINITION(Component, Light)
 
+	void Light::OnEnable()
+	{
+		AddToSceneComponents(Light::Type);
+	}
+
+	void Light::OnDisable()
+	{
+		RemoveFromSceneComponents(Light::Type);
+	}
+
 	const LightType& Light::GetType()
 	{
 		return m_Type;

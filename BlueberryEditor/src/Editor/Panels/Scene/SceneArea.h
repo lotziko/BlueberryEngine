@@ -54,7 +54,8 @@ namespace Blueberry
 		void RequestRedraw();
 
 	private:
-		RenderTexture* m_RenderTarget = nullptr;
+		RenderTexture* m_ColorRenderTarget = nullptr;
+		RenderTexture* m_DepthStencilRenderTarget = nullptr;
 		Material* m_GridMaterial;
 		Camera* m_Camera;
 		SceneObjectPicker* m_ObjectPicker = nullptr;

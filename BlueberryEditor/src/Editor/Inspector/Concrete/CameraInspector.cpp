@@ -71,7 +71,7 @@ namespace Blueberry
 	void CameraInspector::DrawScene(Object* object)
 	{
 		Camera* camera = static_cast<Camera*>(object);
-		Transform* transform = camera->GetEntity()->GetTransform();
+		Transform* transform = camera->GetTransform();
 
 		Matrix view = camera->GetInverseViewMatrix();
 		Matrix projection = camera->GetProjectionMatrix();

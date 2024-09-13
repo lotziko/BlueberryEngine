@@ -9,6 +9,7 @@
 
 #include "Editor\Inspector\ObjectInspectorDB.h"
 #include "Editor\Panels\Inspector\InspectorExpandedItemsCache.h"
+#include "Editor\Misc\ImGuiHelper.h"
 
 namespace Blueberry
 {
@@ -33,27 +34,12 @@ namespace Blueberry
 		std::vector<Component*> components = entity->GetComponents();
 
 		ImGui::Text(entity->GetTypeName().c_str());
-		
-		// Name
-	/*	{
-			ImGui::Text("Name");
-			ImGui::SameLine();
 
-			static ObjectId entityId;
-			static char buf[256];
-			if (entity->GetObjectId() != entityId)
-			{
-				std::string name = entity->GetName();
-				strncpy(buf, name.c_str(), sizeof(buf) - 1);
-				entityId = entity->GetObjectId();
-			}
-
-			ImGui::InputText("##name", buf, 256);
-			if (ImGui::IsItemDeactivated())
-			{
-				entity->SetName(buf);
-			}
-		}*/
+		bool isActive = entity->IsActive();
+		if (ImGui::BoolEdit("Is Active", &isActive))
+		{
+			entity->SetActive(isActive);
+		}
 
 		for (auto component : components)
 		{

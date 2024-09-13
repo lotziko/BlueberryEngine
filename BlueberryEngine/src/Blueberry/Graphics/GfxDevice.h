@@ -41,6 +41,7 @@ namespace Blueberry
 		static bool CreateTexture(const TextureProperties& properties, GfxTexture*& texture);
 		static bool CreateImGuiRenderer(ImGuiRenderer*& renderer);
 
+		static void Copy(GfxTexture* source, GfxTexture* target);
 		static void Copy(GfxTexture* source, GfxTexture* target, const Rectangle& area);
 		static void Read(GfxTexture* source, void* target, const Rectangle& area);
 
@@ -74,6 +75,7 @@ namespace Blueberry
 		virtual bool CreateTextureImpl(const TextureProperties& properties, GfxTexture*& texture) const = 0;
 		virtual bool CreateImGuiRendererImpl(ImGuiRenderer*& renderer) const = 0;
 		
+		virtual void CopyImpl(GfxTexture* source, GfxTexture* target) const = 0;
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Rectangle& area) const = 0;
 		virtual void ReadImpl(GfxTexture* source, void* target, const Rectangle& area) const = 0;
 

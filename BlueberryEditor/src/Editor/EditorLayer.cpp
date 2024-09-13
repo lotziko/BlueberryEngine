@@ -196,8 +196,8 @@ namespace Blueberry
 
 			m_SceneHierarchy->DrawUI();
 			m_SceneInspector->DrawUI();
-			m_SceneArea->DrawUI();
 			m_GameView->DrawUI();
+			m_SceneArea->DrawUI();
 			m_ProjectBrowser->DrawUI();
 
 			ImGui::End();

@@ -11,7 +11,7 @@ namespace Blueberry
 
 	void Collider::OnBeginPlay()
 	{
-		Transform* transform = GetEntity()->GetTransform();
+		Transform* transform = GetTransform();
 		while (transform != nullptr)
 		{
 			PhysicsBody* body = transform->GetEntity()->GetComponent<PhysicsBody>();

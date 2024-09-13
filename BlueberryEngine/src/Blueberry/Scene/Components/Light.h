@@ -19,6 +19,9 @@ namespace Blueberry
 		Light() = default;
 		virtual ~Light() = default;
 
+		virtual void OnEnable() final;
+		virtual void OnDisable() final;
+
 		const LightType& GetType();
 		const Color& GetColor();
 		const float& GetIntensity();

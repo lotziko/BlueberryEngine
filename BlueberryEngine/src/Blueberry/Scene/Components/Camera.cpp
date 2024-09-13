@@ -8,6 +8,16 @@ namespace Blueberry
 {
 	OBJECT_DEFINITION(Component, Camera)
 
+	void Camera::OnEnable()
+	{
+		AddToSceneComponents(Camera::Type);
+	}
+
+	void Camera::OnDisable()
+	{
+		RemoveFromSceneComponents(Camera::Type);
+	}
+
 	const Matrix& Camera::GetProjectionMatrix()
 	{
 		if (m_IsProjectionDirty)
@@ -252,7 +262,7 @@ namespace Blueberry
 	bool Camera::IsViewDirty()
 	{
 		// This may cause problems some time later
-		size_t transformRecalculationFrame = GetEntity()->GetTransform()->GetRecalculationFrame();
+		size_t transformRecalculationFrame = GetTransform()->GetRecalculationFrame();
 		if (m_RecalculationFrame <= transformRecalculationFrame)
 		{
 			m_RecalculationFrame = transformRecalculationFrame;
@@ -263,7 +273,7 @@ namespace Blueberry
 
 	void Camera::RecalculateView()
 	{
-		Transform* transform = GetEntity()->GetTransform();
+		Transform* transform = GetTransform();
 		Matrix rotationMatrix = Matrix::CreateFromQuaternion(transform->GetRotation());
 
 		Vector3 position = transform->GetPosition();

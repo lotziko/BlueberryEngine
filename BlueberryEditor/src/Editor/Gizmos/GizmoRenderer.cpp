@@ -23,15 +23,18 @@ namespace Blueberry
 			if (activeObject->IsClassType(Entity::Type))
 			{
 				Entity* entity = static_cast<Entity*>(activeObject);
-				for (auto& component : entity->GetComponents())
+				if (entity->IsActiveInHierarchy())
 				{
-					ObjectInspector* inspector = ObjectInspectorDB::GetInspector(component->GetType());
-					if (inspector != nullptr)
+					for (auto& component : entity->GetComponents())
 					{
-						Gizmos::SetColor(Color(1, 1, 1, 1));
-						Gizmos::Begin();
-						inspector->DrawScene(component);
-						Gizmos::End();
+						ObjectInspector* inspector = ObjectInspectorDB::GetInspector(component->GetType());
+						if (inspector != nullptr)
+						{
+							Gizmos::SetColor(Color(1, 1, 1, 1));
+							Gizmos::Begin();
+							inspector->DrawScene(component);
+							Gizmos::End();
+						}
 					}
 				}
 			}

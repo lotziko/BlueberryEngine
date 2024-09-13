@@ -33,7 +33,8 @@ namespace Blueberry
 
 	SceneArea::SceneArea()
 	{
-		m_RenderTarget = RenderTexture::Create(1920, 1080, 1, TextureFormat::R8G8B8A8_UNorm);
+		m_ColorRenderTarget = RenderTexture::Create(1920, 1080, 1, TextureFormat::R8G8B8A8_UNorm);
+		m_DepthStencilRenderTarget = RenderTexture::Create(1920, 1080, 1, TextureFormat::D24_UNorm);
 
 		m_GridMaterial = Material::Create((Shader*)AssetLoader::Load("assets/Grid.shader"));
 		m_ObjectPicker = new SceneObjectPicker();
@@ -45,8 +46,8 @@ namespace Blueberry
 		Entity* cameraEntity = Object::Create<Entity>();
 		cameraEntity->AddComponent<Transform>();
 		cameraEntity->AddComponent<Camera>();
+		cameraEntity->OnCreate();
 		m_Camera = cameraEntity->GetComponent<Camera>();
-		cameraEntity->GetComponent<Transform>()->OnCreate();
 
 		Selection::GetSelectionChanged().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
 		EditorSceneManager::GetSceneLoaded().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
@@ -57,7 +58,8 @@ namespace Blueberry
 
 	SceneArea::~SceneArea()
 	{
-		delete m_RenderTarget;
+		delete m_ColorRenderTarget;
+		delete m_DepthStencilRenderTarget;
 		delete m_ObjectPicker;
 
 		Selection::GetSelectionChanged().RemoveCallback<SceneArea, &SceneArea::RequestRedraw>(this);
@@ -229,11 +231,11 @@ namespace Blueberry
 			{
 				DrawScene(size.x, size.y);
 
-				m_ObjectPicker->DrawOutline(EditorSceneManager::GetScene(), m_Camera, m_RenderTarget->Get());
+				m_ObjectPicker->DrawOutline(EditorSceneManager::GetScene(), m_Camera, m_ColorRenderTarget->Get());
 			}
 			DrawGizmos(Rectangle(pos.x, pos.y, size.x, size.y));
 
-			ImGui::GetWindowDrawList()->AddImage(m_RenderTarget->GetHandle(), ImVec2(pos.x, pos.y), ImVec2(pos.x + size.x, pos.y + size.y), ImVec2(0, 0), ImVec2(size.x / m_RenderTarget->GetWidth(), size.y / m_RenderTarget->GetHeight()));
+			ImGui::GetWindowDrawList()->AddImage(m_ColorRenderTarget->GetHandle(), ImVec2(pos.x, pos.y), ImVec2(pos.x + size.x, pos.y + size.y), ImVec2(0, 0), ImVec2(size.x / m_ColorRenderTarget->GetWidth(), size.y / m_ColorRenderTarget->GetHeight()));
 			DrawControls();
 		}
 		ImGui::End();
@@ -322,7 +324,7 @@ namespace Blueberry
 	Vector3 SceneArea::GetCameraPosition()
 	{
 		// GetCameraDistance() is inverted because of right handed coordinate system
-		return m_Position + Vector3::Transform(Vector3(0, 0, GetCameraDistance()), m_Camera->GetEntity()->GetTransform()->GetRotation());
+		return m_Position + Vector3::Transform(Vector3(0, 0, GetCameraDistance()), m_Camera->GetTransform()->GetRotation());
 	}
 
 	Quaternion SceneArea::GetCameraRotation()
@@ -353,7 +355,7 @@ namespace Blueberry
 
 	void SceneArea::SetupCamera(const float& width, const float& height)
 	{
-		Transform* transform = m_Camera->GetEntity()->GetTransform();
+		Transform* transform = m_Camera->GetTransform();
 		// avoid changing this when there is no motion
 		Quaternion rotation = GetCameraRotation();
 		if (rotation != m_PreviousRotation)
@@ -472,7 +474,7 @@ namespace Blueberry
 		Scene* scene = EditorSceneManager::GetScene();
 		if (scene != nullptr)
 		{
-			GfxDevice::SetRenderTarget(m_RenderTarget->Get(), DefaultRenderer::GetDepthStencil()->Get());
+			GfxDevice::SetRenderTarget(m_ColorRenderTarget->Get(), m_DepthStencilRenderTarget->Get());
 			GfxDevice::SetViewport(0, 0, viewport.width, viewport.height);
 			GizmoRenderer::Draw(scene, m_Camera);
 			GfxDevice::SetRenderTarget(nullptr);
@@ -486,8 +488,8 @@ namespace Blueberry
 		int viewportHeight = static_cast<int>(height);
 
 		Scene* scene = EditorSceneManager::GetScene();
-		DefaultRenderer::Draw(scene, m_Camera, Rectangle(0, 0, viewportWidth, viewportHeight), { 0.117f, 0.117f, 0.117f, 1 }, m_RenderTarget);
-		GfxDevice::SetRenderTarget(m_RenderTarget->Get(), DefaultRenderer::GetDepthStencil()->Get());
+		DefaultRenderer::Draw(scene, m_Camera, Rectangle(0, 0, viewportWidth, viewportHeight), { 0.117f, 0.117f, 0.117f, 1 }, m_ColorRenderTarget, m_DepthStencilRenderTarget);
+		GfxDevice::SetRenderTarget(m_ColorRenderTarget->Get(), m_DepthStencilRenderTarget->Get());
 		GfxDevice::SetViewport(0, 0, viewportWidth, viewportHeight);
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_GridMaterial));
 		if (scene != nullptr)

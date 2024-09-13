@@ -20,7 +20,7 @@ namespace Blueberry
 			for (auto component : scene->GetIterator<Light>())
 			{
 				auto light = static_cast<Light*>(component.second);
-				auto transform = light->GetEntity()->GetTransform();
+				auto transform = light->GetTransform();
 				lights.emplace_back(LightData { transform, light });
 			}
 			PerCameraLightDataConstantBuffer::BindData(lights);
@@ -32,7 +32,7 @@ namespace Blueberry
 			for (auto component : scene->GetIterator<SpriteRenderer>())
 			{
 				auto spriteRenderer = static_cast<SpriteRenderer*>(component.second);
-				Renderer2D::Draw(spriteRenderer->GetEntity()->GetTransform()->GetLocalToWorldMatrix(), spriteRenderer->GetTexture(), spriteRenderer->GetMaterial(), spriteRenderer->GetColor(), spriteRenderer->GetSortingOrder());
+				Renderer2D::Draw(spriteRenderer->GetTransform()->GetLocalToWorldMatrix(), spriteRenderer->GetTexture(), spriteRenderer->GetMaterial(), spriteRenderer->GetColor(), spriteRenderer->GetSortingOrder());
 			}
 			Renderer2D::End();
 		}
@@ -48,14 +48,13 @@ namespace Blueberry
 		{
 			auto meshRenderer = static_cast<MeshRenderer*>(component.second);
 			AABB bounds = meshRenderer->GetBounds();
-
 			if (frustum.Contains(bounds))
 			{
 				Mesh* mesh = meshRenderer->GetMesh();
 				if (mesh != nullptr)
 				{
 					Material* material = meshRenderer->GetMaterial();
-					PerDrawConstantBuffer::BindData(meshRenderer->GetEntity()->GetTransform()->GetLocalToWorldMatrix());
+					PerDrawConstantBuffer::BindData(meshRenderer->GetTransform()->GetLocalToWorldMatrix());
 					GfxDevice::Draw(GfxDrawingOperation(mesh, material));
 				}
 			}

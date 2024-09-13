@@ -12,6 +12,16 @@ namespace Blueberry
 {
 	OBJECT_DEFINITION(Renderer, MeshRenderer)
 
+	void MeshRenderer::OnEnable()
+	{
+		AddToSceneComponents(MeshRenderer::Type);
+	}
+
+	void MeshRenderer::OnDisable()
+	{
+		RemoveFromSceneComponents(MeshRenderer::Type);
+	}
+
 	Mesh* MeshRenderer::GetMesh()
 	{
 		return m_Mesh.Get();
@@ -39,7 +49,7 @@ namespace Blueberry
 			return m_Bounds;
 		}
 
-		Transform* transform = GetEntity()->GetTransform();
+		Transform* transform = GetTransform();
 		size_t transformRecalculationFrame = transform->GetRecalculationFrame();
 		if (m_RecalculationFrame <= transformRecalculationFrame)
 		{

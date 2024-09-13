@@ -66,10 +66,16 @@ namespace Blueberry
 			{
 				Entity* entity = (Entity*)object.first;
 				scene->AddEntity(entity);
+				entity->OnCreate();
+
 			}
 			else if (object.first->IsClassType(PrefabInstance::Type))
 			{
-				scene->AddEntity(((PrefabInstance*)object.first)->GetEntity());
+				PrefabInstance* prefabInstance = (PrefabInstance*)object.first;
+				prefabInstance->OnCreate();
+				Entity* entity = prefabInstance->GetEntity();
+				scene->AddEntity(entity);
+				entity->OnCreate();
 			}
 		}
 	}

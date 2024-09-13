@@ -110,6 +110,11 @@ namespace Blueberry
 
 	GfxRenderState* Material::GetState(const uint8_t& passIndex)
 	{
+		if (m_PassCache.size() == 0)
+		{
+			ApplyProperties();
+		}
+
 		GfxRenderState* passState = &m_PassCache[passIndex];
 		if (passState->isValid)
 		{
@@ -206,11 +211,6 @@ namespace Blueberry
 		BIND_FIELD(FieldInfo(TO_STRING(m_Textures), &Material::m_Textures, BindingType::DataArray).SetObjectType(TextureData::Type))
 		BIND_FIELD(FieldInfo(TO_STRING(m_ActiveKeywords), &Material::m_ActiveKeywords, BindingType::StringArray))
 		END_OBJECT_BINDING()
-	}
-
-	void Material::OnCreate()
-	{
-		ApplyProperties();
 	}
 
 	void Material::FillTextureMap()

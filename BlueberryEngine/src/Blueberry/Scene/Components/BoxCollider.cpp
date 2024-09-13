@@ -26,7 +26,7 @@ namespace Blueberry
 
 	JPH::Shape* BoxCollider::GetShape()
 	{
-		Transform* transform = GetEntity()->GetTransform();
+		Transform* transform = GetTransform();
 		Vector3 scale = transform->GetLocalScale();
 		return new JPH::BoxShape(JPH::RVec3(m_Size.x * scale.x, m_Size.y * scale.y, m_Size.z * scale.z));
 	}

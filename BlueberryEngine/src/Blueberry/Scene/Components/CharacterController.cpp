@@ -22,6 +22,7 @@ namespace Blueberry
 	{
 		JPH::Ref<JPH::Character> character;
 		JPH::RefConst<JPH::Shape> shape;
+		JPH::BodyID bodyId;
 	};
 
 	CharacterController::~CharacterController()
@@ -32,11 +33,37 @@ namespace Blueberry
 		}
 	}
 
-	void CharacterController::Update()
+	void CharacterController::OnEnable()
+	{
+		AddToSceneComponents(UpdatableComponent::Type);
+		if (m_CharacterData != nullptr)
+		{
+			JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
+			if (!bodyInterface.IsAdded(m_CharacterData->bodyId))
+			{
+				bodyInterface.AddBody(m_CharacterData->bodyId, JPH::EActivation::Activate);
+			}
+		}
+	}
+
+	void CharacterController::OnDisable()
+	{
+		RemoveFromSceneComponents(UpdatableComponent::Type);
+		if (m_CharacterData != nullptr)
+		{
+			JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
+			if (bodyInterface.IsAdded(m_CharacterData->bodyId))
+			{
+				bodyInterface.RemoveBody(m_CharacterData->bodyId);
+			}
+		}
+	}
+
+	void CharacterController::OnUpdate()
 	{
 		if (m_CharacterData == nullptr)
 		{
-			m_Transform = GetEntity()->GetTransform();
+			m_Transform = GetTransform();
 			m_CharacterData = new CharacterData();
 			Vector3 position = m_Transform->GetPosition();
 			Quaternion rotation = m_Transform->GetRotation();
@@ -50,6 +77,7 @@ namespace Blueberry
 
 			m_CharacterData->character = new JPH::Character(&settings, JPH::RVec3(position.x, position.y, position.z), JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w), 0, Physics::s_PhysicsSystem);
 			m_CharacterData->character->AddToPhysicsSystem();
+			m_CharacterData->bodyId = m_CharacterData->character->GetBodyID();
 		}
 		else
 		{
@@ -73,11 +101,11 @@ namespace Blueberry
 				Vector3 velocity = (right * movementAxis.x + forward * movementAxis.y) * movementSpeed;
 
 				rotation *= Quaternion::CreateFromAxisAngle(Vector3::UnitY, turnAxis * turnSpeed);
-				
+
 				character->SetRotation(JPH::QuatArg(rotation.x, rotation.y, rotation.z, rotation.w));
 				character->SetLinearVelocity(character->GetUp() * character->GetLinearVelocity() + JPH::Vec3Arg(velocity.x, velocity.y, velocity.z));
 			}
-			
+
 			JPH::RVec3 position;
 			JPH::Quat rotation;
 			character->GetPositionAndRotation(position, rotation);

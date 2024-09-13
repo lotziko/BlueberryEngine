@@ -12,7 +12,7 @@ namespace Blueberry
 	void SphereColliderInspector::DrawScene(Object* object)
 	{
 		auto collider = static_cast<SphereCollider*>(object);
-		auto transform = collider->GetEntity()->GetTransform();
+		auto transform = collider->GetTransform();
 		Gizmos::SetMatrix(transform->GetLocalToWorldMatrix());
 		Gizmos::SetColor(Color(0, 1, 0, 1));
 		Gizmos::DrawSphere(Vector3::Zero, collider->GetRadius());

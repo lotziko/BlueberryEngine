@@ -32,6 +32,7 @@ namespace Blueberry
 	private:
 		std::map<ObjectId, ObjectPtr<Entity>> m_Entities;
 		std::vector<Component*> m_CreatedComponents;
+		// Stores only components added using AddToSceneComponents()
 		ComponentManager m_ComponentManager;
 
 		friend class Entity;

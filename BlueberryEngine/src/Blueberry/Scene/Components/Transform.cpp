@@ -8,11 +8,6 @@ namespace Blueberry
 {
 	OBJECT_DEFINITION(Component, Transform)
 
-	void Transform::OnCreate()
-	{
-		m_Entity->m_Transform = this;
-	}
-
 	void Transform::OnDestroy()
 	{
 		if (m_Parent.IsValid())
@@ -175,6 +170,8 @@ namespace Blueberry
 		}
 		m_Parent = parent;
 		m_Parent->m_Children.emplace_back(this);
+		// Reset activity
+		m_Entity->UpdateHierarchy(-1);
 	}
 
 	const bool& Transform::IsDirty() const

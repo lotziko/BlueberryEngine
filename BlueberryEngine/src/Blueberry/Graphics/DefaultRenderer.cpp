@@ -30,7 +30,7 @@ namespace Blueberry
 		Object::Destroy(s_ResolveMSAAMaterial);
 	}
 
-	void DefaultRenderer::Draw(Scene* scene, Camera* camera, Rectangle viewport, Color background, RenderTexture* output)
+	void DefaultRenderer::Draw(Scene* scene, Camera* camera, Rectangle viewport, Color background, RenderTexture* colorOutput, RenderTexture* depthOutput)
 	{
 		GfxDevice::SetRenderTarget(s_ColorMSAARenderTarget->Get(), s_DepthStencilMSAARenderTarget->Get());
 		GfxDevice::SetViewport(0, 0, viewport.width, viewport.height);
@@ -45,16 +45,20 @@ namespace Blueberry
 		GfxDevice::SetRenderTarget(s_ColorRenderTarget->Get(), s_DepthStencilRenderTarget->Get());
 		GfxDevice::ClearColor(background);
 		GfxDevice::ClearDepth(1.0f);
-		GfxDevice::SetViewport(0, 0, 1920, 1080);
+		GfxDevice::SetViewport(0, 0, s_ColorRenderTarget->GetWidth(), s_ColorRenderTarget->GetHeight());
 		GfxDevice::SetGlobalTexture(TO_HASH("_ScreenColorTexture"), s_ColorMSAARenderTarget->Get());
 		GfxDevice::SetGlobalTexture(TO_HASH("_ScreenDepthStencilTexture"), s_DepthStencilMSAARenderTarget->Get());
 		// Gamma correction is done manually together with MSAA resolve to avoid using SRGB swapchain
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_ResolveMSAAMaterial));
 		GfxDevice::SetRenderTarget(nullptr);
 
-		if (output != nullptr)
+		if (colorOutput != nullptr)
 		{
-			GfxDevice::Copy(s_ColorRenderTarget->Get(), output->Get(), Rectangle(0, 0, 1920, 1080));
+			GfxDevice::Copy(s_ColorRenderTarget->Get(), colorOutput->Get());
+		}
+		if (depthOutput != nullptr)
+		{
+			GfxDevice::Copy(s_DepthStencilRenderTarget->Get(), depthOutput->Get());
 		}
 	}
 

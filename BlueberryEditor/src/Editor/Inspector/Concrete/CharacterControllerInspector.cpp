@@ -12,7 +12,7 @@ namespace Blueberry
 	void CharacterControllerInspector::DrawScene(Object* object)
 	{
 		auto controller = static_cast<CharacterController*>(object);
-		auto transform = controller->GetEntity()->GetTransform();
+		auto transform = controller->GetTransform();
 
 		float height = controller->GetHeight();
 		float radius = controller->GetRadius();

@@ -12,6 +12,7 @@
 #include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Graphics\GfxBuffer.h"
 #include "Blueberry\Scene\Scene.h"
+#include "Blueberry\Graphics\PerCameraDataConstantBuffer.h"
 #include "Blueberry\Graphics\PerDrawDataConstantBuffer.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
 
@@ -87,6 +88,8 @@ namespace Blueberry
 			return nullptr;
 		}
 
+		PerCameraDataConstantBuffer::BindData(camera);
+
 		Rectangle area = Rectangle(Min(Max(positionX, 0), camera->GetPixelSize().x), Min(Max(positionY, 0), camera->GetPixelSize().y), 1, 1);
 		unsigned char pixel[4];
 		std::unordered_map<int, ObjectId> validObjects;
@@ -97,50 +100,57 @@ namespace Blueberry
 		GfxDevice::ClearColor({ 0, 0, 0, 0 });
 		GfxDevice::ClearDepth(1.0f);
 		Renderer2D::Begin();
-		for (auto component : scene->GetIterator<SpriteRenderer>())
+		for (auto& pair : scene->GetIterator<SpriteRenderer>())
 		{
-			auto spriteRenderer = static_cast<SpriteRenderer*>(component.second);
-			if (spriteRenderer->GetTexture() != nullptr)
+			Entity* entity = pair.second->GetEntity();
+			if (entity->IsActiveInHierarchy())
 			{
-				Renderer2D::Draw(spriteRenderer->GetEntity()->GetTransform()->GetLocalToWorldMatrix(), spriteRenderer->GetTexture(), m_SpriteObjectPickerMaterial, ConvertIndexToColor(index), spriteRenderer->GetSortingOrder());
-				validObjects[index] = spriteRenderer->GetEntity()->GetObjectId();
-				++index;
+				auto spriteRenderer = static_cast<SpriteRenderer*>(pair.second);
+				if (spriteRenderer->GetTexture() != nullptr)
+				{
+					Renderer2D::Draw(entity->GetTransform()->GetLocalToWorldMatrix(), spriteRenderer->GetTexture(), m_SpriteObjectPickerMaterial, ConvertIndexToColor(index), spriteRenderer->GetSortingOrder());
+					validObjects[index] = entity->GetObjectId();
+					++index;
+				}
 			}
 		}
 		Renderer2D::End();
 
-		for (auto component : scene->GetIterator<MeshRenderer>())
+		for (auto& pair : scene->GetIterator<MeshRenderer>())
 		{
-			auto meshRenderer = static_cast<MeshRenderer*>(component.second);
+			Entity* entity = pair.second->GetEntity();
+			auto meshRenderer = static_cast<MeshRenderer*>(pair.second);
 			Mesh* mesh = meshRenderer->GetMesh();
 			if (mesh != nullptr)
 			{
-				PerDrawConstantBuffer::BindData(meshRenderer->GetEntity()->GetTransform()->GetLocalToWorldMatrix());
+				PerDrawConstantBuffer::BindData(entity->GetTransform()->GetLocalToWorldMatrix());
 				PerObjectDataConstantBuffer::BindData(ConvertIndexToColor(index));
 				GfxDevice::Draw(GfxDrawingOperation(mesh, m_MeshObjectPickerMaterial));
-				validObjects[index] = meshRenderer->GetEntity()->GetObjectId();
+				validObjects[index] = entity->GetObjectId();
 				++index;
 			}
 		}
 
-		Vector3 cameraDirection = Vector3::Transform(Vector3::Forward, camera->GetEntity()->GetTransform()->GetRotation());
+		Vector3 cameraDirection = Vector3::Transform(Vector3::Forward, camera->GetTransform()->GetRotation());
 		for (auto& pair : scene->GetEntities())
 		{
 			Entity* entity = pair.second.Get();
-			for (auto& component : entity->GetComponents())
+			if (entity->IsActiveInHierarchy())
 			{
-				ObjectInspector* inspector = ObjectInspectorDB::GetInspector(component->GetType());
-				if (inspector->GetIconPath(component) != nullptr)
+				for (auto& component : entity->GetComponents())
 				{
-					Transform* transform = entity->GetTransform();
-					Vector3 position = transform->GetPosition();
-					Matrix modelMatrix = Matrix::CreateScale(0.75f) * Matrix::CreateBillboard(position, position - cameraDirection, Vector3(0, -1, 0));
-					PerDrawConstantBuffer::BindData(modelMatrix);
-					PerObjectDataConstantBuffer::BindData(ConvertIndexToColor(index));
-					GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_MeshObjectPickerMaterial));
-					validObjects[index] = entity->GetObjectId();
-					++index;
-					break;
+					ObjectInspector* inspector = ObjectInspectorDB::GetInspector(component->GetType());
+					if (inspector->GetIconPath(component) != nullptr)
+					{
+						Vector3 position = entity->GetTransform()->GetPosition();
+						Matrix modelMatrix = Matrix::CreateScale(0.75f) * Matrix::CreateBillboard(position, position - cameraDirection, Vector3(0, -1, 0));
+						PerDrawConstantBuffer::BindData(modelMatrix);
+						PerObjectDataConstantBuffer::BindData(ConvertIndexToColor(index));
+						GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_MeshObjectPickerMaterial));
+						validObjects[index] = entity->GetObjectId();
+						++index;
+						break;
+					}
 				}
 			}
 		}
@@ -168,34 +178,38 @@ namespace Blueberry
 			return;
 		}
 
+		PerCameraDataConstantBuffer::BindData(camera);
+
 		GfxDevice::SetRenderTarget(m_SceneRenderTarget);
 		GfxDevice::SetViewport(0, 0, camera->GetPixelSize().x, camera->GetPixelSize().y);
 		GfxDevice::ClearColor({ 0, 0, 0, 0 });
 		GfxDevice::ClearDepth(1.0f);
 
 		Renderer2D::Begin();
-		for (auto component : scene->GetIterator<SpriteRenderer>())
+		for (auto& pair : scene->GetIterator<SpriteRenderer>())
 		{
-			if (Selection::IsActiveObject(component.second->GetEntity()))
+			Entity* entity = pair.second->GetEntity();
+			if (Selection::IsActiveObject(entity) && entity->IsActiveInHierarchy())
 			{
-				auto spriteRenderer = static_cast<SpriteRenderer*>(component.second);
+				auto spriteRenderer = static_cast<SpriteRenderer*>(pair.second);
 				if (spriteRenderer->GetTexture() != nullptr)
 				{
-					Renderer2D::Draw(spriteRenderer->GetEntity()->GetTransform()->GetLocalToWorldMatrix(), spriteRenderer->GetTexture(), m_SpriteObjectPickerMaterial, ConvertIndexToColor(65535), spriteRenderer->GetSortingOrder());
+					Renderer2D::Draw(entity->GetTransform()->GetLocalToWorldMatrix(), spriteRenderer->GetTexture(), m_SpriteObjectPickerMaterial, ConvertIndexToColor(65535), spriteRenderer->GetSortingOrder());
 				}
 			}
 		}
 		Renderer2D::End();
 
-		for (auto component : scene->GetIterator<MeshRenderer>())
+		for (auto& pair : scene->GetIterator<MeshRenderer>()) // REMOVE FROM LIST WHEN DISABLING INSTEAD OF ITERATING OVER DISABLED ONES
 		{
-			if (Selection::IsActiveObject(component.second->GetEntity()))
+			Entity* entity = pair.second->GetEntity();
+			if (Selection::IsActiveObject(entity) && entity->IsActiveInHierarchy())
 			{
-				auto meshRenderer = static_cast<MeshRenderer*>(component.second);
+				auto meshRenderer = static_cast<MeshRenderer*>(pair.second);
 				Mesh* mesh = meshRenderer->GetMesh();
 				if (mesh != nullptr)
 				{
-					PerDrawConstantBuffer::BindData(meshRenderer->GetEntity()->GetTransform()->GetLocalToWorldMatrix());
+					PerDrawConstantBuffer::BindData(entity->GetTransform()->GetLocalToWorldMatrix());
 					PerObjectDataConstantBuffer::BindData(ConvertIndexToColor(10000));
 					GfxDevice::Draw(GfxDrawingOperation(mesh, m_MeshObjectPickerMaterial));
 				}

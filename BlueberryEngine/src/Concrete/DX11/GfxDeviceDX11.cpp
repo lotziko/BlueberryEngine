@@ -217,6 +217,11 @@ namespace Blueberry
 		return true;
 	}
 
+	void GfxDeviceDX11::CopyImpl(GfxTexture* source, GfxTexture* target) const
+	{
+		m_DeviceContext->CopySubresourceRegion(static_cast<GfxTextureDX11*>(target)->m_Texture.Get(), 0, 0, 0, 0, static_cast<GfxTextureDX11*>(source)->m_Texture.Get(), 0, NULL);
+	}
+
 	void GfxDeviceDX11::CopyImpl(GfxTexture* source, GfxTexture* target, const Rectangle& area) const
 	{
 		D3D11_BOX src;

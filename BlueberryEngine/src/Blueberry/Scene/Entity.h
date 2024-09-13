@@ -12,10 +12,13 @@ namespace Blueberry
 	class Entity : public Object
 	{
 		OBJECT_DECLARATION(Entity)
+		
 	public:
 		Entity() = default;
-
 		Entity(const std::string& name);
+
+		virtual void OnCreate() override;
+		virtual void OnDestroy() override;
 
 		template<class ComponentType>
 		void AddComponent();
@@ -36,22 +39,30 @@ namespace Blueberry
 
 		Transform* GetTransform();
 		Scene* GetScene();
+		
+		const bool& IsActive();
+		void SetActive(const bool& active);
+		bool IsActiveInHierarchy();
 
 		static void BindProperties();
 
-		virtual void OnDestroy() override;
-
 	private:
-		void AddComponentIntoScene(Component* component);
-		void RemoveComponentFromScene(Component* component);
+		void AddToCreatedComponents(Component* component);
+		void AddComponentToScene(Component* component, const size_t& type);
+		void RemoveComponentFromScene(Component* component, const size_t& type);
+		void UpdateHierarchy(const bool& active);
+		void UpdateComponents();
 
 	private:
 		std::vector<ObjectPtr<Component>> m_Components;
+		bool m_IsActive = true;
 
-		ObjectPtr<Transform> m_Transform;
+		Transform* m_Transform;
 		Scene* m_Scene;
+		int8_t m_IsActiveInHierarchy = -1;
 
 		friend class Scene;
+		friend class Component;
 		friend class Transform;
 	};
 
@@ -61,25 +72,25 @@ namespace Blueberry
 		static_assert(std::is_base_of<Component, ComponentType>::value, "Type is not derived from Component.");
 
 		ComponentType* componentToAdd = Object::Create<ComponentType>();
-		ObjectPtr<Component> weakPtr((Component*)componentToAdd);
 
 		int index = 0;
-		for (auto componentSlot : m_Components)
+		for (auto& componentSlot : m_Components)
 		{
 			if (!componentSlot.IsValid())
 			{
-				componentSlot = std::move(weakPtr);
+				componentSlot = componentToAdd;
 				break;
 			}
 			++index;
 		}
 
 		componentToAdd->m_Entity = ObjectPtr<Entity>(this);
-		AddComponentIntoScene(componentToAdd);
+		AddToCreatedComponents(componentToAdd);
 		if (index >= m_Components.size())
 		{
-			m_Components.emplace_back(std::move(weakPtr));
+			m_Components.emplace_back(componentToAdd);
 		}
+		componentToAdd->OnCreate();
 	}
 
 	template<class ComponentType>
@@ -87,24 +98,24 @@ namespace Blueberry
 	{
 		static_assert(std::is_base_of<Component, ComponentType>::value, "Type is not derived from Component.");
 
-		ObjectPtr<Component> weakPtr((Component*)component);
 		int index = 0;
 		for (auto& componentSlot : m_Components)
 		{
 			if (!componentSlot.IsValid())
 			{
-				componentSlot = std::move(weakPtr);
+				componentSlot = component;
 				break;
 			}
 			++index;
 		}
 
 		component->m_Entity = ObjectPtr<Entity>(this);
-		AddComponentIntoScene(component);
+		AddToCreatedComponents(component);
 		if (index >= m_Components.size())
 		{
-			m_Components.emplace_back(std::move(weakPtr));
+			m_Components.emplace_back(component);
 		}
+		component->OnCreate();
 	}
 
 	template<class ComponentType>
@@ -138,7 +149,7 @@ namespace Blueberry
 	template<class ComponentType>
 	inline void Entity::RemoveComponent(ComponentType* component)
 	{
-		RemoveComponentFromScene(component);
+		//RemoveComponentFromScene(component);
 		auto& index = std::find(m_Components.begin(), m_Components.end(), component);
 		m_Components.erase(index);
 		Object::Destroy(component);

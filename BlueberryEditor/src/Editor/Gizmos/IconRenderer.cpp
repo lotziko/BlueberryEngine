@@ -49,20 +49,23 @@ namespace Blueberry
 			GenerateCache(scene);
 		}
 
-		Vector3 cameraDirection = Vector3::Transform(Vector3::Forward, camera->GetEntity()->GetTransform()->GetRotation());
+		Vector3 cameraDirection = Vector3::Transform(Vector3::Forward, camera->GetTransform()->GetRotation());
 
 		for (auto& info : s_IconsCache)
 		{
-			Vector3 position = info.transform->GetPosition();
-			Matrix modelMatrix = Matrix::CreateBillboard(position, position - cameraDirection, Vector3(0, -1, 0));
-
-			const char* path = info.inspector->GetIconPath(info.component.Get());
-			if (path != nullptr)
+			if (info.component->GetEntity()->IsActiveInHierarchy())
 			{
-				s_IconMaterial->SetTexture("_BaseMap", (Texture*)AssetLoader::Load(path));
+				Vector3 position = info.transform->GetPosition();
+				Matrix modelMatrix = Matrix::CreateBillboard(position, position - cameraDirection, Vector3(0, -1, 0));
 
-				PerDrawConstantBuffer::BindData(modelMatrix);
-				GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_IconMaterial));
+				const char* path = info.inspector->GetIconPath(info.component.Get());
+				if (path != nullptr)
+				{
+					s_IconMaterial->SetTexture("_BaseMap", (Texture*)AssetLoader::Load(path));
+
+					PerDrawConstantBuffer::BindData(modelMatrix);
+					GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_IconMaterial));
+				}
 			}
 		}
 	}

@@ -29,17 +29,11 @@ namespace Blueberry
 			m_CreatedComponents.clear();
 		}
 
-		// Update physics
+		// Update
 		{
-			for (auto& component : GetIterator<PhysicsBody>())
+			for (auto& component : m_ComponentManager.GetIterator(UpdatableComponent::Type))
 			{
-				auto physicsBody = static_cast<PhysicsBody*>(component.second);
-				physicsBody->Update();
-			}
-			for (auto& component : GetIterator<CharacterController>())
-			{
-				auto characterController = static_cast<CharacterController*>(component.second);
-				characterController->Update();
+				component.second->OnUpdate();
 			}
 		}
 	}
@@ -62,7 +56,7 @@ namespace Blueberry
 		m_Entities[entity->GetObjectId()] = entity;
 
 		entity->AddComponent<Transform>();
-		entity->m_Transform = entity->GetComponent<Transform>();
+		entity->OnCreate();
 		return entity;
 	}
 
@@ -71,10 +65,13 @@ namespace Blueberry
 		//BB_INFO("Entity is added.")
 		entity->m_Scene = this;
 		m_Entities[entity->GetObjectId()] = entity;
-
+		if (entity->IsActiveInHierarchy())
+		{
+			entity->UpdateComponents();
+		}
 		for (auto& component : entity->GetComponents())
 		{
-			entity->AddComponentIntoScene(component);
+			entity->AddToCreatedComponents(component);
 		}
 		for (auto& child : entity->GetTransform()->GetChildren())
 		{

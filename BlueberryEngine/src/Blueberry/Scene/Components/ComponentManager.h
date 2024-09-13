@@ -1,6 +1,6 @@
 #pragma once
 
-#include <map>
+#include <unordered_map>
 #include "Blueberry/Scene/Entity.h"
 
 namespace Blueberry
@@ -8,26 +8,31 @@ namespace Blueberry
 	struct ComponentIterator
 	{
 	public:
-		ComponentIterator(std::map<std::size_t, Component*> data) : m_Data(data) {}
+		ComponentIterator(std::unordered_map<ObjectId, Component*> data) : m_Data(data) {}
 
 		auto begin() { return m_Data.begin(); }
 		auto end() { return m_Data.end(); }
 
 	private:
-		std::map<std::size_t, Component*> m_Data;
+		std::unordered_map<ObjectId, Component*> m_Data;
 	};
 
 	class ComponentManager
 	{
 	public:
 		void AddComponent(Component* component);
+		// Unsafe
+		void AddComponent(Component* component, const size_t& type);
 		void RemoveComponent(Component* component);
+		// Unsafe
+		void RemoveComponent(Component* component, const size_t& type);
 
 		template<class ComponentType>
 		ComponentIterator GetIterator();
+		ComponentIterator GetIterator(const size_t& type);
 
 	private:
-		std::map<std::size_t, std::map<std::size_t, Component*>> m_Components;
+		std::map<std::size_t, std::unordered_map<ObjectId, Component*>> m_Components;
 	};
 
 	template<class ComponentType>
@@ -41,8 +46,23 @@ namespace Blueberry
 		m_Components[component->GetType()][component->GetObjectId()] = component;
 	}
 
+	inline void ComponentManager::AddComponent(Component* component, const size_t& type)
+	{
+		m_Components[type][component->GetObjectId()] = component;
+	}
+
 	inline void ComponentManager::RemoveComponent(Component* component)
 	{
 		m_Components[component->GetType()].erase(component->GetObjectId());
+	}
+
+	inline void ComponentManager::RemoveComponent(Component* component, const size_t& type)
+	{
+		m_Components[type].erase(component->GetObjectId());
+	}
+
+	inline ComponentIterator ComponentManager::GetIterator(const size_t& type)
+	{
+		return ComponentIterator(m_Components[type]);
 	}
 }

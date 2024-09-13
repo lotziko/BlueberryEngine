@@ -143,15 +143,15 @@ namespace Blueberry
 			else
 			{
 				bool isPrefab = PrefabManager::IsPartOfPrefabInstance(entity);
-				if (isPrefab)
+				bool isActive = entity->IsActiveInHierarchy();
+				ImVec4 color = isPrefab ? ImVec4(0, 1, 0, 1) : ImVec4(1, 1, 1, 1);
+				if (!isActive)
 				{
-					ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 255, 0, 255));
+					color.w *= 0.5f;
 				}
+				ImGui::PushStyleColor(ImGuiCol_Text, color);
 				ImGui::Text("%s", entity->GetName().c_str());
-				if (isPrefab)
-				{
-					ImGui::PopStyleColor();
-				}
+				ImGui::PopStyleColor();
 			}
 		}
 

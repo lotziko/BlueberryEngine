@@ -62,7 +62,6 @@ namespace Blueberry
 		{
 			Object* object = pair.second;
 			DeserializeNode(root[pair.first], Context::Create(object, object->GetType()));
-			object->OnCreate();
 		}
 	}
 

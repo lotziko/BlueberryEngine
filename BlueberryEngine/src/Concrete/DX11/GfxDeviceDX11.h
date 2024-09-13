@@ -39,6 +39,7 @@ namespace Blueberry
 		virtual bool CreateTextureImpl(const TextureProperties& properties, GfxTexture*& texture) const final;
 		virtual bool CreateImGuiRendererImpl(ImGuiRenderer*& renderer) const final;
 
+		virtual void CopyImpl(GfxTexture* source, GfxTexture* target) const final;
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Rectangle& area) const final;
 		virtual void ReadImpl(GfxTexture* source, void* target, const Rectangle& area) const final;
 

@@ -60,8 +60,6 @@ namespace Blueberry
 
 		static void BindProperties();
 
-		virtual void OnCreate() override final;
-
 	private:
 		void FillTextureMap();
 

@@ -81,7 +81,6 @@ namespace Blueberry
 				input.read((char*)&fileId, sizeof(FileId));
 				Object* object = m_FileIdToObject[fileId];
 				DeserializeNode(input, Context::Create(object, object->GetType()));
-				object->OnCreate();
 			}
 			input.close();
 		}

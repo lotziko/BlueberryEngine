@@ -14,7 +14,9 @@ namespace Blueberry
 		CharacterController() = default;
 		virtual ~CharacterController();
 
-		void Update();
+		virtual void OnEnable() final;
+		virtual void OnDisable() final;
+		virtual void OnUpdate() final;
 
 		const float& GetHeight();
 		const float& GetRadius();

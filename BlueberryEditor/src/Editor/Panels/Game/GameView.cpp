@@ -32,10 +32,13 @@ namespace Blueberry
 			if (scene != nullptr)
 			{
 				Camera* camera = nullptr;
-				for (auto& component : scene->GetIterator<Camera>())
+				for (auto& pair : scene->GetIterator<Camera>())
 				{
-					camera = static_cast<Camera*>(component.second);
-					break;
+					if (pair.second->GetEntity()->IsActiveInHierarchy())
+					{
+						camera = static_cast<Camera*>(pair.second);
+						break;
+					}
 				}
 				if (camera != nullptr)
 				{

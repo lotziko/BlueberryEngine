@@ -91,7 +91,7 @@ namespace Blueberry
 		const float maxCameraSizeForWorldToScreen = 2.5E+7f;
 
 		Camera* camera = area->GetCamera();
-		Transform* transform = camera->GetEntity()->GetTransform();
+		Transform* transform = camera->GetTransform();
 		Vector3 previousPosition = transform->GetPosition();
 		float previousNear = camera->GetNearClipPlane();
 		float previousFar = camera->GetFarClipPlane();

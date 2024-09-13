@@ -29,7 +29,7 @@ namespace Blueberry
 			GfxDevice::CreateConstantBuffer(sizeof(CONSTANTS) * 1, s_ConstantBuffer);
 		}
 
-		Transform* transform = camera->GetEntity()->GetTransform();
+		Transform* transform = camera->GetTransform();
 
 		const Matrix& view = GfxDevice::GetGPUMatrix(camera->GetViewMatrix());
 		const Matrix& projection = GfxDevice::GetGPUMatrix(camera->GetProjectionMatrix());

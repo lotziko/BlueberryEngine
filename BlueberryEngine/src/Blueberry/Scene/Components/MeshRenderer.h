@@ -15,6 +15,9 @@ namespace Blueberry
 		MeshRenderer() = default;
 		virtual ~MeshRenderer() = default;
 
+		virtual void OnEnable() final;
+		virtual void OnDisable() final;
+
 		Mesh* GetMesh();
 		void SetMesh(Mesh* mesh);
 

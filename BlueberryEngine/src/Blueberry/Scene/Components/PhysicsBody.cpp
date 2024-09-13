@@ -16,14 +16,40 @@ namespace Blueberry
 	OBJECT_DEFINITION(Component, PhysicsBody)
 
 	// ModelImporter will generate prefabs with static PhysicsBodies with mesh shape if it is choosed to
-	
-	void PhysicsBody::Update()
+
+	void PhysicsBody::OnEnable()
+	{
+		AddToSceneComponents(UpdatableComponent::Type);
+		if (m_IsInitialized)
+		{
+			JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
+			if (!bodyInterface.IsAdded(m_BodyId))
+			{
+				bodyInterface.AddBody(m_BodyId, JPH::EActivation::Activate);
+			}
+		}
+	}
+
+	void PhysicsBody::OnDisable()
+	{
+		RemoveFromSceneComponents(UpdatableComponent::Type);
+		if (m_IsInitialized)
+		{
+			JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
+			if (bodyInterface.IsAdded(m_BodyId))
+			{
+				bodyInterface.RemoveBody(m_BodyId);
+			}
+		}
+	}
+
+	void PhysicsBody::OnUpdate()
 	{
 		JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
 
 		if (!m_IsInitialized)
 		{
-			m_Transform = GetEntity()->GetTransform();
+			m_Transform = GetTransform();
 			Vector3 position = m_Transform->GetLocalPosition();
 			Quaternion rotation = m_Transform->GetLocalRotation();
 			size_t collidersCount = m_Colliders.size();
@@ -38,10 +64,10 @@ namespace Blueberry
 			else if (collidersCount > 1)
 			{
 				JPH::StaticCompoundShapeSettings* shapeSettings = new JPH::StaticCompoundShapeSettings();
-				Transform* bodyTransform = GetEntity()->GetTransform();
+				Transform* bodyTransform = GetTransform();
 				for (auto& collider : m_Colliders)
 				{
-					Transform* colliderTransform = collider->GetEntity()->GetTransform();
+					Transform* colliderTransform = collider->GetTransform();
 					if (bodyTransform == colliderTransform)
 					{
 						shapeSettings->AddShape(JPH::Vec3::sZero(), JPH::Quat::sIdentity(), collider->GetShape());

@@ -26,7 +26,7 @@ namespace Blueberry
 	void LightInspector::DrawScene(Object* object)
 	{
 		Light* light = static_cast<Light*>(object);
-		Transform* transform = light->GetEntity()->GetTransform();
+		Transform* transform = light->GetTransform();
 		LightType type = light->GetType();
 		float range = light->GetRange();
 

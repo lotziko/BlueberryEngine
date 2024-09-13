@@ -107,6 +107,11 @@ namespace Blueberry
 		return s_Instance->CreateImGuiRendererImpl(renderer);
 	}
 
+	void GfxDevice::Copy(GfxTexture* source, GfxTexture* target)
+	{
+		s_Instance->CopyImpl(source, target);
+	}
+
 	void GfxDevice::Copy(GfxTexture* source, GfxTexture* target, const Rectangle& area)
 	{
 		s_Instance->CopyImpl(source, target, area);
