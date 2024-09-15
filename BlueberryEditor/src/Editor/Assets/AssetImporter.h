@@ -22,6 +22,7 @@ namespace Blueberry
 		const std::unordered_map<FileId, ObjectId>& GetImportedObjects();
 		const FileId& GetMainObject();
 		const bool IsImported();
+		const bool& IsRequiringSave();
 		const Texture2D* GetIcon();
 
 		void ResetImport();
@@ -48,6 +49,7 @@ namespace Blueberry
 		FileId m_MainObject;
 		std::unordered_map<FileId, ObjectId> m_ImportedObjects = {};
 		Texture2D* m_Icon = nullptr;
+		bool m_RequireSave = false;
 
 		friend class ImporterInfoCache;
 	};

@@ -5,7 +5,6 @@
 #include "GfxBufferDX11.h"
 #include "GfxTextureDX11.h"
 #include "ImGuiRendererDX11.h"
-#include "Blueberry\Graphics\Texture.h"
 #include "Blueberry\Graphics\Enums.h"
 #include "Blueberry\Tools\CRCHelper.h"
 
@@ -425,7 +424,7 @@ namespace Blueberry
 				for (int i = 0; i < renderState->fragmentTextureCount; i++)
 				{
 					GfxRenderState::TextureInfo info = renderState->fragmentTextures[i];
-					auto dxTexture = static_cast<GfxTextureDX11*>(*info.texture);
+					auto dxTexture = static_cast<GfxTextureDX11*>(info.Get());
 					m_ShaderResourceViews[info.textureSlot] = dxTexture->m_ResourceView.Get();
 					if (info.samplerSlot != -1)
 					{

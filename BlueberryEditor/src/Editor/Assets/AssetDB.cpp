@@ -77,6 +77,10 @@ namespace Blueberry
 		{
 			importer->ImportDataIfNeeded();
 			ImporterInfoCache::Set(importer);
+			if (importer->IsRequiringSave())
+			{
+				importer->Save();
+			}
 		}
 		ImporterInfoCache::Save();
 		s_AssetDBRefreshed.Invoke();

@@ -33,5 +33,6 @@ namespace Blueberry
 
 		friend class Material;
 		friend struct GfxDrawingOperation;
+		friend struct GfxRenderState;
 	};
 }

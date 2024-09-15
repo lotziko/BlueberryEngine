@@ -29,6 +29,7 @@ namespace Blueberry
 			{
 				//BB_INFO(componentSlot->GetTypeName() << " is destroyed.");
 				//RemoveComponentFromScene(componentSlot.Get());
+				componentSlot->OnDisable();
 				componentSlot->OnDestroy();
 				Object::Destroy(componentSlot.Get());
 			}
@@ -87,6 +88,7 @@ namespace Blueberry
 				return m_IsActiveInHierarchy;
 			}
 			m_IsActiveInHierarchy = parent->GetEntity()->IsActiveInHierarchy();
+			return m_IsActiveInHierarchy;
 		}
 		else
 		{

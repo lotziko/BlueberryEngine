@@ -21,12 +21,10 @@ namespace Blueberry
 		if (m_VertexBuffer != nullptr)
 		{
 			delete m_VertexBuffer;
-			delete m_Vertices;
 		}
 		if (m_IndexBuffer != nullptr)
 		{
 			delete m_IndexBuffer;
-			delete m_Indices;
 		}
 	}
 
@@ -42,47 +40,35 @@ namespace Blueberry
 
 	void Mesh::SetVertices(const Vector3* vertices, const UINT& vertexCount)
 	{
-		if (m_Vertices == nullptr || vertexCount > m_VertexCount)
-		{
-			m_VertexCount = vertexCount;
-			m_Vertices = new Vector3[vertexCount];
-			memcpy(m_Vertices, vertices, sizeof(Vector3) * vertexCount);
-			m_ChannelFlags |= VERTICES_BIT;
-			m_BufferIsDirty = true;
-		}
+		m_VertexCount = vertexCount;
+		m_Vertices.resize(vertexCount);
+		memcpy(m_Vertices.data(), vertices, sizeof(Vector3) * vertexCount);
+		m_ChannelFlags |= VERTICES_BIT;
+		m_BufferIsDirty = true;
 	}
 
 	void Mesh::SetNormals(const Vector3* normals, const UINT& vertexCount)
 	{
-		if (m_Normals == nullptr || vertexCount > m_VertexCount)
-		{
-			m_Normals = new Vector3[vertexCount];
-			memcpy(m_Normals, normals, sizeof(Vector3) * vertexCount);
-			m_ChannelFlags |= NORMALS_BIT;
-			m_BufferIsDirty = true;
-		}
+		m_Normals.resize(vertexCount);
+		memcpy(m_Normals.data(), normals, sizeof(Vector3) * vertexCount);
+		m_ChannelFlags |= NORMALS_BIT;
+		m_BufferIsDirty = true;
 	}
 
 	void Mesh::SetTangents(const Vector4* tangents, const UINT& vertexCount)
 	{
-		if (m_Tangents == nullptr || vertexCount > m_VertexCount)
-		{
-			m_Tangents = new Vector4[vertexCount];
-			memcpy(m_Tangents, tangents, sizeof(Vector4) * vertexCount);
-			m_ChannelFlags |= TANGENTS_BIT;
-			m_BufferIsDirty = true;
-		}
+		m_Tangents.resize(vertexCount);
+		memcpy(m_Tangents.data(), tangents, sizeof(Vector4) * vertexCount);
+		m_ChannelFlags |= TANGENTS_BIT;
+		m_BufferIsDirty = true;
 	}
 
 	void Mesh::SetIndices(const UINT* indices, const UINT& indexCount)
 	{
-		if (indexCount > m_IndexCount)
-		{
-			m_IndexCount = indexCount;
-			m_Indices = new UINT[indexCount];
-			memcpy(m_Indices, indices, sizeof(UINT) * indexCount);
-			m_BufferIsDirty = true;
-		}
+		m_IndexCount = indexCount;
+		m_Indices.resize(indexCount);
+		memcpy(m_Indices.data(), indices, sizeof(UINT) * indexCount);
+		m_BufferIsDirty = true;
 	}
 
 	void Mesh::SetUVs(const int& channel, const Vector2* uvs, const UINT& uvCount)
@@ -93,8 +79,8 @@ namespace Blueberry
 		}
 		if (uvCount == m_VertexCount)
 		{
-			m_UVs[channel] = new Vector2[uvCount];
-			memcpy(m_UVs[channel], uvs, sizeof(Vector2) * uvCount);
+			m_UVs[channel].resize(uvCount);
+			memcpy(m_UVs[channel].data(), uvs, sizeof(Vector2) * uvCount);
 			m_ChannelFlags |= UV0_BIT;
 			m_BufferIsDirty = true;
 		}
@@ -181,7 +167,7 @@ namespace Blueberry
 	
 	void Mesh::GenerateTangents()
 	{
-		m_Tangents = new Vector4[m_VertexCount];
+		m_Tangents.resize(m_VertexCount);
 		TangentGenerator generator;
 		generator.Generate(this);
 		m_ChannelFlags |= TANGENTS_BIT;
@@ -212,17 +198,17 @@ namespace Blueberry
 			{
 				vertexBufferSize += m_VertexCount * sizeof(Vector3) / sizeof(float);
 			}
-			if (m_Normals != nullptr)
+			if (m_Normals.size() == m_VertexCount)
 			{
 				vertexBufferSize += m_VertexCount * sizeof(Vector3) / sizeof(float);
 			}
-			if (m_Tangents != nullptr)
+			if (m_Tangents.size() == m_VertexCount)
 			{
 				vertexBufferSize += m_VertexCount * sizeof(Vector4) / sizeof(float);
 			}
 			for (int i = 0; i < 8; ++i)
 			{
-				if (m_UVs[i] != nullptr)
+				if (m_UVs[i].size() == m_VertexCount)
 				{
 					vertexBufferSize += m_VertexCount * sizeof(Vector2) / sizeof(float);
 				}
@@ -234,10 +220,10 @@ namespace Blueberry
 			}
 
 			float* bufferPointer = m_VertexData.data();
-			Vector3* vertexPointer = m_Vertices;
-			Vector3* normalPointer = m_Normals;
-			Vector4* tangentPointer = m_Tangents;
-			Vector2* uvPointer = m_UVs[0];
+			Vector3* vertexPointer = m_Vertices.data();
+			Vector3* normalPointer = m_Normals.data();
+			Vector4* tangentPointer = m_Tangents.data();
+			Vector2* uvPointer = m_UVs[0].data();
 
 			for (UINT i = 0; i < m_VertexCount; ++i)
 			{
@@ -268,9 +254,9 @@ namespace Blueberry
 			{
 				m_IndexData.resize(m_IndexCount);
 			}
-			memcpy(m_IndexData.data(), m_Indices, m_IndexCount * sizeof(UINT));
+			memcpy(m_IndexData.data(), m_Indices.data(), m_IndexCount * sizeof(UINT));
 
-			AABB::CreateFromPoints(m_Bounds, m_VertexCount, m_Vertices, sizeof(Vector3));
+			AABB::CreateFromPoints(m_Bounds, m_VertexCount, m_Vertices.data(), sizeof(Vector3));
 		}
 
 		// TODO handle old buffers instead

@@ -25,6 +25,12 @@ namespace Blueberry
 			}
 		}
 
+		float scale = modelImporter->GetScale();
+		if (ImGui::FloatEdit("Scale", &scale))
+		{
+			modelImporter->SetScale(scale);
+		}
+
 		if (ImGui::Button("Save"))
 		{
 			AssetDB::SetDirty(object);

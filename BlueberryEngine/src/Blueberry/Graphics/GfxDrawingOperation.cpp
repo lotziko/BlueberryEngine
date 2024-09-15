@@ -58,4 +58,10 @@ namespace Blueberry
 	{
 		return isValid;
 	}
+	
+	GfxTexture* GfxRenderState::TextureInfo::Get()
+	{
+		Texture* texture = static_cast<Texture*>(ObjectDB::GetObject(*textureId));
+		return texture == nullptr ? nullptr : texture->m_Texture;
+	}
 }

@@ -2,6 +2,7 @@
 #include "Texture.h"
 
 #include "Blueberry\Graphics\GfxTexture.h"
+#include "Blueberry\Core\ObjectDB.h"
 
 namespace Blueberry
 {

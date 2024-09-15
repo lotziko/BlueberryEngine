@@ -102,6 +102,9 @@ namespace Blueberry
 
 			switch (field.type)
 			{
+			case BindingType::Bool:
+				output.write((char*)value.Get<bool>(), sizeof(bool));
+				break;
 			case BindingType::Int:
 				output.write((char*)value.Get<int>(), sizeof(int));
 				break;
@@ -262,6 +265,9 @@ namespace Blueberry
 
 				switch (field.type)
 				{
+				case BindingType::Bool:
+					input.read((char*)value.Get<bool>(), sizeof(bool));
+					break;
 				case BindingType::Int:
 					input.read((char*)value.Get<int>(), sizeof(int));
 					break;

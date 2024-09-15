@@ -4,9 +4,15 @@
 #include "Blueberry\Core\ObjectPtr.h"
 #include "Blueberry\Core\DataPtr.h"
 
+namespace fbxsdk
+{
+	class FbxNode;
+}
+
 namespace Blueberry
 {
 	class Material;
+	class Transform;
 
 	class ModelMaterialData : public Data
 	{
@@ -37,6 +43,9 @@ namespace Blueberry
 		ModelImporter() = default;
 
 		const std::vector<DataPtr<ModelMaterialData>>& GetMaterials();
+		
+		const float& GetScale();
+		void SetScale(const float& scale);
 
 		static void BindProperties();
 
@@ -45,6 +54,10 @@ namespace Blueberry
 		virtual std::string GetIconPath() final;
 
 	private:
+		void CreateMeshEntity(Transform* parent, fbxsdk::FbxNode* node, std::vector<Object*>& objects);
+
+	private:
 		std::vector<DataPtr<ModelMaterialData>> m_Materials;
+		float m_Scale = 1.0f;
 	};
 }

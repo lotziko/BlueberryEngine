@@ -63,6 +63,11 @@ namespace Blueberry
 		return false;
 	}
 
+	const bool& AssetImporter::IsRequiringSave()
+	{
+		return m_RequireSave;
+	}
+
 	const Texture2D* AssetImporter::GetIcon()
 	{
 		return m_Icon;
@@ -96,6 +101,7 @@ namespace Blueberry
 		serializer.SetGuid(m_Guid);
 		serializer.AddObject(this);
 		serializer.Serialize(GetMetaFilePath());
+		m_RequireSave = false;
 	}
 
 	AssetImporter* AssetImporter::CreateNew(const size_t& type, const std::filesystem::path& relativePath, const std::filesystem::path& relativeMetaPath)
@@ -108,6 +114,7 @@ namespace Blueberry
 		importer->m_Name = relativePath.stem().string();
 		importer->m_Icon = (Texture2D*)AssetLoader::Load(importer->GetIconPath());
 		importer->Save();
+		importer->m_RequireSave = true; // Importer may get some important data from the asset and should be saved second time
 		return importer;
 	}
 

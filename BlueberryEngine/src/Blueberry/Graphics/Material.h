@@ -68,10 +68,10 @@ namespace Blueberry
 		std::vector<std::string> m_ActiveKeywords;
 		ObjectPtr<Shader> m_Shader;
 
-		std::unordered_map<std::size_t, GfxTexture*> m_TextureMap;
+		std::unordered_map<std::size_t, ObjectId> m_TextureMap;
 		std::vector<GfxRenderState> m_PassCache;
 
-		uint32_t m_Crc;
+		uint32_t m_Crc = -1;
 
 		friend struct GfxDrawingOperation;
 	};

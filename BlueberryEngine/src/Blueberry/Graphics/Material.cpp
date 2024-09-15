@@ -51,8 +51,8 @@ namespace Blueberry
 
 	void Material::SetTexture(std::size_t id, Texture* texture)
 	{
-		m_TextureMap.insert_or_assign(id, texture->m_Texture);
-		m_Crc = 0;
+		m_TextureMap.insert_or_assign(id, texture->GetObjectId());
+		m_Crc = -1;
 	}
 
 	void Material::SetTexture(std::string name, Texture* texture)
@@ -166,7 +166,7 @@ namespace Blueberry
 			if (it != m_TextureMap.end())
 			{
 				GfxRenderState::TextureInfo info = {};
-				info.texture = &it->second;
+				info.textureId = &it->second;
 				info.textureSlot = slot.second.first;
 				info.samplerSlot = slot.second.second;
 				newState.fragmentTextures[newState.fragmentTextureCount] = info;
@@ -190,11 +190,11 @@ namespace Blueberry
 
 	const uint32_t& Material::GetCRC()
 	{
-		if (m_Crc == 0)
+		if (m_Crc == -1)
 		{
 			for (auto& pair : m_TextureMap)
 			{
-				m_Crc = CRCHelper::Calculate(&pair, sizeof(std::pair<std::size_t, GfxTexture*>), m_Crc);
+				m_Crc = CRCHelper::Calculate(&pair, sizeof(std::pair<std::size_t, ObjectId>), m_Crc);
 			}
 			for (auto& keyword : m_ActiveKeywords)
 			{
@@ -224,7 +224,7 @@ namespace Blueberry
 				std::size_t key = TO_HASH(data->GetName());
 				if (m_TextureMap.count(key) == 0)
 				{
-					m_TextureMap.insert({key, ((Texture*)DefaultTextures::GetTexture(data->GetDefaultTextureName()))->m_Texture });
+					m_TextureMap.insert({key, ((Texture*)DefaultTextures::GetTexture(data->GetDefaultTextureName()))->GetObjectId() });
 				}
 			}
 		}
@@ -233,7 +233,7 @@ namespace Blueberry
 			TextureData* textureData = texture.Get();
 			if (textureData->m_Texture.IsValid())
 			{
-				m_TextureMap.insert_or_assign(TO_HASH(textureData->m_Name), textureData->m_Texture->m_Texture);
+				m_TextureMap.insert_or_assign(TO_HASH(textureData->m_Name), textureData->m_Texture->GetObjectId());
 			}
 		}
 	}
