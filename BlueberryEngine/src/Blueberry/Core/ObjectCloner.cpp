@@ -94,6 +94,10 @@ namespace Blueberry
 							}
 							cloneObjectRefArrayPointer->emplace_back(child);
 						}
+						else
+						{
+							cloneObjectRefArrayPointer->emplace_back(nullptr);
+						}
 					}
 				}
 			}

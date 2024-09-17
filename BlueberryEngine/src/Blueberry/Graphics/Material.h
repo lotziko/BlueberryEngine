@@ -15,13 +15,13 @@ namespace Blueberry
 		DATA_DECLARATION(TextureData)
 
 	public:
-		static void BindProperties();
-
 		const std::string& GetName();
 		void SetName(const std::string& name);
 
 		Texture* GetTexture();
 		void SetTexture(Texture* texture);
+
+		static void BindProperties();
 
 	private:
 		std::string m_Name;

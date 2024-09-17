@@ -21,8 +21,10 @@ namespace Blueberry
 		Mesh* GetMesh();
 		void SetMesh(Mesh* mesh);
 
-		Material* GetMaterial();
+		Material* GetMaterial(const UINT& index = 0);
 		void SetMaterial(Material* material);
+
+		void SetMaterials(const std::vector<Material*> materials);
 
 		const AABB& GetBounds();
 
@@ -30,7 +32,8 @@ namespace Blueberry
 
 	private:
 		ObjectPtr<Mesh> m_Mesh;
-		ObjectPtr<Material> m_Material;
+		//ObjectPtr<Material> m_Material;
+		std::vector<ObjectPtr<Material>> m_Materials;
 		AABB m_Bounds;
 		size_t m_RecalculationFrame = 0;
 	};

@@ -91,6 +91,10 @@ namespace Blueberry
 			m_Components.emplace_back(componentToAdd);
 		}
 		componentToAdd->OnCreate();
+		if (IsActiveInHierarchy())
+		{
+			componentToAdd->OnEnable();
+		}
 	}
 
 	template<class ComponentType>
@@ -116,6 +120,10 @@ namespace Blueberry
 			m_Components.emplace_back(component);
 		}
 		component->OnCreate();
+		if (IsActiveInHierarchy())
+		{
+			component->OnEnable();
+		}
 	}
 
 	template<class ComponentType>

@@ -2,6 +2,7 @@
 #include "SceneRenderer.h"
 
 #include "Blueberry\Graphics\Renderer2D.h"
+#include "Blueberry\Graphics\Mesh.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\PerCameraDataConstantBuffer.h"
 #include "Blueberry\Graphics\PerDrawDataConstantBuffer.h"
@@ -53,9 +54,22 @@ namespace Blueberry
 				Mesh* mesh = meshRenderer->GetMesh();
 				if (mesh != nullptr)
 				{
-					Material* material = meshRenderer->GetMaterial();
 					PerDrawConstantBuffer::BindData(meshRenderer->GetTransform()->GetLocalToWorldMatrix());
-					GfxDevice::Draw(GfxDrawingOperation(mesh, material));
+					UINT subMeshCount = mesh->GetSubMeshCount();
+					if (subMeshCount > 1)
+					{
+						for (int i = 0; i < subMeshCount; ++i)
+						{
+							Material* material = meshRenderer->GetMaterial(i);
+							SubMeshData* subMesh = mesh->GetSubMesh(i);
+							GfxDevice::Draw(GfxDrawingOperation(mesh, material, subMesh->GetIndexCount(), subMesh->GetIndexStart(), mesh->GetVertexCount()));
+						}
+					}
+					else
+					{
+						Material* material = meshRenderer->GetMaterial();
+						GfxDevice::Draw(GfxDrawingOperation(mesh, material));
+					}
 				}
 			}
 		}

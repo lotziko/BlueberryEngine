@@ -98,6 +98,7 @@ namespace Blueberry
 		Object* result;
 		if (data.guid.data[0] > 0)
 		{
+			std::string guid1 = data.guid.ToString();
 			result = ObjectDB::GetObjectFromGuid(data.guid, data.fileId);
 			if (result == nullptr || result->GetState() == ObjectState::AwaitingLoading)
 			{
@@ -128,15 +129,19 @@ namespace Blueberry
 		ObjectPtrData result = {};
 		if (ObjectDB::HasGuid(object))
 		{
-			FileId fileId = ObjectDB::GetFileIdFromObject(object);
-			auto fileIdIt = m_FileIdToObject.find(fileId);
+			auto pair = ObjectDB::GetGuidAndFileIdFromObject(object);
+			auto fileIdIt = m_FileIdToObject.find(pair.second);
 			if (fileIdIt != m_FileIdToObject.end() && fileIdIt->second == object)
 			{
-				result.fileId = fileId;
+				result.fileId = pair.second;
+			}
+			else if (m_AssetGuid == pair.first)
+			{
+				result.fileId = pair.second;
+				AddAdditionalObject(object);
 			}
 			else
 			{
-				auto pair = ObjectDB::GetGuidAndFileIdFromObject(object);
 				result.guid = pair.first;
 				result.fileId = pair.second;
 			}

@@ -2,6 +2,7 @@
 #include "PngTextureProcessor.h"
 
 #include "Blueberry\Tools\StringConverter.h"
+#include "BCFlipper.h"
 
 namespace Blueberry
 {
@@ -39,6 +40,69 @@ namespace Blueberry
 		m_Properties.mipCount = GetMipCount(image.width, image.height, generateMips);
 	}
 
+	void FlipDDS(const DXGI_FORMAT& format, unsigned char* image, const UINT& mipCount, UINT width, UINT height)
+	{
+		UINT blockSize = 0;
+		switch (format)
+		{
+		case DXGI_FORMAT_BC1_UNORM:
+			blockSize = 8;
+			break;
+		case DXGI_FORMAT_BC3_UNORM:
+			blockSize = 16;
+			break;
+		case DXGI_FORMAT_BC4_UNORM:
+			blockSize = 8;
+			break;
+		case DXGI_FORMAT_BC5_UNORM:
+			blockSize = 16;
+			break;
+		}
+
+		for (int i = 0; i < mipCount; ++i)
+		{
+			switch (format)
+			{
+			case DXGI_FORMAT_BC1_UNORM:
+				FlipBC1Image(image, width, height);
+				break;
+			case DXGI_FORMAT_BC3_UNORM:
+				FlipBC3Image(image, width, height);
+				break;
+			case DXGI_FORMAT_BC4_UNORM:
+				FlipBC4Image(image, width, height);
+				break;
+			case DXGI_FORMAT_BC5_UNORM:
+				FlipBC5Image(image, width, height);
+				break;
+			default:
+				BB_ERROR("Can't flip image");
+				return;
+			}
+			image += ((width + 3) / 4) * ((height + 3) / 4) * blockSize;
+			width /= 2;
+			height /= 2;
+		}
+	}
+
+	void PngTextureProcessor::LoadDDS(const std::string& path)
+	{
+		HRESULT hr = DirectX::LoadFromDDSFile(StringConverter::StringToWide(path).c_str(), DirectX::DDS_FLAGS::DDS_FLAGS_NONE, nullptr, m_ScratchImage);
+		if (FAILED(hr))
+		{
+			BB_ERROR("Failed to load texture from file.");
+			return;
+		}
+
+		DirectX::Image image = *m_ScratchImage.GetImages();
+		FlipDDS(m_ScratchImage.GetMetadata().format, m_ScratchImage.GetPixels(), m_ScratchImage.GetImageCount(), image.width, image.height);
+
+		m_Properties = {};
+		m_Properties.width = image.width;
+		m_Properties.height = image.height;
+		m_Properties.mipCount = m_ScratchImage.GetImageCount();
+	}
+
 	void PngTextureProcessor::Compress(const TextureFormat& format)
 	{
 		DXGI_FORMAT dxgiFormat = (DXGI_FORMAT)format;
@@ -51,10 +115,8 @@ namespace Blueberry
 		{
 			return;
 		}
-		if (m_Properties.mipCount > 3)
+		if (m_Properties.mipCount > 1)
 		{
-			// Remove last mip levels to stay dividable by 4
-			m_Properties.mipCount -= 2;
 			DirectX::ScratchImage mipmappedScratchImage;
 			HRESULT hr = DirectX::GenerateMipMaps(*m_ScratchImage.GetImages(), DirectX::TEX_FILTER_FANT, m_Properties.mipCount, mipmappedScratchImage);
 			m_ScratchImage = std::move(mipmappedScratchImage);

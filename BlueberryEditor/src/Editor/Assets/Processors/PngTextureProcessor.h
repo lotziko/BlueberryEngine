@@ -22,6 +22,7 @@ namespace Blueberry
 		~PngTextureProcessor();
 
 		void Load(const std::string& path, const bool& srgb, const bool& generateMips);
+		void LoadDDS(const std::string& path);
 		void Compress(const TextureFormat& format);
 		const PngTextureProperties& GetProperties();
 

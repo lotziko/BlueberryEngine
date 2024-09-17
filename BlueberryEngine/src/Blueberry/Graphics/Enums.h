@@ -23,8 +23,11 @@ namespace Blueberry
 		R8G8B8A8_UINT = 30,
 		R24G8_TYPELESS = 44,
 		D24_UNorm = 45,
+		BC1_UNORM = 71,
+		BC2_UNORM = 74,
 		BC3_UNORM = 77,
 		BC3_UNORM_SRGB = 78,
+		BC5_UNORM = 83,
 		BC7_UNORM = 98,
 		BC7_UNORM_SRGB = 99,
 	};

@@ -18,6 +18,7 @@ namespace ImGui
 	bool ColorEdit(const char* label, Blueberry::Color* v);
 	bool ObjectEdit(const char* label, Blueberry::Object** v, const std::size_t& type);
 	bool ObjectEdit(const char* label, Blueberry::ObjectPtr<Blueberry::Object>* v, const std::size_t& type);
+	bool ObjectArrayEdit(const char* label, std::vector<Blueberry::ObjectPtr<Blueberry::Object>>* v, const std::size_t& type);
 
 	void ApplyEditorDarkTheme();
 	void LoadDefaultEditorFonts();

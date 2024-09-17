@@ -13,6 +13,7 @@ namespace Blueberry
 {
 	void BinarySerializer::Serialize(const std::string& path)
 	{
+		m_AssetGuid = ObjectDB::GetGuidFromObject(m_ObjectsToSerialize[0]);
 		std::ofstream output(path, std::ofstream::binary);
 		if (output.is_open())
 		{

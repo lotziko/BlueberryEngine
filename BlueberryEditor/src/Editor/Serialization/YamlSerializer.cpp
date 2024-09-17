@@ -12,6 +12,7 @@ namespace Blueberry
 {
 	void YamlSerializer::Serialize(const std::string& path)
 	{
+		m_AssetGuid = ObjectDB::GetGuidFromObject(m_ObjectsToSerialize[0]);
 		ryml::Tree tree;
 		ryml::NodeRef root = tree.rootref();
 		root |= ryml::MAP;

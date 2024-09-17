@@ -16,6 +16,45 @@ namespace Blueberry
 		m_DepthStencilView = nullptr;
 	}
 
+	UINT GetBlockSize(DXGI_FORMAT format)
+	{
+		switch (format)
+		{
+		case DXGI_FORMAT_BC1_TYPELESS:
+		case DXGI_FORMAT_BC1_UNORM:
+		case DXGI_FORMAT_BC1_UNORM_SRGB:
+			return 8;
+		case DXGI_FORMAT_BC2_TYPELESS:
+		case DXGI_FORMAT_BC2_UNORM:
+		case DXGI_FORMAT_BC2_UNORM_SRGB:
+		case DXGI_FORMAT_BC3_TYPELESS:
+		case DXGI_FORMAT_BC3_UNORM:
+		case DXGI_FORMAT_BC3_UNORM_SRGB:
+			return 16;
+		case DXGI_FORMAT_BC4_TYPELESS:
+		case DXGI_FORMAT_BC4_UNORM:
+		case DXGI_FORMAT_BC4_SNORM:
+			return 8;
+		case DXGI_FORMAT_BC5_TYPELESS:
+		case DXGI_FORMAT_BC5_UNORM:
+		case DXGI_FORMAT_BC5_SNORM:
+		case DXGI_FORMAT_BC6H_TYPELESS:
+		case DXGI_FORMAT_BC6H_UF16:
+		case DXGI_FORMAT_BC6H_SF16:
+		case DXGI_FORMAT_BC7_TYPELESS:
+		case DXGI_FORMAT_BC7_UNORM:
+		case DXGI_FORMAT_BC7_UNORM_SRGB:
+			return 16;
+
+		case DXGI_FORMAT_R8G8B8A8_UNORM:
+		case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
+			return 4;
+
+		default:
+			return 0;
+		}
+	}
+
 	bool IsCompressed(DXGI_FORMAT format)
 	{
 		switch (format)
@@ -55,21 +94,23 @@ namespace Blueberry
 
 		if (properties.data != nullptr)
 		{
-			if (IsCompressed((DXGI_FORMAT)properties.format))
+			DXGI_FORMAT format = (DXGI_FORMAT)properties.format;
+			UINT blockSize = GetBlockSize(format);
+			if (IsCompressed(format))
 			{
 				D3D11_SUBRESOURCE_DATA* subresourceDatas = new D3D11_SUBRESOURCE_DATA[properties.mipCount];
-				int width = properties.width;
-				int height = properties.height;
+				UINT width = properties.width;
+				UINT height = properties.height;
 				char* ptr = (char*)properties.data;
 				for (UINT i = 0; i < properties.mipCount; ++i)
 				{
 					D3D11_SUBRESOURCE_DATA subresourceData;
 					subresourceData.pSysMem = ptr;
-					subresourceData.SysMemPitch = 16 * (width / 4);
+					subresourceData.SysMemPitch = Max(1, (width + 3) / 4) * blockSize;
 					subresourceData.SysMemSlicePitch = 0;
 					subresourceDatas[i] = subresourceData;
 
-					ptr += subresourceData.SysMemPitch * (height / 4);
+					ptr += subresourceData.SysMemPitch * Max(1, (height + 3) / 4);
 					width /= 2;
 					height /= 2;
 				}
@@ -80,7 +121,7 @@ namespace Blueberry
 				D3D11_SUBRESOURCE_DATA subresourceData;
 
 				subresourceData.pSysMem = properties.data;
-				subresourceData.SysMemPitch = properties.width * 4;
+				subresourceData.SysMemPitch = properties.width * blockSize;
 
 				return InitializeResource(&subresourceData, properties);
 			}

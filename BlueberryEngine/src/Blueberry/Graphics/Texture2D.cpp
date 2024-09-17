@@ -19,6 +19,7 @@ namespace Blueberry
 	void Texture2D::SetData(byte* data, const size_t& dataSize)
 	{
 		m_RawData.data = (byte*)data;
+		m_RawData.size = dataSize;
 	}
 
 	void Texture2D::Apply()

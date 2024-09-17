@@ -78,7 +78,6 @@ namespace Blueberry
 			{
 				Object* object = pair.first;
 				FileId id = pair.second;
-				BB_INFO(id);
 				ObjectDB::AllocateIdToGuid(object, guid, id);
 				object->SetState(ObjectState::Default);
 
@@ -264,13 +263,17 @@ namespace Blueberry
 			fbxsdk::FbxArray<fbxsdk::FbxVector2> fbxUvs;
 			if (fbxUvNames.GetCount() > 0)
 			{
+				std::string str = fbxUvNames[0];
 				fbxMesh->GetPolygonVertexUVs(fbxUvNames[0], fbxUvs);
 			}
 
 			int verticesCount = fbxMesh->GetPolygonVertexCount();
 
 			static std::vector<Vector3> verticesNormalsTangentsUvs;
-			verticesNormalsTangentsUvs.reserve(verticesCount);
+			if (verticesCount > verticesNormalsTangentsUvs.size())
+			{
+				verticesNormalsTangentsUvs.resize(verticesCount);
+			}
 
 			// Vertices
 			int* verticesPtr = fbxMesh->mPolygonVertices;
@@ -284,20 +287,59 @@ namespace Blueberry
 
 			// Indices
 			int indicesCount = 0;
-			fbxsdk::FbxMesh::PolygonDef* polygonPtr = fbxMesh->mPolygons;
-			for (int i = 0, n = fbxMesh->GetPolygonCount(); i < n; ++i, ++polygonPtr)
+			for (int i = 0; i < polygonCount; ++i)
 			{
-				indicesCount += polygonPtr->mSize == 3 ? 3 : 6;
+				// This may break if accidently get 5 or more vertex polygon
+				indicesCount += (fbxMesh->mPolygons[i]).mSize == 3 ? 3 : 6;
 			}
-			polygonPtr = fbxMesh->mPolygons;
 
 			static std::vector<UINT> indices;
-			indices.reserve(indicesCount);
+			if (indicesCount > indices.size())
+			{
+				indices.resize(indicesCount);
+			}
+
+			static std::vector<int> sortedPolygonIndexes;
+			sortedPolygonIndexes.reserve(polygonCount);
+			sortedPolygonIndexes.clear();
+
+			// Submeshes
+			UINT materialCount = node->GetMaterialCount();
+			std::vector<int> subMeshPolygonCounts;
+			fbxsdk::FbxLayerElementArrayTemplate<int>* materialIndices;
+			if (fbxMesh->GetMaterialIndices(&materialIndices))
+			{
+				UINT subMeshStart = 0;
+				for (int i = 0; i < materialCount; ++i)
+				{
+					UINT subMeshSize = 0;
+					for (int j = 0; j < polygonCount; ++j)
+					{
+						if (materialIndices->GetAt(j) == i)
+						{
+							sortedPolygonIndexes.emplace_back(j);
+							subMeshSize += fbxMesh->mPolygons[j].mSize == 3 ? 3 : 6;
+						}
+					}
+					SubMeshData* subMesh = new SubMeshData();
+					subMesh->SetIndexStart(subMeshStart);
+					subMesh->SetIndexCount(subMeshSize);
+					mesh->SetSubMesh(i, subMesh);
+					subMeshStart += subMeshSize;
+				}
+			}
+			else
+			{
+				for (int i = 0; i < polygonCount; ++i)
+				{
+					sortedPolygonIndexes.emplace_back(i);
+				}
+			}
 
 			UINT* indicesPtr = indices.data();
-			for (int i = 0, n = fbxMesh->GetPolygonCount(); i < n; ++i, ++polygonPtr)
+			for (int i = 0; i < polygonCount; ++i)
 			{
-				fbxsdk::FbxMesh::PolygonDef polygon = *polygonPtr;
+				fbxsdk::FbxMesh::PolygonDef polygon = fbxMesh->mPolygons[sortedPolygonIndexes[i]];
 				if (polygon.mSize == 3)
 				{
 					*indicesPtr++ = polygon.mIndex;
@@ -346,7 +388,9 @@ namespace Blueberry
 			}
 			mesh->Apply();
 
-			for (int i = 0; i < node->GetMaterialCount(); ++i)
+			std::vector<Material*> materials;
+			materials.resize(materialCount);
+			for (int i = 0; i < materialCount; ++i)
 			{
 				fbxsdk::FbxSurfaceMaterial* fbxMaterial = node->GetMaterial(i);
 				std::string name = fbxMaterial->GetName();
@@ -363,11 +407,12 @@ namespace Blueberry
 					Material* material = index->Get()->GetMaterial();
 					if (material != nullptr)
 					{
-						meshRenderer->SetMaterial(material);
+						materials[i] = material;
 					}
 				}
 			}
-
+			meshRenderer->SetMaterials(materials);
+			
 			//BB_INFO("Mesh \"" << nodeName << "\" imported.");
 			mesh->SetName(nodeName);
 			AddImportedObject(mesh, meshFileId);

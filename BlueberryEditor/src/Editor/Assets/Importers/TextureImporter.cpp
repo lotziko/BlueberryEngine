@@ -48,10 +48,17 @@ namespace Blueberry
 		else
 		{
 			std::string path = GetFilePath();
-
+			
 			PngTextureProcessor processor;
-			processor.Load(path, m_IsSRGB, m_GenerateMipmaps);
-			processor.Compress(TextureFormat::BC7_UNORM);
+			if (std::filesystem::path(path).extension() == ".dds")
+			{
+				processor.LoadDDS(path);
+			}
+			else
+			{
+				processor.Load(path, m_IsSRGB, m_GenerateMipmaps);
+				processor.Compress(TextureFormat::BC7_UNORM);
+			}
 			PngTextureProperties properties = processor.GetProperties();
 
 			auto objects = GetImportedObjects();

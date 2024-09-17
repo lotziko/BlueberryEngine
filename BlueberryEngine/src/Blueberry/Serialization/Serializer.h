@@ -54,6 +54,7 @@ namespace Blueberry
 		FileId GenerateFileId();
 
 	protected:
+		Guid m_AssetGuid;
 		std::vector<Object*> m_ObjectsToSerialize;
 		std::vector<Object*> m_AdditionalObjectsToSerialize;
 		std::vector<std::pair<Object*, FileId>> m_DeserializedObjects;

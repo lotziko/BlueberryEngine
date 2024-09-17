@@ -83,6 +83,12 @@ namespace Blueberry
 				hasChanged = true;
 			}
 		break;
+		case BindingType::ObjectPtrArray:
+			if (ImGui::ObjectArrayEdit(nameLabel, value.Get<std::vector<ObjectPtr<Object>>>(), info.objectType))
+			{
+				hasChanged = true;
+			}
+			break;
 		}
 		if (hasChanged)
 		{

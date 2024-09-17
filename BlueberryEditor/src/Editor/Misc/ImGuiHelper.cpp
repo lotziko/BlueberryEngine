@@ -161,7 +161,10 @@ bool ImGui::ObjectEdit(const char* label, Blueberry::Object** v, const std::size
 
 	ImGui::Text(label);
 	ImGui::SameLine();
-	ImGui::SetCursorPosX(100);
+	ImGui::SetCursorPosX(150);
+
+	Blueberry::Object* vObj = *v;
+	ImGui::Text((vObj != nullptr && Blueberry::ObjectDB::IsValid(vObj)) ? vObj->GetName().c_str() : "None");
 
 	if (ImGui::BeginDragDropTarget())
 	{
@@ -185,9 +188,6 @@ bool ImGui::ObjectEdit(const char* label, Blueberry::Object** v, const std::size
 		ImGui::EndDragDropTarget();
 	}
 
-	Blueberry::Object* vObj = *v;
-	ImGui::Text((vObj != nullptr && Blueberry::ObjectDB::IsValid(vObj)) ? vObj->GetName().c_str() : "None");
-
 	ImGui::PopID();
 	return result;
 }
@@ -199,6 +199,20 @@ bool ImGui::ObjectEdit(const char* label, Blueberry::ObjectPtr<Blueberry::Object
 	{
 		*v = object;
 		return true;
+	}
+	return false;
+}
+
+bool ImGui::ObjectArrayEdit(const char* label, std::vector<Blueberry::ObjectPtr<Blueberry::Object>>* v, const std::size_t& type)
+{
+	ImGui::Text(label);
+	for (int i = 0; i < v->size(); ++i)
+	{
+		Blueberry::ObjectPtr<Blueberry::Object>* objectPtr = (v->data() + i);
+		if (ObjectEdit("", objectPtr, type))
+		{
+			return true;
+		}
 	}
 	return false;
 }

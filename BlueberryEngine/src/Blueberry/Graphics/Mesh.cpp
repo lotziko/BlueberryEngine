@@ -9,7 +9,36 @@
 
 namespace Blueberry
 {
+	DATA_DEFINITION(SubMeshData)
 	OBJECT_DEFINITION(Object, Mesh)
+
+	const UINT& SubMeshData::GetIndexStart()
+	{
+		return m_IndexStart;
+	}
+
+	void SubMeshData::SetIndexStart(const UINT& indexStart)
+	{
+		m_IndexStart = indexStart;
+	}
+
+	const UINT& SubMeshData::GetIndexCount()
+	{
+		return m_IndexCount;
+	}
+
+	void SubMeshData::SetIndexCount(const UINT& indexCount)
+	{
+		m_IndexCount = indexCount;
+	}
+
+	void SubMeshData::BindProperties()
+	{
+		BEGIN_OBJECT_BINDING(SubMeshData)
+		BIND_FIELD(FieldInfo(TO_STRING(m_IndexStart), &SubMeshData::m_IndexStart, BindingType::Int))
+		BIND_FIELD(FieldInfo(TO_STRING(m_IndexCount), &SubMeshData::m_IndexCount, BindingType::Int))
+		END_OBJECT_BINDING()
+	}
 
 	const int VERTICES_BIT = 1;
 	const int NORMALS_BIT = 2;
@@ -36,6 +65,16 @@ namespace Blueberry
 	const UINT& Mesh::GetIndexCount()
 	{
 		return m_IndexCount;
+	}
+
+	const UINT& Mesh::GetSubMeshCount()
+	{
+		return m_SubMeshes.size();
+	}
+
+	SubMeshData* Mesh::GetSubMesh(const UINT& index)
+	{
+		return m_SubMeshes[index].Get();
 	}
 
 	void Mesh::SetVertices(const Vector3* vertices, const UINT& vertexCount)
@@ -84,6 +123,15 @@ namespace Blueberry
 			m_ChannelFlags |= UV0_BIT;
 			m_BufferIsDirty = true;
 		}
+	}
+
+	void Mesh::SetSubMesh(const UINT& index, SubMeshData* data)
+	{
+		if (index >= m_SubMeshes.size())
+		{
+			m_SubMeshes.resize(index + 1);
+		}
+		m_SubMeshes[index] = data;
 	}
 
 	// Based on https://www.turais.de/using-mikktspace-in-your-project/
@@ -282,6 +330,7 @@ namespace Blueberry
 		BIND_FIELD(FieldInfo(TO_STRING(m_VertexCount), &Mesh::m_VertexCount, BindingType::Int))
 		BIND_FIELD(FieldInfo(TO_STRING(m_IndexCount), &Mesh::m_IndexCount, BindingType::Int))
 		BIND_FIELD(FieldInfo(TO_STRING(m_ChannelFlags), &Mesh::m_ChannelFlags, BindingType::Int))
+		BIND_FIELD(FieldInfo(TO_STRING(m_SubMeshes), &Mesh::m_SubMeshes, BindingType::DataArray).SetObjectType(SubMeshData::Type))
 		BIND_FIELD(FieldInfo(TO_STRING(m_Bounds), &Mesh::m_Bounds, BindingType::AABB))
 		END_OBJECT_BINDING()
 	}
