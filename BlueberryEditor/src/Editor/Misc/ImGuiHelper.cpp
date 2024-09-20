@@ -299,7 +299,7 @@ void ImGui::ApplyEditorDarkTheme()
 void ImGui::LoadDefaultEditorFonts()
 {
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	float fontSize = 17.0f;
+	float fontSize = 16.0f;
 	io.Fonts->AddFontFromFileTTF("assets/fonts/sourcesans/SourceSansPro-Semibold.ttf", fontSize);
 	io.FontDefault = io.Fonts->AddFontFromFileTTF("assets/fonts/sourcesans/SourceSansPro-Regular.ttf", fontSize);
 }

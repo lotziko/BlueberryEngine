@@ -43,6 +43,10 @@ namespace Blueberry
 
 	void MeshRenderer::SetMaterial(Material* material)
 	{
+		if (m_Materials.size() == 0)
+		{
+			m_Materials.resize(1);
+		}
 		m_Materials[0] = material;
 	}
 

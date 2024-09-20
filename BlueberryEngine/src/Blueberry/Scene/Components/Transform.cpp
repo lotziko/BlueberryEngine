@@ -111,6 +111,20 @@ namespace Blueberry
 		SetHierarchyDirty();
 	}
 
+	void Transform::SetLocalRotationHint(const Quaternion& rotation, const float& snapping)
+	{
+		m_LocalRotation = rotation;
+		Vector3 euler = ToDegrees(rotation.ToEuler());
+		if (snapping > 0)
+		{
+			euler /= snapping;
+			euler = Vector3(roundf(euler.x), roundf(euler.y), roundf(euler.z));
+			euler *= snapping;
+		}
+		m_LocalRotationEulerHint = euler;
+		SetHierarchyDirty();
+	}
+
 	void Transform::SetLocalEulerRotation(const Vector3& euler)
 	{
 		m_LocalRotation = Quaternion::CreateFromYawPitchRoll(euler.y, euler.x, euler.z);

@@ -22,9 +22,19 @@ namespace Blueberry
 		return m_Type;
 	}
 
+	void Light::SetType(const LightType& type)
+	{
+		m_Type = type;
+	}
+
 	const Color& Light::GetColor()
 	{
 		return m_Color;
+	}
+
+	void Light::SetColor(const Color& color)
+	{
+		m_Color = color;
 	}
 
 	const float& Light::GetIntensity()
@@ -32,9 +42,19 @@ namespace Blueberry
 		return m_Intensity;
 	}
 
+	void Light::SetIntensity(const float& intensity)
+	{
+		m_Intensity = intensity;
+	}
+
 	const float& Light::GetRange()
 	{
 		return m_Range;
+	}
+
+	void Light::SetRange(const float& range)
+	{
+		m_Range = range;
 	}
 
 	const float& Light::GetOuterSpotAngle()

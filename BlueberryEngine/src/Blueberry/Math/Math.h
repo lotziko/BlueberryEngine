@@ -20,8 +20,6 @@ namespace Blueberry
 	constexpr auto DegreeToRad = 57.29577951471995f;
 	constexpr auto RadToDegree = 0.0174532925194444f;
 
-	const Vector3 ForwardVector = Vector3(0, 0, 1);
-
 	inline float ToDegrees(float radians)
 	{
 		return radians * DegreeToRad;
@@ -45,6 +43,23 @@ namespace Blueberry
 	inline Matrix CreateTRS(Vector3 position, Quaternion rotation, Vector3 scale)
 	{
 		return Matrix::CreateScale(scale) * Matrix::CreateFromQuaternion(rotation) * Matrix::CreateTranslation(position);
+	}
+
+	inline Quaternion LookRotation(Vector3 forward, Vector3 up = Vector3::UnitY)
+	{
+		Vector3 zAxis = forward;
+		Vector3 xAxis = zAxis.Cross(up);
+		xAxis.Normalize();
+		Vector3 yAxis = zAxis.Cross(xAxis);
+
+		Matrix rotationMatrix = Matrix(
+			xAxis.x, xAxis.y, xAxis.z, 0.0f,
+			yAxis.x, yAxis.y, yAxis.z, 0.0f,
+			zAxis.x, zAxis.y, zAxis.z, 0.0f,
+			0.0f, 0.0f, 0.0f, 1.0f
+		);
+
+		return Quaternion::CreateFromRotationMatrix(rotationMatrix);
 	}
 
 	inline float Max(float a, float b)

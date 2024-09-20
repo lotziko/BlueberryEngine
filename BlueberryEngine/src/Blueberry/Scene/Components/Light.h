@@ -23,9 +23,17 @@ namespace Blueberry
 		virtual void OnDisable() final;
 
 		const LightType& GetType();
+		void SetType(const LightType& type);
+
 		const Color& GetColor();
+		void SetColor(const Color& color);
+
 		const float& GetIntensity();
+		void SetIntensity(const float& intensity);
+
 		const float& GetRange();
+		void SetRange(const float& range);
+
 		const float& GetOuterSpotAngle();
 		const float& GetInnerSpotAngle();
 

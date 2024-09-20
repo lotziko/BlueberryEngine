@@ -93,7 +93,7 @@ namespace Blueberry
 
 				transformMatrix.Decompose(scale, rotation, translation);
 				transform->SetLocalPosition(translation);
-				transform->SetLocalRotation(rotation);
+				transform->SetLocalRotationHint(rotation, gizmoSnapping[0]);
 				transform->SetLocalScale(scale);
 				SceneArea::RequestRedrawAll();
 			}

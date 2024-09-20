@@ -105,38 +105,60 @@ namespace Blueberry
 			UpdateFiles();
 		}
 
-		// Prefab creating
-		ImGui::Dummy(size);
-		if (ImGui::BeginDragDropTarget())
+		const int bottomPanelSize = 20;
+
+		if (ImGui::BeginChild("Middle panel", ImVec2(size.x, size.y - bottomPanelSize)))
 		{
-			const ImGuiPayload* payload = ImGui::GetDragDropPayload();
-			if (payload != nullptr && payload->IsDataType("OBJECT_ID"))
+			ImVec2 localPos = ImGui::GetCursorScreenPos();
+			ImVec2 localSize = ImGui::GetContentRegionAvail();
+			// Prefab creating
+			ImGui::Dummy(localSize);
+			if (ImGui::BeginDragDropTarget())
 			{
-				Blueberry::ObjectId* id = (Blueberry::ObjectId*)payload->Data;
-				Blueberry::Object* object = Blueberry::ObjectDB::GetObject(*id);
-				if (object != nullptr && object->IsClassType(Entity::Type) && ImGui::AcceptDragDropPayload("OBJECT_ID"))
+				const ImGuiPayload* payload = ImGui::GetDragDropPayload();
+				if (payload != nullptr && payload->IsDataType("OBJECT_ID"))
 				{
-					PrefabManager::CreatePrefab(m_CurrentDirectory.string(), (Entity*)object);
-					UpdateFiles();
+					Blueberry::ObjectId* id = (Blueberry::ObjectId*)payload->Data;
+					Blueberry::Object* object = Blueberry::ObjectDB::GetObject(*id);
+					if (object != nullptr && object->IsClassType(Entity::Type) && ImGui::AcceptDragDropPayload("OBJECT_ID"))
+					{
+						PrefabManager::CreatePrefab(m_CurrentDirectory.string(), (Entity*)object);
+						UpdateFiles();
+					}
+				}
+				ImGui::EndDragDropTarget();
+			}
+			ImGui::SetCursorScreenPos(localPos);
+
+			for (auto& path : m_CurrentDirectoryFiles)
+			{
+				DrawFile(path);
+				if (ImGui::IsItemHovered())
+				{
+					isAnyFileHovered = true;
 				}
 			}
-			ImGui::EndDragDropTarget();
-		}
-		ImGui::SetCursorScreenPos(pos);
-		
-		for (auto& path : m_CurrentDirectoryFiles)
-		{
-			DrawFile(path);
-			if (ImGui::IsItemHovered())
+
+			if (!isAnyFileHovered && ImGui::IsWindowHovered() && ImGui::IsMouseClicked(0))
 			{
-				isAnyFileHovered = true;
+				Selection::SetActiveObject(nullptr);
 			}
 		}
+		ImGui::EndChild();
 
-		if (!isAnyFileHovered && ImGui::IsWindowHovered() && ImGui::IsMouseClicked(0))
+		ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyleColorVec4(ImGuiCol_MenuBarBg));
+		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 0.0f);
+		if (ImGui::BeginChild("Bottom panel"))
 		{
-			Selection::SetActiveObject(nullptr);
+			std::string path = AssetDB::GetRelativeAssetPath(Selection::GetActiveObject());
+			if (path.size() > 0)
+			{
+				ImGui::Text(path.c_str());
+			}
 		}
+		ImGui::EndChild();
+		ImGui::PopStyleVar();
+		ImGui::PopStyleColor();
 
 		const char* popId = "Delete?";
 		const char* popupId = "ProjectPopup";
@@ -228,7 +250,7 @@ namespace Blueberry
 				}
 			}
 
-			Texture* icon = ThumbnailCache::GetThumbnail(importer);
+			Texture* icon = ThumbnailCache::GetThumbnail(ObjectDB::GetObjectFromGuid(importer->GetGuid(), importer->GetMainObject()));
 			if (icon == nullptr)
 			{
 				icon = ((Texture*)importer->GetIcon());

@@ -21,7 +21,7 @@ namespace Blueberry
 		virtual void OnDestroy() override;
 
 		template<class ComponentType>
-		void AddComponent();
+		ComponentType* AddComponent();
 
 		template<class ComponentType>
 		void AddComponent(ComponentType* component);
@@ -67,7 +67,7 @@ namespace Blueberry
 	};
 
 	template<class ComponentType>
-	inline void Entity::AddComponent()
+	inline ComponentType* Entity::AddComponent()
 	{
 		static_assert(std::is_base_of<Component, ComponentType>::value, "Type is not derived from Component.");
 
@@ -95,6 +95,7 @@ namespace Blueberry
 		{
 			componentToAdd->OnEnable();
 		}
+		return componentToAdd;
 	}
 
 	template<class ComponentType>

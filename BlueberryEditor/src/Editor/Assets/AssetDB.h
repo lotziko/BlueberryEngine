@@ -26,6 +26,7 @@ namespace Blueberry
 		// Use inside importers only
 		static std::vector<std::pair<Object*, FileId>> AssetDB::LoadAssetObjects(const Guid& guid, const std::unordered_map<FileId, ObjectId>& existingObjects);
 
+		static const std::string GetRelativeAssetPath(Object* object);
 		static std::string GetAssetCachedDataPath(Object* object);
 
 		static bool HasAssetWithGuidInData(const Guid& guid);

@@ -45,9 +45,8 @@ namespace Blueberry
 
 		Entity* cameraEntity = Object::Create<Entity>();
 		cameraEntity->AddComponent<Transform>();
-		cameraEntity->AddComponent<Camera>();
+		m_Camera = cameraEntity->AddComponent<Camera>();
 		cameraEntity->OnCreate();
-		m_Camera = cameraEntity->GetComponent<Camera>();
 
 		Selection::GetSelectionChanged().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
 		EditorSceneManager::GetSceneLoaded().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
@@ -486,16 +485,21 @@ namespace Blueberry
 	{
 		int viewportWidth = static_cast<int>(width);
 		int viewportHeight = static_cast<int>(height);
+		Color background = { 0.117f, 0.117f, 0.117f, 1 };
 
 		Scene* scene = EditorSceneManager::GetScene();
-		DefaultRenderer::Draw(scene, m_Camera, Rectangle(0, 0, viewportWidth, viewportHeight), { 0.117f, 0.117f, 0.117f, 1 }, m_ColorRenderTarget, m_DepthStencilRenderTarget);
+		if (scene == nullptr)
+		{
+			GfxDevice::SetRenderTarget(m_ColorRenderTarget->Get());
+			GfxDevice::ClearColor(background);
+			GfxDevice::SetRenderTarget(nullptr);
+			return;
+		}
+		DefaultRenderer::Draw(scene, m_Camera, Rectangle(0, 0, viewportWidth, viewportHeight), background, m_ColorRenderTarget, m_DepthStencilRenderTarget);
 		GfxDevice::SetRenderTarget(m_ColorRenderTarget->Get(), m_DepthStencilRenderTarget->Get());
 		GfxDevice::SetViewport(0, 0, viewportWidth, viewportHeight);
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_GridMaterial));
-		if (scene != nullptr)
-		{
-			IconRenderer::Draw(scene, m_Camera);
-		}
+		IconRenderer::Draw(scene, m_Camera);
 		GfxDevice::SetRenderTarget(nullptr);
 	}
 

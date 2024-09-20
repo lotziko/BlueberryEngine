@@ -11,6 +11,6 @@ namespace Blueberry
 		virtual Object* LoadImpl(const std::string& path) override;
 
 	private:
-		std::map<std::string, Object*> m_LoadedAssets;
+		std::unordered_map<std::string, Object*> m_LoadedAssets;
 	};
 }

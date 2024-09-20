@@ -31,6 +31,7 @@ namespace Blueberry
 
 		void SetLocalPosition(const Vector3& position);
 		void SetLocalRotation(const Quaternion& rotation);
+		void SetLocalRotationHint(const Quaternion& rotation, const float& snapping = 0.0f);
 		void SetLocalEulerRotation(const Vector3& euler);
 		void SetLocalEulerRotationHint(const Vector3& euler);
 		void SetLocalScale(const Vector3& scale);

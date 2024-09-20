@@ -4,6 +4,7 @@
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\Texture.h"
 #include "Editor\Assets\AssetDB.h"
+#include "Editor\Assets\ThumbnailCache.h"
 #include "Editor\Misc\ImGuiHelper.h"
 #include "imgui\imgui.h"
 
@@ -57,6 +58,7 @@ namespace Blueberry
 			if (hasPropertyChanges)
 			{
 				material->ApplyProperties();
+				ThumbnailCache::Refresh(material);
 			}
 		}
 

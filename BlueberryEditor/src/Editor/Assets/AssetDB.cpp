@@ -133,6 +133,32 @@ namespace Blueberry
 		return objects;
 	}
 
+	const std::string AssetDB::GetRelativeAssetPath(Object* object)
+	{
+		// TODO make some cache instead
+		if (object == nullptr)
+		{
+			return "";
+		}
+
+		AssetImporter* importer = nullptr;
+		if (object->IsClassType(AssetImporter::Type))
+		{
+			importer = (AssetImporter*)object;
+		}
+
+		if (ObjectDB::HasGuid(object))
+		{
+			importer = GetImporter(ObjectDB::GetGuidFromObject(object));
+		}
+
+		if (importer != nullptr)
+		{
+			return importer->GetRelativeFilePath();
+		}
+		return "";
+	}
+
 	std::string AssetDB::GetAssetCachedDataPath(Object* object)
 	{
 		std::filesystem::path dataPath = Path::GetAssetCachePath();

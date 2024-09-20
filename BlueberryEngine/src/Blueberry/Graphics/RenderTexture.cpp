@@ -15,7 +15,7 @@ namespace Blueberry
 		}
 	}
 
-	RenderTexture* RenderTexture::Create(const UINT& width, const UINT& height, const UINT& antiAliasing, const TextureFormat& textureFormat, const WrapMode& wrapMode, const FilterMode& filterMode)
+	RenderTexture* RenderTexture::Create(const UINT& width, const UINT& height, const UINT& antiAliasing, const TextureFormat& textureFormat, const WrapMode& wrapMode, const FilterMode& filterMode, const bool& isReadable)
 	{
 		RenderTexture* texture = Object::Create<RenderTexture>();
 		texture->m_Width = width;
@@ -35,6 +35,7 @@ namespace Blueberry
 		textureProperties.wrapMode = wrapMode;
 		textureProperties.filterMode = filterMode;
 		textureProperties.isRenderTarget = true;
+		textureProperties.isReadable = isReadable;
 
 		GfxDevice::CreateTexture(textureProperties, texture->m_Texture);
 

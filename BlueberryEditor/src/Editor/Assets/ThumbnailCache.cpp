@@ -3,13 +3,12 @@
 
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\Texture2D.h"
-#include "Blueberry\Graphics\StandardMeshes.h"
-#include "Blueberry\Graphics\DefaultMaterials.h"
 #include "Blueberry\Core\ObjectDB.h"
 #include "Blueberry\Tools\FileHelper.h"
 
+#include "Editor\Assets\AssetDB.h"
+#include "Editor\Assets\ThumbnailRenderer.h"
 #include "Editor\Assets\AssetImporter.h"
-#include "Editor\Assets\Importers\TextureImporter.h"
 #include "Editor\Path.h"
 
 namespace Blueberry
@@ -19,67 +18,52 @@ namespace Blueberry
 	#define THUMBNAIL_SIZE 128
 	#define THUMBNAIL_DATA_SIZE THUMBNAIL_SIZE * THUMBNAIL_SIZE * 4
 
-	Texture2D* ThumbnailCache::GetThumbnail(AssetImporter* importer)
+	Texture2D* ThumbnailCache::GetThumbnail(Object* asset)
 	{
-		if (importer == nullptr)
+		if (asset == nullptr || !ObjectDB::HasGuid(asset))
 		{
 			return nullptr;
 		}
 
-		auto thumbnailIt = s_Thumbnails.find(importer->GetObjectId());
+		// Return existing
+		auto thumbnailIt = s_Thumbnails.find(asset->GetObjectId());
 		if (thumbnailIt != s_Thumbnails.end())
 		{
 			return thumbnailIt->second;
 		}
 
-		if (s_ThumbnailRenderTarget == nullptr)
+		// Load and return existing
+		Texture2D* thumbnail = Load(asset);
+		if (thumbnail != nullptr)
 		{
-			TextureProperties properties = {};
-			properties.width = THUMBNAIL_SIZE;
-			properties.height = THUMBNAIL_SIZE;
-			properties.isRenderTarget = true;
-			properties.isReadable = true;
-			properties.format = TextureFormat::R8G8B8A8_UNorm;
-			GfxDevice::CreateTexture(properties, s_ThumbnailRenderTarget);
+			s_Thumbnails.insert_or_assign(asset->GetObjectId(), thumbnail);
+			return thumbnail;
 		}
 
-		if (importer->IsClassType(TextureImporter::Type))
+		// Draw and create new
+		thumbnail = DrawAndSave(asset);
+		if (thumbnail != nullptr)
 		{
-			Texture2D* thumbnail = Load(importer);
-			if (thumbnail != nullptr)
-			{
-				s_Thumbnails.insert_or_assign(importer->GetObjectId(), thumbnail);
-				return thumbnail;
-			}
-			importer->ImportDataIfNeeded();
-			if (importer->IsImported())
-			{
-				static size_t blitTextureId = TO_HASH("_BlitTexture");
-
-				unsigned char data[THUMBNAIL_DATA_SIZE];
-				Texture2D* importedTexture = (Texture2D*)ObjectDB::GetObject(importer->GetImportedObjects().begin()->second);
-				GfxDevice::SetRenderTarget(s_ThumbnailRenderTarget);
-				GfxDevice::SetViewport(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE);
-				GfxDevice::SetGlobalTexture(blitTextureId, importedTexture->Get());
-				GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetBlit()));
-				GfxDevice::Read(s_ThumbnailRenderTarget, data, Rectangle(0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE));
-				GfxDevice::SetRenderTarget(nullptr);
-
-				Texture2D* thumbnail = Texture2D::Create(THUMBNAIL_SIZE, THUMBNAIL_SIZE);
-				thumbnail->SetData(data, THUMBNAIL_DATA_SIZE);
-				thumbnail->Apply();
-				s_Thumbnails.insert_or_assign(importer->GetObjectId(), thumbnail);
-				Save(importer, data);
-				return thumbnail;
-			}
+			s_Thumbnails.insert_or_assign(asset->GetObjectId(), thumbnail);
+			return thumbnail;
 		}
 		return nullptr;
 	}
 
-	Texture2D* ThumbnailCache::Load(AssetImporter* importer)
+	void ThumbnailCache::Refresh(Object* asset)
+	{
+		Texture2D* thumbnail = DrawAndSave(asset);
+		if (thumbnail != nullptr)
+		{
+			s_Thumbnails.insert_or_assign(asset->GetObjectId(), thumbnail);
+		}
+	}
+
+	Texture2D* ThumbnailCache::Load(Object* asset)
 	{
 		auto thumbnailPath = Path::GetThumbnailCachePath();
-		thumbnailPath.append(importer->GetGuid().ToString());
+		auto pair = ObjectDB::GetGuidAndFileIdFromObject(asset);
+		thumbnailPath.append(pair.first.ToString().append(std::to_string(pair.second)));
 		if (!std::filesystem::exists(thumbnailPath))
 		{
 			return nullptr;
@@ -96,14 +80,42 @@ namespace Blueberry
 		return thumbnail;
 	}
 
-	void ThumbnailCache::Save(AssetImporter* importer, unsigned char* thumbnail)
+	void ThumbnailCache::Save(Object* asset, unsigned char* thumbnail)
 	{
 		auto thumbnailPath = Path::GetThumbnailCachePath();
+		auto pair = ObjectDB::GetGuidAndFileIdFromObject(asset);
 		if (!std::filesystem::exists(thumbnailPath))
 		{
 			std::filesystem::create_directories(thumbnailPath);
 		}
-		thumbnailPath.append(importer->GetGuid().ToString());
+		thumbnailPath.append(pair.first.ToString().append(std::to_string(pair.second)));
 		FileHelper::Save(thumbnail, THUMBNAIL_DATA_SIZE, thumbnailPath.string());
+	}
+
+	Texture2D* ThumbnailCache::DrawAndSave(Object* asset)
+	{
+		if (ThumbnailRenderer::CanDraw(asset->GetType()))
+		{
+			Guid guid = ObjectDB::GetGuidFromObject(asset);
+			AssetImporter* importer = AssetDB::GetImporter(guid);
+			if (importer != nullptr)
+			{
+				importer->ImportDataIfNeeded();
+
+				if (importer->IsImported())
+				{
+					unsigned char data[THUMBNAIL_DATA_SIZE];
+					if (ThumbnailRenderer::Draw(data, THUMBNAIL_SIZE, asset))
+					{
+						Texture2D* thumbnail = Texture2D::Create(THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+						thumbnail->SetData(data, THUMBNAIL_DATA_SIZE);
+						thumbnail->Apply();
+						Save(asset, data);
+						return thumbnail;
+					}
+				}
+			}
+		}
+		return nullptr;
 	}
 }
