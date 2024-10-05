@@ -6,9 +6,22 @@
 namespace Blueberry
 {
 	class Texture2D;
+	class AssetImporter;
+	class Object;
 
 	class ProjectBrowser
 	{
+		struct AssetInfo
+		{
+			std::filesystem::path path;
+			std::string pathString;
+			AssetImporter* importer;
+			std::vector<Object*> objects; // First object is main
+			std::vector<Vector2> positions;
+			bool isDirectory;
+			bool expanded;
+		};
+
 	public:
 		ProjectBrowser();
 		virtual ~ProjectBrowser();
@@ -19,7 +32,8 @@ namespace Blueberry
 		void DrawFoldersTree();
 		void DrawFolderNode(const FolderTreeNode& node);
 		void DrawCurrentFolder();
-		void DrawFile(const std::filesystem::path& path);
+		void DrawObject(Object* object, const AssetInfo& asset, bool& anyHovered);
+		void OpenAsset(const AssetInfo& asset);
 
 		void OnAssetDBRefresh();
 		void UpdateTree();
@@ -28,7 +42,7 @@ namespace Blueberry
 	private:
 		std::filesystem::path m_PreviousDirectory;
 		std::filesystem::path m_CurrentDirectory;
-		std::vector<std::filesystem::path> m_CurrentDirectoryFiles;
+		std::vector<AssetInfo> m_CurrentDirectoryAssets;
 
 		FolderTree m_FolderTree;
 		const char* m_OpenedModalPopupId = nullptr;

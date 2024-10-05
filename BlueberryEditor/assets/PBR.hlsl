@@ -18,6 +18,11 @@ float AdjustRoughnessByGeometricNormal(float roughness, float3 geometricNormalWs
 	return roughness;
 }
 
+half2 CalculateFresnelResponse(half NdotV, half roughness)
+{
+	return pow(float2(0, 0), 2);
+}
+
 void RoughnessEllipseToScaleAndExp(float roughness, out float2 diffuseExponent, out float2 specularExponent, out float2 specularScale)
 {
 	diffuseExponent = ((1.0 - roughness.xx) * 0.8) + 0.6; // 0.8 and 0.6 are magic numbers
@@ -79,6 +84,22 @@ half3 CalculateDirectSpecular(float3 normalWS, float3 viewDirectionWS, float3 li
 	return (numerator / denominator) * NDotL * lightColor * attenuation * falloff;
 }
 
+half3 CalculateIndirectDiffuse(half3 bakedGI, half occlusion)
+{
+	return bakedGI;
+}
+
+half3 CalculateIndirectSpecular(half3 normalWS, half3 positionWS, half3 viewDirectionWS, half roughness, half occlusion, half3 reflectance)
+{
+	half3 reflectVector = reflect(-viewDirectionWS, normalWS);
+	half NDotV = max(0, dot(normalWS.xyz, viewDirectionWS.xyz));
+
+	half3 envirnonmentReflection = max(0, float3(0, 0, 0));
+	half2 fresnelResponse = CalculateFresnelResponse(NDotV, roughness);
+
+	return envirnonmentReflection * (reflectance * fresnelResponse.x + fresnelResponse.y);
+}
+
 float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 {
 	float2 diffuseExponent;
@@ -92,7 +113,8 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 	float3 directDiffuseTerm = (float3)0;
 	float3 directSpecularTerm = (float3)0;
 
-	float3 indirectDiffuseTerm = float3(0.01, 0.01, 0.01);
+	float3 indirectDiffuseTerm = CalculateIndirectDiffuse(float3(0.01, 0.01, 0.01), surfaceData.occlusion);
+	float3 indirectSpecularTerm = CalculateIndirectSpecular(inputData.normalWS, inputData.positionWS, inputData.viewDirectionWS, geometricRoughness, surfaceData.occlusion, reflectance);
 
 	for (int i = 0; i < int(_LightsCount.x); i++)
 	{
@@ -118,7 +140,7 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 	directDiffuseTerm *= (1.0 - reflectance);
 	indirectDiffuseTerm *= (1.0 - reflectance);
 
-	return ((directDiffuseTerm + indirectDiffuseTerm * surfaceData.occlusion) * surfaceData.albedo + directSpecularTerm);
+	return ((directDiffuseTerm + indirectDiffuseTerm * surfaceData.occlusion) * surfaceData.albedo + directSpecularTerm + indirectSpecularTerm * surfaceData.occlusion);
 }
 
 #endif

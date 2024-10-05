@@ -19,11 +19,10 @@ namespace Blueberry
 		std::string GetMetaFilePath();
 		const std::string& GetRelativeFilePath();
 		const std::string& GetRelativeMetaFilePath();
-		const std::unordered_map<FileId, ObjectId>& GetImportedObjects();
 		const FileId& GetMainObject();
+		const std::unordered_map<FileId, ObjectId>& GetAssetObjects();
 		const bool IsImported();
 		const bool& IsRequiringSave();
-		const Texture2D* GetIcon();
 
 		void ResetImport();
 		void ImportDataIfNeeded();
@@ -38,17 +37,16 @@ namespace Blueberry
 		
 	protected:
 		virtual void ImportData() = 0;
-		void AddImportedObject(Object* object, const FileId& fileId);
+		void AddAssetObject(Object* object, const FileId& fileId);
 		void SetMainObject(const FileId& id);
-		virtual std::string GetIconPath();
 
 	private:
 		Guid m_Guid;
 		std::string m_RelativePath;
 		std::string m_RelativeMetaPath;
 		FileId m_MainObject;
-		std::unordered_map<FileId, ObjectId> m_ImportedObjects = {};
-		Texture2D* m_Icon = nullptr;
+		std::unordered_map<FileId, ObjectId> m_AssetObjects = {};
+		//Texture2D* m_Icon = nullptr;
 		bool m_RequireSave = false;
 
 		friend class ImporterInfoCache;

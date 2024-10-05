@@ -7,16 +7,24 @@
 #include "Editor\EditorSceneManager.h"
 #include "Editor\Selection.h"
 #include "Editor\Prefabs\PrefabManager.h"
+#include "Editor\Panels\Inspector\InspectorExpandedItemsCache.h"
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Scene\Entity.h"
-#include "imgui\imgui.h"
+#include "Blueberry\Scene\Components\Component.h"
+#include "imgui\imgui_internal.h"
 
 #include "Editor\Assets\ThumbnailCache.h"
+#include "Editor\Assets\IconDB.h"
 
 namespace Blueberry
 {
+	const int bottomPanelSize = 20;
+	const int cellSize = 90;
+	const int spaceBetweenCells = 15;
+	const int cellIconPadding = 8;
+
 	ProjectBrowser::ProjectBrowser()
 	{
 		m_CurrentDirectory = Path::GetAssetsPath();
@@ -105,37 +113,101 @@ namespace Blueberry
 			UpdateFiles();
 		}
 
-		const int bottomPanelSize = 20;
-
 		if (ImGui::BeginChild("Middle panel", ImVec2(size.x, size.y - bottomPanelSize)))
 		{
-			ImVec2 localPos = ImGui::GetCursorScreenPos();
-			ImVec2 localSize = ImGui::GetContentRegionAvail();
-			// Prefab creating
-			ImGui::Dummy(localSize);
-			if (ImGui::BeginDragDropTarget())
+			ImVec2 panelPos = ImGui::GetCursorPos();
+			int maxCells = (int)floorf(size.x / (cellSize + spaceBetweenCells));
+			if (maxCells > 0)
 			{
-				const ImGuiPayload* payload = ImGui::GetDragDropPayload();
-				if (payload != nullptr && payload->IsDataType("OBJECT_ID"))
+				float expandedSpaceBetweenCells = (size.x - (maxCells * cellSize)) / (maxCells + 1);
+				// Calculate expected size and items positions
+				Vector2 expectedCursorPos = Vector2::Zero;
+				UINT cellIndex = 0;
+				for (auto& asset : m_CurrentDirectoryAssets)
 				{
-					Blueberry::ObjectId* id = (Blueberry::ObjectId*)payload->Data;
-					Blueberry::Object* object = Blueberry::ObjectDB::GetObject(*id);
-					if (object != nullptr && object->IsClassType(Entity::Type) && ImGui::AcceptDragDropPayload("OBJECT_ID"))
+					asset.expanded = InspectorExpandedItemsCache::Get(asset.pathString);
+					for (int i = 0, n = asset.expanded ? asset.objects.size() : 1; i < n; ++i)
 					{
-						PrefabManager::CreatePrefab(m_CurrentDirectory.string(), (Entity*)object);
-						UpdateFiles();
+						expectedCursorPos.x += expandedSpaceBetweenCells;
+						asset.positions[i] = Vector2(expectedCursorPos.x, expectedCursorPos.y);
+						if (cellIndex + 1 < maxCells)
+						{
+							expectedCursorPos.x += cellSize;
+							++cellIndex;
+						}
+						else
+						{
+							expectedCursorPos.y += cellSize + spaceBetweenCells;
+							expectedCursorPos.x = 0;
+							cellIndex = 0;
+						}
 					}
 				}
-				ImGui::EndDragDropTarget();
-			}
-			ImGui::SetCursorScreenPos(localPos);
+				ImGui::Dummy(ImVec2(size.x, expectedCursorPos.y + cellSize));
+				ImGui::SetCursorPos(panelPos);
 
-			for (auto& path : m_CurrentDirectoryFiles)
-			{
-				DrawFile(path);
-				if (ImGui::IsItemHovered())
+				// Prefab creating
+				if (ImGui::BeginDragDropTarget())
 				{
-					isAnyFileHovered = true;
+					const ImGuiPayload* payload = ImGui::GetDragDropPayload();
+					if (payload != nullptr && payload->IsDataType("OBJECT_ID"))
+					{
+						Blueberry::ObjectId* id = (Blueberry::ObjectId*)payload->Data;
+						Blueberry::Object* object = Blueberry::ObjectDB::GetObject(*id);
+						if (object != nullptr && object->IsClassType(Entity::Type) && ImGui::AcceptDragDropPayload("OBJECT_ID"))
+						{
+							PrefabManager::CreatePrefab(m_CurrentDirectory.string(), (Entity*)object);
+							UpdateFiles();
+						}
+					}
+					ImGui::EndDragDropTarget();
+				}
+
+				// Draw items
+				float scrollY = ImGui::GetScrollY();
+				float topClip = scrollY - cellSize - spaceBetweenCells;
+				float bottomClip = scrollY + ImGui::GetWindowHeight();
+				for (auto& asset : m_CurrentDirectoryAssets)
+				{
+					for (int i = 0, n = asset.expanded ? asset.objects.size() : 1; i < n; ++i)
+					{
+						Object* object;
+						if (i == 0)
+						{
+							object = asset.importer;
+						}
+						else
+						{
+							object = asset.objects[i];
+						}
+						Vector2 position = asset.positions[i];
+						if (position.y >= topClip && position.y <= bottomClip)
+						{
+							ImGui::SetCursorPos(ImVec2(position.x, position.y));
+							// Expanded background
+							if (i > 0 && asset.expanded)
+							{
+								ImVec2 screenPos = ImGui::GetCursorScreenPos();
+								ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(screenPos.x - 12, screenPos.y), ImVec2(screenPos.x + cellSize + 12, screenPos.y + cellSize), ImGui::GetColorU32(ImGuiCol_TitleBg), 3.0f);
+							}
+							DrawObject(object, asset, isAnyFileHovered);
+						}
+					}
+					// Expand icon
+					if (asset.objects.size() > 1)
+					{
+						const int iconSize = 16;
+						Vector2 position = asset.positions[0];
+						ImGui::SetCursorPos(ImVec2(position.x + cellSize, position.y + cellSize / 2 - iconSize / 2));
+						ImGui::SetItemAllowOverlap();
+						ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
+						if (ImGui::ArrowButtonEx("##Arrow", asset.expanded ? ImGuiDir_Left : ImGuiDir_Right, ImVec2(iconSize, iconSize)))
+						{
+							asset.expanded = !asset.expanded;
+							InspectorExpandedItemsCache::Set(asset.pathString, asset.expanded);
+						}
+						ImGui::PopStyleColor();
+					}
 				}
 			}
 
@@ -217,92 +289,81 @@ namespace Blueberry
 		}
 	}
 
-	void ProjectBrowser::DrawFile(const std::filesystem::path& path)
+	void ProjectBrowser::DrawObject(Object* object, const AssetInfo& asset, bool& anyHovered)
 	{
-		const int cellSize = 90;
-		const int cellIconPadding = 8;
+		ImVec2 screenPos = ImGui::GetCursorScreenPos();
 
-		auto pathString = path.string();
-		auto extension = path.extension();
-		auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
-
-		ImGui::PushID(pathString.c_str());
+		ImGui::PushID(object->GetObjectId());
 		ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 1.0f));
-
-		AssetImporter* importer = AssetDB::GetImporter(relativePath.string());
-		if (importer != nullptr)
+		
+		if (ImGui::Selectable(object->GetName().c_str(), Selection::IsActiveObject(object), 0, ImVec2(cellSize, cellSize)))
 		{
-			auto name = path.stem().string();
-			auto importedObjects = importer->GetImportedObjects();
-			bool isDirectory = std::filesystem::is_directory(path);
-
-			//https://www.google.com/search?q=imgui+selectable&oq=imgui+selectable&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIGCAEQRRhB0gEIMjA0NGowajGoAgCwAgA&sourceid=chrome&ie=UTF-8
-			ImVec2 pos = ImGui::GetCursorScreenPos();
-			if (ImGui::Selectable(name.c_str(), Selection::IsActiveObject(importer), 0, ImVec2(cellSize, cellSize)))
+			if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
 			{
-				if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
-				{
-					Selection::AddActiveObject(importer);
-				}
-				else
-				{
-					Selection::SetActiveObject(importer);
-				}
+				Selection::AddActiveObject(object);
 			}
-
-			Texture* icon = ThumbnailCache::GetThumbnail(ObjectDB::GetObjectFromGuid(importer->GetGuid(), importer->GetMainObject()));
-			if (icon == nullptr)
+			else
 			{
-				icon = ((Texture*)importer->GetIcon());
+				Selection::SetActiveObject(object);
 			}
-			ImGui::GetWindowDrawList()->AddImage(icon->GetHandle(), ImVec2(pos.x + cellIconPadding, pos.y), ImVec2(pos.x + cellSize - cellIconPadding, pos.y + cellSize - cellIconPadding * 2), ImVec2(0, 1), ImVec2(1, 0));
-
-			if (ImGui::IsItemHovered())
-			{
-				if (isDirectory)
-				{
-					if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-					{
-						std::filesystem::path directoryPath = importer->GetFilePath();
-						m_CurrentDirectory /= directoryPath.filename();
-					}
-				}
-				else
-				{
-					if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-					{
-						std::string stringPath = importer->GetFilePath();
-						std::filesystem::path filePath = stringPath;
-						if (filePath.extension() == ".scene")
-						{
-							EditorSceneManager::Load(stringPath);
-						}
-					}
-				}
-			}
-
-			// TODO main object, selection into OBJECT_ID and dropdown for multiple objects
-			if (ImGui::BeginDragDropSource())
-			{
-				auto it = importer->GetImportedObjects().find(importer->GetMainObject());
-				if (it != importer->GetImportedObjects().end())
-				{
-					ObjectId objectId = it->second;
-					ImGui::SetDragDropPayload("OBJECT_ID", &objectId, sizeof(ObjectId));
-					ImGui::Text("%s", importer->GetName().c_str());
-				}
-				ImGui::EndDragDropSource();
-			}
+			asset.importer->ImportDataIfNeeded();
 		}
 
-		float visibleWidth = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
-		if (ImGui::GetItemRectMax().x + cellSize < visibleWidth)
+		if (ImGui::IsItemHovered())
 		{
-			ImGui::SameLine();
+			if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+			{
+				OpenAsset(asset);
+			}
+			anyHovered = true;
 		}
 
-		ImGui::PopID();
+		Object* iconObject = object;
+		if (object == asset.importer && asset.objects.size() > 0 && asset.objects[0] != nullptr)
+		{
+			iconObject = asset.objects[0];
+		}
+
+		// Dragging
+		if (ImGui::BeginDragDropSource())
+		{
+			ObjectId objectId = iconObject->GetObjectId();
+			ImGui::SetDragDropPayload("OBJECT_ID", &objectId, sizeof(ObjectId));
+			ImGui::Text("%s", iconObject->GetName().c_str());
+			ImGui::EndDragDropSource();
+		}
+
+		Texture* icon = ThumbnailCache::GetThumbnail(iconObject);
+		if (icon == nullptr)
+		{
+			icon = IconDB::GetAssetIcon(iconObject);
+		}
+		ImGui::GetWindowDrawList()->AddImage(icon->GetHandle(), ImVec2(screenPos.x + cellIconPadding, screenPos.y), ImVec2(screenPos.x + cellSize - cellIconPadding, screenPos.y + cellSize - cellIconPadding * 2), ImVec2(0, 1), ImVec2(1, 0));
+
 		ImGui::PopStyleVar();
+		ImGui::PopID();
+	}
+
+	void ProjectBrowser::OpenAsset(const AssetInfo& asset)
+	{
+		if (asset.isDirectory)
+		{
+			std::filesystem::path directoryPath = asset.importer->GetFilePath();
+			m_CurrentDirectory /= directoryPath.filename();
+		}
+		else
+		{
+			std::string stringPath = asset.importer->GetFilePath();
+			std::filesystem::path filePath = stringPath;
+			if (filePath.extension() == ".scene")
+			{
+				EditorSceneManager::Load(stringPath);
+			}
+			else
+			{
+				// TODO
+			}
+		}
 	}
 
 	void ProjectBrowser::OnAssetDBRefresh()
@@ -319,22 +380,58 @@ namespace Blueberry
 	void ProjectBrowser::UpdateFiles()
 	{
 		m_PreviousDirectory = m_CurrentDirectory;
-		m_CurrentDirectoryFiles.clear();
+		m_CurrentDirectoryAssets.clear();
 
 		for (auto& it : std::filesystem::directory_iterator(m_CurrentDirectory))
 		{
 			auto path = it.path();
 			if (it.is_directory() && path.extension() != ".meta")
 			{
-				m_CurrentDirectoryFiles.emplace_back(path);
+				auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
+				AssetInfo info = {};
+				info.path = path;
+				info.pathString = path.string();
+				info.importer = AssetDB::GetImporter(relativePath.string());
+				info.objects.emplace_back(nullptr);
+				info.positions.resize(1);
+				info.isDirectory = true;
+				m_CurrentDirectoryAssets.emplace_back(info);
 			}
 		}
 		for (auto& it : std::filesystem::directory_iterator(m_CurrentDirectory))
 		{
 			auto path = it.path();
+
 			if (!it.is_directory() && path.extension() != ".meta")
 			{
-				m_CurrentDirectoryFiles.emplace_back(path);
+				auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
+				AssetImporter* importer = AssetDB::GetImporter(relativePath.string());
+				if (importer != nullptr)
+				{
+					Object* mainObject = ObjectDB::GetObjectFromGuid(importer->GetGuid(), importer->GetMainObject());
+					AssetInfo info = {};
+					info.path = relativePath.string();
+					info.importer = importer;
+					if (mainObject != nullptr)
+					{
+						info.objects.emplace_back(mainObject);
+					}
+					for (auto& pair : importer->GetAssetObjects())
+					{
+						Object* object = ObjectDB::GetObject(pair.second);
+						if (object != nullptr)
+						{
+							info.objects.emplace_back(object);
+						}
+					}
+					if (info.objects.size() == 0)
+					{
+						info.objects.emplace_back(nullptr);
+					}
+					info.positions.resize(Max(1, info.objects.size()));
+					info.isDirectory = false;
+					m_CurrentDirectoryAssets.emplace_back(info);
+				}
 			}
 		}
 	}

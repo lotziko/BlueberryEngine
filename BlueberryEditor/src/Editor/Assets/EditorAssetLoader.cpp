@@ -29,12 +29,7 @@ namespace Blueberry
 		if (importer != nullptr)
 		{
 			importer->ImportDataIfNeeded();
-			auto importedObjects = importer->GetImportedObjects();
-			auto objectIt = importedObjects.find(fileId);
-			if (objectIt != importedObjects.end())
-			{
-				return ObjectDB::GetObject(objectIt->second);
-			}
+			return ObjectDB::GetObjectFromGuid(guid, fileId);
 		}
 		return nullptr;
 	}

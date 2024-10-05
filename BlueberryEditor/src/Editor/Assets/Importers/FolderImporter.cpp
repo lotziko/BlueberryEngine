@@ -9,11 +9,6 @@ namespace Blueberry
 	{
 	}
 
-	std::string FolderImporter::GetIconPath()
-	{
-		return "assets/icons/FolderIcon.png";
-	}
-
 	void FolderImporter::ImportData()
 	{
 	}

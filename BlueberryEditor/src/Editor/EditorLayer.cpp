@@ -21,6 +21,7 @@
 
 #include "Editor\RegisterEditorTypes.h"
 #include "Editor\Assets\RegisterAssetImporters.h"
+#include "Editor\Assets\RegisterIcons.h"
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Gizmos\Gizmos.h"
 #include "Editor\Gizmos\IconRenderer.h"
@@ -33,6 +34,7 @@ namespace Blueberry
 	{
 		RegisterEditorTypes();
 		RegisterAssetImporters();
+		RegisterIcons();
 		AssetDB::Refresh();
 
 		RegisterObjectInspectors();
@@ -110,7 +112,7 @@ namespace Blueberry
 
 	void EditorLayer::OnWindowFocus()
 	{
-		AssetDB::Refresh();
+		//AssetDB::Refresh();
 	}
 
 	void EditorLayer::DrawMenuBar()

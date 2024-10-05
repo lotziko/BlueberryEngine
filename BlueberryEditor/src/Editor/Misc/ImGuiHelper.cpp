@@ -50,6 +50,11 @@ bool ImGui::DragVector3(const char* label, Blueberry::Vector3* v)
 
 bool ImGui::EnumEdit(const char* label, int* v, const std::vector<std::string>* names)
 {
+	if (names == nullptr || names->size() == 0)
+	{
+		return false;
+	}
+
 	ImGui::PushID(label);
 
 	ImGui::Text(label);

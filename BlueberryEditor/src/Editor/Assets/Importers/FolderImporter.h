@@ -14,6 +14,5 @@ namespace Blueberry
 
 	protected:
 		virtual void ImportData() override;
-		virtual std::string GetIconPath() final;
 	};
 }

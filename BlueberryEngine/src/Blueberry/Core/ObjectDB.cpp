@@ -184,4 +184,9 @@ namespace Blueberry
 		}
 		return nullptr;
 	}
+
+	const std::unordered_map<FileId, ObjectId>& ObjectDB::GetObjectsFromGuid(const Guid& guid)
+	{
+		return s_GuidToObjectId[guid];
+	}
 }

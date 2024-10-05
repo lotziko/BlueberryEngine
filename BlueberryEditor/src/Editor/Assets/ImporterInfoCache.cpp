@@ -80,13 +80,16 @@ namespace Blueberry
 				// Do not create the imported object if it already exists
 				if (!ObjectDB::HasGuidAndFileId(guid, fileId))
 				{
-					ClassDB::ClassInfo info = ClassDB::GetInfo(type);
-					Object* importedObject = (Object*)info.createInstance();
+					ClassDB::ClassInfo classInfo = ClassDB::GetInfo(type);
+					Object* importedObject = (Object*)classInfo.createInstance();
 					importedObject->SetName(name);
 					importedObject->SetState(ObjectState::AwaitingLoading);
 
 					ObjectDB::AllocateIdToGuid(importedObject, guid, fileId);
-					importer->AddImportedObject(importedObject, fileId);
+					if (fileId != info.mainObject)
+					{
+						importer->AddAssetObject(importedObject, fileId);
+					}
 				}
 			}
 			return true;
@@ -100,12 +103,19 @@ namespace Blueberry
 		ImporterInfo info;
 		info.mainObject = importer->GetMainObject();
 		info.objects.clear();
-		for (auto& object : importer->GetImportedObjects())
+		
+		if (info.mainObject > 0)
 		{
-			Object* importedObject = ObjectDB::GetObject(object.second);
-			if (importedObject != nullptr)
+			Object* mainObject = ObjectDB::GetObjectFromGuid(guid, info.mainObject);
+			info.objects.emplace_back(std::make_tuple(info.mainObject, mainObject->GetType(), mainObject->GetName()));
+		}
+
+		for (auto& object : importer->GetAssetObjects())
+		{
+			Object* assetObject = ObjectDB::GetObject(object.second);
+			if (assetObject != nullptr)
 			{
-				info.objects.emplace_back(std::tuple{ object.first, importedObject->GetType(), importedObject->GetName() });
+				info.objects.emplace_back(std::make_tuple(object.first, assetObject->GetType(), assetObject->GetName()));
 			}
 		}
 		s_ImporterInfoCache.insert_or_assign(guid, info);

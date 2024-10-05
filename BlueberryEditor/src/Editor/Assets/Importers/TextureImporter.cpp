@@ -30,7 +30,7 @@ namespace Blueberry
 		Texture2D* object;
 		if (AssetDB::HasAssetWithGuidInData(guid))
 		{
-			auto objects = AssetDB::LoadAssetObjects(guid, GetImportedObjects());
+			auto objects = AssetDB::LoadAssetObjects(guid, ObjectDB::GetObjectsFromGuid(guid));
 			if (objects.size() == 1 && objects[0].first->IsClassType(Texture2D::Type))
 			{
 				object = static_cast<Texture2D*>(objects[0].first);
@@ -61,7 +61,7 @@ namespace Blueberry
 			}
 			PngTextureProperties properties = processor.GetProperties();
 
-			auto objects = GetImportedObjects();
+			const auto& objects = ObjectDB::GetObjectsFromGuid(guid);
 			auto it = objects.find(TextureId);
 			if (it != objects.end())
 			{
@@ -82,7 +82,6 @@ namespace Blueberry
 			BB_INFO("Texture \"" << GetName() << "\" imported and created from: " + path);
 		}
 		object->SetName(GetName());
-		AddImportedObject(object, TextureId);
 		SetMainObject(TextureId);
 	}
 

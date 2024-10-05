@@ -73,7 +73,7 @@ namespace Blueberry
 		{
 			// TODO multiple meshes in file
 			// TODO rewrite this, it makes allocateid too and add fileid serializing to yamlserializer
-			auto objects = AssetDB::LoadAssetObjects(guid, GetImportedObjects());
+			auto objects = AssetDB::LoadAssetObjects(guid, ObjectDB::GetObjectsFromGuid(guid));
 			for (auto& pair : objects)
 			{
 				Object* object = pair.first;
@@ -84,12 +84,12 @@ namespace Blueberry
 				if (object->IsClassType(Mesh::Type))
 				{
 					(static_cast<Mesh*>(object))->Apply();
-					AddImportedObject(object, id);
+					AddAssetObject(object, id);
 					//BB_INFO("Mesh \"" << object->GetName() << "\" imported from cache.");
 				} 
 				else if (object->IsClassType(Entity::Type))
 				{
-					AddImportedObject(object, id);
+					AddAssetObject(object, id);
 					//BB_INFO("Entity \"" << object->GetName() << "\" imported from cache.");
 				}
 			}
@@ -142,11 +142,6 @@ namespace Blueberry
 		}
 	}
 
-	std::string ModelImporter::GetIconPath()
-	{
-		return "assets/icons/FbxIcon.png";
-	}
-
 	void ModelImporter::CreateMeshEntity(Transform* parent, fbxsdk::FbxNode* node, std::vector<Object*>& objects)
 	{
 		if (node->GetLodGroup())
@@ -155,7 +150,7 @@ namespace Blueberry
 		}
 
 		Guid guid = GetGuid();
-		auto& importedObjects = GetImportedObjects();
+		const auto& importedObjects = ObjectDB::GetObjectsFromGuid(guid);
 
 		std::string nodeName = node->GetName();
 		size_t entityFileId = TO_HASH(std::string(nodeName).append("_Entity"));
@@ -188,7 +183,6 @@ namespace Blueberry
 		}
 
 		ObjectDB::AllocateIdToGuid(entity, guid, entityFileId);
-		AddImportedObject(entity, entityFileId);
 		objects.emplace_back(entity);
 
 		fbxsdk::FbxDouble3 fbxTranslation = node->LclTranslation.Get();
@@ -415,7 +409,7 @@ namespace Blueberry
 			
 			//BB_INFO("Mesh \"" << nodeName << "\" imported.");
 			mesh->SetName(nodeName);
-			AddImportedObject(mesh, meshFileId);
+			AddAssetObject(mesh, meshFileId);
 			objects.emplace_back(mesh);
 		}
 		for (int i = 0; i < node->GetChildCount(); ++i)

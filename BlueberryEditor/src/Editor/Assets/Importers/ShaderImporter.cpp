@@ -29,7 +29,7 @@ namespace Blueberry
 			HLSLShaderProcessor processor;
 			if (processor.LoadVariants(GetShaderFolder()))
 			{
-				auto objects = AssetDB::LoadAssetObjects(guid, GetImportedObjects());
+				auto objects = AssetDB::LoadAssetObjects(guid, ObjectDB::GetObjectsFromGuid(guid));
 				if (objects.size() == 1 && objects[0].first->IsClassType(Shader::Type))
 				{
 					object = static_cast<Shader*>(objects[0].first);
@@ -59,7 +59,6 @@ namespace Blueberry
 			}
 		}
 		object->SetName(GetName());
-		AddImportedObject(object, 1);
 		SetMainObject(1);
 	}
 

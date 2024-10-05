@@ -42,23 +42,22 @@ namespace Blueberry
 		return m_RelativeMetaPath;
 	}
 
-	const std::unordered_map<FileId, ObjectId>& AssetImporter::GetImportedObjects()
-	{
-		return m_ImportedObjects;
-	}
-
 	const FileId& AssetImporter::GetMainObject()
 	{
 		return m_MainObject;
 	}
 
+	const std::unordered_map<FileId, ObjectId>& AssetImporter::GetAssetObjects()
+	{
+		return m_AssetObjects;
+	}
+
 	const bool AssetImporter::IsImported()
 	{
-		if (m_ImportedObjects.size() > 0)
+		if (m_MainObject > 0)
 		{
-			// bool& SHOULD NOT be used here because it gives wrong result in release build
-			Object* firstObject = ObjectDB::GetObject(m_ImportedObjects.begin()->second);
-			return firstObject->GetState() != ObjectState::AwaitingLoading;
+			Object* mainObject = ObjectDB::GetObjectFromGuid(m_Guid, m_MainObject);
+			return mainObject->GetState() != ObjectState::AwaitingLoading;
 		}
 		return false;
 	}
@@ -68,17 +67,12 @@ namespace Blueberry
 		return m_RequireSave;
 	}
 
-	const Texture2D* AssetImporter::GetIcon()
-	{
-		return m_Icon;
-	}
-
 	void AssetImporter::ResetImport()
 	{
-		for (auto& pair : m_ImportedObjects)
+		if (m_MainObject > 0)
 		{
-			Object* object = ObjectDB::GetObject(pair.second);
-			object->SetState(ObjectState::AwaitingLoading);
+			Object* mainObject = ObjectDB::GetObjectFromGuid(m_Guid, m_MainObject);
+			mainObject->SetState(ObjectState::AwaitingLoading);
 		}
 	}
 
@@ -112,7 +106,6 @@ namespace Blueberry
 		importer->m_RelativePath = relativePath.string();
 		importer->m_RelativeMetaPath = relativeMetaPath.string();
 		importer->m_Name = relativePath.stem().string();
-		importer->m_Icon = (Texture2D*)AssetLoader::Load(importer->GetIconPath());
 		importer->Save();
 		importer->m_RequireSave = true; // Importer may get some important data from the asset and should be saved second time
 		return importer;
@@ -134,7 +127,6 @@ namespace Blueberry
 			importer->m_RelativePath = relativePath.string();
 			importer->m_RelativeMetaPath = relativeMetaPath.string();
 			importer->m_Name = relativePath.stem().string();
-			importer->m_Icon = (Texture2D*)AssetLoader::Load(importer->GetIconPath());
 			importer->SetState(ObjectState::AwaitingLoading);
 			// Data will be imported when it's needed
 			//importer->ImportData();
@@ -156,18 +148,13 @@ namespace Blueberry
 	{
 	}
 
-	void AssetImporter::AddImportedObject(Object* object, const FileId& fileId)
+	void AssetImporter::AddAssetObject(Object* object, const FileId& fileId)
 	{
-		m_ImportedObjects.insert_or_assign(fileId, object->GetObjectId());
+		m_AssetObjects.insert_or_assign(fileId, object->GetObjectId());
 	}
 
 	void AssetImporter::SetMainObject(const FileId& id)
 	{
 		m_MainObject = id;
-	}
-
-	std::string AssetImporter::GetIconPath()
-	{
-		return "assets/icons/FileIcon.png";
 	}
 }

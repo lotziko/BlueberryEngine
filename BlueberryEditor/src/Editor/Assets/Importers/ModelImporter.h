@@ -51,7 +51,6 @@ namespace Blueberry
 
 	protected:
 		virtual void ImportData() override;
-		virtual std::string GetIconPath() final;
 
 	private:
 		void CreateMeshEntity(Transform* parent, fbxsdk::FbxNode* node, std::vector<Object*>& objects);

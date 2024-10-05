@@ -13,7 +13,7 @@
 
 namespace Blueberry
 {
-	std::unordered_map<ObjectId, Texture2D*> ThumbnailCache::s_Thumbnails = std::unordered_map<ObjectId, Texture2D*>();
+	std::unordered_map<ObjectId, Texture2D*> ThumbnailCache::s_Thumbnails = {};
 
 	#define THUMBNAIL_SIZE 128
 	#define THUMBNAIL_DATA_SIZE THUMBNAIL_SIZE * THUMBNAIL_SIZE * 4

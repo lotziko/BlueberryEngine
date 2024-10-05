@@ -24,7 +24,7 @@ namespace Blueberry
 		else
 		{
 			YamlSerializer serializer;
-			for (auto& object : GetImportedObjects())
+			for (auto& object : ObjectDB::GetObjectsFromGuid(guid))
 			{
 				Object* importedObject = ObjectDB::GetObject(object.second);
 				if (importedObject != nullptr)
@@ -42,7 +42,6 @@ namespace Blueberry
 				FileId fileId = pair.second;
 
 				ObjectDB::AllocateIdToGuid(importedObject, guid, fileId);
-				AddImportedObject(importedObject, fileId);
 				importedObject->SetName(GetName());
 				importedObject->SetState(ObjectState::Default);
 				if (!mainObjectIsSet)
