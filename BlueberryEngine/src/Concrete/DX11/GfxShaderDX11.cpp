@@ -39,7 +39,31 @@ namespace Blueberry
 			ID3D11ShaderReflectionConstantBuffer* constantBufferReflection = vertexShaderReflection->GetConstantBufferByIndex(i);
 			D3D11_SHADER_BUFFER_DESC shaderBufferDesc;
 			constantBufferReflection->GetDesc(&shaderBufferDesc);
-			m_ConstantBufferSlots.insert({ TO_HASH(std::string(shaderBufferDesc.Name)), i });
+			if (shaderBufferDesc.Type == D3D_CT_CBUFFER)
+			{
+				m_ConstantBufferSlots.insert({ TO_HASH(std::string(shaderBufferDesc.Name)), i });
+			}
+			else if (shaderBufferDesc.Type == D3D_CT_RESOURCE_BIND_INFO)
+			{
+				m_StructuredBufferSlots.insert({ TO_HASH(std::string(shaderBufferDesc.Name)), std::make_pair(i, 0) });
+			}
+		}
+
+		unsigned int resourceBindingCount = vertexShaderDesc.BoundResources;
+
+		for (UINT i = 0; i < resourceBindingCount; i++)
+		{
+			D3D11_SHADER_INPUT_BIND_DESC inputBindDesc;
+			vertexShaderReflection->GetResourceBindingDesc(i, &inputBindDesc);
+			if (inputBindDesc.Type == D3D_SIT_TEXTURE)
+			{
+				// TODO
+			}
+			else if (inputBindDesc.Type == D3D_SIT_STRUCTURED)
+			{
+				auto pair = &m_StructuredBufferSlots[TO_HASH(std::string(inputBindDesc.Name))];
+				pair->second = i;
+			}
 		}
 
 		// Input layout
@@ -76,16 +100,25 @@ namespace Blueberry
 				else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_SINT32) inputElementDesc.Format = DXGI_FORMAT_R32G32B32A32_SINT;
 				else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32) inputElementDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 			}
-
-			inputElementDesc.InputSlot = 0;
-			inputElementDesc.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-			inputElementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-			inputElementDesc.InstanceDataStepRate = 0;
-
+				
+			if (strcmp(paramDesc.SemanticName, "RenderInstance") == 0)
+			{
+				inputElementDesc.InputSlot = 1;
+				inputElementDesc.AlignedByteOffset = 0;
+				inputElementDesc.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA;
+				inputElementDesc.InstanceDataStepRate = 1;
+			}
+			else
+			{
+				inputElementDesc.InputSlot = 0;
+				inputElementDesc.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+				inputElementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+				inputElementDesc.InstanceDataStepRate = 0;
+			}
 			inputElementDescArray.push_back(inputElementDesc);
 		}
 
-		hr = device->CreateInputLayout(&inputElementDescArray[0], parameterCount, m_ShaderBuffer->GetBufferPointer(), m_ShaderBuffer->GetBufferSize(), m_InputLayout.GetAddressOf());
+		hr = device->CreateInputLayout(&inputElementDescArray[0], inputElementDescArray.size(), m_ShaderBuffer->GetBufferPointer(), m_ShaderBuffer->GetBufferSize(), m_InputLayout.GetAddressOf());
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error creating input layout."));
@@ -200,6 +233,10 @@ namespace Blueberry
 					}
 				}
 				m_TextureSlots.insert({ TO_HASH(std::string(inputBindDesc.Name)), std::make_pair(inputBindDesc.BindPoint, samplerSlot) });
+			}
+			else if (inputBindDesc.Type == D3D_SIT_STRUCTURED)
+			{
+
 			}
 		}
 

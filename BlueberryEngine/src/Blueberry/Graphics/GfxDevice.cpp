@@ -92,6 +92,11 @@ namespace Blueberry
 		return s_Instance->CreateConstantBufferImpl(byteCount, buffer);
 	}
 
+	bool GfxDevice::CreateStructuredBuffer(const UINT& elementCount, const UINT& elementSize, GfxStructuredBuffer*& buffer)
+	{
+		return s_Instance->CreateStructuredBufferImpl(elementCount, elementSize, buffer);
+	}
+
 	bool GfxDevice::CreateComputeBuffer(const UINT& elementCount, const UINT& elementSize, GfxComputeBuffer*& buffer)
 	{
 		return s_Instance->CreateComputeBufferImpl(elementCount, elementSize, buffer);
@@ -130,6 +135,11 @@ namespace Blueberry
 	void GfxDevice::SetGlobalConstantBuffer(const std::size_t& id, GfxConstantBuffer* buffer)
 	{
 		s_Instance->SetGlobalConstantBufferImpl(id, buffer);
+	}
+
+	void GfxDevice::SetGlobalStructuredBuffer(const std::size_t& id, GfxStructuredBuffer* buffer)
+	{
+		s_Instance->SetGlobalStructuredBufferImpl(id, buffer);
 	}
 
 	void GfxDevice::SetGlobalTexture(const std::size_t& id, GfxTexture* texture)

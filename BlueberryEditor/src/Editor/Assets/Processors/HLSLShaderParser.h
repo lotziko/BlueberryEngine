@@ -19,6 +19,7 @@ namespace Blueberry
 		};
 
 		std::vector<Pass> passes;
+		std::vector<PassData*> dataPasses;
 	};
 
 	class HLSLShaderParser

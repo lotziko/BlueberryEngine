@@ -2,7 +2,6 @@
 #include "EditorLayer.h"
 
 #include "Blueberry\Graphics\GfxDevice.h"
-#include "Blueberry\Graphics\SceneRenderer.h"
 #include "Blueberry\Graphics\ImGuiRenderer.h"
 #include "Blueberry\Math\Math.h"
 #include "Blueberry\Events\WindowEvents.h"

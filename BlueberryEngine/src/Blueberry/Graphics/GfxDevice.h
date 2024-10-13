@@ -9,6 +9,7 @@ namespace Blueberry
 	class GfxVertexBuffer;
 	class GfxIndexBuffer;
 	class GfxConstantBuffer;
+	class GfxStructuredBuffer;
 	class GfxComputeBuffer;
 	class GfxTexture;
 	class GfxVertexShader;
@@ -37,6 +38,7 @@ namespace Blueberry
 		static bool CreateVertexBuffer(const VertexLayout& layout, const UINT& vertexCount, GfxVertexBuffer*& buffer);
 		static bool CreateIndexBuffer(const UINT& indexCount, GfxIndexBuffer*& buffer);
 		static bool CreateConstantBuffer(const UINT& byteCount, GfxConstantBuffer*& buffer);
+		static bool CreateStructuredBuffer(const UINT& elementCount, const UINT& elementSize, GfxStructuredBuffer*& buffer);
 		static bool CreateComputeBuffer(const UINT& elementCount, const UINT& elementSize, GfxComputeBuffer*& buffer);
 		static bool CreateTexture(const TextureProperties& properties, GfxTexture*& texture);
 		static bool CreateImGuiRenderer(ImGuiRenderer*& renderer);
@@ -47,6 +49,7 @@ namespace Blueberry
 
 		static void SetRenderTarget(GfxTexture* renderTexture, GfxTexture* depthStencilTexture = nullptr);
 		static void SetGlobalConstantBuffer(const std::size_t& id, GfxConstantBuffer* buffer);
+		static void SetGlobalStructuredBuffer(const std::size_t& id, GfxStructuredBuffer* buffer);
 		static void SetGlobalTexture(const std::size_t& id, GfxTexture* texture);
 		static void Draw(const GfxDrawingOperation& operation);
 
@@ -71,6 +74,7 @@ namespace Blueberry
 		virtual bool CreateVertexBufferImpl(const VertexLayout& layout, const UINT& vertexCount, GfxVertexBuffer*& buffer) = 0;
 		virtual bool CreateIndexBufferImpl(const UINT& indexCount, GfxIndexBuffer*& buffer) = 0;
 		virtual bool CreateConstantBufferImpl(const UINT& byteCount, GfxConstantBuffer*& buffer) = 0;
+		virtual bool CreateStructuredBufferImpl(const UINT& elementCount, const UINT& elementSize, GfxStructuredBuffer*& buffer) = 0;
 		virtual bool CreateComputeBufferImpl(const UINT& elementCount, const UINT& elementSize, GfxComputeBuffer*& buffer) = 0;
 		virtual bool CreateTextureImpl(const TextureProperties& properties, GfxTexture*& texture) const = 0;
 		virtual bool CreateImGuiRendererImpl(ImGuiRenderer*& renderer) const = 0;
@@ -81,6 +85,7 @@ namespace Blueberry
 
 		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture) = 0;
 		virtual void SetGlobalConstantBufferImpl(const std::size_t& id, GfxConstantBuffer* buffer) = 0;
+		virtual void SetGlobalStructuredBufferImpl(const std::size_t& id, GfxStructuredBuffer* buffer) = 0;
 		virtual void SetGlobalTextureImpl(const std::size_t& id, GfxTexture* texture) = 0;
 		virtual void DrawImpl(const GfxDrawingOperation& operation) = 0;
 

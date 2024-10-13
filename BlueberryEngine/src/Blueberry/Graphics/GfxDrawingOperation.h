@@ -48,9 +48,11 @@ namespace Blueberry
 
 	struct GfxDrawingOperation
 	{
-		GfxDrawingOperation(GfxVertexBuffer* vertexBuffer, GfxIndexBuffer* indexBuffer, Material* material, const UINT& indexCount, const UINT& indexOffset, const UINT& vertexCount, const Topology& topology);
-		GfxDrawingOperation(Mesh* mesh, Material* material, const UINT& indexCount, const UINT& indexOffset, const UINT& vertexCount);
-		GfxDrawingOperation(Mesh* mesh, Material* material);
+		GfxDrawingOperation(GfxVertexBuffer* vertexBuffer, GfxIndexBuffer* indexBuffer, Material* material, const UINT& indexCount, const UINT& indexOffset, const UINT& vertexCount, const Topology& topology, const uint8_t& passIndex = 0, GfxVertexBuffer* instanceBuffer = nullptr, const UINT& instanceOffset = 0);
+		GfxDrawingOperation(Mesh* mesh, Material* material, const UINT& indexCount, const UINT& indexOffset, const UINT& vertexCount, const uint8_t& passIndex = 0, GfxVertexBuffer* instanceBuffer = nullptr, const UINT& instanceOffset = 0);
+		GfxDrawingOperation(Mesh* mesh, Material* material, const uint8_t& passIndex = 0, GfxVertexBuffer* instanceBuffer = nullptr, const UINT& instanceOffset = 0);
+
+		static Material* GetValidMaterial(Material* material);
 
 		bool IsValid() const;
 
@@ -58,10 +60,12 @@ namespace Blueberry
 		GfxRenderState* renderState;
 		GfxVertexBuffer* vertexBuffer;
 		GfxIndexBuffer* indexBuffer;
+		GfxVertexBuffer* instanceBuffer;
 		Topology topology;
 		UINT indexCount;
 		UINT indexOffset;
 		UINT vertexCount;
+		UINT instanceOffset;
 		ObjectId materialId;
 		uint32_t materialCRC;
 	};

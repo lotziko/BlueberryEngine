@@ -6,6 +6,7 @@ namespace Blueberry
 {
 	class GfxTextureDX11;
 	class GfxConstantBufferDX11;
+	class GfxStructuredBufferDX11;
 	class GfxVertexShaderDX11;
 	class GfxGeometryShaderDX11;
 	class GfxFragmentShaderDX11;
@@ -35,6 +36,7 @@ namespace Blueberry
 		virtual bool CreateVertexBufferImpl(const VertexLayout& layout, const UINT& vertexCount, GfxVertexBuffer*& buffer) final;
 		virtual bool CreateIndexBufferImpl(const UINT& indexCount, GfxIndexBuffer*& buffer) final;
 		virtual bool CreateConstantBufferImpl(const UINT& byteCount, GfxConstantBuffer*& buffer) final;
+		virtual bool CreateStructuredBufferImpl(const UINT& elementCount, const UINT& elementSize, GfxStructuredBuffer*& buffer) final;
 		virtual bool CreateComputeBufferImpl(const UINT& elementCount, const UINT& elementSize, GfxComputeBuffer*& buffer) final;
 		virtual bool CreateTextureImpl(const TextureProperties& properties, GfxTexture*& texture) const final;
 		virtual bool CreateImGuiRendererImpl(ImGuiRenderer*& renderer) const final;
@@ -45,6 +47,7 @@ namespace Blueberry
 
 		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture) final;
 		virtual void SetGlobalConstantBufferImpl(const std::size_t& id, GfxConstantBuffer* buffer) final;
+		virtual void SetGlobalStructuredBufferImpl(const std::size_t& id, GfxStructuredBuffer* buffer) final;
 		virtual void SetGlobalTextureImpl(const std::size_t& id, GfxTexture* texture) final;
 		virtual void DrawImpl(const GfxDrawingOperation& operation) final;
 
@@ -80,6 +83,7 @@ namespace Blueberry
 		GfxTextureDX11* m_BindedDepthStencil;
 		std::unordered_map<std::size_t, GfxConstantBufferDX11*> m_BindedConstantBuffers;
 		ID3D11Buffer* m_ConstantBuffers[8];
+		std::unordered_map<std::size_t, GfxStructuredBufferDX11*> m_BindedStructuredBuffers;
 		std::unordered_map<std::size_t, GfxTextureDX11*> m_BindedTextures;
 		ID3D11ShaderResourceView* m_ShaderResourceViews[16];
 		ID3D11SamplerState* m_Samplers[16];
@@ -100,5 +104,7 @@ namespace Blueberry
 
 		GfxVertexBufferDX11* m_VertexBuffer = nullptr;
 		GfxIndexBufferDX11* m_IndexBuffer = nullptr;
+		GfxVertexBufferDX11* m_InstanceBuffer = nullptr;
+		UINT m_InstanceOffset = 0;
 	};
 }

@@ -12,7 +12,7 @@ namespace Blueberry
 	public:
 		static void Initialize();
 		static void Shutdown();
-
+		
 		static void Draw(Scene* scene, Camera* camera, Rectangle viewport, Color background, RenderTexture* colorOutput = nullptr, RenderTexture* depthOutput = nullptr);
 
 		static RenderTexture* GetColorMSAA();

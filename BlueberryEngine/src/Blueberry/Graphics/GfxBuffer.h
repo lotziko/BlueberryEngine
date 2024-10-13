@@ -23,6 +23,13 @@ namespace Blueberry
 		virtual void SetData(char* data, const UINT& byteCount) = 0;
 	};
 
+	class GfxStructuredBuffer
+	{
+	public:
+		virtual ~GfxStructuredBuffer() = default;
+		virtual void SetData(char* data, const UINT& elementCount) = 0;
+	};
+
 	class GfxComputeBuffer
 	{
 	public:

@@ -25,6 +25,8 @@ namespace Blueberry
 			return sizeof(Color);
 		case ElementType::TextureCoord:
 			return sizeof(Vector2);
+		case ElementType::Index:
+			return sizeof(uint32_t);
 		}
 
 		BB_ERROR("Unknown vertex layout element type.");

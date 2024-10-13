@@ -187,6 +187,17 @@ namespace Blueberry
 		return true;
 	}
 
+	bool GfxDeviceDX11::CreateStructuredBufferImpl(const UINT& elementCount, const UINT& elementSize, GfxStructuredBuffer*& buffer)
+	{
+		auto dxBuffer = new GfxStructuredBufferDX11(m_Device.Get(), m_DeviceContext.Get());
+		if (!dxBuffer->Initialize(elementCount, elementSize))
+		{
+			return false;
+		}
+		buffer = dxBuffer;
+		return true;
+	}
+
 	bool GfxDeviceDX11::CreateComputeBufferImpl(const UINT& elementCount, const UINT& elementSize, GfxComputeBuffer*& buffer)
 	{
 		auto dxBuffer = new GfxComputeBufferDX11(m_Device.Get(), m_DeviceContext.Get());
@@ -261,27 +272,36 @@ namespace Blueberry
 
 	void GfxDeviceDX11::SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture)
 	{
-		if (renderTexture == nullptr)
+		ID3D11RenderTargetView** renderTarget = nullptr;
+		if (renderTexture != nullptr)
 		{
-			m_DeviceContext->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), NULL);
-			m_BindedRenderTarget = nullptr;
-			m_BindedDepthStencil = nullptr;
+			GfxTextureDX11* dxRenderTarget = static_cast<GfxTextureDX11*>(renderTexture);
+			renderTarget = dxRenderTarget->m_RenderTargetView.GetAddressOf();
+			m_BindedRenderTarget = dxRenderTarget;
 		}
 		else
 		{
-			auto dxRenderTarget = static_cast<GfxTextureDX11*>(renderTexture);
-			m_BindedRenderTarget = dxRenderTarget;
-			if (depthStencilTexture == nullptr)
-			{
-				m_DeviceContext->OMSetRenderTargets(1, dxRenderTarget->m_RenderTargetView.GetAddressOf(), NULL);
-				m_BindedDepthStencil = nullptr;
-			}
-			else
-			{
-				auto dxDepthStencil = static_cast<GfxTextureDX11*>(depthStencilTexture);
-				m_DeviceContext->OMSetRenderTargets(1, dxRenderTarget->m_RenderTargetView.GetAddressOf(), dxDepthStencil->m_DepthStencilView.Get());
-				m_BindedDepthStencil = dxDepthStencil;
-			}
+			m_BindedRenderTarget = nullptr;
+		}
+		ID3D11DepthStencilView* depthStencil = nullptr;
+		if (depthStencilTexture != nullptr)
+		{
+			GfxTextureDX11* dxDepthStencil = static_cast<GfxTextureDX11*>(depthStencilTexture);
+			depthStencil = dxDepthStencil->m_DepthStencilView.Get();
+			m_BindedDepthStencil = dxDepthStencil;
+		}
+		else
+		{
+			m_BindedDepthStencil = nullptr;
+		}
+
+		if (renderTarget == nullptr && depthStencil == nullptr)
+		{
+			m_DeviceContext->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), NULL);
+		}
+		else
+		{
+			m_DeviceContext->OMSetRenderTargets(renderTarget == nullptr ? 0 : 1, renderTarget, depthStencil);
 		}
 	}
 
@@ -289,6 +309,13 @@ namespace Blueberry
 	{
 		auto dxConstantBuffer = static_cast<GfxConstantBufferDX11*>(buffer);
 		m_BindedConstantBuffers.insert_or_assign(id, dxConstantBuffer);
+		m_CurrentCrc = 0;
+	}
+
+	void GfxDeviceDX11::SetGlobalStructuredBufferImpl(const std::size_t& id, GfxStructuredBuffer* buffer)
+	{
+		auto dxStructuredBuffer = static_cast<GfxStructuredBufferDX11*>(buffer);
+		m_BindedStructuredBuffers.insert_or_assign(id, dxStructuredBuffer);
 		m_CurrentCrc = 0;
 	}
 
@@ -371,6 +398,7 @@ namespace Blueberry
 				m_GlobalCrc = m_CurrentCrc;
 
 				std::fill_n(m_ConstantBuffers, 8, nullptr);
+				std::fill_n(m_ShaderResourceViews, 16, nullptr);
 
 				// Bind vertex constant buffers
 				auto bufferMap = dxVertexShader->m_ConstantBufferSlots;
@@ -384,6 +412,23 @@ namespace Blueberry
 				}
 
 				m_DeviceContext->VSSetConstantBuffers(0, 8, m_ConstantBuffers);
+
+				// Bind vertex structured buffers
+				auto structuredBufferMap = dxVertexShader->m_StructuredBufferSlots;
+				for (auto it = structuredBufferMap.begin(); it != structuredBufferMap.end(); it++)
+				{
+					auto pair = m_BindedStructuredBuffers.find(it->first);
+					if (pair != m_BindedStructuredBuffers.end())
+					{
+						UINT bufferSlotIndex = it->second.first;
+						UINT shaderResourceViewSlotIndex = it->second.second;
+						auto dxBuffer = pair->second;
+						//m_ConstantBuffers[bufferSlotIndex] = dxBuffer->m_Buffer.Get();
+						m_ShaderResourceViews[shaderResourceViewSlotIndex] = dxBuffer->m_ShaderResourceView.Get();
+					}
+				}
+				
+				m_DeviceContext->VSSetShaderResources(0, 16, m_ShaderResourceViews);
 
 				if (dxGeometryShader != nullptr)
 				{
@@ -461,9 +506,28 @@ namespace Blueberry
 			m_DeviceContext->IASetVertexBuffers(0, 1, dxVertexBuffer->m_Buffer.GetAddressOf(), &dxVertexBuffer->m_Stride, &dxVertexBuffer->m_Offset);
 		}
 
+		auto dxInstanceBuffer = static_cast<GfxVertexBufferDX11*>(operation.instanceBuffer);//operation.instanceBuffer == nullptr ? nullptr : ;
+		if (dxInstanceBuffer != m_InstanceBuffer || operation.instanceOffset != m_InstanceOffset)
+		{
+			m_InstanceBuffer = dxInstanceBuffer;
+			m_InstanceOffset = operation.instanceOffset;
+			if (dxInstanceBuffer != nullptr)
+			{
+				UINT byteOffset = m_InstanceBuffer ? m_InstanceOffset * m_InstanceBuffer->m_Stride : 0;
+				m_DeviceContext->IASetVertexBuffers(1, 1, dxInstanceBuffer->m_Buffer.GetAddressOf(), &dxInstanceBuffer->m_Stride, &byteOffset);
+			}
+		}
+
 		if (operation.indexBuffer == nullptr)
 		{
-			m_DeviceContext->Draw(operation.vertexCount, 0);
+			if (m_InstanceBuffer == nullptr)
+			{
+				m_DeviceContext->Draw(operation.vertexCount, 0);
+			}
+			else
+			{
+				m_DeviceContext->DrawInstanced(operation.vertexCount, 1, 0, 0);
+			}
 		}
 		else
 		{
@@ -473,7 +537,14 @@ namespace Blueberry
 				m_IndexBuffer = dxIndexBuffer;
 				m_DeviceContext->IASetIndexBuffer(dxIndexBuffer->m_Buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 			}
-			m_DeviceContext->DrawIndexed(operation.indexCount, operation.indexOffset, 0);
+			if (m_InstanceBuffer == nullptr)
+			{
+				m_DeviceContext->DrawIndexed(operation.indexCount, operation.indexOffset, 0);
+			}
+			else
+			{
+				m_DeviceContext->DrawIndexedInstanced(operation.indexCount, 1, operation.indexOffset, 0, 0);
+			}
 		}
 	}
 
@@ -774,6 +845,10 @@ namespace Blueberry
 			for (auto& pair : m_BindedConstantBuffers)
 			{
 				m_CurrentCrc = CRCHelper::Calculate(&pair, sizeof(std::pair<std::size_t, GfxConstantBufferDX11*>), m_CurrentCrc);
+			}
+			for (auto& pair : m_BindedStructuredBuffers)
+			{
+				m_CurrentCrc = CRCHelper::Calculate(&pair, sizeof(std::pair<std::size_t, GfxStructuredBufferDX11*>), m_CurrentCrc);
 			}
 		}
 		return m_CurrentCrc;

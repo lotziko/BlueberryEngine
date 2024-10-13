@@ -9,6 +9,7 @@ namespace Blueberry
 
 	protected:
 		std::unordered_map<std::size_t, UINT> m_ConstantBufferSlots;
+		std::unordered_map<std::size_t, std::pair<UINT, UINT>> m_StructuredBufferSlots;
 		std::unordered_map<std::size_t, std::pair<UINT, UINT>> m_TextureSlots;
 
 		friend struct GfxDrawingOperation;

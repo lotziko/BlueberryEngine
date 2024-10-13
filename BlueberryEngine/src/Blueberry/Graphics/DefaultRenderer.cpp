@@ -4,9 +4,9 @@
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\Material.h"
-#include "Blueberry\Graphics\SceneRenderer.h"
 #include "Blueberry\Graphics\RenderTexture.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
+#include "Blueberry\Graphics\RenderContext.h"
 
 namespace Blueberry
 {
@@ -32,22 +32,36 @@ namespace Blueberry
 
 	void DefaultRenderer::Draw(Scene* scene, Camera* camera, Rectangle viewport, Color background, RenderTexture* colorOutput, RenderTexture* depthOutput)
 	{
-		GfxDevice::SetRenderTarget(s_ColorMSAARenderTarget->Get(), s_DepthStencilMSAARenderTarget->Get());
-		GfxDevice::SetViewport(0, 0, viewport.width, viewport.height);
-		GfxDevice::ClearColor({ 0.0f, 0.0f, 0.0f, 0.0f });
-		GfxDevice::ClearDepth(1.0f);
+		static size_t screenColorTextureId = TO_HASH("_ScreenColorTexture");
+		static size_t screenDepthStencilTextureId = TO_HASH("_ScreenDepthStencilTexture");
 
-		if (scene != nullptr)
-		{
-			SceneRenderer::Draw(scene, camera);
-		}
+		RenderContext context = {};
+		CullingResults results = {};
+		context.Cull(scene, camera, results);
+		context.Bind(results);
+
+		DrawingSettings drawingSettings = {};
+		drawingSettings.passIndex = 1;
+
+		// Z-prepass
+		GfxDevice::SetRenderTarget(nullptr, s_DepthStencilMSAARenderTarget->Get());
+		GfxDevice::SetViewport(0, 0, viewport.width, viewport.height);
+		GfxDevice::ClearDepth(1.0f);
+		context.Draw(results, drawingSettings);
+
+		drawingSettings.passIndex = 0;
+
+		// Forward pass
+		GfxDevice::SetRenderTarget(s_ColorMSAARenderTarget->Get(), s_DepthStencilMSAARenderTarget->Get());
+		GfxDevice::ClearColor({ 0.0f, 0.0f, 0.0f, 0.0f });
+		context.Draw(results, drawingSettings);
 
 		GfxDevice::SetRenderTarget(s_ColorRenderTarget->Get(), s_DepthStencilRenderTarget->Get());
 		GfxDevice::ClearColor(background);
 		GfxDevice::ClearDepth(1.0f);
 		GfxDevice::SetViewport(0, 0, s_ColorRenderTarget->GetWidth(), s_ColorRenderTarget->GetHeight());
-		GfxDevice::SetGlobalTexture(TO_HASH("_ScreenColorTexture"), s_ColorMSAARenderTarget->Get());
-		GfxDevice::SetGlobalTexture(TO_HASH("_ScreenDepthStencilTexture"), s_DepthStencilMSAARenderTarget->Get());
+		GfxDevice::SetGlobalTexture(screenColorTextureId, s_ColorMSAARenderTarget->Get());
+		GfxDevice::SetGlobalTexture(screenDepthStencilTextureId, s_DepthStencilMSAARenderTarget->Get());
 		// Gamma correction is done manually together with MSAA resolve to avoid using SRGB swapchain
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_ResolveMSAAMaterial));
 		GfxDevice::SetRenderTarget(nullptr);

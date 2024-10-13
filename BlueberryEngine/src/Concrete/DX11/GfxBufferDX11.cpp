@@ -120,6 +120,60 @@ namespace Blueberry
 		return true;
 	}
 
+	GfxStructuredBufferDX11::GfxStructuredBufferDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext) : m_Device(device), m_DeviceContext(deviceContext)
+	{
+	}
+
+	void GfxStructuredBufferDX11::SetData(char* data, const UINT& elementCount)
+	{
+		D3D11_BOX dst;
+		dst.left = 0;
+		dst.top = 0;
+		dst.right = elementCount * m_ElementSize;
+		dst.bottom = 1;
+		dst.front = 0;
+		dst.back = 1;
+
+		m_DeviceContext->UpdateSubresource(m_Buffer.Get(), 0, &dst, data, 0, 0);
+	}
+
+	bool GfxStructuredBufferDX11::Initialize(const UINT& elementCount, const UINT& elementSize)
+	{
+		D3D11_BUFFER_DESC structuredBufferDesc;
+		ZeroMemory(&structuredBufferDesc, sizeof(D3D11_BUFFER_DESC));
+
+		UINT byteCount = elementCount * elementSize;
+		structuredBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+		structuredBufferDesc.ByteWidth = byteCount % 16 > 0 ? ((byteCount / 16) + 1) * 16 : byteCount;
+		structuredBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		structuredBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;//0;
+		structuredBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+		structuredBufferDesc.StructureByteStride = elementSize;
+
+		HRESULT hr = m_Device->CreateBuffer(&structuredBufferDesc, nullptr, m_Buffer.GetAddressOf());
+		if (FAILED(hr))
+		{
+			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create structured buffer."));
+			return false;
+		}
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC resourceViewDesc;
+		resourceViewDesc.Format = DXGI_FORMAT_UNKNOWN;
+		resourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+		resourceViewDesc.Buffer.FirstElement = 0;
+		resourceViewDesc.Buffer.NumElements = elementCount;
+
+		hr = m_Device->CreateShaderResourceView(m_Buffer.Get(), &resourceViewDesc, m_ShaderResourceView.GetAddressOf());
+		if (FAILED(hr))
+		{
+			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create shader resource view."));
+			return false;
+		}
+
+		m_ElementSize = elementSize;
+		return true;
+	}
+
 	GfxComputeBufferDX11::GfxComputeBufferDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext) : m_Device(device), m_DeviceContext(deviceContext)
 	{
 	}

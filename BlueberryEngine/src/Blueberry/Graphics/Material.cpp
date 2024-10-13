@@ -115,10 +115,14 @@ namespace Blueberry
 			ApplyProperties();
 		}
 
-		GfxRenderState* passState = &m_PassCache[passIndex];
-		if (passState->isValid)
+		GfxRenderState* passState = nullptr;
+		if (passIndex < m_PassCache.size())
 		{
-			return passState;
+			passState = &m_PassCache[passIndex];
+			if (passState->isValid)
+			{
+				return passState;
+			}
 		}
 
 		if (!m_Shader.IsValid() || m_Shader->GetState() != ObjectState::Default)
@@ -128,6 +132,10 @@ namespace Blueberry
 
 		GfxRenderState newState = {};
 		auto shaderPass = m_Shader.Get()->GetData()->GetPass(passIndex);
+		if (shaderPass == nullptr)
+		{
+			return nullptr;
+		}
 
 		UINT vertexFlags = 0;
 		UINT fragmentFlags = 0;
@@ -154,7 +162,7 @@ namespace Blueberry
 				}
 			}
 		}
-		const ShaderVariant variant = m_Shader->GetVariant(vertexFlags, fragmentFlags);
+		const ShaderVariant variant = m_Shader->GetVariant(vertexFlags, fragmentFlags, passIndex);
 		newState.vertexShader = variant.vertexShader;
 		newState.geometryShader = variant.geometryShader;
 		newState.fragmentShader = variant.fragmentShader;

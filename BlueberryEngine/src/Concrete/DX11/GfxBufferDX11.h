@@ -60,6 +60,25 @@ namespace Blueberry
 		friend class GfxDeviceDX11;
 	};
 
+	class GfxStructuredBufferDX11 final : public GfxStructuredBuffer
+	{
+	public:
+		GfxStructuredBufferDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
+		virtual ~GfxStructuredBufferDX11() = default;
+		virtual void SetData(char* data, const UINT& elementCount) final;
+
+		bool Initialize(const UINT& elementCount, const UINT& elementSize);
+	private:
+		ComPtr<ID3D11Buffer> m_Buffer = nullptr;
+		ComPtr<ID3D11ShaderResourceView> m_ShaderResourceView = nullptr;
+		UINT m_ElementSize;
+
+		ID3D11Device* m_Device;
+		ID3D11DeviceContext* m_DeviceContext;
+
+		friend class GfxDeviceDX11;
+	};
+
 	class GfxComputeBufferDX11 final : public GfxComputeBuffer
 	{
 	public:

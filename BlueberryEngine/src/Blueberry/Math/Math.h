@@ -14,6 +14,7 @@ namespace Blueberry
 	using Rectangle = DirectX::SimpleMath::Rectangle;
 	using Viewport = DirectX::SimpleMath::Viewport;
 	using AABB = DirectX::BoundingBox;
+	using Sphere = DirectX::BoundingSphere;
 	using Frustum = DirectX::BoundingFrustum;
 
 	constexpr auto Pi = 3.1415926535f;

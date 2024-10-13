@@ -16,6 +16,7 @@ namespace Blueberry
 			Float3Color,
 			Float4Color,
 			TextureCoord,
+			Index,
 		};
 		class Element
 		{

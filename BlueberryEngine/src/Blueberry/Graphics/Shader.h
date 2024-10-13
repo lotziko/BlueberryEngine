@@ -63,6 +63,15 @@ namespace Blueberry
 		const std::vector<std::string>& GetFragmentKeywords() const;
 		void SetFragmentKeywords(const std::vector<std::string>& keywords);
 
+		const UINT& GetVertexOffset() const;
+		void SetVertexOffset(const UINT& offset);
+
+		const UINT& GetGeometryOffset() const;
+		void SetGeometryOffset(const UINT& offset);
+
+		const UINT& GetFragmentOffset() const;
+		void SetFragmentOffset(const UINT& offset);
+
 		static void BindProperties();
 
 	private:
@@ -75,6 +84,9 @@ namespace Blueberry
 		ZWrite m_ZWrite = ZWrite::On;
 		std::vector<std::string> m_VertexKeywords;
 		std::vector<std::string> m_FragmentKeywords;
+		UINT m_VertexOffset;
+		UINT m_GeometryOffset;
+		UINT m_FragmentOffset;
 	};
 
 	class Texture2D;
@@ -89,7 +101,7 @@ namespace Blueberry
 
 		const PassData* GetPass(const UINT& index) const;
 		const UINT& GetPassCount() const;
-		void SetPasses(const std::vector<DataPtr<PassData>>& passes);
+		void SetPasses(const std::vector<PassData*>& passes);
 
 		const std::vector<DataPtr<TextureParameterData>>& GetTextureParameters() const;
 		void SetTextureParameters(const std::vector<DataPtr<TextureParameterData>>& parameters);
@@ -104,7 +116,7 @@ namespace Blueberry
 	struct VariantsData
 	{
 		std::vector<UINT> vertexShaderIndices;
-		UINT geometryShaderIndex;
+		std::vector<UINT> geometryShaderIndices;
 		std::vector<UINT> fragmentShaderIndices;
 
 		std::vector<void*> shaders;
@@ -136,14 +148,15 @@ namespace Blueberry
 		static void BindProperties();
 
 	private:
-		const Shader::ShaderVariant GetVariant(const UINT& vertexKeywordFlags, const UINT& fragmentKeywordFlags);
+		const Shader::ShaderVariant GetVariant(const UINT& vertexKeywordFlags, const UINT& fragmentKeywordFlags, const uint8_t& passIndex);
 
 	private:
 		DataPtr<ShaderData> m_Data;
 
 		std::vector<GfxVertexShader*> m_VertexShaders;
-		GfxGeometryShader* m_GeometryShader;
+		std::vector<GfxGeometryShader*> m_GeometryShaders;
 		std::vector<GfxFragmentShader*> m_FragmentShaders;
+		std::vector<std::tuple<UINT, UINT, UINT>> m_PassesOffsets;
 
 		friend struct GfxDrawingOperation;
 		friend class Material;

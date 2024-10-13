@@ -3,9 +3,21 @@
 
 #define MAX_REALTIME_LIGHTS 128
 
+struct PerDrawData
+{
+	float4x4 modelMatrix;
+};
+
+StructuredBuffer<PerDrawData> _PerDrawData;
+
 cbuffer PerDrawData
 {
 	float4x4 _ModelMatrix;
+}
+
+cbuffer PerDrawDataInstanced
+{
+	float4x4 _ModelMatrixInstanced[128];
 }
 
 cbuffer PerCameraData

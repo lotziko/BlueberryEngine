@@ -59,8 +59,10 @@ namespace Blueberry
 		ShaderCompilationData compilationData = {};
 		if (HLSLShaderParser::Parse(path, m_ShaderData, compilationData))
 		{
-			for (auto& compilationPass : compilationData.passes)
+			for (int i = 0; i < compilationData.passes.size(); ++i)
 			{
+				auto& compilationPass = compilationData.passes[i];
+				PassData* pass = compilationData.dataPasses[i];
 				size_t vertexVariantCount = Max(pow(2, compilationPass.vertexKeywords.size()), 1);
 				size_t fragmentVariantCount = Max(pow(2, compilationPass.fragmentKeywords.size()), 1);
 
@@ -75,6 +77,8 @@ namespace Blueberry
 
 					keywords[keywordCount].Name = nullptr;
 					keywords[keywordCount].Definition = nullptr;
+
+					pass->SetVertexOffset(m_VariantsData.vertexShaderIndices.size());
 
 					for (size_t i = 0; i < vertexVariantCount; ++i)
 					{
@@ -100,18 +104,20 @@ namespace Blueberry
 
 				if (!compilationPass.geometryEntryPoint.empty())
 				{
+					pass->SetGeometryOffset(m_VariantsData.geometryShaderIndices.size());
+
 					ComPtr<ID3DBlob> geometryBlob;
 					if (!Compile(compilationPass.shaderCode, compilationPass.geometryEntryPoint.c_str(), "gs_5_0", nullptr, geometryBlob))
 					{
 						return false;
 					}
 					m_VariantsData.shaders.emplace_back(geometryBlob.Get());
-					m_VariantsData.geometryShaderIndex = m_Blobs.size();
+					m_VariantsData.geometryShaderIndices.emplace_back(m_Blobs.size());
 					m_Blobs.emplace_back(geometryBlob);
 				}
 				else
 				{
-					m_VariantsData.geometryShaderIndex = -1;
+					m_VariantsData.geometryShaderIndices.emplace_back(-1);
 				}
 
 				if (!compilationPass.fragmentEntryPoint.empty())
@@ -125,6 +131,8 @@ namespace Blueberry
 
 					keywords[keywordCount].Name = nullptr;
 					keywords[keywordCount].Definition = nullptr;
+
+					pass->SetFragmentOffset(m_VariantsData.fragmentShaderIndices.size());
 
 					for (size_t i = 0; i < fragmentVariantCount; ++i)
 					{
@@ -148,6 +156,7 @@ namespace Blueberry
 					return false;
 				}
 			}
+			m_ShaderData.SetPasses(compilationData.dataPasses);
 		}
 		return true;
 	}
@@ -158,13 +167,15 @@ namespace Blueberry
 		indexesPath.append("indexes");
 
 		UINT vertexShaderCount = (UINT)m_VariantsData.vertexShaderIndices.size();
+		UINT geometryShaderCount = (UINT)m_VariantsData.geometryShaderIndices.size();
 		UINT fragmentShaderCount = (UINT)m_VariantsData.fragmentShaderIndices.size();
 		UINT blobsCount = (UINT)m_Blobs.size();
 		std::ofstream output;
 		output.open(indexesPath, std::ofstream::binary);
 		output.write((char*)&vertexShaderCount, sizeof(UINT));
 		output.write((char*)m_VariantsData.vertexShaderIndices.data(), sizeof(UINT) * vertexShaderCount);
-		output.write((char*)&m_VariantsData.geometryShaderIndex, sizeof(UINT));
+		output.write((char*)&geometryShaderCount, sizeof(UINT));
+		output.write((char*)m_VariantsData.geometryShaderIndices.data(), sizeof(UINT) * geometryShaderCount);
 		output.write((char*)&fragmentShaderCount, sizeof(UINT));
 		output.write((char*)m_VariantsData.fragmentShaderIndices.data(), sizeof(UINT) * fragmentShaderCount);
 		output.write((char*)&blobsCount, sizeof(UINT));
@@ -190,6 +201,7 @@ namespace Blueberry
 		if (std::filesystem::exists(indexesPath))
 		{
 			UINT vertexShaderCount;
+			UINT geometryShaderCount;
 			UINT fragmentShaderCount;
 			UINT blobsCount;
 			std::ifstream input;
@@ -197,7 +209,9 @@ namespace Blueberry
 			input.read((char*)&vertexShaderCount, sizeof(UINT));
 			m_VariantsData.vertexShaderIndices.resize(vertexShaderCount);
 			input.read((char*)m_VariantsData.vertexShaderIndices.data(), sizeof(UINT) * vertexShaderCount);
-			input.read((char*)&m_VariantsData.geometryShaderIndex, sizeof(UINT));
+			input.read((char*)&geometryShaderCount, sizeof(UINT));
+			m_VariantsData.geometryShaderIndices.resize(geometryShaderCount);
+			input.read((char*)m_VariantsData.geometryShaderIndices.data(), sizeof(UINT) * geometryShaderCount);
 			input.read((char*)&fragmentShaderCount, sizeof(UINT));
 			m_VariantsData.fragmentShaderIndices.resize(fragmentShaderCount);
 			input.read((char*)m_VariantsData.fragmentShaderIndices.data(), sizeof(UINT) * fragmentShaderCount);

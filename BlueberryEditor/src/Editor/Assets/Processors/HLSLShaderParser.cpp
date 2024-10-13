@@ -24,7 +24,7 @@ namespace Blueberry
 		return counter == 0;
 	}
 
-	bool ParseBlock(const std::string& text, const std::string& name, const std::string& begin, const std::string& end, std::string& result)
+	bool ParseBlock(std::string& text, const std::string& name, const std::string& begin, const std::string& end, std::string& result)
 	{
 		// Check brackets
 		if (!CheckBrackets(text))
@@ -293,24 +293,26 @@ namespace Blueberry
 		std::string shaderBlock;
 		if (ParseBlock(shader, "Shader", "{", "}", shaderBlock))
 		{
-			// TODO multiple passes
-			std::string passBlock;
-			std::vector<DataPtr<PassData>> passes;
-			if (ParseBlock(shader, "Pass", "{", "}", passBlock))
+			std::string propertiesBlock;
+			if (ParseBlock(shaderBlock, "Properties", "{", "}", propertiesBlock))
 			{
+				ParseProperties(propertiesBlock, shaderData);
+			}
+
+			std::string passBlock;
+			while (ParseBlock(shaderBlock, "Pass", "{", "}", passBlock))
+			{
+				// Replace "Pass" keyword to parse the next one
+				size_t passOffset = shaderBlock.find("Pass", 0);
+				shaderBlock.replace(passOffset, strlen("Pass"), " ");
+
 				ShaderCompilationData::Pass compilationPass = {};
 				PassData passData = {};
 
 				std::string codeBlock;
-				if (!ParseBlock(shaderBlock, "", "HLSLBEGIN", "HLSLEND", codeBlock))
+				if (!ParseBlock(passBlock, "", "HLSLBEGIN", "HLSLEND", codeBlock))
 				{
 					return false;
-				}
-
-				std::string propertiesBlock;
-				if (ParseBlock(shaderBlock, "Properties", "{", "}", propertiesBlock))
-				{
-					ParseProperties(propertiesBlock, shaderData);
 				}
 
 				ParseRenderingParameters(passBlock, passData);
@@ -325,9 +327,8 @@ namespace Blueberry
 
 				compilationPass.shaderCode = codeBlock;
 				compilationData.passes.emplace_back(compilationPass);
-				passes.emplace_back(DataPtr<PassData>(new PassData(passData)));
+				compilationData.dataPasses.emplace_back(new PassData(passData));
 			}
-			shaderData.SetPasses(passes);
 			return true;
 		}
 
