@@ -17,6 +17,7 @@ namespace Blueberry
 	class GfxFragmentShader;
 	class GfxComputeShader;
 	class ImGuiRenderer;
+	class HBAORenderer;
 
 	class GfxDevice
 	{
@@ -29,6 +30,7 @@ namespace Blueberry
 		static void SwapBuffers();
 
 		static void SetViewport(int x, int y, int width, int height);
+		static void SetScissorRect(int x, int y, int width, int height);
 		static void ResizeBackbuffer(int width, int height);
 
 		static bool CreateVertexShader(void* vertexData, GfxVertexShader*& shader);
@@ -42,15 +44,16 @@ namespace Blueberry
 		static bool CreateComputeBuffer(const UINT& elementCount, const UINT& elementSize, GfxComputeBuffer*& buffer);
 		static bool CreateTexture(const TextureProperties& properties, GfxTexture*& texture);
 		static bool CreateImGuiRenderer(ImGuiRenderer*& renderer);
+		static bool CreateHBAORenderer(HBAORenderer*& renderer);
 
 		static void Copy(GfxTexture* source, GfxTexture* target);
 		static void Copy(GfxTexture* source, GfxTexture* target, const Rectangle& area);
 		static void Read(GfxTexture* source, void* target, const Rectangle& area);
 
 		static void SetRenderTarget(GfxTexture* renderTexture, GfxTexture* depthStencilTexture = nullptr);
-		static void SetGlobalConstantBuffer(const std::size_t& id, GfxConstantBuffer* buffer);
-		static void SetGlobalStructuredBuffer(const std::size_t& id, GfxStructuredBuffer* buffer);
-		static void SetGlobalTexture(const std::size_t& id, GfxTexture* texture);
+		static void SetGlobalConstantBuffer(const size_t& id, GfxConstantBuffer* buffer);
+		static void SetGlobalStructuredBuffer(const size_t& id, GfxStructuredBuffer* buffer);
+		static void SetGlobalTexture(const size_t& id, GfxTexture* texture);
 		static void Draw(const GfxDrawingOperation& operation);
 
 		static void Dispatch(GfxComputeShader*& shader, const UINT& threadGroupsX, const UINT& threadGroupsY, const UINT& threadGroupsZ);
@@ -65,6 +68,7 @@ namespace Blueberry
 		virtual void SwapBuffersImpl() const = 0;
 
 		virtual void SetViewportImpl(int x, int y, int width, int height) = 0;
+		virtual void SetScissorRectImpl(int x, int y, int width, int height) = 0;
 		virtual void ResizeBackbufferImpl(int width, int height) = 0;
 
 		virtual bool CreateVertexShaderImpl(void* vertexData, GfxVertexShader*& shader) = 0;
@@ -78,15 +82,16 @@ namespace Blueberry
 		virtual bool CreateComputeBufferImpl(const UINT& elementCount, const UINT& elementSize, GfxComputeBuffer*& buffer) = 0;
 		virtual bool CreateTextureImpl(const TextureProperties& properties, GfxTexture*& texture) const = 0;
 		virtual bool CreateImGuiRendererImpl(ImGuiRenderer*& renderer) const = 0;
+		virtual bool CreateHBAORendererImpl(HBAORenderer*& renderer) const = 0;
 		
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target) const = 0;
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Rectangle& area) const = 0;
 		virtual void ReadImpl(GfxTexture* source, void* target, const Rectangle& area) const = 0;
 
 		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture) = 0;
-		virtual void SetGlobalConstantBufferImpl(const std::size_t& id, GfxConstantBuffer* buffer) = 0;
-		virtual void SetGlobalStructuredBufferImpl(const std::size_t& id, GfxStructuredBuffer* buffer) = 0;
-		virtual void SetGlobalTextureImpl(const std::size_t& id, GfxTexture* texture) = 0;
+		virtual void SetGlobalConstantBufferImpl(const size_t& id, GfxConstantBuffer* buffer) = 0;
+		virtual void SetGlobalStructuredBufferImpl(const size_t& id, GfxStructuredBuffer* buffer) = 0;
+		virtual void SetGlobalTextureImpl(const size_t& id, GfxTexture* texture) = 0;
 		virtual void DrawImpl(const GfxDrawingOperation& operation) = 0;
 
 		virtual void DispatchImpl(GfxComputeShader*& shader, const UINT& threadGroupsX, const UINT& threadGroupsY, const UINT& threadGroupsZ) const = 0;

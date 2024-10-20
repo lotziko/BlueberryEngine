@@ -57,7 +57,7 @@ namespace Blueberry
 			}
 
 			FileId mainObject;
-			std::vector<std::tuple<FileId, size_t, std::string>> objects;
+			std::vector<std::tuple<FileId, std::size_t, std::string>> objects;
 		};
 
 	public:

@@ -3,21 +3,21 @@
 
 namespace Blueberry
 {
-	std::unordered_map<std::size_t, ClassDB::ClassInfo> ClassDB::s_Classes = std::unordered_map<std::size_t, ClassDB::ClassInfo>();
+	std::unordered_map<size_t, ClassDB::ClassInfo> ClassDB::s_Classes = std::unordered_map<size_t, ClassDB::ClassInfo>();
 
-	const ClassDB::ClassInfo& ClassDB::GetInfo(const std::size_t& id)
+	const ClassDB::ClassInfo& ClassDB::GetInfo(const size_t& id)
 	{
 		return s_Classes.find(id)->second;
 	}
 
-	std::unordered_map<std::size_t, ClassDB::ClassInfo>& ClassDB::GetInfos()
+	std::unordered_map<size_t, ClassDB::ClassInfo>& ClassDB::GetInfos()
 	{
 		return s_Classes;
 	}
 
-	bool ClassDB::IsParent(const std::size_t& id, const std::size_t& parentId)
+	bool ClassDB::IsParent(const size_t& id, const size_t& parentId)
 	{
-		std::size_t inheritsId = id;
+		size_t inheritsId = id;
 			
 		while (s_Classes.count(inheritsId) > 0)
 		{
@@ -47,7 +47,7 @@ namespace Blueberry
 		return *this;
 	}
 
-	FieldInfo FieldInfo::SetObjectType(const std::size_t& objectType)
+	FieldInfo FieldInfo::SetObjectType(const size_t& objectType)
 	{
 		this->objectType = objectType;
 		return *this;

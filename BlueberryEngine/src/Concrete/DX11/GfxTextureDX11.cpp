@@ -49,6 +49,9 @@ namespace Blueberry
 		case DXGI_FORMAT_R8G8B8A8_UNORM:
 		case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB:
 			return 4;
+		case DXGI_FORMAT_R16G16B16A16_UNORM:
+		case DXGI_FORMAT_R16G16B16A16_FLOAT:
+			return 8;
 
 		default:
 			return 0;
@@ -95,9 +98,9 @@ namespace Blueberry
 		if (properties.data != nullptr)
 		{
 			DXGI_FORMAT format = (DXGI_FORMAT)properties.format;
-			UINT blockSize = GetBlockSize(format);
 			if (IsCompressed(format))
 			{
+				UINT blockSize = GetBlockSize(format);
 				D3D11_SUBRESOURCE_DATA* subresourceDatas = new D3D11_SUBRESOURCE_DATA[properties.mipCount];
 				UINT width = properties.width;
 				UINT height = properties.height;
@@ -118,6 +121,7 @@ namespace Blueberry
 			}
 			else
 			{
+				UINT blockSize = properties.dataSize / (properties.width * properties.height);
 				D3D11_SUBRESOURCE_DATA subresourceData;
 
 				subresourceData.pSysMem = properties.data;
@@ -141,6 +145,16 @@ namespace Blueberry
 			}
 		}
 		return false;
+	}
+
+	ID3D11ShaderResourceView* GfxTextureDX11::GetSRV() const
+	{
+		return m_ResourceView.Get();
+	}
+
+	ID3D11RenderTargetView* GfxTextureDX11::GetRTV() const
+	{
+		return m_RenderTargetView.Get();
 	}
 
 	UINT GfxTextureDX11::GetWidth() const

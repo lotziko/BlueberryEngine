@@ -41,7 +41,7 @@ namespace Blueberry
 
 		static Material* Create(Shader* shader);
 
-		void SetTexture(std::size_t id, Texture* texture);
+		void SetTexture(size_t id, Texture* texture);
 		void SetTexture(std::string name, Texture* texture);
 
 		Shader* GetShader();
@@ -68,7 +68,7 @@ namespace Blueberry
 		std::vector<std::string> m_ActiveKeywords;
 		ObjectPtr<Shader> m_Shader;
 
-		std::unordered_map<std::size_t, ObjectId> m_TextureMap;
+		std::unordered_map<size_t, ObjectId> m_TextureMap;
 		std::vector<GfxRenderState> m_PassCache;
 
 		uint32_t m_Crc = -1;

@@ -42,6 +42,6 @@ namespace Blueberry
 	class UpdatableComponent
 	{
 	public:
-		static const std::size_t Type;
+		static const size_t Type;
 	};
 }

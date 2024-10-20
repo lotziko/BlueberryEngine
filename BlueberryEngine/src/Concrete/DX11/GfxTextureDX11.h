@@ -12,6 +12,9 @@ namespace Blueberry
 		
 		bool Create(const TextureProperties& properties);
 
+		ID3D11ShaderResourceView* GetSRV() const;
+		ID3D11RenderTargetView* GetRTV() const;
+
 		virtual UINT GetWidth() const override;
 		virtual UINT GetHeight() const override;
 		virtual void* GetHandle() override;

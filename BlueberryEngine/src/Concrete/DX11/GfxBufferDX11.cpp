@@ -126,6 +126,11 @@ namespace Blueberry
 
 	void GfxStructuredBufferDX11::SetData(char* data, const UINT& elementCount)
 	{
+		if (elementCount == 0)
+		{
+			return;
+		}
+
 		D3D11_BOX dst;
 		dst.left = 0;
 		dst.top = 0;

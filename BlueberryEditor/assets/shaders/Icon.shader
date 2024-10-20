@@ -8,7 +8,7 @@ Shader
 	{
 		Blend SrcAlpha OneMinusSrcAlpha
 		ZWrite Off
-		Cull Front
+		Cull Back
 
 		HLSLBEGIN
 		#pragma vertex IconVertex

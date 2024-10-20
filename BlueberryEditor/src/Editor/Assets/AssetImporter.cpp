@@ -98,7 +98,7 @@ namespace Blueberry
 		m_RequireSave = false;
 	}
 
-	AssetImporter* AssetImporter::CreateNew(const size_t& type, const std::filesystem::path& relativePath, const std::filesystem::path& relativeMetaPath)
+	AssetImporter* AssetImporter::CreateNew(const std::size_t& type, const std::filesystem::path& relativePath, const std::filesystem::path& relativeMetaPath)
 	{
 		auto info = ClassDB::GetInfo(type);
 		AssetImporter* importer = (AssetImporter*)info.createInstance();

@@ -28,7 +28,7 @@ namespace Blueberry
 template <>
 struct std::hash<Blueberry::Guid>
 {
-	std::size_t operator()(const Blueberry::Guid& guid) const
+	size_t operator()(const Blueberry::Guid& guid) const
 	{
 		return guid.data[0] ^ guid.data[1];
 	}

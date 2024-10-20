@@ -1,39 +1,42 @@
 #include "bbpch.h"
 #include "DefaultRenderer.h"
 
+#include "Blueberry\Core\Screen.h"
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\RenderTexture.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\RenderContext.h"
+#include "Blueberry\Graphics\HBAORenderer.h"
+#include "Blueberry\Scene\Components\Camera.h"
 
 namespace Blueberry
 {
 	void DefaultRenderer::Initialize()
 	{
-		s_ColorMSAARenderTarget = RenderTexture::Create(1920, 1080, 4, TextureFormat::R16G16B16A16_FLOAT);
-		s_DepthStencilMSAARenderTarget = RenderTexture::Create(1920, 1080, 4, TextureFormat::D24_UNorm);
-		s_ColorRenderTarget = RenderTexture::Create(1920, 1080, 1, TextureFormat::R8G8B8A8_UNorm);
-		s_DepthStencilRenderTarget = RenderTexture::Create(1920, 1080, 1, TextureFormat::D24_UNorm);
-
-		s_ResolveMSAAMaterial = Material::Create((Shader*)AssetLoader::Load("assets/ResolveMSAA.shader"));
+		GfxDevice::CreateHBAORenderer(s_HBAORenderer);
+		s_ResolveMSAAMaterial = Material::Create((Shader*)AssetLoader::Load("assets/shaders/ResolveMSAA.shader"));
 	}
 
 	void DefaultRenderer::Shutdown()
 	{
-		delete s_ColorMSAARenderTarget;
-		delete s_DepthStencilMSAARenderTarget;
-		delete s_ColorRenderTarget;
-		delete s_DepthStencilRenderTarget;
-
 		Object::Destroy(s_ResolveMSAAMaterial);
 	}
 
 	void DefaultRenderer::Draw(Scene* scene, Camera* camera, Rectangle viewport, Color background, RenderTexture* colorOutput, RenderTexture* depthOutput)
 	{
 		static size_t screenColorTextureId = TO_HASH("_ScreenColorTexture");
+		static size_t screenNormalTextureId = TO_HASH("_ScreenNormalTexture");
 		static size_t screenDepthStencilTextureId = TO_HASH("_ScreenDepthStencilTexture");
+
+		RenderTexture* colorMSAARenderTarget = RenderTexture::GetTemporary(viewport.width, viewport.height, 4, TextureFormat::R16G16B16A16_FLOAT);
+		RenderTexture* normalMSAARenderTarget = RenderTexture::GetTemporary(viewport.width, viewport.height, 4, TextureFormat::R8G8B8A8_UNorm);
+		RenderTexture* depthStencilMSAARenderTarget = RenderTexture::GetTemporary(viewport.width, viewport.height, 4, TextureFormat::D24_UNorm);
+
+		RenderTexture* colorNormalRenderTarget = RenderTexture::GetTemporary(viewport.width, viewport.height, 1, TextureFormat::R8G8B8A8_UNorm);
+		RenderTexture* depthStencilRenderTarget = RenderTexture::GetTemporary(viewport.width, viewport.height, 1, TextureFormat::D24_UNorm);
+		RenderTexture* HBAORenderTarget = RenderTexture::GetTemporary(viewport.width, viewport.height, 1, TextureFormat::R8G8B8A8_UNorm);
 
 		RenderContext context = {};
 		CullingResults results = {};
@@ -41,58 +44,56 @@ namespace Blueberry
 		context.Bind(results);
 
 		DrawingSettings drawingSettings = {};
-		drawingSettings.passIndex = 1;
 
-		// Z-prepass
-		GfxDevice::SetRenderTarget(nullptr, s_DepthStencilMSAARenderTarget->Get());
-		GfxDevice::SetViewport(0, 0, viewport.width, viewport.height);
+		// Depth/normal prepass
+		GfxDevice::SetRenderTarget(normalMSAARenderTarget->Get(), depthStencilMSAARenderTarget->Get());
+		GfxDevice::SetViewport(viewport.x, viewport.y, viewport.width, viewport.height);
+		GfxDevice::ClearColor({ 0.0f, 0.0f, 0.0f, 0.0f });
 		GfxDevice::ClearDepth(1.0f);
+		drawingSettings.passIndex = 1;
 		context.Draw(results, drawingSettings);
 
-		drawingSettings.passIndex = 0;
+		// Resolve depth/normal
+		GfxDevice::SetRenderTarget(colorNormalRenderTarget->Get(), depthStencilRenderTarget->Get());
+		GfxDevice::ClearColor({ 0.0f, 0.0f, 0.0f, 0.0f });
+		GfxDevice::ClearDepth(1.0f);
+		GfxDevice::SetGlobalTexture(screenNormalTextureId, normalMSAARenderTarget->Get());
+		GfxDevice::SetGlobalTexture(screenDepthStencilTextureId, depthStencilMSAARenderTarget->Get());
+		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_ResolveMSAAMaterial, 0));
+
+		// HBAO
+		s_HBAORenderer->Draw(depthStencilRenderTarget->Get(), colorNormalRenderTarget->Get(), camera->GetViewMatrix(), camera->GetProjectionMatrix(), viewport, HBAORenderTarget->Get());
+		GfxDevice::SetGlobalTexture(TO_HASH("_ScreenOcclusionTexture"), HBAORenderTarget->Get());
 
 		// Forward pass
-		GfxDevice::SetRenderTarget(s_ColorMSAARenderTarget->Get(), s_DepthStencilMSAARenderTarget->Get());
+		GfxDevice::SetRenderTarget(colorMSAARenderTarget->Get(), depthStencilMSAARenderTarget->Get());
 		GfxDevice::ClearColor({ 0.0f, 0.0f, 0.0f, 0.0f });
+		drawingSettings.passIndex = 0;
 		context.Draw(results, drawingSettings);
 
-		GfxDevice::SetRenderTarget(s_ColorRenderTarget->Get(), s_DepthStencilRenderTarget->Get());
+		// Resolve color
+		GfxDevice::SetRenderTarget(colorNormalRenderTarget->Get());
 		GfxDevice::ClearColor(background);
-		GfxDevice::ClearDepth(1.0f);
-		GfxDevice::SetViewport(0, 0, s_ColorRenderTarget->GetWidth(), s_ColorRenderTarget->GetHeight());
-		GfxDevice::SetGlobalTexture(screenColorTextureId, s_ColorMSAARenderTarget->Get());
-		GfxDevice::SetGlobalTexture(screenDepthStencilTextureId, s_DepthStencilMSAARenderTarget->Get());
+		GfxDevice::SetGlobalTexture(screenColorTextureId, colorMSAARenderTarget->Get());
 		// Gamma correction is done manually together with MSAA resolve to avoid using SRGB swapchain
-		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_ResolveMSAAMaterial));
+		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_ResolveMSAAMaterial, 1));
 		GfxDevice::SetRenderTarget(nullptr);
 
 		if (colorOutput != nullptr)
 		{
-			GfxDevice::Copy(s_ColorRenderTarget->Get(), colorOutput->Get());
+			GfxDevice::Copy(colorNormalRenderTarget->Get(), colorOutput->Get());
 		}
 		if (depthOutput != nullptr)
 		{
-			GfxDevice::Copy(s_DepthStencilRenderTarget->Get(), depthOutput->Get());
+			GfxDevice::Copy(depthStencilRenderTarget->Get(), depthOutput->Get());
 		}
-	}
 
-	RenderTexture* DefaultRenderer::GetColorMSAA()
-	{
-		return s_ColorMSAARenderTarget;
-	}
+		RenderTexture::ReleaseTemporary(colorMSAARenderTarget);
+		RenderTexture::ReleaseTemporary(normalMSAARenderTarget);
+		RenderTexture::ReleaseTemporary(depthStencilMSAARenderTarget);
 
-	RenderTexture* DefaultRenderer::GetDepthStencilMSAA()
-	{
-		return s_DepthStencilMSAARenderTarget;
-	}
-
-	RenderTexture* DefaultRenderer::GetColor()
-	{
-		return s_ColorRenderTarget;
-	}
-
-	RenderTexture* DefaultRenderer::GetDepthStencil()
-	{
-		return s_DepthStencilRenderTarget;
+		RenderTexture::ReleaseTemporary(colorNormalRenderTarget);
+		RenderTexture::ReleaseTemporary(depthStencilRenderTarget);
+		RenderTexture::ReleaseTemporary(HBAORenderTarget);
 	}
 }

@@ -28,6 +28,8 @@ namespace Blueberry
 		void OnWindowResize(const WindowResizeEventArgs& event);
 		void OnWindowFocus();
 
+		static void RequestFrameUpdate();
+
 	private:
 		void DrawMenuBar();
 		void DrawTopBar();
@@ -42,5 +44,7 @@ namespace Blueberry
 		SceneArea* m_SceneArea = nullptr;
 		GameView* m_GameView = nullptr;
 		ProjectBrowser* m_ProjectBrowser = nullptr;
+
+		static inline bool s_FrameUpdateRequested = true;
 	};
 }

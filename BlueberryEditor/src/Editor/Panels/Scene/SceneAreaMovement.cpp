@@ -78,8 +78,8 @@ namespace Blueberry
 				Vector3 cameraPosition = area->GetPosition() - Vector3::Transform(Vector3::Forward, area->GetRotation()) * area->GetCameraDistance();
 				Quaternion rotation = area->GetRotation();
 				// Right handed coordinate system requires inverted delta and a different order of quaternion multiplication
-				rotation *= Quaternion::CreateFromAxisAngle(Vector3::Transform(Vector3::Right, rotation), -delta.y * 0.003f);
-				rotation *= Quaternion::CreateFromAxisAngle(Vector3::Up, -delta.x * 0.003f);
+				rotation *= Quaternion::CreateFromAxisAngle(Vector3::Up, delta.x * 0.003f);
+				rotation *= Quaternion::CreateFromAxisAngle(Vector3::Transform(Vector3::Right, rotation), delta.y * 0.003f);
 				area->SetRotation(rotation);
 				area->SetPosition(cameraPosition + Vector3::Transform(Vector3::Forward, rotation) * area->GetCameraDistance());
 			}

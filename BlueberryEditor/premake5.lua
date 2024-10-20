@@ -40,7 +40,9 @@ project "BlueberryEditor"
 	postbuildcommands
 	{
 		"{COPYDIR} %{wks.location}/BlueberryEditor/assets %{cfg.targetdir}/assets",
-		"{COPYFILE} %{wks.location}/BlueberryEditor/vendor/fbxsdk/lib/vs2017/x64/release/libfbxsdk.dll %{cfg.targetdir}/libfbxsdk.dll"
+		"{COPYDIR} %{wks.location}/BlueberryEngine/assets %{cfg.targetdir}/assets",
+		"{COPYFILE} %{wks.location}/BlueberryEditor/vendor/fbxsdk/lib/vs2017/x64/release/libfbxsdk.dll %{cfg.targetdir}/libfbxsdk.dll",
+		"{COPYFILE} %{wks.location}/BlueberryEngine/vendor/hbao/lib/GFSDK_SSAO_D3D11.win64.dll %{cfg.targetdir}/GFSDK_SSAO_D3D11.win64.dll",
 	}
 
 	filter "system:windows"

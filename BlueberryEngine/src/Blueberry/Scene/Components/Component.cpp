@@ -36,5 +36,5 @@ namespace Blueberry
 		m_Entity.Get()->RemoveComponentFromScene(this, type);
 	}
 
-	const std::size_t UpdatableComponent::Type = TO_OBJECT_TYPE(TO_STRING(UpdatableComponent));
+	const size_t UpdatableComponent::Type = TO_OBJECT_TYPE(TO_STRING(UpdatableComponent));
 }

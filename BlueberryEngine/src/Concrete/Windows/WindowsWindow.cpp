@@ -26,6 +26,19 @@ namespace Blueberry
 		m_Height = properties.Height;
 
 		this->RegisterWindowClass();
+		
+		UINT dpi = GetDpiForSystem();
+		UINT screenWidth = GetSystemMetrics(SM_CXVIRTUALSCREEN); 
+		UINT screenHeight = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+
+		DEVMODE dm;
+		ZeroMemory(&dm, sizeof(dm));
+		dm.dmSize = sizeof(dm);
+
+		if (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &dm))
+		{
+			SetScreenSize(dm.dmPelsWidth, dm.dmPelsHeight);
+		}
 
 		int centerX = (GetSystemMetrics(SM_CXSCREEN) - properties.Width) / 2;
 		int centerY = (GetSystemMetrics(SM_CYSCREEN) - properties.Height) / 2;

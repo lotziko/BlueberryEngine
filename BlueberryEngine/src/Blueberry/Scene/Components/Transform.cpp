@@ -94,7 +94,7 @@ namespace Blueberry
 		return children;
 	}
 
-	const std::size_t Transform::GetChildrenCount() const
+	const size_t Transform::GetChildrenCount() const
 	{
 		return m_Children.size();
 	}

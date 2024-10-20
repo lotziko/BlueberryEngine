@@ -1,8 +1,10 @@
 #include "bbpch.h"
 #include "GameView.h"
 
+#include "Editor\EditorLayer.h"
 #include "Editor\EditorSceneManager.h"
 
+#include "Blueberry\Core\Screen.h"
 #include "Blueberry\Graphics\DefaultRenderer.h"
 #include "Blueberry\Graphics\RenderTexture.h"
 #include "Blueberry\Scene\Scene.h"
@@ -13,7 +15,7 @@ namespace Blueberry
 {
 	GameView::GameView()
 	{
-		m_RenderTarget = RenderTexture::Create(1920, 1080, 1, TextureFormat::R8G8B8A8_UNorm);
+		m_RenderTarget = RenderTexture::Create(Screen::GetWidth(), Screen::GetHeight(), 1, TextureFormat::R8G8B8A8_UNorm);
 	}
 
 	GameView::~GameView()
@@ -42,6 +44,7 @@ namespace Blueberry
 				}
 				if (camera != nullptr)
 				{
+					EditorLayer::RequestFrameUpdate();
 					Camera::SetCurrent(camera);
 
 					float areaAspectRatio = size.x / size.y;

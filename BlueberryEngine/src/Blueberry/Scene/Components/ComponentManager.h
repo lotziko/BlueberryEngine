@@ -32,7 +32,7 @@ namespace Blueberry
 		ComponentIterator GetIterator(const size_t& type);
 
 	private:
-		std::map<std::size_t, std::unordered_map<ObjectId, Component*>> m_Components;
+		std::map<size_t, std::unordered_map<ObjectId, Component*>> m_Components;
 	};
 
 	template<class ComponentType>

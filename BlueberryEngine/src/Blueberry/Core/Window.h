@@ -27,5 +27,8 @@ namespace Blueberry
 		virtual int GetHeight() const = 0;
 
 		static Window* Create(const WindowProperties& properties);
+
+	protected:
+		void SetScreenSize(const UINT& width, const UINT& height);
 	};
 }

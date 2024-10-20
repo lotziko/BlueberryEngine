@@ -22,7 +22,7 @@ namespace Blueberry
 
 	void TextureImporter::ImportData()
 	{
-		static size_t TextureId = 1;
+		static std::size_t TextureId = 1;
 
 		Guid guid = GetGuid();
 		// TODO check if dirty too

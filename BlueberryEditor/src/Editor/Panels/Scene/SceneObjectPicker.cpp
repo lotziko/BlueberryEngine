@@ -4,6 +4,7 @@
 #include "Editor\Selection.h"
 #include "Editor\Inspector\ObjectInspector.h"
 #include "Editor\Inspector\ObjectInspectorDB.h"
+#include "Blueberry\Core\Screen.h"
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Graphics\Renderer2D.h"
@@ -36,7 +37,7 @@ namespace Blueberry
 
 		static void BindData(Color indexColor)
 		{
-			static size_t objectDataId = TO_HASH("PerObjectData");
+			static std::size_t objectDataId = TO_HASH("PerObjectData");
 
 			if (s_ConstantBuffer == nullptr)
 			{
@@ -59,8 +60,8 @@ namespace Blueberry
 	SceneObjectPicker::SceneObjectPicker()
 	{
 		TextureProperties properties = {};
-		properties.width = 1920;
-		properties.height = 1080;
+		properties.width = Screen::GetWidth();
+		properties.height = Screen::GetHeight();
 		properties.isRenderTarget = true;
 		properties.isReadable = true;
 		properties.format = TextureFormat::R8G8B8A8_UNorm;
@@ -70,9 +71,9 @@ namespace Blueberry
 		properties.format = TextureFormat::D24_UNorm;
 		GfxDevice::CreateTexture(properties, m_SceneDepthStencil);
 
-		m_SpriteObjectPickerMaterial = Material::Create((Shader*)AssetLoader::Load("assets/SpriteObjectPicker.shader"));
-		m_MeshObjectPickerMaterial = Material::Create((Shader*)AssetLoader::Load("assets/MeshObjectPicker.shader"));
-		m_ObjectPickerOutlineMaterial = Material::Create((Shader*)AssetLoader::Load("assets/ObjectPickerOutline.shader"));
+		m_SpriteObjectPickerMaterial = Material::Create((Shader*)AssetLoader::Load("assets/shaders/SpriteObjectPicker.shader"));
+		m_MeshObjectPickerMaterial = Material::Create((Shader*)AssetLoader::Load("assets/shaders/MeshObjectPicker.shader"));
+		m_ObjectPickerOutlineMaterial = Material::Create((Shader*)AssetLoader::Load("assets/shaders/ObjectPickerOutline.shader"));
 	}
 
 	SceneObjectPicker::~SceneObjectPicker()
@@ -171,7 +172,7 @@ namespace Blueberry
 
 	void SceneObjectPicker::DrawOutline(Scene* scene, Camera* camera, GfxTexture* renderTarget)
 	{
-		static size_t pickingTextureId = TO_HASH("_PickingTexture");
+		static std::size_t pickingTextureId = TO_HASH("_PickingTexture");
 
 		if (scene == nullptr)
 		{
@@ -217,7 +218,7 @@ namespace Blueberry
 		}
 		
 		GfxDevice::SetRenderTarget(renderTarget);
-		GfxDevice::SetViewport(0, 0, 1920, 1080);
+		GfxDevice::SetViewport(0, 0, renderTarget->GetWidth(), renderTarget->GetHeight());
 		GfxDevice::SetGlobalTexture(pickingTextureId, m_SceneRenderTarget);
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_ObjectPickerOutlineMaterial));
 		GfxDevice::SetRenderTarget(nullptr);

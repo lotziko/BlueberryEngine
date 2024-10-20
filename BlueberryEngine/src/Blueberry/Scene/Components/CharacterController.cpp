@@ -88,8 +88,8 @@ namespace Blueberry
 				float movementSpeed = 5.0f;
 				float turnSpeed = 3.0f / 60;
 
-				Vector2 movementAxis = Vector2(Input::IsKeyDown('D') ? 1 : 0 + Input::IsKeyDown('A') ? -1 : 0, Input::IsKeyDown('W') ? -1 : 0 + Input::IsKeyDown('S') ? 1 : 0);
-				float turnAxis = Input::IsKeyDown('Q') ? 1 : 0 + Input::IsKeyDown('E') ? -1 : 0;
+				Vector2 movementAxis = Vector2(Input::IsKeyDown('D') ? 1 : 0 + Input::IsKeyDown('A') ? -1 : 0, Input::IsKeyDown('W') ? 1 : 0 + Input::IsKeyDown('S') ? -1 : 0);
+				float turnAxis = Input::IsKeyDown('Q') ? -1 : 0 + Input::IsKeyDown('E') ? 1 : 0;
 				/*Vector2 mousePosition = Input::GetMousePosition();
 				static Vector2 previousMousePosition;
 				float turnAxis = -(mousePosition - previousMousePosition).x;

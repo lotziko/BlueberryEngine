@@ -7,8 +7,8 @@
 
 namespace Blueberry
 {
-	const std::size_t Object::Type = TO_OBJECT_TYPE(TO_STRING(Object));
-	const std::size_t Object::ParentType = 0;
+	const size_t Object::Type = TO_OBJECT_TYPE(TO_STRING(Object));
+	const size_t Object::ParentType = 0;
 	const std::string Object::TypeName = "Object";
 	
 	Object::Object()
@@ -21,12 +21,12 @@ namespace Blueberry
 		ObjectDB::FreeId(this);
 	}
 
-	bool Object::IsClassType(const std::size_t classType) const
+	bool Object::IsClassType(const size_t classType) const
 	{
 		return classType == Type;
 	}
 
-	std::size_t Object::GetType() const
+	size_t Object::GetType() const
 	{
 		return Type;
 	}

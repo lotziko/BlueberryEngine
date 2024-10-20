@@ -8,7 +8,7 @@ namespace Blueberry
 	struct PairHash
 	{
 		template <class T1, class T2>
-		std::size_t operator() (const std::pair<T1, T2> &v) const
+		size_t operator() (const std::pair<T1, T2> &v) const
 		{
 			return std::hash<T1>()(v.first) ^ std::hash<T2>()(v.second) << 1;
 		}

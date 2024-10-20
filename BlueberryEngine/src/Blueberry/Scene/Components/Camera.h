@@ -76,7 +76,7 @@ namespace Blueberry
 		float m_FieldOfView = 60;
 		float m_AspectRatio = 16.0f / 9.0f;
 
-		Vector3 m_Direction = Vector3(0, 0, -1);
+		Vector3 m_Direction = Vector3(0, 0, 1);
 		Vector3 m_Up = Vector3(0, 1, 0);
 
 		size_t m_RecalculationFrame = 0;

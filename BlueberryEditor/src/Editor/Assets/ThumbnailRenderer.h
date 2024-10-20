@@ -9,7 +9,7 @@ namespace Blueberry
 	class ThumbnailRenderer
 	{
 	public:
-		static bool CanDraw(const size_t& type);
+		static bool CanDraw(const std::size_t& type);
 		static bool Draw(unsigned char* output, const UINT& size, Object* asset);
 
 	private:

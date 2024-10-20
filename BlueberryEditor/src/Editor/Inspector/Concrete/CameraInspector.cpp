@@ -76,7 +76,7 @@ namespace Blueberry
 		Matrix view = camera->GetInverseViewMatrix();
 		Matrix projection = camera->GetProjectionMatrix();
 		Frustum frustum;
-		frustum.CreateFromMatrix(frustum, projection, true);
+		frustum.CreateFromMatrix(frustum, projection, false);
 		frustum.Transform(frustum, view);
 
 		Gizmos::SetMatrix(Matrix::Identity);

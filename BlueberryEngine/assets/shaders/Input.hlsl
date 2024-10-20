@@ -31,6 +31,7 @@ cbuffer PerCameraData
 	float4 _CameraPositionWS;
 	float4 _CameraForwardDirectionWS;
 	float4 _CameraNearFarClipPlane;
+	float4 _CameraSizeInvSize;
 };
 
 cbuffer PerCameraLightData
@@ -41,5 +42,8 @@ cbuffer PerCameraLightData
 	float4 _LightAttenuation[MAX_REALTIME_LIGHTS];
 	float4 _LightDirection[MAX_REALTIME_LIGHTS];
 };
+
+Texture2D _ScreenOcclusionTexture;
+SamplerState _ScreenOcclusionTexture_Sampler;
 
 #endif

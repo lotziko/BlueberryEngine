@@ -5,6 +5,7 @@
 #include "GfxBufferDX11.h"
 #include "GfxTextureDX11.h"
 #include "ImGuiRendererDX11.h"
+#include "HBAORendererDX11.h"
 #include "Blueberry\Graphics\Enums.h"
 #include "Blueberry\Tools\CRCHelper.h"
 
@@ -62,6 +63,25 @@ namespace Blueberry
 		viewport.MaxDepth = 1.0f;
 
 		m_DeviceContext->RSSetViewports(1, &viewport);
+	}
+
+	void GfxDeviceDX11::SetScissorRectImpl(int x, int y, int width, int height)
+	{
+		if (width > 0)
+		{
+			D3D11_RECT rect;
+
+			rect.left = x;
+			rect.right = x + width;
+			rect.top = y;
+			rect.bottom = y + height;
+
+			m_DeviceContext->RSSetScissorRects(1, &rect);
+		}
+		else
+		{
+			m_DeviceContext->RSSetScissorRects(0, NULL);
+		}
 	}
 
 	void GfxDeviceDX11::ResizeBackbufferImpl(int width, int height)
@@ -227,6 +247,17 @@ namespace Blueberry
 		return true;
 	}
 
+	bool GfxDeviceDX11::CreateHBAORendererImpl(HBAORenderer*& renderer) const
+	{
+		auto dxRenderer = new HBAORendererDX11(m_Device.Get(), m_DeviceContext.Get());
+		if (!dxRenderer->Initialize())
+		{
+			return false;
+		}
+		renderer = dxRenderer;
+		return true;
+	}
+
 	void GfxDeviceDX11::CopyImpl(GfxTexture* source, GfxTexture* target) const
 	{
 		m_DeviceContext->CopySubresourceRegion(static_cast<GfxTextureDX11*>(target)->m_Texture.Get(), 0, 0, 0, 0, static_cast<GfxTextureDX11*>(source)->m_Texture.Get(), 0, NULL);
@@ -272,6 +303,9 @@ namespace Blueberry
 
 	void GfxDeviceDX11::SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture)
 	{
+		m_DeviceContext->PSSetShaderResources(0, 16, m_ShaderResourceViews);
+		m_DeviceContext->PSSetSamplers(0, 16, m_Samplers);
+
 		ID3D11RenderTargetView** renderTarget = nullptr;
 		if (renderTexture != nullptr)
 		{
@@ -305,21 +339,21 @@ namespace Blueberry
 		}
 	}
 
-	void GfxDeviceDX11::SetGlobalConstantBufferImpl(const std::size_t& id, GfxConstantBuffer* buffer)
+	void GfxDeviceDX11::SetGlobalConstantBufferImpl(const size_t& id, GfxConstantBuffer* buffer)
 	{
 		auto dxConstantBuffer = static_cast<GfxConstantBufferDX11*>(buffer);
 		m_BindedConstantBuffers.insert_or_assign(id, dxConstantBuffer);
 		m_CurrentCrc = 0;
 	}
 
-	void GfxDeviceDX11::SetGlobalStructuredBufferImpl(const std::size_t& id, GfxStructuredBuffer* buffer)
+	void GfxDeviceDX11::SetGlobalStructuredBufferImpl(const size_t& id, GfxStructuredBuffer* buffer)
 	{
 		auto dxStructuredBuffer = static_cast<GfxStructuredBufferDX11*>(buffer);
 		m_BindedStructuredBuffers.insert_or_assign(id, dxStructuredBuffer);
 		m_CurrentCrc = 0;
 	}
 
-	void GfxDeviceDX11::SetGlobalTextureImpl(const std::size_t& id, GfxTexture* texture)
+	void GfxDeviceDX11::SetGlobalTextureImpl(const size_t& id, GfxTexture* texture)
 	{
 		auto dxTexture = static_cast<GfxTextureDX11*>(texture);
 		m_BindedTextures.insert_or_assign(id, dxTexture);
@@ -397,9 +431,6 @@ namespace Blueberry
 				m_MaterialCrc = materialCRC;
 				m_GlobalCrc = m_CurrentCrc;
 
-				std::fill_n(m_ConstantBuffers, 8, nullptr);
-				std::fill_n(m_ShaderResourceViews, 16, nullptr);
-
 				// Bind vertex constant buffers
 				auto bufferMap = dxVertexShader->m_ConstantBufferSlots;
 				for (auto it = bufferMap.begin(); it != bufferMap.end(); it++)
@@ -412,6 +443,9 @@ namespace Blueberry
 				}
 
 				m_DeviceContext->VSSetConstantBuffers(0, 8, m_ConstantBuffers);
+
+				std::fill_n(m_ConstantBuffers, 8, nullptr);
+				std::fill_n(m_ShaderResourceViews, 16, nullptr);
 
 				// Bind vertex structured buffers
 				auto structuredBufferMap = dxVertexShader->m_StructuredBufferSlots;
@@ -446,8 +480,6 @@ namespace Blueberry
 					m_DeviceContext->GSSetConstantBuffers(0, 8, m_ConstantBuffers);
 				}
 
-				std::fill_n(m_ConstantBuffers, 8, nullptr);
-
 				// Bind fragment constant buffers
 				bufferMap = dxFragmentShader->m_ConstantBufferSlots;
 				for (auto it = bufferMap.begin(); it != bufferMap.end(); it++)
@@ -461,8 +493,7 @@ namespace Blueberry
 
 				m_DeviceContext->PSSetConstantBuffers(0, 8, m_ConstantBuffers);
 
-				std::fill_n(m_ShaderResourceViews, 16, nullptr);
-				std::fill_n(m_Samplers, 16, nullptr);
+				std::fill_n(m_ConstantBuffers, 8, nullptr);
 
 				// Bind fragment material textures
 				auto textureMap = dxFragmentShader->m_TextureSlots;
@@ -496,6 +527,9 @@ namespace Blueberry
 
 				m_DeviceContext->PSSetShaderResources(0, 16, m_ShaderResourceViews);
 				m_DeviceContext->PSSetSamplers(0, 16, m_Samplers);
+
+				std::fill_n(m_ShaderResourceViews, 16, nullptr);
+				std::fill_n(m_Samplers, 16, nullptr);
 			}
 		}
 
@@ -743,7 +777,7 @@ namespace Blueberry
 
 	void GfxDeviceDX11::SetBlendMode(const BlendMode& blendSrcColor, const BlendMode& blendSrcAlpha, const BlendMode& blendDstColor, const BlendMode& blendDstAlpha)
 	{
-		std::size_t key = (UINT)blendSrcColor << 8 | (UINT)blendSrcAlpha << 16 | (UINT)blendSrcColor << 24 | (UINT)blendSrcAlpha << 32;
+		size_t key = (UINT)blendSrcColor << 8 | (UINT)blendSrcAlpha << 16 | (UINT)blendSrcColor << 24 | (UINT)blendSrcAlpha << 32;
 		if (key == m_BlendKey)
 		{
 			return;
@@ -790,7 +824,7 @@ namespace Blueberry
 
 	void GfxDeviceDX11::SetZTestAndZWrite(const ZTest& zTest, const ZWrite& zWrite)
 	{
-		std::size_t key = (UINT)zTest << 8 | (UINT)zWrite << 16;
+		size_t key = (UINT)zTest << 8 | (UINT)zWrite << 16;
 		if (key == m_ZTestZWriteKey)
 		{
 			return;
@@ -840,15 +874,15 @@ namespace Blueberry
 		{
 			for (auto& pair : m_BindedTextures)
 			{
-				m_CurrentCrc = CRCHelper::Calculate(&pair, sizeof(std::pair<std::size_t, GfxTextureDX11*>), m_CurrentCrc);
+				m_CurrentCrc = CRCHelper::Calculate(&pair, sizeof(std::pair<size_t, GfxTextureDX11*>), m_CurrentCrc);
 			}
 			for (auto& pair : m_BindedConstantBuffers)
 			{
-				m_CurrentCrc = CRCHelper::Calculate(&pair, sizeof(std::pair<std::size_t, GfxConstantBufferDX11*>), m_CurrentCrc);
+				m_CurrentCrc = CRCHelper::Calculate(&pair, sizeof(std::pair<size_t, GfxConstantBufferDX11*>), m_CurrentCrc);
 			}
 			for (auto& pair : m_BindedStructuredBuffers)
 			{
-				m_CurrentCrc = CRCHelper::Calculate(&pair, sizeof(std::pair<std::size_t, GfxStructuredBufferDX11*>), m_CurrentCrc);
+				m_CurrentCrc = CRCHelper::Calculate(&pair, sizeof(std::pair<size_t, GfxStructuredBufferDX11*>), m_CurrentCrc);
 			}
 		}
 		return m_CurrentCrc;

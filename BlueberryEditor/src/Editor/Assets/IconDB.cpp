@@ -5,7 +5,7 @@
 
 namespace Blueberry
 {
-	std::unordered_map<size_t, Texture*> IconDB::s_AssetIcons = {};
+	std::unordered_map<std::size_t, Texture*> IconDB::s_AssetIcons = {};
 
 	Texture* IconDB::GetAssetIcon(Object* asset)
 	{
@@ -17,7 +17,7 @@ namespace Blueberry
 		return s_AssetIcons[Object::Type];
 	}
 
-	void IconDB::Register(const size_t& type, const std::string& path)
+	void IconDB::Register(const std::size_t& type, const std::string& path)
 	{
 		s_AssetIcons.insert_or_assign(type, (Texture*)AssetLoader::Load(path));
 	}

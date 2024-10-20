@@ -2,6 +2,7 @@
 #include "EditorLayer.h"
 
 #include "Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\RenderTexture.h"
 #include "Blueberry\Graphics\ImGuiRenderer.h"
 #include "Blueberry\Math\Math.h"
 #include "Blueberry\Events\WindowEvents.h"
@@ -102,6 +103,13 @@ namespace Blueberry
 		m_ImGuiRenderer->End();
 
 		GfxDevice::SwapBuffers();
+
+		if (s_FrameUpdateRequested)
+		{
+			Time::IncrementFrameCount();
+			RenderTexture::UpdateTemporary();
+			s_FrameUpdateRequested = false;
+		}
 	}
 
 	void EditorLayer::OnWindowResize(const WindowResizeEventArgs& event)
@@ -112,6 +120,11 @@ namespace Blueberry
 	void EditorLayer::OnWindowFocus()
 	{
 		//AssetDB::Refresh();
+	}
+
+	void EditorLayer::RequestFrameUpdate()
+	{
+		s_FrameUpdateRequested = true;
 	}
 
 	void EditorLayer::DrawMenuBar()

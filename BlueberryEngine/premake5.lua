@@ -16,6 +16,7 @@ project "BlueberryEngine"
 		"src/**.cpp",
 		"vendor/mikktspace/**.h",
 		"vendor/mikktspace/**.cpp",
+		"vendor/hbao/include/**.h",
 	}
 
 	includedirs
@@ -23,13 +24,15 @@ project "BlueberryEngine"
 		"src",
 		"%{IncludeDir.imgui}",
 		"%{IncludeDir.jolt}",
-		"%{IncludeDir.mikktspace}"
+		"%{IncludeDir.mikktspace}",
+		"%{IncludeDir.hbao}",
 	}
 
 	links
 	{
 		"Imgui",
-		"Jolt"
+		"Jolt",
+		"%{LibraryDir.hbao}",
 	}
 
 	filter "system:windows"

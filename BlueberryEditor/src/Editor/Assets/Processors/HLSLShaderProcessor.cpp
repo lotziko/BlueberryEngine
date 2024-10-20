@@ -14,7 +14,7 @@ namespace Blueberry
 {
 	HRESULT HLSLShaderProcessorInclude::Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes)
 	{
-		std::string filePath("assets/" + std::string(pFileName));
+		std::string filePath("assets/shaders/" + std::string(pFileName));
 		if (!std::filesystem::exists(filePath))
 		{
 			return E_FAIL;

@@ -49,7 +49,7 @@ namespace Blueberry
 		return material;
 	}
 
-	void Material::SetTexture(std::size_t id, Texture* texture)
+	void Material::SetTexture(size_t id, Texture* texture)
 	{
 		m_TextureMap.insert_or_assign(id, texture->GetObjectId());
 		m_Crc = -1;
@@ -202,7 +202,7 @@ namespace Blueberry
 		{
 			for (auto& pair : m_TextureMap)
 			{
-				m_Crc = CRCHelper::Calculate(&pair, sizeof(std::pair<std::size_t, ObjectId>), m_Crc);
+				m_Crc = CRCHelper::Calculate(&pair, sizeof(std::pair<size_t, ObjectId>), m_Crc);
 			}
 			for (auto& keyword : m_ActiveKeywords)
 			{
@@ -229,7 +229,7 @@ namespace Blueberry
 			for (auto& parameter : shaderData->GetTextureParameters())
 			{
 				TextureParameterData* data = parameter.Get();
-				std::size_t key = TO_HASH(data->GetName());
+				size_t key = TO_HASH(data->GetName());
 				if (m_TextureMap.count(key) == 0)
 				{
 					m_TextureMap.insert({key, ((Texture*)DefaultTextures::GetTexture(data->GetDefaultTextureName()))->GetObjectId() });

@@ -52,6 +52,11 @@ namespace Blueberry
 		s_Instance->SetViewportImpl(x, y, width, height);
 	}
 
+	void GfxDevice::SetScissorRect(int x, int y, int width, int height)
+	{
+		s_Instance->SetScissorRectImpl(x, y, width, height);
+	}
+
 	void GfxDevice::ResizeBackbuffer(int width, int height)
 	{
 		s_Instance->ResizeBackbufferImpl(width, height);
@@ -112,6 +117,11 @@ namespace Blueberry
 		return s_Instance->CreateImGuiRendererImpl(renderer);
 	}
 
+	bool GfxDevice::CreateHBAORenderer(HBAORenderer*& renderer)
+	{
+		return s_Instance->CreateHBAORendererImpl(renderer);
+	}
+
 	void GfxDevice::Copy(GfxTexture* source, GfxTexture* target)
 	{
 		s_Instance->CopyImpl(source, target);
@@ -132,17 +142,17 @@ namespace Blueberry
 		s_Instance->SetRenderTargetImpl(renderTexture, depthStencilTexture);
 	}
 
-	void GfxDevice::SetGlobalConstantBuffer(const std::size_t& id, GfxConstantBuffer* buffer)
+	void GfxDevice::SetGlobalConstantBuffer(const size_t& id, GfxConstantBuffer* buffer)
 	{
 		s_Instance->SetGlobalConstantBufferImpl(id, buffer);
 	}
 
-	void GfxDevice::SetGlobalStructuredBuffer(const std::size_t& id, GfxStructuredBuffer* buffer)
+	void GfxDevice::SetGlobalStructuredBuffer(const size_t& id, GfxStructuredBuffer* buffer)
 	{
 		s_Instance->SetGlobalStructuredBufferImpl(id, buffer);
 	}
 
-	void GfxDevice::SetGlobalTexture(const std::size_t& id, GfxTexture* texture)
+	void GfxDevice::SetGlobalTexture(const size_t& id, GfxTexture* texture)
 	{
 		s_Instance->SetGlobalTextureImpl(id, texture);
 	}

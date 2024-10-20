@@ -21,7 +21,7 @@ namespace Blueberry
 
 	bool IconRenderer::Initialize()
 	{
-		Shader* iconShader = (Shader*)AssetLoader::Load("assets/Icon.shader");
+		Shader* iconShader = (Shader*)AssetLoader::Load("assets/shaders/Icon.shader");
 		if (iconShader == nullptr)
 		{
 			BB_ERROR("Failed to load icon shader.")

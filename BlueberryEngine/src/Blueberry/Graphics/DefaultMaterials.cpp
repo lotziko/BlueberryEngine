@@ -11,7 +11,7 @@ namespace Blueberry
 	{
 		if (s_ErrorMaterial == nullptr)
 		{
-			Shader* shader = (Shader*)AssetLoader::Load("assets/Error.shader");
+			Shader* shader = (Shader*)AssetLoader::Load("assets/shaders/Error.shader");
 			if (shader == nullptr)
 			{
 				BB_ERROR("Failed to load error shader.")
@@ -26,7 +26,7 @@ namespace Blueberry
 	{
 		if (s_BlitMaterial == nullptr)
 		{
-			Shader* shader = (Shader*)AssetLoader::Load("assets/Blit.shader");
+			Shader* shader = (Shader*)AssetLoader::Load("assets/shaders/Blit.shader");
 			if (shader == nullptr)
 			{
 				BB_ERROR("Failed to load blit shader.")

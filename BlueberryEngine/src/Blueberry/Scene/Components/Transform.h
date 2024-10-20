@@ -27,7 +27,7 @@ namespace Blueberry
 		Transform* GetParent() const;
 
 		const std::vector<Transform*> GetChildren() const;
-		const std::size_t GetChildrenCount() const;
+		const size_t GetChildrenCount() const;
 
 		void SetLocalPosition(const Vector3& position);
 		void SetLocalRotation(const Quaternion& rotation);

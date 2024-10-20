@@ -149,4 +149,14 @@ namespace Blueberry
 		}
 		return 1;
 	}
+
+	inline float GetRandomFloat01()
+	{
+		return (float)(rand()) / (float)RAND_MAX;
+	}
+
+	inline float GetRandomFloat(float a, float b)
+	{
+		return a + GetRandomFloat01()*(b - a);
+	}
 }

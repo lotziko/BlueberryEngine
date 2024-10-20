@@ -26,7 +26,7 @@ namespace Blueberry
 
 			Vector3 rayOriginCameraSpace = rayPointCameraSpace;
 			// Do not invert startZ because of right handed coordinate system
-			rayOriginCameraSpace.z = startZ;
+			rayOriginCameraSpace.z = -startZ;
 
 			rayOriginWorldSpace = MultiplyPoint(cameraToWorld, rayOriginCameraSpace);
 		}
@@ -39,7 +39,7 @@ namespace Blueberry
 
 			Vector3 cameraPositionWorldSpace = MultiplyPoint(cameraToWorld, Vector3(0, 0, 0));
 			// Do not invert startZ because of right handed coordinate system
-			Vector3 originOffsetWorldSpace = rayDirectionWorldSpace * startZ / rayDirectionCameraSpace.z;
+			Vector3 originOffsetWorldSpace = rayDirectionWorldSpace * -startZ / rayDirectionCameraSpace.z;
 			rayOriginWorldSpace = cameraPositionWorldSpace + originOffsetWorldSpace;
 		}
 

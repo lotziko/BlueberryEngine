@@ -7,6 +7,7 @@
 #include "Blueberry\Graphics\GfxTexture.h"
 
 #include "Editor\Preferences.h"
+#include "Editor\EditorLayer.h"
 #include "Editor\EditorSceneManager.h"
 #include "Editor\EditorObjectManager.h"
 #include "Editor\Selection.h"
@@ -15,6 +16,7 @@
 #include "Editor\Gizmos\GizmoRenderer.h"
 #include "Editor\Gizmos\IconRenderer.h"
 
+#include "Blueberry\Core\Screen.h"
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Graphics\DefaultRenderer.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
@@ -29,19 +31,17 @@
 
 namespace Blueberry
 {
-	size_t SceneArea::s_SceneRedrawFrame = 0;
-
 	SceneArea::SceneArea()
 	{
-		m_ColorRenderTarget = RenderTexture::Create(1920, 1080, 1, TextureFormat::R8G8B8A8_UNorm);
-		m_DepthStencilRenderTarget = RenderTexture::Create(1920, 1080, 1, TextureFormat::D24_UNorm);
+		m_ColorRenderTarget = RenderTexture::Create(Screen::GetWidth(), Screen::GetHeight(), 1, TextureFormat::R8G8B8A8_UNorm);
+		m_DepthStencilRenderTarget = RenderTexture::Create(Screen::GetWidth(), Screen::GetHeight(), 1, TextureFormat::D24_UNorm);
 
-		m_GridMaterial = Material::Create((Shader*)AssetLoader::Load("assets/Grid.shader"));
+		m_GridMaterial = Material::Create((Shader*)AssetLoader::Load("assets/shaders/Grid.shader"));
 		m_ObjectPicker = new SceneObjectPicker();
 
 		// TODO save to config instead
 		m_Position = Vector3(0, 10, 0);
-		m_Rotation = Quaternion::CreateFromYawPitchRoll(0, ToRadians(-45), 0);
+		m_Rotation = Quaternion::CreateFromYawPitchRoll(ToRadians(180), ToRadians(45), 0);
 
 		Entity* cameraEntity = Object::Create<Entity>();
 		cameraEntity->AddComponent<Transform>();
@@ -226,11 +226,12 @@ namespace Blueberry
 
 			SetupCamera(size.x, size.y);
 
-			if (s_SceneRedrawFrame >= Time::GetFrameCount())
+			if (s_SceneRedrawRequested)
 			{
 				DrawScene(size.x, size.y);
 
 				m_ObjectPicker->DrawOutline(EditorSceneManager::GetScene(), m_Camera, m_ColorRenderTarget->Get());
+				s_SceneRedrawRequested = false;
 			}
 			DrawGizmos(Rectangle(pos.x, pos.y, size.x, size.y));
 
@@ -317,13 +318,14 @@ namespace Blueberry
 
 	void SceneArea::RequestRedrawAll()
 	{
-		s_SceneRedrawFrame = Time::GetFrameCount() + 1;
+		s_SceneRedrawRequested = true;
+		EditorLayer::RequestFrameUpdate();
 	}
 
 	Vector3 SceneArea::GetCameraPosition()
 	{
 		// GetCameraDistance() is inverted because of right handed coordinate system
-		return m_Position + Vector3::Transform(Vector3(0, 0, GetCameraDistance()), m_Camera->GetTransform()->GetRotation());
+		return m_Position + Vector3::Transform(Vector3(0, 0, -GetCameraDistance()), m_Camera->GetTransform()->GetRotation());
 	}
 
 	Quaternion SceneArea::GetCameraRotation()
@@ -334,7 +336,7 @@ namespace Blueberry
 	Vector3 SceneArea::GetCameraTargetPosition()
 	{
 		// GetCameraDistance() is inverted because of right handed coordinate system
-		return m_Position + Vector3::Transform(Vector3(0, 0, GetCameraDistance()), m_Rotation);
+		return m_Position + Vector3::Transform(Vector3(0, 0, -GetCameraDistance()), m_Rotation);
 	}
 
 	Quaternion SceneArea::GetCameraTargetRotation()
@@ -369,7 +371,6 @@ namespace Blueberry
 			m_PreviousPosition = position;
 		}
 		
-
 		if (m_IsOrthographic)
 		{
 			m_Camera->SetOrthographic(true);
