@@ -8,12 +8,12 @@ namespace Blueberry
 {
 	OBJECT_DEFINITION(Object, Texture)
 
-	const UINT& Texture::GetWidth()
+	const uint32_t& Texture::GetWidth()
 	{
 		return m_Width;
 	}
 
-	const UINT& Texture::GetHeight()
+	const uint32_t& Texture::GetHeight()
 	{
 		return m_Height;
 	}

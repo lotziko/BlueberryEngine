@@ -18,7 +18,7 @@ namespace Blueberry
 		return type == Texture2D::Type || type == Material::Type;
 	}
 
-	bool ThumbnailRenderer::Draw(unsigned char* output, const UINT& size, Object* asset)
+	bool ThumbnailRenderer::Draw(unsigned char* output, const uint32_t& size, Object* asset)
 	{
 		if (s_ThumbnailRenderTarget == nullptr)
 		{

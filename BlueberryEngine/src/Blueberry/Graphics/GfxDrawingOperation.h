@@ -24,8 +24,8 @@ namespace Blueberry
 			GfxTexture* Get();
 
 			ObjectId* textureId;
-			UINT textureSlot;
-			UINT samplerSlot;
+			uint32_t textureSlot;
+			uint32_t samplerSlot;
 		};
 
 		GfxVertexShader* vertexShader;
@@ -33,7 +33,7 @@ namespace Blueberry
 		GfxFragmentShader* fragmentShader;
 
 		TextureInfo fragmentTextures[16];
-		UINT fragmentTextureCount;
+		uint32_t fragmentTextureCount;
 
 		CullMode cullMode;
 		BlendMode blendSrcColor;
@@ -48,9 +48,9 @@ namespace Blueberry
 
 	struct GfxDrawingOperation
 	{
-		GfxDrawingOperation(GfxVertexBuffer* vertexBuffer, GfxIndexBuffer* indexBuffer, Material* material, const UINT& indexCount, const UINT& indexOffset, const UINT& vertexCount, const Topology& topology, const uint8_t& passIndex = 0, GfxVertexBuffer* instanceBuffer = nullptr, const UINT& instanceOffset = 0);
-		GfxDrawingOperation(Mesh* mesh, Material* material, const UINT& indexCount, const UINT& indexOffset, const UINT& vertexCount, const uint8_t& passIndex = 0, GfxVertexBuffer* instanceBuffer = nullptr, const UINT& instanceOffset = 0);
-		GfxDrawingOperation(Mesh* mesh, Material* material, const uint8_t& passIndex = 0, GfxVertexBuffer* instanceBuffer = nullptr, const UINT& instanceOffset = 0);
+		GfxDrawingOperation(GfxVertexBuffer* vertexBuffer, GfxIndexBuffer* indexBuffer, Material* material, const uint32_t& indexCount, const uint32_t& indexOffset, const uint32_t& vertexCount, const Topology& topology, const uint8_t& passIndex = 0, GfxVertexBuffer* instanceBuffer = nullptr, const uint32_t& instanceOffset = 0, const uint32_t& instanceCount = 1);
+		GfxDrawingOperation(Mesh* mesh, Material* material, const uint32_t& indexCount, const uint32_t& indexOffset, const uint32_t& vertexCount, const uint8_t& passIndex = 0, GfxVertexBuffer* instanceBuffer = nullptr, const uint32_t& instanceOffset = 0, const uint32_t& instanceCount = 1);
+		GfxDrawingOperation(Mesh* mesh, Material* material, const uint8_t& passIndex = 0, GfxVertexBuffer* instanceBuffer = nullptr, const uint32_t& instanceOffset = 0, const uint32_t& instanceCount = 1);
 
 		static Material* GetValidMaterial(Material* material);
 
@@ -62,10 +62,11 @@ namespace Blueberry
 		GfxIndexBuffer* indexBuffer;
 		GfxVertexBuffer* instanceBuffer;
 		Topology topology;
-		UINT indexCount;
-		UINT indexOffset;
-		UINT vertexCount;
-		UINT instanceOffset;
+		uint32_t indexCount;
+		uint32_t indexOffset;
+		uint32_t vertexCount;
+		uint32_t instanceOffset;
+		uint32_t instanceCount;
 		ObjectId materialId;
 		uint32_t materialCRC;
 	};

@@ -5,6 +5,7 @@
 namespace Blueberry
 {
 	class Scene;
+	class Renderer;
 	class Camera;
 	class Light;
 	class Material;
@@ -12,18 +13,25 @@ namespace Blueberry
 
 	struct CullingResults
 	{
-		struct DrawingOperation
+		struct RendererInfo
 		{
-			Matrix matrix;
-			Mesh* mesh;
-			UINT submeshIndex;
-			Material* material;
+			Renderer* renderer;
+			size_t type;
+			AABB bounds;
+			uint32_t frustumMask;
+		};
+
+		struct CullerInfo
+		{
+			Object* object;
+			uint8_t index;
+			DirectX::XMVECTOR nearPlane, farPlane, rightPlane, leftPlane, topPlane, bottomPlane;
 		};
 
 		Camera* camera;
 		std::vector<Light*> lights;
-		std::vector<MeshRenderer*> meshRenderers;
-		std::vector<DrawingOperation> drawingOperations;
+		std::vector<RendererInfo> rendererInfos;
+		std::vector<CullerInfo> cullerInfos;
 	};
 
 	struct DrawingSettings
@@ -31,12 +39,19 @@ namespace Blueberry
 		uint8_t passIndex;
 	};
 
+	struct ShadowDrawingSettings
+	{
+		Light* light;
+		uint8_t sliceIndex;
+	};
+
 	class RenderContext
 	{
 	public:
 		void Cull(Scene* scene, Camera* camera, CullingResults& results);
-		void Bind(CullingResults& results);
-		void Draw(CullingResults& results, DrawingSettings& drawingSettings);
+		void BindCamera(CullingResults& results);
+		void DrawShadows(CullingResults& results, ShadowDrawingSettings& shadowDrawingSettings);
+		void DrawRenderers(CullingResults& results, DrawingSettings& drawingSettings);
 
 	private:
 		static inline GfxVertexBuffer* s_IndexBuffer = nullptr;

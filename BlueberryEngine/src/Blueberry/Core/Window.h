@@ -29,6 +29,6 @@ namespace Blueberry
 		static Window* Create(const WindowProperties& properties);
 
 	protected:
-		void SetScreenSize(const UINT& width, const UINT& height);
+		void SetScreenSize(const uint32_t& width, const uint32_t& height);
 	};
 }

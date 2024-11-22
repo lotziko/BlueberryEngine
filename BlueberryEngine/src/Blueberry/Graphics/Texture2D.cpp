@@ -43,7 +43,7 @@ namespace Blueberry
 		GfxDevice::CreateTexture(textureProperties, m_Texture);
 	}
 
-	Texture2D* Texture2D::Create(const UINT& width, const UINT& height, const UINT& mipCount, const TextureFormat& textureFormat, const WrapMode& wrapMode, const FilterMode& filterMode, Texture2D* existingTexture)
+	Texture2D* Texture2D::Create(const uint32_t& width, const uint32_t& height, const uint32_t& mipCount, const TextureFormat& textureFormat, const WrapMode& wrapMode, const FilterMode& filterMode, Texture2D* existingTexture)
 	{
 		Texture2D* texture = nullptr;
 		if (existingTexture != nullptr)

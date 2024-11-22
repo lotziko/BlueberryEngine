@@ -11,9 +11,9 @@
 
 namespace Blueberry
 {
-	static const UINT MAX_LINES = 1024;
-	static const UINT MAX_VERTICES = MAX_LINES * 2;
-	static const UINT MAX_INDICES = MAX_LINES * 2;
+	static const uint32_t MAX_LINES = 1024;
+	static const uint32_t MAX_VERTICES = MAX_LINES * 2;
+	static const uint32_t MAX_INDICES = MAX_LINES * 2;
 
 	bool Gizmos::Initialize()
 	{
@@ -228,7 +228,7 @@ namespace Blueberry
 			return;
 		}
 
-		for (UINT i = 0; i < s_LineCount; i++)
+		for (uint32_t i = 0; i < s_LineCount; i++)
 		{
 			Line line = s_Lines[i];
 			Vector3 start = line.start;
@@ -268,7 +268,7 @@ namespace Blueberry
 			return;
 		}
 
-		for (UINT i = 0; i < s_ArcCount; i++)
+		for (uint32_t i = 0; i < s_ArcCount; i++)
 		{
 			Arc arc = s_Arcs[i];
 			Vector3 center = arc.center;

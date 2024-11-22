@@ -7,7 +7,7 @@ namespace Blueberry
 	{
 	}
 
-	void GfxVertexBufferDX11::SetData(float* data, const UINT& vertexCount)
+	void GfxVertexBufferDX11::SetData(float* data, const uint32_t& vertexCount)
 	{
 		D3D11_MAPPED_SUBRESOURCE mappedBuffer;
 		ZeroMemory(&mappedBuffer, sizeof(D3D11_MAPPED_SUBRESOURCE));
@@ -19,7 +19,7 @@ namespace Blueberry
 		m_DeviceContext->Unmap(m_Buffer.Get(), 0);
 	}
 
-	bool GfxVertexBufferDX11::Initialize(const VertexLayout& layout, const UINT& vertexCount)
+	bool GfxVertexBufferDX11::Initialize(const VertexLayout& layout, const uint32_t& vertexCount)
 	{
 		m_Layout = layout;
 		m_Stride = layout.GetSize();
@@ -48,7 +48,7 @@ namespace Blueberry
 	{
 	}
 
-	void GfxIndexBufferDX11::SetData(UINT* data, const UINT& indexCount)
+	void GfxIndexBufferDX11::SetData(uint32_t* data, const uint32_t& indexCount)
 	{
 		D3D11_MAPPED_SUBRESOURCE mappedBuffer;
 		ZeroMemory(&mappedBuffer, sizeof(D3D11_MAPPED_SUBRESOURCE));
@@ -56,17 +56,17 @@ namespace Blueberry
 		D3D11_MAP mapType = D3D11_MAP_WRITE_DISCARD;
 
 		m_DeviceContext->Map(m_Buffer.Get(), 0, mapType, 0, &mappedBuffer);
-		memcpy(mappedBuffer.pData, data, sizeof(UINT) * indexCount);
+		memcpy(mappedBuffer.pData, data, sizeof(uint32_t) * indexCount);
 		m_DeviceContext->Unmap(m_Buffer.Get(), 0);
 	}
 
-	bool GfxIndexBufferDX11::Initialize(const UINT& indexCount)
+	bool GfxIndexBufferDX11::Initialize(const uint32_t& indexCount)
 	{
 		D3D11_BUFFER_DESC indexBufferDesc;
 		ZeroMemory(&indexBufferDesc, sizeof(D3D11_BUFFER_DESC));
 
 		indexBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-		indexBufferDesc.ByteWidth = sizeof(UINT) * indexCount;
+		indexBufferDesc.ByteWidth = sizeof(uint32_t) * indexCount;
 		indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 		indexBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 		indexBufferDesc.MiscFlags = 0;
@@ -86,7 +86,7 @@ namespace Blueberry
 	{
 	}
 
-	void GfxConstantBufferDX11::SetData(char* data, const UINT& byteCount)
+	void GfxConstantBufferDX11::SetData(char* data, const uint32_t& byteCount)
 	{
 		D3D11_MAPPED_SUBRESOURCE mappedBuffer;
 		ZeroMemory(&mappedBuffer, sizeof(D3D11_MAPPED_SUBRESOURCE));
@@ -98,7 +98,7 @@ namespace Blueberry
 		m_DeviceContext->Unmap(m_Buffer.Get(), 0);
 	}
 
-	bool GfxConstantBufferDX11::Initialize(const UINT& byteCount)
+	bool GfxConstantBufferDX11::Initialize(const uint32_t& byteCount)
 	{
 		D3D11_BUFFER_DESC constantBufferDesc;
 		ZeroMemory(&constantBufferDesc, sizeof(D3D11_BUFFER_DESC));
@@ -124,7 +124,7 @@ namespace Blueberry
 	{
 	}
 
-	void GfxStructuredBufferDX11::SetData(char* data, const UINT& elementCount)
+	void GfxStructuredBufferDX11::SetData(char* data, const uint32_t& elementCount)
 	{
 		if (elementCount == 0)
 		{
@@ -142,12 +142,12 @@ namespace Blueberry
 		m_DeviceContext->UpdateSubresource(m_Buffer.Get(), 0, &dst, data, 0, 0);
 	}
 
-	bool GfxStructuredBufferDX11::Initialize(const UINT& elementCount, const UINT& elementSize)
+	bool GfxStructuredBufferDX11::Initialize(const uint32_t& elementCount, const uint32_t& elementSize)
 	{
 		D3D11_BUFFER_DESC structuredBufferDesc;
 		ZeroMemory(&structuredBufferDesc, sizeof(D3D11_BUFFER_DESC));
 
-		UINT byteCount = elementCount * elementSize;
+		uint32_t byteCount = elementCount * elementSize;
 		structuredBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 		structuredBufferDesc.ByteWidth = byteCount % 16 > 0 ? ((byteCount / 16) + 1) * 16 : byteCount;
 		structuredBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
@@ -183,19 +183,19 @@ namespace Blueberry
 	{
 	}
 
-	void GfxComputeBufferDX11::GetData(char* data, const UINT& byteCount)
+	void GfxComputeBufferDX11::GetData(char* data, const uint32_t& byteCount)
 	{
 
 	}
 
-	void GfxComputeBufferDX11::SetData(char* data, const UINT& byteCount)
+	void GfxComputeBufferDX11::SetData(char* data, const uint32_t& byteCount)
 	{
 
 	}
 
-	bool GfxComputeBufferDX11::Initialize(const UINT& elementCount, const UINT& elementSize)
+	bool GfxComputeBufferDX11::Initialize(const uint32_t& elementCount, const uint32_t& elementSize)
 	{
-		UINT byteCount = elementCount * elementSize;
+		uint32_t byteCount = elementCount * elementSize;
 		D3D11_BUFFER_DESC computeBufferDesc;
 		ZeroMemory(&computeBufferDesc, sizeof(D3D11_BUFFER_DESC));
 

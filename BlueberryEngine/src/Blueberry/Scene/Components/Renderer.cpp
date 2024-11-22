@@ -5,8 +5,9 @@ namespace Blueberry
 {
 	OBJECT_DEFINITION(Component, Renderer)
 
-	void Renderer::BindProperties()
+	const AABB& Renderer::GetBounds()
 	{
+		return AABB();
 	}
 
 	const int& Renderer::GetSortingOrder()
@@ -17,5 +18,9 @@ namespace Blueberry
 	void Renderer::SetSortingOrder(const int& sortingOrder)
 	{
 		m_SortingOrder = sortingOrder;
+	}
+
+	void Renderer::BindProperties()
+	{
 	}
 }

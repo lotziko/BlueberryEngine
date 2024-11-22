@@ -37,6 +37,9 @@ namespace Blueberry
 		const float& GetOuterSpotAngle();
 		const float& GetInnerSpotAngle();
 
+		const bool& IsCastingShadows();
+		void SetCastingShadows(const bool& castingShadows);
+
 		static void BindProperties();
 
 	private:
@@ -46,5 +49,17 @@ namespace Blueberry
 		float m_Range = 5.0f;
 		float m_OuterSpotAngle = 30.0f;
 		float m_InnerSpotAngle = 15.0f;
+		bool m_IsCastingShadows = true;
+
+	private:
+		uint8_t m_SliceCount = 1;
+		Matrix m_WorldToShadow[6];
+		Matrix m_AtlasWorldToShadow[6];
+		Vector4 m_ShadowBounds[6];
+		Vector4 m_ShadowCascades[6];
+
+		friend class RenderContext;
+		friend class ShadowAtlas;
+		friend class PerCameraLightDataConstantBuffer;
 	};
 }

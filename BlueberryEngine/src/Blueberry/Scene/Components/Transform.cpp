@@ -31,6 +31,16 @@ namespace Blueberry
 		return m_LocalToWorldMatrix;
 	}
 
+	const Matrix& Transform::GetWorldToLocalMatrix()
+	{
+		if (m_IsDirty)
+		{
+			RecalculateHierarchy();
+		}
+
+		return m_WorldToLocalMatrix;
+	}
+
 	const Vector3& Transform::GetLocalPosition()
 	{
 		return m_LocalPosition;

@@ -63,14 +63,14 @@ namespace Blueberry
 		const std::vector<std::string>& GetFragmentKeywords() const;
 		void SetFragmentKeywords(const std::vector<std::string>& keywords);
 
-		const UINT& GetVertexOffset() const;
-		void SetVertexOffset(const UINT& offset);
+		const uint32_t& GetVertexOffset() const;
+		void SetVertexOffset(const uint32_t& offset);
 
-		const UINT& GetGeometryOffset() const;
-		void SetGeometryOffset(const UINT& offset);
+		const uint32_t& GetGeometryOffset() const;
+		void SetGeometryOffset(const uint32_t& offset);
 
-		const UINT& GetFragmentOffset() const;
-		void SetFragmentOffset(const UINT& offset);
+		const uint32_t& GetFragmentOffset() const;
+		void SetFragmentOffset(const uint32_t& offset);
 
 		static void BindProperties();
 
@@ -84,9 +84,9 @@ namespace Blueberry
 		ZWrite m_ZWrite = ZWrite::On;
 		std::vector<std::string> m_VertexKeywords;
 		std::vector<std::string> m_FragmentKeywords;
-		UINT m_VertexOffset;
-		UINT m_GeometryOffset;
-		UINT m_FragmentOffset;
+		uint32_t m_VertexOffset;
+		uint32_t m_GeometryOffset;
+		uint32_t m_FragmentOffset;
 	};
 
 	class Texture2D;
@@ -99,8 +99,8 @@ namespace Blueberry
 		ShaderData() = default;
 		virtual ~ShaderData() = default;
 
-		const PassData* GetPass(const UINT& index) const;
-		const UINT& GetPassCount() const;
+		const PassData* GetPass(const uint32_t& index) const;
+		const uint32_t& GetPassCount() const;
 		void SetPasses(const std::vector<PassData*>& passes);
 
 		const std::vector<DataPtr<TextureParameterData>>& GetTextureParameters() const;
@@ -115,9 +115,9 @@ namespace Blueberry
 
 	struct VariantsData
 	{
-		std::vector<UINT> vertexShaderIndices;
-		std::vector<UINT> geometryShaderIndices;
-		std::vector<UINT> fragmentShaderIndices;
+		std::vector<uint32_t> vertexShaderIndices;
+		std::vector<uint32_t> geometryShaderIndices;
+		std::vector<uint32_t> fragmentShaderIndices;
 
 		std::vector<void*> shaders;
 	};
@@ -148,7 +148,7 @@ namespace Blueberry
 		static void BindProperties();
 
 	private:
-		const Shader::ShaderVariant GetVariant(const UINT& vertexKeywordFlags, const UINT& fragmentKeywordFlags, const uint8_t& passIndex);
+		const Shader::ShaderVariant GetVariant(const uint32_t& vertexKeywordFlags, const uint32_t& fragmentKeywordFlags, const uint8_t& passIndex);
 
 	private:
 		DataPtr<ShaderData> m_Data;
@@ -156,7 +156,7 @@ namespace Blueberry
 		std::vector<GfxVertexShader*> m_VertexShaders;
 		std::vector<GfxGeometryShader*> m_GeometryShaders;
 		std::vector<GfxFragmentShader*> m_FragmentShaders;
-		std::vector<std::tuple<UINT, UINT, UINT>> m_PassesOffsets;
+		std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> m_PassesOffsets;
 
 		friend struct GfxDrawingOperation;
 		friend class Material;

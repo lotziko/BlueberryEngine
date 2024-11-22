@@ -1,0 +1,41 @@
+#pragma once
+
+namespace Blueberry
+{
+	class RenderTexture;
+	class Light;
+	class RenderContext;
+	struct CullingResults;
+
+	class ShadowAtlas
+	{
+	public:
+		struct ShadowRequest
+		{
+			uint32_t size;
+			uint32_t offsetX;
+			uint32_t offsetY;
+			Light* light;
+			uint8_t sliceIndex;
+		};
+
+	public:
+		ShadowAtlas() = default;
+		ShadowAtlas(const uint32_t& width, const uint32_t& height, const uint32_t& maxLightCount);
+
+		void Clear();
+		void Insert(Light* light, const uint32_t& size, const uint8_t& sliceCount);
+		void Draw(RenderContext& context, CullingResults& results);
+
+		RenderTexture* GetAtlasTexture();
+
+	private:
+		void PackRequests();
+
+	private:
+		RenderTexture* m_AtlasTexture;
+		ShadowRequest* m_Requests;
+		uint32_t m_MaxLightCount;
+		uint32_t m_RequestCount;
+	};
+}

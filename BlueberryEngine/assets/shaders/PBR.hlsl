@@ -3,6 +3,7 @@
 
 #include "Structs.hlsl"
 #include "RealtimeLights.hlsl"
+#include "RealtimeShadows.hlsl"
 
 float CalculateGeometricRoughnessFactor(half3 geometricNormalWs)
 {
@@ -116,11 +117,37 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 	float3 indirectDiffuseTerm = CalculateIndirectDiffuse(float3(0.01, 0.01, 0.01), surfaceData.occlusion);
 	float3 indirectSpecularTerm = CalculateIndirectSpecular(inputData.normalWS, inputData.positionWS, inputData.viewDirectionWS, geometricRoughness, surfaceData.occlusion, reflectance);
 
+	if (_MainShadowCascades[0].w > 0)
+	{
+		float cascadeIndex = ComputeCascadeIndex(inputData.positionWS, _MainShadowCascades);
+		float4 positionSS = TransformWorldToShadow(inputData.positionWS, _MainWorldToShadow[cascadeIndex]);
+
+		//return float4(1 * (cascadeIndex == 0), 1 * (cascadeIndex == 1), 1 * (cascadeIndex == 2), 1);
+
+		float shadowAttenuation = 1;
+		if (!IsOutOfBounds(positionSS, _MainShadowBounds[cascadeIndex]))
+		{
+			shadowAttenuation = ComputeShadowPCF3x3(positionSS, _ShadowTexture, _ShadowTexture_Sampler, _Shadow3x3PCFTermC0, _Shadow3x3PCFTermC1, _Shadow3x3PCFTermC2, _Shadow3x3PCFTermC3);
+		}
+
+		float falloff = 1;
+		float3 lightDirectionWS = _MainLightDirection.xyz;
+		float3 lightColor = _MainLightColor.rgb;
+
+		directDiffuseTerm += CalculateDirectDiffuse(inputData.normalWS, lightDirectionWS, lightColor, shadowAttenuation, falloff, diffuseExponent);
+		directSpecularTerm += CalculateDirectSpecular(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, shadowAttenuation, falloff, reflectance, geometricRoughness);
+	}
+
 	for (int i = 0; i < int(_LightsCount.x); i++)
 	{
 		float4 lightPositionWS = _LightPosition[i];
 		float3 posToLight = lightPositionWS.xyz - inputData.positionWS * lightPositionWS.w;
 		float distanceSqr = dot(posToLight, posToLight);
+
+		if (distanceSqr > _LightParam[i].w)
+		{
+			continue;
+		}
 
 		float3 lightDirectionWS = normalize(posToLight);
 		float spotAttenuation = AngleAttenuation(lightDirectionWS, _LightDirection[i].xyz, _LightAttenuation[i].zw);
@@ -133,8 +160,20 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 		float distanceAttenuation = DistanceAttenuation(distanceSqr, _LightAttenuation[i].xy);
 		float falloff = LightFalloff(distanceSqr);
 		float3 lightColor = _LightColor[i].rgb;
-		directDiffuseTerm += CalculateDirectDiffuse(inputData.normalWS, lightDirectionWS, lightColor, distanceAttenuation * spotAttenuation, falloff, diffuseExponent);
-		directSpecularTerm += CalculateDirectSpecular(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, distanceAttenuation * spotAttenuation, falloff, reflectance, geometricRoughness);
+
+		float shadowAttenuation = 1.0;
+		if (_LightParam[i].x > 0)
+		{
+			shadowAttenuation = 0;
+			float4 positionSS = TransformWorldToShadow(inputData.positionWS, _WorldToShadow[i]);
+			if (!IsOutOfBounds(positionSS, _ShadowBounds[i]))
+			{
+				shadowAttenuation = ComputeShadowPCF3x3(positionSS, _ShadowTexture, _ShadowTexture_Sampler, _Shadow3x3PCFTermC0, _Shadow3x3PCFTermC1, _Shadow3x3PCFTermC2, _Shadow3x3PCFTermC3);
+			}
+		}
+
+		directDiffuseTerm += CalculateDirectDiffuse(inputData.normalWS, lightDirectionWS, lightColor, distanceAttenuation * spotAttenuation * shadowAttenuation, falloff, diffuseExponent);
+		directSpecularTerm += CalculateDirectSpecular(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, distanceAttenuation * spotAttenuation * shadowAttenuation, falloff, reflectance, geometricRoughness);
 	}
 
 	directDiffuseTerm *= (1.0 - reflectance);

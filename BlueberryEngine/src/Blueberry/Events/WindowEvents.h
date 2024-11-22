@@ -7,16 +7,16 @@ namespace Blueberry
 	class WindowResizeEventArgs
 	{
 	public:
-		WindowResizeEventArgs(UINT width, UINT height) : m_Width(width), m_Height(height)
+		WindowResizeEventArgs(uint32_t width, uint32_t height) : m_Width(width), m_Height(height)
 		{
 		}
 
-		UINT GetWidth() const;
-		UINT GetHeight() const;
+		uint32_t GetWidth() const;
+		uint32_t GetHeight() const;
 
 	private:
-		UINT m_Width;
-		UINT m_Height;
+		uint32_t m_Width;
+		uint32_t m_Height;
 	};
 
 	using WindowResizeEvent = Event<WindowResizeEventArgs>;

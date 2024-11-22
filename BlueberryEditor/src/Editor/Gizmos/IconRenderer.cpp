@@ -56,7 +56,7 @@ namespace Blueberry
 			if (info.component->GetEntity()->IsActiveInHierarchy())
 			{
 				Vector3 position = info.transform->GetPosition();
-				Matrix modelMatrix = Matrix::CreateBillboard(position, position - cameraDirection, Vector3(0, -1, 0));
+				Matrix modelMatrix = Matrix::CreateBillboard(position, position + cameraDirection, Vector3(0, -1, 0));
 
 				const char* path = info.inspector->GetIconPath(info.component.Get());
 				if (path != nullptr)

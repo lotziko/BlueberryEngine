@@ -7,9 +7,6 @@ namespace Blueberry
 	class GameView
 	{
 	public:
-		GameView();
-		~GameView();
-
 		void DrawUI();
 
 	private:

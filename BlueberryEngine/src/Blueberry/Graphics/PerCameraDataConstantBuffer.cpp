@@ -21,10 +21,10 @@ namespace Blueberry
 		Vector4 cameraSizeInvSize;
 	};
 
+	static size_t perCameraDataId = TO_HASH("PerCameraData");
+
 	void PerCameraDataConstantBuffer::BindData(Camera* camera)
 	{
-		static size_t perCameraDataId = TO_HASH("PerCameraData");
-
 		if (s_ConstantBuffer == nullptr)
 		{
 			GfxDevice::CreateConstantBuffer(sizeof(CONSTANTS) * 1, s_ConstantBuffer);
@@ -57,6 +57,20 @@ namespace Blueberry
 			nearFar,
 			sizeInvSize
 		};
+
+		s_ConstantBuffer->SetData(reinterpret_cast<char*>(&constants), sizeof(constants));
+		GfxDevice::SetGlobalConstantBuffer(perCameraDataId, s_ConstantBuffer);
+	}
+
+	void PerCameraDataConstantBuffer::BindData(const Matrix& viewProjection)
+	{
+		if (s_ConstantBuffer == nullptr)
+		{
+			GfxDevice::CreateConstantBuffer(sizeof(CONSTANTS) * 1, s_ConstantBuffer);
+		}
+
+		CONSTANTS constants = {};
+		constants.viewProjectionMatrix = GfxDevice::GetGPUMatrix(viewProjection);
 
 		s_ConstantBuffer->SetData(reinterpret_cast<char*>(&constants), sizeof(constants));
 		GfxDevice::SetGlobalConstantBuffer(perCameraDataId, s_ConstantBuffer);

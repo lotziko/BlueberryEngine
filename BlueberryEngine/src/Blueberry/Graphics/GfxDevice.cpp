@@ -82,27 +82,27 @@ namespace Blueberry
 		return s_Instance->CreateComputeShaderImpl(computeData, shader);
 	}
 
-	bool GfxDevice::CreateVertexBuffer(const VertexLayout& layout, const UINT& vertexCount, GfxVertexBuffer*& buffer)
+	bool GfxDevice::CreateVertexBuffer(const VertexLayout& layout, const uint32_t& vertexCount, GfxVertexBuffer*& buffer)
 	{
 		return s_Instance->CreateVertexBufferImpl(layout, vertexCount, buffer);
 	}
 
-	bool GfxDevice::CreateIndexBuffer(const UINT& indexCount, GfxIndexBuffer*& buffer)
+	bool GfxDevice::CreateIndexBuffer(const uint32_t& indexCount, GfxIndexBuffer*& buffer)
 	{
 		return s_Instance->CreateIndexBufferImpl(indexCount, buffer);
 	}
 
-	bool GfxDevice::CreateConstantBuffer(const UINT& byteCount, GfxConstantBuffer*& buffer)
+	bool GfxDevice::CreateConstantBuffer(const uint32_t& byteCount, GfxConstantBuffer*& buffer)
 	{
 		return s_Instance->CreateConstantBufferImpl(byteCount, buffer);
 	}
 
-	bool GfxDevice::CreateStructuredBuffer(const UINT& elementCount, const UINT& elementSize, GfxStructuredBuffer*& buffer)
+	bool GfxDevice::CreateStructuredBuffer(const uint32_t& elementCount, const uint32_t& elementSize, GfxStructuredBuffer*& buffer)
 	{
 		return s_Instance->CreateStructuredBufferImpl(elementCount, elementSize, buffer);
 	}
 
-	bool GfxDevice::CreateComputeBuffer(const UINT& elementCount, const UINT& elementSize, GfxComputeBuffer*& buffer)
+	bool GfxDevice::CreateComputeBuffer(const uint32_t& elementCount, const uint32_t& elementSize, GfxComputeBuffer*& buffer)
 	{
 		return s_Instance->CreateComputeBufferImpl(elementCount, elementSize, buffer);
 	}
@@ -162,7 +162,7 @@ namespace Blueberry
 		s_Instance->DrawImpl(operation);
 	}
 
-	void GfxDevice::Dispatch(GfxComputeShader*& shader, const UINT& threadGroupsX, const UINT& threadGroupsY, const UINT& threadGroupsZ)
+	void GfxDevice::Dispatch(GfxComputeShader*& shader, const uint32_t& threadGroupsX, const uint32_t& threadGroupsY, const uint32_t& threadGroupsZ)
 	{
 		s_Instance->DispatchImpl(shader, threadGroupsX, threadGroupsY, threadGroupsZ);
 	}

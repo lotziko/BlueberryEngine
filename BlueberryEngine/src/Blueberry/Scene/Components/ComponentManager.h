@@ -17,6 +17,8 @@ namespace Blueberry
 		std::unordered_map<ObjectId, Component*> m_Data;
 	};
 
+	using ComponentMap = std::unordered_map<ObjectId, Component*>;
+
 	class ComponentManager
 	{
 	public:
@@ -30,9 +32,10 @@ namespace Blueberry
 		template<class ComponentType>
 		ComponentIterator GetIterator();
 		ComponentIterator GetIterator(const size_t& type);
+		ComponentMap& GetComponents(const size_t& type);
 
 	private:
-		std::map<size_t, std::unordered_map<ObjectId, Component*>> m_Components;
+		std::map<size_t, ComponentMap> m_Components;
 	};
 
 	template<class ComponentType>
@@ -64,5 +67,10 @@ namespace Blueberry
 	inline ComponentIterator ComponentManager::GetIterator(const size_t& type)
 	{
 		return ComponentIterator(m_Components[type]);
+	}
+
+	inline ComponentMap& ComponentManager::GetComponents(const size_t& type)
+	{
+		return m_Components[type];
 	}
 }

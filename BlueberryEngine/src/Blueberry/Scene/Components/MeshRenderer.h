@@ -21,12 +21,12 @@ namespace Blueberry
 		Mesh* GetMesh();
 		void SetMesh(Mesh* mesh);
 
-		Material* GetMaterial(const UINT& index = 0);
+		Material* GetMaterial(const uint32_t& index = 0);
 		void SetMaterial(Material* material);
 
 		void SetMaterials(const std::vector<Material*> materials);
 
-		const AABB& GetBounds();
+		virtual const AABB& GetBounds() final;
 
 		static void BindProperties();
 

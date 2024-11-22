@@ -13,10 +13,10 @@ namespace Blueberry
 	static Vector4 s_QuadVertexPositons[4];
 	static Vector2 s_QuadTextureCoords[4];
 
-	static const UINT MAX_QUADS = 4000; // TODO make polygons instead
-	static const UINT MAX_SPRITES = 1024;
-	static const UINT MAX_VERTICES = MAX_QUADS * 4;
-	static const UINT MAX_INDICES = MAX_QUADS * 6;
+	static const uint32_t MAX_QUADS = 4000; // TODO make polygons instead
+	static const uint32_t MAX_SPRITES = 1024;
+	static const uint32_t MAX_VERTICES = MAX_QUADS * 4;
+	static const uint32_t MAX_INDICES = MAX_QUADS * 6;
 
 	bool Renderer2D::Initialize()
 	{
@@ -33,9 +33,9 @@ namespace Blueberry
 			return false;
 		}
 
-		UINT* indexData = new UINT[MAX_INDICES];
-		UINT offset = 0;
-		for (UINT i = 0; i < MAX_INDICES; i += 6)
+		uint32_t* indexData = new uint32_t[MAX_INDICES];
+		uint32_t offset = 0;
+		for (uint32_t i = 0; i < MAX_INDICES; i += 6)
 		{
 			indexData[i + 0] = offset + 0;
 			indexData[i + 1] = offset + 1;
@@ -125,7 +125,7 @@ namespace Blueberry
 
 		// TODO non rectangle sprites
 		// Fill vertices
-		for (UINT i = 0; i < s_DrawingDataCount; i++)
+		for (uint32_t i = 0; i < s_DrawingDataCount; i++)
 		{
 			DrawingData data = s_DrawingDatas[i];
 			Matrix transform = data.transform;
@@ -158,9 +158,9 @@ namespace Blueberry
 		// Draw quads
 		Material* currentMaterial = s_DrawingDatas->material;
 		Texture2D* currentTexture = s_DrawingDatas->texture;
-		UINT indexOffset = 0;
-		UINT indexCount = 0;
-		for (UINT i = 0; i < s_DrawingDataCount; i++)
+		uint32_t indexOffset = 0;
+		uint32_t indexCount = 0;
+		for (uint32_t i = 0; i < s_DrawingDataCount; i++)
 		{
 			DrawingData data = s_DrawingDatas[i];
 			Material* material = data.material;

@@ -14,6 +14,7 @@ namespace Blueberry
 	using Rectangle = DirectX::SimpleMath::Rectangle;
 	using Viewport = DirectX::SimpleMath::Viewport;
 	using AABB = DirectX::BoundingBox;
+	using OBB = DirectX::BoundingOrientedBox;
 	using Sphere = DirectX::BoundingSphere;
 	using Frustum = DirectX::BoundingFrustum;
 
@@ -136,11 +137,44 @@ namespace Blueberry
 		return box.ContainedBy(NearPlane, FarPlane, RightPlane, LeftPlane, TopPlane, BottomPlane);
 	}
 
-	inline UINT GetMipCount(const UINT& width, const UINT& height, const bool& generateMips)
+	inline void GetOrthographicPlanes(Matrix inverseViewProjection, DirectX::XMVECTOR* NearPlane, DirectX::XMVECTOR* FarPlane, DirectX::XMVECTOR* RightPlane, DirectX::XMVECTOR* LeftPlane, DirectX::XMVECTOR* TopPlane, DirectX::XMVECTOR* BottomPlane)
+	{
+		Vector4 corners[8] =
+		{
+			Vector4(-1.0f, 1.0f, 0.0f, 1.0f),
+			Vector4(1.0f, 1.0f, 0.0f, 1.0f),
+			Vector4(1.0f, -1.0f, 0.0f, 1.0f),
+			Vector4(-1.0f, -1.0f, 0.0f, 1.0f),
+
+			Vector4(-1.0f, 1.0f, 1.0f, 1.0f),
+			Vector4(1.0f, 1.0f, 1.0f, 1.0f),
+			Vector4(1.0f, -1.0f, 1.0f, 1.0f),
+			Vector4(-1.0f, -1.0f, 1.0f, 1.0f),
+		};
+
+		for (int i = 0; i < 8; ++i)
+		{
+			corners[i] = Vector4::Transform(corners[i], inverseViewProjection);
+			corners[i].x /= corners[i].w;
+			corners[i].y /= corners[i].w;
+			corners[i].z /= corners[i].w;
+		}
+
+		*NearPlane = DirectX::XMPlaneNormalize(DirectX::XMPlaneFromPoints(corners[0], corners[1], corners[2]));
+		*FarPlane = DirectX::XMPlaneNormalize(DirectX::XMPlaneFromPoints(corners[6], corners[5], corners[4]));
+
+		*LeftPlane = DirectX::XMPlaneNormalize(DirectX::XMPlaneFromPoints(corners[0], corners[3], corners[7]));
+		*RightPlane = DirectX::XMPlaneNormalize(DirectX::XMPlaneFromPoints(corners[6], corners[2], corners[1]));
+
+		*TopPlane = DirectX::XMPlaneNormalize(DirectX::XMPlaneFromPoints(corners[4], corners[1], corners[0]));
+		*BottomPlane = DirectX::XMPlaneNormalize(DirectX::XMPlaneFromPoints(corners[7], corners[3], corners[2]));
+	}
+
+	inline uint32_t GetMipCount(const uint32_t& width, const uint32_t& height, const bool& generateMips)
 	{
 		if (generateMips)
 		{
-			UINT mipCount = (UINT)log2(Min((float)width, (float)height));
+			uint32_t mipCount = (uint32_t)log2(Min((float)width, (float)height));
 			// Based on https://stackoverflow.com/questions/108318/how-can-i-test-whether-a-number-is-a-power-of-2
 			if ((width & (width - 1)) == 0 && (height & (height - 1)) == 0)
 			{

@@ -174,7 +174,7 @@ namespace Blueberry
 		return true;
 	}
 
-	bool GfxDeviceDX11::CreateVertexBufferImpl(const VertexLayout& layout, const UINT& vertexCount, GfxVertexBuffer*& buffer)
+	bool GfxDeviceDX11::CreateVertexBufferImpl(const VertexLayout& layout, const uint32_t& vertexCount, GfxVertexBuffer*& buffer)
 	{
 		auto dxBuffer = new GfxVertexBufferDX11(m_Device.Get(), m_DeviceContext.Get());
 		if (!dxBuffer->Initialize(layout, vertexCount))
@@ -185,7 +185,7 @@ namespace Blueberry
 		return true;
 	}
 
-	bool GfxDeviceDX11::CreateIndexBufferImpl(const UINT& indexCount, GfxIndexBuffer*& buffer)
+	bool GfxDeviceDX11::CreateIndexBufferImpl(const uint32_t& indexCount, GfxIndexBuffer*& buffer)
 	{
 		auto dxBuffer = new GfxIndexBufferDX11(m_Device.Get(), m_DeviceContext.Get());
 		if (!dxBuffer->Initialize(indexCount))
@@ -196,7 +196,7 @@ namespace Blueberry
 		return true;
 	}
 
-	bool GfxDeviceDX11::CreateConstantBufferImpl(const UINT& byteCount, GfxConstantBuffer*& buffer)
+	bool GfxDeviceDX11::CreateConstantBufferImpl(const uint32_t& byteCount, GfxConstantBuffer*& buffer)
 	{
 		auto dxBuffer = new GfxConstantBufferDX11(m_Device.Get(), m_DeviceContext.Get());
 		if (!dxBuffer->Initialize(byteCount))
@@ -207,7 +207,7 @@ namespace Blueberry
 		return true;
 	}
 
-	bool GfxDeviceDX11::CreateStructuredBufferImpl(const UINT& elementCount, const UINT& elementSize, GfxStructuredBuffer*& buffer)
+	bool GfxDeviceDX11::CreateStructuredBufferImpl(const uint32_t& elementCount, const uint32_t& elementSize, GfxStructuredBuffer*& buffer)
 	{
 		auto dxBuffer = new GfxStructuredBufferDX11(m_Device.Get(), m_DeviceContext.Get());
 		if (!dxBuffer->Initialize(elementCount, elementSize))
@@ -218,7 +218,7 @@ namespace Blueberry
 		return true;
 	}
 
-	bool GfxDeviceDX11::CreateComputeBufferImpl(const UINT& elementCount, const UINT& elementSize, GfxComputeBuffer*& buffer)
+	bool GfxDeviceDX11::CreateComputeBufferImpl(const uint32_t& elementCount, const uint32_t& elementSize, GfxComputeBuffer*& buffer)
 	{
 		auto dxBuffer = new GfxComputeBufferDX11(m_Device.Get(), m_DeviceContext.Get());
 		if (!dxBuffer->Initialize(elementCount, elementSize))
@@ -454,8 +454,8 @@ namespace Blueberry
 					auto pair = m_BindedStructuredBuffers.find(it->first);
 					if (pair != m_BindedStructuredBuffers.end())
 					{
-						UINT bufferSlotIndex = it->second.first;
-						UINT shaderResourceViewSlotIndex = it->second.second;
+						uint32_t bufferSlotIndex = it->second.first;
+						uint32_t shaderResourceViewSlotIndex = it->second.second;
 						auto dxBuffer = pair->second;
 						//m_ConstantBuffers[bufferSlotIndex] = dxBuffer->m_Buffer.Get();
 						m_ShaderResourceViews[shaderResourceViewSlotIndex] = dxBuffer->m_ShaderResourceView.Get();
@@ -514,8 +514,8 @@ namespace Blueberry
 					auto pair = m_BindedTextures.find(it->first);
 					if (pair != m_BindedTextures.end())
 					{
-						UINT textureSlotIndex = it->second.first;
-						UINT samplerSlotIndex = it->second.second;
+						uint32_t textureSlotIndex = it->second.first;
+						uint32_t samplerSlotIndex = it->second.second;
 						auto dxTexture = pair->second;
 						m_ShaderResourceViews[textureSlotIndex] = dxTexture->m_ResourceView.Get();
 						if (samplerSlotIndex != -1)
@@ -540,14 +540,14 @@ namespace Blueberry
 			m_DeviceContext->IASetVertexBuffers(0, 1, dxVertexBuffer->m_Buffer.GetAddressOf(), &dxVertexBuffer->m_Stride, &dxVertexBuffer->m_Offset);
 		}
 
-		auto dxInstanceBuffer = static_cast<GfxVertexBufferDX11*>(operation.instanceBuffer);//operation.instanceBuffer == nullptr ? nullptr : ;
+		auto dxInstanceBuffer = static_cast<GfxVertexBufferDX11*>(operation.instanceBuffer);
 		if (dxInstanceBuffer != m_InstanceBuffer || operation.instanceOffset != m_InstanceOffset)
 		{
 			m_InstanceBuffer = dxInstanceBuffer;
 			m_InstanceOffset = operation.instanceOffset;
 			if (dxInstanceBuffer != nullptr)
 			{
-				UINT byteOffset = m_InstanceBuffer ? m_InstanceOffset * m_InstanceBuffer->m_Stride : 0;
+				uint32_t byteOffset = m_InstanceBuffer ? m_InstanceOffset * m_InstanceBuffer->m_Stride : 0;
 				m_DeviceContext->IASetVertexBuffers(1, 1, dxInstanceBuffer->m_Buffer.GetAddressOf(), &dxInstanceBuffer->m_Stride, &byteOffset);
 			}
 		}
@@ -560,7 +560,7 @@ namespace Blueberry
 			}
 			else
 			{
-				m_DeviceContext->DrawInstanced(operation.vertexCount, 1, 0, 0);
+				m_DeviceContext->DrawInstanced(operation.vertexCount, operation.instanceCount, 0, 0);
 			}
 		}
 		else
@@ -577,12 +577,12 @@ namespace Blueberry
 			}
 			else
 			{
-				m_DeviceContext->DrawIndexedInstanced(operation.indexCount, 1, operation.indexOffset, 0, 0);
+				m_DeviceContext->DrawIndexedInstanced(operation.indexCount, operation.instanceCount, operation.indexOffset, 0, 0);
 			}
 		}
 	}
 
-	void GfxDeviceDX11::DispatchImpl(GfxComputeShader*& shader, const UINT& threadGroupsX, const UINT& threadGroupsY, const UINT& threadGroupsZ) const
+	void GfxDeviceDX11::DispatchImpl(GfxComputeShader*& shader, const uint32_t& threadGroupsX, const uint32_t& threadGroupsY, const uint32_t& threadGroupsZ) const
 	{
 		auto dxShader = static_cast<GfxComputeShaderDX11*>(shader);
 
@@ -684,6 +684,8 @@ namespace Blueberry
 			rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
 			rasterizerDesc.MultisampleEnable = true;
 			rasterizerDesc.AntialiasedLineEnable = true;
+			rasterizerDesc.DepthBias = 8;
+			rasterizerDesc.SlopeScaledDepthBias = 2.13f;
 
 			hr = m_Device->CreateRasterizerState(&rasterizerDesc, m_CullNoneRasterizerState.GetAddressOf());
 			if (FAILED(hr))
@@ -702,6 +704,8 @@ namespace Blueberry
 			rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_FRONT;
 			rasterizerDesc.MultisampleEnable = true;
 			rasterizerDesc.AntialiasedLineEnable = true;
+			rasterizerDesc.DepthBias = 8;
+			rasterizerDesc.SlopeScaledDepthBias = 2.13f;
 
 			hr = m_Device->CreateRasterizerState(&rasterizerDesc, m_CullFrontRasterizerState.GetAddressOf());
 			if (FAILED(hr))
@@ -720,6 +724,8 @@ namespace Blueberry
 			rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
 			rasterizerDesc.MultisampleEnable = true;
 			rasterizerDesc.AntialiasedLineEnable = true;
+			rasterizerDesc.DepthBias = 8;
+			rasterizerDesc.SlopeScaledDepthBias = 2.13f;
 
 			hr = m_Device->CreateRasterizerState(&rasterizerDesc, m_CullBackRasterizerState.GetAddressOf());
 			if (FAILED(hr))
@@ -777,7 +783,7 @@ namespace Blueberry
 
 	void GfxDeviceDX11::SetBlendMode(const BlendMode& blendSrcColor, const BlendMode& blendSrcAlpha, const BlendMode& blendDstColor, const BlendMode& blendDstAlpha)
 	{
-		size_t key = (UINT)blendSrcColor << 8 | (UINT)blendSrcAlpha << 16 | (UINT)blendSrcColor << 24 | (UINT)blendSrcAlpha << 32;
+		size_t key = (uint32_t)blendSrcColor << 8 | (uint32_t)blendSrcAlpha << 16 | (uint32_t)blendSrcColor << 24 | (uint32_t)blendSrcAlpha << 32;
 		if (key == m_BlendKey)
 		{
 			return;
@@ -824,7 +830,7 @@ namespace Blueberry
 
 	void GfxDeviceDX11::SetZTestAndZWrite(const ZTest& zTest, const ZWrite& zWrite)
 	{
-		size_t key = (UINT)zTest << 8 | (UINT)zWrite << 16;
+		size_t key = (uint32_t)zTest << 8 | (uint32_t)zWrite << 16;
 		if (key == m_ZTestZWriteKey)
 		{
 			return;
@@ -844,7 +850,7 @@ namespace Blueberry
 
 			depthStencilDesc.DepthEnable = true;
 			depthStencilDesc.DepthWriteMask = zWrite == ZWrite::On ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
-			depthStencilDesc.DepthFunc = (D3D11_COMPARISON_FUNC)((UINT)zTest + 1);
+			depthStencilDesc.DepthFunc = (D3D11_COMPARISON_FUNC)((uint32_t)zTest + 1);
 
 			HRESULT hr = m_Device->CreateDepthStencilState(&depthStencilDesc, state.GetAddressOf());
 			if (FAILED(hr))

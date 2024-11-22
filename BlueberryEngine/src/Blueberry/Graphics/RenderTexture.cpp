@@ -18,7 +18,7 @@ namespace Blueberry
 		}
 	}
 
-	RenderTexture* RenderTexture::Create(const UINT& width, const UINT& height, const UINT& antiAliasing, const TextureFormat& textureFormat, const WrapMode& wrapMode, const FilterMode& filterMode, const bool& isReadable)
+	RenderTexture* RenderTexture::Create(const uint32_t& width, const uint32_t& height, const uint32_t& antiAliasing, const TextureFormat& textureFormat, const WrapMode& wrapMode, const FilterMode& filterMode, const bool& isReadable)
 	{
 		RenderTexture* texture = Object::Create<RenderTexture>();
 		texture->m_Width = width;
@@ -57,15 +57,14 @@ namespace Blueberry
 				Object::Destroy(texture);
 				s_TemporaryKeys.erase(texture->GetObjectId());
 				s_TemporaryPool.erase(it);
-				BB_INFO("Erasing");
 			}
 		}
 	}
 
-	RenderTexture* RenderTexture::GetTemporary(const UINT& width, const UINT& height, const UINT& antiAliasing, const TextureFormat& textureFormat)
+	RenderTexture* RenderTexture::GetTemporary(const uint32_t& width, const uint32_t& height, const uint32_t& antiAliasing, const TextureFormat& textureFormat)
 	{
 		// Use 16 bits for width, height and format
-		size_t key = width | height << 16 | antiAliasing << 24 | (UINT)textureFormat << 40;
+		size_t key = width | height << 16 | antiAliasing << 24 | (uint32_t)textureFormat << 40;
 
 		// https://stackoverflow.com/questions/3952476/how-to-remove-a-specific-pair-from-a-c-multimap
 		auto iterpair = s_TemporaryPool.equal_range(key);

@@ -67,6 +67,16 @@ namespace Blueberry
 		return m_InnerSpotAngle;
 	}
 
+	const bool& Light::IsCastingShadows()
+	{
+		return m_IsCastingShadows;
+	}
+
+	void Light::SetCastingShadows(const bool& castingShadows)
+	{
+		m_IsCastingShadows = castingShadows;
+	}
+
 	void Light::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(Light)
@@ -77,6 +87,7 @@ namespace Blueberry
 		BIND_FIELD(FieldInfo(TO_STRING(m_Range), &Light::m_Range, BindingType::Float))
 		BIND_FIELD(FieldInfo(TO_STRING(m_OuterSpotAngle), &Light::m_OuterSpotAngle, BindingType::Float))
 		BIND_FIELD(FieldInfo(TO_STRING(m_InnerSpotAngle), &Light::m_InnerSpotAngle, BindingType::Float))
+		BIND_FIELD(FieldInfo(TO_STRING(m_IsCastingShadows), &Light::m_IsCastingShadows, BindingType::Bool))
 		END_OBJECT_BINDING()
 	}
 }

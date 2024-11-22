@@ -32,9 +32,9 @@ namespace Blueberry
 		D3D11_SHADER_DESC vertexShaderDesc;
 		vertexShaderReflection->GetDesc(&vertexShaderDesc);
 
-		UINT constantBufferCount = vertexShaderDesc.ConstantBuffers;
+		uint32_t constantBufferCount = vertexShaderDesc.ConstantBuffers;
 
-		for (UINT i = 0; i < constantBufferCount; i++)
+		for (uint32_t i = 0; i < constantBufferCount; i++)
 		{
 			ID3D11ShaderReflectionConstantBuffer* constantBufferReflection = vertexShaderReflection->GetConstantBufferByIndex(i);
 			D3D11_SHADER_BUFFER_DESC shaderBufferDesc;
@@ -51,7 +51,7 @@ namespace Blueberry
 
 		unsigned int resourceBindingCount = vertexShaderDesc.BoundResources;
 
-		for (UINT i = 0; i < resourceBindingCount; i++)
+		for (uint32_t i = 0; i < resourceBindingCount; i++)
 		{
 			D3D11_SHADER_INPUT_BIND_DESC inputBindDesc;
 			vertexShaderReflection->GetResourceBindingDesc(i, &inputBindDesc);
@@ -68,7 +68,7 @@ namespace Blueberry
 
 		// Input layout
 		std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDescArray;
-		UINT parameterCount = vertexShaderDesc.InputParameters;
+		uint32_t parameterCount = vertexShaderDesc.InputParameters;
 
 		for (unsigned int i = 0; i < parameterCount; ++i)
 		{
@@ -156,9 +156,9 @@ namespace Blueberry
 		D3D11_SHADER_DESC geometryShaderDesc;
 		geometryShaderReflection->GetDesc(&geometryShaderDesc);
 
-		UINT constantBufferCount = geometryShaderDesc.ConstantBuffers;
+		uint32_t constantBufferCount = geometryShaderDesc.ConstantBuffers;
 
-		for (UINT i = 0; i < constantBufferCount; i++)
+		for (uint32_t i = 0; i < constantBufferCount; i++)
 		{
 			ID3D11ShaderReflectionConstantBuffer* constantBufferReflection = geometryShaderReflection->GetConstantBufferByIndex(i);
 			D3D11_SHADER_BUFFER_DESC shaderBufferDesc;
@@ -197,9 +197,9 @@ namespace Blueberry
 		D3D11_SHADER_DESC pixelShaderDesc;
 		pixelShaderReflection->GetDesc(&pixelShaderDesc);
 
-		UINT constantBufferCount = pixelShaderDesc.ConstantBuffers;
+		uint32_t constantBufferCount = pixelShaderDesc.ConstantBuffers;
 
-		for (UINT i = 0; i < constantBufferCount; i++)
+		for (uint32_t i = 0; i < constantBufferCount; i++)
 		{
 			ID3D11ShaderReflectionConstantBuffer* constantBufferReflection = pixelShaderReflection->GetConstantBufferByIndex(i);
 			D3D11_SHADER_BUFFER_DESC shaderBufferDesc;
@@ -209,16 +209,16 @@ namespace Blueberry
 
 		unsigned int resourceBindingCount = pixelShaderDesc.BoundResources;
 
-		for (UINT i = 0; i < resourceBindingCount; i++)
+		for (uint32_t i = 0; i < resourceBindingCount; i++)
 		{
 			D3D11_SHADER_INPUT_BIND_DESC inputBindDesc;
 			pixelShaderReflection->GetResourceBindingDesc(i, &inputBindDesc);
 			if (inputBindDesc.Type == D3D_SIT_TEXTURE)
 			{
-				UINT samplerSlot = -1;
+				uint32_t samplerSlot = -1;
 				if (inputBindDesc.NumSamples > 8)
 				{
-					for (UINT j = 0; j < resourceBindingCount; j++)
+					for (uint32_t j = 0; j < resourceBindingCount; j++)
 					{
 						D3D11_SHADER_INPUT_BIND_DESC samplerInputBindDesc;
 						pixelShaderReflection->GetResourceBindingDesc(j, &samplerInputBindDesc);

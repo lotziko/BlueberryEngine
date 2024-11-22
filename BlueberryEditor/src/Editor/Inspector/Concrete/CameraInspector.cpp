@@ -10,6 +10,8 @@
 #include "Editor\Gizmos\Gizmos.h"
 #include "Editor\Panels\Scene\SceneArea.h"
 
+#include "Blueberry\Graphics\RenderContext.h"
+
 namespace Blueberry
 {
 	const char* CameraInspector::GetIconPath(Object* object)

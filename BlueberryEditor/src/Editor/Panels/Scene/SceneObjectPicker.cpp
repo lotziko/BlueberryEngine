@@ -144,7 +144,7 @@ namespace Blueberry
 					if (inspector->GetIconPath(component) != nullptr)
 					{
 						Vector3 position = entity->GetTransform()->GetPosition();
-						Matrix modelMatrix = Matrix::CreateScale(0.75f) * Matrix::CreateBillboard(position, position - cameraDirection, Vector3(0, -1, 0));
+						Matrix modelMatrix = Matrix::CreateScale(0.75f) * Matrix::CreateBillboard(position, position + cameraDirection, Vector3(0, -1, 0));
 						PerDrawConstantBuffer::BindData(modelMatrix);
 						PerObjectDataConstantBuffer::BindData(ConvertIndexToColor(index));
 						GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_MeshObjectPickerMaterial));
@@ -218,7 +218,7 @@ namespace Blueberry
 		}
 		
 		GfxDevice::SetRenderTarget(renderTarget);
-		GfxDevice::SetViewport(0, 0, renderTarget->GetWidth(), renderTarget->GetHeight());
+		GfxDevice::SetViewport(0, 0, m_SceneRenderTarget->GetWidth(), m_SceneRenderTarget->GetHeight());
 		GfxDevice::SetGlobalTexture(pickingTextureId, m_SceneRenderTarget);
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_ObjectPickerOutlineMaterial));
 		GfxDevice::SetRenderTarget(nullptr);

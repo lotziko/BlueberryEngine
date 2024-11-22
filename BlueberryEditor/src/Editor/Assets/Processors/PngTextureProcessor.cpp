@@ -40,9 +40,9 @@ namespace Blueberry
 		m_Properties.mipCount = GetMipCount(image.width, image.height, generateMips);
 	}
 
-	void FlipDDS(const DXGI_FORMAT& format, unsigned char* image, const UINT& mipCount, UINT width, UINT height)
+	void FlipDDS(const DXGI_FORMAT& format, unsigned char* image, const uint32_t& mipCount, uint32_t width, uint32_t height)
 	{
-		UINT blockSize = 0;
+		uint32_t blockSize = 0;
 		switch (format)
 		{
 		case DXGI_FORMAT_BC1_UNORM:

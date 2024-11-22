@@ -7,6 +7,7 @@ namespace Blueberry
 	class RenderTexture;
 	class Material;
 	class HBAORenderer;
+	class ShadowAtlas;
 
 	class DefaultRenderer
 	{
@@ -19,5 +20,6 @@ namespace Blueberry
 	private:
 		static inline Material* s_ResolveMSAAMaterial = nullptr;
 		static inline HBAORenderer* s_HBAORenderer = nullptr;
+		static inline ShadowAtlas* s_ShadowAtlas = nullptr;
 	};
 }

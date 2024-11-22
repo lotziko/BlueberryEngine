@@ -34,11 +34,11 @@ namespace Blueberry
 		virtual bool CreateGeometryShaderImpl(void* geometryData, GfxGeometryShader*& shader) final;
 		virtual bool CreateFragmentShaderImpl(void* fragmentData, GfxFragmentShader*& shader) final;
 		virtual bool CreateComputeShaderImpl(void* computeData, GfxComputeShader*& shader) final;
-		virtual bool CreateVertexBufferImpl(const VertexLayout& layout, const UINT& vertexCount, GfxVertexBuffer*& buffer) final;
-		virtual bool CreateIndexBufferImpl(const UINT& indexCount, GfxIndexBuffer*& buffer) final;
-		virtual bool CreateConstantBufferImpl(const UINT& byteCount, GfxConstantBuffer*& buffer) final;
-		virtual bool CreateStructuredBufferImpl(const UINT& elementCount, const UINT& elementSize, GfxStructuredBuffer*& buffer) final;
-		virtual bool CreateComputeBufferImpl(const UINT& elementCount, const UINT& elementSize, GfxComputeBuffer*& buffer) final;
+		virtual bool CreateVertexBufferImpl(const VertexLayout& layout, const uint32_t& vertexCount, GfxVertexBuffer*& buffer) final;
+		virtual bool CreateIndexBufferImpl(const uint32_t& indexCount, GfxIndexBuffer*& buffer) final;
+		virtual bool CreateConstantBufferImpl(const uint32_t& byteCount, GfxConstantBuffer*& buffer) final;
+		virtual bool CreateStructuredBufferImpl(const uint32_t& elementCount, const uint32_t& elementSize, GfxStructuredBuffer*& buffer) final;
+		virtual bool CreateComputeBufferImpl(const uint32_t& elementCount, const uint32_t& elementSize, GfxComputeBuffer*& buffer) final;
 		virtual bool CreateTextureImpl(const TextureProperties& properties, GfxTexture*& texture) const final;
 		virtual bool CreateImGuiRendererImpl(ImGuiRenderer*& renderer) const final;
 		virtual bool CreateHBAORendererImpl(HBAORenderer*& renderer) const final;
@@ -53,7 +53,7 @@ namespace Blueberry
 		virtual void SetGlobalTextureImpl(const size_t& id, GfxTexture* texture) final;
 		virtual void DrawImpl(const GfxDrawingOperation& operation) final;
 
-		virtual void DispatchImpl(GfxComputeShader*& shader, const UINT& threadGroupsX, const UINT& threadGroupsY, const UINT& threadGroupsZ) const final;
+		virtual void DispatchImpl(GfxComputeShader*& shader, const uint32_t& threadGroupsX, const uint32_t& threadGroupsY, const uint32_t& threadGroupsZ) const final;
 
 		virtual Matrix GetGPUMatrixImpl(const Matrix& viewProjection) const final;
 
@@ -107,6 +107,6 @@ namespace Blueberry
 		GfxVertexBufferDX11* m_VertexBuffer = nullptr;
 		GfxIndexBufferDX11* m_IndexBuffer = nullptr;
 		GfxVertexBufferDX11* m_InstanceBuffer = nullptr;
-		UINT m_InstanceOffset = 0;
+		uint32_t m_InstanceOffset = 0;
 	};
 }

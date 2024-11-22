@@ -31,7 +31,7 @@ namespace Blueberry
 		GfxDevice::SetGlobalConstantBuffer(perDrawDataId, s_ConstantBuffer);
 	}
 
-	void PerDrawConstantBuffer::BindDataInstanced(Matrix* localToWorldMatrices, const UINT& count)
+	void PerDrawConstantBuffer::BindDataInstanced(Matrix* localToWorldMatrices, const uint32_t& count)
 	{
 		static size_t perDrawDataId = TO_HASH("_PerDrawData");
 

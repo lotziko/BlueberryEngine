@@ -57,7 +57,7 @@ namespace Blueberry
 			else
 			{
 				processor.Load(path, m_IsSRGB, m_GenerateMipmaps);
-				processor.Compress(TextureFormat::BC7_UNORM);
+				processor.Compress(TextureFormat::BC7_UNorm);
 			}
 			PngTextureProperties properties = processor.GetProperties();
 

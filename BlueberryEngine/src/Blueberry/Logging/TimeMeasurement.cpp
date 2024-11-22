@@ -16,8 +16,8 @@ namespace Blueberry
 	{
 		std::chrono::high_resolution_clock::time_point start = m_Start.top();
 		std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
-		std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds> (end - start);
+		std::chrono::nanoseconds duration = std::chrono::duration_cast<std::chrono::nanoseconds> (end - start);
 		m_Start.pop();
-		BB_WARNING(duration.count() << " milliseconds.");
+		BB_WARNING(duration.count() / 1000000.0f << " milliseconds.");
 	}
 }

@@ -45,7 +45,7 @@ namespace Blueberry
 		Input.DepthData.Viewport.Width = viewport.width;
 		Input.DepthData.Viewport.Height = viewport.height;
 
-		Input.NormalData.Enable = true;
+		//Input.NormalData.Enable = true;
 		Input.NormalData.pFullResNormalTextureSRV = ((GfxTextureDX11*)normals)->GetSRV();
 		Input.NormalData.WorldToViewMatrix.Data = GFSDK_SSAO_Float4x4((const GFSDK_SSAO_FLOAT*)&view);
 		Input.NormalData.WorldToViewMatrix.Layout = GFSDK_SSAO_ROW_MAJOR_ORDER;

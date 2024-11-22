@@ -19,6 +19,9 @@ namespace Blueberry
 		template<class ComponentType>
 		ComponentIterator GetIterator();
 
+		template<class ComponentType>
+		ComponentMap& GetComponents();
+
 		void Update(const float& deltaTime);
 
 		void Destroy();
@@ -42,5 +45,11 @@ namespace Blueberry
 	inline ComponentIterator Scene::GetIterator()
 	{
 		return m_ComponentManager.GetIterator<ComponentType>();
+	}
+
+	template<class ComponentType>
+	inline ComponentMap& Scene::GetComponents()
+	{
+		return m_ComponentManager.GetComponents<ComponentType>();
 	}
 }

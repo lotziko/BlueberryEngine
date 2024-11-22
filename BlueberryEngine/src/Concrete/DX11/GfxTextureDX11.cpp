@@ -16,7 +16,7 @@ namespace Blueberry
 		m_DepthStencilView = nullptr;
 	}
 
-	UINT GetBlockSize(DXGI_FORMAT format)
+	uint32_t GetBlockSize(DXGI_FORMAT format)
 	{
 		switch (format)
 		{
@@ -100,12 +100,12 @@ namespace Blueberry
 			DXGI_FORMAT format = (DXGI_FORMAT)properties.format;
 			if (IsCompressed(format))
 			{
-				UINT blockSize = GetBlockSize(format);
+				uint32_t blockSize = GetBlockSize(format);
 				D3D11_SUBRESOURCE_DATA* subresourceDatas = new D3D11_SUBRESOURCE_DATA[properties.mipCount];
-				UINT width = properties.width;
-				UINT height = properties.height;
+				uint32_t width = properties.width;
+				uint32_t height = properties.height;
 				char* ptr = (char*)properties.data;
-				for (UINT i = 0; i < properties.mipCount; ++i)
+				for (uint32_t i = 0; i < properties.mipCount; ++i)
 				{
 					D3D11_SUBRESOURCE_DATA subresourceData;
 					subresourceData.pSysMem = ptr;
@@ -121,7 +121,7 @@ namespace Blueberry
 			}
 			else
 			{
-				UINT blockSize = properties.dataSize / (properties.width * properties.height);
+				uint32_t blockSize = properties.dataSize / (properties.width * properties.height);
 				D3D11_SUBRESOURCE_DATA subresourceData;
 
 				subresourceData.pSysMem = properties.data;
@@ -134,7 +134,7 @@ namespace Blueberry
 		{
 			if (properties.isRenderTarget)
 			{
-				if (properties.format == TextureFormat::D24_UNorm)
+				if (properties.format == TextureFormat::D24_UNorm || properties.format == TextureFormat::D32_Float)
 				{
 					return InitializeDepthStencil(properties);
 				}
@@ -157,12 +157,12 @@ namespace Blueberry
 		return m_RenderTargetView.Get();
 	}
 
-	UINT GfxTextureDX11::GetWidth() const
+	uint32_t GfxTextureDX11::GetWidth() const
 	{
 		return m_Width;
 	}
 
-	UINT GfxTextureDX11::GetHeight() const
+	uint32_t GfxTextureDX11::GetHeight() const
 	{
 		return m_Height;
 	}
@@ -191,14 +191,27 @@ namespace Blueberry
 		{
 			return D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 		}
+		if (filterMode == FilterMode::CompareDepth)
+		{
+			return D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+		}
 		return D3D11_FILTER_MIN_MAG_MIP_POINT;
 	}
 
-	UINT GfxTextureDX11::GetQualityLevel(const DXGI_FORMAT& format, const UINT& antiAliasing)
+	D3D11_COMPARISON_FUNC GetComparison(const FilterMode& filterMode)
+	{
+		if (filterMode == FilterMode::CompareDepth)
+		{
+			return D3D11_COMPARISON_LESS;
+		}
+		return D3D11_COMPARISON_NEVER;
+	}
+
+	uint32_t GfxTextureDX11::GetQualityLevel(const DXGI_FORMAT& format, const uint32_t& antiAliasing)
 	{
 		if (antiAliasing > 1)
 		{
-			UINT qualityLevels;
+			uint32_t qualityLevels;
 			HRESULT hr = m_Device->CheckMultisampleQualityLevels(format, antiAliasing, &qualityLevels);
 			return qualityLevels - 1;
 		}
@@ -279,7 +292,7 @@ namespace Blueberry
 		samplerDesc.AddressW = adress;
 		samplerDesc.MipLODBias = 0.0f;
 		samplerDesc.MaxAnisotropy = 1;
-		samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+		samplerDesc.ComparisonFunc = GetComparison(properties.filterMode);
 		samplerDesc.MinLOD = -FLT_MAX;
 		samplerDesc.MaxLOD = FLT_MAX;
 
@@ -299,7 +312,7 @@ namespace Blueberry
 		ZeroMemory(&textureDesc, sizeof(D3D11_TEXTURE2D_DESC));
 
 		DXGI_FORMAT format = (DXGI_FORMAT)properties.format;
-		UINT antiAliasing = Max(1, properties.antiAliasing);
+		uint32_t antiAliasing = Max(1, properties.antiAliasing);
 
 		textureDesc.Width = m_Width;
 		textureDesc.Height = m_Height;
@@ -349,7 +362,7 @@ namespace Blueberry
 			samplerDesc.AddressW = adress;
 			samplerDesc.MipLODBias = 0.0f;
 			samplerDesc.MaxAnisotropy = 1;
-			samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+			samplerDesc.ComparisonFunc = GetComparison(properties.filterMode);
 			samplerDesc.MinLOD = -FLT_MAX;
 			samplerDesc.MaxLOD = FLT_MAX;
 
@@ -408,7 +421,7 @@ namespace Blueberry
 		ZeroMemory(&textureDesc, sizeof(D3D11_TEXTURE2D_DESC));
 
 		DXGI_FORMAT format = (DXGI_FORMAT)properties.format;
-		UINT antiAliasing = Max(1, properties.antiAliasing);
+		uint32_t antiAliasing = Max(1, properties.antiAliasing);
 
 		textureDesc.Width = m_Width;
 		textureDesc.Height = m_Height;
@@ -422,6 +435,9 @@ namespace Blueberry
 		{
 		case DXGI_FORMAT_D24_UNORM_S8_UINT:
 			textureDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
+			break;
+		case DXGI_FORMAT_D32_FLOAT:
+			textureDesc.Format = DXGI_FORMAT_R32_TYPELESS;
 			break;
 		}
 
@@ -449,6 +465,9 @@ namespace Blueberry
 		case DXGI_FORMAT_D24_UNORM_S8_UINT:
 			resourceViewDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 			break;
+		case DXGI_FORMAT_D32_FLOAT:
+			resourceViewDesc.Format = DXGI_FORMAT_R32_FLOAT;
+			break;
 		}
 
 		hr = m_Device->CreateShaderResourceView(m_Texture.Get(), &resourceViewDesc, m_ResourceView.GetAddressOf());
@@ -472,7 +491,7 @@ namespace Blueberry
 			samplerDesc.AddressW = adress;
 			samplerDesc.MipLODBias = 0.0f;
 			samplerDesc.MaxAnisotropy = 1;
-			samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+			samplerDesc.ComparisonFunc = GetComparison(properties.filterMode);
 			samplerDesc.MinLOD = -FLT_MAX;
 			samplerDesc.MaxLOD = FLT_MAX;
 

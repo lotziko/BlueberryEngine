@@ -33,9 +33,6 @@ namespace Blueberry
 {
 	SceneArea::SceneArea()
 	{
-		m_ColorRenderTarget = RenderTexture::Create(Screen::GetWidth(), Screen::GetHeight(), 1, TextureFormat::R8G8B8A8_UNorm);
-		m_DepthStencilRenderTarget = RenderTexture::Create(Screen::GetWidth(), Screen::GetHeight(), 1, TextureFormat::D24_UNorm);
-
 		m_GridMaterial = Material::Create((Shader*)AssetLoader::Load("assets/shaders/Grid.shader"));
 		m_ObjectPicker = new SceneObjectPicker();
 
@@ -57,8 +54,6 @@ namespace Blueberry
 
 	SceneArea::~SceneArea()
 	{
-		delete m_ColorRenderTarget;
-		delete m_DepthStencilRenderTarget;
 		delete m_ObjectPicker;
 
 		Selection::GetSelectionChanged().RemoveCallback<SceneArea, &SceneArea::RequestRedraw>(this);
@@ -235,7 +230,7 @@ namespace Blueberry
 			}
 			DrawGizmos(Rectangle(pos.x, pos.y, size.x, size.y));
 
-			ImGui::GetWindowDrawList()->AddImage(m_ColorRenderTarget->GetHandle(), ImVec2(pos.x, pos.y), ImVec2(pos.x + size.x, pos.y + size.y), ImVec2(0, 0), ImVec2(size.x / m_ColorRenderTarget->GetWidth(), size.y / m_ColorRenderTarget->GetHeight()));
+			ImGui::GetWindowDrawList()->AddImage(m_ColorRenderTarget->GetHandle(), ImVec2(pos.x, pos.y), ImVec2(pos.x + size.x, pos.y + size.y), ImVec2(0, 0), ImVec2(1, 1));
 			DrawControls();
 		}
 		ImGui::End();
@@ -384,6 +379,15 @@ namespace Blueberry
 		Vector2 currentSize = m_Camera->GetPixelSize();
 		if (currentSize.x != width || currentSize.y != height)
 		{
+			if (m_ColorRenderTarget != nullptr)
+			{
+				Object::Destroy(m_ColorRenderTarget);
+				Object::Destroy(m_DepthStencilRenderTarget);
+			}
+
+			m_ColorRenderTarget = RenderTexture::Create(width, height, 1, TextureFormat::R8G8B8A8_UNorm);
+			m_DepthStencilRenderTarget = RenderTexture::Create(width, height, 1, TextureFormat::D24_UNorm);
+
 			m_Camera->SetPixelSize(Vector2(width, height));
 			RequestRedrawAll();
 		}

@@ -13,16 +13,6 @@
 
 namespace Blueberry
 {
-	GameView::GameView()
-	{
-		m_RenderTarget = RenderTexture::Create(Screen::GetWidth(), Screen::GetHeight(), 1, TextureFormat::R8G8B8A8_UNorm);
-	}
-
-	GameView::~GameView()
-	{
-		delete m_RenderTarget;
-	}
-
 	void GameView::DrawUI()
 	{
 		if (ImGui::Begin("Game"))
@@ -69,6 +59,16 @@ namespace Blueberry
 					
 					// TODO viewport change
 					Vector2 viewport = Vector2(size.x, size.y);
+
+					if (m_RenderTarget == nullptr || viewport.x != m_RenderTarget->GetWidth() || viewport.y != m_RenderTarget->GetHeight())
+					{
+						if (m_RenderTarget != nullptr)
+						{
+							Object::Destroy(m_RenderTarget);
+						}
+						m_RenderTarget = RenderTexture::Create(viewport.x, viewport.y, 1, TextureFormat::R8G8B8A8_UNorm);
+						camera->SetPixelSize(Vector2(width, height));
+					}
 					
 					DefaultRenderer::Draw(scene, camera, Rectangle(0, 0, viewport.x, viewport.y), Color(0, 0, 0, 1), m_RenderTarget);
 					ImGui::GetWindowDrawList()->AddImage(m_RenderTarget->GetHandle(), ImVec2(x, y), ImVec2(x + width, y + height), ImVec2(0, 0), ImVec2(viewport.x / m_RenderTarget->GetWidth(), viewport.y / m_RenderTarget->GetHeight()));

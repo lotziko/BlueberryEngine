@@ -13,17 +13,17 @@ namespace Blueberry
 		DATA_DECLARATION(SubMeshData)
 
 	public:
-		const UINT& GetIndexStart();
-		void SetIndexStart(const UINT& indexStart);
+		const uint32_t& GetIndexStart();
+		void SetIndexStart(const uint32_t& indexStart);
 
-		const UINT& GetIndexCount();
-		void SetIndexCount(const UINT& indexCount);
+		const uint32_t& GetIndexCount();
+		void SetIndexCount(const uint32_t& indexCount);
 
 		static void BindProperties();
 
 	private:
-		UINT m_IndexStart;
-		UINT m_IndexCount;
+		uint32_t m_IndexStart;
+		uint32_t m_IndexCount;
 	};
 
 	class Mesh : public Object
@@ -34,17 +34,17 @@ namespace Blueberry
 		Mesh() = default;
 		virtual ~Mesh();
 
-		const UINT& GetVertexCount();
-		const UINT& GetIndexCount();
-		const UINT& GetSubMeshCount();
-		SubMeshData* GetSubMesh(const UINT& index);
+		const uint32_t& GetVertexCount();
+		const uint32_t& GetIndexCount();
+		const uint32_t& GetSubMeshCount();
+		SubMeshData* GetSubMesh(const uint32_t& index);
 		
-		void SetVertices(const Vector3* vertices, const UINT& vertexCount);
-		void SetNormals(const Vector3* normals, const UINT& vertexCount);
-		void SetTangents(const Vector4* tangents, const UINT& vertexCount);
-		void SetIndices(const UINT* indices, const UINT& indexCount);
-		void SetUVs(const int& channel, const Vector2* uvs, const UINT& uvCount);
-		void SetSubMesh(const UINT& index, SubMeshData* data);
+		void SetVertices(const Vector3* vertices, const uint32_t& vertexCount);
+		void SetNormals(const Vector3* normals, const uint32_t& vertexCount);
+		void SetTangents(const Vector4* tangents, const uint32_t& vertexCount);
+		void SetIndices(const uint32_t* indices, const uint32_t& indexCount);
+		void SetUVs(const int& channel, const Vector2* uvs, const uint32_t& uvCount);
+		void SetSubMesh(const uint32_t& index, SubMeshData* data);
 
 		void GenerateTangents();
 
@@ -70,16 +70,16 @@ namespace Blueberry
 		std::vector<Vector3> m_Vertices;
 		std::vector<Vector3> m_Normals;
 		std::vector<Vector4> m_Tangents;
-		std::vector<UINT> m_Indices;
+		std::vector<uint32_t> m_Indices;
 		std::vector<Vector2> m_UVs[8] = {};
 
 		std::vector<float> m_VertexData;
-		std::vector<UINT> m_IndexData;
+		std::vector<uint32_t> m_IndexData;
 		std::vector<DataPtr<SubMeshData>> m_SubMeshes;
 
-		UINT m_VertexCount;
-		UINT m_IndexCount;
-		UINT m_ChannelFlags;
+		uint32_t m_VertexCount;
+		uint32_t m_IndexCount;
+		uint32_t m_ChannelFlags;
 		AABB m_Bounds;
 
 		Topology m_Topology = Topology::TriangleList;

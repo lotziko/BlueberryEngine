@@ -9,10 +9,12 @@ namespace Blueberry
 		OBJECT_DECLARATION(Renderer)
 
 	public:
-		static void BindProperties();
+		virtual const AABB& GetBounds();
 
 		const int& GetSortingOrder();
 		void SetSortingOrder(const int& sortingOrder);
+
+		static void BindProperties();
 
 	protected:
 		int m_SortingOrder = 0;

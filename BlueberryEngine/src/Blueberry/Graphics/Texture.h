@@ -14,8 +14,8 @@ namespace Blueberry
 	public:
 		virtual ~Texture() = default;
 
-		const UINT& GetWidth();
-		const UINT& GetHeight();
+		const uint32_t& GetWidth();
+		const uint32_t& GetHeight();
 		GfxTexture* Get();
 		void* GetHandle();
 
@@ -23,9 +23,9 @@ namespace Blueberry
 
 	protected:
 		GfxTexture* m_Texture = nullptr;
-		UINT m_Width = 0;
-		UINT m_Height = 0;
-		UINT m_MipCount = 0;
+		uint32_t m_Width = 0;
+		uint32_t m_Height = 0;
+		uint32_t m_MipCount = 0;
 		TextureFormat m_Format = TextureFormat::R8G8B8A8_UNorm;
 		WrapMode m_WrapMode = WrapMode::Clamp;
 		FilterMode m_FilterMode = FilterMode::Linear;

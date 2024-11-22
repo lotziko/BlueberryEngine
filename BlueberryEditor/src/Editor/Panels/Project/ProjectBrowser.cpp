@@ -122,7 +122,7 @@ namespace Blueberry
 				float expandedSpaceBetweenCells = (size.x - (maxCells * cellSize)) / (maxCells + 1);
 				// Calculate expected size and items positions
 				Vector2 expectedCursorPos = Vector2::Zero;
-				UINT cellIndex = 0;
+				uint32_t cellIndex = 0;
 				for (auto& asset : m_CurrentDirectoryAssets)
 				{
 					asset.expanded = InspectorExpandedItemsCache::Get(asset.pathString);

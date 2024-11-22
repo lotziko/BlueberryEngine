@@ -287,27 +287,27 @@ namespace Blueberry
 				indicesCount += (fbxMesh->mPolygons[i]).mSize == 3 ? 3 : 6;
 			}
 
-			static std::vector<UINT> indices;
+			static std::vector<uint32_t> indices;
 			if (indicesCount > indices.size())
 			{
 				indices.resize(indicesCount);
 			}
 
-			static std::vector<int> sortedPolygonIndexes;
+			static std::vector<uint32_t> sortedPolygonIndexes;
 			sortedPolygonIndexes.reserve(polygonCount);
 			sortedPolygonIndexes.clear();
 
 			// Submeshes
-			UINT materialCount = node->GetMaterialCount();
-			std::vector<int> subMeshPolygonCounts;
+			uint32_t materialCount = node->GetMaterialCount();
+			std::vector<uint32_t> subMeshPolygonCounts;
 			fbxsdk::FbxLayerElementArrayTemplate<int>* materialIndices;
 			if (fbxMesh->GetMaterialIndices(&materialIndices))
 			{
-				UINT subMeshStart = 0;
-				for (int i = 0; i < materialCount; ++i)
+				uint32_t subMeshStart = 0;
+				for (uint32_t i = 0; i < materialCount; ++i)
 				{
-					UINT subMeshSize = 0;
-					for (int j = 0; j < polygonCount; ++j)
+					uint32_t subMeshSize = 0;
+					for (uint32_t j = 0; j < polygonCount; ++j)
 					{
 						if (materialIndices->GetAt(j) == i)
 						{
@@ -324,14 +324,14 @@ namespace Blueberry
 			}
 			else
 			{
-				for (int i = 0; i < polygonCount; ++i)
+				for (uint32_t i = 0; i < polygonCount; ++i)
 				{
 					sortedPolygonIndexes.emplace_back(i);
 				}
 			}
 
-			UINT* indicesPtr = indices.data();
-			for (int i = 0; i < polygonCount; ++i)
+			uint32_t* indicesPtr = indices.data();
+			for (uint32_t i = 0; i < polygonCount; ++i)
 			{
 				fbxsdk::FbxMesh::PolygonDef polygon = fbxMesh->mPolygons[sortedPolygonIndexes[i]];
 				if (polygon.mSize == 3)
@@ -355,7 +355,7 @@ namespace Blueberry
 			// Normals
 			if (fbxNormals.Size() > 0)
 			{
-				for (int i = 0; i < verticesCount; ++i)
+				for (uint32_t i = 0; i < verticesCount; ++i)
 				{
 					fbxsdk::FbxVector4 fbxNormal = fbxNormals[i];
 					//Vector4 direction = Vector4::Transform(Vector4(fbxNormal[0], fbxNormal[1], fbxNormal[2], 0.0f), rotationMatrix);
@@ -368,7 +368,7 @@ namespace Blueberry
 			Vector2* uvs = (Vector2*)verticesNormalsTangentsUvs.data();
 			if (fbxUvs.Size() > 0)
 			{
-				for (int i = 0; i < verticesCount; ++i)
+				for (uint32_t i = 0; i < verticesCount; ++i)
 				{
 					fbxsdk::FbxVector2 fbxUv = fbxUvs[i];
 					uvs[i] = Vector2(fbxUv[0], fbxUv[1]);
@@ -384,7 +384,7 @@ namespace Blueberry
 
 			std::vector<Material*> materials;
 			materials.resize(materialCount);
-			for (int i = 0; i < materialCount; ++i)
+			for (uint32_t i = 0; i < materialCount; ++i)
 			{
 				fbxsdk::FbxSurfaceMaterial* fbxMaterial = node->GetMaterial(i);
 				std::string name = fbxMaterial->GetName();
@@ -412,7 +412,7 @@ namespace Blueberry
 			AddAssetObject(mesh, meshFileId);
 			objects.emplace_back(mesh);
 		}
-		for (int i = 0; i < node->GetChildCount(); ++i)
+		for (uint32_t i = 0; i < node->GetChildCount(); ++i)
 		{
 			fbxsdk::FbxNode* childNode = node->GetChild(i);
 			CreateMeshEntity(transform, childNode, objects);

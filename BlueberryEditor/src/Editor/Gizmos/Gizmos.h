@@ -61,7 +61,7 @@ namespace Blueberry
 		static inline float* s_ArcVertexData = nullptr;
 		static inline float* s_ArcVertexDataPtr = nullptr;
 		static inline Arc* s_Arcs = nullptr;
-		static inline UINT s_LineCount = 0;
-		static inline UINT s_ArcCount = 0;
+		static inline uint32_t s_LineCount = 0;
+		static inline uint32_t s_ArcCount = 0;
 	};
 }

@@ -5,12 +5,12 @@ namespace Blueberry
 	class Screen
 	{
 	public:
-		static const UINT& GetWidth();
-		static const UINT& GetHeight();
+		static const uint32_t& GetWidth();
+		static const uint32_t& GetHeight();
 
 	private:
-		static UINT s_Width;
-		static UINT s_Height;
+		static uint32_t s_Width;
+		static uint32_t s_Height;
 
 		friend class Window;
 	};

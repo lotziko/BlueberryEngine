@@ -9,14 +9,20 @@
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\RenderContext.h"
 #include "Blueberry\Graphics\HBAORenderer.h"
+#include "Blueberry\Graphics\ShadowAtlas.h"
+#include "Blueberry\Graphics\RealtimeLights.h"
 #include "Blueberry\Scene\Components\Camera.h"
 
 namespace Blueberry
 {
+	static RenderContext s_DefaultContext = {};
+	static CullingResults s_Results = {};
+
 	void DefaultRenderer::Initialize()
 	{
 		GfxDevice::CreateHBAORenderer(s_HBAORenderer);
 		s_ResolveMSAAMaterial = Material::Create((Shader*)AssetLoader::Load("assets/shaders/ResolveMSAA.shader"));
+		s_ShadowAtlas = new ShadowAtlas(2048, 2048, 128);
 	}
 
 	void DefaultRenderer::Shutdown()
@@ -30,7 +36,7 @@ namespace Blueberry
 		static size_t screenNormalTextureId = TO_HASH("_ScreenNormalTexture");
 		static size_t screenDepthStencilTextureId = TO_HASH("_ScreenDepthStencilTexture");
 
-		RenderTexture* colorMSAARenderTarget = RenderTexture::GetTemporary(viewport.width, viewport.height, 4, TextureFormat::R16G16B16A16_FLOAT);
+		RenderTexture* colorMSAARenderTarget = RenderTexture::GetTemporary(viewport.width, viewport.height, 4, TextureFormat::R16G16B16A16_Float);
 		RenderTexture* normalMSAARenderTarget = RenderTexture::GetTemporary(viewport.width, viewport.height, 4, TextureFormat::R8G8B8A8_UNorm);
 		RenderTexture* depthStencilMSAARenderTarget = RenderTexture::GetTemporary(viewport.width, viewport.height, 4, TextureFormat::D24_UNorm);
 
@@ -38,20 +44,28 @@ namespace Blueberry
 		RenderTexture* depthStencilRenderTarget = RenderTexture::GetTemporary(viewport.width, viewport.height, 1, TextureFormat::D24_UNorm);
 		RenderTexture* HBAORenderTarget = RenderTexture::GetTemporary(viewport.width, viewport.height, 1, TextureFormat::R8G8B8A8_UNorm);
 
-		RenderContext context = {};
-		CullingResults results = {};
-		context.Cull(scene, camera, results);
-		context.Bind(results);
+		s_DefaultContext.Cull(scene, camera, s_Results);
 
-		DrawingSettings drawingSettings = {};
+		// Prepare lights and shadows
+		s_ShadowAtlas->Clear();
+		RealtimeLights::PrepareShadows(s_Results, s_ShadowAtlas);
+
+		// Draw shadows
+		s_ShadowAtlas->Draw(s_DefaultContext, s_Results);
+		GfxDevice::SetGlobalTexture(TO_HASH("_ShadowTexture"), s_ShadowAtlas->GetAtlasTexture()->Get());
+		
+		// Lights are binded after shadows finished rendering to have valid shadow matrices
+		RealtimeLights::BindLights(s_Results);
 
 		// Depth/normal prepass
 		GfxDevice::SetRenderTarget(normalMSAARenderTarget->Get(), depthStencilMSAARenderTarget->Get());
 		GfxDevice::SetViewport(viewport.x, viewport.y, viewport.width, viewport.height);
 		GfxDevice::ClearColor({ 0.0f, 0.0f, 0.0f, 0.0f });
 		GfxDevice::ClearDepth(1.0f);
+		DrawingSettings drawingSettings = {};
 		drawingSettings.passIndex = 1;
-		context.Draw(results, drawingSettings);
+		s_DefaultContext.BindCamera(s_Results);
+		s_DefaultContext.DrawRenderers(s_Results, drawingSettings);
 
 		// Resolve depth/normal
 		GfxDevice::SetRenderTarget(colorNormalRenderTarget->Get(), depthStencilRenderTarget->Get());
@@ -69,7 +83,7 @@ namespace Blueberry
 		GfxDevice::SetRenderTarget(colorMSAARenderTarget->Get(), depthStencilMSAARenderTarget->Get());
 		GfxDevice::ClearColor({ 0.0f, 0.0f, 0.0f, 0.0f });
 		drawingSettings.passIndex = 0;
-		context.Draw(results, drawingSettings);
+		s_DefaultContext.DrawRenderers(s_Results, drawingSettings);
 
 		// Resolve color
 		GfxDevice::SetRenderTarget(colorNormalRenderTarget->Get());

@@ -16,6 +16,7 @@ namespace Blueberry
 		virtual void OnDestroy() override;
 		
 		const Matrix& GetLocalToWorldMatrix();
+		const Matrix& GetWorldToLocalMatrix();
 		const Vector3& GetLocalPosition();
 		const Quaternion& GetLocalRotation();
 		const Vector3& GetLocalScale();

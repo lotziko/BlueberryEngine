@@ -23,7 +23,7 @@ namespace Blueberry
 				{ 1.0f, 0.0f },
 				{ 1.0f, 1.0f },
 			};
-			UINT indices[] = { 0, 1, 2, 2, 3, 0 };
+			uint32_t indices[] = { 0, 1, 2, 2, 3, 0 };
 			s_FullscreenMesh = Mesh::Create();
 			s_FullscreenMesh->SetVertices(vertices, 4);
 			s_FullscreenMesh->SetIndices(indices, 6);
@@ -52,7 +52,7 @@ namespace Blueberry
 				{ 1.0f, 1.0f },
 				{ 1.0f, 0.0f },
 			};
-			UINT indices[] = { 0, 1, 2, 2, 3, 0 };
+			uint32_t indices[] = { 0, 1, 2, 2, 3, 0 };
 			s_PlaneMesh = Mesh::Create();
 			s_PlaneMesh->SetVertices(vertices, 4);
 			s_PlaneMesh->SetIndices(indices, 6);
@@ -76,14 +76,14 @@ namespace Blueberry
 			Vector3 vertices[vertexCount];
 			Vector3 normals[vertexCount];
 			Vector2 uvs[vertexCount];
-			UINT indices[indexCount];
+			uint32_t indices[indexCount];
 
 			Vector3* verticesPtr = vertices;
 			Vector3* normalsPtr = normals;
 			Vector2* uvsPtr = uvs;
-			UINT* indicesPtr = indices;
+			uint32_t* indicesPtr = indices;
 
-			UINT offset = 0;
+			uint32_t offset = 0;
 			for (int lat = 0; lat <= latitudeSegments; ++lat)
 			{
 				float theta = lat * Pi / latitudeSegments;

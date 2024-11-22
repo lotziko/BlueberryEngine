@@ -32,7 +32,7 @@ namespace Blueberry
 		m_Mesh = mesh;
 	}
 
-	Material* MeshRenderer::GetMaterial(const UINT& index)
+	Material* MeshRenderer::GetMaterial(const uint32_t& index)
 	{
 		if (index >= m_Materials.size())
 		{

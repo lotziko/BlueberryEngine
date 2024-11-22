@@ -10,9 +10,9 @@ namespace Blueberry
 	public:
 		GfxVertexBufferDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
 		virtual ~GfxVertexBufferDX11() final = default;
-		virtual void SetData(float* data, const UINT& vertexCount) final;
+		virtual void SetData(float* data, const uint32_t& vertexCount) final;
 
-		bool Initialize(const VertexLayout& layout, const UINT& vertexCount);
+		bool Initialize(const VertexLayout& layout, const uint32_t& vertexCount);
 	private:
 		ComPtr<ID3D11Buffer> m_Buffer = nullptr;
 
@@ -20,8 +20,8 @@ namespace Blueberry
 		ID3D11DeviceContext* m_DeviceContext;
 
 		VertexLayout m_Layout;
-		UINT m_Stride;
-		UINT m_Offset = 0;
+		uint32_t m_Stride;
+		uint32_t m_Offset = 0;
 
 		friend class GfxDeviceDX11;
 	};
@@ -31,9 +31,9 @@ namespace Blueberry
 	public:
 		GfxIndexBufferDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
 		virtual ~GfxIndexBufferDX11() = default;
-		virtual void SetData(UINT* data, const UINT& indexCount) final;
+		virtual void SetData(uint32_t* data, const uint32_t& indexCount) final;
 
-		bool Initialize(const UINT& indexCount);
+		bool Initialize(const uint32_t& indexCount);
 	private:
 		ComPtr<ID3D11Buffer> m_Buffer = nullptr;
 
@@ -48,9 +48,9 @@ namespace Blueberry
 	public:
 		GfxConstantBufferDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
 		virtual ~GfxConstantBufferDX11() = default;
-		virtual void SetData(char* data, const UINT& byteCount) final;
+		virtual void SetData(char* data, const uint32_t& byteCount) final;
 
-		bool Initialize(const UINT& byteCount);
+		bool Initialize(const uint32_t& byteCount);
 	private:
 		ComPtr<ID3D11Buffer> m_Buffer = nullptr;
 
@@ -65,13 +65,13 @@ namespace Blueberry
 	public:
 		GfxStructuredBufferDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
 		virtual ~GfxStructuredBufferDX11() = default;
-		virtual void SetData(char* data, const UINT& elementCount) final;
+		virtual void SetData(char* data, const uint32_t& elementCount) final;
 
-		bool Initialize(const UINT& elementCount, const UINT& elementSize);
+		bool Initialize(const uint32_t& elementCount, const uint32_t& elementSize);
 	private:
 		ComPtr<ID3D11Buffer> m_Buffer = nullptr;
 		ComPtr<ID3D11ShaderResourceView> m_ShaderResourceView = nullptr;
-		UINT m_ElementSize;
+		uint32_t m_ElementSize;
 
 		ID3D11Device* m_Device;
 		ID3D11DeviceContext* m_DeviceContext;
@@ -84,10 +84,10 @@ namespace Blueberry
 	public:
 		GfxComputeBufferDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
 		virtual ~GfxComputeBufferDX11() = default;
-		virtual void GetData(char* data, const UINT& byteCount) final;
-		virtual void SetData(char* data, const UINT& byteCount) final;
+		virtual void GetData(char* data, const uint32_t& byteCount) final;
+		virtual void SetData(char* data, const uint32_t& byteCount) final;
 
-		bool Initialize(const UINT& elementCount, const UINT& elementSize);
+		bool Initialize(const uint32_t& elementCount, const uint32_t& elementSize);
 	private:
 		ComPtr<ID3D11Buffer> m_Buffer = nullptr;
 		ComPtr<ID3D11UnorderedAccessView> m_UnorderedAccessView = nullptr;

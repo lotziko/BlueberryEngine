@@ -21,18 +21,18 @@ namespace Blueberry
 		class Element
 		{
 		public:
-			Element(ElementType type, UINT offset);
+			Element(ElementType type, uint32_t offset);
 
-			static constexpr UINT GetSize(ElementType type);
+			static constexpr uint32_t GetSize(ElementType type);
 
 			ElementType GetType() const;
-			UINT GetOffset() const;
-			UINT GetOffsetAfter() const;
-			UINT GetSize() const;
+			uint32_t GetOffset() const;
+			uint32_t GetOffsetAfter() const;
+			uint32_t GetSize() const;
 
 		private:
 			ElementType m_Type;
-			UINT m_Offset;
+			uint32_t m_Offset;
 		};
 	public:
 		template<ElementType T>
@@ -40,8 +40,8 @@ namespace Blueberry
 
 		VertexLayout& Append(ElementType type);
 
-		const Element& ResolveByIndex(UINT i) const;
-		UINT GetSize() const;
+		const Element& ResolveByIndex(uint32_t i) const;
+		uint32_t GetSize() const;
 
 	private:
 		std::vector<Element> m_Elements;

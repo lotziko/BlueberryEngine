@@ -45,7 +45,7 @@ namespace Blueberry
 		static inline float* s_VertexData = nullptr;
 		static inline float* s_VertexDataPtr = nullptr;
 		static inline DrawingData* s_DrawingDatas = nullptr;
-		static inline UINT s_QuadIndexCount = 0;
-		static inline UINT s_DrawingDataCount = 0;
+		static inline uint32_t s_QuadIndexCount = 0;
+		static inline uint32_t s_DrawingDataCount = 0;
 	};
 }

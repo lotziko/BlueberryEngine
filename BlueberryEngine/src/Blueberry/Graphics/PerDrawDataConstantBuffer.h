@@ -10,7 +10,7 @@ namespace Blueberry
 	{
 	public:
 		static void BindData(const Matrix& localToWorldMatrix);
-		static void BindDataInstanced(Matrix* localToWorldMatrices, const UINT& count);
+		static void BindDataInstanced(Matrix* localToWorldMatrices, const uint32_t& count);
 
 	private:
 		static inline GfxStructuredBuffer* s_StructuredBuffer = nullptr;

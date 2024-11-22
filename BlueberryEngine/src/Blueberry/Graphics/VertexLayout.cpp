@@ -3,11 +3,11 @@
 
 namespace Blueberry
 {
-	VertexLayout::Element::Element(ElementType type, UINT offset) : m_Type(type), m_Offset(offset)
+	VertexLayout::Element::Element(ElementType type, uint32_t offset) : m_Type(type), m_Offset(offset)
 	{
 	}
 
-	constexpr UINT VertexLayout::Element::GetSize(ElementType type)
+	constexpr uint32_t VertexLayout::Element::GetSize(ElementType type)
 	{
 		switch (type)
 		{
@@ -38,17 +38,17 @@ namespace Blueberry
 		return m_Type;
 	}
 
-	UINT VertexLayout::Element::GetOffset() const
+	uint32_t VertexLayout::Element::GetOffset() const
 	{
 		return m_Offset;
 	}
 
-	UINT VertexLayout::Element::GetOffsetAfter() const
+	uint32_t VertexLayout::Element::GetOffsetAfter() const
 	{
 		return m_Offset + GetSize();
 	}
 
-	UINT VertexLayout::Element::GetSize() const
+	uint32_t VertexLayout::Element::GetSize() const
 	{
 		return GetSize(m_Type);
 	}
@@ -59,12 +59,12 @@ namespace Blueberry
 		return *this;
 	}
 
-	const VertexLayout::Element& VertexLayout::ResolveByIndex(UINT i) const
+	const VertexLayout::Element& VertexLayout::ResolveByIndex(uint32_t i) const
 	{
 		return m_Elements[i];
 	}
 
-	UINT VertexLayout::GetSize() const
+	uint32_t VertexLayout::GetSize() const
 	{
 		return m_Elements.empty() ? 0 : m_Elements.back().GetOffsetAfter();
 	}

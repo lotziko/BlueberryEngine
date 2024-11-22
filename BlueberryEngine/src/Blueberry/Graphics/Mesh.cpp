@@ -12,22 +12,22 @@ namespace Blueberry
 	DATA_DEFINITION(SubMeshData)
 	OBJECT_DEFINITION(Object, Mesh)
 
-	const UINT& SubMeshData::GetIndexStart()
+	const uint32_t& SubMeshData::GetIndexStart()
 	{
 		return m_IndexStart;
 	}
 
-	void SubMeshData::SetIndexStart(const UINT& indexStart)
+	void SubMeshData::SetIndexStart(const uint32_t& indexStart)
 	{
 		m_IndexStart = indexStart;
 	}
 
-	const UINT& SubMeshData::GetIndexCount()
+	const uint32_t& SubMeshData::GetIndexCount()
 	{
 		return m_IndexCount;
 	}
 
-	void SubMeshData::SetIndexCount(const UINT& indexCount)
+	void SubMeshData::SetIndexCount(const uint32_t& indexCount)
 	{
 		m_IndexCount = indexCount;
 	}
@@ -57,27 +57,27 @@ namespace Blueberry
 		}
 	}
 
-	const UINT& Mesh::GetVertexCount()
+	const uint32_t& Mesh::GetVertexCount()
 	{
 		return m_VertexCount;
 	}
 
-	const UINT& Mesh::GetIndexCount()
+	const uint32_t& Mesh::GetIndexCount()
 	{
 		return m_IndexCount;
 	}
 
-	const UINT& Mesh::GetSubMeshCount()
+	const uint32_t& Mesh::GetSubMeshCount()
 	{
 		return m_SubMeshes.size();
 	}
 
-	SubMeshData* Mesh::GetSubMesh(const UINT& index)
+	SubMeshData* Mesh::GetSubMesh(const uint32_t& index)
 	{
 		return m_SubMeshes[index].Get();
 	}
 
-	void Mesh::SetVertices(const Vector3* vertices, const UINT& vertexCount)
+	void Mesh::SetVertices(const Vector3* vertices, const uint32_t& vertexCount)
 	{
 		m_VertexCount = vertexCount;
 		m_Vertices.resize(vertexCount);
@@ -86,7 +86,7 @@ namespace Blueberry
 		m_BufferIsDirty = true;
 	}
 
-	void Mesh::SetNormals(const Vector3* normals, const UINT& vertexCount)
+	void Mesh::SetNormals(const Vector3* normals, const uint32_t& vertexCount)
 	{
 		m_Normals.resize(vertexCount);
 		memcpy(m_Normals.data(), normals, sizeof(Vector3) * vertexCount);
@@ -94,7 +94,7 @@ namespace Blueberry
 		m_BufferIsDirty = true;
 	}
 
-	void Mesh::SetTangents(const Vector4* tangents, const UINT& vertexCount)
+	void Mesh::SetTangents(const Vector4* tangents, const uint32_t& vertexCount)
 	{
 		m_Tangents.resize(vertexCount);
 		memcpy(m_Tangents.data(), tangents, sizeof(Vector4) * vertexCount);
@@ -102,15 +102,15 @@ namespace Blueberry
 		m_BufferIsDirty = true;
 	}
 
-	void Mesh::SetIndices(const UINT* indices, const UINT& indexCount)
+	void Mesh::SetIndices(const uint32_t* indices, const uint32_t& indexCount)
 	{
 		m_IndexCount = indexCount;
 		m_Indices.resize(indexCount);
-		memcpy(m_Indices.data(), indices, sizeof(UINT) * indexCount);
+		memcpy(m_Indices.data(), indices, sizeof(uint32_t) * indexCount);
 		m_BufferIsDirty = true;
 	}
 
-	void Mesh::SetUVs(const int& channel, const Vector2* uvs, const UINT& uvCount)
+	void Mesh::SetUVs(const int& channel, const Vector2* uvs, const uint32_t& uvCount)
 	{
 		if (channel < 0 || channel >= 8)
 		{
@@ -125,7 +125,7 @@ namespace Blueberry
 		}
 	}
 
-	void Mesh::SetSubMesh(const UINT& index, SubMeshData* data)
+	void Mesh::SetSubMesh(const uint32_t& index, SubMeshData* data)
 	{
 		if (index >= m_SubMeshes.size())
 		{
@@ -273,7 +273,7 @@ namespace Blueberry
 			Vector4* tangentPointer = m_Tangents.data();
 			Vector2* uvPointer = m_UVs[0].data();
 
-			for (UINT i = 0; i < m_VertexCount; ++i)
+			for (uint32_t i = 0; i < m_VertexCount; ++i)
 			{
 				memcpy(bufferPointer, vertexPointer, sizeof(Vector3));
 				bufferPointer += 3;
@@ -302,7 +302,7 @@ namespace Blueberry
 			{
 				m_IndexData.resize(m_IndexCount);
 			}
-			memcpy(m_IndexData.data(), m_Indices.data(), m_IndexCount * sizeof(UINT));
+			memcpy(m_IndexData.data(), m_Indices.data(), m_IndexCount * sizeof(uint32_t));
 
 			AABB::CreateFromPoints(m_Bounds, m_VertexCount, m_Vertices.data(), sizeof(Vector3));
 		}

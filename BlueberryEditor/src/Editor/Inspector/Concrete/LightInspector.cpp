@@ -7,6 +7,8 @@
 
 #include "Editor\Gizmos\Gizmos.h"
 
+#include "Blueberry\Graphics\RenderContext.h"
+
 namespace Blueberry
 {
 	const char* LightInspector::GetIconPath(Object* object)

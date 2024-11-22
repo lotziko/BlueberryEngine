@@ -7,14 +7,14 @@ namespace Blueberry
 {
 	struct TextureProperties
 	{
-		UINT width;
-		UINT height;
+		uint32_t width;
+		uint32_t height;
 		void* data;
 		size_t dataSize;
 		bool isRenderTarget;
 		bool isReadable;
-		UINT antiAliasing;
-		UINT mipCount;
+		uint32_t antiAliasing;
+		uint32_t mipCount;
 		TextureFormat format;
 		WrapMode wrapMode;
 		FilterMode filterMode;

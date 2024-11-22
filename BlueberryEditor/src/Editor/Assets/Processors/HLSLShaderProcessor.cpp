@@ -21,7 +21,7 @@ namespace Blueberry
 		}
 
 		// Based on https://github.com/holy-shit/clion-directx-example/blob/master/main.cpp
-		UINT dataSize;
+		uint32_t dataSize;
 		char* buffer;
 
 		std::ifstream infile;
@@ -166,19 +166,19 @@ namespace Blueberry
 		std::filesystem::path indexesPath = folderPath;
 		indexesPath.append("indexes");
 
-		UINT vertexShaderCount = (UINT)m_VariantsData.vertexShaderIndices.size();
-		UINT geometryShaderCount = (UINT)m_VariantsData.geometryShaderIndices.size();
-		UINT fragmentShaderCount = (UINT)m_VariantsData.fragmentShaderIndices.size();
-		UINT blobsCount = (UINT)m_Blobs.size();
+		uint32_t vertexShaderCount = (uint32_t)m_VariantsData.vertexShaderIndices.size();
+		uint32_t geometryShaderCount = (uint32_t)m_VariantsData.geometryShaderIndices.size();
+		uint32_t fragmentShaderCount = (uint32_t)m_VariantsData.fragmentShaderIndices.size();
+		uint32_t blobsCount = (uint32_t)m_Blobs.size();
 		std::ofstream output;
 		output.open(indexesPath, std::ofstream::binary);
-		output.write((char*)&vertexShaderCount, sizeof(UINT));
-		output.write((char*)m_VariantsData.vertexShaderIndices.data(), sizeof(UINT) * vertexShaderCount);
-		output.write((char*)&geometryShaderCount, sizeof(UINT));
-		output.write((char*)m_VariantsData.geometryShaderIndices.data(), sizeof(UINT) * geometryShaderCount);
-		output.write((char*)&fragmentShaderCount, sizeof(UINT));
-		output.write((char*)m_VariantsData.fragmentShaderIndices.data(), sizeof(UINT) * fragmentShaderCount);
-		output.write((char*)&blobsCount, sizeof(UINT));
+		output.write((char*)&vertexShaderCount, sizeof(uint32_t));
+		output.write((char*)m_VariantsData.vertexShaderIndices.data(), sizeof(uint32_t) * vertexShaderCount);
+		output.write((char*)&geometryShaderCount, sizeof(uint32_t));
+		output.write((char*)m_VariantsData.geometryShaderIndices.data(), sizeof(uint32_t) * geometryShaderCount);
+		output.write((char*)&fragmentShaderCount, sizeof(uint32_t));
+		output.write((char*)m_VariantsData.fragmentShaderIndices.data(), sizeof(uint32_t) * fragmentShaderCount);
+		output.write((char*)&blobsCount, sizeof(uint32_t));
 		output.close();
 
 		for (size_t i = 0; i < m_Blobs.size(); ++i)
@@ -200,25 +200,25 @@ namespace Blueberry
 
 		if (std::filesystem::exists(indexesPath))
 		{
-			UINT vertexShaderCount;
-			UINT geometryShaderCount;
-			UINT fragmentShaderCount;
-			UINT blobsCount;
+			uint32_t vertexShaderCount;
+			uint32_t geometryShaderCount;
+			uint32_t fragmentShaderCount;
+			uint32_t blobsCount;
 			std::ifstream input;
 			input.open(indexesPath, std::ofstream::binary);
-			input.read((char*)&vertexShaderCount, sizeof(UINT));
+			input.read((char*)&vertexShaderCount, sizeof(uint32_t));
 			m_VariantsData.vertexShaderIndices.resize(vertexShaderCount);
-			input.read((char*)m_VariantsData.vertexShaderIndices.data(), sizeof(UINT) * vertexShaderCount);
-			input.read((char*)&geometryShaderCount, sizeof(UINT));
+			input.read((char*)m_VariantsData.vertexShaderIndices.data(), sizeof(uint32_t) * vertexShaderCount);
+			input.read((char*)&geometryShaderCount, sizeof(uint32_t));
 			m_VariantsData.geometryShaderIndices.resize(geometryShaderCount);
-			input.read((char*)m_VariantsData.geometryShaderIndices.data(), sizeof(UINT) * geometryShaderCount);
-			input.read((char*)&fragmentShaderCount, sizeof(UINT));
+			input.read((char*)m_VariantsData.geometryShaderIndices.data(), sizeof(uint32_t) * geometryShaderCount);
+			input.read((char*)&fragmentShaderCount, sizeof(uint32_t));
 			m_VariantsData.fragmentShaderIndices.resize(fragmentShaderCount);
-			input.read((char*)m_VariantsData.fragmentShaderIndices.data(), sizeof(UINT) * fragmentShaderCount);
-			input.read((char*)&blobsCount, sizeof(UINT));
+			input.read((char*)m_VariantsData.fragmentShaderIndices.data(), sizeof(uint32_t) * fragmentShaderCount);
+			input.read((char*)&blobsCount, sizeof(uint32_t));
 			input.close();
 
-			for (UINT i = 0; i < blobsCount; ++i)
+			for (uint32_t i = 0; i < blobsCount; ++i)
 			{
 				ComPtr<ID3DBlob> blob;
 				std::filesystem::path path = folderPath;
@@ -250,7 +250,7 @@ namespace Blueberry
 
 	bool HLSLShaderProcessor::Compile(const std::string& shaderCode, const char* entryPoint, const char* model, D3D_SHADER_MACRO* keywords, ComPtr<ID3DBlob>& blob)
 	{
-		UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
+		uint32_t flags = D3DCOMPILE_ENABLE_STRICTNESS;
 
 		HLSLShaderProcessorInclude include = {};
 		ComPtr<ID3DBlob> temporaryBlob;

@@ -137,8 +137,8 @@ namespace Blueberry
 			return nullptr;
 		}
 
-		UINT vertexFlags = 0;
-		UINT fragmentFlags = 0;
+		uint32_t vertexFlags = 0;
+		uint32_t fragmentFlags = 0;
 		if (m_ActiveKeywords.size() > 0)
 		{
 			auto vertexKeywords = shaderPass->GetVertexKeywords();

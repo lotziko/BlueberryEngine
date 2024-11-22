@@ -80,7 +80,7 @@ namespace Blueberry
 				snapping[2] = gizmoSnapping[2];
 			}
 
-			if (ImGuizmo::Manipulate((float*)camera->GetViewMatrix().m, (float*)camera->GetProjectionMatrix().m, (ImGuizmo::OPERATION)gizmoOperation, ImGuizmo::MODE::LOCAL, (float*)transformMatrix.m, 0, snapping))
+			if (ImGuizmo::Manipulate((float*)camera->GetViewMatrix().m, (float*)camera->GetProjectionMatrix().m, (ImGuizmo::OPERATION)gizmoOperation, ImGuizmo::MODE::LOCAL, (float*)transformMatrix.m, 0, 0))
 			{
 				Vector3 scale;
 				Quaternion rotation;

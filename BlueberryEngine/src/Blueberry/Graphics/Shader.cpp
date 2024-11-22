@@ -135,32 +135,32 @@ namespace Blueberry
 		m_FragmentKeywords = keywords;
 	}
 
-	const UINT& PassData::GetVertexOffset() const
+	const uint32_t& PassData::GetVertexOffset() const
 	{
 		return m_VertexOffset;
 	}
 
-	void PassData::SetVertexOffset(const UINT& offset)
+	void PassData::SetVertexOffset(const uint32_t& offset)
 	{
 		m_VertexOffset = offset;
 	}
 
-	const UINT& PassData::GetGeometryOffset() const
+	const uint32_t& PassData::GetGeometryOffset() const
 	{
 		return m_GeometryOffset;
 	}
 
-	void PassData::SetGeometryOffset(const UINT& offset)
+	void PassData::SetGeometryOffset(const uint32_t& offset)
 	{
 		m_GeometryOffset = offset;
 	}
 
-	const UINT& PassData::GetFragmentOffset() const
+	const uint32_t& PassData::GetFragmentOffset() const
 	{
 		return m_FragmentOffset;
 	}
 
-	void PassData::SetFragmentOffset(const UINT& offset)
+	void PassData::SetFragmentOffset(const uint32_t& offset)
 	{
 		m_FragmentOffset = offset;
 	}
@@ -183,7 +183,7 @@ namespace Blueberry
 		END_OBJECT_BINDING()
 	}
 
-	const PassData* ShaderData::GetPass(const UINT& index) const
+	const PassData* ShaderData::GetPass(const uint32_t& index) const
 	{
 		if (index < 0 || index >= m_Passes.size())
 		{
@@ -192,7 +192,7 @@ namespace Blueberry
 		return m_Passes[index].Get();
 	}
 
-	const UINT& ShaderData::GetPassCount() const
+	const uint32_t& ShaderData::GetPassCount() const
 	{
 		return m_Passes.size();
 	}
@@ -245,7 +245,7 @@ namespace Blueberry
 		for (int i = 0; i < geometryShadersCount; ++i)
 		{
 			GfxGeometryShader* geometryShader = nullptr;
-			UINT index = variantsData.geometryShaderIndices[i];
+			uint32_t index = variantsData.geometryShaderIndices[i];
 			if (index != -1)
 			{
 				GfxDevice::CreateGeometryShader(variantsData.shaders[index], geometryShader);
@@ -283,13 +283,13 @@ namespace Blueberry
 		END_OBJECT_BINDING()
 	}
 
-	const ShaderVariant Shader::GetVariant(const UINT& vertexKeywordFlags, const UINT& fragmentKeywordFlags, const uint8_t& passIndex)
+	const ShaderVariant Shader::GetVariant(const uint32_t& vertexKeywordFlags, const uint32_t& fragmentKeywordFlags, const uint8_t& passIndex)
 	{
 		if (m_PassesOffsets.size() == 0)
 		{
 			ShaderData* data = m_Data.Get();
 			m_PassesOffsets.resize(data->GetPassCount());
-			for (UINT i = 0; i < m_PassesOffsets.size(); ++i)
+			for (uint32_t i = 0; i < m_PassesOffsets.size(); ++i)
 			{
 				const PassData* passData = data->GetPass(i);
 				m_PassesOffsets[i] = std::make_tuple(passData->GetVertexOffset(), passData->GetGeometryOffset(), passData->GetFragmentOffset());
