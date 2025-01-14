@@ -63,8 +63,8 @@ namespace Blueberry
 			{
 				auto& compilationPass = compilationData.passes[i];
 				PassData* pass = compilationData.dataPasses[i];
-				size_t vertexVariantCount = Max(pow(2, compilationPass.vertexKeywords.size()), 1);
-				size_t fragmentVariantCount = Max(pow(2, compilationPass.fragmentKeywords.size()), 1);
+				size_t vertexVariantCount = std::max((int)pow(2, compilationPass.vertexKeywords.size()), 1);
+				size_t fragmentVariantCount = std::max((int)pow(2, compilationPass.fragmentKeywords.size()), 1);
 
 				if (!compilationPass.vertexEntryPoint.empty())
 				{

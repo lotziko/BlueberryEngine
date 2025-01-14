@@ -116,7 +116,7 @@ namespace Blueberry
 		if (ImGui::BeginChild("Middle panel", ImVec2(size.x, size.y - bottomPanelSize)))
 		{
 			ImVec2 panelPos = ImGui::GetCursorPos();
-			int maxCells = (int)floorf(size.x / (cellSize + spaceBetweenCells));
+			uint32_t maxCells = (int)floorf(size.x / (cellSize + spaceBetweenCells));
 			if (maxCells > 0)
 			{
 				float expandedSpaceBetweenCells = (size.x - (maxCells * cellSize)) / (maxCells + 1);
@@ -126,7 +126,7 @@ namespace Blueberry
 				for (auto& asset : m_CurrentDirectoryAssets)
 				{
 					asset.expanded = InspectorExpandedItemsCache::Get(asset.pathString);
-					for (int i = 0, n = asset.expanded ? asset.objects.size() : 1; i < n; ++i)
+					for (uint32_t i = 0, n = asset.expanded ? (uint32_t)asset.objects.size() : 1; i < n; ++i)
 					{
 						expectedCursorPos.x += expandedSpaceBetweenCells;
 						asset.positions[i] = Vector2(expectedCursorPos.x, expectedCursorPos.y);
@@ -169,7 +169,7 @@ namespace Blueberry
 				float bottomClip = scrollY + ImGui::GetWindowHeight();
 				for (auto& asset : m_CurrentDirectoryAssets)
 				{
-					for (int i = 0, n = asset.expanded ? asset.objects.size() : 1; i < n; ++i)
+					for (uint32_t i = 0, n = asset.expanded ? (uint32_t)asset.objects.size() : 1; i < n; ++i)
 					{
 						Object* object;
 						if (i == 0)
@@ -428,7 +428,7 @@ namespace Blueberry
 					{
 						info.objects.emplace_back(nullptr);
 					}
-					info.positions.resize(Max(1, info.objects.size()));
+					info.positions.resize(std::max(1ull, info.objects.size()));
 					info.isDirectory = false;
 					m_CurrentDirectoryAssets.emplace_back(info);
 				}

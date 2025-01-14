@@ -91,7 +91,7 @@ namespace Blueberry
 
 		PerCameraDataConstantBuffer::BindData(camera);
 
-		Rectangle area = Rectangle(Min(Max(positionX, 0), camera->GetPixelSize().x), Min(Max(positionY, 0), camera->GetPixelSize().y), 1, 1);
+		Rectangle area = Rectangle(std::min(std::max(positionX, 0), (int)camera->GetPixelSize().x), std::min(std::max(positionY, 0), (int)camera->GetPixelSize().y), 1, 1);
 		unsigned char pixel[4];
 		std::unordered_map<int, ObjectId> validObjects;
 		uint32_t index = 1;

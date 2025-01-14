@@ -259,6 +259,9 @@ namespace Blueberry
 		s_LineVertexBuffer->SetData(s_LineVertexData, s_LineCount * 2);
 
 		GfxDevice::Draw(GfxDrawingOperation(s_LineVertexBuffer, nullptr, s_LineMaterial, 0, 0, s_LineCount * 2, Topology::LineList));
+		
+		s_LineCount = 0;
+		s_LineVertexDataPtr = s_LineVertexData;
 	}
 
 	void Gizmos::FlushArcs()

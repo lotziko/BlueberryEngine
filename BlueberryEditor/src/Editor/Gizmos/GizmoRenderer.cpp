@@ -10,6 +10,8 @@
 #include "Editor\Inspector\ObjectInspectorDB.h"
 #include "Editor\Inspector\ObjectInspector.h"
 
+#include "Blueberry\Graphics\RendererTree.h"
+
 namespace Blueberry
 {
 	void GizmoRenderer::Draw(Scene* scene, Camera* camera)
@@ -17,6 +19,18 @@ namespace Blueberry
 		PerCameraDataConstantBuffer::BindData(camera);
 
 		// TODO add cache and draw also child entities
+
+		/*Gizmos::SetMatrix(Matrix::Identity);
+		Gizmos::SetColor(Color(1, 1, 1, 1));
+		Gizmos::Begin();
+		std::vector<AABB> bounds = {};
+		RendererTree::GatherBounds(bounds);
+		for (int i = 0; i < bounds.size(); ++i)
+		{
+			Gizmos::DrawBox(bounds[i].Center, (Vector3)bounds[i].Extents * 2);
+		}
+		Gizmos::End();*/
+
 		Object* activeObject = Selection::GetActiveObject();
 		if (activeObject != nullptr)
 		{

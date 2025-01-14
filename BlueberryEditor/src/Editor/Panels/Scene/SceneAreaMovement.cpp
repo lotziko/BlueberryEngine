@@ -35,7 +35,7 @@ namespace Blueberry
 		if (!(isnan(targetSize) || isinf(targetSize)))
 		{
 			const float maxSceneViewSize = 3.2e34f;
-			area->SetSize(Min(targetSize, maxSceneViewSize));
+			area->SetSize(std::min(targetSize, maxSceneViewSize));
 		}
 
 		if (!zoomTowardsCenter && abs(area->GetCameraDistance() < 1.0e7f))
@@ -54,7 +54,7 @@ namespace Blueberry
 	{
 		const float maxCameraFarClip = 1.844674E+19f;
 
-		float farClip = Min(Max(2000.0f * size, 1000.0f), maxCameraFarClip);
+		float farClip = std::min(std::max(2000.0f * size, 1000.0f), maxCameraFarClip);
 		return Vector2(farClip * 0.000005f, farClip);
 	}
 
@@ -97,7 +97,7 @@ namespace Blueberry
 		float previousFar = camera->GetFarClipPlane();
 		float size = area->GetSize();
 
-		area->SetSize(Min(size, maxCameraSizeForWorldToScreen));
+		area->SetSize(std::min(size, maxCameraSizeForWorldToScreen));
 		float scale = size / area->GetSize();
 		Vector2 clip = GetDynamicClipPlanes(area->GetSize());
 

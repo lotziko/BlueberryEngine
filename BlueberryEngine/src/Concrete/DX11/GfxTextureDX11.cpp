@@ -109,11 +109,11 @@ namespace Blueberry
 				{
 					D3D11_SUBRESOURCE_DATA subresourceData;
 					subresourceData.pSysMem = ptr;
-					subresourceData.SysMemPitch = Max(1, (width + 3) / 4) * blockSize;
+					subresourceData.SysMemPitch = std::max(1u, (width + 3) / 4) * blockSize;
 					subresourceData.SysMemSlicePitch = 0;
 					subresourceDatas[i] = subresourceData;
 
-					ptr += subresourceData.SysMemPitch * Max(1, (height + 3) / 4);
+					ptr += subresourceData.SysMemPitch * std::max(1u, (height + 3) / 4);
 					width /= 2;
 					height /= 2;
 				}
@@ -312,7 +312,7 @@ namespace Blueberry
 		ZeroMemory(&textureDesc, sizeof(D3D11_TEXTURE2D_DESC));
 
 		DXGI_FORMAT format = (DXGI_FORMAT)properties.format;
-		uint32_t antiAliasing = Max(1, properties.antiAliasing);
+		uint32_t antiAliasing = std::max(1u, properties.antiAliasing);
 
 		textureDesc.Width = m_Width;
 		textureDesc.Height = m_Height;
@@ -421,7 +421,7 @@ namespace Blueberry
 		ZeroMemory(&textureDesc, sizeof(D3D11_TEXTURE2D_DESC));
 
 		DXGI_FORMAT format = (DXGI_FORMAT)properties.format;
-		uint32_t antiAliasing = Max(1, properties.antiAliasing);
+		uint32_t antiAliasing = std::max(1u, properties.antiAliasing);
 
 		textureDesc.Width = m_Width;
 		textureDesc.Height = m_Height;

@@ -13,24 +13,16 @@ namespace Blueberry
 
 	struct CullingResults
 	{
-		struct RendererInfo
-		{
-			Renderer* renderer;
-			size_t type;
-			AABB bounds;
-			uint32_t frustumMask;
-		};
-
 		struct CullerInfo
 		{
 			Object* object;
 			uint8_t index;
-			DirectX::XMVECTOR nearPlane, farPlane, rightPlane, leftPlane, topPlane, bottomPlane;
+			DirectX::XMVECTOR planes[6];
+			std::vector<ObjectId> renderers;
 		};
 
 		Camera* camera;
 		std::vector<Light*> lights;
-		std::vector<RendererInfo> rendererInfos;
 		std::vector<CullerInfo> cullerInfos;
 	};
 
@@ -55,5 +47,6 @@ namespace Blueberry
 
 	private:
 		static inline GfxVertexBuffer* s_IndexBuffer = nullptr;
+		static inline size_t s_LastCullingFrame = 0;
 	};
 }

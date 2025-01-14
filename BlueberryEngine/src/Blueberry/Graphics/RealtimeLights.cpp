@@ -13,7 +13,7 @@ namespace Blueberry
 		if (type == LightType::Spot)
 			return 512;
 		if (type == LightType::Directional)
-			return 1024;
+			return 2048;
 		if (type == LightType::Point)
 			return 256;
 		return 0;

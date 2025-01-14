@@ -39,6 +39,9 @@ namespace Blueberry
 		const uint32_t& GetSubMeshCount();
 		SubMeshData* GetSubMesh(const uint32_t& index);
 		
+		const std::vector<Vector3>& GetVertices();
+		const std::vector<uint32_t>& GetIndices();
+
 		void SetVertices(const Vector3* vertices, const uint32_t& vertexCount);
 		void SetNormals(const Vector3* normals, const uint32_t& vertexCount);
 		void SetTangents(const Vector4* tangents, const uint32_t& vertexCount);

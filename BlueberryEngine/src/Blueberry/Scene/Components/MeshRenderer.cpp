@@ -4,6 +4,7 @@
 #include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Graphics\Mesh.h"
 #include "Blueberry\Graphics\Material.h"
+#include "Blueberry\Graphics\RendererTree.h"
 #include "Blueberry\Scene\Entity.h"
 
 #include "Blueberry\Scene\Components\Transform.h"
@@ -15,11 +16,25 @@ namespace Blueberry
 	void MeshRenderer::OnEnable()
 	{
 		AddToSceneComponents(MeshRenderer::Type);
+		m_TreeBounds = GetBounds();
+		RendererTree::Add(m_ObjectId, m_TreeBounds);
 	}
 
 	void MeshRenderer::OnDisable()
 	{
 		RemoveFromSceneComponents(MeshRenderer::Type);
+		RendererTree::Remove(m_ObjectId, m_TreeBounds);
+	}
+
+	void MeshRenderer::Update()
+	{
+		size_t transformRecalculationFrame = GetTransform()->GetRecalculationFrame();
+		if (m_RecalculationFrame < transformRecalculationFrame)
+		{
+			AABB newBounds = GetBounds();
+			RendererTree::Update(m_ObjectId, m_TreeBounds, newBounds);
+			m_TreeBounds = newBounds;
+		}
 	}
 
 	Mesh* MeshRenderer::GetMesh()
@@ -65,7 +80,7 @@ namespace Blueberry
 		{
 			return m_Bounds;
 		}
-
+		
 		Transform* transform = GetTransform();
 		size_t transformRecalculationFrame = transform->GetRecalculationFrame();
 		if (m_RecalculationFrame <= transformRecalculationFrame)

@@ -40,11 +40,14 @@ namespace Blueberry
 
 	void Scene::Destroy()
 	{
-		ObjectPtr<Entity> entity;
-		while(m_Entities.size() > 0 && (entity = m_Entities.begin()->second).IsValid())
+		for (auto pair : m_Entities)
 		{
-			DestroyEntity(entity.Get());
+			if (pair.second.IsValid())
+			{
+				DestroyEntity(pair.second.Get());
+			}
 		}
+		m_Entities.clear();
 	}
 
 	Entity* Scene::CreateEntity(const std::string& name = "Entity")

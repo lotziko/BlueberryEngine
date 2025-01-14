@@ -1,0 +1,35 @@
+#include "bbpch.h"
+#include "RendererTree.h"
+
+#include "Blueberry\Scene\Components\Renderer.h"
+
+namespace Blueberry
+{
+	Octree RendererTree::m_Octree = Octree(Vector3::Zero, 10.0f, 1.0f, 1.0f);
+
+	void RendererTree::Add(const ObjectId& id, const AABB& bounds)
+	{
+		m_Octree.Add(bounds, id);
+	}
+
+	void RendererTree::Remove(const ObjectId& id, const AABB& bounds)
+	{
+		m_Octree.Remove(bounds, id);
+	}
+
+	void RendererTree::Update(const ObjectId& id, const AABB& previousBounds, const AABB& newBounds)
+	{
+		m_Octree.Remove(previousBounds, id);
+		m_Octree.Add(newBounds, id);
+	}
+
+	void RendererTree::Cull(DirectX::XMVECTOR* planes, std::vector<ObjectId>& result)
+	{
+		m_Octree.Cull(planes, result);
+	}
+
+	void RendererTree::GatherBounds(std::vector<AABB>& result)
+	{
+		m_Octree.GatherChildrenBounds(result);
+	}
+}

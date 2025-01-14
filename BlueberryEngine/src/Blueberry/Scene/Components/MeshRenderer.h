@@ -17,6 +17,8 @@ namespace Blueberry
 
 		virtual void OnEnable() final;
 		virtual void OnDisable() final;
+		
+		void Update();
 
 		Mesh* GetMesh();
 		void SetMesh(Mesh* mesh);
@@ -32,9 +34,9 @@ namespace Blueberry
 
 	private:
 		ObjectPtr<Mesh> m_Mesh;
-		//ObjectPtr<Material> m_Material;
 		std::vector<ObjectPtr<Material>> m_Materials;
 		AABB m_Bounds;
+		AABB m_TreeBounds;
 		size_t m_RecalculationFrame = 0;
 	};
 }

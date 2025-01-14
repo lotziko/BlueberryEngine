@@ -154,6 +154,7 @@ namespace Blueberry
 				Component* component = componentSlot.Get();
 				if (!component->m_IsActive)
 				{
+					component->m_IsActive = true;
 					component->OnEnable();
 				}
 			}
@@ -163,8 +164,9 @@ namespace Blueberry
 			for (auto&& componentSlot : m_Components)
 			{
 				Component* component = componentSlot.Get();
-				if (!component->m_IsActive)
+				if (component->m_IsActive)
 				{
+					component->m_IsActive = false;
 					component->OnDisable();
 				}
 			}

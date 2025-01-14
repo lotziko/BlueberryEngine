@@ -7,6 +7,7 @@
 #include "Blueberry\Graphics\Renderer2D.h"
 #include "Blueberry\Graphics\DefaultRenderer.h"
 #include "Blueberry\Input\Input.h"
+#include "Blueberry\Threading\JobSystem.h"
 #include "Blueberry\Graphics\RegisterGraphicsTypes.h"
 
 #include "Blueberry\Core\Layer.h"
@@ -30,6 +31,7 @@ namespace Blueberry
 
 		DefaultRenderer::Initialize();
 		Input::Initialize();
+		JobSystem::Initialize();
 
 		RegisterSceneTypes();
 		RegisterGraphicsTypes();

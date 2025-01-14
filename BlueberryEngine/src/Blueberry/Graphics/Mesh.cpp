@@ -77,6 +77,45 @@ namespace Blueberry
 		return m_SubMeshes[index].Get();
 	}
 
+	const std::vector<Vector3>& Mesh::GetVertices()
+	{
+		if (m_Vertices.size() == 0 && m_VertexData.size() > 0)
+		{
+			m_Vertices.reserve(m_VertexCount);
+			int offset = 3;
+			if (m_ChannelFlags & NORMALS_BIT)
+			{
+				offset += 3;
+			}
+			if (m_ChannelFlags & TANGENTS_BIT)
+			{
+				offset += 4;
+			}
+			if (m_ChannelFlags & UV0_BIT)
+			{
+				offset += 2;
+			}
+			float* begin = m_VertexData.data();
+			float* end = begin + m_VertexData.size();
+			for (float* it = begin; it < end; it += offset)
+			{
+				m_Vertices.emplace_back(Vector3(*it, *(it + 1), *(it + 2)));
+			}
+		}
+
+		return m_Vertices;
+	}
+
+	const std::vector<uint32_t>& Mesh::GetIndices()
+	{
+		if (m_Indices.size() == 0)
+		{
+			return m_IndexData;
+		}
+
+		return m_Indices;
+	}
+
 	void Mesh::SetVertices(const Vector3* vertices, const uint32_t& vertexCount)
 	{
 		m_VertexCount = vertexCount;

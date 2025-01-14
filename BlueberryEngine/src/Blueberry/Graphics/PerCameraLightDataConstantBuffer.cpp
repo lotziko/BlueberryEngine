@@ -44,7 +44,7 @@ namespace Blueberry
 			float fadeStartDistanceSqr = 0.8f * 0.8f * lightRangeSqr;
 			float fadeRangeSqr = (fadeStartDistanceSqr - lightRangeSqr);
 			float lightRangeSqrOverFadeRangeSqr = -lightRangeSqr / fadeRangeSqr;
-			float oneOverLightRangeSqr = 1.0f / Max(0.0001f, lightRangeSqr);
+			float oneOverLightRangeSqr = 1.0f / std::max(0.0001f, lightRangeSqr);
 
 			lightAttenuation.x = oneOverLightRangeSqr;
 			lightAttenuation.y = lightRangeSqrOverFadeRangeSqr;
@@ -54,7 +54,7 @@ namespace Blueberry
 		{
 			float cosOuterAngle = cos(ToRadians(spotOuterAngle) * 0.5f);
 			float cosInnerAngle = cos(ToRadians(spotInnerAngle) * 0.5f);
-			float smoothAngleRange = Max(0.001f, cosInnerAngle - cosOuterAngle);
+			float smoothAngleRange = std::max(0.001f, cosInnerAngle - cosOuterAngle);
 			float invAngleRange = 1.0f / smoothAngleRange;
 			float add = -cosOuterAngle * invAngleRange;
 

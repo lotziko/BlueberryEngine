@@ -7,6 +7,7 @@ namespace Blueberry
 	using Vector2 = DirectX::SimpleMath::Vector2;
 	using Vector3 = DirectX::SimpleMath::Vector3;
 	using Vector4 = DirectX::SimpleMath::Vector4;
+	using Vector3Int = DirectX::XMINT3;
 	using Quaternion = DirectX::SimpleMath::Quaternion;
 	using Ray = DirectX::SimpleMath::Ray;
 	using Matrix = DirectX::SimpleMath::Matrix;
@@ -62,26 +63,6 @@ namespace Blueberry
 		);
 
 		return Quaternion::CreateFromRotationMatrix(rotationMatrix);
-	}
-
-	inline float Max(float a, float b)
-	{
-		return a > b ? a : b;
-	}
-
-	inline int Max(int a, int b)
-	{
-		return a > b ? a : b;
-	}
-
-	inline float Min(float a, float b)
-	{
-		return a < b ? a : b;
-	}
-
-	inline float Clamp(float a, float b, float v)
-	{
-		return v < a ? a : (v > b ? b : v);
 	}
 
 	inline Vector3 MultiplyPoint(Matrix matrix, Vector3 point)
@@ -174,7 +155,7 @@ namespace Blueberry
 	{
 		if (generateMips)
 		{
-			uint32_t mipCount = (uint32_t)log2(Min((float)width, (float)height));
+			uint32_t mipCount = (uint32_t)log2(std::min((float)width, (float)height));
 			// Based on https://stackoverflow.com/questions/108318/how-can-i-test-whether-a-number-is-a-power-of-2
 			if ((width & (width - 1)) == 0 && (height & (height - 1)) == 0)
 			{

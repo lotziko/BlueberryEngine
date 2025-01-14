@@ -89,7 +89,7 @@ namespace Blueberry
 				Entity* entity = pair.second.Get();
 				if (PrefabManager::IsPartOfPrefabInstance(entity))
 				{
-					Object::Destroy(entity);
+					Object::Destroy(PrefabManager::GetInstance(entity));
 				}
 			}
 			s_Scene->Destroy();

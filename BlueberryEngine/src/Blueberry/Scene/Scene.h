@@ -50,6 +50,6 @@ namespace Blueberry
 	template<class ComponentType>
 	inline ComponentMap& Scene::GetComponents()
 	{
-		return m_ComponentManager.GetComponents<ComponentType>();
+		return m_ComponentManager.GetComponents(ComponentType::Type);
 	}
 }

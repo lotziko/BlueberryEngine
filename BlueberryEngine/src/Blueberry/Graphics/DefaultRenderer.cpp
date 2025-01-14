@@ -22,14 +22,14 @@ namespace Blueberry
 	{
 		GfxDevice::CreateHBAORenderer(s_HBAORenderer);
 		s_ResolveMSAAMaterial = Material::Create((Shader*)AssetLoader::Load("assets/shaders/ResolveMSAA.shader"));
-		s_ShadowAtlas = new ShadowAtlas(2048, 2048, 128);
+		s_ShadowAtlas = new ShadowAtlas(4096, 4096, 128);
 	}
 
 	void DefaultRenderer::Shutdown()
 	{
 		Object::Destroy(s_ResolveMSAAMaterial);
 	}
-
+	
 	void DefaultRenderer::Draw(Scene* scene, Camera* camera, Rectangle viewport, Color background, RenderTexture* colorOutput, RenderTexture* depthOutput)
 	{
 		static size_t screenColorTextureId = TO_HASH("_ScreenColorTexture");
