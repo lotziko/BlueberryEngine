@@ -3,6 +3,7 @@
 
 #define MAIN_LIGHT_CASCADES 3
 #define MAX_REALTIME_LIGHTS 128
+#define MAX_VIEW_COUNT 2
 
 struct PerDrawData
 {
@@ -23,12 +24,13 @@ cbuffer PerDrawDataInstanced
 
 cbuffer PerCameraData
 {
-	float4x4 _ViewMatrix;
-	float4x4 _ProjectionMatrix;
-	float4x4 _ViewProjectionMatrix;
-	float4x4 _InverseViewMatrix;
-	float4x4 _InverseProjectionMatrix;
-	float4x4 _InverseViewProjectionMatrix;
+	uint4 _ViewCount;
+	float4x4 _ViewMatrix[MAX_VIEW_COUNT];
+	float4x4 _ProjectionMatrix[MAX_VIEW_COUNT];
+	float4x4 _ViewProjectionMatrix[MAX_VIEW_COUNT];
+	float4x4 _InverseViewMatrix[MAX_VIEW_COUNT];
+	float4x4 _InverseProjectionMatrix[MAX_VIEW_COUNT];
+	float4x4 _InverseViewProjectionMatrix[MAX_VIEW_COUNT];
 	float4 _CameraPositionWS;
 	float4 _CameraForwardDirectionWS;
 	float4 _CameraNearFarClipPlane;
@@ -57,10 +59,10 @@ cbuffer PerCameraLightData
 	float4 _Shadow3x3PCFTermC3;
 };
 
-Texture2D _ScreenOcclusionTexture;
-SamplerState _ScreenOcclusionTexture_Sampler;
+TEXTURE2D_X(_ScreenOcclusionTexture);
+SAMPLER(_ScreenOcclusionTexture_Sampler);
 
-Texture2D _ShadowTexture;
-SamplerComparisonState _ShadowTexture_Sampler;
+TEXTURE2D(_ShadowTexture);
+SAMPLER_CMP(_ShadowTexture_Sampler);
 
 #endif

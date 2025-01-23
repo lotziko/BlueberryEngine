@@ -11,13 +11,15 @@ namespace Blueberry
 	public:
 		~RenderTexture();
 
-		static RenderTexture* Create(const uint32_t& width, const uint32_t& height, const uint32_t& antiAliasing = 1, const TextureFormat& textureFormat = TextureFormat::R8G8B8A8_UNorm, const WrapMode& wrapMode = WrapMode::Clamp, const FilterMode& filterMode = FilterMode::Linear, const bool& isReadable = false);
+		static RenderTexture* Create(const uint32_t& width, const uint32_t& height, const uint32_t& depth, const uint32_t& antiAliasing = 1, const TextureFormat& textureFormat = TextureFormat::R8G8B8A8_UNorm, const TextureDimension& textureDimension = TextureDimension::Texture2D, const WrapMode& wrapMode = WrapMode::Clamp, const FilterMode& filterMode = FilterMode::Linear, const bool& isReadable = false);
 	
 		static void UpdateTemporary();
-		static RenderTexture* GetTemporary(const uint32_t& width, const uint32_t& height, const uint32_t& antiAliasing, const TextureFormat& textureFormat);
+		static RenderTexture* GetTemporary(const uint32_t& width, const uint32_t& height, const uint32_t& depth, const uint32_t& antiAliasing, const TextureFormat& textureFormat, const TextureDimension& textureDimension);
 		static void ReleaseTemporary(RenderTexture* texture);
 
 	private:
+		uint32_t m_Depth = 0;
+
 		static std::unordered_map<ObjectId, size_t> s_TemporaryKeys;
 		static std::unordered_multimap<size_t, std::pair<RenderTexture*, size_t>> s_TemporaryPool;
 	};

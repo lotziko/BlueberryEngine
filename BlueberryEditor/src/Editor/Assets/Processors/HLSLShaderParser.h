@@ -16,6 +16,9 @@ namespace Blueberry
 
 			std::vector<std::string> vertexKeywords;
 			std::vector<std::string> fragmentKeywords;
+
+			std::vector<std::string> globalVertexKeywords;
+			std::vector<std::string> globalFragmentKeywords;
 		};
 
 		std::vector<Pass> passes;

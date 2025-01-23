@@ -2,7 +2,7 @@ Shader
 {
 	Pass
 	{
-		Blend One Zero 
+		Blend One Zero
 		ZWrite On
 		Cull None
 
@@ -10,13 +10,14 @@ Shader
 		#pragma vertex ErrorVertex
 		#pragma fragment ErrorFragment
 
-		#include "Input.hlsl"
+		#include "Core.hlsl"
 
 		struct Attributes
 		{
 			float3 positionOS : POSITION;
 			float3 normalOS	: NORMAL;
-			uint instanceID : RenderInstance;
+			VERTEX_INSTANCE_ID;
+			VERTEX_RENDER_INSTANCE_ID;
 		};
 
 		struct Varyings
@@ -27,15 +28,18 @@ Shader
 
 		Varyings ErrorVertex(Attributes input)
 		{
+			SETUP_VIEW_INDEX(input);
+			SETUP_RENDER_INSTANCE_ID(input);
+
 			Varyings output;
-			output.positionCS = mul(mul(float4(input.positionOS, 1.0f), _PerDrawData[input.instanceID].modelMatrix), _ViewProjectionMatrix);
-			output.normalWS = normalize(mul(float4(input.normalOS, 0.0f), _PerDrawData[input.instanceID].modelMatrix).xyz);
+			output.positionCS = TransformObjectToClip(input.positionOS);
+			output.normalWS = TransformObjectToWorldNormal(input.normalOS);
 			return output;
 		}
 
 		float4 ErrorFragment(Varyings input) : SV_TARGET
 		{
-			float lambert = dot(input.normalWS, -_CameraForwardDirectionWS);
+			float lambert = dot(input.normalWS, -CAMERA_FORWARD_DIRECTION_WS);
 			return float4(1.0 * lambert, 0.0, 1.0 * lambert, 1.0);
 		}
 		HLSLEND
@@ -50,12 +54,13 @@ Shader
 		#pragma vertex ErrorVertex
 		#pragma fragment ErrorFragment
 
-		#include "Input.hlsl"
+		#include "Core.hlsl"
 
 		struct Attributes
 		{
 			float3 positionOS : POSITION;
-			uint instanceID : RenderInstance;
+			VERTEX_INSTANCE_ID;
+			VERTEX_RENDER_INSTANCE_ID;
 		};
 
 		struct Varyings
@@ -65,8 +70,11 @@ Shader
 
 		Varyings ErrorVertex(Attributes input)
 		{
+			SETUP_VIEW_INDEX(input);
+			SETUP_RENDER_INSTANCE_ID(input);
+
 			Varyings output;
-			output.positionCS = mul(mul(float4(input.positionOS, 1.0f), _PerDrawData[input.instanceID].modelMatrix), _ViewProjectionMatrix);
+			output.positionCS = TransformObjectToClip(input.positionOS);
 			return output;
 		}
 

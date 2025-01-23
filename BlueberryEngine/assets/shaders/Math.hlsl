@@ -14,7 +14,27 @@ float3 NormalTSToNormalWS(float3 normalTS, float3 normalWS, float3 tangentWS, fl
 
 float3 GetNormalizedViewDirectionWS(float3 positionWS)
 {
-	return normalize(_CameraForwardDirectionWS - positionWS);
+	return normalize(CAMERA_FORWARD_DIRECTION_WS - positionWS);
+}
+
+float3 TransformObjectToWorld(float3 positionOS)
+{
+	return mul(float4(positionOS, 1.0f), OBJECT_TO_WORLD_MATRIX).xyz;
+}
+
+float4 TransformWorldToClip(float3 positionWS)
+{
+	return mul(float4(positionWS, 1.0f), VIEW_PROJECTION_MATRIX);
+}
+
+float4 TransformObjectToClip(float3 positionOS)
+{
+	return mul(mul(float4(positionOS, 1.0f), OBJECT_TO_WORLD_MATRIX), VIEW_PROJECTION_MATRIX);
+}
+
+float3 TransformObjectToWorldNormal(float3 normalOS)
+{
+	return normalize(mul(float4(normalOS, 0.0f), OBJECT_TO_WORLD_MATRIX).xyz);
 }
 
 #endif

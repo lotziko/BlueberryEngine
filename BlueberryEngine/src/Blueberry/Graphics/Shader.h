@@ -9,6 +9,16 @@ namespace Blueberry
 {
 	class GfxShader;
 
+	class KeywordDB
+	{
+	public:
+		const uint32_t& GetMask(const size_t& id);
+
+	private:
+		std::unordered_map<size_t, uint32_t> m_KeywordMask = {};
+		uint32_t m_MaxMask = 1;
+	};
+
 	class TextureParameterData : public Data
 	{
 		DATA_DECLARATION(TextureParameterData)
@@ -145,6 +155,8 @@ namespace Blueberry
 
 		static Shader* Create(const VariantsData& variantsData, const ShaderData& shaderData);
 
+		static void SetKeyword(const size_t& id, const bool& enabled);
+
 		static void BindProperties();
 
 	private:
@@ -157,6 +169,11 @@ namespace Blueberry
 		std::vector<GfxGeometryShader*> m_GeometryShaders;
 		std::vector<GfxFragmentShader*> m_FragmentShaders;
 		std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> m_PassesOffsets;
+		KeywordDB m_LocalKeywords = {};
+
+		static inline std::unordered_set<size_t> s_ActiveKeywords = {};
+		static inline uint32_t s_ActiveKeywordsMask = 0;
+		static inline KeywordDB s_GlobalKeywords = {};
 
 		friend struct GfxDrawingOperation;
 		friend class Material;

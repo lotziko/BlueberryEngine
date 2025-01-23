@@ -1,6 +1,8 @@
 #ifndef REALTIME_SHADOWS_INCLUDED
 #define REALTIME_SHADOWS_INCLUDED
 
+#include "Macros.hlsl"
+
 bool IsOutOfBounds(float4 position, float4 bounds)
 {
 	float3 lower = float3(position.xy >= bounds.xy, position.z >= 0.0);
@@ -31,10 +33,10 @@ float ComputeShadowPCF3x3(float4 positionSS, Texture2D shadowmap, SamplerCompari
 	positionSS.z = saturate(positionSS.z - 0.000001);
 
 	float4 attenuation4;
-	attenuation4.x = shadowmap.SampleCmpLevelZero(shadowmapSampler, positionSS.xy + shadowTerm1.xy, positionSS.z).r;
-	attenuation4.y = shadowmap.SampleCmpLevelZero(shadowmapSampler, positionSS.xy + shadowTerm1.zy, positionSS.z).r;
-	attenuation4.z = shadowmap.SampleCmpLevelZero(shadowmapSampler, positionSS.xy + shadowTerm1.xw, positionSS.z).r;
-	attenuation4.w = shadowmap.SampleCmpLevelZero(shadowmapSampler, positionSS.xy + shadowTerm1.zw, positionSS.z).r;
+	attenuation4.x = SAMPLE_TEXTURE2D_SHADOW(shadowmap, shadowmapSampler, positionSS.xy + shadowTerm1.xy, positionSS.z).r;
+	attenuation4.y = SAMPLE_TEXTURE2D_SHADOW(shadowmap, shadowmapSampler, positionSS.xy + shadowTerm1.zy, positionSS.z).r;
+	attenuation4.z = SAMPLE_TEXTURE2D_SHADOW(shadowmap, shadowmapSampler, positionSS.xy + shadowTerm1.xw, positionSS.z).r;
+	attenuation4.w = SAMPLE_TEXTURE2D_SHADOW(shadowmap, shadowmapSampler, positionSS.xy + shadowTerm1.zw, positionSS.z).r;
 
 	attenuation = dot(attenuation4, 0.25);
 	if (attenuation == 0.0 || attenuation == 1.0)
@@ -43,13 +45,13 @@ float ComputeShadowPCF3x3(float4 positionSS, Texture2D shadowmap, SamplerCompari
 	}
 	attenuation *= shadowTerm0.x * 4.0;
 
-	attenuation4.x = shadowmap.SampleCmpLevelZero(shadowmapSampler, positionSS.xy + shadowTerm2.xz, positionSS.z).r;
-	attenuation4.y = shadowmap.SampleCmpLevelZero(shadowmapSampler, positionSS.xy + shadowTerm3.xz, positionSS.z).r;
-	attenuation4.z = shadowmap.SampleCmpLevelZero(shadowmapSampler, positionSS.xy + shadowTerm3.zy, positionSS.z).r;
-	attenuation4.w = shadowmap.SampleCmpLevelZero(shadowmapSampler, positionSS.xy + shadowTerm2.zy, positionSS.z).r;
+	attenuation4.x = SAMPLE_TEXTURE2D_SHADOW(shadowmap, shadowmapSampler, positionSS.xy + shadowTerm2.xz, positionSS.z).r;
+	attenuation4.y = SAMPLE_TEXTURE2D_SHADOW(shadowmap, shadowmapSampler, positionSS.xy + shadowTerm3.xz, positionSS.z).r;
+	attenuation4.z = SAMPLE_TEXTURE2D_SHADOW(shadowmap, shadowmapSampler, positionSS.xy + shadowTerm3.zy, positionSS.z).r;
+	attenuation4.w = SAMPLE_TEXTURE2D_SHADOW(shadowmap, shadowmapSampler, positionSS.xy + shadowTerm2.zy, positionSS.z).r;
 	attenuation += dot(attenuation4, shadowTerm0.y);
 
-	attenuation += shadowmap.SampleCmpLevelZero(shadowmapSampler, positionSS.xy, positionSS.z).r * shadowTerm0.z;
+	attenuation += SAMPLE_TEXTURE2D_SHADOW(shadowmap, shadowmapSampler, positionSS.xy, positionSS.z).r * shadowTerm0.z;
 
 	return attenuation;
 }

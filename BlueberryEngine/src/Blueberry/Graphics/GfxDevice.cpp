@@ -62,6 +62,16 @@ namespace Blueberry
 		s_Instance->ResizeBackbufferImpl(width, height);
 	}
 
+	const uint32_t& GfxDevice::GetViewCount()
+	{
+		return s_Instance->GetViewCountImpl();
+	}
+
+	void GfxDevice::SetViewCount(const uint32_t& count)
+	{
+		s_Instance->SetViewCountImpl(count);
+	}
+
 	bool GfxDevice::CreateVertexShader(void* vertexData, GfxVertexShader*& shader)
 	{
 		return s_Instance->CreateVertexShaderImpl(vertexData, shader);

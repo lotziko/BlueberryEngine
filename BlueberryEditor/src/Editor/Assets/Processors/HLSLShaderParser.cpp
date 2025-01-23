@@ -280,6 +280,14 @@ namespace Blueberry
 			{
 				StringHelper::Split(keywords.c_str(), ' ', compilationPass.fragmentKeywords);
 			}
+			else if (type == "global_vertex")
+			{
+				StringHelper::Split(keywords.c_str(), ' ', compilationPass.vertexKeywords);
+			}
+			else if (type == "global_fragment")
+			{
+				StringHelper::Split(keywords.c_str(), ' ', compilationPass.fragmentKeywords);
+			}
 		}
 		passData.SetVertexKeywords(compilationPass.vertexKeywords);
 		passData.SetFragmentKeywords(compilationPass.fragmentKeywords);

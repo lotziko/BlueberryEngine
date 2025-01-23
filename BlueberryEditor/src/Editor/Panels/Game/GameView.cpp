@@ -66,7 +66,7 @@ namespace Blueberry
 						{
 							Object::Destroy(m_RenderTarget);
 						}
-						m_RenderTarget = RenderTexture::Create(viewport.x, viewport.y, 1, TextureFormat::R8G8B8A8_UNorm);
+						m_RenderTarget = RenderTexture::Create(viewport.x, viewport.y, 1, 1, TextureFormat::R8G8B8A8_UNorm);
 						camera->SetPixelSize(Vector2(width, height));
 					}
 					

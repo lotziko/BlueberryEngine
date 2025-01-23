@@ -32,17 +32,20 @@ namespace Blueberry
 	
 	void DefaultRenderer::Draw(Scene* scene, Camera* camera, Rectangle viewport, Color background, RenderTexture* colorOutput, RenderTexture* depthOutput)
 	{
+		int viewCount = 2;
+		Shader::SetKeyword(TO_HASH("MULTIVIEW"), true);
+
 		static size_t screenColorTextureId = TO_HASH("_ScreenColorTexture");
 		static size_t screenNormalTextureId = TO_HASH("_ScreenNormalTexture");
 		static size_t screenDepthStencilTextureId = TO_HASH("_ScreenDepthStencilTexture");
 
-		RenderTexture* colorMSAARenderTarget = RenderTexture::GetTemporary(viewport.width, viewport.height, 4, TextureFormat::R16G16B16A16_Float);
-		RenderTexture* normalMSAARenderTarget = RenderTexture::GetTemporary(viewport.width, viewport.height, 4, TextureFormat::R8G8B8A8_UNorm);
-		RenderTexture* depthStencilMSAARenderTarget = RenderTexture::GetTemporary(viewport.width, viewport.height, 4, TextureFormat::D24_UNorm);
+		RenderTexture* colorMSAARenderTarget = RenderTexture::GetTemporary(viewport.width, viewport.height, 2, 4, TextureFormat::R16G16B16A16_Float, TextureDimension::Texture2DArray);
+		RenderTexture* normalMSAARenderTarget = RenderTexture::GetTemporary(viewport.width, viewport.height, 2, 4, TextureFormat::R8G8B8A8_UNorm, TextureDimension::Texture2DArray);
+		RenderTexture* depthStencilMSAARenderTarget = RenderTexture::GetTemporary(viewport.width, viewport.height, 2, 4, TextureFormat::D24_UNorm, TextureDimension::Texture2DArray);
 
-		RenderTexture* colorNormalRenderTarget = RenderTexture::GetTemporary(viewport.width, viewport.height, 1, TextureFormat::R8G8B8A8_UNorm);
-		RenderTexture* depthStencilRenderTarget = RenderTexture::GetTemporary(viewport.width, viewport.height, 1, TextureFormat::D24_UNorm);
-		RenderTexture* HBAORenderTarget = RenderTexture::GetTemporary(viewport.width, viewport.height, 1, TextureFormat::R8G8B8A8_UNorm);
+		RenderTexture* colorNormalRenderTarget = RenderTexture::GetTemporary(viewport.width, viewport.height, 2, 1, TextureFormat::R8G8B8A8_UNorm, TextureDimension::Texture2DArray);
+		RenderTexture* depthStencilRenderTarget = RenderTexture::GetTemporary(viewport.width, viewport.height, 2, 1, TextureFormat::D24_UNorm, TextureDimension::Texture2DArray);
+		RenderTexture* HBAORenderTarget = RenderTexture::GetTemporary(viewport.width, viewport.height, 2, 1, TextureFormat::R8G8B8A8_UNorm, TextureDimension::Texture2DArray);
 
 		s_DefaultContext.Cull(scene, camera, s_Results);
 
@@ -51,6 +54,7 @@ namespace Blueberry
 		RealtimeLights::PrepareShadows(s_Results, s_ShadowAtlas);
 
 		// Draw shadows
+		GfxDevice::SetViewCount(1);
 		s_ShadowAtlas->Draw(s_DefaultContext, s_Results);
 		GfxDevice::SetGlobalTexture(TO_HASH("_ShadowTexture"), s_ShadowAtlas->GetAtlasTexture()->Get());
 		
@@ -58,6 +62,7 @@ namespace Blueberry
 		RealtimeLights::BindLights(s_Results);
 
 		// Depth/normal prepass
+		GfxDevice::SetViewCount(viewCount);
 		GfxDevice::SetRenderTarget(normalMSAARenderTarget->Get(), depthStencilMSAARenderTarget->Get());
 		GfxDevice::SetViewport(viewport.x, viewport.y, viewport.width, viewport.height);
 		GfxDevice::ClearColor({ 0.0f, 0.0f, 0.0f, 0.0f });
@@ -76,7 +81,7 @@ namespace Blueberry
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_ResolveMSAAMaterial, 0));
 
 		// HBAO
-		s_HBAORenderer->Draw(depthStencilRenderTarget->Get(), colorNormalRenderTarget->Get(), camera->GetViewMatrix(), camera->GetProjectionMatrix(), viewport, HBAORenderTarget->Get());
+		//s_HBAORenderer->Draw(depthStencilRenderTarget->Get(), colorNormalRenderTarget->Get(), camera->GetViewMatrix(), camera->GetProjectionMatrix(), viewport, HBAORenderTarget->Get());
 		GfxDevice::SetGlobalTexture(TO_HASH("_ScreenOcclusionTexture"), HBAORenderTarget->Get());
 
 		// Forward pass

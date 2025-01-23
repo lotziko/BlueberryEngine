@@ -10,7 +10,7 @@ Shader
 		#pragma vertex ColorVertex
 		#pragma fragment ColorFragment
 
-		#include "Input.hlsl"
+		#include "Core.hlsl"
 
 		struct Attributes
 		{
@@ -28,7 +28,7 @@ Shader
 		Varyings ColorVertex(Attributes input)
 		{
 			Varyings output;
-			output.positionCS = mul(mul(float4(input.positionOS, 1.0f), _ModelMatrix), _ViewProjectionMatrix);
+			output.positionCS = mul(mul(float4(input.positionOS, 1.0f), _ModelMatrix), VIEW_PROJECTION_MATRIX);
 			output.color = input.color;
 			return output;
 		}

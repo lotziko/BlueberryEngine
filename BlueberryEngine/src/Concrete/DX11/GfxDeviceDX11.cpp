@@ -130,6 +130,16 @@ namespace Blueberry
 		m_DeviceContext->RSSetViewports(1, &viewport);
 	}
 
+	const uint32_t& GfxDeviceDX11::GetViewCountImpl()
+	{
+		return m_ViewCount;
+	}
+
+	void GfxDeviceDX11::SetViewCountImpl(const uint32_t& count)
+	{
+		m_ViewCount = count;
+	}
+
 	bool GfxDeviceDX11::CreateVertexShaderImpl(void* vertexData, GfxVertexShader*& shader)
 	{
 		auto dxShader = new GfxVertexShaderDX11();
@@ -556,11 +566,11 @@ namespace Blueberry
 		{
 			if (m_InstanceBuffer == nullptr)
 			{
-				m_DeviceContext->Draw(operation.vertexCount, 0);
+				m_DeviceContext->DrawInstanced(operation.vertexCount, m_ViewCount, 0, 0);
 			}
 			else
 			{
-				m_DeviceContext->DrawInstanced(operation.vertexCount, operation.instanceCount, 0, 0);
+				m_DeviceContext->DrawInstanced(operation.vertexCount, operation.instanceCount * m_ViewCount, 0, 0);
 			}
 		}
 		else
@@ -573,11 +583,11 @@ namespace Blueberry
 			}
 			if (m_InstanceBuffer == nullptr)
 			{
-				m_DeviceContext->DrawIndexed(operation.indexCount, operation.indexOffset, 0);
+				m_DeviceContext->DrawIndexedInstanced(operation.indexCount, m_ViewCount, operation.indexOffset, 0, 0);
 			}
 			else
 			{
-				m_DeviceContext->DrawIndexedInstanced(operation.indexCount, operation.instanceCount, operation.indexOffset, 0, 0);
+				m_DeviceContext->DrawIndexedInstanced(operation.indexCount, operation.instanceCount * m_ViewCount, operation.indexOffset, 0, 0);
 			}
 		}
 	}

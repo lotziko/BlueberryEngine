@@ -101,12 +101,16 @@ namespace Blueberry
 				else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32) inputElementDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 			}
 				
-			if (strcmp(paramDesc.SemanticName, "RenderInstance") == 0)
+			if (strcmp(paramDesc.SemanticName, "RENDER_INSTANCE") == 0)
 			{
 				inputElementDesc.InputSlot = 1;
 				inputElementDesc.AlignedByteOffset = 0;
 				inputElementDesc.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA;
 				inputElementDesc.InstanceDataStepRate = 1;
+			}
+			else if (strcmp(paramDesc.SemanticName, "SV_InstanceID") == 0)
+			{
+				continue;
 			}
 			else
 			{

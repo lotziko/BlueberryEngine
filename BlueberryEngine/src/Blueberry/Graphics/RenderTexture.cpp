@@ -18,13 +18,15 @@ namespace Blueberry
 		}
 	}
 
-	RenderTexture* RenderTexture::Create(const uint32_t& width, const uint32_t& height, const uint32_t& antiAliasing, const TextureFormat& textureFormat, const WrapMode& wrapMode, const FilterMode& filterMode, const bool& isReadable)
+	RenderTexture* RenderTexture::Create(const uint32_t& width, const uint32_t& height, const uint32_t& depth, const uint32_t& antiAliasing, const TextureFormat& textureFormat, const TextureDimension& textureDimension, const WrapMode& wrapMode, const FilterMode& filterMode, const bool& isReadable)
 	{
 		RenderTexture* texture = Object::Create<RenderTexture>();
 		texture->m_Width = width;
 		texture->m_Height = height;
+		texture->m_Depth = depth;
 		texture->m_MipCount = 1;
 		texture->m_Format = textureFormat;
+		texture->m_Dimension = textureDimension;
 		texture->m_WrapMode = wrapMode;
 		texture->m_FilterMode = filterMode;
 
@@ -32,9 +34,11 @@ namespace Blueberry
 
 		textureProperties.width = width;
 		textureProperties.height = height;
+		textureProperties.depth = depth;
 		textureProperties.antiAliasing = antiAliasing;
 		textureProperties.mipCount = 1;
 		textureProperties.format = textureFormat;
+		textureProperties.dimension = textureDimension;
 		textureProperties.wrapMode = wrapMode;
 		textureProperties.filterMode = filterMode;
 		textureProperties.isRenderTarget = true;
@@ -61,10 +65,10 @@ namespace Blueberry
 		}
 	}
 
-	RenderTexture* RenderTexture::GetTemporary(const uint32_t& width, const uint32_t& height, const uint32_t& antiAliasing, const TextureFormat& textureFormat)
+	RenderTexture* RenderTexture::GetTemporary(const uint32_t& width, const uint32_t& height, const uint32_t& depth, const uint32_t& antiAliasing, const TextureFormat& textureFormat, const TextureDimension& textureDimension)
 	{
 		// Use 16 bits for width, height and format
-		size_t key = width | height << 16 | antiAliasing << 24 | (uint32_t)textureFormat << 40;
+		size_t key = width | height << 16 | depth << 32 | antiAliasing << 40 | (uint8_t)textureFormat << 48 | (uint8_t)textureDimension << 48;
 
 		// https://stackoverflow.com/questions/3952476/how-to-remove-a-specific-pair-from-a-c-multimap
 		auto iterpair = s_TemporaryPool.equal_range(key);
@@ -76,7 +80,7 @@ namespace Blueberry
 		}
 		
 		// Allocate new texture
-		RenderTexture* texture = RenderTexture::Create(width, height, antiAliasing, textureFormat);
+		RenderTexture* texture = RenderTexture::Create(width, height, depth, antiAliasing, textureFormat, textureDimension);
 		s_TemporaryKeys.insert_or_assign(texture->GetObjectId(), key);
 		return texture;
 	}

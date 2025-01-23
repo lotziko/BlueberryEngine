@@ -24,7 +24,7 @@ namespace Blueberry
 			return;
 		}
 
-		this->renderState = material->GetState(passIndex);
+		this->renderState = material->GetState(passIndex, Shader::s_ActiveKeywordsMask);
 		if (this->renderState == nullptr)
 		{
 			isValid = false;

@@ -14,7 +14,7 @@ Shader
 		#pragma vertex IconVertex
 		#pragma fragment IconFragment
 
-		#include "Input.hlsl"
+		#include "Core.hlsl"
 
 		struct Attributes
 		{
@@ -38,19 +38,18 @@ Shader
 		Varyings IconVertex(Attributes input)
 		{
 			Varyings output;
-			output.positionCS = mul(mul(float4(input.positionOS, 1.0f), _ModelMatrix), _ViewProjectionMatrix);
+			output.positionCS = mul(mul(float4(input.positionOS, 1.0f), _ModelMatrix), VIEW_PROJECTION_MATRIX);
 			output.texcoordAlpha.xy = input.texcoord;
 			float3 modelPositionWS = float3(_ModelMatrix._41, _ModelMatrix._42, _ModelMatrix._43);
-			output.texcoordAlpha.z = GetAlpha(distance(modelPositionWS, _CameraPositionWS));
+			output.texcoordAlpha.z = GetAlpha(distance(modelPositionWS, CAMERA_POSITION_WS));
 			return output;
 		}
 
-		Texture2D _BaseMap;
-		SamplerState _BaseMap_Sampler;
-
+		TEXTURE2D(_BaseMap);	SAMPLER(_BaseMap_Sampler);
+		
 		float4 IconFragment(Varyings input) : SV_TARGET
 		{
-			float4 color = _BaseMap.Sample(_BaseMap_Sampler, input.texcoordAlpha.xy);
+			float4 color = SAMPLE_TEXTURE2D(_BaseMap, _BaseMap_Sampler, input.texcoordAlpha.xy);
 			color.a *= input.texcoordAlpha.z;
 			return color;
 		}

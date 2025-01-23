@@ -22,7 +22,7 @@ namespace Blueberry
 	{
 		if (s_ThumbnailRenderTarget == nullptr)
 		{
-			s_ThumbnailRenderTarget = RenderTexture::Create(size, size, 1, TextureFormat::R8G8B8A8_UNorm, WrapMode::Clamp, FilterMode::Linear, true);
+			s_ThumbnailRenderTarget = RenderTexture::Create(size, size, 1, 1, TextureFormat::R8G8B8A8_UNorm, TextureDimension::Texture2D, WrapMode::Clamp, FilterMode::Linear, true);
 		}
 
 		if (asset->IsClassType(Texture2D::Type))

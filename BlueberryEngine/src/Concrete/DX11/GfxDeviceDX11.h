@@ -30,6 +30,9 @@ namespace Blueberry
 		virtual void SetScissorRectImpl(int x, int y, int width, int height) final;
 		virtual void ResizeBackbufferImpl(int width, int height) final;
 
+		virtual const uint32_t& GetViewCountImpl() final;
+		virtual void SetViewCountImpl(const uint32_t& count) final;
+
 		virtual bool CreateVertexShaderImpl(void* vertexData, GfxVertexShader*& shader) final;
 		virtual bool CreateGeometryShaderImpl(void* geometryData, GfxGeometryShader*& shader) final;
 		virtual bool CreateFragmentShaderImpl(void* fragmentData, GfxFragmentShader*& shader) final;
@@ -108,5 +111,7 @@ namespace Blueberry
 		GfxIndexBufferDX11* m_IndexBuffer = nullptr;
 		GfxVertexBufferDX11* m_InstanceBuffer = nullptr;
 		uint32_t m_InstanceOffset = 0;
+
+		uint32_t m_ViewCount = 1;
 	};
 }

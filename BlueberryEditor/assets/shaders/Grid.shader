@@ -10,7 +10,7 @@ Shader
 		#pragma vertex GridVertex
 		#pragma fragment GridFragment
 
-		#include "Input.hlsl"
+		#include "Core.hlsl"
 
 		struct Attributes
 		{
@@ -42,14 +42,14 @@ Shader
 		{
 			Varyings output;
 			output.positionCS = float4(input.positionOS, 1.0f);
-			output.near = Unproject(float3(input.positionOS.xy, 0.0f), _InverseViewProjectionMatrix);
-			output.far = Unproject(float3(input.positionOS.xy, 1.0f), _InverseViewProjectionMatrix);
+			output.near = Unproject(float3(input.positionOS.xy, 0.0f), INVERSE_VIEW_PROJECTION_MATRIX);
+			output.far = Unproject(float3(input.positionOS.xy, 1.0f), INVERSE_VIEW_PROJECTION_MATRIX);
 			return output;
 		}
 
 		float ComputeDepth(float3 positionWS)
 		{
-			float4 positionCS = mul(float4(positionWS, 1.0f), _ViewProjectionMatrix);
+			float4 positionCS = mul(float4(positionWS, 1.0f), VIEW_PROJECTION_MATRIX);
 			return positionCS.z / positionCS.w;
 		}
 
@@ -80,7 +80,7 @@ Shader
 			clip(t);
 			float3 positionWS = input.near + t * (input.far - input.near);
 			float gridScale = 1 * 0.1;
-			float2 uv = (positionWS * gridScale - floor(_CameraPositionWS * gridScale)).xz;
+			float2 uv = (positionWS * gridScale - floor(CAMERA_POSITION_WS * gridScale)).xz;
 
 			float gridA = ComputePristineGrid(uv, float2(0.0025, 0.0025)) * 0.25;
 			float gridB = ComputePristineGrid(uv * 10, float2(0.0025, 0.0025) * 10) * 0.075;

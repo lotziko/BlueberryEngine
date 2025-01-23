@@ -10,7 +10,7 @@ Shader
 		#pragma vertex SpriteObjectPickerVertex
 		#pragma fragment SpriteObjectPickerFragment
 
-		#include "Input.hlsl"
+		#include "Core.hlsl"
 
 		struct Attributes
 		{
@@ -29,18 +29,17 @@ Shader
 		Varyings SpriteObjectPickerVertex(Attributes input)
 		{
 			Varyings output;
-			output.positionCS = mul(float4(input.positionOS, 1.0f), _ViewProjectionMatrix);
+			output.positionCS = mul(float4(input.positionOS, 1.0f), VIEW_PROJECTION_MATRIX);
 			output.color = input.color;
 			output.texcoord = input.texcoord;
 			return output;
 		}
 
-		Texture2D _BaseMap;
-		SamplerState _BaseMap_Sampler;
-
+		TEXTURE2D(_BaseMap);	SAMPLER(_BaseMap_Sampler);
+		
 		float4 SpriteObjectPickerFragment(Varyings input) : SV_TARGET
 		{
-			float4 color = _BaseMap.Sample(_BaseMap_Sampler, input.texcoord);
+			float4 color = SAMPLE_TEXTURE2D(_BaseMap, _BaseMap_Sampler, input.texcoord);
 			return input.color * ceil(color.a);
 		}
 		HLSLEND

@@ -10,6 +10,8 @@ Shader
 		#pragma vertex ObjectPickerOutlineVertex
 		#pragma fragment ObjectPickerOutlineFragment
 
+		#include "Core.hlsl"
+
 		struct Attributes
 		{
 			float3 positionOS : POSITION;
@@ -30,23 +32,22 @@ Shader
 			return output;
 		}
 
-		Texture2D _PickingTexture;
-		SamplerState _PickingTexture_Sampler;
-
+		TEXTURE2D(_PickingTexture);		SAMPLER(_PickingTexture_Sampler);
+		
 		float4 ObjectPickerOutlineFragment(Varyings input) : SV_TARGET
 		{
 			float2 offset = float2(3.0 / 1920.0, 3.0 / 1080.0);
 
-			float4 sample1 = _PickingTexture.Sample(_PickingTexture_Sampler, input.texcoord);
+			float4 sample1 = SAMPLE_TEXTURE2D(_PickingTexture, _PickingTexture_Sampler, input.texcoord);
 
-			float4 sample2 = _PickingTexture.Sample(_PickingTexture_Sampler, input.texcoord + float2(offset.x, 0));
-			float4 sample3 = _PickingTexture.Sample(_PickingTexture_Sampler, input.texcoord - float2(offset.x, 0));
-			float4 sample4 = _PickingTexture.Sample(_PickingTexture_Sampler, input.texcoord + float2(0, offset.y));
-			float4 sample5 = _PickingTexture.Sample(_PickingTexture_Sampler, input.texcoord - float2(0, offset.y));
-			float4 sample6 = _PickingTexture.Sample(_PickingTexture_Sampler, input.texcoord + float2(offset.x, offset.y));
-			float4 sample7 = _PickingTexture.Sample(_PickingTexture_Sampler, input.texcoord - float2(offset.x, offset.y));
-			float4 sample8 = _PickingTexture.Sample(_PickingTexture_Sampler, input.texcoord + float2(offset.x, -offset.y));
-			float4 sample9 = _PickingTexture.Sample(_PickingTexture_Sampler, input.texcoord - float2(offset.x, -offset.y));
+			float4 sample2 = SAMPLE_TEXTURE2D(_PickingTexture, _PickingTexture_Sampler, input.texcoord + float2(offset.x, 0));
+			float4 sample3 = SAMPLE_TEXTURE2D(_PickingTexture, _PickingTexture_Sampler, input.texcoord - float2(offset.x, 0));
+			float4 sample4 = SAMPLE_TEXTURE2D(_PickingTexture, _PickingTexture_Sampler, input.texcoord + float2(0, offset.y));
+			float4 sample5 = SAMPLE_TEXTURE2D(_PickingTexture, _PickingTexture_Sampler, input.texcoord - float2(0, offset.y));
+			float4 sample6 = SAMPLE_TEXTURE2D(_PickingTexture, _PickingTexture_Sampler, input.texcoord + float2(offset.x, offset.y));
+			float4 sample7 = SAMPLE_TEXTURE2D(_PickingTexture, _PickingTexture_Sampler, input.texcoord - float2(offset.x, offset.y));
+			float4 sample8 = SAMPLE_TEXTURE2D(_PickingTexture, _PickingTexture_Sampler, input.texcoord + float2(offset.x, -offset.y));
+			float4 sample9 = SAMPLE_TEXTURE2D(_PickingTexture, _PickingTexture_Sampler, input.texcoord - float2(offset.x, -offset.y));
 
 			if (sample1.r == 0)
 			{

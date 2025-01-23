@@ -11,7 +11,7 @@ Shader
 		#pragma geometry ArcLineGeometry
 		#pragma fragment ArcLineFragment
 
-		#include "Input.hlsl"
+		#include "Core.hlsl"
 
 		struct Attributes
 		{
@@ -65,7 +65,7 @@ Shader
 				float v = sin(radians(i / segments * angle)) * radius;
 				
 				FragmentVaryings p1;
-				p1.positionCS = mul(mul(float4(center + tangentOS * u + bitangentOS * v, 1.0), _ModelMatrix), _ViewProjectionMatrix);
+				p1.positionCS = mul(mul(float4(center + tangentOS * u + bitangentOS * v, 1.0), _ModelMatrix), VIEW_PROJECTION_MATRIX);
 				p1.color = color;
 				lineStream.Append(p1);
 			}

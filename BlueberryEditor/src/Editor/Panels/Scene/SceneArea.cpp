@@ -385,8 +385,8 @@ namespace Blueberry
 				Object::Destroy(m_DepthStencilRenderTarget);
 			}
 
-			m_ColorRenderTarget = RenderTexture::Create(width, height, 1, TextureFormat::R8G8B8A8_UNorm);
-			m_DepthStencilRenderTarget = RenderTexture::Create(width, height, 1, TextureFormat::D24_UNorm);
+			m_ColorRenderTarget = RenderTexture::Create(width, height, 1, 1, TextureFormat::R8G8B8A8_UNorm);
+			m_DepthStencilRenderTarget = RenderTexture::Create(width, height, 1, 1, TextureFormat::D24_UNorm);
 
 			m_Camera->SetPixelSize(Vector2(width, height));
 			RequestRedrawAll();

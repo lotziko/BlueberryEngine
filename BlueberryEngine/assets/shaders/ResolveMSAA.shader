@@ -10,18 +10,23 @@ Shader
 		#pragma vertex ResolveMSAAVertex
 		#pragma fragment ResolveMSAAFragment
 
-		#include "Input.hlsl"
+		#pragma keyword_global_vertex MULTIVIEW
+		#pragma keyword_global_fragment MULTIVIEW
+
+		#include "Core.hlsl"
 
 		struct Attributes
 		{
 			float3 positionOS : POSITION;
 			float2 texcoord : TEXCOORD0;
+			VERTEX_INPUT_INSTANCE_ID
 		};
 
 		struct Varyings
 		{
 			float4 positionCS : SV_POSITION;
 			float2 texcoord : TEXCOORD0;
+			VERTEX_OUTPUT_VIEW_INDEX
 		};
 
 		struct Output
@@ -33,22 +38,25 @@ Shader
 		Varyings ResolveMSAAVertex(Attributes input)
 		{
 			Varyings output;
+			SETUP_INSTANCE_ID(input);
+			SETUP_OUTPUT_VIEW_INDEX(output);
+
 			output.positionCS = float4(input.positionOS, 1.0f);
 			output.texcoord = input.texcoord;
 			return output;
 		}
 
-		Texture2DMS<float4, 4> _ScreenNormalTexture;
-		Texture2DMS<float, 4> _ScreenDepthStencilTexture;
-
+		TEXTURE2D_X_MSAA(_ScreenNormalTexture, 4);
+		TEXTURE2D_X_MSAA_FLOAT(_ScreenDepthStencilTexture, 4);
+		
 		Output ResolveMSAAFragment(Varyings input)
 		{
 			Output output;
 			for (int i = 0; i < 4; ++i)
 			{
-				uint2 uv = uint2(input.texcoord.x * _CameraSizeInvSize.x, input.texcoord.y * _CameraSizeInvSize.y);
-				output.color += _ScreenNormalTexture.Load(uv, i);
-				output.depth += _ScreenDepthStencilTexture.Load(uv, i);
+				uint2 uv = uint2(input.texcoord.x * CAMERA_SIZE_INV_SIZE.x, input.texcoord.y * CAMERA_SIZE_INV_SIZE.y);
+				output.color += LOAD_TEXTURE2D_X_MSAA(_ScreenNormalTexture, uv, i);
+				output.depth += LOAD_TEXTURE2D_X_MSAA(_ScreenDepthStencilTexture, uv, i);
 			}
 			output.color /= 4;
 			output.depth /= 4;
@@ -66,18 +74,23 @@ Shader
 		#pragma vertex ResolveMSAAVertex
 		#pragma fragment ResolveMSAAFragment
 
-		#include "Input.hlsl"
+		#pragma keyword_global_vertex MULTIVIEW
+		#pragma keyword_global_fragment MULTIVIEW
+
+		#include "Core.hlsl"
 
 		struct Attributes
 		{
 			float3 positionOS : POSITION;
 			float2 texcoord : TEXCOORD0;
+			VERTEX_INPUT_INSTANCE_ID
 		};
 
 		struct Varyings
 		{
 			float4 positionCS : SV_POSITION;
 			float2 texcoord : TEXCOORD0;
+			VERTEX_OUTPUT_VIEW_INDEX
 		};
 
 		struct Output
@@ -88,20 +101,23 @@ Shader
 		Varyings ResolveMSAAVertex(Attributes input)
 		{
 			Varyings output;
+			SETUP_INSTANCE_ID(input);
+			SETUP_OUTPUT_VIEW_INDEX(output);
+
 			output.positionCS = float4(input.positionOS, 1.0f);
 			output.texcoord = input.texcoord;
 			return output;
 		}
 
-		Texture2DMS<float4, 4> _ScreenColorTexture;
+		TEXTURE2D_X_MSAA(_ScreenColorTexture, 4);
 
 		Output ResolveMSAAFragment(Varyings input)
 		{
 			Output output;
 			for (int i = 0; i < 4; ++i)
 			{
-				uint2 uv = uint2(input.texcoord.x * _CameraSizeInvSize.x, input.texcoord.y * _CameraSizeInvSize.y);
-				output.color += _ScreenColorTexture.Load(uv, i);
+				uint2 uv = uint2(input.texcoord.x * CAMERA_SIZE_INV_SIZE.x, input.texcoord.y * CAMERA_SIZE_INV_SIZE.y);
+				output.color += LOAD_TEXTURE2D_X_MSAA(_ScreenColorTexture, uv, i);
 			}
 			output.color /= 4;
 			// Gamma correction
@@ -110,4 +126,5 @@ Shader
 		}
 		HLSLEND
 	}
+	
 }

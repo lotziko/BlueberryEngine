@@ -55,7 +55,7 @@ namespace Blueberry
 
 		void SetKeyword(const std::string& keyword, const bool& enabled);
 
-		GfxRenderState* GetState(const uint8_t& passIndex); // TODO pass + global keywords
+		GfxRenderState* GetState(const uint8_t& passIndex, const uint32_t& keywordMask); // TODO pass + global keywords
 		const uint32_t& GetCRC();
 
 		static void BindProperties();
@@ -69,9 +69,10 @@ namespace Blueberry
 		ObjectPtr<Shader> m_Shader;
 
 		std::unordered_map<size_t, ObjectId> m_TextureMap;
-		std::vector<GfxRenderState> m_PassCache;
+		std::unordered_map<size_t, GfxRenderState> m_RenderStateCache;
 
 		uint32_t m_Crc = -1;
+		uint32_t m_ActiveKeywordsMask = 0;
 
 		friend struct GfxDrawingOperation;
 	};

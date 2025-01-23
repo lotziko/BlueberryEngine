@@ -10,7 +10,7 @@ Shader
 		#pragma vertex BlitVertex
 		#pragma fragment BlitFragment
 
-		#include "Input.hlsl"
+		#include "Core.hlsl"
 
 		struct Attributes
 		{
@@ -24,8 +24,7 @@ Shader
 			float2 texcoord : TEXCOORD0;
 		};
 
-		Texture2D _BlitTexture;
-		SamplerState _BlitTexture_Sampler;
+		TEXTURE2D(_BlitTexture);	SAMPLER(_BlitTexture_Sampler);
 
 		Varyings BlitVertex(Attributes input)
 		{
@@ -37,7 +36,7 @@ Shader
 
 		float4 BlitFragment(Varyings input) : SV_TARGET
 		{
-			return _BlitTexture.Sample(_BlitTexture_Sampler, input.texcoord);
+			return SAMPLE_TEXTURE2D(_BlitTexture, _BlitTexture_Sampler, input.texcoord);
 		}
 		HLSLEND
 	}

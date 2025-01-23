@@ -13,6 +13,19 @@ namespace Blueberry
 	DATA_DEFINITION(ShaderData)
 	OBJECT_DEFINITION(Object, Shader)
 
+	const uint32_t& KeywordDB::GetMask(const size_t& id)
+	{
+		auto it = m_KeywordMask.find(id);
+		if (it != m_KeywordMask.end())
+		{
+			return it->second;
+		}
+		uint32_t mask = m_MaxMask;
+		m_MaxMask = m_MaxMask << 1;
+		m_KeywordMask.insert({ id, mask });
+		return mask;
+	}
+
 	const std::string& TextureParameterData::GetName() const
 	{
 		return m_Name;
@@ -274,6 +287,23 @@ namespace Blueberry
 		Shader* shader = Object::Create<Shader>();
 		shader->Initialize(variantsData, shaderData);
 		return shader;
+	}
+
+	void Shader::SetKeyword(const size_t& id, const bool& enabled)
+	{
+		if (enabled)
+		{
+			s_ActiveKeywords.insert(id);
+		}
+		else
+		{
+			s_ActiveKeywords.erase(id);
+		}
+		s_ActiveKeywordsMask = 0;
+		for (auto keyword : s_ActiveKeywords)
+		{
+			s_ActiveKeywordsMask |= s_GlobalKeywords.GetMask(keyword);
+		}
 	}
 
 	void Shader::BindProperties()

@@ -33,6 +33,9 @@ namespace Blueberry
 		static void SetScissorRect(int x, int y, int width, int height);
 		static void ResizeBackbuffer(int width, int height);
 
+		static const uint32_t& GetViewCount();
+		static void SetViewCount(const uint32_t& count);
+
 		static bool CreateVertexShader(void* vertexData, GfxVertexShader*& shader);
 		static bool CreateGeometryShader(void* geometryData, GfxGeometryShader*& shader);
 		static bool CreateFragmentShader(void* fragmentData, GfxFragmentShader*& shader);
@@ -70,6 +73,9 @@ namespace Blueberry
 		virtual void SetViewportImpl(int x, int y, int width, int height) = 0;
 		virtual void SetScissorRectImpl(int x, int y, int width, int height) = 0;
 		virtual void ResizeBackbufferImpl(int width, int height) = 0;
+
+		virtual const uint32_t& GetViewCountImpl() = 0;
+		virtual void SetViewCountImpl(const uint32_t& count) = 0;
 
 		virtual bool CreateVertexShaderImpl(void* vertexData, GfxVertexShader*& shader) = 0;
 		virtual bool CreateGeometryShaderImpl(void* geometryData, GfxGeometryShader*& shader) = 0;

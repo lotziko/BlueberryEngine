@@ -35,6 +35,12 @@ namespace Blueberry
 		BC7_UNorm_SRGB = 99,
 	};
 
+	enum class TextureDimension
+	{
+		Texture2D,
+		Texture2DArray
+	};
+
 	enum class CullMode
 	{
 		None,

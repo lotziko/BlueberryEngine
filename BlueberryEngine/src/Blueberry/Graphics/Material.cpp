@@ -74,7 +74,7 @@ namespace Blueberry
 	{
 		if (m_Shader.IsValid())
 		{
-			m_PassCache.resize(m_Shader.Get()->GetData()->GetPassCount());
+			m_RenderStateCache.clear();
 		}
 		FillTextureMap();
 	}
@@ -102,32 +102,34 @@ namespace Blueberry
 	void Material::SetKeyword(const std::string& keyword, const bool& enabled)
 	{
 		// TODO use an unordered_map
-		if (enabled)
+		auto it = std::find(m_ActiveKeywords.begin(), m_ActiveKeywords.end(), keyword);
+		if (it != m_ActiveKeywords.end() && !enabled)
+		{
+			m_ActiveKeywords.erase(it);
+		}
+		else if (enabled)
 		{
 			m_ActiveKeywords.emplace_back(keyword);
 		}
+		m_ActiveKeywordsMask = 0;
+		for (auto keyword : m_ActiveKeywords)
+		{
+			m_ActiveKeywordsMask |= m_Shader->m_LocalKeywords.GetMask(TO_HASH(keyword));
+		}
 	}
 
-	GfxRenderState* Material::GetState(const uint8_t& passIndex)
+	GfxRenderState* Material::GetState(const uint8_t& passIndex, const uint32_t& keywordMask)
 	{
-		if (m_PassCache.size() == 0)
-		{
-			ApplyProperties();
-		}
-
-		GfxRenderState* passState = nullptr;
-		if (passIndex < m_PassCache.size())
-		{
-			passState = &m_PassCache[passIndex];
-			if (passState->isValid)
-			{
-				return passState;
-			}
-		}
-
 		if (!m_Shader.IsValid() || m_Shader->GetState() != ObjectState::Default)
 		{
 			return nullptr;
+		}
+
+		size_t key = keywordMask | m_ActiveKeywordsMask << 32 | passIndex << 56;
+		auto it = m_RenderStateCache.find(key);
+		if (it != m_RenderStateCache.end())
+		{
+			return &(it->second);
 		}
 
 		GfxRenderState newState = {};
@@ -139,10 +141,10 @@ namespace Blueberry
 
 		uint32_t vertexFlags = 0;
 		uint32_t fragmentFlags = 0;
+		const std::vector<std::string>& vertexKeywords = shaderPass->GetVertexKeywords();
+		const std::vector<std::string>& fragmentKeywords = shaderPass->GetFragmentKeywords();
 		if (m_ActiveKeywords.size() > 0)
 		{
-			auto vertexKeywords = shaderPass->GetVertexKeywords();
-			auto fragmentKeywords = shaderPass->GetFragmentKeywords();
 			for (auto& keyword : m_ActiveKeywords)
 			{
 				for (int i = 0; i < vertexKeywords.size(); ++i)
@@ -162,10 +164,33 @@ namespace Blueberry
 				}
 			}
 		}
+		if (Shader::s_ActiveKeywords.size() > 0)
+		{
+			for (int i = 0; i < vertexKeywords.size(); ++i)
+			{
+				if (Shader::s_ActiveKeywords.find(TO_HASH(vertexKeywords[i])) != Shader::s_ActiveKeywords.end())
+				{
+					vertexFlags |= 1 << i;
+				}
+			}
+			for (int i = 0; i < fragmentKeywords.size(); ++i)
+			{
+				if (Shader::s_ActiveKeywords.find(TO_HASH(fragmentKeywords[i])) != Shader::s_ActiveKeywords.end())
+				{
+					fragmentFlags |= 1 << i;
+					break;
+				}
+			}
+		}
 		const ShaderVariant variant = m_Shader->GetVariant(vertexFlags, fragmentFlags, passIndex);
 		newState.vertexShader = variant.vertexShader;
 		newState.geometryShader = variant.geometryShader;
 		newState.fragmentShader = variant.fragmentShader;
+
+		if (m_RenderStateCache.size() == 0)
+		{
+			ApplyProperties();
+		}
 
 		auto textureSlots = variant.fragmentShader->m_TextureSlots;
 		for (auto& slot : textureSlots)
@@ -190,10 +215,8 @@ namespace Blueberry
 		newState.zTest = shaderPass->GetZTest();
 		newState.zWrite = shaderPass->GetZWrite();
 
-		newState.isValid = true;
-
-		m_PassCache[passIndex] = newState;
-		return passState;
+		m_RenderStateCache[key] = newState;
+		return &m_RenderStateCache[key];
 	}
 
 	const uint32_t& Material::GetCRC()

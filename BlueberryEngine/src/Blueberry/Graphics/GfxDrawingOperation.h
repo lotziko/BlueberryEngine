@@ -42,8 +42,6 @@ namespace Blueberry
 		BlendMode blendDstAlpha;
 		ZTest zTest;
 		ZWrite zWrite;
-
-		bool isValid;
 	};
 
 	struct GfxDrawingOperation
