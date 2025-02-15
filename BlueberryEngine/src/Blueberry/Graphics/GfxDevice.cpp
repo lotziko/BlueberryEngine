@@ -122,16 +122,6 @@ namespace Blueberry
 		return s_Instance->CreateTextureImpl(properties, texture);
 	}
 
-	bool GfxDevice::CreateImGuiRenderer(ImGuiRenderer*& renderer)
-	{
-		return s_Instance->CreateImGuiRendererImpl(renderer);
-	}
-
-	bool GfxDevice::CreateHBAORenderer(HBAORenderer*& renderer)
-	{
-		return s_Instance->CreateHBAORendererImpl(renderer);
-	}
-
 	void GfxDevice::Copy(GfxTexture* source, GfxTexture* target)
 	{
 		s_Instance->CopyImpl(source, target);
@@ -180,5 +170,10 @@ namespace Blueberry
 	Matrix GfxDevice::GetGPUMatrix(const Matrix& viewProjection)
 	{
 		return s_Instance->GetGPUMatrixImpl(viewProjection);
+	}
+
+	GfxDevice* GfxDevice::GetInstance()
+	{
+		return s_Instance;
 	}
 }

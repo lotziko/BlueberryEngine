@@ -2,6 +2,7 @@
 #include "PerCameraDataConstantBuffer.h"
 
 #include "Blueberry\Scene\Components\Camera.h"
+#include "Blueberry\Graphics\RenderContext.h"
 #include "GfxDevice.h"
 #include "GfxBuffer.h"
 
@@ -28,53 +29,72 @@ namespace Blueberry
 
 	void PerCameraDataConstantBuffer::BindData(Camera* camera)
 	{
+		CameraData cameraData = { camera };
+		BindData(cameraData);
+	}
+
+	void PerCameraDataConstantBuffer::BindData(CameraData& cameraData)
+	{
 		if (s_ConstantBuffer == nullptr)
 		{
 			GfxDevice::CreateConstantBuffer(sizeof(CONSTANTS) * 1, s_ConstantBuffer);
 		}
 
+		Camera* camera = cameraData.camera;
 		Transform* transform = camera->GetTransform();
 
 		const int viewCount = GfxDevice::GetViewCount();
-		const Matrix& view = GfxDevice::GetGPUMatrix(camera->GetViewMatrix());
-		const Matrix& projection = GfxDevice::GetGPUMatrix(camera->GetProjectionMatrix());
-		const Matrix& viewProjection = GfxDevice::GetGPUMatrix(camera->GetViewProjectionMatrix());
-		const Matrix& inverseView = GfxDevice::GetGPUMatrix(camera->GetInverseViewMatrix());
-		const Matrix& inverseProjection = GfxDevice::GetGPUMatrix(camera->GetInverseProjectionMatrix());
-		const Matrix& inverseViewProjection = GfxDevice::GetGPUMatrix(camera->GetInverseViewProjectionMatrix());
+		CONSTANTS constants = {};
+		constants.viewCount = { viewCount, 0, 0, 0 };
+
 		const Vector4& position = Vector4(transform->GetPosition());
 		const Vector4& direction = Vector4(Vector3::Transform(Vector3::Forward, transform->GetRotation()));
 		const Vector4& nearFar = Vector4(camera->GetNearClipPlane(), camera->GetFarClipPlane(), 0, 0);
-		const Vector2& pixelSize = camera->GetPixelSize();
-		const Vector4& sizeInvSize = Vector4(pixelSize.x, pixelSize.y, 1.0f / pixelSize.x, 1.0f / pixelSize.y);
-
-		CONSTANTS constants = {};
-		constants.viewCount = { viewCount, 0, 0, 0 };
+		
 		if (viewCount == 1)
 		{
+			const Matrix& view = GfxDevice::GetGPUMatrix(camera->GetViewMatrix());
+			const Matrix& projection = GfxDevice::GetGPUMatrix(camera->GetProjectionMatrix());
+			const Matrix& viewProjection = GfxDevice::GetGPUMatrix(camera->GetViewProjectionMatrix());
+			const Matrix& inverseView = GfxDevice::GetGPUMatrix(camera->GetInverseViewMatrix());
+			const Matrix& inverseProjection = GfxDevice::GetGPUMatrix(camera->GetInverseProjectionMatrix());
+			const Matrix& inverseViewProjection = GfxDevice::GetGPUMatrix(camera->GetInverseViewProjectionMatrix());
+			const Vector2& pixelSize = camera->GetPixelSize();
+			const Vector4& sizeInvSize = Vector4(pixelSize.x, pixelSize.y, 1.0f / pixelSize.x, 1.0f / pixelSize.y);
+
 			constants.viewMatrix[0] = view;
 			constants.projectionMatrix[0] = projection;
 			constants.viewProjectionMatrix[0] = viewProjection;
 			constants.inverseViewMatrix[0] = inverseView;
 			constants.inverseProjectionMatrix[0] = inverseProjection;
 			constants.inverseViewProjectionMatrix[0] = inverseViewProjection;
+			constants.cameraSizeInvSize = sizeInvSize;
 		}
 		else
 		{
 			for (int i = 0; i < viewCount; ++i)
 			{
+				const Matrix& view = GfxDevice::GetGPUMatrix(cameraData.multiviewViewMatrix[i]);
+				const Matrix& projection = GfxDevice::GetGPUMatrix(cameraData.multiviewProjectionMatrix[i]);
+				const Matrix& viewProjection = GfxDevice::GetGPUMatrix(cameraData.multiviewViewMatrix[i] * cameraData.multiviewProjectionMatrix[i]);
+				const Matrix& inverseView = GfxDevice::GetGPUMatrix(cameraData.multiviewViewMatrix[i].Invert());
+				const Matrix& inverseProjection = GfxDevice::GetGPUMatrix(cameraData.multiviewProjectionMatrix[i].Invert());
+				const Matrix& inverseViewProjection = GfxDevice::GetGPUMatrix((cameraData.multiviewViewMatrix[i] * cameraData.multiviewProjectionMatrix[i]).Invert());
+				const Vector2& pixelSize = Vector2(cameraData.multiviewViewport.width, cameraData.multiviewViewport.height);
+				const Vector4& sizeInvSize = Vector4(pixelSize.x, pixelSize.y, 1.0f / pixelSize.x, 1.0f / pixelSize.y);
+
 				constants.viewMatrix[i] = view;
 				constants.projectionMatrix[i] = projection;
-				constants.viewProjectionMatrix[i] = GfxDevice::GetGPUMatrix(camera->GetViewProjectionMatrix());
+				constants.viewProjectionMatrix[i] = viewProjection;
 				constants.inverseViewMatrix[i] = inverseView;
 				constants.inverseProjectionMatrix[i] = inverseProjection;
 				constants.inverseViewProjectionMatrix[i] = inverseViewProjection;
+				constants.cameraSizeInvSize = sizeInvSize;
 			}
 		}
 		constants.cameraPositionWS = position;
 		constants.cameraForwardDirectionWS = direction;
 		constants.cameraNearFarClipPlane = nearFar;
-		constants.cameraSizeInvSize = sizeInvSize;
 
 		s_ConstantBuffer->SetData(reinterpret_cast<char*>(&constants), sizeof(constants));
 		GfxDevice::SetGlobalConstantBuffer(perCameraDataId, s_ConstantBuffer);

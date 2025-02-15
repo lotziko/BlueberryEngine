@@ -1,6 +1,9 @@
 #include "bbpch.h"
 #include "ImGuiRendererDX11.h"
 
+#include "Blueberry\Graphics\GfxDevice.h"
+#include "Concrete\DX11\GfxDeviceDX11.h"
+
 #include "imgui\imgui.h"
 #include "imgui\imguizmo.h"
 #include "imgui\backends\imgui_impl_win32.h"
@@ -8,18 +11,25 @@
 
 namespace Blueberry
 {
-	ImGuiRendererDX11::ImGuiRendererDX11(HWND hwnd, ID3D11Device* device, ID3D11DeviceContext* deviceContext) : m_Hwnd(hwnd), m_Device(device), m_DeviceContext(deviceContext)
+	bool ImGuiRendererDX11::InitializeImpl()
 	{
+		GfxDeviceDX11* gfxDevice = (GfxDeviceDX11*)GfxDevice::GetInstance();
+
+		m_Device = gfxDevice->GetDevice();
+		m_DeviceContext = gfxDevice->GetDeviceContext();
+		m_Hwnd = gfxDevice->GetHwnd();
+
 		// Setup Dear ImGui context
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
 
 		//// Setup Platform/Renderer backends
-		ImGui_ImplWin32_Init(hwnd);
-		ImGui_ImplDX11_Init(device, deviceContext);
+		ImGui_ImplWin32_Init(m_Hwnd);
+		ImGui_ImplDX11_Init(m_Device, m_DeviceContext);
+		return true;
 	}
 
-	ImGuiRendererDX11::~ImGuiRendererDX11()
+	void ImGuiRendererDX11::ShutdownImpl()
 	{
 		// Cleanup
 		ImGui_ImplDX11_Shutdown();
@@ -27,7 +37,7 @@ namespace Blueberry
 		ImGui::DestroyContext();
 	}
 
-	void ImGuiRendererDX11::Begin()
+	void ImGuiRendererDX11::BeginImpl()
 	{
 		// Start the Dear ImGui frame
 		ImGui_ImplDX11_NewFrame();
@@ -36,7 +46,7 @@ namespace Blueberry
 		ImGuizmo::BeginFrame();
 	}
 
-	void ImGuiRendererDX11::End()
+	void ImGuiRendererDX11::EndImpl()
 	{
 		// Rendering
 		ImGui::Render();

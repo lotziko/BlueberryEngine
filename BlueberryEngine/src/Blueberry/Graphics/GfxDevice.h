@@ -46,8 +46,6 @@ namespace Blueberry
 		static bool CreateStructuredBuffer(const uint32_t& elementCount, const uint32_t& elementSize, GfxStructuredBuffer*& buffer);
 		static bool CreateComputeBuffer(const uint32_t& elementCount, const uint32_t& elementSize, GfxComputeBuffer*& buffer);
 		static bool CreateTexture(const TextureProperties& properties, GfxTexture*& texture);
-		static bool CreateImGuiRenderer(ImGuiRenderer*& renderer);
-		static bool CreateHBAORenderer(HBAORenderer*& renderer);
 
 		static void Copy(GfxTexture* source, GfxTexture* target);
 		static void Copy(GfxTexture* source, GfxTexture* target, const Rectangle& area);
@@ -63,12 +61,14 @@ namespace Blueberry
 
 		static Matrix GetGPUMatrix(const Matrix& viewProjection);
 
+		static GfxDevice* GetInstance();
+
 	protected:
 		virtual bool InitializeImpl(int width, int height, void* data) = 0;
 
 		virtual void ClearColorImpl(const Color& color) const = 0;
 		virtual void ClearDepthImpl(const float& depth) const = 0;
-		virtual void SwapBuffersImpl() const = 0;
+		virtual void SwapBuffersImpl() = 0;
 
 		virtual void SetViewportImpl(int x, int y, int width, int height) = 0;
 		virtual void SetScissorRectImpl(int x, int y, int width, int height) = 0;
@@ -87,8 +87,6 @@ namespace Blueberry
 		virtual bool CreateStructuredBufferImpl(const uint32_t& elementCount, const uint32_t& elementSize, GfxStructuredBuffer*& buffer) = 0;
 		virtual bool CreateComputeBufferImpl(const uint32_t& elementCount, const uint32_t& elementSize, GfxComputeBuffer*& buffer) = 0;
 		virtual bool CreateTextureImpl(const TextureProperties& properties, GfxTexture*& texture) const = 0;
-		virtual bool CreateImGuiRendererImpl(ImGuiRenderer*& renderer) const = 0;
-		virtual bool CreateHBAORendererImpl(HBAORenderer*& renderer) const = 0;
 		
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target) const = 0;
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Rectangle& area) const = 0;

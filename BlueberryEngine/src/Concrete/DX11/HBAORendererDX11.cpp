@@ -3,16 +3,19 @@
 
 #include "hbao\GFSDK_SSAO.h"
 #include "Blueberry\Graphics\RenderTexture.h"
+#include "Blueberry\Graphics\GfxDevice.h"
+#include "Concrete\DX11\GfxDeviceDX11.h"
 #include "Concrete\DX11\GfxTextureDX11.h"
 
 namespace Blueberry
 {
-	HBAORendererDX11::HBAORendererDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext) : m_Device(device), m_DeviceContext(deviceContext)
+	bool HBAORendererDX11::InitializeImpl()
 	{
-	}
+		GfxDeviceDX11* gfxDevice = (GfxDeviceDX11*)GfxDevice::GetInstance();
 
-	bool HBAORendererDX11::Initialize()
-	{
+		m_Device = gfxDevice->GetDevice();
+		m_DeviceContext = gfxDevice->GetDeviceContext();
+
 		GFSDK_SSAO_CustomHeap CustomHeap;
 		CustomHeap.new_ = ::operator new;
 		CustomHeap.delete_ = ::operator delete;
@@ -26,13 +29,8 @@ namespace Blueberry
 		return true;
 	}
 
-	void HBAORendererDX11::Draw(GfxTexture* depthStencil, GfxTexture* normals, const Matrix& view, const Matrix& projection, const Rectangle& viewport, GfxTexture* output)
+	void HBAORendererDX11::DrawImpl(GfxTexture* depthStencil, GfxTexture* normals, const Matrix& view, const Matrix& projection, const Rectangle& viewport, GfxTexture* output)
 	{
-		//Matrix transformLH = Matrix::Identity;
-		//transformLH._33 = -1;
-		//Matrix viewLH = transformLH * view;
-		//Matrix projectionLH = transformLH * projection;
-
 		GFSDK_SSAO_InputData_D3D11 Input;
 		Input.DepthData.DepthTextureType = GFSDK_SSAO_HARDWARE_DEPTHS;
 		Input.DepthData.pFullResDepthTextureSRV = ((GfxTextureDX11*)depthStencil)->GetSRV();

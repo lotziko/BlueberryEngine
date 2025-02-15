@@ -125,7 +125,7 @@ namespace Blueberry
 			return nullptr;
 		}
 
-		size_t key = keywordMask | m_ActiveKeywordsMask << 32 | passIndex << 56;
+		size_t key = (size_t)keywordMask | (size_t)m_ActiveKeywordsMask << 32 | (size_t)passIndex << 56;
 		auto it = m_RenderStateCache.find(key);
 		if (it != m_RenderStateCache.end())
 		{

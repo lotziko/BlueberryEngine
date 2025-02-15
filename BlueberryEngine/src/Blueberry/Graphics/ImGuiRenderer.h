@@ -5,9 +5,20 @@ namespace Blueberry
 	class ImGuiRenderer
 	{
 	public:
-		virtual ~ImGuiRenderer() = default;
+		static bool Initialize();
+		static void Shutdown();
 
-		virtual void Begin() = 0;
-		virtual void End() = 0;
+		static void Begin();
+		static void End();
+
+	protected:
+		virtual bool InitializeImpl() = 0;
+		virtual void ShutdownImpl() = 0;
+
+		virtual void BeginImpl() = 0;
+		virtual void EndImpl() = 0;
+
+	private:
+		static inline ImGuiRenderer* s_Instance = nullptr;
 	};
 }

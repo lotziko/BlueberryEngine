@@ -39,7 +39,7 @@ namespace Blueberry
 		}
 	}
 
-	void GfxDeviceDX11::SwapBuffersImpl() const
+	void GfxDeviceDX11::SwapBuffersImpl()
 	{
 		m_SwapChain->Present(1, NULL);
 
@@ -48,6 +48,10 @@ namespace Blueberry
 		ID3D11SamplerState* emptySampler[1] = { nullptr };
 		m_DeviceContext->PSSetShaderResources(0, 1, emptySRV);
 		m_DeviceContext->PSSetSamplers(0, 1, emptySampler);
+
+		m_BindedConstantBuffers.clear();
+		m_BindedStructuredBuffers.clear();
+		m_BindedTextures.clear();
 	}
 
 	void GfxDeviceDX11::SetViewportImpl(int x, int y, int width, int height)
@@ -247,24 +251,6 @@ namespace Blueberry
 			return false;
 		}
 		texture = dxTexture;
-		return true;
-	}
-
-	bool GfxDeviceDX11::CreateImGuiRendererImpl(ImGuiRenderer*& renderer) const
-	{
-		auto dxRenderer = new ImGuiRendererDX11(m_Hwnd, m_Device.Get(), m_DeviceContext.Get());
-		renderer = dxRenderer;
-		return true;
-	}
-
-	bool GfxDeviceDX11::CreateHBAORendererImpl(HBAORenderer*& renderer) const
-	{
-		auto dxRenderer = new HBAORendererDX11(m_Device.Get(), m_DeviceContext.Get());
-		if (!dxRenderer->Initialize())
-		{
-			return false;
-		}
-		renderer = dxRenderer;
 		return true;
 	}
 
@@ -607,6 +593,21 @@ namespace Blueberry
 		return copy;
 	}
 
+	ID3D11Device* GfxDeviceDX11::GetDevice()
+	{
+		return m_Device.Get();
+	}
+
+	ID3D11DeviceContext* GfxDeviceDX11::GetDeviceContext()
+	{
+		return m_DeviceContext.Get();
+	}
+
+	HWND GfxDeviceDX11::GetHwnd()
+	{
+		return m_Hwnd;
+	}
+
 	bool GfxDeviceDX11::InitializeDirectX(HWND hwnd, int width, int height)
 	{
 		m_Hwnd = hwnd;
@@ -793,7 +794,7 @@ namespace Blueberry
 
 	void GfxDeviceDX11::SetBlendMode(const BlendMode& blendSrcColor, const BlendMode& blendSrcAlpha, const BlendMode& blendDstColor, const BlendMode& blendDstAlpha)
 	{
-		size_t key = (uint32_t)blendSrcColor << 8 | (uint32_t)blendSrcAlpha << 16 | (uint32_t)blendSrcColor << 24 | (uint32_t)blendSrcAlpha << 32;
+		size_t key = (size_t)blendSrcColor << 8 | (size_t)blendSrcAlpha << 16 | (size_t)blendSrcColor << 24 | (size_t)blendSrcAlpha << 32;
 		if (key == m_BlendKey)
 		{
 			return;
@@ -840,7 +841,7 @@ namespace Blueberry
 
 	void GfxDeviceDX11::SetZTestAndZWrite(const ZTest& zTest, const ZWrite& zWrite)
 	{
-		size_t key = (uint32_t)zTest << 8 | (uint32_t)zWrite << 16;
+		size_t key = (size_t)zTest << 8 | (size_t)zWrite << 16;
 		if (key == m_ZTestZWriteKey)
 		{
 			return;

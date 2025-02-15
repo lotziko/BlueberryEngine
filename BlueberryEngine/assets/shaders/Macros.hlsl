@@ -12,6 +12,7 @@ static uint _RenderInstanceId;
 #define VERTEX_OUTPUT_VIEW_INDEX			uint renderTargetIndex : SV_RenderTargetArrayIndex;
 #define SETUP_INSTANCE_ID(input)			_ViewIndex = input.instanceID % _ViewCount.x; _RenderInstanceId = input.renderInstanceID - (input.instanceID / _ViewCount.x + _ViewIndex)
 #define SETUP_OUTPUT_VIEW_INDEX(output)		output.renderTargetIndex = _ViewIndex
+#define SETUP_INPUT_VIEW_INDEX(input)		_ViewIndex = input.renderTargetIndex
 
 #else
 
@@ -20,6 +21,7 @@ static uint _RenderInstanceId;
 #define VERTEX_OUTPUT_VIEW_INDEX
 #define SETUP_INSTANCE_ID(input)			_RenderInstanceId = input.renderInstanceID
 #define SETUP_OUTPUT_VIEW_INDEX(output)
+#define SETUP_INPUT_VIEW_INDEX(input)
 
 #endif
 

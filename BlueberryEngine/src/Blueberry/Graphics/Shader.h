@@ -12,6 +12,9 @@ namespace Blueberry
 	class KeywordDB
 	{
 	public:
+		KeywordDB() = default;
+		virtual ~KeywordDB() = default;
+
 		const uint32_t& GetMask(const size_t& id);
 
 	private:
@@ -171,9 +174,9 @@ namespace Blueberry
 		std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> m_PassesOffsets;
 		KeywordDB m_LocalKeywords = {};
 
-		static inline std::unordered_set<size_t> s_ActiveKeywords = {};
-		static inline uint32_t s_ActiveKeywordsMask = 0;
-		static inline KeywordDB s_GlobalKeywords = {};
+		static std::unordered_set<size_t> s_ActiveKeywords;
+		static uint32_t s_ActiveKeywordsMask;
+		static KeywordDB s_GlobalKeywords;
 
 		friend struct GfxDrawingOperation;
 		friend class Material;

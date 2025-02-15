@@ -78,6 +78,10 @@ namespace Blueberry
 
 	void AssetImporter::ImportDataIfNeeded()
 	{
+		if (GetState() == ObjectState::Loading)
+		{
+			return;
+		}
 		if (GetState() == ObjectState::AwaitingLoading)
 		{
 			AssetImporter::LoadFromMeta(this);

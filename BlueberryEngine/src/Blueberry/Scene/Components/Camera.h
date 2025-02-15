@@ -83,5 +83,8 @@ namespace Blueberry
 
 		float m_ZNearPlane = 0.1f;
 		float m_ZFarPlane = 1000.0f;
+
+	public:
+		bool m_IsVR = true;
 	};
 }

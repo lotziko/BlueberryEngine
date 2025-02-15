@@ -29,6 +29,7 @@ namespace Blueberry
 		void RemoveCallback(OwnerObject* const object);
 		template <void(*methodPtr)()>
 		void RemoveCallback();
+		bool HasCallbacks();
 		void Invoke();
 
 	private:
@@ -47,6 +48,7 @@ namespace Blueberry
 		void RemoveCallback(OwnerObject* const object);
 		template <void(*methodPtr)(const EventType&)>
 		void RemoveCallback();
+		bool HasCallbacks();
 		void Invoke(EventType& event);
 
 	private:
@@ -75,6 +77,11 @@ namespace Blueberry
 	inline void Event<void>::RemoveCallback()
 	{
 		m_Callbacks.erase(std::make_pair((uint64_t)&methodPtr, 0));
+	}
+
+	inline bool Event<void>::HasCallbacks()
+	{
+		return m_Callbacks.size() > 0;
 	}
 
 	inline void Event<void>::Invoke()
@@ -109,6 +116,12 @@ namespace Blueberry
 	inline void Event<EventType>::RemoveCallback()
 	{
 		m_Callbacks.erase(std::make_pair((uint64_t)&methodPtr, 0));
+	}
+
+	template<class EventType>
+	inline bool Event<EventType>::HasCallbacks()
+	{
+		return m_Callbacks.size() > 0;
 	}
 
 	template<class EventType>

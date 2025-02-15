@@ -51,6 +51,8 @@ Shader
 		
 		Output ResolveMSAAFragment(Varyings input)
 		{
+			SETUP_INPUT_VIEW_INDEX(input);
+
 			Output output;
 			for (int i = 0; i < 4; ++i)
 			{
@@ -113,6 +115,8 @@ Shader
 
 		Output ResolveMSAAFragment(Varyings input)
 		{
+			SETUP_INPUT_VIEW_INDEX(input);
+
 			Output output;
 			for (int i = 0; i < 4; ++i)
 			{

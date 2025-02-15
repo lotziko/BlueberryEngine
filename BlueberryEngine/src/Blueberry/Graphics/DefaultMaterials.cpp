@@ -36,4 +36,19 @@ namespace Blueberry
 		}
 		return s_BlitMaterial;
 	}
+
+	Material* DefaultMaterials::GetVRMirrorView()
+	{
+		if (s_VRMirrorViewMaterial == nullptr)
+		{
+			Shader* shader = (Shader*)AssetLoader::Load("assets/shaders/VRMirrorView.shader");
+			if (shader == nullptr)
+			{
+				BB_ERROR("Failed to load VR mirror view shader.")
+					return false;
+			}
+			s_VRMirrorViewMaterial = Material::Create(shader);
+		}
+		return s_VRMirrorViewMaterial;
+	}
 }

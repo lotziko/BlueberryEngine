@@ -13,7 +13,6 @@ namespace Blueberry
 	class Texture;
 	class SceneArea;
 	class GameView;
-	class ImGuiRenderer;
 	class WindowResizeEventArgs;
 
 	class EditorLayer : public Layer
@@ -37,7 +36,6 @@ namespace Blueberry
 
 	private:
 		Scene* m_Scene = nullptr;
-		ImGuiRenderer* m_ImGuiRenderer = nullptr;
 
 		SceneHierarchy* m_SceneHierarchy = nullptr;
 		SceneInspector* m_SceneInspector = nullptr;

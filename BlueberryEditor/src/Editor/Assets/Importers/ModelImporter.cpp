@@ -86,7 +86,7 @@ namespace Blueberry
 					(static_cast<Mesh*>(object))->Apply();
 					AddAssetObject(object, id);
 					//BB_INFO("Mesh \"" << object->GetName() << "\" imported from cache.");
-				} 
+				}
 				else if (object->IsClassType(Entity::Type))
 				{
 					AddAssetObject(object, id);

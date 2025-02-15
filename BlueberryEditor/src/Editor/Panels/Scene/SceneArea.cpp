@@ -43,6 +43,7 @@ namespace Blueberry
 		Entity* cameraEntity = Object::Create<Entity>();
 		cameraEntity->AddComponent<Transform>();
 		m_Camera = cameraEntity->AddComponent<Camera>();
+		m_Camera->m_IsVR = false;
 		cameraEntity->OnCreate();
 
 		Selection::GetSelectionChanged().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);

@@ -38,7 +38,8 @@ namespace Blueberry
 	enum class TextureDimension
 	{
 		Texture2D,
-		Texture2DArray
+		Texture2DArray,
+		Cubemap,
 	};
 
 	enum class CullMode

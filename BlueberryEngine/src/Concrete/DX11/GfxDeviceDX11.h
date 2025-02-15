@@ -24,7 +24,7 @@ namespace Blueberry
 
 		virtual void ClearColorImpl(const Color& color) const final;
 		virtual void ClearDepthImpl(const float& depth) const final;
-		virtual void SwapBuffersImpl() const final;
+		virtual void SwapBuffersImpl() final;
 
 		virtual void SetViewportImpl(int x, int y, int width, int height) final;
 		virtual void SetScissorRectImpl(int x, int y, int width, int height) final;
@@ -43,8 +43,6 @@ namespace Blueberry
 		virtual bool CreateStructuredBufferImpl(const uint32_t& elementCount, const uint32_t& elementSize, GfxStructuredBuffer*& buffer) final;
 		virtual bool CreateComputeBufferImpl(const uint32_t& elementCount, const uint32_t& elementSize, GfxComputeBuffer*& buffer) final;
 		virtual bool CreateTextureImpl(const TextureProperties& properties, GfxTexture*& texture) const final;
-		virtual bool CreateImGuiRendererImpl(ImGuiRenderer*& renderer) const final;
-		virtual bool CreateHBAORendererImpl(HBAORenderer*& renderer) const final;
 
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target) const final;
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Rectangle& area) const final;
@@ -59,6 +57,11 @@ namespace Blueberry
 		virtual void DispatchImpl(GfxComputeShader*& shader, const uint32_t& threadGroupsX, const uint32_t& threadGroupsY, const uint32_t& threadGroupsZ) const final;
 
 		virtual Matrix GetGPUMatrixImpl(const Matrix& viewProjection) const final;
+
+	public:
+		ID3D11Device* GetDevice();
+		ID3D11DeviceContext* GetDeviceContext();
+		HWND GetHwnd();
 
 	private:
 		bool InitializeDirectX(HWND hwnd, int width, int height);

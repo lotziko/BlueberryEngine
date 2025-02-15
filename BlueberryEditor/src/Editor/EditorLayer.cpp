@@ -26,6 +26,8 @@
 #include "Editor\Gizmos\Gizmos.h"
 #include "Editor\Gizmos\IconRenderer.h"
 
+#include "Blueberry\Graphics\OpenXRRenderer.h"
+
 #include <fstream>
 
 namespace Blueberry
@@ -47,7 +49,7 @@ namespace Blueberry
 
 		m_ProjectBrowser = new ProjectBrowser();
 
-		if (GfxDevice::CreateImGuiRenderer(m_ImGuiRenderer))
+		if (ImGuiRenderer::Initialize())
 		{
 			ImGuiIO& io = ImGui::GetIO(); (void)io;
 			io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -70,6 +72,10 @@ namespace Blueberry
 		delete m_ProjectBrowser;
 		Gizmos::Shutdown();
 		IconRenderer::Shutdown();
+		if (OpenXRRenderer::IsActive())
+		{
+			OpenXRRenderer::Shutdown();
+		}
 		WindowEvents::GetWindowResized().RemoveCallback<EditorLayer, &EditorLayer::OnWindowResize>(this);
 		WindowEvents::GetWindowFocused().RemoveCallback<EditorLayer, &EditorLayer::OnWindowFocus>(this);
 	}
@@ -96,11 +102,13 @@ namespace Blueberry
 
 		GfxDevice::ClearColor({ 0, 0, 0, 1 });
 
-		m_ImGuiRenderer->Begin();
+		OpenXRRenderer::BeginFrame();
+		ImGuiRenderer::Begin();
 		//DrawMenuBar();
 		DrawTopBar();
 		DrawDockSpace();
-		m_ImGuiRenderer->End();
+		ImGuiRenderer::End();
+		OpenXRRenderer::EndFrame();
 
 		GfxDevice::SwapBuffers();
 
@@ -157,6 +165,7 @@ namespace Blueberry
 						if (ImGui::Button("Stop"))
 						{
 							Physics::Shutdown();
+							OpenXRRenderer::Shutdown();
 							EditorSceneManager::Stop();
 						}
 					}
@@ -165,6 +174,7 @@ namespace Blueberry
 						if (ImGui::Button("Run"))
 						{
 							Physics::Initialize();
+							OpenXRRenderer::Initialize();
 							EditorSceneManager::Run();
 						}
 					}

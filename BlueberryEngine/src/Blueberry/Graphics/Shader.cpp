@@ -13,6 +13,10 @@ namespace Blueberry
 	DATA_DEFINITION(ShaderData)
 	OBJECT_DEFINITION(Object, Shader)
 
+	std::unordered_set<size_t> Shader::s_ActiveKeywords = {};
+	uint32_t Shader::s_ActiveKeywordsMask = 0;
+	KeywordDB Shader::s_GlobalKeywords = {};
+
 	const uint32_t& KeywordDB::GetMask(const size_t& id)
 	{
 		auto it = m_KeywordMask.find(id);

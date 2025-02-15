@@ -122,8 +122,9 @@ namespace Blueberry
 		BindOperationsRenderers();
 	}
 
-	void RenderContext::Cull(Scene* scene, Camera* camera, CullingResults& results)
+	void RenderContext::Cull(Scene* scene, CameraData& cameraData, CullingResults& results)
 	{
+		Camera* camera = cameraData.camera;
 		if (scene == nullptr || camera == nullptr)
 		{
 			return;
@@ -133,8 +134,8 @@ namespace Blueberry
 		results.lights.clear();
 		results.cullerInfos.clear();
 
-		Matrix view = camera->GetInverseViewMatrix();
-		Matrix projection = camera->GetProjectionMatrix();
+		Matrix view = cameraData.isMultiview ? cameraData.multiviewViewMatrix[0].Invert() : camera->GetInverseViewMatrix();
+		Matrix projection = cameraData.isMultiview ? cameraData.multiviewProjectionMatrix[0] : camera->GetProjectionMatrix();
 		Frustum cameraFrustum;
 		cameraFrustum.CreateFromMatrix(cameraFrustum, projection, false);
 		cameraFrustum.Transform(cameraFrustum, view);
@@ -283,22 +284,22 @@ namespace Blueberry
 			}
 		}
 
-		TimeMeasurement::Start();
+		//TimeMeasurement::Start();
 		JobSystem::Dispatch(cullerInfos.size(), 1, [&cullerInfos](JobDispatchArgs args)
 		{
 			RendererTree::Cull(cullerInfos[args.jobIndex].planes, cullerInfos[args.jobIndex].renderers);
 		});
 		JobSystem::Wait();
-		TimeMeasurement::End();
+		//TimeMeasurement::End();
 
 		results.cullerInfos = cullerInfos;
 		s_LastCullerInfo = std::make_pair(nullptr, 0);
 	}
 
-	void RenderContext::BindCamera(CullingResults& results)
+	void RenderContext::BindCamera(CullingResults& results, CameraData& cameraData)
 	{
 		Camera* camera = results.camera;
-		PerCameraDataConstantBuffer::BindData(camera);
+		PerCameraDataConstantBuffer::BindData(cameraData);
 		GatherOperations(results, camera);
 	}
 

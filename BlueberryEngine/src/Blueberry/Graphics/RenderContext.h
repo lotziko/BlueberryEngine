@@ -11,6 +11,15 @@ namespace Blueberry
 	class Material;
 	class MeshRenderer;
 
+	struct CameraData
+	{
+		Camera* camera;
+		Matrix multiviewViewMatrix[2];
+		Matrix multiviewProjectionMatrix[2];
+		Rectangle multiviewViewport;
+		bool isMultiview;
+	};
+
 	struct CullingResults
 	{
 		struct CullerInfo
@@ -40,8 +49,8 @@ namespace Blueberry
 	class RenderContext
 	{
 	public:
-		void Cull(Scene* scene, Camera* camera, CullingResults& results);
-		void BindCamera(CullingResults& results);
+		void Cull(Scene* scene, CameraData& cameraData, CullingResults& results);
+		void BindCamera(CullingResults& results, CameraData& cameraData);
 		void DrawShadows(CullingResults& results, ShadowDrawingSettings& shadowDrawingSettings);
 		void DrawRenderers(CullingResults& results, DrawingSettings& drawingSettings);
 

@@ -7,11 +7,13 @@ namespace Blueberry
 	class ImGuiRendererDX11 final : public ImGuiRenderer
 	{
 	public:
-		ImGuiRendererDX11(HWND hwnd, ID3D11Device* device, ID3D11DeviceContext* deviceContext);
-		virtual ~ImGuiRendererDX11() final;
+		virtual bool InitializeImpl() final;
+		virtual void ShutdownImpl() final;
 
-		virtual void Begin() final;
-		virtual void End() final;
+	protected:
+		virtual void BeginImpl() final;
+		virtual void EndImpl() final;
+
 	private:
 		HWND m_Hwnd;
 		ID3D11Device* m_Device;

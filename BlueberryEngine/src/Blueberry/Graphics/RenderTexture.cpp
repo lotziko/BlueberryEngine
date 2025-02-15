@@ -8,7 +8,7 @@ namespace Blueberry
 	OBJECT_DEFINITION(Texture, RenderTexture)
 
 	std::unordered_map<ObjectId, size_t> RenderTexture::s_TemporaryKeys = {};
-	std::unordered_multimap<size_t, std::pair<RenderTexture*, size_t>> RenderTexture::s_TemporaryPool = {};
+	std::unordered_map<size_t, std::vector<std::pair<RenderTexture*, size_t>>> RenderTexture::s_TemporaryPool = {};
 
 	RenderTexture::~RenderTexture()
 	{
@@ -29,6 +29,7 @@ namespace Blueberry
 		texture->m_Dimension = textureDimension;
 		texture->m_WrapMode = wrapMode;
 		texture->m_FilterMode = filterMode;
+		texture->m_SampleCount = antiAliasing;
 
 		TextureProperties textureProperties = {};
 
@@ -54,13 +55,20 @@ namespace Blueberry
 		size_t currentFrame = Time::GetFrameCount();
 		for (auto it = s_TemporaryPool.begin(); it != s_TemporaryPool.end(); ++it)
 		{
-			// Release textures older than 5 frames
-			if (currentFrame - it->second.second > 5)
+			std::vector<std::pair<RenderTexture*, size_t>>& textures = it->second;
+			for (auto it1 = textures.end() - 1; it1 != textures.begin(); --it1)
 			{
-				RenderTexture* texture = it->second.first;
-				Object::Destroy(texture);
-				s_TemporaryKeys.erase(texture->GetObjectId());
-				s_TemporaryPool.erase(it);
+				// Release textures older than 5 frames
+				if (currentFrame - it1->second > 5)
+				{
+					RenderTexture* texture = it1->first;
+					if (texture != nullptr)
+					{
+						s_TemporaryKeys.erase(texture->GetObjectId());
+						Object::Destroy(texture);
+						textures.erase(it1);
+					}
+				}
 			}
 		}
 	}
@@ -68,15 +76,18 @@ namespace Blueberry
 	RenderTexture* RenderTexture::GetTemporary(const uint32_t& width, const uint32_t& height, const uint32_t& depth, const uint32_t& antiAliasing, const TextureFormat& textureFormat, const TextureDimension& textureDimension)
 	{
 		// Use 16 bits for width, height and format
-		size_t key = width | height << 16 | depth << 32 | antiAliasing << 40 | (uint8_t)textureFormat << 48 | (uint8_t)textureDimension << 48;
+		size_t key = (size_t)width | (size_t)height << 16 | (size_t)depth << 32 | (size_t)antiAliasing << 40 | (size_t)textureFormat << 48 | (size_t)textureDimension << 56;
 
-		// https://stackoverflow.com/questions/3952476/how-to-remove-a-specific-pair-from-a-c-multimap
-		auto iterpair = s_TemporaryPool.equal_range(key);
-		auto it = iterpair.first;
-		for (; it != iterpair.second; ++it)
+		auto it = s_TemporaryPool.find(key);
+		if (it != s_TemporaryPool.end())
 		{
-			s_TemporaryPool.erase(it);
-			return it->second.first;
+			std::vector<std::pair<RenderTexture*, size_t>>& textures = it->second;
+			if (textures.size() > 0)
+			{
+				RenderTexture* last = (textures.end() - 1)->first; 
+				textures.erase(textures.end() - 1);
+				return last;
+			}
 		}
 		
 		// Allocate new texture
@@ -87,10 +98,27 @@ namespace Blueberry
 
 	void RenderTexture::ReleaseTemporary(RenderTexture* texture)
 	{
+		if (texture == nullptr)
+		{
+			return;
+		}
+
 		auto it = s_TemporaryKeys.find(texture->GetObjectId());
 		if (it != s_TemporaryKeys.end())
 		{
-			s_TemporaryPool.insert({ it->second, std::make_pair(texture, Time::GetFrameCount()) });
+			auto pair = std::make_pair(texture, Time::GetFrameCount());
+			auto it1 = s_TemporaryPool.find(it->second);
+			if (it1 != s_TemporaryPool.end())
+			{
+				std::vector<std::pair<RenderTexture*, size_t>>& textures = it1->second;
+				textures.emplace_back(pair);
+			}
+			else
+			{
+				std::vector<std::pair<RenderTexture*, size_t>> textures = {};
+				textures.emplace_back(pair);
+				s_TemporaryPool.insert({ it->second, textures });
+			}
 		}
 		else
 		{

@@ -14,6 +14,8 @@
 #include <sstream>
 #include <tuple>
 #include <regex>
+#include <thread>
+#include <mutex>
 
 #include "Blueberry\Core\Base.h"
 #include "Blueberry\Core\Object.h"

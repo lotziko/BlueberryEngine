@@ -3,6 +3,8 @@
 
 namespace Blueberry
 {
+	static std::mutex s_AllocationMutex = {};
+
 	ChunkedObjectArray ObjectDB::s_Array = ChunkedObjectArray();
 	std::unordered_map<ObjectId, std::pair<Guid, FileId>> ObjectDB::s_ObjectIdToGuid = std::unordered_map<ObjectId, std::pair<Guid, FileId>>();
 	std::unordered_map<Guid, std::unordered_map<FileId, ObjectId>> ObjectDB::s_GuidToObjectId = std::unordered_map<Guid, std::unordered_map<FileId, ObjectId>>();
@@ -58,6 +60,7 @@ namespace Blueberry
 
 	void ObjectDB::AllocateId(Object* object)
 	{
+		std::lock_guard<std::mutex> lock(s_AllocationMutex);
 		ObjectId id = s_Array.AddSingle();
 		object->m_ObjectId = id;
 		ObjectItem* objectItem = IdToObjectItem(id);

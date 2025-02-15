@@ -12,6 +12,8 @@
 
 #include "Blueberry\Graphics\RendererTree.h"
 
+#include "Blueberry\Graphics\OpenXRRenderer.h"
+
 namespace Blueberry
 {
 	void GizmoRenderer::Draw(Scene* scene, Camera* camera)
@@ -19,6 +21,29 @@ namespace Blueberry
 		PerCameraDataConstantBuffer::BindData(camera);
 
 		// TODO add cache and draw also child entities
+
+		//Gizmos::Begin();
+		//Gizmos::SetMatrix(Matrix::Identity);
+		//Gizmos::SetColor(Color(1, 0, 0, 1));
+
+		//Frustum frustum;
+		//frustum.CreateFromMatrix(frustum, OpenXRRenderer::multiviewProjectionMatrix[0], false);
+		//frustum.Transform(frustum, OpenXRRenderer::multiviewViewMatrix[0].Invert());
+		//Gizmos::DrawFrustum(frustum);
+
+		//Gizmos::SetColor(Color(0, 1, 0, 1));
+		//frustum = {};
+		//frustum.CreateFromMatrix(frustum, OpenXRRenderer::multiviewProjectionMatrix[1], false);
+		//frustum.Transform(frustum, OpenXRRenderer::multiviewViewMatrix[1].Invert());
+		//Gizmos::DrawFrustum(frustum);
+
+		////Gizmos::SetMatrix(OpenXRRenderer::multiviewViewMatrix[0].Invert());
+		////Gizmos::DrawBox(Vector3::Zero, Vector3(0.1f, 0.1f, 1));
+		////Gizmos::DrawBox(Vector3::Forward, Vector3(0.1f, 0.1f, 1));
+		////Gizmos::SetColor(Color(0, 1, 0, 1));
+		////Gizmos::SetMatrix(OpenXRRenderer::multiviewViewMatrix[1].Invert());
+		////Gizmos::DrawBox(Vector3::Zero, Vector3(0.1f, 0.1f, 1));
+		//Gizmos::End();
 
 		/*Gizmos::SetMatrix(Matrix::Identity);
 		Gizmos::SetColor(Color(1, 1, 1, 1));

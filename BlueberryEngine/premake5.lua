@@ -17,6 +17,7 @@ project "BlueberryEngine"
 		"vendor/mikktspace/**.h",
 		"vendor/mikktspace/**.cpp",
 		"vendor/hbao/include/**.h",
+		"vendor/openxr/include/**.h",
 	}
 
 	includedirs
@@ -26,6 +27,7 @@ project "BlueberryEngine"
 		"%{IncludeDir.jolt}",
 		"%{IncludeDir.mikktspace}",
 		"%{IncludeDir.hbao}",
+		"%{IncludeDir.openxr}",
 	}
 
 	links
@@ -33,6 +35,7 @@ project "BlueberryEngine"
 		"Imgui",
 		"Jolt",
 		"%{LibraryDir.hbao}",
+		"%{LibraryDir.openxr}",
 	}
 
 	filter "system:windows"

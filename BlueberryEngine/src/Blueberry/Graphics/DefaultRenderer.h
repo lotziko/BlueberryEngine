@@ -19,7 +19,6 @@ namespace Blueberry
 
 	private:
 		static inline Material* s_ResolveMSAAMaterial = nullptr;
-		static inline HBAORenderer* s_HBAORenderer = nullptr;
 		static inline ShadowAtlas* s_ShadowAtlas = nullptr;
 	};
 }

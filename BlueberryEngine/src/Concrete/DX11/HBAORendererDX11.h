@@ -8,12 +8,10 @@ namespace Blueberry
 {
 	class HBAORendererDX11 : public HBAORenderer
 	{
-	public:
-		HBAORendererDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
+	protected:
+		virtual bool InitializeImpl() final;
 
-		bool Initialize();
-
-		virtual void Draw(GfxTexture* depthStencil, GfxTexture* normals, const Matrix& view, const Matrix& projection, const Rectangle& viewport, GfxTexture* output) final;
+		virtual void DrawImpl(GfxTexture* depthStencil, GfxTexture* normals, const Matrix& view, const Matrix& projection, const Rectangle& viewport, GfxTexture* output) final;
 
 	private:
 		ID3D11Device* m_Device;

@@ -10,30 +10,33 @@ Shader
 		#pragma vertex ErrorVertex
 		#pragma fragment ErrorFragment
 
+		#pragma keyword_global_vertex MULTIVIEW
+
 		#include "Core.hlsl"
 
 		struct Attributes
 		{
 			float3 positionOS : POSITION;
 			float3 normalOS	: NORMAL;
-			VERTEX_INSTANCE_ID;
-			VERTEX_RENDER_INSTANCE_ID;
+			VERTEX_INPUT_INSTANCE_ID
 		};
 
 		struct Varyings
 		{
 			float4 positionCS : SV_POSITION;
 			float3 normalWS : TEXCOORD0;
+			VERTEX_OUTPUT_VIEW_INDEX
 		};
 
 		Varyings ErrorVertex(Attributes input)
 		{
-			SETUP_VIEW_INDEX(input);
-			SETUP_RENDER_INSTANCE_ID(input);
-
 			Varyings output;
+			SETUP_INSTANCE_ID(input);
+			SETUP_OUTPUT_VIEW_INDEX(output);
+
 			output.positionCS = TransformObjectToClip(input.positionOS);
 			output.normalWS = TransformObjectToWorldNormal(input.normalOS);
+
 			return output;
 		}
 
@@ -54,26 +57,28 @@ Shader
 		#pragma vertex ErrorVertex
 		#pragma fragment ErrorFragment
 
+		#pragma keyword_global_vertex MULTIVIEW
+
 		#include "Core.hlsl"
 
 		struct Attributes
 		{
 			float3 positionOS : POSITION;
-			VERTEX_INSTANCE_ID;
-			VERTEX_RENDER_INSTANCE_ID;
+			VERTEX_INPUT_INSTANCE_ID
 		};
 
 		struct Varyings
 		{
 			float4 positionCS : SV_POSITION;
+			VERTEX_OUTPUT_VIEW_INDEX
 		};
 
 		Varyings ErrorVertex(Attributes input)
 		{
-			SETUP_VIEW_INDEX(input);
-			SETUP_RENDER_INSTANCE_ID(input);
-
 			Varyings output;
+			SETUP_INSTANCE_ID(input);
+			SETUP_OUTPUT_VIEW_INDEX(output);
+
 			output.positionCS = TransformObjectToClip(input.positionOS);
 			return output;
 		}

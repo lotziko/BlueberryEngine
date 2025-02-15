@@ -147,6 +147,11 @@ namespace Blueberry
 		return false;
 	}
 
+	ID3D11Resource* GfxTextureDX11::GetTexture() const
+	{
+		return m_Texture.Get();
+	}
+
 	ID3D11ShaderResourceView* GfxTextureDX11::GetSRV() const
 	{
 		return m_ResourceView.Get();
@@ -347,11 +352,20 @@ namespace Blueberry
 		}
 		else
 		{
-			resourceViewDesc.ViewDimension = antiAliasing > 1 ? D3D11_SRV_DIMENSION_TEXTURE2DMSARRAY : D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-			resourceViewDesc.Texture2DArray.MostDetailedMip = 0;
-			resourceViewDesc.Texture2DArray.MipLevels = 1;
-			resourceViewDesc.Texture2DArray.FirstArraySlice = 0;
-			resourceViewDesc.Texture2DArray.ArraySize = arraySize;
+			if (antiAliasing > 1)
+			{
+				resourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMSARRAY;
+				resourceViewDesc.Texture2DMSArray.FirstArraySlice = 0;
+				resourceViewDesc.Texture2DMSArray.ArraySize = arraySize;
+			}
+			else
+			{
+				resourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+				resourceViewDesc.Texture2DArray.MostDetailedMip = 0;
+				resourceViewDesc.Texture2DArray.MipLevels = 1;
+				resourceViewDesc.Texture2DArray.FirstArraySlice = 0;
+				resourceViewDesc.Texture2DArray.ArraySize = arraySize;
+			}
 		}
 
 		hr = m_Device->CreateShaderResourceView(m_Texture.Get(), &resourceViewDesc, m_ResourceView.GetAddressOf());
@@ -499,11 +513,20 @@ namespace Blueberry
 		}
 		else
 		{
-			resourceViewDesc.ViewDimension = antiAliasing > 1 ? D3D11_SRV_DIMENSION_TEXTURE2DMSARRAY : D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-			resourceViewDesc.Texture2DArray.MostDetailedMip = 0;
-			resourceViewDesc.Texture2DArray.MipLevels = textureDesc.MipLevels;
-			resourceViewDesc.Texture2DArray.FirstArraySlice = 0;
-			resourceViewDesc.Texture2DArray.ArraySize = arraySize;
+			if (antiAliasing > 1)
+			{
+				resourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMSARRAY;
+				resourceViewDesc.Texture2DMSArray.FirstArraySlice = 0;
+				resourceViewDesc.Texture2DMSArray.ArraySize = arraySize;
+			}
+			else
+			{
+				resourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+				resourceViewDesc.Texture2DArray.MostDetailedMip = 0;
+				resourceViewDesc.Texture2DArray.MipLevels = 1;
+				resourceViewDesc.Texture2DArray.FirstArraySlice = 0;
+				resourceViewDesc.Texture2DArray.ArraySize = arraySize;
+			}
 		}
 
 		switch (format)
