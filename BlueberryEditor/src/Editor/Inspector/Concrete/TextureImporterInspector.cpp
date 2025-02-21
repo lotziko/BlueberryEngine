@@ -4,6 +4,7 @@
 #include "Editor\Assets\Importers\TextureImporter.h"
 #include "Editor\Assets\ThumbnailCache.h"
 #include "Blueberry\Graphics\Texture.h"
+#include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Core\ObjectDB.h"
 #include "imgui\imgui.h"
 
@@ -25,7 +26,10 @@ namespace Blueberry
 			ThumbnailCache::Refresh(texture);
 		}
 		
-		ImVec2 size = ImGui::GetContentRegionAvail();
-		ImGui::Image(texture->GetHandle(), ImVec2(size.x, (texture->GetHeight() * size.x) / (float)texture->GetWidth()), ImVec2(0, 1), ImVec2(1, 0));
+		if (texture->IsClassType(Texture2D::Type))
+		{
+			ImVec2 size = ImGui::GetContentRegionAvail();
+			ImGui::Image(texture->GetHandle(), ImVec2(size.x, (texture->GetHeight() * size.x) / static_cast<float>(texture->GetWidth())), ImVec2(0, 1), ImVec2(1, 0));
+		}
 	}
 }

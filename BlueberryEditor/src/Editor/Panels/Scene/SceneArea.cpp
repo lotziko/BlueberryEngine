@@ -33,7 +33,7 @@ namespace Blueberry
 {
 	SceneArea::SceneArea()
 	{
-		m_GridMaterial = Material::Create((Shader*)AssetLoader::Load("assets/shaders/Grid.shader"));
+		m_GridMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/Grid.shader")));
 		m_ObjectPicker = new SceneObjectPicker();
 
 		// TODO save to config instead
@@ -176,7 +176,7 @@ namespace Blueberry
 				const ImGuiPayload* payload = ImGui::GetDragDropPayload();
 				if (payload != nullptr && payload->IsDataType("OBJECT_ID"))
 				{
-					Blueberry::ObjectId* id = (Blueberry::ObjectId*)payload->Data;
+					Blueberry::ObjectId* id = static_cast<Blueberry::ObjectId*>(payload->Data);
 					Blueberry::Object* object = Blueberry::ObjectDB::GetObject(*id);
 
 					if (object != nullptr && object->IsClassType(Entity::Type) && ImGui::AcceptDragDropPayload("OBJECT_ID"))
@@ -187,7 +187,7 @@ namespace Blueberry
 							if (Blueberry::ObjectDB::HasGuid(object))
 							{
 								AssetLoader::Load(Blueberry::ObjectDB::GetGuidFromObject(object));
-								scene->AddEntity(PrefabManager::CreateInstance((Entity*)object)->GetEntity());
+								scene->AddEntity(PrefabManager::CreateInstance(static_cast<Entity*>(object))->GetEntity());
 							}
 						}
 					}

@@ -16,9 +16,9 @@ namespace Blueberry
 		}
 	}
 
-	void Texture2D::SetData(byte* data, const size_t& dataSize)
+	void Texture2D::SetData(uint8_t* data, const size_t& dataSize)
 	{
-		m_RawData.data = (byte*)data;
+		m_RawData.data = data;
 		m_RawData.size = dataSize;
 	}
 
@@ -32,6 +32,7 @@ namespace Blueberry
 		textureProperties.dataSize = m_RawData.size;
 		textureProperties.mipCount = m_MipCount;
 		textureProperties.format = m_Format;
+		textureProperties.dimension = TextureDimension::Texture2D;
 		textureProperties.wrapMode = m_WrapMode;
 		textureProperties.filterMode = m_FilterMode;
 

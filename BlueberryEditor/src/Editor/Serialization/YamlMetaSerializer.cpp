@@ -47,7 +47,7 @@ namespace Blueberry
 		// Importer is only created during first deserialization
 		if (m_FileIdToObject.size() == 0)
 		{
-			Object* instance = (Object*)info.createInstance();
+			Object* instance = info.createInstance();
 			m_DeserializedObjects.emplace_back(std::make_pair(instance, 0));
 		}
 		else

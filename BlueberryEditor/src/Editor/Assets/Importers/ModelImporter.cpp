@@ -133,7 +133,7 @@ namespace Blueberry
 				CreateMeshEntity(nullptr, rootNode, objects);
 			}
 
-			Entity* root = (Entity*)ObjectDB::GetObjectFromGuid(GetGuid(), GetMainObject());
+			Entity* root = static_cast<Entity*>(ObjectDB::GetObjectFromGuid(GetGuid(), GetMainObject()));
 
 			importer->Destroy();
 			manager->Destroy();
@@ -158,7 +158,7 @@ namespace Blueberry
 		auto it = importedObjects.find(entityFileId);
 		if (it != importedObjects.end())
 		{
-			entity = (Entity*)ObjectDB::GetObject(it->second);
+			entity = static_cast<Entity*>(ObjectDB::GetObject(it->second));
 			entity->SetState(ObjectState::Default);
 		}
 		else
@@ -225,7 +225,7 @@ namespace Blueberry
 			it = importedObjects.find(meshFileId);
 			if (it != importedObjects.end())
 			{
-				mesh = (Mesh*)ObjectDB::GetObject(it->second);
+				mesh = static_cast<Mesh*>(ObjectDB::GetObject(it->second));
 				mesh->SetState(ObjectState::Default);
 			}
 			else
@@ -365,7 +365,7 @@ namespace Blueberry
 			}
 
 			// Uvs
-			Vector2* uvs = (Vector2*)verticesNormalsTangentsUvs.data();
+			Vector2* uvs = reinterpret_cast<Vector2*>(verticesNormalsTangentsUvs.data());
 			if (fbxUvs.Size() > 0)
 			{
 				for (uint32_t i = 0; i < verticesCount; ++i)

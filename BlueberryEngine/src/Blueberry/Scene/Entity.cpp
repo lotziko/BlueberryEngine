@@ -53,7 +53,7 @@ namespace Blueberry
 	{
 		if (m_Transform == nullptr)
 		{
-			m_Transform = (Transform*)m_Components[0].Get();
+			m_Transform = static_cast<Transform*>(m_Components[0].Get());
 		}
 		return m_Transform;
 	}

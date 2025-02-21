@@ -144,7 +144,7 @@ namespace Blueberry
 		AssetImporter* importer = nullptr;
 		if (object->IsClassType(AssetImporter::Type))
 		{
-			importer = (AssetImporter*)object;
+			importer = static_cast<AssetImporter*>(object);
 		}
 
 		if (ObjectDB::HasGuid(object))
@@ -238,7 +238,7 @@ namespace Blueberry
 				}
 				else if (object->IsClassType(AssetImporter::Type))
 				{
-					AssetImporter* importer = (AssetImporter*)object;
+					AssetImporter* importer = static_cast<AssetImporter*>(object);
 					importer->Save();
 					importer->ResetImport();
 					// Maybe refresh always after save?

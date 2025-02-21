@@ -49,9 +49,13 @@ namespace Blueberry
 
 		static void Copy(GfxTexture* source, GfxTexture* target);
 		static void Copy(GfxTexture* source, GfxTexture* target, const Rectangle& area);
+		static void Read(GfxTexture* source, void* target);
 		static void Read(GfxTexture* source, void* target, const Rectangle& area);
 
-		static void SetRenderTarget(GfxTexture* renderTexture, GfxTexture* depthStencilTexture = nullptr);
+		static void SetRenderTarget(GfxTexture* renderTexture);
+		static void SetRenderTarget(GfxTexture* renderTexture, GfxTexture* depthStencilTexture);
+		static void SetRenderTarget(GfxTexture* renderTexture, const uint32_t& slice);
+		static void SetRenderTarget(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, const uint32_t& slice);
 		static void SetGlobalConstantBuffer(const size_t& id, GfxConstantBuffer* buffer);
 		static void SetGlobalStructuredBuffer(const size_t& id, GfxStructuredBuffer* buffer);
 		static void SetGlobalTexture(const size_t& id, GfxTexture* texture);
@@ -90,9 +94,11 @@ namespace Blueberry
 		
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target) const = 0;
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Rectangle& area) const = 0;
+		virtual void ReadImpl(GfxTexture* source, void* target) const = 0;
 		virtual void ReadImpl(GfxTexture* source, void* target, const Rectangle& area) const = 0;
 
 		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture) = 0;
+		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, const uint32_t& slice) = 0;
 		virtual void SetGlobalConstantBufferImpl(const size_t& id, GfxConstantBuffer* buffer) = 0;
 		virtual void SetGlobalStructuredBufferImpl(const size_t& id, GfxStructuredBuffer* buffer) = 0;
 		virtual void SetGlobalTextureImpl(const size_t& id, GfxTexture* texture) = 0;

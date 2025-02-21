@@ -2,6 +2,7 @@
 #include "IconDB.h"
 
 #include "Blueberry\Assets\AssetLoader.h"
+#include "Blueberry\Graphics\Texture.h"
 
 namespace Blueberry
 {
@@ -19,6 +20,6 @@ namespace Blueberry
 
 	void IconDB::Register(const std::size_t& type, const std::string& path)
 	{
-		s_AssetIcons.insert_or_assign(type, (Texture*)AssetLoader::Load(path));
+		s_AssetIcons.insert_or_assign(type, static_cast<Texture*>(AssetLoader::Load(path)));
 	}
 }

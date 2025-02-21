@@ -64,14 +64,14 @@ namespace Blueberry
 		{
 			if (object.first->IsClassType(Entity::Type))
 			{
-				Entity* entity = (Entity*)object.first;
+				Entity* entity = static_cast<Entity*>(object.first);
 				scene->AddEntity(entity);
 				entity->OnCreate();
 
 			}
 			else if (object.first->IsClassType(PrefabInstance::Type))
 			{
-				PrefabInstance* prefabInstance = (PrefabInstance*)object.first;
+				PrefabInstance* prefabInstance = static_cast<PrefabInstance*>(object.first);
 				prefabInstance->OnCreate();
 				Entity* entity = prefabInstance->GetEntity();
 				scene->AddEntity(entity);

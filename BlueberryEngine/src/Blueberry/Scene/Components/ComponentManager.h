@@ -8,13 +8,13 @@ namespace Blueberry
 	struct ComponentIterator
 	{
 	public:
-		ComponentIterator(std::unordered_map<ObjectId, Component*> data) : m_Data(data) {}
+		ComponentIterator(std::unordered_map<ObjectId, Component*>* data) : m_Data(data) {}
 
-		auto begin() { return m_Data.begin(); }
-		auto end() { return m_Data.end(); }
+		auto begin() { return m_Data->begin(); }
+		auto end() { return m_Data->end(); }
 
 	private:
-		std::unordered_map<ObjectId, Component*> m_Data;
+		std::unordered_map<ObjectId, Component*>* m_Data;
 	};
 
 	using ComponentMap = std::unordered_map<ObjectId, Component*>;
@@ -41,7 +41,7 @@ namespace Blueberry
 	template<class ComponentType>
 	inline ComponentIterator ComponentManager::GetIterator()
 	{
-		return ComponentIterator(m_Components[ComponentType::Type]);
+		return ComponentIterator(&m_Components[ComponentType::Type]);
 	}
 
 	inline void ComponentManager::AddComponent(Component* component)
@@ -66,7 +66,7 @@ namespace Blueberry
 
 	inline ComponentIterator ComponentManager::GetIterator(const size_t& type)
 	{
-		return ComponentIterator(m_Components[type]);
+		return ComponentIterator(&m_Components[type]);
 	}
 
 	inline ComponentMap& ComponentManager::GetComponents(const size_t& type)

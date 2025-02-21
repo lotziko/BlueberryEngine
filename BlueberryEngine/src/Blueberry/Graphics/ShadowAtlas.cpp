@@ -59,10 +59,10 @@ namespace Blueberry
 			context.DrawShadows(results, shadowDrawingSettings);
 
 			Matrix sliceTransform = Matrix::Identity;
-			sliceTransform._11 = (float)request.size / m_AtlasTexture->GetWidth();
-			sliceTransform._22 = (float)request.size / m_AtlasTexture->GetHeight();
-			sliceTransform._41 = (float)request.offsetX / m_AtlasTexture->GetWidth();
-			sliceTransform._42 = (float)request.offsetY / m_AtlasTexture->GetHeight();
+			sliceTransform._11 = static_cast<float>(request.size) / m_AtlasTexture->GetWidth();
+			sliceTransform._22 = static_cast<float>(request.size) / m_AtlasTexture->GetHeight();
+			sliceTransform._41 = static_cast<float>(request.offsetX) / m_AtlasTexture->GetWidth();
+			sliceTransform._42 = static_cast<float>(request.offsetY) / m_AtlasTexture->GetHeight();
 
 			Matrix scaleBiasTransform = Matrix::Identity;
 			scaleBiasTransform._11 = 0.5f;
@@ -114,7 +114,7 @@ namespace Blueberry
 			free *= (previousSize.x / currentRequestSize * previousSize.y / currentRequestSize);
 
 			uint32_t sideSlotCount = layerSize.x / currentRequestSize;
-			uint32_t layerDepth = (uint32_t)log2(sideSlotCount);
+			uint32_t layerDepth = static_cast<uint32_t>(log2(sideSlotCount));
 			uint32_t slotIndex = sideSlotCount * sideSlotCount - free;
 
 			for (uint32_t j = 0; j < layerDepth; ++j)

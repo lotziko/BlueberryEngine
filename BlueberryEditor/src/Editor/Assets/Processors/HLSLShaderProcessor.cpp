@@ -29,7 +29,7 @@ namespace Blueberry
 		infile.seekg(0, std::ios::end);
 		dataSize = infile.tellg();
 		infile.seekg(0, std::ios::beg);
-		buffer = (char*)malloc(dataSize);
+		buffer = static_cast<char*>(malloc(dataSize));
 		infile.read(buffer, dataSize);
 		infile.close();
 
@@ -63,8 +63,8 @@ namespace Blueberry
 			{
 				auto& compilationPass = compilationData.passes[i];
 				PassData* pass = compilationData.dataPasses[i];
-				size_t vertexVariantCount = std::max((int)pow(2, compilationPass.vertexKeywords.size()), 1);
-				size_t fragmentVariantCount = std::max((int)pow(2, compilationPass.fragmentKeywords.size()), 1);
+				size_t vertexVariantCount = std::max(static_cast<int>(pow(2, compilationPass.vertexKeywords.size())), 1);
+				size_t fragmentVariantCount = std::max(static_cast<int>(pow(2, compilationPass.fragmentKeywords.size())), 1);
 
 				if (!compilationPass.vertexEntryPoint.empty())
 				{
@@ -166,19 +166,19 @@ namespace Blueberry
 		std::filesystem::path indexesPath = folderPath;
 		indexesPath.append("indexes");
 
-		uint32_t vertexShaderCount = (uint32_t)m_VariantsData.vertexShaderIndices.size();
-		uint32_t geometryShaderCount = (uint32_t)m_VariantsData.geometryShaderIndices.size();
-		uint32_t fragmentShaderCount = (uint32_t)m_VariantsData.fragmentShaderIndices.size();
-		uint32_t blobsCount = (uint32_t)m_Blobs.size();
+		uint32_t vertexShaderCount = static_cast<uint32_t>(m_VariantsData.vertexShaderIndices.size());
+		uint32_t geometryShaderCount = static_cast<uint32_t>(m_VariantsData.geometryShaderIndices.size());
+		uint32_t fragmentShaderCount = static_cast<uint32_t>(m_VariantsData.fragmentShaderIndices.size());
+		uint32_t blobsCount = static_cast<uint32_t>(m_Blobs.size());
 		std::ofstream output;
 		output.open(indexesPath, std::ofstream::binary);
-		output.write((char*)&vertexShaderCount, sizeof(uint32_t));
-		output.write((char*)m_VariantsData.vertexShaderIndices.data(), sizeof(uint32_t) * vertexShaderCount);
-		output.write((char*)&geometryShaderCount, sizeof(uint32_t));
-		output.write((char*)m_VariantsData.geometryShaderIndices.data(), sizeof(uint32_t) * geometryShaderCount);
-		output.write((char*)&fragmentShaderCount, sizeof(uint32_t));
-		output.write((char*)m_VariantsData.fragmentShaderIndices.data(), sizeof(uint32_t) * fragmentShaderCount);
-		output.write((char*)&blobsCount, sizeof(uint32_t));
+		output.write(reinterpret_cast<char*>(&vertexShaderCount), sizeof(uint32_t));
+		output.write(reinterpret_cast<char*>(m_VariantsData.vertexShaderIndices.data()), sizeof(uint32_t) * vertexShaderCount);
+		output.write(reinterpret_cast<char*>(&geometryShaderCount), sizeof(uint32_t));
+		output.write(reinterpret_cast<char*>(m_VariantsData.geometryShaderIndices.data()), sizeof(uint32_t) * geometryShaderCount);
+		output.write(reinterpret_cast<char*>(&fragmentShaderCount), sizeof(uint32_t));
+		output.write(reinterpret_cast<char*>(m_VariantsData.fragmentShaderIndices.data()), sizeof(uint32_t) * fragmentShaderCount);
+		output.write(reinterpret_cast<char*>(&blobsCount), sizeof(uint32_t));
 		output.close();
 
 		for (size_t i = 0; i < m_Blobs.size(); ++i)
@@ -206,16 +206,16 @@ namespace Blueberry
 			uint32_t blobsCount;
 			std::ifstream input;
 			input.open(indexesPath, std::ofstream::binary);
-			input.read((char*)&vertexShaderCount, sizeof(uint32_t));
+			input.read(reinterpret_cast<char*>(&vertexShaderCount), sizeof(uint32_t));
 			m_VariantsData.vertexShaderIndices.resize(vertexShaderCount);
-			input.read((char*)m_VariantsData.vertexShaderIndices.data(), sizeof(uint32_t) * vertexShaderCount);
-			input.read((char*)&geometryShaderCount, sizeof(uint32_t));
+			input.read(reinterpret_cast<char*>(m_VariantsData.vertexShaderIndices.data()), sizeof(uint32_t) * vertexShaderCount);
+			input.read(reinterpret_cast<char*>(&geometryShaderCount), sizeof(uint32_t));
 			m_VariantsData.geometryShaderIndices.resize(geometryShaderCount);
-			input.read((char*)m_VariantsData.geometryShaderIndices.data(), sizeof(uint32_t) * geometryShaderCount);
-			input.read((char*)&fragmentShaderCount, sizeof(uint32_t));
+			input.read(reinterpret_cast<char*>(m_VariantsData.geometryShaderIndices.data()), sizeof(uint32_t) * geometryShaderCount);
+			input.read(reinterpret_cast<char*>(&fragmentShaderCount), sizeof(uint32_t));
 			m_VariantsData.fragmentShaderIndices.resize(fragmentShaderCount);
-			input.read((char*)m_VariantsData.fragmentShaderIndices.data(), sizeof(uint32_t) * fragmentShaderCount);
-			input.read((char*)&blobsCount, sizeof(uint32_t));
+			input.read(reinterpret_cast<char*>(m_VariantsData.fragmentShaderIndices.data()), sizeof(uint32_t) * fragmentShaderCount);
+			input.read(reinterpret_cast<char*>(&blobsCount), sizeof(uint32_t));
 			input.close();
 
 			for (uint32_t i = 0; i < blobsCount; ++i)
@@ -261,7 +261,7 @@ namespace Blueberry
 		if (FAILED(hr))
 		{
 			BB_ERROR("Failed to compile shader.");
-			BB_ERROR((char*)error->GetBufferPointer());
+			BB_ERROR(static_cast<char*>(error->GetBufferPointer()));
 			error->Release();
 			return false;
 		}

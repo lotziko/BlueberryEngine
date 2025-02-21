@@ -176,7 +176,7 @@ bool ImGui::ObjectEdit(const char* label, Blueberry::Object** v, const std::size
 		const ImGuiPayload* payload = ImGui::GetDragDropPayload();
 		if (payload != nullptr && payload->IsDataType("OBJECT_ID"))
 		{
-			Blueberry::ObjectId* id = (Blueberry::ObjectId*)payload->Data;
+			Blueberry::ObjectId* id = static_cast<Blueberry::ObjectId*>(payload->Data);
 			Blueberry::Object* object = Blueberry::ObjectDB::GetObject(*id);
 
 			if (object != nullptr && object->IsClassType(type) && ImGui::AcceptDragDropPayload("OBJECT_ID"))

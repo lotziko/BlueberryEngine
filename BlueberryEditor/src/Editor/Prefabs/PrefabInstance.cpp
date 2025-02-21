@@ -20,7 +20,7 @@ namespace Blueberry
 		// TODO handle changes too
 		if (m_Prefab.IsValid())
 		{
-			m_Entity = (Entity*)ObjectCloner::Clone(m_Prefab.Get());
+			m_Entity = static_cast<Entity*>(ObjectCloner::Clone(m_Prefab.Get()));
 			PrefabManager::s_EntityToPrefabInstance.insert_or_assign(m_Entity->GetObjectId(), GetObjectId());
 			AddPrefabEntities(m_Entity.Get());
 		}

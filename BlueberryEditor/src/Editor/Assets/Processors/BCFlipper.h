@@ -66,8 +66,8 @@ namespace Blueberry
 		uint32_t temp32;
 		uint32_t *asInt[2];
 
-		asInt[0] = (uint32_t *)block->ahagafaeadacabaa.alpha;
-		asInt[1] = (uint32_t *)block->apaoanamalakajai.alpha;
+		asInt[0] = reinterpret_cast<uint32_t*>(block->ahagafaeadacabaa.alpha);
+		asInt[1] = reinterpret_cast<uint32_t*>(block->apaoanamalakajai.alpha);
 		// swap adacabaa with apaoanam
 		temp32 = *asInt[0] & ((1 << 12) - 1);
 		*asInt[0] &= ~((1 << 12) - 1);
@@ -95,8 +95,8 @@ namespace Blueberry
 		uint32_t temp32;
 		uint32_t *asInt[2];
 
-		asInt[0] = (uint32_t*)block->rhrgrfrerdrcrbra.red;
-		asInt[1] = (uint32_t*)block->rprornrmrlrkrjri.red;
+		asInt[0] = reinterpret_cast<uint32_t*>(block->rhrgrfrerdrcrbra.red);
+		asInt[1] = reinterpret_cast<uint32_t*>(block->rprornrmrlrkrjri.red);
 
 		// swap rdrcrbra with rprornrm
 		temp32 = *asInt[0] & ((1 << 12) - 1);
@@ -118,8 +118,8 @@ namespace Blueberry
 		uint32_t temp32;
 		uint32_t *asInt[2];
 
-		asInt[0] = (uint32_t*)block->rhrgrfrerdrcrbra.red;
-		asInt[1] = (uint32_t*)block->rprornrmrlrkrjri.red;
+		asInt[0] = reinterpret_cast<uint32_t*>(block->rhrgrfrerdrcrbra.red);
+		asInt[1] = reinterpret_cast<uint32_t*>(block->rprornrmrlrkrjri.red);
 
 		// swap rdrcrbra with rprornrm
 		temp32 = *asInt[0] & ((1 << 12) - 1);
@@ -134,8 +134,8 @@ namespace Blueberry
 		*asInt[1] &= ~((1 << 12) - 1);
 		*asInt[1] |= temp32 >> 12;
 
-		asInt[0] = (uint32_t*)block->ghgggfgegdgcgbga.green;
-		asInt[1] = (uint32_t*)block->gpgogngmglgkgjgi.green;
+		asInt[0] = reinterpret_cast<uint32_t*>(block->ghgggfgegdgcgbga.green);
+		asInt[1] = reinterpret_cast<uint32_t*>(block->gpgogngmglgkgjgi.green);
 
 		// swap gdgcgbga with gpgogngm
 		temp32 = *asInt[0] & ((1 << 12) - 1);

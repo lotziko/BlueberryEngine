@@ -13,7 +13,7 @@ namespace Blueberry
 {
 	bool ImGuiRendererDX11::InitializeImpl()
 	{
-		GfxDeviceDX11* gfxDevice = (GfxDeviceDX11*)GfxDevice::GetInstance();
+		GfxDeviceDX11* gfxDevice = static_cast<GfxDeviceDX11*>(GfxDevice::GetInstance());
 
 		m_Device = gfxDevice->GetDevice();
 		m_DeviceContext = gfxDevice->GetDeviceContext();

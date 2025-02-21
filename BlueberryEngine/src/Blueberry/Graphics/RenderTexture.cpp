@@ -55,18 +55,19 @@ namespace Blueberry
 		size_t currentFrame = Time::GetFrameCount();
 		for (auto it = s_TemporaryPool.begin(); it != s_TemporaryPool.end(); ++it)
 		{
-			std::vector<std::pair<RenderTexture*, size_t>>& textures = it->second;
-			for (auto it1 = textures.end() - 1; it1 != textures.begin(); --it1)
+			auto& vector = it->second;
+			for (int i = vector.size() - 1; i >= 0; --i)
 			{
+				auto& pair = vector[i];
 				// Release textures older than 5 frames
-				if (currentFrame - it1->second > 5)
+				if (currentFrame - pair.second > 5)
 				{
-					RenderTexture* texture = it1->first;
+					RenderTexture* texture = pair.first;
 					if (texture != nullptr)
 					{
 						s_TemporaryKeys.erase(texture->GetObjectId());
 						Object::Destroy(texture);
-						textures.erase(it1);
+						it->second.erase(vector.begin() + i);
 					}
 				}
 			}
@@ -76,7 +77,7 @@ namespace Blueberry
 	RenderTexture* RenderTexture::GetTemporary(const uint32_t& width, const uint32_t& height, const uint32_t& depth, const uint32_t& antiAliasing, const TextureFormat& textureFormat, const TextureDimension& textureDimension)
 	{
 		// Use 16 bits for width, height and format
-		size_t key = (size_t)width | (size_t)height << 16 | (size_t)depth << 32 | (size_t)antiAliasing << 40 | (size_t)textureFormat << 48 | (size_t)textureDimension << 56;
+		size_t key = static_cast<size_t>(width) | static_cast<size_t>(height) << 16 | static_cast<size_t>(depth) << 32 | static_cast<size_t>(antiAliasing) << 40 | static_cast<size_t>(textureFormat) << 48 | static_cast<size_t>(textureDimension) << 56;
 
 		auto it = s_TemporaryPool.find(key);
 		if (it != s_TemporaryPool.end())

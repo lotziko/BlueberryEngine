@@ -28,7 +28,7 @@ namespace Blueberry
 		if (asset->IsClassType(Texture2D::Type))
 		{
 			static std::size_t blitTextureId = TO_HASH("_BlitTexture");
-			Texture2D* importedTexture = (Texture2D*)asset;
+			Texture2D* importedTexture = static_cast<Texture2D*>(asset);
 			GfxDevice::SetRenderTarget(s_ThumbnailRenderTarget->Get());
 			GfxDevice::SetViewport(0, 0, size, size);
 			GfxDevice::SetGlobalTexture(blitTextureId, importedTexture->Get());
@@ -40,7 +40,7 @@ namespace Blueberry
 		else if (asset->IsClassType(Material::Type))
 		{
 			static PreviewScene previewScene;
-			previewScene.Draw((Material*)asset, s_ThumbnailRenderTarget);
+			previewScene.Draw(static_cast<Material*>(asset), s_ThumbnailRenderTarget);
 			GfxDevice::Read(s_ThumbnailRenderTarget->Get(), output, Rectangle(0, 0, size, size));
 			GfxDevice::SetRenderTarget(nullptr);
 			return true;
@@ -48,7 +48,7 @@ namespace Blueberry
 		else if (asset->IsClassType(Mesh::Type))
 		{
 			static PreviewScene previewScene;
-			previewScene.Draw((Mesh*)asset, s_ThumbnailRenderTarget);
+			previewScene.Draw(static_cast<Mesh*>(asset), s_ThumbnailRenderTarget);
 			GfxDevice::Read(s_ThumbnailRenderTarget->Get(), output, Rectangle(0, 0, size, size));
 			GfxDevice::SetRenderTarget(nullptr);
 			return true;

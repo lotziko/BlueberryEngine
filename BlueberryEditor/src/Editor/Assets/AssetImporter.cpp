@@ -105,7 +105,7 @@ namespace Blueberry
 	AssetImporter* AssetImporter::CreateNew(const std::size_t& type, const std::filesystem::path& relativePath, const std::filesystem::path& relativeMetaPath)
 	{
 		auto info = ClassDB::GetInfo(type);
-		AssetImporter* importer = (AssetImporter*)info.createInstance();
+		AssetImporter* importer = static_cast<AssetImporter*>(info.createInstance());
 		importer->m_Guid = Guid::Create();
 		importer->m_RelativePath = relativePath.string();
 		importer->m_RelativeMetaPath = relativeMetaPath.string();
@@ -125,7 +125,7 @@ namespace Blueberry
 		auto& deserializedObjects = serializer.GetDeserializedObjects();
 		if (deserializedObjects.size() > 0)
 		{
-			AssetImporter* importer = (AssetImporter*)deserializedObjects[0].first;
+			AssetImporter* importer = static_cast<AssetImporter*>(deserializedObjects[0].first);
 			Guid guid = serializer.GetGuid();
 			importer->m_Guid = guid;
 			importer->m_RelativePath = relativePath.string();

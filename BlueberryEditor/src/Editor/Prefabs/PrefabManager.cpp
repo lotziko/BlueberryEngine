@@ -28,7 +28,7 @@ namespace Blueberry
 			Object* object = ObjectDB::GetObject(it->second);
 			if (object != nullptr)
 			{
-				return (PrefabInstance*)object;
+				return static_cast<PrefabInstance*>(object);
 			}
 		}
 		return nullptr;
@@ -65,7 +65,7 @@ namespace Blueberry
 		if (it != s_EntityToPrefabInstance.end())
 		{
 			Object* object = ObjectDB::GetObject(it->second);
-			PrefabInstance* instance = (PrefabInstance*)object;
+			PrefabInstance* instance = static_cast<PrefabInstance*>(object);
 			instance->RemovePrefabEntities(instance->m_Entity.Get());
 			instance->m_Entity = nullptr;
 			Object::Destroy(instance);

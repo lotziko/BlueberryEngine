@@ -29,8 +29,8 @@ namespace Blueberry
 	{
 		m_CurrentDirectory = Path::GetAssetsPath();
 
-		m_FolderIconSmall = (Texture2D*)AssetLoader::Load("assets/icons/FolderIconSmall.png");
-		m_FolderIconSmallOpened = (Texture2D*)AssetLoader::Load("assets/icons/FolderIconSmallOpened.png");
+		m_FolderIconSmall = static_cast<Texture2D*>(AssetLoader::Load("assets/icons/FolderIconSmall.png"));
+		m_FolderIconSmallOpened = static_cast<Texture2D*>(AssetLoader::Load("assets/icons/FolderIconSmallOpened.png"));
 		
 		UpdateTree();
 		AssetDB::GetAssetDBRefreshed().AddCallback<ProjectBrowser, &ProjectBrowser::OnAssetDBRefresh>(this);
@@ -116,7 +116,7 @@ namespace Blueberry
 		if (ImGui::BeginChild("Middle panel", ImVec2(size.x, size.y - bottomPanelSize)))
 		{
 			ImVec2 panelPos = ImGui::GetCursorPos();
-			uint32_t maxCells = (int)floorf(size.x / (cellSize + spaceBetweenCells));
+			uint32_t maxCells = static_cast<uint32_t>(floorf(size.x / (cellSize + spaceBetweenCells)));
 			if (maxCells > 0)
 			{
 				float expandedSpaceBetweenCells = (size.x - (maxCells * cellSize)) / (maxCells + 1);
@@ -126,7 +126,7 @@ namespace Blueberry
 				for (auto& asset : m_CurrentDirectoryAssets)
 				{
 					asset.expanded = InspectorExpandedItemsCache::Get(asset.pathString);
-					for (uint32_t i = 0, n = asset.expanded ? (uint32_t)asset.objects.size() : 1; i < n; ++i)
+					for (uint32_t i = 0, n = asset.expanded ? static_cast<uint32_t>(asset.objects.size()) : 1; i < n; ++i)
 					{
 						expectedCursorPos.x += expandedSpaceBetweenCells;
 						asset.positions[i] = Vector2(expectedCursorPos.x, expectedCursorPos.y);
@@ -152,11 +152,11 @@ namespace Blueberry
 					const ImGuiPayload* payload = ImGui::GetDragDropPayload();
 					if (payload != nullptr && payload->IsDataType("OBJECT_ID"))
 					{
-						Blueberry::ObjectId* id = (Blueberry::ObjectId*)payload->Data;
+						Blueberry::ObjectId* id = static_cast<Blueberry::ObjectId*>(payload->Data);
 						Blueberry::Object* object = Blueberry::ObjectDB::GetObject(*id);
 						if (object != nullptr && object->IsClassType(Entity::Type) && ImGui::AcceptDragDropPayload("OBJECT_ID"))
 						{
-							PrefabManager::CreatePrefab(m_CurrentDirectory.string(), (Entity*)object);
+							PrefabManager::CreatePrefab(m_CurrentDirectory.string(), static_cast<Entity*>(object));
 							UpdateFiles();
 						}
 					}
@@ -169,7 +169,7 @@ namespace Blueberry
 				float bottomClip = scrollY + ImGui::GetWindowHeight();
 				for (auto& asset : m_CurrentDirectoryAssets)
 				{
-					for (uint32_t i = 0, n = asset.expanded ? (uint32_t)asset.objects.size() : 1; i < n; ++i)
+					for (uint32_t i = 0, n = asset.expanded ? static_cast<uint32_t>(asset.objects.size()) : 1; i < n; ++i)
 					{
 						Object* object;
 						if (i == 0)

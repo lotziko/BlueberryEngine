@@ -272,10 +272,10 @@ namespace Blueberry
 		m_DeviceContext->CopySubresourceRegion(static_cast<GfxTextureDX11*>(target)->m_Texture.Get(), 0, 0, 0, 0, static_cast<GfxTextureDX11*>(source)->m_Texture.Get(), 0, &src);
 	}
 
-	void GfxDeviceDX11::ReadImpl(GfxTexture* source, void* target, const Rectangle& area) const
+	void GfxDeviceDX11::ReadImpl(GfxTexture* source, void* target) const
 	{
 		auto dxTexture = static_cast<GfxTextureDX11*>(source);
-		m_DeviceContext->CopySubresourceRegion(dxTexture->m_StagingTexture.Get(), 0, 0, 0, 0, dxTexture->m_Texture.Get(), 0, NULL);
+		m_DeviceContext->CopyResource(dxTexture->m_StagingTexture.Get(), dxTexture->m_Texture.Get());
 
 		D3D11_MAPPED_SUBRESOURCE mappedTexture;
 		ZeroMemory(&mappedTexture, sizeof(D3D11_MAPPED_SUBRESOURCE));
@@ -285,10 +285,26 @@ namespace Blueberry
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to get texture data."));
 			return;
 		}
-		// TODO handle texture formats
+		memcpy(target, mappedTexture.pData, mappedTexture.RowPitch * dxTexture->m_Height * dxTexture->m_ArraySize);
+		m_DeviceContext->Unmap(dxTexture->m_StagingTexture.Get(), 0);
+	}
+
+	void GfxDeviceDX11::ReadImpl(GfxTexture* source, void* target, const Rectangle& area) const
+	{
+		auto dxTexture = static_cast<GfxTextureDX11*>(source);
+		m_DeviceContext->CopyResource(dxTexture->m_StagingTexture.Get(), dxTexture->m_Texture.Get());
+		
+		D3D11_MAPPED_SUBRESOURCE mappedTexture;
+		ZeroMemory(&mappedTexture, sizeof(D3D11_MAPPED_SUBRESOURCE));
+		HRESULT hr = m_DeviceContext->Map(dxTexture->m_StagingTexture.Get(), 0, D3D11_MAP_READ, 0, &mappedTexture);
+		if (FAILED(hr))
+		{
+			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to get texture data."));
+			return;
+		}
 		for (int i = 0; i < area.height; i++)
 		{
-			size_t pixelSize = sizeof(char) * 4;
+			size_t pixelSize = mappedTexture.RowPitch / dxTexture->m_Width;
 			size_t offset = ((area.y + i) * dxTexture->m_Width + area.x) * pixelSize;
 			char* copyPtr = static_cast<char*>(mappedTexture.pData) + offset;
 			char* targetPtr = static_cast<char*>(target) + (area.width * pixelSize * i);
@@ -299,6 +315,11 @@ namespace Blueberry
 
 	void GfxDeviceDX11::SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture)
 	{
+		SetRenderTargetImpl(renderTexture, depthStencilTexture, UINT32_MAX);
+	}
+
+	void GfxDeviceDX11::SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, const uint32_t& slice)
+	{
 		m_DeviceContext->PSSetShaderResources(0, 16, m_ShaderResourceViews);
 		m_DeviceContext->PSSetSamplers(0, 16, m_Samplers);
 
@@ -306,7 +327,7 @@ namespace Blueberry
 		if (renderTexture != nullptr)
 		{
 			GfxTextureDX11* dxRenderTarget = static_cast<GfxTextureDX11*>(renderTexture);
-			renderTarget = dxRenderTarget->m_RenderTargetView.GetAddressOf();
+			renderTarget = slice == UINT32_MAX ? dxRenderTarget->m_RenderTargetView.GetAddressOf() : dxRenderTarget->m_SlicesRenderTargetViews[slice].GetAddressOf();
 			m_BindedRenderTarget = dxRenderTarget;
 		}
 		else
@@ -428,8 +449,7 @@ namespace Blueberry
 				m_GlobalCrc = m_CurrentCrc;
 
 				// Bind vertex constant buffers
-				auto bufferMap = dxVertexShader->m_ConstantBufferSlots;
-				for (auto it = bufferMap.begin(); it != bufferMap.end(); it++)
+				for (auto it = dxVertexShader->m_ConstantBufferSlots.begin(); it != dxVertexShader->m_ConstantBufferSlots.end(); it++)
 				{
 					auto pair = m_BindedConstantBuffers.find(it->first);
 					if (pair != m_BindedConstantBuffers.end())
@@ -444,8 +464,7 @@ namespace Blueberry
 				std::fill_n(m_ShaderResourceViews, 16, nullptr);
 
 				// Bind vertex structured buffers
-				auto structuredBufferMap = dxVertexShader->m_StructuredBufferSlots;
-				for (auto it = structuredBufferMap.begin(); it != structuredBufferMap.end(); it++)
+				for (auto it = dxVertexShader->m_StructuredBufferSlots.begin(); it != dxVertexShader->m_StructuredBufferSlots.end(); it++)
 				{
 					auto pair = m_BindedStructuredBuffers.find(it->first);
 					if (pair != m_BindedStructuredBuffers.end())
@@ -463,8 +482,7 @@ namespace Blueberry
 				if (dxGeometryShader != nullptr)
 				{
 					// Bind geometry constant buffers
-					bufferMap = dxGeometryShader->m_ConstantBufferSlots;
-					for (auto it = bufferMap.begin(); it != bufferMap.end(); it++)
+					for (auto it = dxGeometryShader->m_ConstantBufferSlots.begin(); it != dxGeometryShader->m_ConstantBufferSlots.end(); it++)
 					{
 						auto pair = m_BindedConstantBuffers.find(it->first);
 						if (pair != m_BindedConstantBuffers.end())
@@ -477,8 +495,7 @@ namespace Blueberry
 				}
 
 				// Bind fragment constant buffers
-				bufferMap = dxFragmentShader->m_ConstantBufferSlots;
-				for (auto it = bufferMap.begin(); it != bufferMap.end(); it++)
+				for (auto it = dxFragmentShader->m_ConstantBufferSlots.begin(); it != dxFragmentShader->m_ConstantBufferSlots.end(); it++)
 				{
 					auto pair = m_BindedConstantBuffers.find(it->first);
 					if (pair != m_BindedConstantBuffers.end())
@@ -492,7 +509,6 @@ namespace Blueberry
 				std::fill_n(m_ConstantBuffers, 8, nullptr);
 
 				// Bind fragment material textures
-				auto textureMap = dxFragmentShader->m_TextureSlots;
 				for (int i = 0; i < renderState->fragmentTextureCount; i++)
 				{
 					GfxRenderState::TextureInfo info = renderState->fragmentTextures[i];
@@ -505,7 +521,7 @@ namespace Blueberry
 				}
 
 				// Bind fragment global textures
-				for (auto it = textureMap.begin(); it != textureMap.end(); it++)
+				for (auto it = dxFragmentShader->m_TextureSlots.begin(); it != dxFragmentShader->m_TextureSlots.end(); it++)
 				{
 					auto pair = m_BindedTextures.find(it->first);
 					if (pair != m_BindedTextures.end())
@@ -794,7 +810,7 @@ namespace Blueberry
 
 	void GfxDeviceDX11::SetBlendMode(const BlendMode& blendSrcColor, const BlendMode& blendSrcAlpha, const BlendMode& blendDstColor, const BlendMode& blendDstAlpha)
 	{
-		size_t key = (size_t)blendSrcColor << 8 | (size_t)blendSrcAlpha << 16 | (size_t)blendSrcColor << 24 | (size_t)blendSrcAlpha << 32;
+		size_t key = static_cast<size_t>(blendSrcColor) << 8 | static_cast<size_t>(blendSrcAlpha) << 16 | static_cast<size_t>(blendSrcColor) << 24 | static_cast<size_t>(blendSrcAlpha) << 32;
 		if (key == m_BlendKey)
 		{
 			return;
@@ -841,7 +857,7 @@ namespace Blueberry
 
 	void GfxDeviceDX11::SetZTestAndZWrite(const ZTest& zTest, const ZWrite& zWrite)
 	{
-		size_t key = (size_t)zTest << 8 | (size_t)zWrite << 16;
+		size_t key = static_cast<size_t>(zTest) << 8 | static_cast<size_t>(zWrite) << 16;
 		if (key == m_ZTestZWriteKey)
 		{
 			return;
@@ -861,7 +877,7 @@ namespace Blueberry
 
 			depthStencilDesc.DepthEnable = true;
 			depthStencilDesc.DepthWriteMask = zWrite == ZWrite::On ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
-			depthStencilDesc.DepthFunc = (D3D11_COMPARISON_FUNC)((uint32_t)zTest + 1);
+			depthStencilDesc.DepthFunc = (D3D11_COMPARISON_FUNC)(static_cast<uint32_t>(zTest) + 1);
 
 			HRESULT hr = m_Device->CreateDepthStencilState(&depthStencilDesc, state.GetAddressOf());
 			if (FAILED(hr))

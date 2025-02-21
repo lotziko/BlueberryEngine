@@ -16,6 +16,7 @@ namespace Blueberry
 	void MeshRenderer::OnEnable()
 	{
 		AddToSceneComponents(MeshRenderer::Type);
+		// TODO handle prefabs
 		m_TreeBounds = GetBounds();
 		RendererTree::Add(m_ObjectId, m_TreeBounds);
 	}

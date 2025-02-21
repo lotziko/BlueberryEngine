@@ -12,6 +12,7 @@
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\Material.h"
+#include "Blueberry\Graphics\Texture.h"
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Scene\Components\Light.h"
 
@@ -21,7 +22,7 @@ namespace Blueberry
 
 	bool IconRenderer::Initialize()
 	{
-		Shader* iconShader = (Shader*)AssetLoader::Load("assets/shaders/Icon.shader");
+		Shader* iconShader = static_cast<Shader*>(AssetLoader::Load("assets/shaders/Icon.shader"));
 		if (iconShader == nullptr)
 		{
 			BB_ERROR("Failed to load icon shader.")
@@ -61,7 +62,7 @@ namespace Blueberry
 				const char* path = info.inspector->GetIconPath(info.component.Get());
 				if (path != nullptr)
 				{
-					s_IconMaterial->SetTexture("_BaseMap", (Texture*)AssetLoader::Load(path));
+					s_IconMaterial->SetTexture("_BaseMap", static_cast<Texture*>(AssetLoader::Load(path)));
 
 					PerDrawConstantBuffer::BindData(modelMatrix);
 					GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_IconMaterial));

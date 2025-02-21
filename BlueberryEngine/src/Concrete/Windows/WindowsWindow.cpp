@@ -200,8 +200,8 @@ namespace Blueberry
 		}
 		case WM_MOUSEMOVE:
 		{
-			int xPos = ((int)(short)LOWORD(lParam));
-			int yPos = ((int)(short)HIWORD(lParam));
+			int xPos = static_cast<int>(LOWORD(lParam));
+			int yPos = static_cast<int>(HIWORD(lParam));
 			MouseMoveEventArgs args(xPos, yPos);
 			InputEvents::GetMouseMoved().Invoke(args);
 			return 0;

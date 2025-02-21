@@ -156,7 +156,7 @@ namespace Blueberry
 	{
 		if (generateMips)
 		{
-			uint32_t mipCount = (uint32_t)log2(std::min((float)width, (float)height));
+			uint32_t mipCount = static_cast<uint32_t>(log2(std::min(static_cast<float>(width), static_cast<float>(height))));
 			// Based on https://stackoverflow.com/questions/108318/how-can-i-test-whether-a-number-is-a-power-of-2
 			if ((width & (width - 1)) == 0 && (height & (height - 1)) == 0)
 			{
@@ -168,7 +168,7 @@ namespace Blueberry
 
 	inline float GetRandomFloat01()
 	{
-		return (float)(rand()) / (float)RAND_MAX;
+		return static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
 	}
 
 	inline float GetRandomFloat(float a, float b)

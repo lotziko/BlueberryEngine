@@ -71,9 +71,9 @@ namespace Blueberry
 		properties.format = TextureFormat::D24_UNorm;
 		GfxDevice::CreateTexture(properties, m_SceneDepthStencil);
 
-		m_SpriteObjectPickerMaterial = Material::Create((Shader*)AssetLoader::Load("assets/shaders/SpriteObjectPicker.shader"));
-		m_MeshObjectPickerMaterial = Material::Create((Shader*)AssetLoader::Load("assets/shaders/MeshObjectPicker.shader"));
-		m_ObjectPickerOutlineMaterial = Material::Create((Shader*)AssetLoader::Load("assets/shaders/ObjectPickerOutline.shader"));
+		m_SpriteObjectPickerMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/SpriteObjectPicker.shader")));
+		m_MeshObjectPickerMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/MeshObjectPicker.shader")));
+		m_ObjectPickerOutlineMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/ObjectPickerOutline.shader")));
 	}
 
 	SceneObjectPicker::~SceneObjectPicker()
@@ -91,7 +91,7 @@ namespace Blueberry
 
 		PerCameraDataConstantBuffer::BindData(camera);
 
-		Rectangle area = Rectangle(std::min(std::max(positionX, 0), (int)camera->GetPixelSize().x), std::min(std::max(positionY, 0), (int)camera->GetPixelSize().y), 1, 1);
+		Rectangle area = Rectangle(std::min(std::max(positionX, 0), static_cast<int>(camera->GetPixelSize().x)), std::min(std::max(positionY, 0), static_cast<int>(camera->GetPixelSize().y)), 1, 1);
 		unsigned char pixel[4];
 		std::unordered_map<int, ObjectId> validObjects;
 		uint32_t index = 1;

@@ -47,7 +47,7 @@ namespace Blueberry
 					ryml::csubstr key = node.key();
 					std::string typeName(key.str, key.size());
 					ClassDB::ClassInfo info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
-					Object* instance = (Object*)info.createInstance();
+					Object* instance = info.createInstance();
 					AddDeserializedObject(instance, fileId);
 					deserializedNodes.emplace_back(i, instance);
 				}
@@ -103,7 +103,7 @@ namespace Blueberry
 			{
 				std::vector<int> data = *value.Get<std::vector<int>>();
 				ByteData byteData;
-				byteData.data = (byte*)data.data();
+				byteData.data = reinterpret_cast<uint8_t*>(data.data());
 				byteData.size = data.size() * sizeof(int);
 				objectNode[key] << byteData;
 			}
@@ -112,7 +112,7 @@ namespace Blueberry
 			{
 				std::vector<float> data = *value.Get<std::vector<float>>();
 				ByteData byteData;
-				byteData.data = (byte*)data.data();
+				byteData.data = reinterpret_cast<uint8_t*>(data.data());
 				byteData.size = data.size() * sizeof(float);
 				objectNode[key] << byteData;
 			}

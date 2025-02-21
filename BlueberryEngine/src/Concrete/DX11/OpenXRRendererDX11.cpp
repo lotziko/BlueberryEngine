@@ -112,7 +112,7 @@ namespace Blueberry
 		swapchain_surfdata_t result = {};
 
 		// Get information about the swapchain image that OpenXR made for us!
-		XrSwapchainImageD3D11KHR &swapchainImgDX11 = (XrSwapchainImageD3D11KHR &)swapchainImg;
+		XrSwapchainImageD3D11KHR& swapchainImgDX11 = reinterpret_cast<XrSwapchainImageD3D11KHR&>(swapchainImg);
 		D3D11_TEXTURE2D_DESC color_desc;
 		swapchainImgDX11.texture->GetDesc(&color_desc);
 		result.texture = swapchainImgDX11.texture;
@@ -122,7 +122,7 @@ namespace Blueberry
 		targetDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
 		targetDesc.Texture2DArray.ArraySize = 2;
 
-		targetDesc.Format = (DXGI_FORMAT)SWAPCHAIN_FORMAT;
+		targetDesc.Format = static_cast<DXGI_FORMAT>(SWAPCHAIN_FORMAT);
 		s_Device->CreateRenderTargetView(swapchainImgDX11.texture, &targetDesc, &result.targetView);
 
 		return result;
@@ -130,9 +130,10 @@ namespace Blueberry
 
 	bool OpenXRRendererDX11::InitializeImpl()
 	{
+		GfxDeviceDX11* dxDevice = static_cast<GfxDeviceDX11*>(GfxDevice::GetInstance());
 		s_Engine = Engine::GetInstance();
-		s_Device = ((GfxDeviceDX11*)GfxDevice::GetInstance())->GetDevice();
-		s_DeviceContext = ((GfxDeviceDX11*)GfxDevice::GetInstance())->GetDeviceContext();
+		s_Device = dxDevice->GetDevice();
+		s_DeviceContext = dxDevice->GetDeviceContext();
 
 		std::vector<const char*> useExtensions;
 		const char* askExtensions[] = 
@@ -212,7 +213,7 @@ namespace Blueberry
 			OutputDebugStringA(text);
 
 			// Returning XR_TRUE here will force the calling function to fail
-			return (XrBool32)XR_FALSE;
+			return static_cast<XrBool32>(XR_FALSE);
 		};
 
 		if (s_ExtXrCreateDebugUtilsMessengerEXT)
@@ -292,10 +293,10 @@ namespace Blueberry
 		swapchain.handle = handle;
 		swapchain.surfaceImages.resize(surface—ount, { XR_TYPE_SWAPCHAIN_IMAGE_D3D11_KHR });
 		swapchain.surfaceData.resize(surface—ount);
-		xrEnumerateSwapchainImages(swapchain.handle, surface—ount, &surface—ount, (XrSwapchainImageBaseHeader*)swapchain.surfaceImages.data());
+		xrEnumerateSwapchainImages(swapchain.handle, surface—ount, &surface—ount, reinterpret_cast<XrSwapchainImageBaseHeader*>(swapchain.surfaceImages.data()));
 		for (uint32_t i = 0; i < surface—ount; i++)
 		{
-			swapchain.surfaceData[i] = CreateSurfaceData((XrBaseInStructure&)swapchain.surfaceImages[i]);
+			swapchain.surfaceData[i] = CreateSurfaceData(reinterpret_cast<XrBaseInStructure&>(swapchain.surfaceImages[i]));
 		}
 		s_XrSwapchains.push_back(swapchain);
 
@@ -381,7 +382,7 @@ namespace Blueberry
 		locateInfo.viewConfigurationType = s_AppConfigView;
 		locateInfo.displayTime = s_XrFrameState.predictedDisplayTime;
 		locateInfo.space = s_XrAppSpace;
-		xrLocateViews(s_XrSession, &locateInfo, &viewState, (uint32_t)s_XrViews.size(), &viewCount, s_XrViews.data());
+		xrLocateViews(s_XrSession, &locateInfo, &viewState, static_cast<uint32_t>(s_XrViews.size()), &viewCount, s_XrViews.data());
 		views.resize(viewCount);
 
 		// We need to ask which swapchain image to use for rendering! Which one will we get?
@@ -421,7 +422,7 @@ namespace Blueberry
 		m_MultiviewViewport = { 0, 0, s_XrSwapchains[0].width, s_XrSwapchains[0].height };
 
 		layerProj.space = s_XrAppSpace;
-		layerProj.viewCount = (uint32_t)views.size();
+		layerProj.viewCount = static_cast<uint32_t>(views.size());
 		layerProj.views = views.data();
 		s_CompositionData.hasLayer = true;
 

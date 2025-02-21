@@ -15,7 +15,7 @@ namespace Blueberry
 			return false;
 		}
 
-		m_ComputeShaderBuffer.Attach((ID3DBlob*)computeData);
+		m_ComputeShaderBuffer.Attach(static_cast<ID3DBlob*>(computeData));
 		HRESULT hr = m_Device->CreateComputeShader(m_ComputeShaderBuffer->GetBufferPointer(), m_ComputeShaderBuffer->GetBufferSize(), NULL, m_ComputeShader.GetAddressOf());
 		if (FAILED(hr))
 		{

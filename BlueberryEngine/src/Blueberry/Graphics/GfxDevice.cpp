@@ -132,14 +132,34 @@ namespace Blueberry
 		s_Instance->CopyImpl(source, target, area);
 	}
 
+	void GfxDevice::Read(GfxTexture* source, void* target)
+	{
+		s_Instance->ReadImpl(source, target);
+	}
+
 	void GfxDevice::Read(GfxTexture* source, void* target, const Rectangle& area)
 	{
 		s_Instance->ReadImpl(source, target, area);
 	}
 
+	void GfxDevice::SetRenderTarget(GfxTexture* renderTexture)
+	{
+		s_Instance->SetRenderTargetImpl(renderTexture, nullptr);
+	}
+
 	void GfxDevice::SetRenderTarget(GfxTexture* renderTexture, GfxTexture* depthStencilTexture)
 	{
 		s_Instance->SetRenderTargetImpl(renderTexture, depthStencilTexture);
+	}
+
+	void GfxDevice::SetRenderTarget(GfxTexture* renderTexture, const uint32_t& slice)
+	{
+		s_Instance->SetRenderTargetImpl(renderTexture, nullptr, slice);
+	}
+
+	void GfxDevice::SetRenderTarget(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, const uint32_t& slice)
+	{
+		s_Instance->SetRenderTargetImpl(renderTexture, depthStencilTexture, slice);
 	}
 
 	void GfxDevice::SetGlobalConstantBuffer(const size_t& id, GfxConstantBuffer* buffer)

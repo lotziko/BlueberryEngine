@@ -12,7 +12,7 @@ namespace Blueberry
 			return false;
 		}
 
-		m_ShaderBuffer.Attach((ID3DBlob*)vertexData);
+		m_ShaderBuffer.Attach(static_cast<ID3DBlob*>(vertexData));
 		HRESULT hr = device->CreateVertexShader(m_ShaderBuffer->GetBufferPointer(), m_ShaderBuffer->GetBufferSize(), NULL, m_Shader.GetAddressOf());
 		if (FAILED(hr))
 		{
@@ -140,7 +140,7 @@ namespace Blueberry
 			return false;
 		}
 
-		m_ShaderBuffer.Attach((ID3DBlob*)geometryData);
+		m_ShaderBuffer.Attach(static_cast<ID3DBlob*>(geometryData));
 		HRESULT hr = device->CreateGeometryShader(m_ShaderBuffer->GetBufferPointer(), m_ShaderBuffer->GetBufferSize(), NULL, m_Shader.GetAddressOf());
 		if (FAILED(hr))
 		{
@@ -181,7 +181,7 @@ namespace Blueberry
 			return false;
 		}
 
-		m_ShaderBuffer.Attach((ID3DBlob*)fragmentData);
+		m_ShaderBuffer.Attach(static_cast<ID3DBlob*>(fragmentData));
 		HRESULT hr = device->CreatePixelShader(m_ShaderBuffer->GetBufferPointer(), m_ShaderBuffer->GetBufferSize(), NULL, m_Shader.GetAddressOf());
 		if (FAILED(hr))
 		{

@@ -105,7 +105,7 @@ namespace Blueberry
 
 	void PngTextureProcessor::Compress(const TextureFormat& format)
 	{
-		DXGI_FORMAT dxgiFormat = (DXGI_FORMAT)format;
+		DXGI_FORMAT dxgiFormat = static_cast<DXGI_FORMAT>(format);
 		const DirectX::Image* image = m_ScratchImage.GetImage(0, 0, 0);
 		if (DirectX::IsSRGB(image->format))
 		{
@@ -142,7 +142,7 @@ namespace Blueberry
 		DirectX::Image image = *m_ScratchImage.GetImages();
 		m_Properties.data = m_ScratchImage.GetPixels();
 		m_Properties.dataSize = m_ScratchImage.GetPixelsSize();
-		m_Properties.format = (TextureFormat)image.format;
+		m_Properties.format = static_cast<TextureFormat>(image.format);
 		return m_Properties;
 	}
 }

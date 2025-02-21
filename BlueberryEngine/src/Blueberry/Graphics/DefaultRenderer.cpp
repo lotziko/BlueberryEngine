@@ -6,6 +6,7 @@
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\RenderTexture.h"
+#include "Blueberry\Graphics\TextureCube.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\DefaultMaterials.h"
 #include "Blueberry\Graphics\RenderContext.h"
@@ -24,7 +25,7 @@ namespace Blueberry
 	void DefaultRenderer::Initialize()
 	{
 		HBAORenderer::Initialize();
-		s_ResolveMSAAMaterial = Material::Create((Shader*)AssetLoader::Load("assets/shaders/ResolveMSAA.shader"));
+		s_ResolveMSAAMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/ResolveMSAA.shader")));
 		s_ShadowAtlas = new ShadowAtlas(4096, 4096, 128);
 	}
 
@@ -77,7 +78,7 @@ namespace Blueberry
 		RealtimeLights::PrepareShadows(s_Results, s_ShadowAtlas);
 
 		// Draw shadows
-		s_ShadowAtlas->Draw(s_DefaultContext, s_Results);
+		//s_ShadowAtlas->Draw(s_DefaultContext, s_Results);
 		GfxDevice::SetGlobalTexture(TO_HASH("_ShadowTexture"), s_ShadowAtlas->GetAtlasTexture()->Get());
 
 		// Lights are binded after shadows finished rendering to have valid shadow matrices
@@ -107,7 +108,7 @@ namespace Blueberry
 		GfxDevice::SetRenderTarget(HBAORenderTarget->Get());
 		GfxDevice::ClearColor({ 1.0f, 1.0f, 1.0f, 1.0f });
 		GfxDevice::SetGlobalTexture(TO_HASH("_ScreenOcclusionTexture"), HBAORenderTarget->Get());
-
+		
 		// Forward pass
 		GfxDevice::SetRenderTarget(colorMSAARenderTarget->Get(), depthStencilMSAARenderTarget->Get());
 		GfxDevice::ClearColor({ 0.0f, 0.0f, 0.0f, 0.0f });
@@ -126,7 +127,7 @@ namespace Blueberry
 		{
 			OpenXRRenderer::SubmitColorRenderTarget(colorNormalRenderTarget);
 
-			float aspectRatio = (float)viewport.height / viewport.width;
+			float aspectRatio = static_cast<float>(viewport.height) / viewport.width;
 			Rectangle eyeViewport = Rectangle(0, 0, aspectRatio * colorOutput->GetHeight(), colorOutput->GetHeight());
 
 			GfxDevice::SetRenderTarget(colorOutput->Get());

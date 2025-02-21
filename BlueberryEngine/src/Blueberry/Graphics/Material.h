@@ -69,7 +69,7 @@ namespace Blueberry
 		ObjectPtr<Shader> m_Shader;
 
 		std::unordered_map<size_t, ObjectId> m_TextureMap;
-		std::unordered_map<size_t, GfxRenderState> m_RenderStateCache;
+		std::vector<std::pair<size_t, GfxRenderState>> m_RenderStateCache;
 
 		uint32_t m_Crc = -1;
 		uint32_t m_ActiveKeywordsMask = 0;

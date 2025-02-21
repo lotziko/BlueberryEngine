@@ -102,7 +102,7 @@ namespace Blueberry
 
 					verticesPtr[0] = vertex;
 					normalsPtr[0] = normal;
-					uvsPtr[0] = Vector2((float)lon / longitudeSegments * 2, (float)lat / latitudeSegments);
+					uvsPtr[0] = Vector2(static_cast<float>(lon) / longitudeSegments * 2, static_cast<float>(lat) / latitudeSegments);
 					++verticesPtr;
 					++normalsPtr;
 					++uvsPtr;
@@ -137,5 +137,92 @@ namespace Blueberry
 		}
 
 		return s_SphereMesh;
+	}
+
+	Mesh* StandardMeshes::GetCube()
+	{
+		if (s_CubeMesh == nullptr)
+		{
+			Vector3 vertices[] =
+			{
+				{ -0.5f, -0.5f, -0.5f },
+				{ -0.5f, 0.5f, -0.5f },
+				{ 0.5f, 0.5f, -0.5f },
+				{ 0.5f, -0.5f, -0.5f },
+
+				{ -0.5f, -0.5f, 0.5f },
+				{ 0.5f, -0.5f, 0.5f },
+				{ 0.5f,  0.5f, 0.5f },
+				{ -0.5f,  0.5f, 0.5f },
+
+				{ -0.5f, 0.5f, -0.5f },
+				{ -0.5f, 0.5f, 0.5f },
+				{ 0.5f, 0.5f, 0.5f },
+				{ 0.5f, 0.5f, -0.5f },
+
+				{ -0.5f, -0.5f, -0.5f },
+				{ 0.5f, -0.5f, -0.5f },
+				{ 0.5f, -0.5f, 0.5f},
+				{ -0.5f, -0.5f, 0.5f },
+
+				{ -0.5f, -0.5f,  0.5f },
+				{ -0.5f, 0.5f, 0.5f },
+				{ -0.5f, 0.5f, -0.5f },
+				{ -0.5f, -0.5f, -0.5f },
+
+				{ 0.5f, -0.5f, -0.5f },
+				{ 0.5f,  0.5f, -0.5f },
+				{ 0.5f,  0.5f,  0.5f },
+				{ 0.5f, -0.5f,  0.5f }
+			};
+			Vector2 uvs[] =
+			{
+				{ 0.0f, 0.0f },
+				{ 0.0f, 1.0f },
+				{ 1.0f, 1.0f },
+				{ 1.0f, 0.0f },
+
+				{ 0.0f, 0.0f },
+				{ 0.0f, 1.0f },
+				{ 1.0f, 1.0f },
+				{ 1.0f, 0.0f },
+
+				{ 0.0f, 0.0f },
+				{ 0.0f, 1.0f },
+				{ 1.0f, 1.0f },
+				{ 1.0f, 0.0f },
+
+				{ 0.0f, 0.0f },
+				{ 0.0f, 1.0f },
+				{ 1.0f, 1.0f },
+				{ 1.0f, 0.0f },
+
+				{ 0.0f, 0.0f },
+				{ 0.0f, 1.0f },
+				{ 1.0f, 1.0f },
+				{ 1.0f, 0.0f },
+
+				{ 0.0f, 0.0f },
+				{ 0.0f, 1.0f },
+				{ 1.0f, 1.0f },
+				{ 1.0f, 0.0f },
+			};
+			uint32_t indices[] = 
+			{ 
+				0, 1, 2, 0, 2, 3,
+				4, 5, 6, 4, 6, 7,
+				8, 9, 10, 8, 10, 11,
+				12, 13, 14,	12, 14, 15,
+				16, 17, 18, 16, 18, 19,
+				20, 21, 22, 20, 22, 23
+			};
+			s_CubeMesh = Mesh::Create();
+			s_CubeMesh->SetVertices(vertices, ARRAYSIZE(vertices));
+			s_CubeMesh->SetIndices(indices, ARRAYSIZE(indices));
+			s_CubeMesh->SetUVs(0, uvs, ARRAYSIZE(uvs));
+			s_CubeMesh->Apply();
+		}
+
+		return s_CubeMesh;
 	}
 }

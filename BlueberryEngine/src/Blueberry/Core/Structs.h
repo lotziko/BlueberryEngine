@@ -6,7 +6,7 @@ namespace Blueberry
 {
 	struct ByteData
 	{
-		byte* data = nullptr;
+		uint8_t* data = nullptr;
 		size_t size = 0;
 	};
 

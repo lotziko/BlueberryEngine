@@ -15,6 +15,7 @@ namespace Blueberry
 		ID3D11Resource* GetTexture() const;
 		ID3D11ShaderResourceView* GetSRV() const;
 		ID3D11RenderTargetView* GetRTV() const;
+		ID3D11RenderTargetView* GetRTV(const uint32_t& slice);
 
 		virtual uint32_t GetWidth() const override;
 		virtual uint32_t GetHeight() const override;
@@ -24,10 +25,7 @@ namespace Blueberry
 
 	private:
 		uint32_t GetQualityLevel(const DXGI_FORMAT& format, const uint32_t& antiAliasing);
-		bool InitializeTexture2D();
-		bool InitializeResource(D3D11_SUBRESOURCE_DATA* subresourceData, const TextureProperties& properties);
-		bool InitializeRenderTarget(const TextureProperties& properties);
-		bool InitializeDepthStencil(const TextureProperties& properties);
+		bool Initialize(D3D11_SUBRESOURCE_DATA* subresourceData, const TextureProperties& properties);
 
 	private:
 		ComPtr<ID3D11Resource> m_Texture;
@@ -37,8 +35,11 @@ namespace Blueberry
 		ComPtr<ID3D11DepthStencilView> m_DepthStencilView;
 		ComPtr<ID3D11Resource> m_StagingTexture;
 
+		std::vector<ComPtr<ID3D11RenderTargetView>> m_SlicesRenderTargetViews;
+
 		uint32_t m_Width;
 		uint32_t m_Height;
+		uint32_t m_ArraySize;
 
 		ID3D11Device* m_Device;
 		ID3D11DeviceContext* m_DeviceContext;

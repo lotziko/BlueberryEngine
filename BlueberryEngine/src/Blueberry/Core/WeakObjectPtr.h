@@ -68,7 +68,7 @@ namespace Blueberry
 			return nullptr;
 		}
 		ObjectItem* item = ObjectDB::IdToObjectItem(m_Id);
-		return item != nullptr ? (ObjectType*)item->object : nullptr;
+		return item != nullptr ? static_cast<ObjectType*>(item->object) : nullptr;
 	}
 
 	template<class ObjectType>

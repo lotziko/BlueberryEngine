@@ -12,6 +12,7 @@ namespace Blueberry
 		OBJECT_DECLARATION(Texture)
 
 	public:
+		Texture() = default;
 		virtual ~Texture() = default;
 
 		const uint32_t& GetWidth();

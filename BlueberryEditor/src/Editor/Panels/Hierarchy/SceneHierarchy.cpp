@@ -64,7 +64,7 @@ namespace Blueberry
 			flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
 		}
 
-		bool opened = ImGui::TreeNodeEx((void*)entity, flags, "");
+		bool opened = ImGui::TreeNodeEx(static_cast<void*>(entity), flags, "");
 		if (!ImGui::IsItemToggledOpen())
 		{
 			if (ImGui::IsItemClicked())
@@ -92,12 +92,12 @@ namespace Blueberry
 			const ImGuiPayload* payload = ImGui::GetDragDropPayload();
 			if (payload != nullptr && payload->IsDataType("OBJECT_ID"))
 			{
-				ObjectId* id = (ObjectId*)payload->Data;
+				ObjectId* id = static_cast<ObjectId*>(payload->Data);
 				Object* object = ObjectDB::GetObject(*id);
 
 				if (object != nullptr && object != entity && ImGui::AcceptDragDropPayload("OBJECT_ID"))
 				{
-					((Entity*)object)->GetTransform()->SetParent(entity->GetTransform());
+					(static_cast<Entity*>(object))->GetTransform()->SetParent(entity->GetTransform());
 				}
 			}
 			ImGui::EndDragDropTarget();

@@ -17,7 +17,7 @@ namespace Blueberry
 
 	bool Gizmos::Initialize()
 	{
-		Shader* lineShader = (Shader*)AssetLoader::Load("assets/shaders/Color.shader");
+		Shader* lineShader = static_cast<Shader*>(AssetLoader::Load("assets/shaders/Color.shader"));
 		if (lineShader == nullptr)
 		{
 			BB_ERROR("Failed to load gizmo line shader.")
@@ -25,7 +25,7 @@ namespace Blueberry
 		}
 		s_LineMaterial = Material::Create(lineShader);
 
-		Shader* arcShader = (Shader*)AssetLoader::Load("assets/shaders/ArcLine.shader");
+		Shader* arcShader = static_cast<Shader*>(AssetLoader::Load("assets/shaders/ArcLine.shader"));
 		if (arcShader == nullptr)
 		{
 			BB_ERROR("Failed to load gizmo arc shader.")

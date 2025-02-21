@@ -9,6 +9,8 @@ namespace Blueberry
 	class HBAORenderer;
 	class ShadowAtlas;
 
+	class TextureCube;
+
 	class DefaultRenderer
 	{
 	public:

@@ -39,7 +39,7 @@ namespace Blueberry
 	{
 		Texture2D,
 		Texture2DArray,
-		Cubemap,
+		TextureCube,
 	};
 
 	enum class CullMode

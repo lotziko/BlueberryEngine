@@ -99,7 +99,7 @@ namespace Blueberry
 
 				if (ImGui::Selectable(info.second.name.c_str()))
 				{
-					entity->AddComponent((Component*)info.second.createInstance());
+					entity->AddComponent(static_cast<Component*>(info.second.createInstance()));
 				}
 			}
 

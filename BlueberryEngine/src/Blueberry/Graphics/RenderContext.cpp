@@ -88,7 +88,7 @@ namespace Blueberry
 		auto end = results.cullerInfos[cullerIndex].renderers.end();
 		for (auto it = begin; it < end; ++it)
 		{
-			Renderer* renderer = (Renderer*)ObjectDB::GetObject(*it);
+			Renderer* renderer = static_cast<Renderer*>(ObjectDB::GetObject(*it));
 			if (renderer->GetType() == MeshRenderer::Type)
 			{
 				auto meshRenderer = static_cast<MeshRenderer*>(renderer);
@@ -103,7 +103,7 @@ namespace Blueberry
 						if (material != nullptr)
 						{
 							SubMeshData* subMesh = mesh->GetSubMesh(i);
-							s_DrawingOperations.emplace_back(DrawingOperation{ matrix, mesh, mesh->GetObjectId(), (uint8_t)i, material, material->GetObjectId(), 1 });
+							s_DrawingOperations.emplace_back(DrawingOperation{ matrix, mesh, mesh->GetObjectId(), static_cast<uint8_t>(i), material, material->GetObjectId(), 1 });
 						}
 					}
 				}
@@ -284,13 +284,11 @@ namespace Blueberry
 			}
 		}
 
-		//TimeMeasurement::Start();
 		JobSystem::Dispatch(cullerInfos.size(), 1, [&cullerInfos](JobDispatchArgs args)
 		{
 			RendererTree::Cull(cullerInfos[args.jobIndex].planes, cullerInfos[args.jobIndex].renderers);
 		});
 		JobSystem::Wait();
-		//TimeMeasurement::End();
 
 		results.cullerInfos = cullerInfos;
 		s_LastCullerInfo = std::make_pair(nullptr, 0);
@@ -329,7 +327,7 @@ namespace Blueberry
 			{
 				indices[i] = i;
 			}
-			s_IndexBuffer->SetData((float*)indices, INSTANCE_BUFFER_SIZE);
+			s_IndexBuffer->SetData(reinterpret_cast<float*>(indices), INSTANCE_BUFFER_SIZE);
 		}
 
 		// Draw meshes

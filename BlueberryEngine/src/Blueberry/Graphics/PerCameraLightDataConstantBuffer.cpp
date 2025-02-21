@@ -78,7 +78,7 @@ namespace Blueberry
 		if (mainLight.light != nullptr)
 		{
 			Light* light = mainLight.light;
-			constants.mainLightDirection = (Vector4)Vector3::Transform(Vector3::Backward, mainLight.transform->GetRotation());
+			constants.mainLightDirection = static_cast<Vector4>(Vector3::Transform(Vector3::Backward, mainLight.transform->GetRotation()));
 			constants.mainLightColor = light->GetColor() * light->GetIntensity();
 			for (int i = 0; i < light->m_SliceCount; ++i)
 			{

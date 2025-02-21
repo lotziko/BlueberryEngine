@@ -73,7 +73,7 @@ namespace Blueberry
 		{
 			return nullptr;
 		}
-		return m_Item != nullptr ? (ObjectType*)m_Item->object : nullptr;
+		return m_Item != nullptr ? static_cast<ObjectType*>(m_Item->object) : nullptr;
 	}
 
 	template<class ObjectType>

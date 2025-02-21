@@ -11,7 +11,7 @@ namespace Blueberry
 {
 	bool HBAORendererDX11::InitializeImpl()
 	{
-		GfxDeviceDX11* gfxDevice = (GfxDeviceDX11*)GfxDevice::GetInstance();
+		GfxDeviceDX11* gfxDevice = static_cast<GfxDeviceDX11*>(GfxDevice::GetInstance());
 
 		m_Device = gfxDevice->GetDevice();
 		m_DeviceContext = gfxDevice->GetDeviceContext();
@@ -33,7 +33,7 @@ namespace Blueberry
 	{
 		GFSDK_SSAO_InputData_D3D11 Input;
 		Input.DepthData.DepthTextureType = GFSDK_SSAO_HARDWARE_DEPTHS;
-		Input.DepthData.pFullResDepthTextureSRV = ((GfxTextureDX11*)depthStencil)->GetSRV();
+		Input.DepthData.pFullResDepthTextureSRV = (static_cast<GfxTextureDX11*>(depthStencil))->GetSRV();
 		Input.DepthData.ProjectionMatrix.Data = GFSDK_SSAO_Float4x4((const GFSDK_SSAO_FLOAT*)&projection);
 		Input.DepthData.ProjectionMatrix.Layout = GFSDK_SSAO_ROW_MAJOR_ORDER;
 		Input.DepthData.MetersToViewSpaceUnits = 1.0f;
@@ -44,7 +44,7 @@ namespace Blueberry
 		Input.DepthData.Viewport.Height = viewport.height;
 
 		//Input.NormalData.Enable = true;
-		Input.NormalData.pFullResNormalTextureSRV = ((GfxTextureDX11*)normals)->GetSRV();
+		Input.NormalData.pFullResNormalTextureSRV = (static_cast<GfxTextureDX11*>(normals))->GetSRV();
 		Input.NormalData.WorldToViewMatrix.Data = GFSDK_SSAO_Float4x4((const GFSDK_SSAO_FLOAT*)&view);
 		Input.NormalData.WorldToViewMatrix.Layout = GFSDK_SSAO_ROW_MAJOR_ORDER;
 		Input.NormalData.DecodeScale = 2;
@@ -59,7 +59,7 @@ namespace Blueberry
 		Params.Blur.Sharpness = 16.f;
 
 		GFSDK_SSAO_Output_D3D11 Output;
-		Output.pRenderTargetView = ((GfxTextureDX11*)output)->GetRTV();
+		Output.pRenderTargetView = (static_cast<GfxTextureDX11*>(output))->GetRTV();
 		Output.Blend.Mode = GFSDK_SSAO_OVERWRITE_RGB;
 
 		GFSDK_SSAO_Status status = m_AOContext->RenderAO(m_DeviceContext, Input, Params, Output);

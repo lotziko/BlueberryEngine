@@ -98,14 +98,14 @@ namespace DirectX
 	void write(ryml::NodeRef* n, const BoundingBox& val)
 	{
 		*n |= ryml::MAP;
-		n->append_child() << ryml::key("m_Center") << (SimpleMath::Vector3)val.Center;
-		n->append_child() << ryml::key("m_Extents") << (SimpleMath::Vector3)val.Extents;
+		n->append_child() << ryml::key("m_Center") << static_cast<SimpleMath::Vector3>(val.Center);
+		n->append_child() << ryml::key("m_Extents") << static_cast<SimpleMath::Vector3>(val.Extents);
 	}
 
 	bool read(const ryml::ConstNodeRef& n, BoundingBox* val)
 	{
-		n["m_Center"].operator>><SimpleMath::Vector3>((SimpleMath::Vector3)val->Center);
-		n["m_Extents"].operator>><SimpleMath::Vector3>((SimpleMath::Vector3)val->Extents);
+		n["m_Center"].operator>><SimpleMath::Vector3>(static_cast<SimpleMath::Vector3>(val->Center));
+		n["m_Extents"].operator>><SimpleMath::Vector3>(static_cast<SimpleMath::Vector3>(val->Extents));
 		return true;
 	}
 }
@@ -138,8 +138,8 @@ namespace Blueberry
 	bool from_chars(ryml::csubstr buf, Blueberry::ByteData* v)
 	{
 		size_t size = buf.size();
-		v->data = new byte[size / 2];
-		v->size = size / (2 * sizeof(byte));
+		v->data = new uint8_t[size / 2];
+		v->size = size / (2 * sizeof(uint8_t));
 		ByteConverter::HexStringToBytes(buf.data(), v->data, size);
 		return true;
 	}

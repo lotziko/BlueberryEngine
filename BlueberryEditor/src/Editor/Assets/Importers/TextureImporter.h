@@ -4,6 +4,14 @@
 
 namespace Blueberry
 {
+	enum class TextureImporterShape
+	{
+		Texture2D,
+		Texture2DArray,
+		TextureCube,
+		Texture3D
+	};
+
 	class TextureImporter : public AssetImporter
 	{
 		OBJECT_DECLARATION(TextureImporter)
@@ -23,5 +31,6 @@ namespace Blueberry
 		bool m_IsSRGB = true;
 		WrapMode m_WrapMode = WrapMode::Clamp;
 		FilterMode m_FilterMode = FilterMode::Linear;
+		TextureImporterShape m_TextureShape = TextureImporterShape::Texture2D;
 	};
 }

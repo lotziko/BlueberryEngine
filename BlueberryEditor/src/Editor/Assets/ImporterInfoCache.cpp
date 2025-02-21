@@ -81,7 +81,7 @@ namespace Blueberry
 				if (!ObjectDB::HasGuidAndFileId(guid, fileId))
 				{
 					ClassDB::ClassInfo classInfo = ClassDB::GetInfo(type);
-					Object* importedObject = (Object*)classInfo.createInstance();
+					Object* importedObject = static_cast<Object*>(classInfo.createInstance());
 					importedObject->SetName(name);
 					importedObject->SetState(ObjectState::AwaitingLoading);
 

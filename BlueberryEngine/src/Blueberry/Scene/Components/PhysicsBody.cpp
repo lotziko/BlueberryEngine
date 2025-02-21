@@ -57,7 +57,7 @@ namespace Blueberry
 			{
 				JPH::Shape* shape;
 				shape = m_Colliders[0]->GetShape();
-				JPH::EMotionType motionType = (JPH::EMotionType)m_BodyType;
+				JPH::EMotionType motionType = static_cast<JPH::EMotionType>(m_BodyType);
 				JPH::BodyCreationSettings settings(shape, JPH::RVec3(position.x, position.y, position.z), JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w), motionType, 1);
 				m_BodyId = bodyInterface.CreateAndAddBody(settings, JPH::EActivation::Activate);
 			}
@@ -79,7 +79,7 @@ namespace Blueberry
 						shapeSettings->AddShape(JPH::Vec3(position.x, position.y, position.z), JPH::QuatArg(rotation.x, rotation.y, rotation.z, rotation.w), collider->GetShape());
 					}
 				}
-				JPH::EMotionType motionType = (JPH::EMotionType)m_BodyType;
+				JPH::EMotionType motionType = static_cast<JPH::EMotionType>(m_BodyType);
 				JPH::BodyCreationSettings settings(shapeSettings, JPH::RVec3(position.x, position.y, position.z), JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w), motionType, 1);
 				m_BodyId = bodyInterface.CreateAndAddBody(settings, JPH::EActivation::Activate);
 			}

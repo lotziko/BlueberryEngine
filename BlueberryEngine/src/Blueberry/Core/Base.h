@@ -23,8 +23,6 @@ namespace Blueberry
 	{
 		return std::make_unique<T>(std::forward<Args>(args)...);
 	}
-
-	using byte = unsigned char;
 }
 
 #undef min

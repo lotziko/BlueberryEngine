@@ -74,11 +74,9 @@ namespace Blueberry
 				std::this_thread::sleep_until(next);
 				next += framerate{ 1 };
 			}
-			
-			//TimeMeasurement::Start();
+
 			Update();
 			Draw();
-			//TimeMeasurement::End();
 
 			if (!hasCallbacks)
 			{

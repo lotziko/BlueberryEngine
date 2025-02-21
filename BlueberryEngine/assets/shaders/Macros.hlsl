@@ -1,5 +1,7 @@
-#ifndef INSTANCING_INCLUDED
-#define INSTANCING_INCLUDED
+#ifndef MACROS_INCLUDED
+#define MACROS_INCLUDED
+
+#define PI 3.14159265358979323846
 
 static uint _ViewIndex;
 static uint _RenderInstanceId;
@@ -39,6 +41,7 @@ static uint _RenderInstanceId;
 #define TEXTURE2D_ARRAY(textureName)					Texture2DArray textureName
 #define TEXTURE2D_ARRAY_MSAA(textureName, samples)		Texture2DMSArray<float4, samples> textureName
 #define TEXTURE2D_ARRAY_MSAA_FLOAT(textureName, samples)Texture2DMSArray<float, samples> textureName
+#define TEXTURECUBE(textureName)						TextureCube textureName
 
 #define SAMPLER(samplerName)							SamplerState samplerName
 #define SAMPLER_CMP(samplerName)						SamplerComparisonState samplerName
@@ -48,6 +51,7 @@ static uint _RenderInstanceId;
 #define SAMPLE_TEXTURE2D_SHADOW(textureName, samplerName, coord2, depth)    textureName.SampleCmpLevelZero(samplerName, coord2, depth)
 #define LOAD_TEXTURE2D_MSAA(textureName, uv, sampleIndex)					textureName.Load(uv, sampleIndex)
 #define LOAD_TEXTURE2D_ARRAY_MSAA(textureName, uv, index, sampleIndex)		textureName.Load(uint3(uv, index), sampleIndex)
+#define SAMPLE_TEXTURECUBE(textureName, samplerName, coord3)				textureName.Sample(samplerName, coord3)
 
 #if defined(MULTIVIEW)
 

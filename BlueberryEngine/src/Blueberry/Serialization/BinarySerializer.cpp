@@ -50,14 +50,14 @@ namespace Blueberry
 		if (input.is_open())
 		{
 			size_t objectCount;
-			input.read((char*)&objectCount, sizeof(size_t));
+			input.read(reinterpret_cast<char*>(&objectCount), sizeof(size_t));
 			for (size_t i = 0; i < objectCount; ++i)
 			{
 				FileId fileId;
-				input.read((char*)&fileId, sizeof(FileId));
+				input.read(reinterpret_cast<char*>(&fileId), sizeof(FileId));
 
 				size_t typeNameSize;
-				input.read((char*)&typeNameSize, sizeof(size_t));
+				input.read(reinterpret_cast<char*>(&typeNameSize), sizeof(size_t));
 
 				std::string typeName(typeNameSize, ' ');
 				input.read(typeName.data(), typeNameSize);
@@ -66,7 +66,7 @@ namespace Blueberry
 				if (it == m_FileIdToObject.end())
 				{
 					ClassDB::ClassInfo info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
-					Object* instance = (Object*)info.createInstance();
+					Object* instance = info.createInstance();
 					AddDeserializedObject(instance, fileId);
 				}
 				else
@@ -79,7 +79,7 @@ namespace Blueberry
 			for (size_t i = 0; i < objectCount; ++i)
 			{
 				FileId fileId;
-				input.read((char*)&fileId, sizeof(FileId));
+				input.read(reinterpret_cast<char*>(&fileId), sizeof(FileId));
 				Object* object = m_FileIdToObject[fileId];
 				DeserializeNode(input, Context::Create(object, object->GetType()));
 			}
@@ -104,76 +104,76 @@ namespace Blueberry
 			switch (field.type)
 			{
 			case BindingType::Bool:
-				output.write((char*)value.Get<bool>(), sizeof(bool));
+				output.write(reinterpret_cast<char*>(value.Get<bool>()), sizeof(bool));
 				break;
 			case BindingType::Int:
-				output.write((char*)value.Get<int>(), sizeof(int));
+				output.write(reinterpret_cast<char*>(value.Get<int>()), sizeof(int));
 				break;
 			case BindingType::Float:
-				output.write((char*)value.Get<float>(), sizeof(float));
+				output.write(reinterpret_cast<char*>(value.Get<float>()), sizeof(float));
 				break;
 			case BindingType::String:
 			{
 				std::string data = *value.Get<std::string>();
 				size_t stringSize = data.size();
-				output.write((char*)&stringSize, sizeof(size_t));
+				output.write(reinterpret_cast<char*>(&stringSize), sizeof(size_t));
 				output.write(data.data(), stringSize);
 			}
 			break;
 			case BindingType::ByteData:
 			{
 				ByteData data = *value.Get<ByteData>();
-				output.write((char*)&data.size, sizeof(size_t));
-				output.write((char*)data.data, data.size);
+				output.write(reinterpret_cast<char*>(&data.size), sizeof(size_t));
+				output.write(reinterpret_cast<char*>(data.data), data.size);
 			}
 			break;
 			case BindingType::IntByteArray:
 			{
 				std::vector<int> data = *value.Get<std::vector<int>>();
 				size_t dataSize = data.size();
-				output.write((char*)&dataSize, sizeof(size_t));
-				output.write((char*)data.data(), data.size() * sizeof(int));
+				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
+				output.write(reinterpret_cast<char*>(data.data()), data.size() * sizeof(int));
 			}
 			break;
 			case BindingType::FloatByteArray:
 			{
 				std::vector<float> data = *value.Get<std::vector<float>>();
 				size_t dataSize = data.size();
-				output.write((char*)&dataSize, sizeof(size_t));
-				output.write((char*)data.data(), data.size() * sizeof(float));
+				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
+				output.write(reinterpret_cast<char*>(data.data()), data.size() * sizeof(float));
 			}
 			break;
 			case BindingType::StringArray:
 			{
 				std::vector<std::string> data = *value.Get<std::vector<std::string>>();
 				size_t dataSize = data.size();
-				output.write((char*)&dataSize, sizeof(size_t));
+				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 				for (size_t i = 0; i < dataSize; ++i)
 				{
 					std::string string = data[i];
 					size_t stringSize = string.size();
-					output.write((char*)&stringSize, sizeof(size_t));
+					output.write(reinterpret_cast<char*>(&stringSize), sizeof(size_t));
 					output.write(string.data(), stringSize);
 				}
 			}
 			break;
 			case BindingType::Enum:
-				output.write((char*)value.Get<int>(), sizeof(int));
+				output.write(reinterpret_cast<char*>(value.Get<int>()), sizeof(int));
 				break;
 			case BindingType::Vector3:
-				output.write((char*)&(*value.Get<Vector3>()).x, 3 * sizeof(float));
+				output.write(reinterpret_cast<char*>(&(*value.Get<Vector3>()).x), 3 * sizeof(float));
 				break;
 			case BindingType::Vector4:
-				output.write((char*)&(*value.Get<Vector4>()).x, 4 * sizeof(float));
+				output.write(reinterpret_cast<char*>(&(*value.Get<Vector4>()).x), 4 * sizeof(float));
 				break;
 			case BindingType::Quaternion:
-				output.write((char*)&(*value.Get<Quaternion>()).x, 4 * sizeof(float));
+				output.write(reinterpret_cast<char*>(&(*value.Get<Quaternion>()).x), 4 * sizeof(float));
 				break;
 			case BindingType::Color:
-				output.write((char*)&(*value.Get<Color>()).x, 4 * sizeof(float));
+				output.write(reinterpret_cast<char*>(&(*value.Get<Color>()).x), 4 * sizeof(float));
 				break;
 			case BindingType::AABB:
-				output.write((char*)&(*value.Get<AABB>()).Center, 6 * sizeof(float));
+				output.write(reinterpret_cast<char*>(&(*value.Get<AABB>()).Center), 6 * sizeof(float));
 				break;
 			case BindingType::ObjectPtr:
 			{
@@ -187,14 +187,14 @@ namespace Blueberry
 				{
 					data.fileId = 0;
 				}
-				output.write((char*)&data, sizeof(ObjectPtrData));
+				output.write(reinterpret_cast<char*>(&data), sizeof(ObjectPtrData));
 			}
 			break;
 			case BindingType::ObjectPtrArray:
 			{
 				std::vector<ObjectPtr<Object>> arrayValue = *value.Get<std::vector<ObjectPtr<Object>>>();
 				size_t dataSize = arrayValue.size();
-				output.write((char*)&dataSize, sizeof(size_t));
+				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 				if (dataSize > 0)
 				{
 					for (ObjectPtr<Object>& objectRefValue : arrayValue)
@@ -208,7 +208,7 @@ namespace Blueberry
 						{
 							data.fileId = 0;
 						}
-						output.write((char*)&data, sizeof(ObjectPtrData));
+						output.write(reinterpret_cast<char*>(&data), sizeof(ObjectPtrData));
 					}
 				}
 			}
@@ -225,7 +225,7 @@ namespace Blueberry
 			{
 				std::vector<DataPtr<Data>>* arrayValue = value.Get<std::vector<DataPtr<Data>>>();
 				size_t dataSize = arrayValue->size();
-				output.write((char*)&dataSize, sizeof(size_t));
+				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 				if (dataSize > 0)
 				{
 					for (auto const& dataValue : *arrayValue)
@@ -248,13 +248,13 @@ namespace Blueberry
 	{
 		Variant value;
 		size_t fieldCount;
-		input.read((char*)&fieldCount, sizeof(size_t));
+		input.read(reinterpret_cast<char*>(&fieldCount), sizeof(size_t));
 
 		auto fieldsMap = context.info.fieldsMap;
 		for (size_t i = 0; i < fieldCount; ++i)
 		{
 			size_t fieldNameSize;
-			input.read((char*)&fieldNameSize, sizeof(size_t));
+			input.read(reinterpret_cast<char*>(&fieldNameSize), sizeof(size_t));
 			std::string fieldName(fieldNameSize, ' ');
 			input.read(fieldName.data(), fieldNameSize);
 
@@ -267,18 +267,18 @@ namespace Blueberry
 				switch (field.type)
 				{
 				case BindingType::Bool:
-					input.read((char*)value.Get<bool>(), sizeof(bool));
+					input.read(reinterpret_cast<char*>(value.Get<bool>()), sizeof(bool));
 					break;
 				case BindingType::Int:
-					input.read((char*)value.Get<int>(), sizeof(int));
+					input.read(reinterpret_cast<char*>(value.Get<int>()), sizeof(int));
 					break;
 				case BindingType::Float:
-					input.read((char*)value.Get<float>(), sizeof(float));
+					input.read(reinterpret_cast<char*>(value.Get<float>()), sizeof(float));
 					break;
 				case BindingType::String:
 				{
 					size_t stringSize;
-					input.read((char*)&stringSize, sizeof(size_t));
+					input.read(reinterpret_cast<char*>(&stringSize), sizeof(size_t));
 					std::string data(stringSize, ' ');
 					input.read(data.data(), stringSize);
 					*value.Get<std::string>() = data;
@@ -288,39 +288,39 @@ namespace Blueberry
 				{
 					ByteData data;
 					size_t dataSize;
-					input.read((char*)&dataSize, sizeof(size_t));
+					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 					data.data = new byte[dataSize];
-					input.read((char*)data.data, dataSize);
+					input.read(reinterpret_cast<char*>(data.data), dataSize);
 					*value.Get<ByteData>() = data;
 				}
 				break;
 				case BindingType::IntByteArray:
 				{
 					size_t dataSize;
-					input.read((char*)&dataSize, sizeof(size_t));
+					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 					std::vector<int> data(dataSize);
-					input.read((char*)data.data(), dataSize * sizeof(int));
+					input.read(reinterpret_cast<char*>(data.data()), dataSize * sizeof(int));
 					*value.Get<std::vector<int>>() = data;
 				}
 				break;
 				case BindingType::FloatByteArray:
 				{
 					size_t dataSize;
-					input.read((char*)&dataSize, sizeof(size_t));
+					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 					std::vector<float> data(dataSize);
-					input.read((char*)data.data(), dataSize * sizeof(float));
+					input.read(reinterpret_cast<char*>(data.data()), dataSize * sizeof(float));
 					*value.Get<std::vector<float>>() = data;
 				}
 				break;
 				case BindingType::StringArray:
 				{
 					size_t dataSize;
-					input.read((char*)&dataSize, sizeof(size_t));
+					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 					std::vector<std::string> data(dataSize);
 					for (size_t i = 0; i < dataSize; ++i)
 					{
 						size_t stringSize;
-						input.read((char*)&stringSize, sizeof(size_t));
+						input.read(reinterpret_cast<char*>(&stringSize), sizeof(size_t));
 						std::string string(stringSize, ' ');
 						input.read(string.data(), stringSize);
 						data[i] = string;
@@ -329,39 +329,39 @@ namespace Blueberry
 				}
 				break;
 				case BindingType::Enum:
-					input.read((char*)value.Get<int>(), sizeof(int));
+					input.read(reinterpret_cast<char*>(value.Get<int>()), sizeof(int));
 					break;
 				case BindingType::Vector3:
-					input.read((char*)&(*value.Get<Vector3>()).x, 3 * sizeof(float));
+					input.read(reinterpret_cast<char*>(&(*value.Get<Vector3>()).x), 3 * sizeof(float));
 					break;
 				case BindingType::Vector4:
-					input.read((char*)&(*value.Get<Vector3>()).x, 4 * sizeof(float));
+					input.read(reinterpret_cast<char*>(&(*value.Get<Vector3>()).x), 4 * sizeof(float));
 					break;
 				case BindingType::Quaternion:
-					input.read((char*)&(*value.Get<Vector3>()).x, 4 * sizeof(float));
+					input.read(reinterpret_cast<char*>(&(*value.Get<Vector3>()).x), 4 * sizeof(float));
 					break;
 				case BindingType::Color:
-					input.read((char*)&(*value.Get<Vector3>()).x, 4 * sizeof(float));
+					input.read(reinterpret_cast<char*>(&(*value.Get<Vector3>()).x), 4 * sizeof(float));
 					break;
 				case BindingType::AABB:
-					input.read((char*)&(*value.Get<AABB>()).Center, 6 * sizeof(float));
+					input.read(reinterpret_cast<char*>(&(*value.Get<AABB>()).Center), 6 * sizeof(float));
 					break;
 				case BindingType::ObjectPtr:
 				{
 					ObjectPtrData data = {};
-					input.read((char*)&data, sizeof(ObjectPtrData));
+					input.read(reinterpret_cast<char*>(&data), sizeof(ObjectPtrData));
 					*value.Get<ObjectPtr<Object>>() = GetPtrObject(data);
 				}
 				break;
 				case BindingType::ObjectPtrArray:
 				{
 					size_t dataSize;
-					input.read((char*)&dataSize, sizeof(size_t));
+					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 					std::vector<ObjectPtr<Object>>* refArrayPointer = value.Get<std::vector<ObjectPtr<Object>>>();
 					for (size_t i = 0; i < dataSize; ++i)
 					{
 						ObjectPtrData data = {};
-						input.read((char*)&data, sizeof(ObjectPtrData));
+						input.read(reinterpret_cast<char*>(&data), sizeof(ObjectPtrData));
 						refArrayPointer->emplace_back(GetPtrObject(data));
 					}
 				}
@@ -378,7 +378,7 @@ namespace Blueberry
 				case BindingType::DataArray:
 				{
 					size_t dataSize;
-					input.read((char*)&dataSize, sizeof(size_t));
+					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 					ClassDB::ClassInfo info = ClassDB::GetInfo(field.objectType);
 					std::vector<DataPtr<Data>>* dataArrayPointer = value.Get<std::vector<DataPtr<Data>>>();
 					for (size_t i = 0; i < dataSize; ++i)

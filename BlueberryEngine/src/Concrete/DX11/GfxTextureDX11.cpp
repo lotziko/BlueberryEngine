@@ -90,6 +90,34 @@ namespace Blueberry
 		}
 	}
 
+	bool IsDepth(DXGI_FORMAT format)
+	{
+		switch (format)
+		{
+		case DXGI_FORMAT_D32_FLOAT:
+		case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:
+		case DXGI_FORMAT_D24_UNORM_S8_UINT:
+		case DXGI_FORMAT_D16_UNORM:
+			return true;
+
+		default:
+			return false;
+		}
+	}
+
+	uint32_t GetArraySize(const TextureDimension& dimension, const uint32_t depth)
+	{
+		if (dimension == TextureDimension::Texture2D)
+		{
+			return 1;
+		}
+		else if (dimension == TextureDimension::TextureCube)
+		{
+			return 6;
+		}
+		return std::min(1u, depth);
+	}
+
 	bool GfxTextureDX11::Create(const TextureProperties& properties)
 	{
 		m_Width = properties.width;
@@ -97,14 +125,14 @@ namespace Blueberry
 
 		if (properties.data != nullptr)
 		{
-			DXGI_FORMAT format = (DXGI_FORMAT)properties.format;
+			DXGI_FORMAT format = static_cast<DXGI_FORMAT>(properties.format);
 			if (IsCompressed(format))
 			{
 				uint32_t blockSize = GetBlockSize(format);
 				D3D11_SUBRESOURCE_DATA* subresourceDatas = new D3D11_SUBRESOURCE_DATA[properties.mipCount];
 				uint32_t width = properties.width;
 				uint32_t height = properties.height;
-				char* ptr = (char*)properties.data;
+				char* ptr = static_cast<char*>(properties.data);
 				for (uint32_t i = 0; i < properties.mipCount; ++i)
 				{
 					D3D11_SUBRESOURCE_DATA subresourceData;
@@ -117,34 +145,43 @@ namespace Blueberry
 					width /= 2;
 					height /= 2;
 				}
-				return InitializeResource(subresourceDatas, properties);
+				return Initialize(subresourceDatas, properties);
 			}
 			else
 			{
-				uint32_t blockSize = properties.dataSize / (properties.width * properties.height);
-				D3D11_SUBRESOURCE_DATA subresourceData;
+				uint32_t arraySize = GetArraySize(properties.dimension, properties.depth);
+				uint32_t blockSize = properties.dataSize / (properties.width * properties.height * arraySize);
 
-				subresourceData.pSysMem = properties.data;
-				subresourceData.SysMemPitch = properties.width * blockSize;
+				if (arraySize > 1)
+				{
+					char* ptr = static_cast<char*>(properties.data);
+					D3D11_SUBRESOURCE_DATA* subresourceDatas = new D3D11_SUBRESOURCE_DATA[arraySize];
+					for (uint32_t i = 0; i < arraySize; ++i)
+					{
+						D3D11_SUBRESOURCE_DATA subresourceData;
+						subresourceData.pSysMem = ptr;
+						subresourceData.SysMemPitch = properties.width * blockSize;
+						subresourceData.SysMemSlicePitch = 0;
+						subresourceDatas[i] = subresourceData;
 
-				return InitializeResource(&subresourceData, properties);
+						ptr += properties.width * properties.height * blockSize;
+					}
+					return Initialize(subresourceDatas, properties);
+				}
+				else
+				{
+					D3D11_SUBRESOURCE_DATA subresourceData;
+					subresourceData.pSysMem = properties.data;
+					subresourceData.SysMemPitch = properties.width * blockSize;
+					subresourceData.SysMemSlicePitch = 0;
+					return Initialize(&subresourceData, properties);
+				}
 			}
 		}
 		else
 		{
-			if (properties.isRenderTarget)
-			{
-				if (properties.format == TextureFormat::D24_UNorm || properties.format == TextureFormat::D32_Float)
-				{
-					return InitializeDepthStencil(properties);
-				}
-				else
-				{
-					return InitializeRenderTarget(properties);
-				}
-			}
+			return Initialize(nullptr, properties);
 		}
-		return false;
 	}
 
 	ID3D11Resource* GfxTextureDX11::GetTexture() const
@@ -160,6 +197,11 @@ namespace Blueberry
 	ID3D11RenderTargetView* GfxTextureDX11::GetRTV() const
 	{
 		return m_RenderTargetView.Get();
+	}
+
+	ID3D11RenderTargetView* GfxTextureDX11::GetRTV(const uint32_t& slice)
+	{
+		return m_SlicesRenderTargetViews[slice].Get();
 	}
 
 	uint32_t GfxTextureDX11::GetWidth() const
@@ -223,54 +265,155 @@ namespace Blueberry
 		return 0;
 	}
 
-	bool GfxTextureDX11::InitializeResource(D3D11_SUBRESOURCE_DATA* subresourceData, const TextureProperties& properties)
+	DXGI_FORMAT GetTextureFormat(const DXGI_FORMAT& format)
 	{
+		if (format == DXGI_FORMAT_D24_UNORM_S8_UINT)
+		{
+			return DXGI_FORMAT_R24G8_TYPELESS;
+		}
+		else if (format == DXGI_FORMAT_D32_FLOAT)
+		{
+			return DXGI_FORMAT_R32_TYPELESS;
+		}
+		return format;
+	}
+
+	DXGI_FORMAT GetSRVFormat(const DXGI_FORMAT& format)
+	{
+		if (format == DXGI_FORMAT_D24_UNORM_S8_UINT)
+		{
+			return DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+		}
+		else if (format == DXGI_FORMAT_D32_FLOAT)
+		{
+			return DXGI_FORMAT_R32_FLOAT;
+		}
+		return format;
+	}
+
+	bool GfxTextureDX11::Initialize(D3D11_SUBRESOURCE_DATA* subresourceData, const TextureProperties& properties)
+	{
+		DXGI_FORMAT format = static_cast<DXGI_FORMAT>(properties.format);
+		uint32_t antiAliasing = std::max(1u, properties.antiAliasing);
+		uint32_t arraySize = GetArraySize(properties.dimension, properties.depth);
+		bool isCompressed = false;
+		bool generateMipmaps = false;
+		bool isCubemap = properties.dimension == TextureDimension::TextureCube;
+		bool isArray = !isCubemap && arraySize > 1;
+		
+		bool useDSV = IsDepth(format);
+		bool useRTV = !useDSV && properties.isRenderTarget;
+		bool useStaging = useRTV && properties.isReadable;
+		bool isResource = !useDSV && !useRTV;
+		bool useSampler = isResource || antiAliasing <= 1;
+
+		m_ArraySize = arraySize;
+
+		if (isResource)
+		{
+			isCompressed = IsCompressed(format);
+			generateMipmaps = !isCompressed && properties.mipCount > 1;
+		}
+
+		// Texture
 		D3D11_TEXTURE2D_DESC textureDesc;
 		ZeroMemory(&textureDesc, sizeof(D3D11_TEXTURE2D_DESC));
 
 		textureDesc.Width = m_Width;
 		textureDesc.Height = m_Height;
-		textureDesc.MipLevels = textureDesc.ArraySize = 1;
-		textureDesc.Format = (DXGI_FORMAT)properties.format;
-		textureDesc.SampleDesc.Count = 1;
-		textureDesc.SampleDesc.Quality = 0;
+		textureDesc.Usage = D3D11_USAGE_DEFAULT;
+		textureDesc.CPUAccessFlags = isResource ? D3D11_CPU_ACCESS_WRITE : 0;
+		textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		textureDesc.MipLevels = 1;
+		textureDesc.Format = GetTextureFormat(format);
+		textureDesc.SampleDesc.Count = antiAliasing;
+		textureDesc.SampleDesc.Quality = GetQualityLevel(format, antiAliasing);
+		textureDesc.ArraySize = arraySize;
 		textureDesc.MiscFlags = 0;
 
-		bool compressed = IsCompressed(textureDesc.Format);
-		bool generateMipmaps = properties.mipCount > 1 && !compressed;
-
-		textureDesc.Usage = D3D11_USAGE_DEFAULT;
-		textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-		textureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-		if (generateMipmaps)
+		if (isResource)
 		{
-			textureDesc.MipLevels = 0;
+			if (generateMipmaps)
+			{
+				textureDesc.MipLevels = 0;
+				textureDesc.BindFlags |= D3D11_BIND_RENDER_TARGET;
+				textureDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+			}
+			else if (isCompressed)
+			{
+				textureDesc.MipLevels = properties.mipCount;
+			}
+		}
+
+		if (useRTV)
+		{
 			textureDesc.BindFlags |= D3D11_BIND_RENDER_TARGET;
-			textureDesc.MiscFlags = D3D11_RESOURCE_MISC_GENERATE_MIPS;
+			m_SlicesRenderTargetViews.resize(arraySize);
 		}
-		else if (compressed)
+		if (useDSV)
 		{
-			textureDesc.MipLevels = properties.mipCount;
+			textureDesc.BindFlags |= D3D11_BIND_DEPTH_STENCIL;
+		}
+		if (isCubemap)
+		{
+			textureDesc.MiscFlags |= D3D11_RESOURCE_MISC_TEXTURECUBE;
 		}
 
-		HRESULT hr = m_Device->CreateTexture2D(&textureDesc, generateMipmaps ? nullptr : subresourceData, (ID3D11Texture2D**)m_Texture.GetAddressOf());
+		HRESULT hr = m_Device->CreateTexture2D(&textureDesc, generateMipmaps ? nullptr : subresourceData, reinterpret_cast<ID3D11Texture2D**>(m_Texture.GetAddressOf()));
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create texture."));
 			return false;
 		}
 
+		// SRV
 		D3D11_SHADER_RESOURCE_VIEW_DESC resourceViewDesc;
 		ZeroMemory(&resourceViewDesc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
 
-		resourceViewDesc.Format = textureDesc.Format;
-		resourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-		resourceViewDesc.Texture2D.MostDetailedMip = 0;
-		resourceViewDesc.Texture2D.MipLevels = textureDesc.MipLevels;
+		resourceViewDesc.Format = GetSRVFormat(format);
 
-		if (generateMipmaps)
+		if (isArray)
 		{
-			resourceViewDesc.Texture2D.MipLevels = -1;
+			if (antiAliasing > 1)
+			{
+				resourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMSARRAY;
+				resourceViewDesc.Texture2DMSArray.ArraySize = arraySize;
+			}
+			else
+			{
+				resourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+				resourceViewDesc.Texture2DArray.ArraySize = arraySize;
+				resourceViewDesc.Texture2DArray.MipLevels = textureDesc.MipLevels;
+				resourceViewDesc.Texture2DArray.FirstArraySlice = 0;
+				resourceViewDesc.Texture2DArray.MostDetailedMip = 0;
+			}
+		}
+		else if (isCubemap)
+		{
+			resourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
+			resourceViewDesc.TextureCube.MipLevels = textureDesc.MipLevels;
+			resourceViewDesc.TextureCube.MostDetailedMip = 0;
+		}
+		else
+		{
+			if (antiAliasing > 1)
+			{
+				resourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
+			}
+			else
+			{
+				resourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+				resourceViewDesc.Texture2D.MostDetailedMip = 0;
+
+				if (generateMipmaps)
+				{
+					resourceViewDesc.Texture2D.MipLevels = -1;
+				}
+				else
+				{
+					resourceViewDesc.Texture2D.MipLevels = textureDesc.MipLevels;
+				}
+			}
 		}
 
 		hr = m_Device->CreateShaderResourceView(m_Texture.Get(), &resourceViewDesc, m_ResourceView.GetAddressOf());
@@ -285,156 +428,104 @@ namespace Blueberry
 			m_DeviceContext->GenerateMips(m_ResourceView.Get());
 		}
 
-		D3D11_SAMPLER_DESC samplerDesc;
-		ZeroMemory(&samplerDesc, sizeof(D3D11_SAMPLER_DESC));
-
-		D3D11_TEXTURE_ADDRESS_MODE adress = GetAdressMode(properties.wrapMode);
-		D3D11_FILTER filter = GetFilter(properties.filterMode);
-
-		samplerDesc.Filter = filter;
-		samplerDesc.AddressU = adress;
-		samplerDesc.AddressV = adress;
-		samplerDesc.AddressW = adress;
-		samplerDesc.MipLODBias = 0.0f;
-		samplerDesc.MaxAnisotropy = 1;
-		samplerDesc.ComparisonFunc = GetComparison(properties.filterMode);
-		samplerDesc.MinLOD = -FLT_MAX;
-		samplerDesc.MaxLOD = FLT_MAX;
-
-		hr = m_Device->CreateSamplerState(&samplerDesc, m_SamplerState.GetAddressOf());
-		if (FAILED(hr))
+		// RTV
+		if (useRTV)
 		{
-			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create sampler state."));
-			return false;
-		}
+			D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
+			ZeroMemory(&renderTargetViewDesc, sizeof(D3D11_RENDER_TARGET_VIEW_DESC));
 
-		return true;
-	}
-
-	bool GfxTextureDX11::InitializeRenderTarget(const TextureProperties& properties)
-	{
-		DXGI_FORMAT format = (DXGI_FORMAT)properties.format;
-		uint32_t antiAliasing = std::max(1u, properties.antiAliasing);
-		uint32_t arraySize = properties.dimension == TextureDimension::Texture2D ? 1 : properties.depth;
-
-		D3D11_TEXTURE2D_DESC textureDesc;
-		ZeroMemory(&textureDesc, sizeof(D3D11_TEXTURE2D_DESC));
-
-		textureDesc.Width = m_Width;
-		textureDesc.Height = m_Height;
-		textureDesc.MipLevels = 1;
-		textureDesc.ArraySize = arraySize;
-		textureDesc.Format = format;
-		textureDesc.SampleDesc.Count = antiAliasing;
-		textureDesc.SampleDesc.Quality = GetQualityLevel(format, antiAliasing);
-		textureDesc.MiscFlags = 0;
-
-		textureDesc.Usage = D3D11_USAGE_DEFAULT;
-		textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-		textureDesc.CPUAccessFlags = 0;
-
-		HRESULT hr = m_Device->CreateTexture2D(&textureDesc, nullptr, (ID3D11Texture2D**)m_Texture.GetAddressOf());
-		if (FAILED(hr))
-		{
-			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create texture."));
-			return false;
-		}
-
-		D3D11_SHADER_RESOURCE_VIEW_DESC resourceViewDesc;
-		ZeroMemory(&resourceViewDesc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-
-		resourceViewDesc.Format = format;
-		if (arraySize == 1)
-		{
-			resourceViewDesc.ViewDimension = antiAliasing > 1 ? D3D11_SRV_DIMENSION_TEXTURE2DMS : D3D11_SRV_DIMENSION_TEXTURE2D;
-			resourceViewDesc.Texture2D.MostDetailedMip = 0;
-			resourceViewDesc.Texture2D.MipLevels = 1;
-		}
-		else
-		{
-			if (antiAliasing > 1)
+			renderTargetViewDesc.Format = format;
+			if (isArray)
 			{
-				resourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMSARRAY;
-				resourceViewDesc.Texture2DMSArray.FirstArraySlice = 0;
-				resourceViewDesc.Texture2DMSArray.ArraySize = arraySize;
+				m_SlicesRenderTargetViews.resize(arraySize);
+				if (antiAliasing > 1)
+				{
+					renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DMSARRAY;
+					renderTargetViewDesc.Texture2DMSArray.FirstArraySlice = 0;
+					renderTargetViewDesc.Texture2DMSArray.ArraySize = arraySize;
+				}
+				else
+				{
+					renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+					renderTargetViewDesc.Texture2DArray.MipSlice = 0;
+					renderTargetViewDesc.Texture2DArray.FirstArraySlice = 0;
+					renderTargetViewDesc.Texture2DArray.ArraySize = arraySize;
+				}
 			}
-			else
-			{
-				resourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-				resourceViewDesc.Texture2DArray.MostDetailedMip = 0;
-				resourceViewDesc.Texture2DArray.MipLevels = 1;
-				resourceViewDesc.Texture2DArray.FirstArraySlice = 0;
-				resourceViewDesc.Texture2DArray.ArraySize = arraySize;
-			}
-		}
-
-		hr = m_Device->CreateShaderResourceView(m_Texture.Get(), &resourceViewDesc, m_ResourceView.GetAddressOf());
-		if (FAILED(hr))
-		{
-			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create shader resource view."));
-			return false;
-		}
-
-		if (antiAliasing <= 1)
-		{
-			D3D11_SAMPLER_DESC samplerDesc;
-			ZeroMemory(&samplerDesc, sizeof(D3D11_SAMPLER_DESC));
-
-			D3D11_TEXTURE_ADDRESS_MODE adress = GetAdressMode(properties.wrapMode);
-			D3D11_FILTER filter = GetFilter(properties.filterMode);
-
-			samplerDesc.Filter = filter;
-			samplerDesc.AddressU = adress;
-			samplerDesc.AddressV = adress;
-			samplerDesc.AddressW = adress;
-			samplerDesc.MipLODBias = 0.0f;
-			samplerDesc.MaxAnisotropy = 1;
-			samplerDesc.ComparisonFunc = GetComparison(properties.filterMode);
-			samplerDesc.MinLOD = -FLT_MAX;
-			samplerDesc.MaxLOD = FLT_MAX;
-
-			hr = m_Device->CreateSamplerState(&samplerDesc, m_SamplerState.GetAddressOf());
-			if (FAILED(hr))
-			{
-				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create sampler state."));
-				return false;
-			}
-		}
-
-		D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc;
-		ZeroMemory(&renderTargetViewDesc, sizeof(D3D11_RENDER_TARGET_VIEW_DESC));
-
-		renderTargetViewDesc.Format = format;
-		if (arraySize == 1)
-		{
-			renderTargetViewDesc.ViewDimension = antiAliasing > 1 ? D3D11_RTV_DIMENSION_TEXTURE2DMS : D3D11_RTV_DIMENSION_TEXTURE2D;
-			renderTargetViewDesc.Texture2D.MipSlice = 0;
-		}
-		else
-		{
-			if (antiAliasing > 1)
-			{
-				renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DMSARRAY;
-				renderTargetViewDesc.Texture2DMSArray.FirstArraySlice = 0;
-				renderTargetViewDesc.Texture2DMSArray.ArraySize = arraySize;
-			}
-			else
+			if (isCubemap)
 			{
 				renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
 				renderTargetViewDesc.Texture2DArray.MipSlice = 0;
 				renderTargetViewDesc.Texture2DArray.FirstArraySlice = 0;
-				renderTargetViewDesc.Texture2DArray.ArraySize = arraySize;
+				renderTargetViewDesc.Texture2DArray.ArraySize = 6;
+
+				D3D11_RENDER_TARGET_VIEW_DESC sliceRenderTargetViewDesc = renderTargetViewDesc;
+				for (uint32_t i = 0; i < 6; ++i)
+				{
+					sliceRenderTargetViewDesc.Texture2DArray.FirstArraySlice = i;
+					sliceRenderTargetViewDesc.Texture2DArray.ArraySize = 1;
+
+					hr = m_Device->CreateRenderTargetView(m_Texture.Get(), &sliceRenderTargetViewDesc, m_SlicesRenderTargetViews[i].GetAddressOf());
+					if (FAILED(hr))
+					{
+						BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create render target view."));
+						return false;
+					}
+				}
+			}
+			else
+			{
+				renderTargetViewDesc.ViewDimension = antiAliasing > 1 ? D3D11_RTV_DIMENSION_TEXTURE2DMS : D3D11_RTV_DIMENSION_TEXTURE2D;
+				renderTargetViewDesc.Texture2D.MipSlice = 0;
+			}
+
+			hr = m_Device->CreateRenderTargetView(m_Texture.Get(), &renderTargetViewDesc, m_RenderTargetView.GetAddressOf());
+			if (FAILED(hr))
+			{
+				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create render target view."));
+				return false;
 			}
 		}
 
-		hr = m_Device->CreateRenderTargetView(m_Texture.Get(), &renderTargetViewDesc, m_RenderTargetView.GetAddressOf());
-		if (FAILED(hr))
+		// DSV
+		if (useDSV)
 		{
-			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create render target view."));
-			return false;
+			D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
+			ZeroMemory(&depthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
+
+			depthStencilViewDesc.Format = format;
+
+			if (isArray)
+			{
+				if (antiAliasing > 1)
+				{
+					depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMSARRAY;
+					depthStencilViewDesc.Texture2DMSArray.FirstArraySlice = 0;
+					depthStencilViewDesc.Texture2DMSArray.ArraySize = arraySize;
+				}
+				else
+				{
+					depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+					depthStencilViewDesc.Texture2DArray.MipSlice = 0;
+					depthStencilViewDesc.Texture2DArray.FirstArraySlice = 0;
+					depthStencilViewDesc.Texture2DArray.ArraySize = arraySize;
+				}
+			}
+			else
+			{
+				depthStencilViewDesc.ViewDimension = antiAliasing > 1 ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
+				depthStencilViewDesc.Texture2D.MipSlice = 0;
+			}
+
+			hr = m_Device->CreateDepthStencilView(m_Texture.Get(), &depthStencilViewDesc, m_DepthStencilView.GetAddressOf());
+			if (FAILED(hr))
+			{
+				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create depth stencil view."));
+				return false;
+			}
 		}
 
-		if (properties.isReadable)
+		if (useStaging)
 		{
 			D3D11_TEXTURE2D_DESC textureDesc;
 			ZeroMemory(&textureDesc, sizeof(D3D11_TEXTURE2D_DESC));
@@ -451,7 +542,12 @@ namespace Blueberry
 			textureDesc.BindFlags = 0;
 			textureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 
-			HRESULT hr = m_Device->CreateTexture2D(&textureDesc, nullptr, (ID3D11Texture2D**)m_StagingTexture.GetAddressOf());
+			if (isCubemap)
+			{
+				textureDesc.MiscFlags |= D3D11_RESOURCE_MISC_TEXTURECUBE;
+			}
+
+			HRESULT hr = m_Device->CreateTexture2D(&textureDesc, nullptr, reinterpret_cast<ID3D11Texture2D**>(m_StagingTexture.GetAddressOf()));
 			if (FAILED(hr))
 			{
 				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create texture."));
@@ -459,94 +555,8 @@ namespace Blueberry
 			}
 		}
 
-		return true;
-	}
-
-	bool GfxTextureDX11::InitializeDepthStencil(const TextureProperties& properties)
-	{
-		D3D11_TEXTURE2D_DESC textureDesc;
-		ZeroMemory(&textureDesc, sizeof(D3D11_TEXTURE2D_DESC));
-
-		DXGI_FORMAT format = (DXGI_FORMAT)properties.format;
-		uint32_t antiAliasing = std::max(1u, properties.antiAliasing);
-		uint32_t arraySize = properties.dimension == TextureDimension::Texture2D ? 1 : properties.depth;
-
-		textureDesc.Width = m_Width;
-		textureDesc.Height = m_Height;
-		textureDesc.MipLevels = 1;
-		textureDesc.ArraySize = arraySize;
-		textureDesc.Format = format;
-		textureDesc.SampleDesc.Count = antiAliasing;
-		textureDesc.SampleDesc.Quality = GetQualityLevel(format, antiAliasing);
-		textureDesc.MiscFlags = 0;
-
-		switch (format)
-		{
-		case DXGI_FORMAT_D24_UNORM_S8_UINT:
-			textureDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
-			break;
-		case DXGI_FORMAT_D32_FLOAT:
-			textureDesc.Format = DXGI_FORMAT_R32_TYPELESS;
-			break;
-		}
-
-		textureDesc.Usage = D3D11_USAGE_DEFAULT;
-		textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_DEPTH_STENCIL;
-		textureDesc.CPUAccessFlags = 0;
-
-		HRESULT hr = m_Device->CreateTexture2D(&textureDesc, nullptr, (ID3D11Texture2D**)m_Texture.GetAddressOf());
-		if (FAILED(hr))
-		{
-			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create texture."));
-			return false;
-		}
-
-		D3D11_SHADER_RESOURCE_VIEW_DESC resourceViewDesc;
-		ZeroMemory(&resourceViewDesc, sizeof(D3D11_SHADER_RESOURCE_VIEW_DESC));
-
-		resourceViewDesc.Format = format;
-		if (arraySize == 1)
-		{
-			resourceViewDesc.ViewDimension = antiAliasing > 1 ? D3D11_SRV_DIMENSION_TEXTURE2DMS : D3D11_SRV_DIMENSION_TEXTURE2D;
-			resourceViewDesc.Texture2D.MostDetailedMip = 0;
-			resourceViewDesc.Texture2D.MipLevels = textureDesc.MipLevels;
-		}
-		else
-		{
-			if (antiAliasing > 1)
-			{
-				resourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMSARRAY;
-				resourceViewDesc.Texture2DMSArray.FirstArraySlice = 0;
-				resourceViewDesc.Texture2DMSArray.ArraySize = arraySize;
-			}
-			else
-			{
-				resourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-				resourceViewDesc.Texture2DArray.MostDetailedMip = 0;
-				resourceViewDesc.Texture2DArray.MipLevels = 1;
-				resourceViewDesc.Texture2DArray.FirstArraySlice = 0;
-				resourceViewDesc.Texture2DArray.ArraySize = arraySize;
-			}
-		}
-
-		switch (format)
-		{
-		case DXGI_FORMAT_D24_UNORM_S8_UINT:
-			resourceViewDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
-			break;
-		case DXGI_FORMAT_D32_FLOAT:
-			resourceViewDesc.Format = DXGI_FORMAT_R32_FLOAT;
-			break;
-		}
-
-		hr = m_Device->CreateShaderResourceView(m_Texture.Get(), &resourceViewDesc, m_ResourceView.GetAddressOf());
-		if (FAILED(hr))
-		{
-			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create shader resource view."));
-			return false;
-		}
-
-		if (antiAliasing <= 1)
+		// Sampler
+		if (useSampler)
 		{
 			D3D11_SAMPLER_DESC samplerDesc;
 			ZeroMemory(&samplerDesc, sizeof(D3D11_SAMPLER_DESC));
@@ -571,40 +581,7 @@ namespace Blueberry
 				return false;
 			}
 		}
-
-		D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc;
-		ZeroMemory(&depthStencilViewDesc, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
-
-		depthStencilViewDesc.Format = format;
-		if (arraySize == 1)
-		{
-			depthStencilViewDesc.ViewDimension = antiAliasing > 1 ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D;
-			depthStencilViewDesc.Texture2D.MipSlice = 0;
-		}
-		else
-		{
-			if (antiAliasing > 1)
-			{
-				depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMSARRAY;
-				depthStencilViewDesc.Texture2DMSArray.FirstArraySlice = 0;
-				depthStencilViewDesc.Texture2DMSArray.ArraySize = arraySize;
-			}
-			else
-			{
-				depthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
-				depthStencilViewDesc.Texture2DArray.MipSlice = 0;
-				depthStencilViewDesc.Texture2DArray.FirstArraySlice = 0;
-				depthStencilViewDesc.Texture2DArray.ArraySize = arraySize;
-			}
-		}
-
-		hr = m_Device->CreateDepthStencilView(m_Texture.Get(), &depthStencilViewDesc, m_DepthStencilView.GetAddressOf());
-		if (FAILED(hr))
-		{
-			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create depth stencil view."));
-			return false;
-		}
-
+		
 		return true;
 	}
 }

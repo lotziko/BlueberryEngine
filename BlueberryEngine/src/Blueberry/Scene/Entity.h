@@ -93,6 +93,7 @@ namespace Blueberry
 		componentToAdd->OnCreate();
 		if (IsActiveInHierarchy())
 		{
+			// TODO handle prefabs
 			componentToAdd->OnEnable();
 		}
 		return componentToAdd;
@@ -134,7 +135,7 @@ namespace Blueberry
 		{
 			if (component->IsClassType(ComponentType::Type))
 			{
-				return (ComponentType*)component.Get();
+				return static_cast<ComponentType*>(component.Get());
 			}
 		}
 

@@ -3,6 +3,7 @@
 
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\Texture.h"
+#include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Graphics\DefaultTextures.h"
 #include "Blueberry\Core\ClassDB.h"
@@ -125,11 +126,14 @@ namespace Blueberry
 			return nullptr;
 		}
 
-		size_t key = (size_t)keywordMask | (size_t)m_ActiveKeywordsMask << 32 | (size_t)passIndex << 56;
-		auto it = m_RenderStateCache.find(key);
-		if (it != m_RenderStateCache.end())
+		size_t key = static_cast<size_t>(keywordMask) | static_cast<size_t>(m_ActiveKeywordsMask) << 32 | static_cast<size_t>(passIndex) << 56;
+		
+		for (auto it = m_RenderStateCache.begin(); it < m_RenderStateCache.end(); ++it)
 		{
-			return &(it->second);
+			if (it->first == key)
+			{
+				return &(it->second);
+			}
 		}
 
 		GfxRenderState newState = {};
@@ -215,8 +219,8 @@ namespace Blueberry
 		newState.zTest = shaderPass->GetZTest();
 		newState.zWrite = shaderPass->GetZWrite();
 
-		m_RenderStateCache[key] = newState;
-		return &m_RenderStateCache[key];
+		m_RenderStateCache.emplace_back(std::move(std::make_pair(key, newState)));
+		return &m_RenderStateCache[m_RenderStateCache.size() - 1].second;
 	}
 
 	const uint32_t& Material::GetCRC()
@@ -255,7 +259,8 @@ namespace Blueberry
 				size_t key = TO_HASH(data->GetName());
 				if (m_TextureMap.count(key) == 0)
 				{
-					m_TextureMap.insert({key, ((Texture*)DefaultTextures::GetTexture(data->GetDefaultTextureName()))->GetObjectId() });
+					// TODO cubemap
+					m_TextureMap.insert({key, DefaultTextures::GetTexture(data->GetDefaultTextureName())->GetObjectId() });
 				}
 			}
 		}
