@@ -3,6 +3,7 @@
 #include "EnityComponent.h"
 #include "Components\ComponentManager.h"
 #include "Blueberry\Events\Event.h"
+#include "Blueberry\Graphics\RendererTree.h"
 
 namespace Blueberry
 {
@@ -30,13 +31,16 @@ namespace Blueberry
 		void AddEntity(Entity* entity);
 		void DestroyEntity(Entity* entity);
 
-		const std::map<ObjectId, ObjectPtr<Entity>>& GetEntities();
+		const ska::flat_hash_map<ObjectId, ObjectPtr<Entity>>& GetEntities();
+
+		RendererTree& GetRendererTree();
 
 	private:
-		std::map<ObjectId, ObjectPtr<Entity>> m_Entities;
+		ska::flat_hash_map<ObjectId, ObjectPtr<Entity>> m_Entities;
 		std::vector<Component*> m_CreatedComponents;
 		// Stores only components added using AddToSceneComponents()
 		ComponentManager m_ComponentManager;
+		RendererTree m_RendererTree;
 
 		friend class Entity;
 	};

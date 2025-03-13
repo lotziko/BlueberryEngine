@@ -1,23 +1,22 @@
 #pragma once
 
-#include <unordered_map>
-#include "Blueberry/Scene/Entity.h"
+#include "Blueberry\Scene\Entity.h"
 
 namespace Blueberry
 {
 	struct ComponentIterator
 	{
 	public:
-		ComponentIterator(std::unordered_map<ObjectId, Component*>* data) : m_Data(data) {}
+		ComponentIterator(ska::flat_hash_map<ObjectId, Component*>* data) : m_Data(data) {}
 
 		auto begin() { return m_Data->begin(); }
 		auto end() { return m_Data->end(); }
 
 	private:
-		std::unordered_map<ObjectId, Component*>* m_Data;
+		ska::flat_hash_map<ObjectId, Component*>* m_Data;
 	};
 
-	using ComponentMap = std::unordered_map<ObjectId, Component*>;
+	using ComponentMap = ska::flat_hash_map<ObjectId, Component*>;
 
 	class ComponentManager
 	{
@@ -35,7 +34,7 @@ namespace Blueberry
 		ComponentMap& GetComponents(const size_t& type);
 
 	private:
-		std::map<size_t, ComponentMap> m_Components;
+		ska::flat_hash_map<size_t, ComponentMap> m_Components;
 	};
 
 	template<class ComponentType>

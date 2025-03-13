@@ -16,6 +16,9 @@ namespace Blueberry
 		if (!InitializeDirectX(*(static_cast<HWND*>(data)), width, height))
 			return false;
 
+		m_Cache = GfxRenderStateCacheDX11(this);
+		m_BindedTextures.reserve(64);
+
 		return true;
 	}
 
@@ -320,8 +323,8 @@ namespace Blueberry
 
 	void GfxDeviceDX11::SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, const uint32_t& slice)
 	{
-		m_DeviceContext->PSSetShaderResources(0, 16, m_ShaderResourceViews);
-		m_DeviceContext->PSSetSamplers(0, 16, m_Samplers);
+		m_DeviceContext->PSSetShaderResources(0, 16, m_EmptyShaderResourceViews);
+		m_DeviceContext->PSSetSamplers(0, 16, m_EmptySamplers);
 
 		ID3D11RenderTargetView** renderTarget = nullptr;
 		if (renderTexture != nullptr)
@@ -360,21 +363,29 @@ namespace Blueberry
 	{
 		auto dxConstantBuffer = static_cast<GfxConstantBufferDX11*>(buffer);
 		m_BindedConstantBuffers.insert_or_assign(id, dxConstantBuffer);
-		m_CurrentCrc = 0;
+		m_CurrentCrc = UINT32_MAX;
 	}
 
 	void GfxDeviceDX11::SetGlobalStructuredBufferImpl(const size_t& id, GfxStructuredBuffer* buffer)
 	{
 		auto dxStructuredBuffer = static_cast<GfxStructuredBufferDX11*>(buffer);
 		m_BindedStructuredBuffers.insert_or_assign(id, dxStructuredBuffer);
-		m_CurrentCrc = 0;
+		m_CurrentCrc = UINT32_MAX;
 	}
 
 	void GfxDeviceDX11::SetGlobalTextureImpl(const size_t& id, GfxTexture* texture)
 	{
 		auto dxTexture = static_cast<GfxTextureDX11*>(texture);
-		m_BindedTextures.insert_or_assign(id, dxTexture);
-		m_CurrentCrc = 0;
+		for (auto it = m_BindedTextures.begin(); it < m_BindedTextures.end(); ++it)
+		{
+			if (it->first == id)
+			{
+				it->second = dxTexture;
+				return;
+			}
+		}
+		m_BindedTextures.emplace_back(std::make_pair(id, dxTexture));
+		m_CurrentCrc = UINT32_MAX;
 	}
 
 	D3D11_PRIMITIVE_TOPOLOGY GetPrimitiveTopology(const Topology& topology)
@@ -397,152 +408,81 @@ namespace Blueberry
 			return;
 		}
 
-		GfxRenderState* renderState = operation.renderState;
-		ObjectId materialId = operation.materialId;
-		uint32_t materialCRC = operation.materialCRC;
-		SetCullMode(renderState->cullMode);
-		SetBlendMode(renderState->blendSrcColor, renderState->blendSrcAlpha, renderState->blendDstColor, renderState->blendDstAlpha);
-		SetZTestAndZWrite(renderState->zTest, renderState->zWrite);
-		SetTopology(operation.topology);
+		const GfxRenderStateDX11 renderState = m_Cache.GetState(operation.material, operation.passIndex);
 
-		// TODO check if shader variant/material/mesh is the same to skip some bindings
-
-		// Does not work when texture is switched for example in IconRenderer
+		if (!renderState.isValid)
 		{
-			auto dxVertexShader = static_cast<GfxVertexShaderDX11*>(renderState->vertexShader);
-			if (dxVertexShader != m_VertexShader)
+			return;
+		}
+
+		if (renderState.inputLayout != m_RenderState.inputLayout)
+		{
+			m_DeviceContext->IASetInputLayout(renderState.inputLayout);
+		}
+		if (renderState.vertexShader != m_RenderState.vertexShader)
+		{
+			m_DeviceContext->VSSetShader(renderState.vertexShader, NULL, 0);
+		}
+		if (renderState.geometryShader != m_RenderState.geometryShader)
+		{
+			m_DeviceContext->GSSetShader(renderState.geometryShader, NULL, 0);
+		}
+		if (renderState.pixelShader != m_RenderState.pixelShader)
+		{
+			m_DeviceContext->PSSetShader(renderState.pixelShader, NULL, 0);
+		}
+		for (uint32_t i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT / 8; ++i)
+		{
+			if (renderState.vertexShaderResourceViews[i] != m_RenderState.vertexShaderResourceViews[i])
 			{
-				m_VertexShader = dxVertexShader;
-
-				m_DeviceContext->IASetInputLayout(dxVertexShader->m_InputLayout.Get());
-				m_DeviceContext->VSSetShader(dxVertexShader->m_Shader.Get(), NULL, 0);
+				m_DeviceContext->VSSetShaderResources(i, 1, &renderState.vertexShaderResourceViews[i]);
 			}
-
-			auto dxGeometryShader = static_cast<GfxGeometryShaderDX11*>(renderState->geometryShader);
-			if (dxGeometryShader != m_GeometryShader)
+			if (renderState.vertexSamplerStates[i] != m_RenderState.vertexSamplerStates[i])
 			{
-				m_GeometryShader = dxGeometryShader;
-				
-				if (dxGeometryShader == nullptr)
-				{
-					m_DeviceContext->GSSetShader(NULL, NULL, 0);
-				}
-				else
-				{
-					m_DeviceContext->GSSetShader(dxGeometryShader->m_Shader.Get(), NULL, 0);
-				}
+				m_DeviceContext->VSSetSamplers(i, 1, &renderState.vertexSamplerStates[i]);
 			}
-			
-			auto dxFragmentShader = static_cast<GfxFragmentShaderDX11*>(renderState->fragmentShader);
-			if (dxFragmentShader != m_FragmentShader)
+			if (renderState.pixelShaderResourceViews[i] != m_RenderState.pixelShaderResourceViews[i])
 			{
-				m_FragmentShader = dxFragmentShader;
-
-				m_DeviceContext->PSSetShader(dxFragmentShader->m_Shader.Get(), NULL, 0);
+				m_DeviceContext->PSSetShaderResources(i, 1, &renderState.pixelShaderResourceViews[i]);
 			}
-
-			if (materialId != m_MaterialId || operation.materialCRC != m_MaterialCrc || GetCRC() != m_GlobalCrc || renderState != m_RenderState)
+			if (renderState.pixelSamplerStates[i] != m_RenderState.pixelSamplerStates[i])
 			{
-				m_MaterialId = materialId;
-				m_RenderState = renderState;
-				m_MaterialCrc = materialCRC;
-				m_GlobalCrc = m_CurrentCrc;
-
-				// Bind vertex constant buffers
-				for (auto it = dxVertexShader->m_ConstantBufferSlots.begin(); it != dxVertexShader->m_ConstantBufferSlots.end(); it++)
-				{
-					auto pair = m_BindedConstantBuffers.find(it->first);
-					if (pair != m_BindedConstantBuffers.end())
-					{
-						m_ConstantBuffers[it->second] = pair->second->m_Buffer.Get();
-					}
-				}
-
-				m_DeviceContext->VSSetConstantBuffers(0, 8, m_ConstantBuffers);
-
-				std::fill_n(m_ConstantBuffers, 8, nullptr);
-				std::fill_n(m_ShaderResourceViews, 16, nullptr);
-
-				// Bind vertex structured buffers
-				for (auto it = dxVertexShader->m_StructuredBufferSlots.begin(); it != dxVertexShader->m_StructuredBufferSlots.end(); it++)
-				{
-					auto pair = m_BindedStructuredBuffers.find(it->first);
-					if (pair != m_BindedStructuredBuffers.end())
-					{
-						uint32_t bufferSlotIndex = it->second.first;
-						uint32_t shaderResourceViewSlotIndex = it->second.second;
-						auto dxBuffer = pair->second;
-						//m_ConstantBuffers[bufferSlotIndex] = dxBuffer->m_Buffer.Get();
-						m_ShaderResourceViews[shaderResourceViewSlotIndex] = dxBuffer->m_ShaderResourceView.Get();
-					}
-				}
-				
-				m_DeviceContext->VSSetShaderResources(0, 16, m_ShaderResourceViews);
-
-				if (dxGeometryShader != nullptr)
-				{
-					// Bind geometry constant buffers
-					for (auto it = dxGeometryShader->m_ConstantBufferSlots.begin(); it != dxGeometryShader->m_ConstantBufferSlots.end(); it++)
-					{
-						auto pair = m_BindedConstantBuffers.find(it->first);
-						if (pair != m_BindedConstantBuffers.end())
-						{
-							m_ConstantBuffers[it->second] = pair->second->m_Buffer.Get();
-						}
-					}
-
-					m_DeviceContext->GSSetConstantBuffers(0, 8, m_ConstantBuffers);
-				}
-
-				// Bind fragment constant buffers
-				for (auto it = dxFragmentShader->m_ConstantBufferSlots.begin(); it != dxFragmentShader->m_ConstantBufferSlots.end(); it++)
-				{
-					auto pair = m_BindedConstantBuffers.find(it->first);
-					if (pair != m_BindedConstantBuffers.end())
-					{
-						m_ConstantBuffers[it->second] = pair->second->m_Buffer.Get();
-					}
-				}
-
-				m_DeviceContext->PSSetConstantBuffers(0, 8, m_ConstantBuffers);
-
-				std::fill_n(m_ConstantBuffers, 8, nullptr);
-
-				// Bind fragment material textures
-				for (int i = 0; i < renderState->fragmentTextureCount; i++)
-				{
-					GfxRenderState::TextureInfo info = renderState->fragmentTextures[i];
-					auto dxTexture = static_cast<GfxTextureDX11*>(info.Get());
-					m_ShaderResourceViews[info.textureSlot] = dxTexture->m_ResourceView.Get();
-					if (info.samplerSlot != -1)
-					{
-						m_Samplers[info.samplerSlot] = dxTexture->m_SamplerState.Get();
-					}
-				}
-
-				// Bind fragment global textures
-				for (auto it = dxFragmentShader->m_TextureSlots.begin(); it != dxFragmentShader->m_TextureSlots.end(); it++)
-				{
-					auto pair = m_BindedTextures.find(it->first);
-					if (pair != m_BindedTextures.end())
-					{
-						uint32_t textureSlotIndex = it->second.first;
-						uint32_t samplerSlotIndex = it->second.second;
-						auto dxTexture = pair->second;
-						m_ShaderResourceViews[textureSlotIndex] = dxTexture->m_ResourceView.Get();
-						if (samplerSlotIndex != -1)
-						{
-							m_Samplers[samplerSlotIndex] = dxTexture->m_SamplerState.Get();
-						}
-					}
-				}
-
-				m_DeviceContext->PSSetShaderResources(0, 16, m_ShaderResourceViews);
-				m_DeviceContext->PSSetSamplers(0, 16, m_Samplers);
-
-				std::fill_n(m_ShaderResourceViews, 16, nullptr);
-				std::fill_n(m_Samplers, 16, nullptr);
+				m_DeviceContext->PSSetSamplers(i, 1, &renderState.pixelSamplerStates[i]);
 			}
+		}
+		for (uint32_t i = 0; i < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT; ++i)
+		{
+			if (renderState.vertexConstantBuffers[i] != m_RenderState.vertexConstantBuffers[i])
+			{
+				m_DeviceContext->VSSetConstantBuffers(i, 1, &renderState.vertexConstantBuffers[i]);
+			}
+			if (renderState.geometryConstantBuffers[i] != m_RenderState.geometryConstantBuffers[i])
+			{
+				m_DeviceContext->GSSetConstantBuffers(i, 1, &renderState.geometryConstantBuffers[i]);
+			}
+			if (renderState.pixelConstantBuffers[i] != m_RenderState.pixelConstantBuffers[i])
+			{
+				m_DeviceContext->PSSetConstantBuffers(i, 1, &renderState.pixelConstantBuffers[i]);
+			}
+		}
+
+		if (renderState.rasterizerState != m_RenderState.rasterizerState)
+		{
+			m_DeviceContext->RSSetState(renderState.rasterizerState);
+		}
+		if (renderState.depthStencilState != m_RenderState.depthStencilState)
+		{
+			m_DeviceContext->OMSetDepthStencilState(renderState.depthStencilState, 0);
+		}
+		if (renderState.blendState != m_RenderState.blendState)
+		{
+			const float blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
+			m_DeviceContext->OMSetBlendState(renderState.blendState, blendFactor, 0xffffffff);
+		}
+		if (m_Topology != operation.topology)
+		{
+			m_Topology = operation.topology;
+			m_DeviceContext->IASetPrimitiveTopology(GetPrimitiveTopology(operation.topology));
 		}
 
 		auto dxVertexBuffer = static_cast<GfxVertexBufferDX11*>(operation.vertexBuffer);
@@ -592,6 +532,8 @@ namespace Blueberry
 				m_DeviceContext->DrawIndexedInstanced(operation.indexCount, operation.instanceCount * m_ViewCount, operation.indexOffset, 0, 0);
 			}
 		}
+
+		m_RenderState = renderState;
 	}
 
 	void GfxDeviceDX11::DispatchImpl(GfxComputeShader*& shader, const uint32_t& threadGroupsX, const uint32_t& threadGroupsY, const uint32_t& threadGroupsZ) const
@@ -762,10 +704,6 @@ namespace Blueberry
 			}
 		}
 
-		SetCullMode(CullMode::None);
-		SetBlendMode(BlendMode::One, BlendMode::Zero, BlendMode::One, BlendMode::Zero);
-		SetZTestAndZWrite(ZTest::LessEqual, ZWrite::On);
-
 		m_BindedRenderTarget = nullptr;
 		m_BindedDepthStencil = nullptr;
 
@@ -774,25 +712,16 @@ namespace Blueberry
 		return true;
 	}
 
-	void GfxDeviceDX11::SetCullMode(const CullMode& mode)
+	ID3D11RasterizerState* GfxDeviceDX11::GetRasterizerState(const CullMode& mode)
 	{
-		if (mode == m_CullMode)
-		{
-			return;
-		}
-		m_CullMode = mode;
-
 		switch (mode)
 		{
 		case CullMode::None:
-			m_DeviceContext->RSSetState(m_CullNoneRasterizerState.Get());
-			break;
+			return m_CullNoneRasterizerState.Get();
 		case CullMode::Front:
-			m_DeviceContext->RSSetState(m_CullFrontRasterizerState.Get());
-			break;
+			return m_CullFrontRasterizerState.Get();
 		case CullMode::Back:
-			m_DeviceContext->RSSetState(m_CullBackRasterizerState.Get());
-			break;
+			return m_CullBackRasterizerState.Get();
 		}
 	}
 
@@ -808,20 +737,13 @@ namespace Blueberry
 		}
 	}
 
-	void GfxDeviceDX11::SetBlendMode(const BlendMode& blendSrcColor, const BlendMode& blendSrcAlpha, const BlendMode& blendDstColor, const BlendMode& blendDstAlpha)
+	ID3D11BlendState* GfxDeviceDX11::GetBlendState(const BlendMode& blendSrcColor, const BlendMode& blendSrcAlpha, const BlendMode& blendDstColor, const BlendMode& blendDstAlpha)
 	{
 		size_t key = static_cast<size_t>(blendSrcColor) << 8 | static_cast<size_t>(blendSrcAlpha) << 16 | static_cast<size_t>(blendSrcColor) << 24 | static_cast<size_t>(blendSrcAlpha) << 32;
-		if (key == m_BlendKey)
-		{
-			return;
-		}
-		m_BlendKey = key;
-
-		ComPtr<ID3D11BlendState> state;
 		auto it = m_BlendStates.find(key);
 		if (it != m_BlendStates.end())
 		{
-			state = it->second;
+			return it->second.Get();
 		}
 		else
 		{
@@ -843,32 +765,25 @@ namespace Blueberry
 			blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 			blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
+			ComPtr<ID3D11BlendState> state;
 			HRESULT hr = m_Device->CreateBlendState(&blendDesc, state.GetAddressOf());
 			if (FAILED(hr))
 			{
 				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create blend state."));
-				return;
+				return state.Get();
 			}
 			m_BlendStates.insert_or_assign(key, state);
+			return state.Get();
 		}
-		const float blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
-		m_DeviceContext->OMSetBlendState(state.Get(), blendFactor, 0xffffffff);
 	}
 
-	void GfxDeviceDX11::SetZTestAndZWrite(const ZTest& zTest, const ZWrite& zWrite)
+	ID3D11DepthStencilState* GfxDeviceDX11::GetDepthStencilState(const ZTest& zTest, const ZWrite& zWrite)
 	{
 		size_t key = static_cast<size_t>(zTest) << 8 | static_cast<size_t>(zWrite) << 16;
-		if (key == m_ZTestZWriteKey)
-		{
-			return;
-		}
-		m_ZTestZWriteKey = key;
-
-		ComPtr<ID3D11DepthStencilState> state;
 		auto it = m_DepthStencilStates.find(key);
 		if (it != m_DepthStencilStates.end())
 		{
-			state = it->second;
+			return it->second.Get();
 		}
 		else
 		{
@@ -879,32 +794,23 @@ namespace Blueberry
 			depthStencilDesc.DepthWriteMask = zWrite == ZWrite::On ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
 			depthStencilDesc.DepthFunc = (D3D11_COMPARISON_FUNC)(static_cast<uint32_t>(zTest) + 1);
 
+			ComPtr<ID3D11DepthStencilState> state;
 			HRESULT hr = m_Device->CreateDepthStencilState(&depthStencilDesc, state.GetAddressOf());
 			if (FAILED(hr))
 			{
 				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create depth stencil state."));
-				return;
+				return state.Get();
 			}
 			m_DepthStencilStates.insert_or_assign(key, state);
+			return state.Get();
 		}
-		m_DeviceContext->OMSetDepthStencilState(state.Get(), 0);
-	}
-
-	void GfxDeviceDX11::SetTopology(const Topology& topology)
-	{
-		if (topology == m_Topology)
-		{
-			return;
-		}
-		m_Topology = topology;
-
-		m_DeviceContext->IASetPrimitiveTopology(GetPrimitiveTopology(topology));
 	}
 
 	const uint32_t& GfxDeviceDX11::GetCRC()
 	{
-		if (m_CurrentCrc == 0)
+		if (m_CurrentCrc == UINT32_MAX)
 		{
+			m_CurrentCrc = 0;
 			for (auto& pair : m_BindedTextures)
 			{
 				m_CurrentCrc = CRCHelper::Calculate(&pair, sizeof(std::pair<size_t, GfxTextureDX11*>), m_CurrentCrc);

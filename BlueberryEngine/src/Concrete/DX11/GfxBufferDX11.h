@@ -24,6 +24,7 @@ namespace Blueberry
 		uint32_t m_Offset = 0;
 
 		friend class GfxDeviceDX11;
+		friend class GfxRenderStateCacheDX11;
 	};
 
 	class GfxIndexBufferDX11 final : public GfxIndexBuffer
@@ -41,6 +42,7 @@ namespace Blueberry
 		ID3D11DeviceContext* m_DeviceContext;
 
 		friend class GfxDeviceDX11;
+		friend class GfxRenderStateCacheDX11;
 	};
 
 	class GfxConstantBufferDX11 final : public GfxConstantBuffer
@@ -58,6 +60,7 @@ namespace Blueberry
 		ID3D11DeviceContext* m_DeviceContext;
 
 		friend class GfxDeviceDX11;
+		friend class GfxRenderStateCacheDX11;
 	};
 
 	class GfxStructuredBufferDX11 final : public GfxStructuredBuffer
@@ -77,6 +80,7 @@ namespace Blueberry
 		ID3D11DeviceContext* m_DeviceContext;
 
 		friend class GfxDeviceDX11;
+		friend class GfxRenderStateCacheDX11;
 	};
 
 	class GfxComputeBufferDX11 final : public GfxComputeBuffer

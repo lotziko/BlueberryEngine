@@ -28,6 +28,8 @@
 #include "Blueberry\Logging\Log.h"
 #include "Blueberry\Logging\TimeMeasurement.h"
 
+#include "flathashmap\flat_hash_map.hpp"
+
 #include <d3d11_4.h>
 #include <dxgi1_6.h>
 #include <d3dcompiler.h>

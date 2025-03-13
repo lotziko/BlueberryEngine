@@ -11,6 +11,7 @@ namespace Blueberry
 		ComPtr<ID3DBlob> m_ShaderBuffer = nullptr;
 
 		friend class GfxDeviceDX11;
+		friend class GfxRenderStateCacheDX11;
 	};
 
 	class GfxVertexShaderDX11 : GfxShaderDX11<GfxVertexShader, ID3D11VertexShader>
@@ -22,6 +23,7 @@ namespace Blueberry
 		ComPtr<ID3D11InputLayout> m_InputLayout;
 
 		friend class GfxDeviceDX11;
+		friend class GfxRenderStateCacheDX11;
 	};
 
 	class GfxGeometryShaderDX11 : GfxShaderDX11<GfxGeometryShader, ID3D11GeometryShader>
@@ -30,6 +32,7 @@ namespace Blueberry
 		bool Initialize(ID3D11Device* device, void* geometryData);
 
 		friend class GfxDeviceDX11;
+		friend class GfxRenderStateCacheDX11;
 	};
 
 	class GfxFragmentShaderDX11 : GfxShaderDX11<GfxFragmentShader, ID3D11PixelShader>
@@ -37,5 +40,6 @@ namespace Blueberry
 		bool Initialize(ID3D11Device* device, void* fragmentData);
 
 		friend class GfxDeviceDX11;
+		friend class GfxRenderStateCacheDX11;
 	};
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Blueberry\Graphics\GfxDevice.h"
+#include "Concrete\DX11\GfxRenderStateCacheDX11.h"
 
 namespace Blueberry
 {
@@ -12,6 +13,7 @@ namespace Blueberry
 	class GfxFragmentShaderDX11;
 	class GfxVertexBufferDX11;
 	class GfxIndexBufferDX11;
+	struct GfxRenderStateDX11;
 
 	class GfxDeviceDX11 final : public GfxDevice
 	{
@@ -68,10 +70,9 @@ namespace Blueberry
 	private:
 		bool InitializeDirectX(HWND hwnd, int width, int height);
 
-		void SetCullMode(const CullMode& mode);
-		void SetBlendMode(const BlendMode& blendSrcColor, const BlendMode& blendSrcAlpha, const BlendMode& blendDstColor, const BlendMode& blendDstAlpha);
-		void SetZTestAndZWrite(const ZTest& zTest, const ZWrite& zWrite);
-		void SetTopology(const Topology& topology);
+		ID3D11RasterizerState* GetRasterizerState(const CullMode& mode);
+		ID3D11BlendState* GetBlendState(const BlendMode& blendSrcColor, const BlendMode& blendSrcAlpha, const BlendMode& blendDstColor, const BlendMode& blendDstAlpha);
+		ID3D11DepthStencilState* GetDepthStencilState(const ZTest& zTest, const ZWrite& zWrite);
 
 		const uint32_t& GetCRC();
 
@@ -92,25 +93,14 @@ namespace Blueberry
 		GfxTextureDX11* m_BindedRenderTarget;
 		GfxTextureDX11* m_BindedDepthStencil;
 		std::unordered_map<size_t, GfxConstantBufferDX11*> m_BindedConstantBuffers;
-		ID3D11Buffer* m_ConstantBuffers[8];
 		std::unordered_map<size_t, GfxStructuredBufferDX11*> m_BindedStructuredBuffers;
-		std::unordered_map<size_t, GfxTextureDX11*> m_BindedTextures;
-		ID3D11ShaderResourceView* m_ShaderResourceViews[16];
-		ID3D11SamplerState* m_Samplers[16];
+		std::vector<std::pair<size_t, GfxTextureDX11*>> m_BindedTextures;
+		ID3D11ShaderResourceView* m_EmptyShaderResourceViews[16];
+		ID3D11SamplerState* m_EmptySamplers[16];
 
-		ObjectId m_MaterialId = 0;
-		uint32_t m_MaterialCrc = 0;
-		uint32_t m_GlobalCrc = 0;
-		uint32_t m_CurrentCrc = 0;
-		CullMode m_CullMode = (CullMode)-1;
-		size_t m_BlendKey = -1;
-		size_t m_ZTestZWriteKey = -1;
-		Topology m_Topology = (Topology)-1;
-		
-		GfxVertexShaderDX11* m_VertexShader = nullptr;
-		GfxGeometryShaderDX11* m_GeometryShader = nullptr;
-		GfxFragmentShaderDX11* m_FragmentShader = nullptr;
-		GfxRenderState* m_RenderState = nullptr;
+		uint32_t m_CurrentCrc = UINT32_MAX;
+		GfxRenderStateDX11 m_RenderState = {};
+		GfxRenderStateCacheDX11 m_Cache;
 
 		GfxVertexBufferDX11* m_VertexBuffer = nullptr;
 		GfxIndexBufferDX11* m_IndexBuffer = nullptr;
@@ -118,5 +108,8 @@ namespace Blueberry
 		uint32_t m_InstanceOffset = 0;
 
 		uint32_t m_ViewCount = 1;
+		Topology m_Topology = (Topology)-1;
+
+		friend class GfxRenderStateCacheDX11;
 	};
 }

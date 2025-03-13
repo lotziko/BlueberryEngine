@@ -7,6 +7,7 @@
 #include "Blueberry\Graphics\RendererTree.h"
 #include "Blueberry\Scene\Entity.h"
 
+#include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Scene\Components\Transform.h"
 
 namespace Blueberry
@@ -18,13 +19,13 @@ namespace Blueberry
 		AddToSceneComponents(MeshRenderer::Type);
 		// TODO handle prefabs
 		m_TreeBounds = GetBounds();
-		RendererTree::Add(m_ObjectId, m_TreeBounds);
+		GetScene()->GetRendererTree().Add(m_ObjectId, m_TreeBounds);
 	}
 
 	void MeshRenderer::OnDisable()
 	{
 		RemoveFromSceneComponents(MeshRenderer::Type);
-		RendererTree::Remove(m_ObjectId, m_TreeBounds);
+		GetScene()->GetRendererTree().Remove(m_ObjectId, m_TreeBounds);
 	}
 
 	void MeshRenderer::Update()
@@ -33,7 +34,7 @@ namespace Blueberry
 		if (m_RecalculationFrame < transformRecalculationFrame)
 		{
 			AABB newBounds = GetBounds();
-			RendererTree::Update(m_ObjectId, m_TreeBounds, newBounds);
+			GetScene()->GetRendererTree().Update(m_ObjectId, m_TreeBounds, newBounds);
 			m_TreeBounds = newBounds;
 		}
 	}

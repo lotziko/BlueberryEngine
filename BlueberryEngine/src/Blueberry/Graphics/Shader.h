@@ -159,6 +159,7 @@ namespace Blueberry
 		static Shader* Create(const VariantsData& variantsData, const ShaderData& shaderData);
 
 		static void SetKeyword(const size_t& id, const bool& enabled);
+		static const uint32_t& GetActiveKeywordsMask();
 
 		static void BindProperties();
 
@@ -180,5 +181,6 @@ namespace Blueberry
 
 		friend struct GfxDrawingOperation;
 		friend class Material;
+		friend class GfxRenderStateCache;
 	};
 }

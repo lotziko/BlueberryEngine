@@ -1,12 +1,8 @@
 #include "bbpch.h"
 #include "RendererTree.h"
 
-#include "Blueberry\Scene\Components\Renderer.h"
-
 namespace Blueberry
 {
-	Octree RendererTree::m_Octree = Octree(Vector3::Zero, 10.0f, 1.0f, 1.0f);
-
 	void RendererTree::Add(const ObjectId& id, const AABB& bounds)
 	{
 		m_Octree.Add(bounds, id);

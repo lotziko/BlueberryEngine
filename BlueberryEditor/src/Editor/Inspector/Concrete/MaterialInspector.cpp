@@ -8,6 +8,8 @@
 #include "Editor\Misc\ImGuiHelper.h"
 #include "imgui\imgui.h"
 
+#include "Editor\Panels\Scene\SceneArea.h"
+
 namespace Blueberry
 {
 	void MaterialInspector::Draw(Object* object)
@@ -59,6 +61,7 @@ namespace Blueberry
 			{
 				material->ApplyProperties();
 				ThumbnailCache::Refresh(material);
+				SceneArea::RequestRedrawAll();
 			}
 		}
 

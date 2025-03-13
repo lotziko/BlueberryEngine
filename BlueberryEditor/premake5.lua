@@ -29,6 +29,7 @@ project "BlueberryEditor"
 		"%{IncludeDir.rapidyaml}",
 		"%{IncludeDir.fbxsdk}",
 		"%{IncludeDir.directxtex}",
+		"%{IncludeDir.flathashmap}",
 	}
 
 	links

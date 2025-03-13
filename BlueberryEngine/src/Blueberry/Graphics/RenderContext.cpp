@@ -36,7 +36,7 @@ namespace Blueberry
 	static std::vector<MeshRenderer*> s_MeshRenderers = {};
 	static std::pair<Object*, uint8_t> s_LastCullerInfo = {};
 
-	bool CompareOperations(DrawingOperation o1, DrawingOperation o2)
+	bool CompareOperations(const DrawingOperation& o1, const DrawingOperation& o2)
 	{
 		if (o1.materialId != o2.materialId)
 		{
@@ -284,9 +284,9 @@ namespace Blueberry
 			}
 		}
 
-		JobSystem::Dispatch(cullerInfos.size(), 1, [&cullerInfos](JobDispatchArgs args)
+		JobSystem::Dispatch(cullerInfos.size(), 1, [&cullerInfos, scene](JobDispatchArgs args)
 		{
-			RendererTree::Cull(cullerInfos[args.jobIndex].planes, cullerInfos[args.jobIndex].renderers);
+			scene->GetRendererTree().Cull(cullerInfos[args.jobIndex].planes, cullerInfos[args.jobIndex].renderers);
 		});
 		JobSystem::Wait();
 

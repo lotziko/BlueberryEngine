@@ -28,6 +28,7 @@ project "BlueberryEngine"
 		"%{IncludeDir.mikktspace}",
 		"%{IncludeDir.hbao}",
 		"%{IncludeDir.openxr}",
+		"%{IncludeDir.flathashmap}",
 	}
 
 	links

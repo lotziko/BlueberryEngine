@@ -45,5 +45,6 @@ namespace Blueberry
 		ID3D11DeviceContext* m_DeviceContext;
 
 		friend class GfxDeviceDX11;
+		friend class GfxRenderStateCacheDX11;
 	};
 }

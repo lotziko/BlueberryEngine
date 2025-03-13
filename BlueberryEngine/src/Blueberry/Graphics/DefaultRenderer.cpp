@@ -78,7 +78,7 @@ namespace Blueberry
 		RealtimeLights::PrepareShadows(s_Results, s_ShadowAtlas);
 
 		// Draw shadows
-		//s_ShadowAtlas->Draw(s_DefaultContext, s_Results);
+		s_ShadowAtlas->Draw(s_DefaultContext, s_Results);
 		GfxDevice::SetGlobalTexture(TO_HASH("_ShadowTexture"), s_ShadowAtlas->GetAtlasTexture()->Get());
 
 		// Lights are binded after shadows finished rendering to have valid shadow matrices

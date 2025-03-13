@@ -310,6 +310,11 @@ namespace Blueberry
 		}
 	}
 
+	const uint32_t& Shader::GetActiveKeywordsMask()
+	{
+		return s_ActiveKeywordsMask;
+	}
+
 	void Shader::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(Shader)

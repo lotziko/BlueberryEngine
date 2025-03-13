@@ -52,8 +52,8 @@ namespace Blueberry
 
 	void Material::SetTexture(size_t id, Texture* texture)
 	{
-		m_TextureMap.insert_or_assign(id, texture->GetObjectId());
-		m_Crc = -1;
+		m_BindedTextures[id] = texture->GetObjectId();
+		m_Crc = UINT32_MAX;
 	}
 
 	void Material::SetTexture(std::string name, Texture* texture)
@@ -63,6 +63,11 @@ namespace Blueberry
 
 	Shader* Material::GetShader()
 	{
+		if (m_BindedTextures.size() < m_Textures.size())
+		{
+			ApplyProperties();
+		}
+
 		return m_Shader.Get();
 	}
 
@@ -73,11 +78,8 @@ namespace Blueberry
 
 	void Material::ApplyProperties()
 	{
-		if (m_Shader.IsValid())
-		{
-			m_RenderStateCache.clear();
-		}
 		FillTextureMap();
+		m_Crc = UINT32_MAX;
 	}
 
 	const ShaderData* Material::GetShaderData()
@@ -119,115 +121,17 @@ namespace Blueberry
 		}
 	}
 
-	GfxRenderState* Material::GetState(const uint8_t& passIndex, const uint32_t& keywordMask)
+	const uint32_t& Material::GetActiveKeywordsMask()
 	{
-		if (!m_Shader.IsValid() || m_Shader->GetState() != ObjectState::Default)
-		{
-			return nullptr;
-		}
-
-		size_t key = static_cast<size_t>(keywordMask) | static_cast<size_t>(m_ActiveKeywordsMask) << 32 | static_cast<size_t>(passIndex) << 56;
-		
-		for (auto it = m_RenderStateCache.begin(); it < m_RenderStateCache.end(); ++it)
-		{
-			if (it->first == key)
-			{
-				return &(it->second);
-			}
-		}
-
-		GfxRenderState newState = {};
-		auto shaderPass = m_Shader.Get()->GetData()->GetPass(passIndex);
-		if (shaderPass == nullptr)
-		{
-			return nullptr;
-		}
-
-		uint32_t vertexFlags = 0;
-		uint32_t fragmentFlags = 0;
-		const std::vector<std::string>& vertexKeywords = shaderPass->GetVertexKeywords();
-		const std::vector<std::string>& fragmentKeywords = shaderPass->GetFragmentKeywords();
-		if (m_ActiveKeywords.size() > 0)
-		{
-			for (auto& keyword : m_ActiveKeywords)
-			{
-				for (int i = 0; i < vertexKeywords.size(); ++i)
-				{
-					if (vertexKeywords[i] == keyword)
-					{
-						vertexFlags |= 1 << i;
-					}
-				}
-				for (int i = 0; i < fragmentKeywords.size(); ++i)
-				{
-					if (fragmentKeywords[i] == keyword)
-					{
-						fragmentFlags |= 1 << i;
-						break;
-					}
-				}
-			}
-		}
-		if (Shader::s_ActiveKeywords.size() > 0)
-		{
-			for (int i = 0; i < vertexKeywords.size(); ++i)
-			{
-				if (Shader::s_ActiveKeywords.find(TO_HASH(vertexKeywords[i])) != Shader::s_ActiveKeywords.end())
-				{
-					vertexFlags |= 1 << i;
-				}
-			}
-			for (int i = 0; i < fragmentKeywords.size(); ++i)
-			{
-				if (Shader::s_ActiveKeywords.find(TO_HASH(fragmentKeywords[i])) != Shader::s_ActiveKeywords.end())
-				{
-					fragmentFlags |= 1 << i;
-					break;
-				}
-			}
-		}
-		const ShaderVariant variant = m_Shader->GetVariant(vertexFlags, fragmentFlags, passIndex);
-		newState.vertexShader = variant.vertexShader;
-		newState.geometryShader = variant.geometryShader;
-		newState.fragmentShader = variant.fragmentShader;
-
-		if (m_RenderStateCache.size() == 0)
-		{
-			ApplyProperties();
-		}
-
-		auto textureSlots = variant.fragmentShader->m_TextureSlots;
-		for (auto& slot : textureSlots)
-		{
-			auto it = m_TextureMap.find(slot.first);
-			if (it != m_TextureMap.end())
-			{
-				GfxRenderState::TextureInfo info = {};
-				info.textureId = &it->second;
-				info.textureSlot = slot.second.first;
-				info.samplerSlot = slot.second.second;
-				newState.fragmentTextures[newState.fragmentTextureCount] = info;
-				++newState.fragmentTextureCount;
-			}
-		}
-
-		newState.cullMode = shaderPass->GetCullMode();
-		newState.blendSrcColor = shaderPass->GetBlendSrcColor();
-		newState.blendSrcAlpha = shaderPass->GetBlendSrcAlpha();
-		newState.blendDstColor = shaderPass->GetBlendDstColor();
-		newState.blendDstAlpha = shaderPass->GetBlendDstAlpha();
-		newState.zTest = shaderPass->GetZTest();
-		newState.zWrite = shaderPass->GetZWrite();
-
-		m_RenderStateCache.emplace_back(std::move(std::make_pair(key, newState)));
-		return &m_RenderStateCache[m_RenderStateCache.size() - 1].second;
+		return m_ActiveKeywordsMask;
 	}
 
 	const uint32_t& Material::GetCRC()
 	{
-		if (m_Crc == -1)
+		if (m_Crc == UINT32_MAX)
 		{
-			for (auto& pair : m_TextureMap)
+			m_Crc = 0;
+			for (auto& pair : m_BindedTextures)
 			{
 				m_Crc = CRCHelper::Calculate(&pair, sizeof(std::pair<size_t, ObjectId>), m_Crc);
 			}
@@ -237,6 +141,16 @@ namespace Blueberry
 			}
 		}
 		return m_Crc;
+	}
+
+	Texture* Material::GetTexture(const size_t& id)
+	{
+		auto it = m_BindedTextures.find(id);
+		if (it != m_BindedTextures.end())
+		{
+			return static_cast<Texture*>(ObjectDB::GetObject(it->second));
+		}
+		return nullptr;
 	}
 
 	void Material::BindProperties()
@@ -257,11 +171,7 @@ namespace Blueberry
 			{
 				TextureParameterData* data = parameter.Get();
 				size_t key = TO_HASH(data->GetName());
-				if (m_TextureMap.count(key) == 0)
-				{
-					// TODO cubemap
-					m_TextureMap.insert({key, DefaultTextures::GetTexture(data->GetDefaultTextureName())->GetObjectId() });
-				}
+				m_BindedTextures.try_emplace(key, DefaultTextures::GetTexture(data->GetDefaultTextureName())->GetObjectId());
 			}
 		}
 		for (auto const& texture : m_Textures)
@@ -269,7 +179,8 @@ namespace Blueberry
 			TextureData* textureData = texture.Get();
 			if (textureData->m_Texture.IsValid())
 			{
-				m_TextureMap.insert_or_assign(TO_HASH(textureData->m_Name), textureData->m_Texture->GetObjectId());
+				size_t key = TO_HASH(textureData->m_Name);
+				m_BindedTextures.insert_or_assign(key, textureData->m_Texture.Get()->GetObjectId());
 			}
 		}
 	}

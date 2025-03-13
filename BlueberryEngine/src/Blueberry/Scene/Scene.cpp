@@ -94,8 +94,13 @@ namespace Blueberry
 		Object::Destroy(entity);
 	}
 
-	const std::map<ObjectId, ObjectPtr<Entity>>& Scene::GetEntities()
+	const ska::flat_hash_map<ObjectId, ObjectPtr<Entity>>& Scene::GetEntities()
 	{
 		return m_Entities;
+	}
+
+	RendererTree& Scene::GetRendererTree()
+	{
+		return m_RendererTree;
 	}
 }

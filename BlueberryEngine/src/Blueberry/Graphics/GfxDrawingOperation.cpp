@@ -24,13 +24,6 @@ namespace Blueberry
 			return;
 		}
 
-		this->renderState = material->GetState(passIndex, Shader::s_ActiveKeywordsMask);
-		if (this->renderState == nullptr)
-		{
-			isValid = false;
-			return;
-		}
-
 		this->vertexBuffer = vertexBuffer;
 		this->indexBuffer = indexBuffer;
 		this->indexCount = indexCount;
@@ -40,8 +33,8 @@ namespace Blueberry
 		this->instanceBuffer = instanceBuffer;
 		this->instanceOffset = instanceOffset;
 		this->instanceCount = instanceCount;
-		this->materialId = material->GetObjectId();
-		this->materialCRC = material->GetCRC();
+		this->material = material;
+		this->passIndex = passIndex;
 	}
 
 	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material, const uint32_t& indexCount, const uint32_t& indexOffset, const uint32_t& vertexCount, const uint8_t& passIndex, GfxVertexBuffer* instanceBuffer, const uint32_t& instanceOffset, const uint32_t& instanceCount) : GfxDrawingOperation(mesh->m_VertexBuffer, mesh->m_IndexBuffer, material, indexCount, indexOffset, vertexCount, mesh->GetTopology(), passIndex, instanceBuffer, instanceOffset, instanceCount)
@@ -64,11 +57,5 @@ namespace Blueberry
 	bool GfxDrawingOperation::IsValid() const
 	{
 		return isValid;
-	}
-	
-	GfxTexture* GfxRenderState::TextureInfo::Get()
-	{
-		Texture* texture = static_cast<Texture*>(ObjectDB::GetObject(*textureId));
-		return texture == nullptr ? nullptr : texture->m_Texture;
 	}
 }
