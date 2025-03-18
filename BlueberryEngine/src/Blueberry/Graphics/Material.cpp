@@ -91,7 +91,7 @@ namespace Blueberry
 		return nullptr;
 	}
 
-	std::vector<DataPtr<TextureData>>& Material::GetTextureDatas()
+	List<DataPtr<TextureData>>& Material::GetTextureDatas()
 	{
 		return m_Textures;
 	}

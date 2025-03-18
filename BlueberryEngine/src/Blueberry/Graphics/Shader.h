@@ -18,7 +18,7 @@ namespace Blueberry
 		const uint32_t& GetMask(const size_t& id);
 
 	private:
-		std::unordered_map<size_t, uint32_t> m_KeywordMask = {};
+		Dictionary<size_t, uint32_t> m_KeywordMask = {};
 		uint32_t m_MaxMask = 1;
 	};
 
@@ -70,11 +70,11 @@ namespace Blueberry
 		const ZWrite& GetZWrite() const;
 		void SetZWrite(const ZWrite& zWrite);
 
-		const std::vector<std::string>& GetVertexKeywords() const;
-		void SetVertexKeywords(const std::vector<std::string>& keywords);
+		const List<std::string>& GetVertexKeywords() const;
+		void SetVertexKeywords(const List<std::string>& keywords);
 
-		const std::vector<std::string>& GetFragmentKeywords() const;
-		void SetFragmentKeywords(const std::vector<std::string>& keywords);
+		const List<std::string>& GetFragmentKeywords() const;
+		void SetFragmentKeywords(const List<std::string>& keywords);
 
 		const uint32_t& GetVertexOffset() const;
 		void SetVertexOffset(const uint32_t& offset);
@@ -95,8 +95,8 @@ namespace Blueberry
 		BlendMode m_DstBlendAlpha = BlendMode::Zero;
 		ZTest m_ZTest = ZTest::LessEqual;
 		ZWrite m_ZWrite = ZWrite::On;
-		std::vector<std::string> m_VertexKeywords;
-		std::vector<std::string> m_FragmentKeywords;
+		List<std::string> m_VertexKeywords;
+		List<std::string> m_FragmentKeywords;
 		uint32_t m_VertexOffset;
 		uint32_t m_GeometryOffset;
 		uint32_t m_FragmentOffset;
@@ -114,25 +114,25 @@ namespace Blueberry
 
 		const PassData* GetPass(const uint32_t& index) const;
 		const uint32_t& GetPassCount() const;
-		void SetPasses(const std::vector<PassData*>& passes);
+		void SetPasses(const List<PassData*>& passes);
 
-		const std::vector<DataPtr<TextureParameterData>>& GetTextureParameters() const;
-		void SetTextureParameters(const std::vector<DataPtr<TextureParameterData>>& parameters);
+		const List<DataPtr<TextureParameterData>>& GetTextureParameters() const;
+		void SetTextureParameters(const List<DataPtr<TextureParameterData>>& parameters);
 
 		static void BindProperties();
 
 	private:
-		std::vector<DataPtr<PassData>> m_Passes;
-		std::vector<DataPtr<TextureParameterData>> m_TextureParameters;
+		List<DataPtr<PassData>> m_Passes;
+		List<DataPtr<TextureParameterData>> m_TextureParameters;
 	};
 
 	struct VariantsData
 	{
-		std::vector<uint32_t> vertexShaderIndices;
-		std::vector<uint32_t> geometryShaderIndices;
-		std::vector<uint32_t> fragmentShaderIndices;
+		List<uint32_t> vertexShaderIndices;
+		List<uint32_t> geometryShaderIndices;
+		List<uint32_t> fragmentShaderIndices;
 
-		std::vector<void*> shaders;
+		List<void*> shaders;
 	};
 
 	struct ShaderVariant
@@ -169,13 +169,13 @@ namespace Blueberry
 	private:
 		DataPtr<ShaderData> m_Data;
 
-		std::vector<GfxVertexShader*> m_VertexShaders;
-		std::vector<GfxGeometryShader*> m_GeometryShaders;
-		std::vector<GfxFragmentShader*> m_FragmentShaders;
-		std::vector<std::tuple<uint32_t, uint32_t, uint32_t>> m_PassesOffsets;
+		List<GfxVertexShader*> m_VertexShaders;
+		List<GfxGeometryShader*> m_GeometryShaders;
+		List<GfxFragmentShader*> m_FragmentShaders;
+		List<std::tuple<uint32_t, uint32_t, uint32_t>> m_PassesOffsets;
 		KeywordDB m_LocalKeywords = {};
 
-		static std::unordered_set<size_t> s_ActiveKeywords;
+		static HashSet<size_t> s_ActiveKeywords;
 		static uint32_t s_ActiveKeywordsMask;
 		static KeywordDB s_GlobalKeywords;
 

@@ -17,8 +17,8 @@ namespace Blueberry
 		static void UnpackPrefabInstance(Entity* entity);
 
 	private:
-		static std::unordered_map<ObjectId, ObjectId> s_EntityToPrefabInstance;
-		static std::unordered_set<ObjectId> s_PrefabEntities;
+		static Dictionary<ObjectId, ObjectId> s_EntityToPrefabInstance;
+		static HashSet<ObjectId> s_PrefabEntities;
 
 		friend class PrefabInstance;
 	};

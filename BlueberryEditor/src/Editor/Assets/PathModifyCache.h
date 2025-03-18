@@ -18,6 +18,6 @@ namespace Blueberry
 		static void Set(const std::string& path, const WriteInfo& writeInfo);
 
 	private:
-		static std::unordered_map<std::string, WriteInfo> s_PathModifyCache;
+		static Dictionary<std::string, WriteInfo> s_PathModifyCache;
 	};
 }

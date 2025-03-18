@@ -7,6 +7,8 @@ namespace Blueberry
 	class HBAORenderer
 	{
 	public:
+		BB_OVERRIDE_NEW_DELETE
+
 		static bool Initialize();
 		static void Shutdown();
 

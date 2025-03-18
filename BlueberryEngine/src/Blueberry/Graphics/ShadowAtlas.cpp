@@ -13,7 +13,12 @@ namespace Blueberry
 	ShadowAtlas::ShadowAtlas(const uint32_t& width, const uint32_t& height, const uint32_t& maxLightCount) : m_MaxLightCount(maxLightCount)
 	{
 		m_AtlasTexture = RenderTexture::Create(width, height, 1, 1, TextureFormat::D32_Float, TextureDimension::Texture2D, WrapMode::Clamp, FilterMode::CompareDepth);
-		m_Requests = new ShadowRequest[maxLightCount];
+		m_Requests = BB_MALLOC_ARRAY(ShadowRequest, maxLightCount);
+	}
+
+	ShadowAtlas::~ShadowAtlas()
+	{
+		BB_FREE(m_Requests);
 	}
 
 	void ShadowAtlas::Clear()

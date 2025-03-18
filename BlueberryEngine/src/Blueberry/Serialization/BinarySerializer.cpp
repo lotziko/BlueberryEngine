@@ -129,7 +129,7 @@ namespace Blueberry
 			break;
 			case BindingType::IntByteArray:
 			{
-				std::vector<int> data = *value.Get<std::vector<int>>();
+				List<int> data = *value.Get<List<int>>();
 				size_t dataSize = data.size();
 				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 				output.write(reinterpret_cast<char*>(data.data()), data.size() * sizeof(int));
@@ -137,7 +137,7 @@ namespace Blueberry
 			break;
 			case BindingType::FloatByteArray:
 			{
-				std::vector<float> data = *value.Get<std::vector<float>>();
+				List<float> data = *value.Get<List<float>>();
 				size_t dataSize = data.size();
 				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 				output.write(reinterpret_cast<char*>(data.data()), data.size() * sizeof(float));
@@ -145,7 +145,7 @@ namespace Blueberry
 			break;
 			case BindingType::StringArray:
 			{
-				std::vector<std::string> data = *value.Get<std::vector<std::string>>();
+				List<std::string> data = *value.Get<List<std::string>>();
 				size_t dataSize = data.size();
 				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 				for (size_t i = 0; i < dataSize; ++i)
@@ -192,7 +192,7 @@ namespace Blueberry
 			break;
 			case BindingType::ObjectPtrArray:
 			{
-				std::vector<ObjectPtr<Object>> arrayValue = *value.Get<std::vector<ObjectPtr<Object>>>();
+				List<ObjectPtr<Object>> arrayValue = *value.Get<List<ObjectPtr<Object>>>();
 				size_t dataSize = arrayValue.size();
 				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 				if (dataSize > 0)
@@ -223,7 +223,7 @@ namespace Blueberry
 			break;
 			case BindingType::DataArray:
 			{
-				std::vector<DataPtr<Data>>* arrayValue = value.Get<std::vector<DataPtr<Data>>>();
+				List<DataPtr<Data>>* arrayValue = value.Get<List<DataPtr<Data>>>();
 				size_t dataSize = arrayValue->size();
 				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 				if (dataSize > 0)
@@ -289,7 +289,7 @@ namespace Blueberry
 					ByteData data;
 					size_t dataSize;
 					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
-					data.data = new byte[dataSize];
+					data.data = BB_MALLOC_ARRAY(uint8_t, dataSize);
 					input.read(reinterpret_cast<char*>(data.data), dataSize);
 					*value.Get<ByteData>() = data;
 				}
@@ -298,25 +298,25 @@ namespace Blueberry
 				{
 					size_t dataSize;
 					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
-					std::vector<int> data(dataSize);
+					List<int> data(dataSize);
 					input.read(reinterpret_cast<char*>(data.data()), dataSize * sizeof(int));
-					*value.Get<std::vector<int>>() = data;
+					*value.Get<List<int>>() = data;
 				}
 				break;
 				case BindingType::FloatByteArray:
 				{
 					size_t dataSize;
 					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
-					std::vector<float> data(dataSize);
+					List<float> data(dataSize);
 					input.read(reinterpret_cast<char*>(data.data()), dataSize * sizeof(float));
-					*value.Get<std::vector<float>>() = data;
+					*value.Get<List<float>>() = data;
 				}
 				break;
 				case BindingType::StringArray:
 				{
 					size_t dataSize;
 					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
-					std::vector<std::string> data(dataSize);
+					List<std::string> data(dataSize);
 					for (size_t i = 0; i < dataSize; ++i)
 					{
 						size_t stringSize;
@@ -325,7 +325,7 @@ namespace Blueberry
 						input.read(string.data(), stringSize);
 						data[i] = string;
 					}
-					*value.Get<std::vector<std::string>>() = data;
+					*value.Get<List<std::string>>() = data;
 				}
 				break;
 				case BindingType::Enum:
@@ -357,7 +357,7 @@ namespace Blueberry
 				{
 					size_t dataSize;
 					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
-					std::vector<ObjectPtr<Object>>* refArrayPointer = value.Get<std::vector<ObjectPtr<Object>>>();
+					List<ObjectPtr<Object>>* refArrayPointer = value.Get<List<ObjectPtr<Object>>>();
 					for (size_t i = 0; i < dataSize; ++i)
 					{
 						ObjectPtrData data = {};
@@ -380,7 +380,7 @@ namespace Blueberry
 					size_t dataSize;
 					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 					ClassDB::ClassInfo info = ClassDB::GetInfo(field.objectType);
-					std::vector<DataPtr<Data>>* dataArrayPointer = value.Get<std::vector<DataPtr<Data>>>();
+					List<DataPtr<Data>>* dataArrayPointer = value.Get<List<DataPtr<Data>>>();
 					for (size_t i = 0; i < dataSize; ++i)
 					{
 						Data* instance = info.createDataInstance();

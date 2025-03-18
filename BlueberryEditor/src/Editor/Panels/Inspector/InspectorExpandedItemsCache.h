@@ -12,6 +12,6 @@ namespace Blueberry
 		static void Set(const std::string& name, const bool& expanded);
 
 	private:
-		static std::unordered_set<std::string> s_InspectorExpandedItemsCache;
+		static HashSet<std::string> s_InspectorExpandedItemsCache;
 	};
 }

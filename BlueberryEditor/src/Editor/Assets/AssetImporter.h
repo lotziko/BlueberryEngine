@@ -20,7 +20,7 @@ namespace Blueberry
 		const std::string& GetRelativeFilePath();
 		const std::string& GetRelativeMetaFilePath();
 		const FileId& GetMainObject();
-		const std::unordered_map<FileId, ObjectId>& GetAssetObjects();
+		const Dictionary<FileId, ObjectId>& GetAssetObjects();
 		const bool IsImported();
 		const bool& IsRequiringSave();
 
@@ -45,7 +45,7 @@ namespace Blueberry
 		std::string m_RelativePath;
 		std::string m_RelativeMetaPath;
 		FileId m_MainObject;
-		std::unordered_map<FileId, ObjectId> m_AssetObjects = {};
+		Dictionary<FileId, ObjectId> m_AssetObjects = {};
 		//Texture2D* m_Icon = nullptr;
 		bool m_RequireSave = false;
 

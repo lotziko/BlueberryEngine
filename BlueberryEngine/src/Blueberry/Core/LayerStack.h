@@ -7,16 +7,18 @@ namespace Blueberry
 	class LayerStack
 	{
 	public:
+		BB_OVERRIDE_NEW_DELETE;
+
 		LayerStack() = default;
 		virtual ~LayerStack();
 
 		void PushLayer(Layer* layer);
 		void PopLayer(Layer* layer);
 
-		std::vector<Layer*>::iterator begin();
-		std::vector<Layer*>::iterator end();
+		List<Layer*>::iterator begin();
+		List<Layer*>::iterator end();
 
 	private:
-		std::vector<Layer*> m_Layers;
+		List<Layer*> m_Layers;
 	};
 }

@@ -32,6 +32,6 @@ namespace Blueberry
 
 	private:
 		static inline Material* s_IconMaterial = nullptr;
-		static std::vector<IconInfo> s_IconsCache;
+		static List<IconInfo> s_IconsCache;
 	};
 }

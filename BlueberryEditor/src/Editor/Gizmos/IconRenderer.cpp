@@ -18,7 +18,7 @@
 
 namespace Blueberry
 {
-	std::vector<IconRenderer::IconInfo> IconRenderer::s_IconsCache = {};
+	List<IconRenderer::IconInfo> IconRenderer::s_IconsCache = {};
 
 	bool IconRenderer::Initialize()
 	{

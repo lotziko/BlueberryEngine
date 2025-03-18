@@ -39,8 +39,8 @@ namespace Blueberry
 		const uint32_t& GetSubMeshCount();
 		SubMeshData* GetSubMesh(const uint32_t& index);
 		
-		const std::vector<Vector3>& GetVertices();
-		const std::vector<uint32_t>& GetIndices();
+		const List<Vector3>& GetVertices();
+		const List<uint32_t>& GetIndices();
 
 		void SetVertices(const Vector3* vertices, const uint32_t& vertexCount);
 		void SetNormals(const Vector3* normals, const uint32_t& vertexCount);
@@ -70,15 +70,15 @@ namespace Blueberry
 		GfxIndexBuffer* m_IndexBuffer;
 		bool m_BufferIsDirty = false;
 
-		std::vector<Vector3> m_Vertices;
-		std::vector<Vector3> m_Normals;
-		std::vector<Vector4> m_Tangents;
-		std::vector<uint32_t> m_Indices;
-		std::vector<Vector2> m_UVs[8] = {};
+		List<Vector3> m_Vertices;
+		List<Vector3> m_Normals;
+		List<Vector4> m_Tangents;
+		List<uint32_t> m_Indices;
+		List<Vector2> m_UVs[8] = {};
 
-		std::vector<float> m_VertexData;
-		std::vector<uint32_t> m_IndexData;
-		std::vector<DataPtr<SubMeshData>> m_SubMeshes;
+		List<float> m_VertexData;
+		List<uint32_t> m_IndexData;
+		List<DataPtr<SubMeshData>> m_SubMeshes;
 
 		uint32_t m_VertexCount;
 		uint32_t m_IndexCount;

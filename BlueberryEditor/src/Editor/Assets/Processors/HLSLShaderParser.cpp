@@ -179,7 +179,7 @@ namespace Blueberry
 		auto propertiesStart = std::sregex_iterator(propertiesBlock.begin(), propertiesBlock.end(), propertyRegex);
 		auto propertiesEnd = std::sregex_iterator();
 
-		std::vector<DataPtr<TextureParameterData>> textureParameters;
+		List<DataPtr<TextureParameterData>> textureParameters;
 		for (std::regex_iterator i = propertiesStart; i != propertiesEnd; ++i)
 		{
 			std::smatch match = *i;

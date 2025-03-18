@@ -9,7 +9,7 @@
 // On creating of importer create dummy objects with corresponding fileIds and then pass them to deserializer when needed
 namespace Blueberry
 {
-	std::unordered_map<std::string, WriteInfo> PathModifyCache::s_PathModifyCache = std::unordered_map<std::string, WriteInfo>();
+	Dictionary<std::string, WriteInfo> PathModifyCache::s_PathModifyCache = {};
 
 	void PathModifyCache::Load()
 	{

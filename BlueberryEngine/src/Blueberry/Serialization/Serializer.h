@@ -38,7 +38,7 @@ namespace Blueberry
 		virtual void Serialize(const std::string& path) = 0;
 		virtual void Deserialize(const std::string& path) = 0;
 
-		std::vector<std::pair<Object*, FileId>>& GetDeserializedObjects();
+		List<std::pair<Object*, FileId>>& GetDeserializedObjects();
 
 	protected:
 		void AddAdditionalObject(Object* object);
@@ -55,10 +55,10 @@ namespace Blueberry
 
 	protected:
 		Guid m_AssetGuid;
-		std::vector<Object*> m_ObjectsToSerialize;
-		std::vector<Object*> m_AdditionalObjectsToSerialize;
-		std::vector<std::pair<Object*, FileId>> m_DeserializedObjects;
-		std::unordered_map<FileId, Object*> m_FileIdToObject;
-		std::unordered_set<FileId> m_AdditionalObjectsIds;
+		List<Object*> m_ObjectsToSerialize;
+		List<Object*> m_AdditionalObjectsToSerialize;
+		List<std::pair<Object*, FileId>> m_DeserializedObjects;
+		Dictionary<FileId, Object*> m_FileIdToObject;
+		HashSet<FileId> m_AdditionalObjectsIds;
 	};
 }

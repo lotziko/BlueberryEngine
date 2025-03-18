@@ -10,6 +10,8 @@ namespace Blueberry
 	class ShadowAtlas
 	{
 	public:
+		BB_OVERRIDE_NEW_DELETE;
+
 		struct ShadowRequest
 		{
 			uint32_t size;
@@ -22,6 +24,7 @@ namespace Blueberry
 	public:
 		ShadowAtlas() = default;
 		ShadowAtlas(const uint32_t& width, const uint32_t& height, const uint32_t& maxLightCount);
+		~ShadowAtlas();
 
 		void Clear();
 		void Insert(Light* light, const uint32_t& size, const uint8_t& sliceCount);

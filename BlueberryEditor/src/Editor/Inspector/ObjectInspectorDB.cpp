@@ -6,9 +6,9 @@
 
 namespace Blueberry
 {
-	std::unordered_map<std::size_t, ObjectInspector*> ObjectInspectorDB::s_Inspectors = std::unordered_map<std::size_t, ObjectInspector*>();
+	Dictionary<std::size_t, ObjectInspector*> ObjectInspectorDB::s_Inspectors = {};
 
-	std::unordered_map<std::size_t, ObjectInspector*>& Blueberry::ObjectInspectorDB::GetInspectors()
+	Dictionary<std::size_t, ObjectInspector*>& Blueberry::ObjectInspectorDB::GetInspectors()
 	{
 		return s_Inspectors;
 	}

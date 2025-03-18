@@ -7,8 +7,8 @@
 
 namespace Blueberry
 {
-	std::unordered_map<ObjectId, ObjectId> PrefabManager::s_EntityToPrefabInstance = std::unordered_map<ObjectId, ObjectId>();
-	std::unordered_set<ObjectId> PrefabManager::s_PrefabEntities = std::unordered_set<ObjectId>();
+	Dictionary<ObjectId, ObjectId> PrefabManager::s_EntityToPrefabInstance = {};
+	HashSet<ObjectId> PrefabManager::s_PrefabEntities = {};
 
 	bool PrefabManager::IsPrefabInstanceRoot(Entity* entity)
 	{

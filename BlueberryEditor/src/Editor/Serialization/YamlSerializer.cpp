@@ -34,7 +34,7 @@ namespace Blueberry
 		ryml::Tree tree;
 		YamlHelper::Load(tree, path);
 		ryml::NodeRef root = tree.rootref();
-		std::vector<std::pair<int, Object*>> deserializedNodes;
+		List<std::pair<int, Object*>> deserializedNodes;
 		for (size_t i = 0; i < root.num_children(); i++)
 		{
 			ryml::ConstNodeRef node = root[i];
@@ -101,7 +101,7 @@ namespace Blueberry
 			break;
 			case BindingType::IntByteArray:
 			{
-				std::vector<int> data = *value.Get<std::vector<int>>();
+				List<int> data = *value.Get<List<int>>();
 				ByteData byteData;
 				byteData.data = reinterpret_cast<uint8_t*>(data.data());
 				byteData.size = data.size() * sizeof(int);
@@ -110,7 +110,7 @@ namespace Blueberry
 			break;
 			case BindingType::FloatByteArray:
 			{
-				std::vector<float> data = *value.Get<std::vector<float>>();
+				List<float> data = *value.Get<List<float>>();
 				ByteData byteData;
 				byteData.data = reinterpret_cast<uint8_t*>(data.data());
 				byteData.size = data.size() * sizeof(float);
@@ -119,7 +119,7 @@ namespace Blueberry
 			break;
 			case BindingType::StringArray:
 			{
-				std::vector<std::string> arrayValue = *value.Get<std::vector<std::string>>();
+				List<std::string> arrayValue = *value.Get<List<std::string>>();
 				if (arrayValue.size() > 0)
 				{
 					ryml::NodeRef sequence = objectNode[key];
@@ -166,7 +166,7 @@ namespace Blueberry
 			break;
 			case BindingType::ObjectPtrArray:
 			{
-				std::vector<ObjectPtr<Object>> arrayValue = *value.Get<std::vector<ObjectPtr<Object>>>();
+				List<ObjectPtr<Object>> arrayValue = *value.Get<List<ObjectPtr<Object>>>();
 				if (arrayValue.size() > 0)
 				{
 					ryml::NodeRef sequence = objectNode[key];
@@ -198,7 +198,7 @@ namespace Blueberry
 			case BindingType::DataArray:
 			{
 				const ClassDB::ClassInfo& info = ClassDB::GetInfo(field.objectType);
-				std::vector<DataPtr<Data>>* arrayValue = value.Get<std::vector<DataPtr<Data>>>();
+				List<DataPtr<Data>>* arrayValue = value.Get<List<DataPtr<Data>>>();
 				if (arrayValue->size() > 0)
 				{
 					ryml::NodeRef sequence = objectNode[key];
@@ -256,8 +256,8 @@ namespace Blueberry
 					ByteData byteData;
 					objectNode[key] >> byteData;
 					int* ptr = reinterpret_cast<int*>(byteData.data);
-					std::vector<int> data(ptr, ptr + byteData.size / sizeof(int));
-					*value.Get<std::vector<int>>() = data;
+					List<int> data(ptr, ptr + byteData.size / sizeof(int));
+					*value.Get<List<int>>() = data;
 				}
 				break;
 				case BindingType::FloatByteArray:
@@ -265,13 +265,13 @@ namespace Blueberry
 					ByteData byteData;
 					objectNode[key] >> byteData;
 					float* ptr = reinterpret_cast<float*>(byteData.data);
-					std::vector<float> data(ptr, ptr + byteData.size / sizeof(float));
-					*value.Get<std::vector<float>>() = data;
+					List<float> data(ptr, ptr + byteData.size / sizeof(float));
+					*value.Get<List<float>>() = data;
 				}
 				break;
 				case BindingType::StringArray:
 				{
-					std::vector<std::string>* arrayPointer = value.Get<std::vector<std::string>>();
+					List<std::string>* arrayPointer = value.Get<List<std::string>>();
 					for (auto& child : objectNode[key].children())
 					{
 						std::string stringValue;
@@ -308,7 +308,7 @@ namespace Blueberry
 				break;
 				case BindingType::ObjectPtrArray:
 				{
-					std::vector<ObjectPtr<Object>>* refArrayPointer = value.Get<std::vector<ObjectPtr<Object>>>();
+					List<ObjectPtr<Object>>* refArrayPointer = value.Get<List<ObjectPtr<Object>>>();
 					for (auto& child : objectNode[key].cchildren())
 					{
 						ObjectPtrData data = {};
@@ -329,7 +329,7 @@ namespace Blueberry
 				case BindingType::DataArray:
 				{
 					const ClassDB::ClassInfo& info = ClassDB::GetInfo(field.objectType);
-					std::vector<DataPtr<Data>>* dataArrayPointer = value.Get<std::vector<DataPtr<Data>>>();
+					List<DataPtr<Data>>* dataArrayPointer = value.Get<List<DataPtr<Data>>>();
 					for (auto& child : objectNode[key].children())
 					{
 						Data* instance = info.createDataInstance();

@@ -36,9 +36,9 @@ namespace Blueberry
 		}
 	}
 
-	std::vector<Component*> Entity::GetComponents()
+	List<Component*> Entity::GetComponents()
 	{
-		std::vector<Component*> components;
+		List<Component*> components;
 		for (auto component : m_Components)
 		{
 			if (component.IsValid())

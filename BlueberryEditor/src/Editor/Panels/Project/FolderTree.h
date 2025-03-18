@@ -8,7 +8,7 @@ namespace Blueberry
 	{
 		std::string name;
 		std::filesystem::path path;
-		std::vector<FolderTreeNode> children;
+		List<FolderTreeNode> children;
 	};
 
 	class FolderTree

@@ -71,6 +71,7 @@ namespace Blueberry
 			std::thread worker([] 
 			{
 				std::function<void()> job;
+				BB_INITIALIZE_ALLOCATOR_THREAD();
 				while (true)
 				{
 					if (jobPool.pop_front(job)) // try to grab a job from the jobPool queue
@@ -86,6 +87,7 @@ namespace Blueberry
 						wakeCondition.wait(lock);
 					}
 				}
+				BB_SHUTDOWN_ALLOCATOR_THREAD();
 			});
 
 #ifdef _WIN32

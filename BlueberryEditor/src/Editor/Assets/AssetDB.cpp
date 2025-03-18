@@ -12,18 +12,18 @@
 
 namespace Blueberry
 {
-	std::unordered_map<std::string, std::size_t> AssetDB::s_ImporterTypes = std::unordered_map<std::string, std::size_t>();
-	std::unordered_map<std::string, AssetImporter*> AssetDB::s_Importers = std::unordered_map<std::string, AssetImporter*>();
+	Dictionary<std::string, std::size_t> AssetDB::s_ImporterTypes = {};
+	Dictionary<std::string, AssetImporter*> AssetDB::s_Importers = {};
 	
-	std::unordered_map<Guid, std::string> AssetDB::s_GuidToPath = std::unordered_map<Guid, std::string>();
-	std::vector<ObjectId> AssetDB::s_DirtyAssets = std::vector<ObjectId>();
+	Dictionary<Guid, std::string> AssetDB::s_GuidToPath = {};
+	List<ObjectId> AssetDB::s_DirtyAssets = {};
 
 	AssetDBRefreshEvent AssetDB::s_AssetDBRefreshed = {};
 
 	// TODO import data always if it was found in project but not in cache instead of importing on mouse over icon
 	void AssetDB::Refresh()
 	{
-		std::vector<AssetImporter*> importersToImport;
+		List<AssetImporter*> importersToImport;
 		PathModifyCache::Load();
 		ImporterInfoCache::Load();
 		
@@ -106,7 +106,7 @@ namespace Blueberry
 		return nullptr;
 	}
 	
-	std::vector<std::pair<Object*, FileId>> AssetDB::LoadAssetObjects(const Guid& guid, const std::unordered_map<FileId, ObjectId>& existingObjects)
+	List<std::pair<Object*, FileId>> AssetDB::LoadAssetObjects(const Guid& guid, const Dictionary<FileId, ObjectId>& existingObjects)
 	{
 		BinarySerializer/*YamlSerializer*/ serializer;
 		std::filesystem::path dataPath = Path::GetAssetCachePath();
@@ -120,7 +120,7 @@ namespace Blueberry
 		}
 		serializer.Deserialize(dataPath.append(guid.ToString()).string());
 		auto& deserializedObjects = serializer.GetDeserializedObjects();
-		std::vector<std::pair<Object*, FileId>> objects(deserializedObjects.size());
+		List<std::pair<Object*, FileId>> objects(deserializedObjects.size());
 		if (deserializedObjects.size() > 0)
 		{
 			int i = 0;
@@ -190,7 +190,7 @@ namespace Blueberry
 		Refresh();
 	}
 
-	void AssetDB::SaveAssetObjectsToCache(const std::vector<Object*>& objects)
+	void AssetDB::SaveAssetObjectsToCache(const List<Object*>& objects)
 	{
 		BinarySerializer/*YamlSerializer*/ serializer;
 		for (Object* object : objects)

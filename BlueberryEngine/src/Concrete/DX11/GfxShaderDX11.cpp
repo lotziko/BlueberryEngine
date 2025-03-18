@@ -67,7 +67,7 @@ namespace Blueberry
 		}
 
 		// Input layout
-		std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDescArray;
+		List<D3D11_INPUT_ELEMENT_DESC> inputElementDescArray;
 		uint32_t parameterCount = vertexShaderDesc.InputParameters;
 
 		for (unsigned int i = 0; i < parameterCount; ++i)

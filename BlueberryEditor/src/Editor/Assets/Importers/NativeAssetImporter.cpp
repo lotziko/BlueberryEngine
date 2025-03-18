@@ -50,7 +50,7 @@ namespace Blueberry
 					mainObjectIsSet = true;
 				}
 			}
-			BB_INFO("NativeAsset \"" << GetName() << "\" imported.");
+			//BB_INFO("NativeAsset \"" << GetName() << "\" imported.");
 		}
 	}
 }

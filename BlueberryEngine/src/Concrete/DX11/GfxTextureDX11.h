@@ -35,7 +35,7 @@ namespace Blueberry
 		ComPtr<ID3D11DepthStencilView> m_DepthStencilView;
 		ComPtr<ID3D11Resource> m_StagingTexture;
 
-		std::vector<ComPtr<ID3D11RenderTargetView>> m_SlicesRenderTargetViews;
+		List<ComPtr<ID3D11RenderTargetView>> m_SlicesRenderTargetViews;
 
 		uint32_t m_Width;
 		uint32_t m_Height;

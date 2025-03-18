@@ -65,7 +65,7 @@ namespace Blueberry
 
 		struct BindingData
 		{
-			std::vector<FieldInfo> fieldInfos;
+			List<FieldInfo> fieldInfos;
 
 			BindingData& BindField(FieldInfo info)
 			{
@@ -82,12 +82,12 @@ namespace Blueberry
 			Data*(*createDataInstance)() = nullptr;
 			bool isObject;
 			size_t offset;
-			std::vector<FieldInfo> fields;
-			std::unordered_map<std::string, FieldInfo> fieldsMap;
+			List<FieldInfo> fields;
+			Dictionary<std::string, FieldInfo> fieldsMap;
 		};
 
 		static const ClassInfo& GetInfo(const size_t&);
-		static std::unordered_map<size_t, ClassInfo>& GetInfos();
+		static Dictionary<size_t, ClassInfo>& GetInfos();
 		static bool IsParent(const size_t& id, const size_t& parentId);
 
 		template<class ObjectType>
@@ -113,7 +113,7 @@ namespace Blueberry
 		}
 
 	private:
-		static std::unordered_map<size_t, ClassInfo> s_Classes;
+		static Dictionary<size_t, ClassInfo> s_Classes;
 	};
 
 	constexpr auto GetFieldName(std::string_view name)

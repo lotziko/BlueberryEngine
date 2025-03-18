@@ -29,6 +29,6 @@ namespace Blueberry
 	private:
 		ShaderData m_ShaderData;
 		VariantsData m_VariantsData;
-		std::vector<ComPtr<ID3DBlob>> m_Blobs;
+		List<ComPtr<ID3DBlob>> m_Blobs;
 	};
 }

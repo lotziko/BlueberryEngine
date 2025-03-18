@@ -48,7 +48,7 @@ bool ImGui::DragVector3(const char* label, Blueberry::Vector3* v)
 	return false;
 }
 
-bool ImGui::EnumEdit(const char* label, int* v, const std::vector<std::string>* names)
+bool ImGui::EnumEdit(const char* label, int* v, const Blueberry::List<std::string>* names)
 {
 	if (names == nullptr || names->size() == 0)
 	{
@@ -208,7 +208,7 @@ bool ImGui::ObjectEdit(const char* label, Blueberry::ObjectPtr<Blueberry::Object
 	return false;
 }
 
-bool ImGui::ObjectArrayEdit(const char* label, std::vector<Blueberry::ObjectPtr<Blueberry::Object>>* v, const std::size_t& type)
+bool ImGui::ObjectArrayEdit(const char* label, Blueberry::List<Blueberry::ObjectPtr<Blueberry::Object>>* v, const std::size_t& type)
 {
 	ImGui::Text(label);
 	for (int i = 0; i < v->size(); ++i)

@@ -5,12 +5,14 @@ namespace Blueberry
 	class GfxShader
 	{
 	public:
+		BB_OVERRIDE_NEW_DELETE
+
 		virtual ~GfxShader() = default;
 
 	protected:
-		std::unordered_map<size_t, uint8_t> m_ConstantBufferSlots;
-		std::unordered_map<size_t, std::pair<uint8_t, uint8_t>> m_StructuredBufferSlots;
-		std::unordered_map<size_t, std::pair<uint8_t, uint8_t>> m_TextureSlots;
+		Dictionary<size_t, uint8_t> m_ConstantBufferSlots;
+		Dictionary<size_t, std::pair<uint8_t, uint8_t>> m_StructuredBufferSlots;
+		Dictionary<size_t, std::pair<uint8_t, uint8_t>> m_TextureSlots;
 
 		friend struct GfxDrawingOperation;
 		friend class Material;

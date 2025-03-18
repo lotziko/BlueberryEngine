@@ -44,7 +44,7 @@ namespace Blueberry
 		uint32_t GetSize() const;
 
 	private:
-		std::vector<Element> m_Elements;
+		List<Element> m_Elements;
 	};
 
 	template<VertexLayout::ElementType T>

@@ -3,7 +3,7 @@
 namespace Blueberry
 {
 	class Object;
-	using ObjectMapping = std::unordered_map<ObjectId, ObjectId>;
+	using ObjectMapping = Dictionary<ObjectId, ObjectId>;
 
 	class ObjectCloner
 	{

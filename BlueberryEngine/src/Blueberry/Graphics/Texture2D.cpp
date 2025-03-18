@@ -14,6 +14,10 @@ namespace Blueberry
 		{
 			delete m_Texture;
 		}
+		if (m_RawData.data != nullptr)
+		{
+			BB_FREE(m_RawData.data);
+		}
 	}
 
 	void Texture2D::SetData(uint8_t* data, const size_t& dataSize)

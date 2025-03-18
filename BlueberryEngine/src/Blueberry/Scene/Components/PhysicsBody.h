@@ -38,7 +38,7 @@ namespace Blueberry
 		Transform* m_Transform;
 		JPH::BodyID m_BodyId;
 		bool m_IsInitialized = false;
-		std::vector<ObjectPtr<Collider>> m_Colliders;
+		List<ObjectPtr<Collider>> m_Colliders;
 
 		friend class Collider;
 	};

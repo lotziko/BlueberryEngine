@@ -65,7 +65,7 @@ namespace Blueberry
 		return lightAttenuation;
 	}
 
-	void PerCameraLightDataConstantBuffer::BindData(const LightData& mainLight, const std::vector<LightData>& lights)
+	void PerCameraLightDataConstantBuffer::BindData(const LightData& mainLight, const List<LightData>& lights)
 	{
 		static size_t perCameraLightDataId = TO_HASH("PerCameraLightData");
 

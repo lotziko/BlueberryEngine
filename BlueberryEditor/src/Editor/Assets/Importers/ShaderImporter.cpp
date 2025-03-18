@@ -50,7 +50,7 @@ namespace Blueberry
 				processor.SaveVariants(GetShaderFolder());
 				object = Shader::Create(processor.GetVariantsData(), processor.GetShaderData());
 				ObjectDB::AllocateIdToGuid(object, guid, 1);
-				AssetDB::SaveAssetObjectsToCache(std::vector<Object*> { object });
+				AssetDB::SaveAssetObjectsToCache(List<Object*> { object });
 				BB_INFO("Shader \"" << GetName() << "\" imported and compiled from: " + path);
 			}
 			else

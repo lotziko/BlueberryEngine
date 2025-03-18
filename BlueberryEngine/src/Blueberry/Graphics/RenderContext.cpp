@@ -32,8 +32,8 @@ namespace Blueberry
 		uint8_t instanceCount;
 	};
 	
-	static std::vector<DrawingOperation> s_DrawingOperations = {};
-	static std::vector<MeshRenderer*> s_MeshRenderers = {};
+	static List<DrawingOperation> s_DrawingOperations = {};
+	static List<MeshRenderer*> s_MeshRenderers = {};
 	static std::pair<Object*, uint8_t> s_LastCullerInfo = {};
 
 	bool CompareOperations(const DrawingOperation& o1, const DrawingOperation& o2)
@@ -140,11 +140,10 @@ namespace Blueberry
 		cameraFrustum.CreateFromMatrix(cameraFrustum, projection, false);
 		cameraFrustum.Transform(cameraFrustum, view);
 
-		std::vector<CullingResults::CullerInfo> cullerInfos;
 		CullingResults::CullerInfo cameraFrustumInfo = {};
 		cameraFrustumInfo.object = camera;
 		cameraFrustum.GetPlanes(&cameraFrustumInfo.planes[0], &cameraFrustumInfo.planes[1], &cameraFrustumInfo.planes[2], &cameraFrustumInfo.planes[3], &cameraFrustumInfo.planes[4], &cameraFrustumInfo.planes[5]);
-		cullerInfos.emplace_back(cameraFrustumInfo);
+		results.cullerInfos.emplace_back(cameraFrustumInfo);
 
 		if (s_LastCullingFrame < Time::GetFrameCount())
 		{
@@ -263,7 +262,7 @@ namespace Blueberry
 							GetOrthographicPlanes(viewProjection.Invert(), &lightCullerInfo.planes[0], &lightCullerInfo.planes[1], &lightCullerInfo.planes[2], &lightCullerInfo.planes[3], &lightCullerInfo.planes[4], &lightCullerInfo.planes[5]);
 
 							lightCullerInfo.index = i;
-							cullerInfos.emplace_back(lightCullerInfo);
+							results.cullerInfos.emplace_back(lightCullerInfo);
 						}
 					}
 					else
@@ -278,19 +277,18 @@ namespace Blueberry
 						lightFrustum.GetPlanes(&lightCullerInfo.planes[0], &lightCullerInfo.planes[1], &lightCullerInfo.planes[2], &lightCullerInfo.planes[3], &lightCullerInfo.planes[4], &lightCullerInfo.planes[5]);
 						light->m_WorldToShadow[0] = view * projection;
 
-						cullerInfos.emplace_back(lightCullerInfo);
+						results.cullerInfos.emplace_back(lightCullerInfo);
 					}
 				}
 			}
 		}
 
-		JobSystem::Dispatch(cullerInfos.size(), 1, [&cullerInfos, scene](JobDispatchArgs args)
+		JobSystem::Dispatch(results.cullerInfos.size(), 1, [&results, scene](JobDispatchArgs args)
 		{
-			scene->GetRendererTree().Cull(cullerInfos[args.jobIndex].planes, cullerInfos[args.jobIndex].renderers);
+			scene->GetRendererTree().Cull(results.cullerInfos[args.jobIndex].planes, results.cullerInfos[args.jobIndex].renderers);
 		});
 		JobSystem::Wait();
 
-		results.cullerInfos = cullerInfos;
 		s_LastCullerInfo = std::make_pair(nullptr, 0);
 	}
 

@@ -6,23 +6,23 @@ namespace Blueberry
 	static std::mutex s_AllocationMutex = {};
 
 	ChunkedObjectArray ObjectDB::s_Array = ChunkedObjectArray();
-	std::unordered_map<ObjectId, std::pair<Guid, FileId>> ObjectDB::s_ObjectIdToGuid = std::unordered_map<ObjectId, std::pair<Guid, FileId>>();
-	std::unordered_map<Guid, std::unordered_map<FileId, ObjectId>> ObjectDB::s_GuidToObjectId = std::unordered_map<Guid, std::unordered_map<FileId, ObjectId>>();
-	std::unordered_map<ObjectId, FileId> ObjectDB::s_ObjectIdToFileId = std::unordered_map<ObjectId, FileId>();
+	Dictionary<ObjectId, std::pair<Guid, FileId>> ObjectDB::s_ObjectIdToGuid = {};
+	Dictionary<Guid, Dictionary<FileId, ObjectId>> ObjectDB::s_GuidToObjectId = {};
+	Dictionary<ObjectId, FileId> ObjectDB::s_ObjectIdToFileId = {};
 
 	ChunkedObjectArray::ChunkedObjectArray()
 	{
 		m_MaxChunksCount = MAX_OBJECTS / ELEMENTS_PER_CHUNK + 1;
-		m_Objects = new ObjectItem*[m_MaxChunksCount];
+		m_Objects = BB_MALLOC_ARRAY(ObjectItem*, m_MaxChunksCount);
 	}
 
 	ChunkedObjectArray::~ChunkedObjectArray()
 	{
 		for (uint32_t i = 0; i < m_ChunksCount; i++)
 		{
-			delete[] m_Objects[i];
+			BB_FREE(m_Objects[i]);
 		}
-		delete[] m_Objects;
+		BB_FREE(m_Objects);
 	}
 
 	int32_t ChunkedObjectArray::AddSingle()
@@ -52,7 +52,7 @@ namespace Blueberry
 		while (chunkIndex >= m_ChunksCount)
 		{
 			ObjectItem** chunk = &m_Objects[m_ChunksCount];
-			ObjectItem* newChunk = new ObjectItem[ELEMENTS_PER_CHUNK]();
+			ObjectItem* newChunk = BB_MALLOC_ARRAY(ObjectItem, ELEMENTS_PER_CHUNK);
 			*chunk = newChunk;
 			++m_ChunksCount;
 		}
@@ -188,7 +188,7 @@ namespace Blueberry
 		return nullptr;
 	}
 
-	const std::unordered_map<FileId, ObjectId>& ObjectDB::GetObjectsFromGuid(const Guid& guid)
+	const Dictionary<FileId, ObjectId>& ObjectDB::GetObjectsFromGuid(const Guid& guid)
 	{
 		return s_GuidToObjectId[guid];
 	}

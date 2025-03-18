@@ -22,6 +22,8 @@ namespace Blueberry
 	class GfxDevice
 	{
 	public:
+		BB_OVERRIDE_NEW_DELETE
+
 		static bool Initialize(int width, int height, void* data);
 		static void Shutdown();
 

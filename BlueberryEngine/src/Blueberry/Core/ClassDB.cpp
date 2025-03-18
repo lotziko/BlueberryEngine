@@ -3,14 +3,14 @@
 
 namespace Blueberry
 {
-	std::unordered_map<size_t, ClassDB::ClassInfo> ClassDB::s_Classes = std::unordered_map<size_t, ClassDB::ClassInfo>();
+	Dictionary<size_t, ClassDB::ClassInfo> ClassDB::s_Classes = {};
 
 	const ClassDB::ClassInfo& ClassDB::GetInfo(const size_t& id)
 	{
 		return s_Classes.find(id)->second;
 	}
 
-	std::unordered_map<size_t, ClassDB::ClassInfo>& ClassDB::GetInfos()
+	Dictionary<size_t, ClassDB::ClassInfo>& ClassDB::GetInfos()
 	{
 		return s_Classes;
 	}
@@ -36,7 +36,7 @@ namespace Blueberry
 	{
 		if (type == BindingType::Enum)
 		{
-			auto names = new std::vector<std::string>();
+			auto names = new List<std::string>();
 			StringHelper::Split(hintData, ',', *names);
 			this->hintData = names;
 		}

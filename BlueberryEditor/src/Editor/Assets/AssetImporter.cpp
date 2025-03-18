@@ -47,7 +47,7 @@ namespace Blueberry
 		return m_MainObject;
 	}
 
-	const std::unordered_map<FileId, ObjectId>& AssetImporter::GetAssetObjects()
+	const Dictionary<FileId, ObjectId>& AssetImporter::GetAssetObjects()
 	{
 		return m_AssetObjects;
 	}

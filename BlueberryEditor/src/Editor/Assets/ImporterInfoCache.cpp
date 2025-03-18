@@ -12,7 +12,7 @@
 
 namespace Blueberry
 {
-	std::unordered_map<Guid, ImporterInfoCache::ImporterInfo> ImporterInfoCache::s_ImporterInfoCache = std::unordered_map<Guid, ImporterInfoCache::ImporterInfo>();
+	Dictionary<Guid, ImporterInfoCache::ImporterInfo> ImporterInfoCache::s_ImporterInfoCache = {};
 	
 	void ImporterInfoCache::Load()
 	{

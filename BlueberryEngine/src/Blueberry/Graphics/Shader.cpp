@@ -13,7 +13,7 @@ namespace Blueberry
 	DATA_DEFINITION(ShaderData)
 	OBJECT_DEFINITION(Object, Shader)
 
-	std::unordered_set<size_t> Shader::s_ActiveKeywords = {};
+	HashSet<size_t> Shader::s_ActiveKeywords = {};
 	uint32_t Shader::s_ActiveKeywordsMask = 0;
 	KeywordDB Shader::s_GlobalKeywords = {};
 
@@ -132,22 +132,22 @@ namespace Blueberry
 		m_ZWrite = zWrite;
 	}
 
-	const std::vector<std::string>& PassData::GetVertexKeywords() const
+	const List<std::string>& PassData::GetVertexKeywords() const
 	{
 		return m_VertexKeywords;
 	}
 
-	void PassData::SetVertexKeywords(const std::vector<std::string>& keywords)
+	void PassData::SetVertexKeywords(const List<std::string>& keywords)
 	{
 		m_VertexKeywords = keywords;
 	}
 
-	const std::vector<std::string>& PassData::GetFragmentKeywords() const
+	const List<std::string>& PassData::GetFragmentKeywords() const
 	{
 		return m_FragmentKeywords;
 	}
 
-	void PassData::SetFragmentKeywords(const std::vector<std::string>& keywords)
+	void PassData::SetFragmentKeywords(const List<std::string>& keywords)
 	{
 		m_FragmentKeywords = keywords;
 	}
@@ -214,7 +214,7 @@ namespace Blueberry
 		return m_Passes.size();
 	}
 
-	void ShaderData::SetPasses(const std::vector<PassData*>& passes)
+	void ShaderData::SetPasses(const List<PassData*>& passes)
 	{
 		m_Passes.resize(passes.size());
 		for (int i = 0; i < passes.size(); ++i)
@@ -223,12 +223,12 @@ namespace Blueberry
 		}
 	}
 
-	const std::vector<DataPtr<TextureParameterData>>& ShaderData::GetTextureParameters() const
+	const List<DataPtr<TextureParameterData>>& ShaderData::GetTextureParameters() const
 	{
 		return m_TextureParameters;
 	}
 
-	void ShaderData::SetTextureParameters(const std::vector<DataPtr<TextureParameterData>>& parameters)
+	void ShaderData::SetTextureParameters(const List<DataPtr<TextureParameterData>>& parameters)
 	{
 		m_TextureParameters = parameters;
 	}

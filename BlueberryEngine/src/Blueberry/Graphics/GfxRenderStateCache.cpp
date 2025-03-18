@@ -14,8 +14,8 @@ namespace Blueberry
 		{
 			uint32_t vertexFlags = 0;
 			uint32_t fragmentFlags = 0;
-			const std::vector<std::string>& vertexKeywords = shaderPass->GetVertexKeywords();
-			const std::vector<std::string>& fragmentKeywords = shaderPass->GetFragmentKeywords();
+			const List<std::string>& vertexKeywords = shaderPass->GetVertexKeywords();
+			const List<std::string>& fragmentKeywords = shaderPass->GetFragmentKeywords();
 
 			if (material->m_ActiveKeywords.size() > 0)
 			{

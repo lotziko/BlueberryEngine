@@ -16,7 +16,7 @@ namespace Blueberry
 		fseek(file, 0, SEEK_END);
 		length = ftell(file);
 		rewind(file);
-		data = static_cast<uint8_t*>(malloc(sizeof(uint8_t)*length));
+		data = BB_MALLOC_ARRAY(uint8_t, length);
 		fread(data, sizeof(uint8_t) * length, 1, file);
 		fclose(file);
 	}

@@ -31,15 +31,15 @@ namespace Blueberry
 		XrSwapchain handle;
 		int32_t width;
 		int32_t height;
-		std::vector<XrSwapchainImageD3D11KHR> surfaceImages;
-		std::vector<swapchain_surfdata_t> surfaceData;
+		List<XrSwapchainImageD3D11KHR> surfaceImages;
+		List<swapchain_surfdata_t> surfaceData;
 	};
 
 	struct CompositionData
 	{
 		bool hasLayer;
 		XrCompositionLayerProjection layerProjection;
-		std::vector<XrCompositionLayerProjectionView> layerProjectionViews;
+		List<XrCompositionLayerProjectionView> layerProjectionViews;
 		uint32_t imgId;
 	} s_CompositionData;
 
@@ -65,9 +65,9 @@ namespace Blueberry
 	static XrEnvironmentBlendMode s_XrBlend = {};
 	static XrDebugUtilsMessengerEXT s_XrDebug = {};
 
-	static std::vector<XrView> s_XrViews;
-	static std::vector<XrViewConfigurationView> s_XrConfigViews;
-	static std::vector<swapchain_t> s_XrSwapchains;
+	static List<XrView> s_XrViews;
+	static List<XrViewConfigurationView> s_XrConfigViews;
+	static List<swapchain_t> s_XrSwapchains;
 
 	static XrFrameState s_XrFrameState;
 
@@ -135,7 +135,7 @@ namespace Blueberry
 		s_Device = dxDevice->GetDevice();
 		s_DeviceContext = dxDevice->GetDeviceContext();
 
-		std::vector<const char*> useExtensions;
+		List<const char*> useExtensions;
 		const char* askExtensions[] = 
 		{
 			XR_KHR_D3D11_ENABLE_EXTENSION_NAME, // Use Direct3D11 for rendering
@@ -144,7 +144,7 @@ namespace Blueberry
 
 		uint32_t extCount = 0;
 		xrEnumerateInstanceExtensionProperties(nullptr, 0, &extCount, nullptr);
-		std::vector<XrExtensionProperties> xrExts(extCount, { XR_TYPE_EXTENSION_PROPERTIES });
+		List<XrExtensionProperties> xrExts(extCount, { XR_TYPE_EXTENSION_PROPERTIES });
 		xrEnumerateInstanceExtensionProperties(nullptr, extCount, &extCount, xrExts.data());
 
 		for (size_t i = 0; i < xrExts.size(); i++)
@@ -365,7 +365,7 @@ namespace Blueberry
 		xrBeginFrame(s_XrSession, nullptr);
 
 		XrCompositionLayerProjection& layerProj = s_CompositionData.layerProjection = { XR_TYPE_COMPOSITION_LAYER_PROJECTION };
-		std::vector<XrCompositionLayerProjectionView>& views = s_CompositionData.layerProjectionViews;
+		List<XrCompositionLayerProjectionView>& views = s_CompositionData.layerProjectionViews;
 		
 		s_CompositionData.hasLayer = false;
 		s_CompositionData.imgId = 0;

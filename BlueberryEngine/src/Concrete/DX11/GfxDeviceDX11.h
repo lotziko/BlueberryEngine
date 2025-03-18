@@ -87,14 +87,14 @@ namespace Blueberry
 		ComPtr<ID3D11RasterizerState> m_CullFrontRasterizerState;
 		ComPtr<ID3D11RasterizerState> m_CullBackRasterizerState;
 
-		std::unordered_map<size_t, ComPtr<ID3D11DepthStencilState>> m_DepthStencilStates;
-		std::unordered_map<size_t, ComPtr<ID3D11BlendState>> m_BlendStates;
+		Dictionary<size_t, ComPtr<ID3D11DepthStencilState>> m_DepthStencilStates;
+		Dictionary<size_t, ComPtr<ID3D11BlendState>> m_BlendStates;
 
 		GfxTextureDX11* m_BindedRenderTarget;
 		GfxTextureDX11* m_BindedDepthStencil;
-		std::unordered_map<size_t, GfxConstantBufferDX11*> m_BindedConstantBuffers;
-		std::unordered_map<size_t, GfxStructuredBufferDX11*> m_BindedStructuredBuffers;
-		std::vector<std::pair<size_t, GfxTextureDX11*>> m_BindedTextures;
+		Dictionary<size_t, GfxConstantBufferDX11*> m_BindedConstantBuffers;
+		Dictionary<size_t, GfxStructuredBufferDX11*> m_BindedStructuredBuffers;
+		List<std::pair<size_t, GfxTextureDX11*>> m_BindedTextures;
 		ID3D11ShaderResourceView* m_EmptyShaderResourceViews[16];
 		ID3D11SamplerState* m_EmptySamplers[16];
 

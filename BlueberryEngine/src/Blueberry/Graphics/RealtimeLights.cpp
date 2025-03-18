@@ -45,7 +45,7 @@ namespace Blueberry
 	void RealtimeLights::BindLights(CullingResults& results)
 	{
 		LightData mainLight = {};
-		std::vector<LightData> lights;
+		List<LightData> lights;
 		for (Light* light : results.lights)
 		{
 			if (light->GetType() == LightType::Directional && light->IsCastingShadows())

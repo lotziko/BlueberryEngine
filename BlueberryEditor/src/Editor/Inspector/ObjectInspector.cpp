@@ -60,7 +60,7 @@ namespace Blueberry
 			}
 			break;
 		case BindingType::Enum:
-			if (ImGui::EnumEdit(nameLabel, value.Get<int>(), static_cast<std::vector<std::string>*>(info.hintData)))
+			if (ImGui::EnumEdit(nameLabel, value.Get<int>(), static_cast<List<std::string>*>(info.hintData)))
 			{
 				hasChanged = true;
 			}
@@ -84,7 +84,7 @@ namespace Blueberry
 			}
 		break;
 		case BindingType::ObjectPtrArray:
-			if (ImGui::ObjectArrayEdit(nameLabel, value.Get<std::vector<ObjectPtr<Object>>>(), info.objectType))
+			if (ImGui::ObjectArrayEdit(nameLabel, value.Get<List<ObjectPtr<Object>>>(), info.objectType))
 			{
 				hasChanged = true;
 			}

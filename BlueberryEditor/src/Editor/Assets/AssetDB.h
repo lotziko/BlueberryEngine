@@ -24,14 +24,14 @@ namespace Blueberry
 		static ObjectType* CreateAssetObject(const Guid& guid);
 
 		// Use inside importers only
-		static std::vector<std::pair<Object*, FileId>> AssetDB::LoadAssetObjects(const Guid& guid, const std::unordered_map<FileId, ObjectId>& existingObjects);
+		static List<std::pair<Object*, FileId>> AssetDB::LoadAssetObjects(const Guid& guid, const Dictionary<FileId, ObjectId>& existingObjects);
 
 		static const std::string GetRelativeAssetPath(Object* object);
 		static std::string GetAssetCachedDataPath(Object* object);
 
 		static bool HasAssetWithGuidInData(const Guid& guid);
 		static void CreateAsset(Object* object, const std::string& relativePath);
-		static void SaveAssetObjectsToCache(const std::vector<Object*>& objects);
+		static void SaveAssetObjectsToCache(const List<Object*>& objects);
 		static void SetDirty(Object* object);
 		static void DeleteAssetFromData(const Guid& guid);
 		static void SaveAssets();
@@ -45,10 +45,10 @@ namespace Blueberry
 		static void Register(const std::string& extension, const std::size_t& importerType);
 
 	private:
-		static std::unordered_map<std::string, std::size_t> s_ImporterTypes;
-		static std::unordered_map<std::string, AssetImporter*> s_Importers;
-		static std::unordered_map<Guid, std::string> s_GuidToPath;
-		static std::vector<ObjectId> s_DirtyAssets;
+		static Dictionary<std::string, std::size_t> s_ImporterTypes;
+		static Dictionary<std::string, AssetImporter*> s_Importers;
+		static Dictionary<Guid, std::string> s_GuidToPath;
+		static List<ObjectId> s_DirtyAssets;
 		static AssetDBRefreshEvent s_AssetDBRefreshed;
 	};
 

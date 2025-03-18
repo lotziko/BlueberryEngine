@@ -21,6 +21,8 @@ namespace Blueberry
 	class Event<void>
 	{
 	public:
+		BB_OVERRIDE_NEW_DELETE
+
 		template <class OwnerObject, void(OwnerObject::*methodPtr)()>
 		void AddCallback(OwnerObject* const object);
 		template <void(*methodPtr)()>
@@ -33,13 +35,15 @@ namespace Blueberry
 		void Invoke();
 
 	private:
-		std::unordered_map<std::pair<uint64_t, uint64_t>, Delegate<>, PairHash> m_Callbacks;
+		Dictionary<std::pair<uint64_t, uint64_t>, Delegate<>, PairHash> m_Callbacks;
 	};
 
 	template<class EventType>
 	class Event
 	{
 	public:
+		BB_OVERRIDE_NEW_DELETE
+
 		template <class OwnerObject, void(OwnerObject::*methodPtr)(const EventType&)>
 		void AddCallback(OwnerObject* const object);
 		template <void(*methodPtr)(const EventType&)>
@@ -52,7 +56,7 @@ namespace Blueberry
 		void Invoke(EventType& event);
 
 	private:
-		std::unordered_map<std::pair<uint64_t, uint64_t>, Delegate<const EventType&>, PairHash> m_Callbacks;
+		Dictionary<std::pair<uint64_t, uint64_t>, Delegate<const EventType&>, PairHash> m_Callbacks;
 	};
 
 	template <class OwnerObject, void(OwnerObject::*methodPtr)()>

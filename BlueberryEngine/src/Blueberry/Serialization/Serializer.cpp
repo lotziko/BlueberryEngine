@@ -20,7 +20,7 @@ namespace Blueberry
 		m_FileIdToObject.insert({ fileId, object });
 	}
 
-	std::vector<std::pair<Object*, FileId>>& Serializer::GetDeserializedObjects()
+	List<std::pair<Object*, FileId>>& Serializer::GetDeserializedObjects()
 	{
 		return m_DeserializedObjects;
 	}

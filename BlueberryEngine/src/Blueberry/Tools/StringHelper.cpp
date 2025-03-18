@@ -3,7 +3,7 @@
 
 namespace Blueberry
 {
-	void StringHelper::Split(const char* data, const char symbol, std::vector<std::string>& result)
+	void StringHelper::Split(const char* data, const char symbol, List<std::string>& result)
 	{
 		std::string str(data);
 		// Based on https://sentry.io/answers/split-string-in-cpp/

@@ -14,15 +14,15 @@ namespace Blueberry
 			std::string geometryEntryPoint;
 			std::string fragmentEntryPoint;
 
-			std::vector<std::string> vertexKeywords;
-			std::vector<std::string> fragmentKeywords;
+			List<std::string> vertexKeywords;
+			List<std::string> fragmentKeywords;
 
-			std::vector<std::string> globalVertexKeywords;
-			std::vector<std::string> globalFragmentKeywords;
+			List<std::string> globalVertexKeywords;
+			List<std::string> globalFragmentKeywords;
 		};
 
-		std::vector<Pass> passes;
-		std::vector<PassData*> dataPasses;
+		List<Pass> passes;
+		List<PassData*> dataPasses;
 	};
 
 	class HLSLShaderParser

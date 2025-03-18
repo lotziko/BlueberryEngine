@@ -42,7 +42,7 @@ namespace Blueberry
 		END_OBJECT_BINDING()
 	}
 
-	const std::vector<DataPtr<ModelMaterialData>>& ModelImporter::GetMaterials()
+	const List<DataPtr<ModelMaterialData>>& ModelImporter::GetMaterials()
 	{
 		return m_Materials;
 	}
@@ -123,7 +123,7 @@ namespace Blueberry
 			}
 
 			fbxsdk::FbxNode* rootNode = scene->GetRootNode();
-			std::vector<Object*> objects;
+			List<Object*> objects;
 			if (meshCount == 1)
 			{
 				CreateMeshEntity(nullptr, rootNode->GetChild(0), objects);
@@ -142,7 +142,7 @@ namespace Blueberry
 		}
 	}
 
-	void ModelImporter::CreateMeshEntity(Transform* parent, fbxsdk::FbxNode* node, std::vector<Object*>& objects)
+	void ModelImporter::CreateMeshEntity(Transform* parent, fbxsdk::FbxNode* node, List<Object*>& objects)
 	{
 		if (node->GetLodGroup())
 		{
@@ -263,7 +263,7 @@ namespace Blueberry
 
 			int verticesCount = fbxMesh->GetPolygonVertexCount();
 
-			static std::vector<Vector3> verticesNormalsTangentsUvs;
+			static List<Vector3> verticesNormalsTangentsUvs;
 			if (verticesCount > verticesNormalsTangentsUvs.size())
 			{
 				verticesNormalsTangentsUvs.resize(verticesCount);
@@ -287,19 +287,19 @@ namespace Blueberry
 				indicesCount += (fbxMesh->mPolygons[i]).mSize == 3 ? 3 : 6;
 			}
 
-			static std::vector<uint32_t> indices;
+			static List<uint32_t> indices;
 			if (indicesCount > indices.size())
 			{
 				indices.resize(indicesCount);
 			}
 
-			static std::vector<uint32_t> sortedPolygonIndexes;
+			static List<uint32_t> sortedPolygonIndexes;
 			sortedPolygonIndexes.reserve(polygonCount);
 			sortedPolygonIndexes.clear();
 
 			// Submeshes
 			uint32_t materialCount = node->GetMaterialCount();
-			std::vector<uint32_t> subMeshPolygonCounts;
+			List<uint32_t> subMeshPolygonCounts;
 			fbxsdk::FbxLayerElementArrayTemplate<int>* materialIndices;
 			if (fbxMesh->GetMaterialIndices(&materialIndices))
 			{
@@ -382,7 +382,7 @@ namespace Blueberry
 			}
 			mesh->Apply();
 
-			std::vector<Material*> materials;
+			List<Material*> materials;
 			materials.resize(materialCount);
 			for (uint32_t i = 0; i < materialCount; ++i)
 			{

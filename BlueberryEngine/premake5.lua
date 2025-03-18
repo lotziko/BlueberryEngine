@@ -18,6 +18,8 @@ project "BlueberryEngine"
 		"vendor/mikktspace/**.cpp",
 		"vendor/hbao/include/**.h",
 		"vendor/openxr/include/**.h",
+		"vendor/rpmalloc/**.h",
+		"vendor/rpmalloc/**.cpp",
 	}
 
 	includedirs
@@ -29,6 +31,7 @@ project "BlueberryEngine"
 		"%{IncludeDir.hbao}",
 		"%{IncludeDir.openxr}",
 		"%{IncludeDir.flathashmap}",
+		"%{IncludeDir.rpmalloc}",
 	}
 
 	links

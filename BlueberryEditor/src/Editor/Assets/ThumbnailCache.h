@@ -18,6 +18,6 @@ namespace Blueberry
 		static Texture2D* DrawAndSave(Object* asset);
 
 	private:
-		static std::unordered_map<ObjectId, Texture2D*> s_Thumbnails;
+		static Dictionary<ObjectId, Texture2D*> s_Thumbnails;
 	};
 }

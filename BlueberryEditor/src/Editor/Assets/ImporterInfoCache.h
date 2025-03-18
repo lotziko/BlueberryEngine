@@ -57,7 +57,7 @@ namespace Blueberry
 			}
 
 			FileId mainObject;
-			std::vector<std::tuple<FileId, std::size_t, std::string>> objects;
+			List<std::tuple<FileId, std::size_t, std::string>> objects;
 		};
 
 	public:
@@ -69,6 +69,6 @@ namespace Blueberry
 		static void Set(AssetImporter* importer);
 
 	private:
-		static std::unordered_map<Guid, ImporterInfo> s_ImporterInfoCache;
+		static Dictionary<Guid, ImporterInfo> s_ImporterInfoCache;
 	};
 }

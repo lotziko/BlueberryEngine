@@ -16,8 +16,8 @@ namespace Blueberry
 			std::filesystem::path path;
 			std::string pathString;
 			AssetImporter* importer;
-			std::vector<Object*> objects; // First object is main
-			std::vector<Vector2> positions;
+			List<Object*> objects; // First object is main
+			List<Vector2> positions;
 			bool isDirectory;
 			bool expanded;
 		};
@@ -42,7 +42,7 @@ namespace Blueberry
 	private:
 		std::filesystem::path m_PreviousDirectory;
 		std::filesystem::path m_CurrentDirectory;
-		std::vector<AssetInfo> m_CurrentDirectoryAssets;
+		List<AssetInfo> m_CurrentDirectoryAssets;
 
 		FolderTree m_FolderTree;
 		const char* m_OpenedModalPopupId = nullptr;

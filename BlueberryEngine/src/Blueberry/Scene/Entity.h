@@ -29,7 +29,7 @@ namespace Blueberry
 		template<class ComponentType>
 		ComponentType* GetComponent();
 
-		std::vector<Component*> GetComponents();
+		List<Component*> GetComponents();
 
 		template<class ComponentType>
 		bool HasComponent();
@@ -54,7 +54,7 @@ namespace Blueberry
 		void UpdateComponents();
 
 	private:
-		std::vector<ObjectPtr<Component>> m_Components;
+		List<ObjectPtr<Component>> m_Components;
 		bool m_IsActive = true;
 
 		Transform* m_Transform;

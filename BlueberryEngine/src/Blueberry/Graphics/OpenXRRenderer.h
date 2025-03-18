@@ -8,6 +8,8 @@ namespace Blueberry
 	class OpenXRRenderer
 	{
 	public:
+		BB_OVERRIDE_NEW_DELETE
+
 		static bool Initialize();
 		static void Shutdown();
 		static bool IsActive();

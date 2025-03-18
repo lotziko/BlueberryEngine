@@ -5,6 +5,8 @@ namespace Blueberry
 	class OctreeNode
 	{
 	public:
+		BB_OVERRIDE_NEW_DELETE
+
 		OctreeNode(const Vector3& center, const float& size, const float& minNodeSize, const float& looseness);
 
 		bool Add(const AABB& bounds, const ObjectId& object);
@@ -12,8 +14,8 @@ namespace Blueberry
 		bool Remove(const AABB& bounds, const ObjectId& object);
 		const uint32_t GetBestFit(const Vector3& center);
 
-		void Cull(DirectX::XMVECTOR* planes, std::vector<ObjectId>& result, bool skipChecks);
-		void GatherChildrenBounds(std::vector<AABB>& result);
+		void Cull(DirectX::XMVECTOR* planes, List<ObjectId>& result, bool skipChecks);
+		void GatherChildrenBounds(List<AABB>& result);
 
 		std::shared_ptr<OctreeNode> ShrinkIfPossible(const float& minSize);
 
@@ -34,7 +36,7 @@ namespace Blueberry
 		float m_AdjustedSize;
 		float m_MinNodeSize;
 		float m_Looseness;
-		std::vector<std::pair<AABB, ObjectId>> m_Objects;
+		List<std::pair<AABB, ObjectId>> m_Objects;
 		std::array<AABB, 8> m_ChildBounds;
 		std::array<std::shared_ptr<OctreeNode>, 8> m_Children;
 
@@ -44,14 +46,16 @@ namespace Blueberry
 	class Octree
 	{
 	public:
+		BB_OVERRIDE_NEW_DELETE
+
 		Octree(const Vector3& initialPosition, const float& initialSize, const float& minNodeSize, const float& looseness);
 
 		void Add(const AABB& bounds, const ObjectId& object);
 		bool Remove(const ObjectId& object);
 		bool Remove(const AABB& bounds, const ObjectId& object);
 
-		void Cull(DirectX::XMVECTOR* planes, std::vector<ObjectId>& result);
-		void GatherChildrenBounds(std::vector<AABB>& result);
+		void Cull(DirectX::XMVECTOR* planes, List<ObjectId>& result);
+		void GatherChildrenBounds(List<AABB>& result);
 
 	private:
 		void Grow(const Vector3& direction);

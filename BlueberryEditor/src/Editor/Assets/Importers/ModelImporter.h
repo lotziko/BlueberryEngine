@@ -42,7 +42,7 @@ namespace Blueberry
 	public:
 		ModelImporter() = default;
 
-		const std::vector<DataPtr<ModelMaterialData>>& GetMaterials();
+		const List<DataPtr<ModelMaterialData>>& GetMaterials();
 		
 		const float& GetScale();
 		void SetScale(const float& scale);
@@ -53,10 +53,10 @@ namespace Blueberry
 		virtual void ImportData() override;
 
 	private:
-		void CreateMeshEntity(Transform* parent, fbxsdk::FbxNode* node, std::vector<Object*>& objects);
+		void CreateMeshEntity(Transform* parent, fbxsdk::FbxNode* node, List<Object*>& objects);
 
 	private:
-		std::vector<DataPtr<ModelMaterialData>> m_Materials;
+		List<DataPtr<ModelMaterialData>> m_Materials;
 		float m_Scale = 1.0f;
 	};
 }

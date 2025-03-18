@@ -29,12 +29,12 @@ namespace Blueberry
 		}
 	}
 
-	std::vector<Layer*>::iterator LayerStack::begin()
+	List<Layer*>::iterator LayerStack::begin()
 	{
 		return m_Layers.begin();
 	}
 
-	std::vector<Layer*>::iterator LayerStack::end()
+	List<Layer*>::iterator LayerStack::end()
 	{
 		return m_Layers.end();
 	}

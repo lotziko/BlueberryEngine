@@ -70,7 +70,7 @@ namespace Blueberry
 		return (center.x <= m_Center.x ? 0 : 1) + (center.y >= m_Center.y ? 0 : 4) + (center.z <= m_Center.z ? 0 : 2);
 	}
 
-	void OctreeNode::Cull(DirectX::XMVECTOR* planes, std::vector<ObjectId>& result, bool skipChecks)
+	void OctreeNode::Cull(DirectX::XMVECTOR* planes, List<ObjectId>& result, bool skipChecks)
 	{
 		if (skipChecks)
 		{
@@ -113,7 +113,7 @@ namespace Blueberry
 		}
 	}
 
-	void OctreeNode::GatherChildrenBounds(std::vector<AABB>& result)
+	void OctreeNode::GatherChildrenBounds(List<AABB>& result)
 	{
 		if (m_Children[0])
 		{
@@ -417,12 +417,12 @@ namespace Blueberry
 		return removed;
 	}
 
-	void Octree::Cull(DirectX::XMVECTOR* planes, std::vector<ObjectId>& result)
+	void Octree::Cull(DirectX::XMVECTOR* planes, List<ObjectId>& result)
 	{
 		m_Root->Cull(planes, result, false);
 	}
 
-	void Octree::GatherChildrenBounds(std::vector<AABB>& result)
+	void Octree::GatherChildrenBounds(List<AABB>& result)
 	{
 		m_Root->GatherChildrenBounds(result);
 	}

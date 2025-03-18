@@ -31,7 +31,7 @@ namespace Blueberry
 	void EntityInspector::Draw(Object* object)
 	{
 		Entity* entity = static_cast<Entity*>(object);
-		std::vector<Component*> components = entity->GetComponents();
+		List<Component*> components = entity->GetComponents();
 
 		ImGui::Text(entity->GetTypeName().c_str());
 

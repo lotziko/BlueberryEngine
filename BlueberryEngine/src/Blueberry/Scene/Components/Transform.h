@@ -27,7 +27,7 @@ namespace Blueberry
 
 		Transform* GetParent() const;
 
-		const std::vector<Transform*> GetChildren() const;
+		const List<Transform*> GetChildren() const;
 		const size_t GetChildrenCount() const;
 
 		void SetLocalPosition(const Vector3& position);
@@ -56,7 +56,7 @@ namespace Blueberry
 		size_t m_RecalculationFrame = 0;
 
 		ObjectPtr<Transform> m_Parent = nullptr;
-		std::vector<ObjectPtr<Transform>> m_Children;
+		List<ObjectPtr<Transform>> m_Children;
 
 		Matrix m_LocalToWorldMatrix;
 		Matrix m_WorldToLocalMatrix;

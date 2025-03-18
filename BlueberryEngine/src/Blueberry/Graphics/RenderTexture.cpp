@@ -7,8 +7,8 @@ namespace Blueberry
 {
 	OBJECT_DEFINITION(Texture, RenderTexture)
 
-	std::unordered_map<ObjectId, size_t> RenderTexture::s_TemporaryKeys = {};
-	std::unordered_map<size_t, std::vector<std::pair<RenderTexture*, size_t>>> RenderTexture::s_TemporaryPool = {};
+	Dictionary<ObjectId, size_t> RenderTexture::s_TemporaryKeys = {};
+	Dictionary<size_t, List<std::pair<RenderTexture*, size_t>>> RenderTexture::s_TemporaryPool = {};
 
 	RenderTexture::~RenderTexture()
 	{
@@ -82,7 +82,7 @@ namespace Blueberry
 		auto it = s_TemporaryPool.find(key);
 		if (it != s_TemporaryPool.end())
 		{
-			std::vector<std::pair<RenderTexture*, size_t>>& textures = it->second;
+			List<std::pair<RenderTexture*, size_t>>& textures = it->second;
 			if (textures.size() > 0)
 			{
 				RenderTexture* last = (textures.end() - 1)->first; 
@@ -111,12 +111,12 @@ namespace Blueberry
 			auto it1 = s_TemporaryPool.find(it->second);
 			if (it1 != s_TemporaryPool.end())
 			{
-				std::vector<std::pair<RenderTexture*, size_t>>& textures = it1->second;
+				List<std::pair<RenderTexture*, size_t>>& textures = it1->second;
 				textures.emplace_back(pair);
 			}
 			else
 			{
-				std::vector<std::pair<RenderTexture*, size_t>> textures = {};
+				List<std::pair<RenderTexture*, size_t>> textures = {};
 				textures.emplace_back(pair);
 				s_TemporaryPool.insert({ it->second, textures });
 			}

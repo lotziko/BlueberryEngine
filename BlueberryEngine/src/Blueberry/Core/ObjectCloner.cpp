@@ -69,8 +69,8 @@ namespace Blueberry
 			break;
 			case BindingType::ObjectPtrArray:
 			{
-				std::vector<ObjectPtr<Object>> objectRefArrayValue = *originalValue.Get<std::vector<ObjectPtr<Object>>>();
-				std::vector<ObjectPtr<Object>>* cloneObjectRefArrayPointer = cloneValue.Get<std::vector<ObjectPtr<Object>>>();
+				List<ObjectPtr<Object>> objectRefArrayValue = *originalValue.Get<List<ObjectPtr<Object>>>();
+				List<ObjectPtr<Object>>* cloneObjectRefArrayPointer = cloneValue.Get<List<ObjectPtr<Object>>>();
 				
 				if (objectRefArrayValue.size() > 0)
 				{

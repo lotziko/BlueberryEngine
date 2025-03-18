@@ -27,12 +27,12 @@ namespace Blueberry
 			Object* object;
 			uint8_t index;
 			DirectX::XMVECTOR planes[6];
-			std::vector<ObjectId> renderers;
+			List<ObjectId> renderers;
 		};
 
 		Camera* camera;
-		std::vector<Light*> lights;
-		std::vector<CullerInfo> cullerInfos;
+		List<Light*> lights;
+		List<CullerInfo> cullerInfos;
 	};
 
 	struct DrawingSettings

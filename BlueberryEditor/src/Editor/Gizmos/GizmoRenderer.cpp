@@ -48,7 +48,7 @@ namespace Blueberry
 		/*Gizmos::SetMatrix(Matrix::Identity);
 		Gizmos::SetColor(Color(1, 1, 1, 1));
 		Gizmos::Begin();
-		std::vector<AABB> bounds = {};
+		List<AABB> bounds = {};
 		RendererTree::GatherBounds(bounds);
 		for (int i = 0; i < bounds.size(); ++i)
 		{

@@ -7,6 +7,8 @@ namespace Blueberry
 	class Layer
 	{
 	public:
+		BB_OVERRIDE_NEW_DELETE
+
 		Layer(const std::string& name = "Layer");
 		virtual ~Layer() = default;
 

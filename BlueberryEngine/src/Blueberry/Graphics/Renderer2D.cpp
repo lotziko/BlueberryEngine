@@ -26,14 +26,14 @@ namespace Blueberry
 			.Append(VertexLayout::TextureCoord);
 
 		int size = layout.GetSize();
-		s_VertexData = new float[MAX_VERTICES * size / sizeof(float)];
+		s_VertexData = BB_MALLOC_ARRAY(float, MAX_VERTICES * size / sizeof(float));
 
 		if (!GfxDevice::CreateVertexBuffer(layout, MAX_VERTICES, s_VertexBuffer))
 		{
 			return false;
 		}
 
-		uint32_t* indexData = new uint32_t[MAX_INDICES];
+		uint32_t* indexData = BB_MALLOC_ARRAY(uint32_t, MAX_INDICES);
 		uint32_t offset = 0;
 		for (uint32_t i = 0; i < MAX_INDICES; i += 6)
 		{
@@ -53,9 +53,9 @@ namespace Blueberry
 			return false;
 		}
 		s_IndexBuffer->SetData(indexData, MAX_INDICES);
-		delete[] indexData;
+		BB_FREE(indexData);
 
-		s_DrawingDatas = new DrawingData[MAX_SPRITES];
+		s_DrawingDatas = BB_MALLOC_ARRAY(DrawingData, MAX_SPRITES);
 
 		s_QuadVertexPositons[0] = { -0.5f, -0.5f, 0.0f, 1.0f };
 		s_QuadVertexPositons[1] = { -0.5f, 0.5f, 0.0f, 1.0f };
@@ -72,8 +72,8 @@ namespace Blueberry
 
 	void Renderer2D::Shutdown()
 	{
-		delete[] s_VertexData;
-		delete[] s_DrawingDatas;
+		BB_FREE(s_VertexData);
+		BB_FREE(s_DrawingDatas);
 	}
 
 	void Renderer2D::Begin()

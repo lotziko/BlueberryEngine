@@ -77,7 +77,7 @@ namespace Blueberry
 		return m_SubMeshes[index].Get();
 	}
 
-	const std::vector<Vector3>& Mesh::GetVertices()
+	const List<Vector3>& Mesh::GetVertices()
 	{
 		if (m_Vertices.size() == 0 && m_VertexData.size() > 0)
 		{
@@ -106,7 +106,7 @@ namespace Blueberry
 		return m_Vertices;
 	}
 
-	const std::vector<uint32_t>& Mesh::GetIndices()
+	const List<uint32_t>& Mesh::GetIndices()
 	{
 		if (m_Indices.size() == 0)
 		{

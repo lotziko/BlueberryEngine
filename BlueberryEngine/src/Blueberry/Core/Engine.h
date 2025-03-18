@@ -9,6 +9,8 @@ namespace Blueberry
 	class Engine
 	{
 	public:
+		BB_OVERRIDE_NEW_DELETE
+
 		bool Initialize(const WindowProperties& properties);
 		void Shutdown();
 		void Run();

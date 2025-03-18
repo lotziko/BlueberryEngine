@@ -13,6 +13,8 @@ namespace Blueberry
 	class Scene
 	{
 	public:
+		BB_OVERRIDE_NEW_DELETE;
+
 		Scene();
 
 		bool Initialize();
@@ -37,7 +39,7 @@ namespace Blueberry
 
 	private:
 		ska::flat_hash_map<ObjectId, ObjectPtr<Entity>> m_Entities;
-		std::vector<Component*> m_CreatedComponents;
+		List<Component*> m_CreatedComponents;
 		// Stores only components added using AddToSceneComponents()
 		ComponentManager m_ComponentManager;
 		RendererTree m_RendererTree;

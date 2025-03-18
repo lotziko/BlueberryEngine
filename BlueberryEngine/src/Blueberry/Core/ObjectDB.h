@@ -55,11 +55,11 @@ namespace Blueberry
 		static bool HasGuid(const Guid& guid);
 		static bool HasGuidAndFileId(const Guid& guid, const FileId& fileId);
 		static Object* GetObjectFromGuid(const Guid& guid, const FileId& fileId);
-		static const std::unordered_map<FileId, ObjectId>& GetObjectsFromGuid(const Guid& guid);
+		static const Dictionary<FileId, ObjectId>& GetObjectsFromGuid(const Guid& guid);
 	private:
 		static ChunkedObjectArray s_Array;
-		static std::unordered_map<ObjectId, std::pair<Guid, FileId>> s_ObjectIdToGuid;
-		static std::unordered_map<Guid, std::unordered_map<FileId, ObjectId>> s_GuidToObjectId;
-		static std::unordered_map<ObjectId, FileId> s_ObjectIdToFileId;
+		static Dictionary<ObjectId, std::pair<Guid, FileId>> s_ObjectIdToGuid;
+		static Dictionary<Guid, Dictionary<FileId, ObjectId>> s_GuidToObjectId;
+		static Dictionary<ObjectId, FileId> s_ObjectIdToFileId;
 	};
 }

@@ -6,7 +6,7 @@
 
 namespace Blueberry
 {
-	std::unordered_map<std::size_t, Texture*> IconDB::s_AssetIcons = {};
+	Dictionary<std::size_t, Texture*> IconDB::s_AssetIcons = {};
 
 	Texture* IconDB::GetAssetIcon(Object* asset)
 	{

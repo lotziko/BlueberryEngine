@@ -58,8 +58,7 @@ namespace Blueberry
 					texture->SetData(data, length);
 					texture->Apply();
 					texture->SetState(ObjectState::Default);
-					delete[] data;
-					BB_INFO("Texture2D \"" << GetName() << "\" imported from cache.");
+					//BB_INFO("Texture2D \"" << GetName() << "\" imported from cache.");
 				}
 				else if (object->IsClassType(TextureCube::Type))
 				{
@@ -71,8 +70,7 @@ namespace Blueberry
 					texture->SetData(data, length);
 					texture->Apply();
 					texture->SetState(ObjectState::Default);
-					delete[] data;
-					BB_INFO("TextureCube \"" << GetName() << "\" imported from cache.");
+					//BB_INFO("TextureCube \"" << GetName() << "\" imported from cache.");
 				}
 			}
 		}
@@ -114,7 +112,7 @@ namespace Blueberry
 				texture->Apply();
 				object = texture;
 
-				AssetDB::SaveAssetObjectsToCache(std::vector<Object*> { object });
+				AssetDB::SaveAssetObjectsToCache(List<Object*> { object });
 				FileHelper::Save(static_cast<uint8_t*>(properties.data), properties.dataSize, GetTexturePath());
 			}
 			else if (m_TextureShape == TextureImporterShape::TextureCube)
@@ -136,7 +134,7 @@ namespace Blueberry
 				temporaryTexture->Apply();
 				RenderTexture* temporaryTextureCube = RenderTexture::Create(size, size, 1, 1, TextureFormat::R8G8B8A8_UNorm, TextureDimension::TextureCube, WrapMode::Clamp, FilterMode::Linear, true);
 				size_t dataSize = size * size * 6 * 4;
-				uint8_t* data = new uint8_t[dataSize];
+				uint8_t* data = BB_MALLOC_ARRAY(uint8_t, dataSize);
 
 				if (s_EquirectangularToCubemapMaterial == nullptr)
 				{
@@ -160,7 +158,7 @@ namespace Blueberry
 				texture->SetState(ObjectState::Default);
 				object = texture;
 
-				AssetDB::SaveAssetObjectsToCache(std::vector<Object*> { object });
+				AssetDB::SaveAssetObjectsToCache(List<Object*> { object });
 				FileHelper::Save(data, dataSize, GetTexturePath());
 			}
 

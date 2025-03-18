@@ -91,9 +91,9 @@ namespace Blueberry
 		return m_Parent.Get();
 	}
 
-	const std::vector<Transform*> Transform::GetChildren() const
+	const List<Transform*> Transform::GetChildren() const
 	{
-		std::vector<Transform*> children;
+		List<Transform*> children;
 		for (auto child : m_Children)
 		{
 			if (child.IsValid())

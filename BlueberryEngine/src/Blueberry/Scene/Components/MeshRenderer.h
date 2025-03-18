@@ -26,7 +26,7 @@ namespace Blueberry
 		Material* GetMaterial(const uint32_t& index = 0);
 		void SetMaterial(Material* material);
 
-		void SetMaterials(const std::vector<Material*> materials);
+		void SetMaterials(const List<Material*> materials);
 
 		virtual const AABB& GetBounds() final;
 
@@ -34,7 +34,7 @@ namespace Blueberry
 
 	private:
 		ObjectPtr<Mesh> m_Mesh;
-		std::vector<ObjectPtr<Material>> m_Materials;
+		List<ObjectPtr<Material>> m_Materials;
 		AABB m_Bounds;
 		AABB m_TreeBounds;
 		size_t m_RecalculationFrame = 0;

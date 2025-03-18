@@ -18,14 +18,22 @@ namespace Blueberry
 	{
 		AddToSceneComponents(MeshRenderer::Type);
 		// TODO handle prefabs
-		m_TreeBounds = GetBounds();
-		GetScene()->GetRendererTree().Add(m_ObjectId, m_TreeBounds);
+		Scene* scene = GetScene();
+		if (scene != nullptr)
+		{
+			m_TreeBounds = GetBounds();
+			scene->GetRendererTree().Add(m_ObjectId, m_TreeBounds);
+		}
 	}
 
 	void MeshRenderer::OnDisable()
 	{
 		RemoveFromSceneComponents(MeshRenderer::Type);
-		GetScene()->GetRendererTree().Remove(m_ObjectId, m_TreeBounds);
+		Scene* scene = GetScene();
+		if (scene != nullptr)
+		{
+			scene->GetRendererTree().Remove(m_ObjectId, m_TreeBounds);
+		}
 	}
 
 	void MeshRenderer::Update()
@@ -67,7 +75,7 @@ namespace Blueberry
 		m_Materials[0] = material;
 	}
 
-	void MeshRenderer::SetMaterials(const std::vector<Material*> materials)
+	void MeshRenderer::SetMaterials(const List<Material*> materials)
 	{
 		m_Materials.clear();
 		for (Material* material : materials)

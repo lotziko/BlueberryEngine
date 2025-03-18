@@ -6,19 +6,19 @@ namespace Blueberry
 {
 #define TO_OBJECT_TYPE( classname ) TO_HASH( classname )
 
-//********************************************************************************
-// OBJECT_DECLARATION
-// This macro must be included in the declaration of any subclass of Object.
-// It declares variables used in type checking.
-//********************************************************************************
+	//********************************************************************************
+	// OBJECT_DECLARATION
+	// This macro must be included in the declaration of any subclass of Object.
+	// It declares variables used in type checking.
+	//********************************************************************************
 #define OBJECT_DECLARATION( classname )											\
 public:																			\
-    static const size_t Type;												\
-    static const size_t ParentType;										\
+    static const size_t Type;													\
+    static const size_t ParentType;												\
 	static const std::string TypeName;											\
 public:																			\
-    virtual bool IsClassType( const size_t classType ) const override;		\
-	virtual size_t GetType() const override;								\
+    virtual bool IsClassType( const size_t classType ) const override;			\
+	virtual size_t GetType() const override;									\
 	virtual std::string GetTypeName() const override;							\
 
 //********************************************************************************
@@ -28,16 +28,16 @@ public:																			\
 // proper parentclass is indicated or the run-time type information will be incorrect.
 //********************************************************************************
 #define OBJECT_DEFINITION( parentclass, childclass )								\
-const size_t childclass::Type = TO_OBJECT_TYPE(TO_STRING(childclass));			\
-const size_t childclass::ParentType = TO_OBJECT_TYPE(TO_STRING(parentclass));	\
+const size_t childclass::Type = TO_OBJECT_TYPE(TO_STRING(childclass));				\
+const size_t childclass::ParentType = TO_OBJECT_TYPE(TO_STRING(parentclass));		\
 const std::string childclass::TypeName = TO_STRING(childclass);						\
-bool childclass::IsClassType( const size_t classType ) const					\
+bool childclass::IsClassType( const size_t classType ) const						\
 {																					\
     if ( classType == childclass::Type )											\
         return true;																\
     return parentclass::IsClassType( classType );									\
 }																					\
-size_t childclass::GetType() const												\
+size_t childclass::GetType() const													\
 {																					\
 	return childclass::Type;														\
 }																					\
@@ -59,6 +59,8 @@ std::string childclass::GetTypeName() const											\
 	class Object
 	{
 	public:
+		BB_OVERRIDE_NEW_DELETE
+
 		static const size_t Type;
 		static const size_t ParentType;
 		static const std::string TypeName;
@@ -104,16 +106,18 @@ std::string childclass::GetTypeName() const											\
 
 #define DATA_DECLARATION( classname )											\
 public:																			\
-    static const size_t Type;												\
+    static const size_t Type;													\
 	static const std::string TypeName;											\
 
 #define DATA_DEFINITION( childclass )											\
-const size_t childclass::Type = TO_OBJECT_TYPE(TO_STRING(childclass));		\
+const size_t childclass::Type = TO_OBJECT_TYPE(TO_STRING(childclass));			\
 const std::string childclass::TypeName = TO_STRING(childclass);					\
 
 	class Data
 	{
 	public:
+		BB_OVERRIDE_NEW_DELETE
+
 		Data() = default;
 		~Data() = default;
 

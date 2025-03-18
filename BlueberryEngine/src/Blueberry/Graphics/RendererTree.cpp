@@ -19,12 +19,12 @@ namespace Blueberry
 		m_Octree.Add(newBounds, id);
 	}
 
-	void RendererTree::Cull(DirectX::XMVECTOR* planes, std::vector<ObjectId>& result)
+	void RendererTree::Cull(DirectX::XMVECTOR* planes, List<ObjectId>& result)
 	{
 		m_Octree.Cull(planes, result);
 	}
 
-	void RendererTree::GatherBounds(std::vector<AABB>& result)
+	void RendererTree::GatherBounds(List<AABB>& result)
 	{
 		m_Octree.GatherChildrenBounds(result);
 	}

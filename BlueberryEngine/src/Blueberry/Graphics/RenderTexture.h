@@ -21,7 +21,7 @@ namespace Blueberry
 		uint32_t m_Depth = 0;
 		uint32_t m_SampleCount = 0;
 
-		static std::unordered_map<ObjectId, size_t> s_TemporaryKeys;
-		static std::unordered_map<size_t, std::vector<std::pair<RenderTexture*, size_t>>> s_TemporaryPool;
+		static Dictionary<ObjectId, size_t> s_TemporaryKeys;
+		static Dictionary<size_t, List<std::pair<RenderTexture*, size_t>>> s_TemporaryPool;
 	};
 }
