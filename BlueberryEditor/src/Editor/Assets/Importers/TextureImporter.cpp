@@ -79,9 +79,14 @@ namespace Blueberry
 			std::string path = GetFilePath();
 			
 			PngTextureProcessor processor;
-			if (std::filesystem::path(path).extension() == ".dds")
+			std::string extension = std::filesystem::path(path).extension().string();
+			if (extension == ".dds")
 			{
 				processor.LoadDDS(path);
+			}
+			else if (extension == ".hdr")
+			{
+				processor.LoadHDR(path);
 			}
 			else
 			{
@@ -129,11 +134,12 @@ namespace Blueberry
 					ObjectDB::AllocateIdToGuid(texture, guid, TextureCubeId);
 				}
 
-				Texture2D* temporaryTexture = Texture2D::Create(properties.width, properties.height, 1, TextureFormat::R8G8B8A8_UNorm);
+				Texture2D* temporaryTexture = Texture2D::Create(properties.width, properties.height, 1, properties.format);
 				temporaryTexture->SetData(static_cast<uint8_t*>(properties.data), properties.dataSize);
 				temporaryTexture->Apply();
-				RenderTexture* temporaryTextureCube = RenderTexture::Create(size, size, 1, 1, TextureFormat::R8G8B8A8_UNorm, TextureDimension::TextureCube, WrapMode::Clamp, FilterMode::Linear, true);
-				size_t dataSize = size * size * 6 * 4;
+				RenderTexture* temporaryTextureCube = RenderTexture::Create(size, size, 1, 1, properties.format, TextureDimension::TextureCube, WrapMode::Clamp, FilterMode::Linear, true);
+				uint8_t blockSize = properties.dataSize / (properties.width * properties.height);
+				size_t dataSize = size * size * 6 * blockSize;
 				uint8_t* data = BB_MALLOC_ARRAY(uint8_t, dataSize);
 
 				if (s_EquirectangularToCubemapMaterial == nullptr)

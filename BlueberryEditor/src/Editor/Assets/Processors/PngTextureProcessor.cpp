@@ -103,6 +103,31 @@ namespace Blueberry
 		m_Properties.mipCount = m_ScratchImage.GetImageCount();
 	}
 
+	void PngTextureProcessor::LoadHDR(const std::string& path)
+	{
+		HRESULT hr = DirectX::LoadFromHDRFile(StringConverter::StringToWide(path).c_str(), nullptr, m_ScratchImage);
+		if (FAILED(hr))
+		{
+			BB_ERROR("Failed to load texture from file.");
+			return;
+		}
+
+		DirectX::ScratchImage flippedScratchImage;
+		hr = DirectX::FlipRotate(m_ScratchImage.GetImages(), m_ScratchImage.GetImageCount(), m_ScratchImage.GetMetadata(), DirectX::TEX_FR_FLIP_VERTICAL, flippedScratchImage);
+		if (FAILED(hr))
+		{
+			BB_ERROR("Failed to flip texture.");
+			return;
+		}
+		m_ScratchImage = std::move(flippedScratchImage);
+
+		DirectX::Image image = *m_ScratchImage.GetImages();
+		m_Properties = {};
+		m_Properties.width = image.width;
+		m_Properties.height = image.height;
+		m_Properties.mipCount = m_ScratchImage.GetImageCount();
+	}
+
 	void PngTextureProcessor::Compress(const TextureFormat& format)
 	{
 		DXGI_FORMAT dxgiFormat = static_cast<DXGI_FORMAT>(format);
