@@ -1,16 +1,23 @@
 #pragma once
 
+#include "Editor\Panels\EditorWindow.h"
+
 namespace Blueberry
 {
 	class Entity;
 
-	class SceneHierarchy
+	class SceneHierarchy : public EditorWindow
 	{
+		OBJECT_DECLARATION(SceneHierarchy)
+
 	public:
 		SceneHierarchy() = default;
 		virtual ~SceneHierarchy() = default;
 
-		void DrawUI();
+		static void Open();
+		static void BindProperties();
+
+		virtual void OnDrawUI() final;
 
 	private:
 		void DrawEntity(Entity* entity);

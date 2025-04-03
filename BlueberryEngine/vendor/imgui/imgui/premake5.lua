@@ -23,12 +23,25 @@ project "ImGui"
 		"backends/imgui_impl_dx11.h",
 		"backends/imgui_impl_dx11.cpp",
 
+        "misc/freetype/imgui_freetype.h",
+        "misc/freetype/imgui_freetype.cpp",
+
 		"imgui_internal.h",
 		"imgui_widgets.cpp",
 		"imstb_rectpack.h",
 		"imstb_textedit.h",
 		"imstb_truetype.h",
 		"imgui_demo.cpp"
+	}
+
+    includedirs
+	{
+		"freetype/include"
+	}
+	
+	links
+	{
+		"freetype/lib/freetype.lib"
 	}
 
     filter "system:windows"

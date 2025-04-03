@@ -9,6 +9,26 @@ namespace Blueberry
 
 namespace ImGui
 {
+	struct EditorStyle
+	{
+		float ProjectBottomPanelSize;
+		float ProjectCellSize;
+		float ProjectSpaceBetweenCells;
+		float ProjectCellIconPadding;
+		float ProjectExpandIconSize;
+		float ProjectFolderIconSize;
+	};
+
+	struct EditorContext
+	{
+		EditorStyle Style;
+	};
+
+	extern EditorContext* GEditor;
+
+	void CreateEditorContext();
+	EditorStyle& GetEditorStyle();
+
 	bool DragVector2(const char* label, Blueberry::Vector2* v);
 	bool DragVector3(const char* label, Blueberry::Vector3* v);
 	bool EnumEdit(const char* label, int* v, const Blueberry::List<std::string>* names);
@@ -19,6 +39,8 @@ namespace ImGui
 	bool ObjectEdit(const char* label, Blueberry::Object** v, const std::size_t& type);
 	bool ObjectEdit(const char* label, Blueberry::ObjectPtr<Blueberry::Object>* v, const std::size_t& type);
 	bool ObjectArrayEdit(const char* label, Blueberry::List<Blueberry::ObjectPtr<Blueberry::Object>>* v, const std::size_t& type);
+
+	void HorizontalSplitter(const char* strId, float* size, float minSize);
 
 	void ApplyEditorDarkTheme();
 	void LoadDefaultEditorFonts();

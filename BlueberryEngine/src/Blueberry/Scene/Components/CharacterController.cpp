@@ -101,6 +101,7 @@ namespace Blueberry
 				Vector3 velocity = (right * movementAxis.x + forward * movementAxis.y) * movementSpeed;
 
 				rotation *= Quaternion::CreateFromAxisAngle(Vector3::UnitY, turnAxis * turnSpeed);
+				rotation.Normalize();
 
 				character->SetRotation(JPH::QuatArg(rotation.x, rotation.y, rotation.z, rotation.w));
 				character->SetLinearVelocity(character->GetUp() * character->GetLinearVelocity() + JPH::Vec3Arg(velocity.x, velocity.y, velocity.z));

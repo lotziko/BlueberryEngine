@@ -10,6 +10,7 @@ namespace Blueberry
 		WindowsWindow(const WindowProperties& properties);
 		virtual ~WindowsWindow();
 
+		virtual bool IsActive() final;
 		virtual bool ProcessMessages() final;
 
 		virtual void* GetHandle() final;

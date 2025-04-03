@@ -37,12 +37,6 @@ namespace Blueberry
 	private:
 		Scene* m_Scene = nullptr;
 
-		SceneHierarchy* m_SceneHierarchy = nullptr;
-		SceneInspector* m_SceneInspector = nullptr;
-		SceneArea* m_SceneArea = nullptr;
-		GameView* m_GameView = nullptr;
-		ProjectBrowser* m_ProjectBrowser = nullptr;
-
 		static inline bool s_FrameUpdateRequested = true;
 	};
 }

@@ -3,18 +3,25 @@
 #include "Blueberry\Math\Math.h"
 #include "SceneObjectPicker.h"
 
+#include "Editor\Panels\EditorWindow.h"
+
 namespace Blueberry
 {
 	class RenderTexture;
 	class Camera;
 
-	class SceneArea
+	class SceneArea : public EditorWindow
 	{
+		OBJECT_DECLARATION(SceneArea)
+
 	public:
 		SceneArea();
 		virtual ~SceneArea();
+
+		static void Open();
+		static void BindProperties();
 		
-		void DrawUI();
+		virtual void OnDrawUI() final;
 
 		float GetPerspectiveDistance(const float objectSize, const float fov);
 		float GetCameraDistance();

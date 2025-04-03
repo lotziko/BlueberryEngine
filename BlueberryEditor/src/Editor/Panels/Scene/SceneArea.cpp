@@ -15,6 +15,7 @@
 #include "Editor\Prefabs\PrefabManager.h"
 #include "Editor\Gizmos\GizmoRenderer.h"
 #include "Editor\Gizmos\IconRenderer.h"
+#include "Editor\Menu\EditorMenuManager.h"
 
 #include "Blueberry\Core\Screen.h"
 #include "Blueberry\Scene\Scene.h"
@@ -31,6 +32,8 @@
 
 namespace Blueberry
 {
+	OBJECT_DEFINITION(EditorWindow, SceneArea)
+
 	SceneArea::SceneArea()
 	{
 		m_GridMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/Grid.shader")));
@@ -103,138 +106,152 @@ namespace Blueberry
 		return motion;
 	}
 
-	void SceneArea::DrawUI()
+	void SceneArea::Open()
 	{
-		if (ImGui::Begin("Scene"))
+		EditorWindow* window = GetWindow(SceneArea::Type);
+		window->SetTitle("Scene");
+		window->Show();
+	}
+
+	void SceneArea::BindProperties()
+	{
+		BEGIN_OBJECT_BINDING(SceneArea)
+		BIND_FIELD(FieldInfo(TO_STRING(m_Title), &SceneArea::m_Title, BindingType::String))
+		BIND_FIELD(FieldInfo(TO_STRING(m_RawData), &SceneArea::m_RawData, BindingType::ByteData))
+		END_OBJECT_BINDING()
+
+		EditorMenuManager::AddItem("Window/Scene", &SceneArea::Open);
+	}
+
+	void SceneArea::OnDrawUI()
+	{
+		if (ImGui::IsWindowAppearing())
 		{
-			if (ImGui::IsWindowAppearing())
+			RequestRedrawAll();
+		}
+
+		Camera::SetCurrent(m_Camera);
+
+		ImGuiIO *io = &ImGui::GetIO();
+		ImVec2 mousePos = ImGui::GetMousePos();
+		ImVec2 pos = ImGui::GetCursorScreenPos();
+		ImVec2 size = ImGui::GetContentRegionAvail();
+		bool popupOpen = ImGui::IsPopupOpen(NULL, ImGuiPopupFlags_AnyPopupId);
+
+		// Motion
+		if (!popupOpen && ImGui::IsWindowFocused())
+		{
+			Vector3 motion = GetMotion(m_Rotation);
+			m_Position += motion;
+			if (motion.LengthSquared() > 0)
 			{
 				RequestRedrawAll();
 			}
+		}
 
-			Camera::SetCurrent(m_Camera);
-
-			ImGuiIO *io = &ImGui::GetIO();
-			ImVec2 mousePos = ImGui::GetMousePos();
-			ImVec2 pos = ImGui::GetCursorScreenPos();
-			ImVec2 size = ImGui::GetContentRegionAvail();
-
-			// Motion
-			if (ImGui::IsWindowFocused())
+		// Zoom
+		float mouseWheelDelta = io->MouseWheel;
+		if (!popupOpen && mouseWheelDelta != 0)
+		{
+			if (mousePos.x >= pos.x && mousePos.y >= pos.y && mousePos.x <= pos.x + size.x && mousePos.y <= pos.y + size.y)
 			{
-				Vector3 motion = GetMotion(m_Rotation);
-				m_Position += motion;
-				if (motion.LengthSquared() > 0)
-				{
-					RequestRedrawAll();
-				}
-			}
-
-			// Zoom
-			float mouseWheelDelta = io->MouseWheel;
-			if (mouseWheelDelta != 0)
-			{
-				if (mousePos.x >= pos.x && mousePos.y >= pos.y && mousePos.x <= pos.x + size.x && mousePos.y <= pos.y + size.y)
-				{
-					SceneAreaMovement::HandleZoom(this, mouseWheelDelta, Vector2(mousePos.x - pos.x, size.y - (mousePos.y - pos.y)));
-					RequestRedrawAll();
-				}
-			}
-
-			// Dragging
-			if (ImGui::IsMouseDragging(1, 0))
-			{
-				if (m_IsDragging == false)
-				{
-					ImVec2 clickPos = io->MouseClickedPos[1];
-					if (clickPos.x >= pos.x && clickPos.y >= pos.y && clickPos.x <= pos.x + size.x && clickPos.y <= pos.y + size.y)
-					{
-						m_IsDragging = true;
-						m_PreviousDragDelta = Vector2::Zero;
-					}
-				}
-				else
-				{
-					ImVec2 dragDelta = ImGui::GetMouseDragDelta(1, 0);
-					SceneAreaMovement::HandleDrag(this, Vector2(dragDelta.x - m_PreviousDragDelta.x, dragDelta.y - m_PreviousDragDelta.y));
-					m_PreviousDragDelta = Vector2(dragDelta.x, dragDelta.y);
-				}
+				SceneAreaMovement::HandleZoom(this, mouseWheelDelta, Vector2(mousePos.x - pos.x, size.y - (mousePos.y - pos.y)));
 				RequestRedrawAll();
+			}
+		}
+
+		// Dragging
+		if (!popupOpen && ImGui::IsMouseDragging(1, 0))
+		{
+			if (m_IsDragging == false)
+			{
+				ImVec2 clickPos = io->MouseClickedPos[1];
+				if (clickPos.x >= pos.x && clickPos.y >= pos.y && clickPos.x <= pos.x + size.x && clickPos.y <= pos.y + size.y)
+				{
+					m_IsDragging = true;
+					m_PreviousDragDelta = Vector2::Zero;
+				}
 			}
 			else
 			{
-				if (m_IsDragging)
-				{
-					m_IsDragging = false;
-				}
+				ImVec2 dragDelta = ImGui::GetMouseDragDelta(1, 0);
+				SceneAreaMovement::HandleDrag(this, Vector2(dragDelta.x - m_PreviousDragDelta.x, dragDelta.y - m_PreviousDragDelta.y));
+				m_PreviousDragDelta = Vector2(dragDelta.x, dragDelta.y);
 			}
-
-			// Prefab drop
-			ImGui::Dummy(size);
-			if (ImGui::BeginDragDropTarget())
+			RequestRedrawAll();
+		}
+		else
+		{
+			if (m_IsDragging)
 			{
-				const ImGuiPayload* payload = ImGui::GetDragDropPayload();
-				if (payload != nullptr && payload->IsDataType("OBJECT_ID"))
-				{
-					Blueberry::ObjectId* id = static_cast<Blueberry::ObjectId*>(payload->Data);
-					Blueberry::Object* object = Blueberry::ObjectDB::GetObject(*id);
+				m_IsDragging = false;
+			}
+		}
 
-					if (object != nullptr && object->IsClassType(Entity::Type) && ImGui::AcceptDragDropPayload("OBJECT_ID"))
+		// Prefab drop
+		ImGui::Dummy(size);
+		if (ImGui::BeginDragDropTarget())
+		{
+			const ImGuiPayload* payload = ImGui::GetDragDropPayload();
+			if (payload != nullptr && payload->IsDataType("OBJECT_ID"))
+			{
+				Blueberry::ObjectId* id = static_cast<Blueberry::ObjectId*>(payload->Data);
+				Blueberry::Object* object = Blueberry::ObjectDB::GetObject(*id);
+
+				if (object != nullptr && object->IsClassType(Entity::Type) && ImGui::AcceptDragDropPayload("OBJECT_ID"))
+				{
+					Scene* scene = EditorSceneManager::GetScene();
+					if (scene != nullptr)
 					{
-						Scene* scene = EditorSceneManager::GetScene();
-						if (scene != nullptr)
+						if (Blueberry::ObjectDB::HasGuid(object))
 						{
-							if (Blueberry::ObjectDB::HasGuid(object))
-							{
-								AssetLoader::Load(Blueberry::ObjectDB::GetGuidFromObject(object));
-								scene->AddEntity(PrefabManager::CreateInstance(static_cast<Entity*>(object))->GetEntity());
-							}
+							AssetLoader::Load(Blueberry::ObjectDB::GetGuidFromObject(object));
+							scene->AddEntity(PrefabManager::CreateInstance(static_cast<Entity*>(object))->GetEntity());
 						}
 					}
-					RequestRedrawAll();
 				}
-				ImGui::EndDragDropTarget();
+				RequestRedrawAll();
 			}
-			ImGui::SetCursorScreenPos(pos);
-
-			// Selection
-			if (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered() && (!ImGuizmo::IsOver() || Selection::GetActiveObject() == nullptr))
-			{
-				if (ImGui::IsMouseClicked(0) && mousePos.x >= pos.x && mousePos.y >= pos.y && mousePos.x <= pos.x + size.x && mousePos.y <= pos.y + size.y)
-				{
-					Object* pickedObject = m_ObjectPicker->Pick(EditorSceneManager::GetScene(), m_Camera, (int)(mousePos.x - pos.x), (int)(mousePos.y - pos.y));
-					if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
-					{
-						Selection::AddActiveObject(pickedObject);
-					}
-					else
-					{
-						Selection::SetActiveObject(pickedObject);
-					}
-				}
-			}
-
-			// Focus window on right mouse button down
-			if (ImGui::IsWindowHovered() && ImGui::IsMouseDown(1))
-			{
-				ImGui::SetWindowFocus();
-			}
-
-			SetupCamera(size.x, size.y);
-
-			if (s_SceneRedrawRequested)
-			{
-				DrawScene(size.x, size.y);
-
-				m_ObjectPicker->DrawOutline(EditorSceneManager::GetScene(), m_Camera, m_ColorRenderTarget->Get());
-				s_SceneRedrawRequested = false;
-			}
-			DrawGizmos(Rectangle(pos.x, pos.y, size.x, size.y));
-
-			ImGui::GetWindowDrawList()->AddImage(m_ColorRenderTarget->GetHandle(), ImVec2(pos.x, pos.y), ImVec2(pos.x + size.x, pos.y + size.y), ImVec2(0, 0), ImVec2(1, 1));
-			DrawControls();
+			ImGui::EndDragDropTarget();
 		}
-		ImGui::End();
+		ImGui::SetCursorScreenPos(pos);
+
+		// Selection
+		if (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered() && (!ImGuizmo::IsOver() || Selection::GetActiveObject() == nullptr))
+		{
+			if (ImGui::IsMouseClicked(0) && mousePos.x >= pos.x && mousePos.y >= pos.y && mousePos.x <= pos.x + size.x && mousePos.y <= pos.y + size.y)
+			{
+				Object* pickedObject = m_ObjectPicker->Pick(EditorSceneManager::GetScene(), m_Camera, (int)(mousePos.x - pos.x), (int)(mousePos.y - pos.y));
+				if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
+				{
+					Selection::AddActiveObject(pickedObject);
+				}
+				else
+				{
+					Selection::SetActiveObject(pickedObject);
+				}
+			}
+		}
+
+		// Focus window on right mouse button down
+		if (ImGui::IsWindowHovered() && ImGui::IsMouseDown(1))
+		{
+			ImGui::SetWindowFocus();
+		}
+
+		SetupCamera(size.x, size.y);
+
+		if (s_SceneRedrawRequested)
+		{
+			DrawScene(size.x, size.y);
+
+			m_ObjectPicker->DrawOutline(EditorSceneManager::GetScene(), m_Camera, m_ColorRenderTarget->Get());
+			s_SceneRedrawRequested = false;
+		}
+
+		ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(m_ColorRenderTarget->GetHandle()), ImVec2(pos.x, pos.y), ImVec2(pos.x + size.x, pos.y + size.y), ImVec2(0, 0), ImVec2(1, 1));
+		DrawControls();
+		DrawGizmos(Rectangle(pos.x, pos.y, size.x, size.y));
 	}
 
 	float SceneArea::GetPerspectiveDistance(const float objectSize, const float fov)
@@ -471,10 +488,11 @@ namespace Blueberry
 	// TODO remove ImGuizmo and manually draw handles
 	void SceneArea::DrawGizmos(const Rectangle& viewport)
 	{
-		ImDrawList* drawList = ImGui::GetForegroundDrawList();
+		ImDrawList* drawList = ImGui::GetWindowDrawList();
 		drawList->PushClipRect(ImVec2(viewport.x, viewport.y), ImVec2(viewport.x + viewport.width, viewport.y + viewport.height));
 		ImGuizmo::SetDrawlist(drawList);
 		ImGuizmo::SetRect(viewport.x, viewport.y, viewport.width, viewport.height);
+		ImGuizmo::Enable(!ImGui::IsPopupOpen(NULL, ImGuiPopupFlags_AnyPopup));
 
 		Scene* scene = EditorSceneManager::GetScene();
 		if (scene != nullptr)

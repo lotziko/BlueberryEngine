@@ -10,6 +10,8 @@
 // Forward declare message handler from imgui_impl_win32.cpp
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+static bool s_IsActive = false;
+
 namespace Blueberry
 {
 	WindowsWindow::WindowsWindow(const WindowProperties& properties)
@@ -26,10 +28,6 @@ namespace Blueberry
 		m_Height = properties.Height;
 
 		this->RegisterWindowClass();
-		
-		UINT dpi = GetDpiForSystem();
-		UINT screenWidth = GetSystemMetrics(SM_CXVIRTUALSCREEN); 
-		UINT screenHeight = GetSystemMetrics(SM_CYVIRTUALSCREEN);
 
 		DEVMODE dm;
 		ZeroMemory(&dm, sizeof(dm));
@@ -37,8 +35,10 @@ namespace Blueberry
 
 		if (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &dm))
 		{
-			SetScreenSize(dm.dmPelsWidth, dm.dmPelsHeight);
+			SetScreenSize(dm.dmPelsWidth, dm.dmPelsHeight, static_cast<float>(dm.dmPelsWidth) / GetSystemMetrics(SM_CXVIRTUALSCREEN));
 		}
+
+		SetProcessDPIAware();
 
 		int centerX = (GetSystemMetrics(SM_CXSCREEN) - properties.Width) / 2;
 		int centerY = (GetSystemMetrics(SM_CYSCREEN) - properties.Height) / 2;
@@ -72,6 +72,7 @@ namespace Blueberry
 		ShowWindow(m_Handle, SW_SHOW);
 		SetForegroundWindow(m_Handle);
 		SetFocus(m_Handle);
+		s_IsActive = true;
 	}
 
 	WindowsWindow::~WindowsWindow()
@@ -81,6 +82,11 @@ namespace Blueberry
 			UnregisterClass(m_WindowClassWide.c_str(), m_HInstance);
 			DestroyWindow(m_Handle);
 		}
+	}
+
+	bool WindowsWindow::IsActive()
+	{
+		return s_IsActive;
 	}
 
 	bool WindowsWindow::ProcessMessages()
@@ -134,6 +140,7 @@ namespace Blueberry
 		case WM_CLOSE:
 		{
 			DestroyWindow(hwnd);
+			s_IsActive = false;
 			return 0;
 			break;
 		}

@@ -4,6 +4,21 @@
 #include "Blueberry\Core\ObjectPtr.h"
 #include "Blueberry\Assets\AssetLoader.h"
 #include "imgui\imgui_internal.h"
+#include "imgui\misc\freetype\imgui_freetype.h"
+
+#include "Editor\Panels\Picking\ObjectPicker.h"
+
+ImGui::EditorContext* ImGui::GEditor = NULL;
+
+void ImGui::CreateEditorContext()
+{
+	GEditor = static_cast<EditorContext*>(BB_MALLOC(sizeof(ImGui::EditorContext)));
+}
+
+ImGui::EditorStyle& ImGui::GetEditorStyle()
+{
+	return GEditor->Style;
+}
 
 bool ImGui::DragVector2(const char* label, Blueberry::Vector2* v)
 {
@@ -169,7 +184,19 @@ bool ImGui::ObjectEdit(const char* label, Blueberry::Object** v, const std::size
 	ImGui::SetCursorPosX(150);
 
 	Blueberry::Object* vObj = *v;
-	ImGui::Text((vObj != nullptr && Blueberry::ObjectDB::IsValid(vObj)) ? vObj->GetName().c_str() : "None");
+	if (ImGui::Button((vObj != nullptr && Blueberry::ObjectDB::IsValid(vObj)) ? vObj->GetName().c_str() : "None"))
+	{
+		Blueberry::ObjectPicker::Open(v, type);
+	}
+	if (Blueberry::ObjectPicker::GetResult(v))
+	{
+		vObj = *v;
+		if (vObj->GetState() == Blueberry::ObjectState::AwaitingLoading && Blueberry::ObjectDB::HasGuid(vObj))
+		{
+			Blueberry::AssetLoader::Load(Blueberry::ObjectDB::GetGuidFromObject(vObj));
+		}
+		result = true;
+	}
 
 	if (ImGui::BeginDragDropTarget())
 	{
@@ -220,6 +247,28 @@ bool ImGui::ObjectArrayEdit(const char* label, Blueberry::List<Blueberry::Object
 		}
 	}
 	return false;
+}
+
+void ImGui::HorizontalSplitter(const char* strId, float* size, float minSize)
+{
+	ImVec2 screenPos = ImGui::GetCursorScreenPos();
+	ImVec2 min = ImVec2(screenPos.x, screenPos.y);
+	ImVec2 max = ImVec2(screenPos.x, screenPos.y + ImGui::GetContentRegionAvail().y);
+	bool hovered, held;
+	ImGuiID id = ImGui::GetID(strId);
+	ImGui::KeepAliveID(id);
+
+	ImGui::Dummy(ImVec2(1, 1));
+	ImGui::ButtonBehavior(ImRect(ImVec2(min.x - 4, min.y), ImVec2(max.x + 4, max.y)), id, &hovered, &held);
+	ImGui::GetWindowDrawList()->AddLine(min, max, ImGui::GetColorU32(held ? ImGuiCol_SeparatorActive : (hovered ? ImGuiCol_SeparatorHovered : ImGuiCol_Separator)));
+	if (hovered || held)
+	{
+		ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+	}
+	if (held)
+	{
+		*size = std::max(GImGui->IO.MousePos.x - GImGui->ActiveIdClickOffset.x - 4, minSize);
+	}
 }
 
 void ImGui::ApplyEditorDarkTheme()
@@ -288,23 +337,37 @@ void ImGui::ApplyEditorDarkTheme()
 		colors[i] = color;
 	}*/
 
-	style->ChildRounding = 4.0f;
+	float scale = Blueberry::Screen::GetScale();
+
+	style->ChildRounding = 4.0f * scale;
 	style->FrameBorderSize = 1.0f;
-	style->FrameRounding = 2.0f;
-	style->GrabMinSize = 7.0f;
-	style->PopupRounding = 2.0f;
-	style->ScrollbarRounding = 12.0f;
-	style->ScrollbarSize = 13.0f;
-	style->TabBorderSize = 1.0f;
+	style->FrameRounding = 2.0f * scale;
+	style->GrabMinSize = 7.0f * scale;
+	style->PopupRounding = 2.0f * scale;
+	style->ScrollbarRounding = 12.0f * scale;
+	style->ScrollbarSize = 13.0f * scale;
+	style->TabBorderSize = 1.0f * scale;
 	style->TabRounding = 0.0f;
-	style->WindowRounding = 4.0f;
+	style->WindowRounding = 4.0f * scale;
 	style->WindowPadding = ImVec2(0.0f, 0.0f);
+
+	EditorStyle* editorStyle = &GEditor->Style;
+	
+	editorStyle->ProjectBottomPanelSize = 20 * scale;
+	editorStyle->ProjectCellSize = 90 * scale;
+	editorStyle->ProjectSpaceBetweenCells = 15 * scale;
+	editorStyle->ProjectCellIconPadding = 8 * scale;
+	editorStyle->ProjectExpandIconSize = 16 * scale;
+	editorStyle->ProjectFolderIconSize = 16 * scale;
 }
 
 void ImGui::LoadDefaultEditorFonts()
 {
+	ImFontConfig cfg = {};
+	cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags::ImGuiFreeTypeBuilderFlags_LightHinting;
+
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	float fontSize = 16.0f;
-	io.Fonts->AddFontFromFileTTF("assets/fonts/sourcesans/SourceSansPro-Semibold.ttf", fontSize);
-	io.FontDefault = io.Fonts->AddFontFromFileTTF("assets/fonts/sourcesans/SourceSansPro-Regular.ttf", fontSize);
+	float fontSize = 16 * Blueberry::Screen::GetScale();
+	io.Fonts->AddFontFromFileTTF("assets/fonts/segoeui/segoeui.ttf", fontSize, &cfg);
+	io.FontDefault = io.Fonts->AddFontFromFileTTF("assets/fonts/segoeui/segoeui.ttf", fontSize, &cfg);
 }

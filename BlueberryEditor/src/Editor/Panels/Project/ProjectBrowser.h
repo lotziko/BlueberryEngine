@@ -3,14 +3,18 @@
 #include "FolderTree.h"
 #include <filesystem>
 
+#include "Editor\Panels\EditorWindow.h"
+
 namespace Blueberry
 {
 	class Texture2D;
 	class AssetImporter;
 	class Object;
 
-	class ProjectBrowser
+	class ProjectBrowser : public EditorWindow
 	{
+		OBJECT_DECLARATION(ProjectBrowser)
+
 		struct AssetInfo
 		{
 			std::filesystem::path path;
@@ -26,7 +30,10 @@ namespace Blueberry
 		ProjectBrowser();
 		virtual ~ProjectBrowser();
 
-		void DrawUI();
+		static void Open();
+		static void BindProperties();
+
+		virtual void OnDrawUI() final;
 
 	private:
 		void DrawFoldersTree();
@@ -46,6 +53,8 @@ namespace Blueberry
 
 		FolderTree m_FolderTree;
 		const char* m_OpenedModalPopupId = nullptr;
+
+		float m_FoldersColumnWidth = 200;
 
 		Texture2D* m_FolderIconSmall;
 		Texture2D* m_FolderIconSmallOpened;

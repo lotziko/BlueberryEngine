@@ -31,6 +31,7 @@ namespace Blueberry
 			}
 
 			s_WhiteTexture = Texture2D::Create(size, size, 1, TextureFormat::R8G8B8A8_UNorm_SRGB, WrapMode::Repeat, FilterMode::Point);
+			s_WhiteTexture->SetName("White");
 			s_WhiteTexture->SetData(data, size * size * 4);
 			s_WhiteTexture->Apply();
 		}
@@ -52,6 +53,7 @@ namespace Blueberry
 			}
 			
 			s_NormalTexture = Texture2D::Create(size, size, 1, TextureFormat::R8G8B8A8_UNorm, WrapMode::Repeat, FilterMode::Point);
+			s_WhiteTexture->SetName("Normal");
 			s_NormalTexture->SetData(data, size * size * 4);
 			s_NormalTexture->Apply();
 		}

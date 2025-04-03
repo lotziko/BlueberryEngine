@@ -17,13 +17,12 @@
 
 #include "Editor\Assets\ThumbnailCache.h"
 #include "Editor\Assets\IconDB.h"
+#include "Editor\Menu\EditorMenuManager.h"
+#include "Editor\Misc\ImGuiHelper.h"
 
 namespace Blueberry
 {
-	const int bottomPanelSize = 20;
-	const int cellSize = 90;
-	const int spaceBetweenCells = 15;
-	const int cellIconPadding = 8;
+	OBJECT_DEFINITION(EditorWindow, ProjectBrowser)
 
 	ProjectBrowser::ProjectBrowser()
 	{
@@ -41,31 +40,42 @@ namespace Blueberry
 		AssetDB::GetAssetDBRefreshed().RemoveCallback<ProjectBrowser, &ProjectBrowser::OnAssetDBRefresh>(this);
 	}
 
-	void ProjectBrowser::DrawUI()
+	void ProjectBrowser::Open()
 	{
-		ImGui::Begin("Project");
+		EditorWindow* window = GetWindow(ProjectBrowser::Type);
+		window->SetTitle("Project");
+		window->Show();
+	}
 
-		ImGuiTableFlags tableFlags = 0;
-		tableFlags |= ImGuiTableFlags_Resizable;
+	void ProjectBrowser::BindProperties()
+	{
+		BEGIN_OBJECT_BINDING(ProjectBrowser)
+		BIND_FIELD(FieldInfo(TO_STRING(m_Title), &ProjectBrowser::m_Title, BindingType::String))
+		BIND_FIELD(FieldInfo(TO_STRING(m_FoldersColumnWidth), &ProjectBrowser::m_FoldersColumnWidth, BindingType::Float))
+		BIND_FIELD(FieldInfo(TO_STRING(m_RawData), &ProjectBrowser::m_RawData, BindingType::ByteData))
+		END_OBJECT_BINDING()
+			
+		EditorMenuManager::AddItem("Window/Project", &ProjectBrowser::Open);
+	}
 
-		if (ImGui::BeginTable("##ProjectTable", 2, tableFlags))
-		{
-			ImGui::TableNextRow();
-			ImGui::TableSetColumnIndex(0);
+	bool wasInit = false;
 
-			ImGui::BeginChild("##FoldersColumn", ImVec2(0, ImGui::GetContentRegionAvail().y - 2));
-			DrawFoldersTree();
-			ImGui::EndChild();
+	void ProjectBrowser::OnDrawUI()
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		ImVec2 pos = ImGui::GetCursorPos();
 
-			ImGui::TableSetColumnIndex(1);
-			ImGui::BeginChild("##CurrentFolderColumn", ImVec2(0, ImGui::GetContentRegionAvail().y - 2));
-			DrawCurrentFolder();
-			ImGui::EndChild();
+		ImGui::BeginChild("##FoldersColumn", ImVec2(m_FoldersColumnWidth, ImGui::GetContentRegionAvail().y - 2));
+		DrawFoldersTree();
+		ImGui::EndChild();
 
-			ImGui::EndTable();
-		}
-		
-		ImGui::End();
+		ImGui::SameLine();
+		ImGui::HorizontalSplitter("##FolderHorizontalSplitter", &m_FoldersColumnWidth, 200);
+
+		ImGui::SameLine();
+		ImGui::BeginChild("##CurrentFolderColumn", ImVec2(0, ImGui::GetContentRegionAvail().y - 2));
+		DrawCurrentFolder();
+		ImGui::EndChild();
 	}
 
 	void ProjectBrowser::DrawFoldersTree()
@@ -75,6 +85,8 @@ namespace Blueberry
 
 	void ProjectBrowser::DrawFolderNode(const FolderTreeNode& node)
 	{
+		ImGui::EditorStyle& style = ImGui::GetEditorStyle();
+
 		ImGuiTreeNodeFlags flags = (node.children.size() > 0 ? ImGuiTreeNodeFlags_OpenOnArrow : ImGuiTreeNodeFlags_Leaf) | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_SpanFullWidth;
 		ImVec2 pos = ImGui::GetCursorScreenPos();
 		const char* label = node.name.c_str();
@@ -87,7 +99,7 @@ namespace Blueberry
 
 		ImGui::SameLine();
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 4);
-		ImGui::Image((opened && node.children.size() > 0) ? m_FolderIconSmallOpened->GetHandle() : m_FolderIconSmall->GetHandle(), ImVec2(16, 16), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::Image(reinterpret_cast<ImTextureID>((opened && node.children.size() > 0) ? m_FolderIconSmallOpened->GetHandle() : m_FolderIconSmall->GetHandle()), ImVec2(style.ProjectFolderIconSize, style.ProjectFolderIconSize), ImVec2(0, 1), ImVec2(1, 0));
 		ImGui::SameLine();
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 4);
 		ImGui::Text("%s", label);
@@ -104,6 +116,8 @@ namespace Blueberry
 
 	void ProjectBrowser::DrawCurrentFolder()
 	{
+		ImGui::EditorStyle& style = ImGui::GetEditorStyle();
+
 		ImVec2 pos = ImGui::GetCursorScreenPos();
 		ImVec2 size = ImGui::GetContentRegionAvail();
 		bool isAnyFileHovered = false;
@@ -113,13 +127,13 @@ namespace Blueberry
 			UpdateFiles();
 		}
 
-		if (ImGui::BeginChild("Middle panel", ImVec2(size.x, size.y - bottomPanelSize)))
+		if (ImGui::BeginChild("Middle panel", ImVec2(size.x, size.y - style.ProjectBottomPanelSize)))
 		{
 			ImVec2 panelPos = ImGui::GetCursorPos();
-			uint32_t maxCells = static_cast<uint32_t>(floorf(size.x / (cellSize + spaceBetweenCells)));
+			uint32_t maxCells = static_cast<uint32_t>(floorf(size.x / (style.ProjectCellSize + style.ProjectSpaceBetweenCells)));
 			if (maxCells > 0)
 			{
-				float expandedSpaceBetweenCells = (size.x - (maxCells * cellSize)) / (maxCells + 1);
+				float expandedSpaceBetweenCells = (size.x - (maxCells * style.ProjectCellSize)) / (maxCells + 1);
 				// Calculate expected size and items positions
 				Vector2 expectedCursorPos = Vector2::Zero;
 				uint32_t cellIndex = 0;
@@ -132,18 +146,18 @@ namespace Blueberry
 						asset.positions[i] = Vector2(expectedCursorPos.x, expectedCursorPos.y);
 						if (cellIndex + 1 < maxCells)
 						{
-							expectedCursorPos.x += cellSize;
+							expectedCursorPos.x += style.ProjectCellSize;
 							++cellIndex;
 						}
 						else
 						{
-							expectedCursorPos.y += cellSize + spaceBetweenCells;
+							expectedCursorPos.y += style.ProjectCellSize + style.ProjectSpaceBetweenCells;
 							expectedCursorPos.x = 0;
 							cellIndex = 0;
 						}
 					}
 				}
-				ImGui::Dummy(ImVec2(size.x, expectedCursorPos.y + cellSize));
+				ImGui::Dummy(ImVec2(size.x, expectedCursorPos.y + style.ProjectCellSize));
 				ImGui::SetCursorPos(panelPos);
 
 				// Prefab creating
@@ -165,7 +179,7 @@ namespace Blueberry
 
 				// Draw items
 				float scrollY = ImGui::GetScrollY();
-				float topClip = scrollY - cellSize - spaceBetweenCells;
+				float topClip = scrollY - style.ProjectCellSize - style.ProjectSpaceBetweenCells;
 				float bottomClip = scrollY + ImGui::GetWindowHeight();
 				for (auto& asset : m_CurrentDirectoryAssets)
 				{
@@ -188,7 +202,7 @@ namespace Blueberry
 							if (i > 0 && asset.expanded)
 							{
 								ImVec2 screenPos = ImGui::GetCursorScreenPos();
-								ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(screenPos.x - 12, screenPos.y), ImVec2(screenPos.x + cellSize + 12, screenPos.y + cellSize), ImGui::GetColorU32(ImGuiCol_TitleBg), 3.0f);
+								ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(screenPos.x - 12, screenPos.y), ImVec2(screenPos.x + style.ProjectCellSize + 12, screenPos.y + style.ProjectCellSize), ImGui::GetColorU32(ImGuiCol_TitleBg), 3.0f);
 							}
 							DrawObject(object, asset, isAnyFileHovered);
 						}
@@ -196,12 +210,11 @@ namespace Blueberry
 					// Expand icon
 					if (asset.objects.size() > 1)
 					{
-						const int iconSize = 16;
 						Vector2 position = asset.positions[0];
-						ImGui::SetCursorPos(ImVec2(position.x + cellSize, position.y + cellSize / 2 - iconSize / 2));
+						ImGui::SetCursorPos(ImVec2(position.x + style.ProjectCellSize, position.y + style.ProjectCellSize / 2 - style.ProjectExpandIconSize / 2));
 						ImGui::SetItemAllowOverlap();
 						ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
-						if (ImGui::ArrowButtonEx("##Arrow", asset.expanded ? ImGuiDir_Left : ImGuiDir_Right, ImVec2(iconSize, iconSize)))
+						if (ImGui::ArrowButtonEx("##Arrow", asset.expanded ? ImGuiDir_Left : ImGuiDir_Right, ImVec2(style.ProjectExpandIconSize, style.ProjectExpandIconSize)))
 						{
 							asset.expanded = !asset.expanded;
 							InspectorExpandedItemsCache::Set(asset.pathString, asset.expanded);
@@ -291,12 +304,14 @@ namespace Blueberry
 
 	void ProjectBrowser::DrawObject(Object* object, const AssetInfo& asset, bool& anyHovered)
 	{
+		ImGui::EditorStyle& style = ImGui::GetEditorStyle();
+
 		ImVec2 screenPos = ImGui::GetCursorScreenPos();
 
 		ImGui::PushID(object->GetObjectId());
 		ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 1.0f));
 		
-		if (ImGui::Selectable(object->GetName().c_str(), Selection::IsActiveObject(object), 0, ImVec2(cellSize, cellSize)))
+		if (ImGui::Selectable(object->GetName().c_str(), Selection::IsActiveObject(object), 0, ImVec2(style.ProjectCellSize, style.ProjectCellSize)))
 		{
 			if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
 			{
@@ -338,7 +353,7 @@ namespace Blueberry
 		{
 			icon = IconDB::GetAssetIcon(iconObject);
 		}
-		ImGui::GetWindowDrawList()->AddImage(icon->GetHandle(), ImVec2(screenPos.x + cellIconPadding, screenPos.y), ImVec2(screenPos.x + cellSize - cellIconPadding, screenPos.y + cellSize - cellIconPadding * 2), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(icon->GetHandle()), ImVec2(screenPos.x + style.ProjectCellIconPadding, screenPos.y), ImVec2(screenPos.x + style.ProjectCellSize - style.ProjectCellIconPadding, screenPos.y + style.ProjectCellSize - style.ProjectCellIconPadding * 2), ImVec2(0, 1), ImVec2(1, 0));
 
 		ImGui::PopStyleVar();
 		ImGui::PopID();

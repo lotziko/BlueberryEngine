@@ -11,9 +11,10 @@ namespace Blueberry
 		return new WindowsWindow(properties);
 	}
 
-	void Window::SetScreenSize(const uint32_t& width, const uint32_t& height)
+	void Window::SetScreenSize(const uint32_t& width, const uint32_t& height, const float& scale)
 	{
 		Screen::s_Width = width;
 		Screen::s_Height = height;
+		Screen::s_Scale = scale;
 	}
 }

@@ -38,6 +38,11 @@ namespace Blueberry
 		return result;
 	}
 
+	const uint32_t& ChunkedObjectArray::GetElementsCount()
+	{
+		return m_ElementsCount;
+	}
+
 	ObjectItem* ChunkedObjectArray::GetObjectItem(const int32_t& index) const
 	{
 		const uint32_t chunkIndex = index / ELEMENTS_PER_CHUNK;
@@ -89,6 +94,26 @@ namespace Blueberry
 	{
 		ObjectItem* item = s_Array.GetObjectItem(id);
 		return item == nullptr ? nullptr : item->object;
+	}
+
+	void ObjectDB::GetObjects(const size_t& type, List<Object*>& result, bool hasGuid)
+	{
+		for (uint32_t i = 0, n = s_Array.GetElementsCount(); i < n; ++i)
+		{
+			ObjectItem* item = s_Array.GetObjectItem(i);
+			if (item != nullptr)
+			{
+				Object* object = item->object;
+				if (object != nullptr && object->IsClassType(type))
+				{
+					if (hasGuid && !HasGuid(object))
+					{
+						continue;
+					}
+					result.emplace_back(std::move(object));
+				}
+			}
+		}
 	}
 
 	void ObjectDB::AllocateIdToFileId(Object* object, const FileId& fileId)

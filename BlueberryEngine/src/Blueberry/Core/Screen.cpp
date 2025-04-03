@@ -5,6 +5,7 @@ namespace Blueberry
 {
 	uint32_t Screen::s_Width = 0;
 	uint32_t Screen::s_Height = 0;
+	float Screen::s_Scale = 1.0f;
 
 	const uint32_t& Screen::GetWidth()
 	{
@@ -14,5 +15,10 @@ namespace Blueberry
 	const uint32_t& Screen::GetHeight()
 	{
 		return s_Height;
+	}
+
+	const float& Screen::GetScale()
+	{
+		return s_Scale;
 	}
 }

@@ -23,9 +23,13 @@ namespace Blueberry
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
 
-		//// Setup Platform/Renderer backends
+		ImGuiIO *io = &ImGui::GetIO();
+		io->IniFilename = NULL;
+
+		// Setup Platform/Renderer backends
 		ImGui_ImplWin32_Init(m_Hwnd);
 		ImGui_ImplDX11_Init(m_Device, m_DeviceContext);
+		
 		return true;
 	}
 

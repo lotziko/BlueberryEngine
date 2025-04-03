@@ -25,6 +25,7 @@ namespace Blueberry
 			};
 			uint32_t indices[] = { 0, 1, 2, 2, 3, 0 };
 			s_FullscreenMesh = Mesh::Create();
+			s_FullscreenMesh->SetName("Fullscreen");
 			s_FullscreenMesh->SetVertices(vertices, 4);
 			s_FullscreenMesh->SetIndices(indices, 6);
 			s_FullscreenMesh->SetUVs(0, uvs, 4);
@@ -54,6 +55,7 @@ namespace Blueberry
 			};
 			uint32_t indices[] = { 0, 1, 2, 2, 3, 0 };
 			s_PlaneMesh = Mesh::Create();
+			s_PlaneMesh->SetName("Plane");
 			s_PlaneMesh->SetVertices(vertices, 4);
 			s_PlaneMesh->SetIndices(indices, 6);
 			s_PlaneMesh->SetUVs(0, uvs, 4);
@@ -128,6 +130,7 @@ namespace Blueberry
 			}
 
 			s_SphereMesh = Mesh::Create();
+			s_SphereMesh->SetName("Sphere");
 			s_SphereMesh->SetVertices(vertices, vertexCount);
 			s_SphereMesh->SetNormals(normals, vertexCount);
 			s_SphereMesh->SetIndices(indices, indexCount);
@@ -217,6 +220,7 @@ namespace Blueberry
 				20, 21, 22, 20, 22, 23
 			};
 			s_CubeMesh = Mesh::Create();
+			s_CubeMesh->SetName("Cube");
 			s_CubeMesh->SetVertices(vertices, ARRAYSIZE(vertices));
 			s_CubeMesh->SetIndices(indices, ARRAYSIZE(indices));
 			s_CubeMesh->SetUVs(0, uvs, ARRAYSIZE(uvs));

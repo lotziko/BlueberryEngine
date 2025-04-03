@@ -23,6 +23,8 @@ namespace Blueberry
 		int32_t AddSingle();
 		int32_t AddRange(const int32_t& count);
 
+		const uint32_t& GetElementsCount();
+
 		ObjectItem* GetObjectItem(const int32_t& index) const;
 	private:
 		void ExpandChunksToIndex(const int32_t& index);
@@ -42,6 +44,7 @@ namespace Blueberry
 		static bool IsValid(Object* object);
 		static ObjectItem* IdToObjectItem(const ObjectId& id);
 		static Object* GetObject(const ObjectId& id);
+		static void GetObjects(const size_t& type, List<Object*>& result, bool hasGuid = false);
 
 		static void AllocateIdToFileId(Object* object, const FileId& fileId);
 		static void AllocateIdToGuid(const ObjectId& id, const Guid& guid, const FileId& fileId);

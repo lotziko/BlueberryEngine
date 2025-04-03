@@ -119,13 +119,23 @@ namespace Blueberry
 
 	void Engine::Update()
 	{
-		for (Layer* layer : *m_LayerStack)
-			layer->OnUpdate();
+		if (m_Window->IsActive())
+		{
+			for (Layer* layer : *m_LayerStack)
+			{
+				layer->OnUpdate();
+			}
+		}
 	}
 
 	void Engine::Draw()
 	{
-		for (Layer* layer : *m_LayerStack)
-			layer->OnDraw();
+		if (m_Window->IsActive())
+		{
+			for (Layer* layer : *m_LayerStack)
+			{
+				layer->OnDraw();
+			}
+		}
 	}
 }

@@ -19,6 +19,7 @@ namespace Blueberry
 	public:
 		virtual ~Window() = default;
 
+		virtual bool IsActive() = 0;
 		virtual bool ProcessMessages() = 0;
 
 		virtual void* GetHandle() = 0;
@@ -29,6 +30,6 @@ namespace Blueberry
 		static Window* Create(const WindowProperties& properties);
 
 	protected:
-		void SetScreenSize(const uint32_t& width, const uint32_t& height);
+		void SetScreenSize(const uint32_t& width, const uint32_t& height, const float& scale);
 	};
 }

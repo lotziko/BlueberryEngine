@@ -25,6 +25,7 @@
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Gizmos\Gizmos.h"
 #include "Editor\Gizmos\IconRenderer.h"
+#include "Editor\Menu\EditorMenuManager.h"
 
 #include "Blueberry\Graphics\OpenXRRenderer.h"
 
@@ -41,35 +42,29 @@ namespace Blueberry
 
 		RegisterObjectInspectors();
 
-		m_SceneHierarchy = new SceneHierarchy();
-		m_SceneInspector = new SceneInspector();
-
-		m_SceneArea = new SceneArea();
-		m_GameView = new GameView();
-
-		m_ProjectBrowser = new ProjectBrowser();
-
 		if (ImGuiRenderer::Initialize())
 		{
 			ImGuiIO& io = ImGui::GetIO(); (void)io;
 			io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
+			ImGui::CreateEditorContext();
 			ImGui::ApplyEditorDarkTheme();
 			ImGui::LoadDefaultEditorFonts();
 		}
 		Gizmos::Initialize();
 		IconRenderer::Initialize();
+		EditorWindow::Load();
 		WindowEvents::GetWindowResized().AddCallback<EditorLayer, &EditorLayer::OnWindowResize>(this);
 		WindowEvents::GetWindowFocused().AddCallback<EditorLayer, &EditorLayer::OnWindowFocus>(this);
 	}
 
 	void EditorLayer::OnDetach()
 	{
-		delete m_SceneHierarchy;
-		delete m_SceneInspector;
-		delete m_SceneArea;
-		delete m_GameView;
-		delete m_ProjectBrowser;
+		EditorWindow::Save();
+		for (auto& window : EditorWindow::GetWindows())
+		{
+			Object::Destroy(window.Get());
+		}
 		Gizmos::Shutdown();
 		IconRenderer::Shutdown();
 		if (OpenXRRenderer::IsActive())
@@ -104,8 +99,8 @@ namespace Blueberry
 
 		OpenXRRenderer::BeginFrame();
 		ImGuiRenderer::Begin();
-		//DrawMenuBar();
-		DrawTopBar();
+		DrawMenuBar();
+		//DrawTopBar();
 		DrawDockSpace();
 		ImGuiRenderer::End();
 		OpenXRRenderer::EndFrame();
@@ -139,14 +134,48 @@ namespace Blueberry
 	{
 		if (ImGui::BeginMainMenuBar())
 		{
-			if (ImGui::BeginMenu("Test"))
+			auto& root = EditorMenuManager::GetRoot();
+			/*if (ImGui::BeginMenu("Blueberry Editor"))
 			{
-				if (ImGui::MenuItem("Save"))
-				{
-					AssetDB::SaveAssets();
-				}
 				ImGui::EndMenu();
+			}*/
+			for (auto it = root.children.begin(); it < root.children.end(); ++it)
+			{
+				if (ImGui::BeginMenu(it->name.c_str()))
+				{
+					for (auto itemIt = it->children.begin(); itemIt < it->children.end(); ++itemIt)
+					{
+						if (ImGui::MenuItem(itemIt->name.c_str()))
+						{
+							itemIt->clickCallback();
+						}
+					}
+					ImGui::EndMenu();
+				}
 			}
+
+			if (EditorSceneManager::GetScene() != nullptr)
+			{
+				if (EditorSceneManager::IsRunning())
+				{
+					if (ImGui::Button("Stop"))
+					{
+						Physics::Shutdown();
+						OpenXRRenderer::Shutdown();
+						EditorSceneManager::Stop();
+					}
+				}
+				else
+				{
+					if (ImGui::Button("Run"))
+					{
+						Physics::Initialize();
+						OpenXRRenderer::Initialize();
+						EditorSceneManager::Run();
+					}
+				}
+			}
+
 			ImGui::EndMainMenuBar();
 		}
 	}
@@ -218,11 +247,7 @@ namespace Blueberry
 				ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
 			}
 
-			m_SceneHierarchy->DrawUI();
-			m_SceneInspector->DrawUI();
-			m_GameView->DrawUI();
-			m_SceneArea->DrawUI();
-			m_ProjectBrowser->DrawUI();
+			EditorWindow::Draw();
 
 			ImGui::End();
 		}

@@ -21,6 +21,7 @@
 #include "Blueberry\Core\Memory.h"
 #include "Blueberry\Core\Object.h"
 #include "Blueberry\Core\Time.h"
+#include "Blueberry\Core\Screen.h"
 #include "Blueberry\Math\Math.h"
 
 #include <Windows.h>

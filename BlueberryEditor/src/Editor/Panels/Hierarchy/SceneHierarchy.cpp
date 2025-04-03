@@ -10,15 +10,33 @@
 #include "Editor\EditorSceneManager.h"
 #include "Editor\EditorObjectManager.h"
 #include "Editor\Prefabs\PrefabManager.h"
+#include "Editor\Menu\EditorMenuManager.h"
 
 #include "imgui\imgui.h"
 
 namespace Blueberry
 {
-	void SceneHierarchy::DrawUI()
-	{
-		ImGui::Begin("Hierarchy");
+	OBJECT_DEFINITION(EditorWindow, SceneHierarchy)
 
+	void SceneHierarchy::Open()
+	{
+		EditorWindow* window = GetWindow(SceneHierarchy::Type);
+		window->SetTitle("Hierarchy");
+		window->Show();
+	}
+
+	void SceneHierarchy::BindProperties()
+	{
+		BEGIN_OBJECT_BINDING(SceneHierarchy)
+		BIND_FIELD(FieldInfo(TO_STRING(m_Title), &SceneHierarchy::m_Title, BindingType::String))
+		BIND_FIELD(FieldInfo(TO_STRING(m_RawData), &SceneHierarchy::m_RawData, BindingType::ByteData))
+		END_OBJECT_BINDING()
+
+		EditorMenuManager::AddItem("Window/Hierarchy", &SceneHierarchy::Open);
+	}
+
+	void SceneHierarchy::OnDrawUI()
+	{
 		Scene* scene = EditorSceneManager::GetScene();
 
 		if (scene != nullptr)
@@ -37,14 +55,12 @@ namespace Blueberry
 				Selection::SetActiveObject(nullptr);
 			}
 
-			if (ImGui::BeginPopupContextWindow(0, 1, false))
+			if (ImGui::BeginPopupContextWindow(0))
 			{
 				DrawCreateEntity();
 				ImGui::EndPopup();
 			}
 		}
-
-		ImGui::End();
 	}
 
 	void SceneHierarchy::DrawEntity(Entity* entity)

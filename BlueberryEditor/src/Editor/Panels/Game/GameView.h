@@ -1,13 +1,23 @@
 #pragma once
 
+#include "Editor\Panels\EditorWindow.h"
+
 namespace Blueberry
 {
 	class RenderTexture;
 
-	class GameView
+	class GameView : public EditorWindow
 	{
+		OBJECT_DECLARATION(GameView)
+
 	public:
-		void DrawUI();
+		GameView() = default;
+		virtual ~GameView() = default;
+
+		static void Open();
+		static void BindProperties();
+
+		virtual void OnDrawUI();
 
 	private:
 		RenderTexture* m_RenderTarget = nullptr;

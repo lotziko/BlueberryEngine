@@ -18,6 +18,7 @@ namespace Blueberry
 					return false;
 			}
 			s_ErrorMaterial = Material::Create(shader);
+			s_ErrorMaterial->SetName("Error");
 		}
 		return s_ErrorMaterial;
 	}
@@ -33,6 +34,7 @@ namespace Blueberry
 					return false;
 			}
 			s_BlitMaterial = Material::Create(shader);
+			s_BlitMaterial->SetName("Blit");
 		}
 		return s_BlitMaterial;
 	}
@@ -48,6 +50,7 @@ namespace Blueberry
 					return false;
 			}
 			s_VRMirrorViewMaterial = Material::Create(shader);
+			s_VRMirrorViewMaterial->SetName("VRMirror");
 		}
 		return s_VRMirrorViewMaterial;
 	}
@@ -63,6 +66,7 @@ namespace Blueberry
 					return false;
 			}
 			s_SkyboxMaterial = Material::Create(shader);
+			s_SkyboxMaterial->SetName("Skybox");
 		}
 		return s_SkyboxMaterial;
 	}
