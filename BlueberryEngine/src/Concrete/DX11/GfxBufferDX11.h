@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Blueberry\Graphics\GfxBuffer.h"
-#include "Blueberry\Graphics\VertexLayout.h"
 
 namespace Blueberry
 {
@@ -12,14 +11,14 @@ namespace Blueberry
 		virtual ~GfxVertexBufferDX11() final = default;
 		virtual void SetData(float* data, const uint32_t& vertexCount) final;
 
-		bool Initialize(const VertexLayout& layout, const uint32_t& vertexCount);
+		bool Initialize(const uint32_t& vertexCount, const uint32_t& vertexSize);
+
 	private:
 		ComPtr<ID3D11Buffer> m_Buffer = nullptr;
 
 		ID3D11Device* m_Device;
 		ID3D11DeviceContext* m_DeviceContext;
 
-		VertexLayout m_Layout;
 		uint32_t m_Stride;
 		uint32_t m_Offset = 0;
 
@@ -35,6 +34,7 @@ namespace Blueberry
 		virtual void SetData(uint32_t* data, const uint32_t& indexCount) final;
 
 		bool Initialize(const uint32_t& indexCount);
+
 	private:
 		ComPtr<ID3D11Buffer> m_Buffer = nullptr;
 
@@ -53,6 +53,7 @@ namespace Blueberry
 		virtual void SetData(char* data, const uint32_t& byteCount) final;
 
 		bool Initialize(const uint32_t& byteCount);
+
 	private:
 		ComPtr<ID3D11Buffer> m_Buffer = nullptr;
 
@@ -71,6 +72,7 @@ namespace Blueberry
 		virtual void SetData(char* data, const uint32_t& elementCount) final;
 
 		bool Initialize(const uint32_t& elementCount, const uint32_t& elementSize);
+
 	private:
 		ComPtr<ID3D11Buffer> m_Buffer = nullptr;
 		ComPtr<ID3D11ShaderResourceView> m_ShaderResourceView = nullptr;
@@ -92,6 +94,7 @@ namespace Blueberry
 		virtual void SetData(char* data, const uint32_t& byteCount) final;
 
 		bool Initialize(const uint32_t& elementCount, const uint32_t& elementSize);
+
 	private:
 		ComPtr<ID3D11Buffer> m_Buffer = nullptr;
 		ComPtr<ID3D11UnorderedAccessView> m_UnorderedAccessView = nullptr;

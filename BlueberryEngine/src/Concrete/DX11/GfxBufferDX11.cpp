@@ -19,10 +19,9 @@ namespace Blueberry
 		m_DeviceContext->Unmap(m_Buffer.Get(), 0);
 	}
 
-	bool GfxVertexBufferDX11::Initialize(const VertexLayout& layout, const uint32_t& vertexCount)
+	bool GfxVertexBufferDX11::Initialize(const uint32_t& vertexCount, const uint32_t& vertexSize)
 	{
-		m_Layout = layout;
-		m_Stride = layout.GetSize();
+		m_Stride = vertexSize;
 
 		D3D11_BUFFER_DESC vertexBufferDesc;
 		ZeroMemory(&vertexBufferDesc, sizeof(D3D11_BUFFER_DESC));

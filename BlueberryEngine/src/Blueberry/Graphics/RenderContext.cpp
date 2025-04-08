@@ -317,9 +317,7 @@ namespace Blueberry
 
 		if (s_IndexBuffer == nullptr)
 		{
-			VertexLayout layout = {};
-			layout.Append(VertexLayout::ElementType::Index);
-			GfxDevice::CreateVertexBuffer(layout, INSTANCE_BUFFER_SIZE, s_IndexBuffer);
+			GfxDevice::CreateVertexBuffer(INSTANCE_BUFFER_SIZE, sizeof(uint32_t), s_IndexBuffer);
 			uint32_t indices[INSTANCE_BUFFER_SIZE];
 			for (uint32_t i = 0; i < INSTANCE_BUFFER_SIZE; ++i)
 			{

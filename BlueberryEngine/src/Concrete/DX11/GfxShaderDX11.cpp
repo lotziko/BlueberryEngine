@@ -4,6 +4,11 @@
 
 namespace Blueberry
 {
+	constexpr uint32_t String4ToInt(const char* s)
+	{
+		return (static_cast<uint32_t>(s[3]) << 24) | (static_cast<uint32_t>(s[2]) << 16) | (static_cast<uint32_t>(s[1]) << 8) |	static_cast<uint32_t>(s[0]);
+	}
+
 	bool GfxVertexShaderDX11::Initialize(ID3D11Device* device, void* vertexData)
 	{
 		if (vertexData == nullptr)
@@ -12,7 +17,7 @@ namespace Blueberry
 			return false;
 		}
 
-		m_ShaderBuffer.Attach(static_cast<ID3DBlob*>(vertexData));
+		m_ShaderBuffer = static_cast<ID3DBlob*>(vertexData);
 		HRESULT hr = device->CreateVertexShader(m_ShaderBuffer->GetBufferPointer(), m_ShaderBuffer->GetBufferSize(), NULL, m_Shader.GetAddressOf());
 		if (FAILED(hr))
 		{
@@ -67,8 +72,12 @@ namespace Blueberry
 		}
 
 		// Input layout
-		List<D3D11_INPUT_ELEMENT_DESC> inputElementDescArray;
 		uint32_t parameterCount = vertexShaderDesc.InputParameters;
+		VertexLayout layout = {};
+		for (uint8_t i = 0; i < VERTEX_ATTRIBUTE_COUNT; ++i)
+		{
+			m_LayoutIndices[i] = UINT8_MAX;
+		}
 
 		for (unsigned int i = 0; i < parameterCount; ++i)
 		{
@@ -80,56 +89,101 @@ namespace Blueberry
 			inputElementDesc.SemanticName = paramDesc.SemanticName;
 			inputElementDesc.SemanticIndex = paramDesc.SemanticIndex;
 
-			if (paramDesc.Mask == 1) {
+			uint32_t size;
+			if (paramDesc.Mask == 1) 
+			{
 				if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_UINT32) inputElementDesc.Format = DXGI_FORMAT_R32_UINT;
 				else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_SINT32) inputElementDesc.Format = DXGI_FORMAT_R32_SINT;
 				else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32) inputElementDesc.Format = DXGI_FORMAT_R32_FLOAT;
+				size = 4;
 			}
-			else if (paramDesc.Mask <= 3) {
+			else if (paramDesc.Mask <= 3) 
+			{
 				if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_UINT32) inputElementDesc.Format = DXGI_FORMAT_R32G32_UINT;
 				else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_SINT32) inputElementDesc.Format = DXGI_FORMAT_R32G32_SINT;
 				else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32) inputElementDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
+				size = 8;
 			}
-			else if (paramDesc.Mask <= 7) {
+			else if (paramDesc.Mask <= 7) 
+			{
 				if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_UINT32) inputElementDesc.Format = DXGI_FORMAT_R32G32B32_UINT;
 				else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_SINT32) inputElementDesc.Format = DXGI_FORMAT_R32G32B32_SINT;
 				else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32) inputElementDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
+				size = 12;
 			}
-			else if (paramDesc.Mask <= 15) {
+			else if (paramDesc.Mask <= 15) 
+			{
 				if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_UINT32) inputElementDesc.Format = DXGI_FORMAT_R32G32B32A32_UINT;
 				else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_SINT32) inputElementDesc.Format = DXGI_FORMAT_R32G32B32A32_SINT;
 				else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32) inputElementDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+				size = 16;
 			}
-				
-			if (strcmp(paramDesc.SemanticName, "RENDER_INSTANCE") == 0)
+			
+			uint32_t nameInt = *reinterpret_cast<const uint32_t*>(paramDesc.SemanticName);
+			switch (nameInt)
 			{
+			case String4ToInt("POSI"): // POSITION
+				m_LayoutIndices[0] = i;
+				layout.Append(VertexAttribute::Position, size);
+				inputElementDesc.InputSlot = 0;
+				inputElementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+				inputElementDesc.InstanceDataStepRate = 0;
+				break;
+			case String4ToInt("NORM"): // NORMAL
+				m_LayoutIndices[1] = i;
+				layout.Append(VertexAttribute::Normal, size);
+				inputElementDesc.InputSlot = 0;
+				inputElementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+				inputElementDesc.InstanceDataStepRate = 0;
+				break;
+			case String4ToInt("TANG"): // TANGENT
+				m_LayoutIndices[2] = i;
+				layout.Append(VertexAttribute::Tangent, size);
+				inputElementDesc.InputSlot = 0;
+				inputElementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+				inputElementDesc.InstanceDataStepRate = 0;
+				break;
+			case String4ToInt("COLO"): // COLOR
+				m_LayoutIndices[3] = i;
+				layout.Append(VertexAttribute::Color, size);
+				inputElementDesc.InputSlot = 0;
+				inputElementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+				inputElementDesc.InstanceDataStepRate = 0;
+				break;
+			case String4ToInt("TEXC"): // TEXCOORD
+				m_LayoutIndices[4 + paramDesc.SemanticIndex] = i;
+				layout.Append(VertexAttribute::Normal, size);
+				inputElementDesc.InputSlot = 0;
+				inputElementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+				inputElementDesc.InstanceDataStepRate = 0;
+				break;
+			case String4ToInt("REND"): // RENDER_INSTANCE
 				inputElementDesc.InputSlot = 1;
 				inputElementDesc.AlignedByteOffset = 0;
 				inputElementDesc.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA;
 				inputElementDesc.InstanceDataStepRate = 1;
-			}
-			else if (strcmp(paramDesc.SemanticName, "SV_InstanceID") == 0)
-			{
+				break;
+			case String4ToInt("SV_I"): // SV_InstanceID
 				continue;
 			}
-			else
-			{
-				inputElementDesc.InputSlot = 0;
-				inputElementDesc.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-				inputElementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-				inputElementDesc.InstanceDataStepRate = 0;
-			}
-			inputElementDescArray.push_back(inputElementDesc);
+			m_InputElementDescs.push_back(inputElementDesc);
 		}
+		layout.Apply();
+		m_Crc = layout.GetCrc();
+		m_Device = device;
+		return true;
+	}
 
-		hr = device->CreateInputLayout(&inputElementDescArray[0], inputElementDescArray.size(), m_ShaderBuffer->GetBufferPointer(), m_ShaderBuffer->GetBufferSize(), m_InputLayout.GetAddressOf());
+	ID3D11InputLayout* GfxVertexShaderDX11::CreateLayout()
+	{
+		ID3D11InputLayout* layout;
+		HRESULT hr = m_Device->CreateInputLayout(m_InputElementDescs.data(), m_InputElementDescs.size(), m_ShaderBuffer->GetBufferPointer(), m_ShaderBuffer->GetBufferSize(), &layout);
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error creating input layout."));
-			return false;
+			return NULL;
 		}
-
-		return true;
+		return layout;
 	}
 
 	bool GfxGeometryShaderDX11::Initialize(ID3D11Device* device, void* geometryData)
@@ -140,7 +194,7 @@ namespace Blueberry
 			return false;
 		}
 
-		m_ShaderBuffer.Attach(static_cast<ID3DBlob*>(geometryData));
+		m_ShaderBuffer = static_cast<ID3DBlob*>(geometryData);
 		HRESULT hr = device->CreateGeometryShader(m_ShaderBuffer->GetBufferPointer(), m_ShaderBuffer->GetBufferSize(), NULL, m_Shader.GetAddressOf());
 		if (FAILED(hr))
 		{
@@ -181,7 +235,7 @@ namespace Blueberry
 			return false;
 		}
 
-		m_ShaderBuffer.Attach(static_cast<ID3DBlob*>(fragmentData));
+		m_ShaderBuffer = static_cast<ID3DBlob*>(fragmentData);
 		HRESULT hr = device->CreatePixelShader(m_ShaderBuffer->GetBufferPointer(), m_ShaderBuffer->GetBufferSize(), NULL, m_Shader.GetAddressOf());
 		if (FAILED(hr))
 		{

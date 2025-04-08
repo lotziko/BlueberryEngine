@@ -59,7 +59,7 @@ namespace Blueberry
 			auto dxGeometryShader = static_cast<GfxGeometryShaderDX11*>(passData.geometryShader);
 			auto dxFragmentShader = static_cast<GfxFragmentShaderDX11*>(passData.fragmentShader);
 
-			renderState.inputLayout = dxVertexShader->m_InputLayout.Get();
+			renderState.dxVertexShader = dxVertexShader;
 			renderState.vertexShader = dxVertexShader->m_Shader.Get();
 
 			// Vertex global constant buffers

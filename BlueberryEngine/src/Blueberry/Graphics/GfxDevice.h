@@ -1,7 +1,6 @@
 #pragma once
 
 #include "GfxDrawingOperation.h"
-#include "VertexLayout.h"
 #include "Structs.h"
 
 namespace Blueberry
@@ -42,7 +41,7 @@ namespace Blueberry
 		static bool CreateGeometryShader(void* geometryData, GfxGeometryShader*& shader);
 		static bool CreateFragmentShader(void* fragmentData, GfxFragmentShader*& shader);
 		static bool CreateComputeShader(void* computeData, GfxComputeShader*& shader);
-		static bool CreateVertexBuffer(const VertexLayout& layout, const uint32_t& vertexCount, GfxVertexBuffer*& buffer);
+		static bool CreateVertexBuffer(const uint32_t& vertexCount, const uint32_t& vertexSize, GfxVertexBuffer*& buffer);
 		static bool CreateIndexBuffer(const uint32_t& indexCount, GfxIndexBuffer*& buffer);
 		static bool CreateConstantBuffer(const uint32_t& byteCount, GfxConstantBuffer*& buffer);
 		static bool CreateStructuredBuffer(const uint32_t& elementCount, const uint32_t& elementSize, GfxStructuredBuffer*& buffer);
@@ -87,7 +86,7 @@ namespace Blueberry
 		virtual bool CreateGeometryShaderImpl(void* geometryData, GfxGeometryShader*& shader) = 0;
 		virtual bool CreateFragmentShaderImpl(void* fragmentData, GfxFragmentShader*& shader) = 0;
 		virtual bool CreateComputeShaderImpl(void* computeData, GfxComputeShader*& shader) = 0;
-		virtual bool CreateVertexBufferImpl(const VertexLayout& layout, const uint32_t& vertexCount, GfxVertexBuffer*& buffer) = 0;
+		virtual bool CreateVertexBufferImpl(const uint32_t& vertexCount, const uint32_t& vertexSize, GfxVertexBuffer*& buffer) = 0;
 		virtual bool CreateIndexBufferImpl(const uint32_t& indexCount, GfxIndexBuffer*& buffer) = 0;
 		virtual bool CreateConstantBufferImpl(const uint32_t& byteCount, GfxConstantBuffer*& buffer) = 0;
 		virtual bool CreateStructuredBufferImpl(const uint32_t& elementCount, const uint32_t& elementSize, GfxStructuredBuffer*& buffer) = 0;

@@ -4,6 +4,7 @@
 #include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\GfxBuffer.h"
+#include "Blueberry\Tools\CRCHelper.h"
 
 #include "mikktspace\mikktspace.h"
 
@@ -67,7 +68,7 @@ namespace Blueberry
 		return m_IndexCount;
 	}
 
-	const uint32_t& Mesh::GetSubMeshCount()
+	const uint32_t Mesh::GetSubMeshCount()
 	{
 		return m_SubMeshes.size();
 	}
@@ -82,22 +83,10 @@ namespace Blueberry
 		if (m_Vertices.size() == 0 && m_VertexData.size() > 0)
 		{
 			m_Vertices.reserve(m_VertexCount);
-			int offset = 3;
-			if (m_ChannelFlags & NORMALS_BIT)
-			{
-				offset += 3;
-			}
-			if (m_ChannelFlags & TANGENTS_BIT)
-			{
-				offset += 4;
-			}
-			if (m_ChannelFlags & UV0_BIT)
-			{
-				offset += 2;
-			}
 			float* begin = m_VertexData.data();
 			float* end = begin + m_VertexData.size();
-			for (float* it = begin; it < end; it += offset)
+			uint32_t vertexSize = m_VertexData.size() / m_VertexCount;
+			for (float* it = begin; it < end; it += vertexSize)
 			{
 				m_Vertices.emplace_back(Vector3(*it, *(it + 1), *(it + 2)));
 			}
@@ -121,7 +110,6 @@ namespace Blueberry
 		m_VertexCount = vertexCount;
 		m_Vertices.resize(vertexCount);
 		memcpy(m_Vertices.data(), vertices, sizeof(Vector3) * vertexCount);
-		m_ChannelFlags |= VERTICES_BIT;
 		m_BufferIsDirty = true;
 	}
 
@@ -129,7 +117,6 @@ namespace Blueberry
 	{
 		m_Normals.resize(vertexCount);
 		memcpy(m_Normals.data(), normals, sizeof(Vector3) * vertexCount);
-		m_ChannelFlags |= NORMALS_BIT;
 		m_BufferIsDirty = true;
 	}
 
@@ -137,7 +124,13 @@ namespace Blueberry
 	{
 		m_Tangents.resize(vertexCount);
 		memcpy(m_Tangents.data(), tangents, sizeof(Vector4) * vertexCount);
-		m_ChannelFlags |= TANGENTS_BIT;
+		m_BufferIsDirty = true;
+	}
+
+	void Mesh::SetColors(const Color* colors, const uint32_t& vertexCount)
+	{
+		m_Colors.resize(vertexCount);
+		memcpy(m_Colors.data(), colors, sizeof(Color) * vertexCount);
 		m_BufferIsDirty = true;
 	}
 
@@ -159,7 +152,6 @@ namespace Blueberry
 		{
 			m_UVs[channel].resize(uvCount);
 			memcpy(m_UVs[channel].data(), uvs, sizeof(Vector2) * uvCount);
-			m_ChannelFlags |= UV0_BIT;
 			m_BufferIsDirty = true;
 		}
 	}
@@ -257,7 +249,6 @@ namespace Blueberry
 		m_Tangents.resize(m_VertexCount);
 		TangentGenerator generator;
 		generator.Generate(this);
-		m_ChannelFlags |= TANGENTS_BIT;
 		m_BufferIsDirty = true;
 	}
 
@@ -280,26 +271,33 @@ namespace Blueberry
 	{
 		if (m_BufferIsDirty)
 		{
+			m_Layout = {};
 			size_t vertexBufferSize = 0;
+			uint32_t offset = 0;
 			if (m_VertexCount > 0)
 			{
 				vertexBufferSize += m_VertexCount * sizeof(Vector3) / sizeof(float);
+				m_Layout.Append(VertexAttribute::Position, 12);
 			}
 			if (m_Normals.size() == m_VertexCount)
 			{
 				vertexBufferSize += m_VertexCount * sizeof(Vector3) / sizeof(float);
+				m_Layout.Append(VertexAttribute::Normal, 12);
 			}
 			if (m_Tangents.size() == m_VertexCount)
 			{
 				vertexBufferSize += m_VertexCount * sizeof(Vector4) / sizeof(float);
+				m_Layout.Append(VertexAttribute::Tangent, 16);
 			}
-			for (int i = 0; i < 8; ++i)
+			for (int i = 0; i < 4; ++i)
 			{
 				if (m_UVs[i].size() == m_VertexCount)
 				{
 					vertexBufferSize += m_VertexCount * sizeof(Vector2) / sizeof(float);
+					m_Layout.Append(static_cast<VertexAttribute>(static_cast<uint32_t>(VertexAttribute::Texcoord0) + i), 8);
 				}
 			}
+			m_Layout.Apply();
 
 			if (vertexBufferSize != m_VertexData.size())
 			{
@@ -347,11 +345,16 @@ namespace Blueberry
 		}
 
 		// TODO handle old buffers instead
-		GfxDevice::CreateVertexBuffer(GetLayout(), m_VertexCount, m_VertexBuffer);
+		GfxDevice::CreateVertexBuffer(m_VertexCount, (m_VertexData.size() * sizeof(float)) / m_VertexCount, m_VertexBuffer);
 		GfxDevice::CreateIndexBuffer(m_IndexCount, m_IndexBuffer);
 
 		m_VertexBuffer->SetData(m_VertexData.data(), m_VertexCount);
 		m_IndexBuffer->SetData(m_IndexData.data(), m_IndexCount);
+	}
+
+	const VertexLayout& Mesh::GetLayout()
+	{
+		return m_Layout;
 	}
 
 	Mesh* Mesh::Create()
@@ -364,35 +367,13 @@ namespace Blueberry
 	{
 		BEGIN_OBJECT_BINDING(Mesh)
 		BIND_FIELD(FieldInfo(TO_STRING(m_Name), &Mesh::m_Name, BindingType::String))
-		BIND_FIELD(FieldInfo(TO_STRING(m_VertexData), &Mesh::m_VertexData, BindingType::FloatByteArray))
-		BIND_FIELD(FieldInfo(TO_STRING(m_IndexData), &Mesh::m_IndexData, BindingType::IntByteArray))
+		BIND_FIELD(FieldInfo(TO_STRING(m_VertexData), &Mesh::m_VertexData, BindingType::FloatList))
+		BIND_FIELD(FieldInfo(TO_STRING(m_IndexData), &Mesh::m_IndexData, BindingType::IntList))
 		BIND_FIELD(FieldInfo(TO_STRING(m_VertexCount), &Mesh::m_VertexCount, BindingType::Int))
 		BIND_FIELD(FieldInfo(TO_STRING(m_IndexCount), &Mesh::m_IndexCount, BindingType::Int))
-		BIND_FIELD(FieldInfo(TO_STRING(m_ChannelFlags), &Mesh::m_ChannelFlags, BindingType::Int))
-		BIND_FIELD(FieldInfo(TO_STRING(m_SubMeshes), &Mesh::m_SubMeshes, BindingType::DataArray).SetObjectType(SubMeshData::Type))
+		BIND_FIELD(FieldInfo(TO_STRING(m_SubMeshes), &Mesh::m_SubMeshes, BindingType::DataList).SetObjectType(SubMeshData::Type))
+		BIND_FIELD(FieldInfo(TO_STRING(m_Layout), &Mesh::m_Layout, BindingType::Raw).SetObjectType(sizeof(VertexLayout)))
 		BIND_FIELD(FieldInfo(TO_STRING(m_Bounds), &Mesh::m_Bounds, BindingType::AABB))
 		END_OBJECT_BINDING()
-	}
-
-	VertexLayout Mesh::GetLayout()
-	{
-		VertexLayout layout = VertexLayout{};
-		if (m_ChannelFlags & VERTICES_BIT)
-		{
-			layout.Append(VertexLayout::ElementType::Position3D);
-		}
-		if (m_ChannelFlags & NORMALS_BIT)
-		{
-			layout.Append(VertexLayout::ElementType::Normal);
-		}
-		if (m_ChannelFlags & TANGENTS_BIT)
-		{
-			layout.Append(VertexLayout::ElementType::Tangent);
-		}
-		if (m_ChannelFlags & UV0_BIT)
-		{
-			layout.Append(VertexLayout::ElementType::TextureCoord);
-		}
-		return layout;
 	}
 }

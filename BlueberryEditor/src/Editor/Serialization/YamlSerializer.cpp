@@ -99,7 +99,7 @@ namespace Blueberry
 				}
 			}
 			break;
-			case BindingType::IntByteArray:
+			case BindingType::IntList:
 			{
 				List<int> data = *value.Get<List<int>>();
 				ByteData byteData;
@@ -108,7 +108,7 @@ namespace Blueberry
 				objectNode[key] << byteData;
 			}
 			break;
-			case BindingType::FloatByteArray:
+			case BindingType::FloatList:
 			{
 				List<float> data = *value.Get<List<float>>();
 				ByteData byteData;
@@ -117,7 +117,7 @@ namespace Blueberry
 				objectNode[key] << byteData;
 			}
 			break;
-			case BindingType::StringArray:
+			case BindingType::StringList:
 			{
 				List<std::string> arrayValue = *value.Get<List<std::string>>();
 				if (arrayValue.size() > 0)
@@ -195,7 +195,7 @@ namespace Blueberry
 				SerializeNode(objectNode, context);
 			}
 			break;
-			case BindingType::DataArray:
+			case BindingType::DataList:
 			{
 				const ClassDB::ClassInfo& info = ClassDB::GetInfo(field.objectType);
 				List<DataPtr<Data>>* arrayValue = value.Get<List<DataPtr<Data>>>();
@@ -251,7 +251,7 @@ namespace Blueberry
 				case BindingType::ByteData:
 					objectNode[key] >> *value.Get<ByteData>();
 					break;
-				case BindingType::IntByteArray:
+				case BindingType::IntList:
 				{
 					ByteData byteData;
 					objectNode[key] >> byteData;
@@ -260,7 +260,7 @@ namespace Blueberry
 					*value.Get<List<int>>() = data;
 				}
 				break;
-				case BindingType::FloatByteArray:
+				case BindingType::FloatList:
 				{
 					ByteData byteData;
 					objectNode[key] >> byteData;
@@ -269,7 +269,7 @@ namespace Blueberry
 					*value.Get<List<float>>() = data;
 				}
 				break;
-				case BindingType::StringArray:
+				case BindingType::StringList:
 				{
 					List<std::string>* arrayPointer = value.Get<List<std::string>>();
 					for (auto& child : objectNode[key].children())
@@ -326,7 +326,7 @@ namespace Blueberry
 					*value.Get<DataPtr<Data>>() = context.ptr;
 				}
 				break;
-				case BindingType::DataArray:
+				case BindingType::DataList:
 				{
 					const ClassDB::ClassInfo& info = ClassDB::GetInfo(field.objectType);
 					List<DataPtr<Data>>* dataArrayPointer = value.Get<List<DataPtr<Data>>>();

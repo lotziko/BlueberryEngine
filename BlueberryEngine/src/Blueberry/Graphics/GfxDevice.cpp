@@ -92,9 +92,9 @@ namespace Blueberry
 		return s_Instance->CreateComputeShaderImpl(computeData, shader);
 	}
 
-	bool GfxDevice::CreateVertexBuffer(const VertexLayout& layout, const uint32_t& vertexCount, GfxVertexBuffer*& buffer)
+	bool GfxDevice::CreateVertexBuffer(const uint32_t& vertexCount, const uint32_t& vertexSize, GfxVertexBuffer*& buffer)
 	{
-		return s_Instance->CreateVertexBufferImpl(layout, vertexCount, buffer);
+		return s_Instance->CreateVertexBufferImpl(vertexCount, vertexSize, buffer);
 	}
 
 	bool GfxDevice::CreateIndexBuffer(const uint32_t& indexCount, GfxIndexBuffer*& buffer)

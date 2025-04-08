@@ -15,6 +15,9 @@ namespace Blueberry
 	static const uint32_t MAX_VERTICES = MAX_LINES * 2;
 	static const uint32_t MAX_INDICES = MAX_LINES * 2;
 
+	static VertexLayout s_LineLayout;
+	static VertexLayout s_ArcLayout;
+
 	bool Gizmos::Initialize()
 	{
 		Shader* lineShader = static_cast<Shader*>(AssetLoader::Load("assets/shaders/Color.shader"));
@@ -33,30 +36,32 @@ namespace Blueberry
 		}
 		s_ArcMaterial = Material::Create(arcShader);
 
-		VertexLayout lineLayout = VertexLayout{}
-			.Append(VertexLayout::Position3D)
-			.Append(VertexLayout::Float4Color);
+		s_LineLayout = VertexLayout{}
+			.Append(VertexAttribute::Position, 12)
+			.Append(VertexAttribute::Color, 16)
+			.Apply();
 
-		int lineSize = lineLayout.GetSize();
+		int lineSize = s_LineLayout.GetSize();
 		s_LineVertexData = new float[MAX_VERTICES * lineSize / sizeof(float)];
 
-		if (!GfxDevice::CreateVertexBuffer(lineLayout, MAX_VERTICES, s_LineVertexBuffer))
+		if (!GfxDevice::CreateVertexBuffer(MAX_VERTICES, lineSize, s_LineVertexBuffer))
 		{
 			return false;
 		}
 
 		s_Lines = new Line[MAX_LINES];
 
-		VertexLayout arcLayout = VertexLayout{}
-			.Append(VertexLayout::Position3D)
-			.Append(VertexLayout::Float4Color)
-			.Append(VertexLayout::Tangent)
-			.Append(VertexLayout::Float4Color);
+		s_ArcLayout = VertexLayout{}
+			.Append(VertexAttribute::Position, 12)
+			.Append(VertexAttribute::Normal, 16)
+			.Append(VertexAttribute::Tangent, 16)
+			.Append(VertexAttribute::Color, 16)
+			.Apply();
 
-		int arcSize = arcLayout.GetSize();
+		int arcSize = s_ArcLayout.GetSize();
 		s_ArcVertexData = new float[MAX_VERTICES * arcSize / sizeof(float)];
 
-		if (!GfxDevice::CreateVertexBuffer(arcLayout, MAX_VERTICES, s_ArcVertexBuffer))
+		if (!GfxDevice::CreateVertexBuffer(MAX_VERTICES, arcSize, s_ArcVertexBuffer))
 		{
 			return false;
 		}
@@ -258,7 +263,7 @@ namespace Blueberry
 
 		s_LineVertexBuffer->SetData(s_LineVertexData, s_LineCount * 2);
 
-		GfxDevice::Draw(GfxDrawingOperation(s_LineVertexBuffer, nullptr, s_LineMaterial, 0, 0, s_LineCount * 2, Topology::LineList));
+		GfxDevice::Draw(GfxDrawingOperation(s_LineVertexBuffer, nullptr, s_LineMaterial, &s_LineLayout, 0, 0, s_LineCount * 2, Topology::LineList));
 		
 		s_LineCount = 0;
 		s_LineVertexDataPtr = s_LineVertexData;
@@ -305,6 +310,6 @@ namespace Blueberry
 
 		s_ArcVertexBuffer->SetData(s_ArcVertexData, s_ArcCount);
 
-		GfxDevice::Draw(GfxDrawingOperation(s_ArcVertexBuffer, nullptr, s_ArcMaterial, 0, 0, s_ArcCount, Topology::PointList));
+		GfxDevice::Draw(GfxDrawingOperation(s_ArcVertexBuffer, nullptr, s_ArcMaterial, &s_ArcLayout, 0, 0, s_ArcCount, Topology::PointList));
 	}
 }

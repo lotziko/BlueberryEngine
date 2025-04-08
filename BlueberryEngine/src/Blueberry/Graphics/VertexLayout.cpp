@@ -1,71 +1,61 @@
 #include "bbpch.h"
 #include "VertexLayout.h"
 
+#include "Blueberry\Tools\CRCHelper.h"
+
 namespace Blueberry
 {
-	VertexLayout::Element::Element(ElementType type, uint32_t offset) : m_Type(type), m_Offset(offset)
+	VertexLayout::Element::Element(const uint32_t& size) : m_Size(size)
 	{
 	}
 
-	constexpr uint32_t VertexLayout::Element::GetSize(ElementType type)
+	const uint32_t& VertexLayout::Element::GetSize()
 	{
-		switch (type)
-		{
-		case ElementType::Position2D:
-			return sizeof(Vector2);
-		case ElementType::Position3D:
-			return sizeof(Vector3);
-		case ElementType::Normal:
-			return sizeof(Vector3);
-		case ElementType::Tangent:
-			return sizeof(Vector4);
-		case ElementType::Float3Color:
-			return sizeof(Vector3);
-		case ElementType::Float4Color:
-			return sizeof(Color);
-		case ElementType::TextureCoord:
-			return sizeof(Vector2);
-		case ElementType::Index:
-			return sizeof(uint32_t);
-		}
-
-		BB_ERROR("Unknown vertex layout element type.");
-		return 0;
+		return m_Size;
 	}
 
-	VertexLayout::ElementType VertexLayout::Element::GetType() const
+	const uint32_t& VertexLayout::Element::GetOffset()
 	{
-		return m_Type;
+		return m_Size;
 	}
 
-	uint32_t VertexLayout::Element::GetOffset() const
+	VertexLayout& VertexLayout::Append(const VertexAttribute& type, const uint32_t& size)
 	{
-		return m_Offset;
-	}
-
-	uint32_t VertexLayout::Element::GetOffsetAfter() const
-	{
-		return m_Offset + GetSize();
-	}
-
-	uint32_t VertexLayout::Element::GetSize() const
-	{
-		return GetSize(m_Type);
-	}
-
-	VertexLayout& VertexLayout::Append(ElementType type)
-	{
-		m_Elements.emplace_back(type, GetSize());
+		m_Elements[static_cast<uint32_t>(type)] = Element(size);
+		m_Crc = UINT32_MAX;
 		return *this;
 	}
 
-	const VertexLayout::Element& VertexLayout::ResolveByIndex(uint32_t i) const
+	VertexLayout& VertexLayout::Apply()
 	{
-		return m_Elements[i];
+		m_Crc = 0;
+		uint32_t offset = 0;
+		for (uint32_t i = 0; i < VERTEX_ATTRIBUTE_COUNT; ++i)
+		{
+			Element& element = m_Elements[i];
+			if (element.m_Size > 0)
+			{
+				element.m_Offset = offset;
+				offset += element.m_Size;
+			}
+			m_Crc = CRCHelper::Calculate(element.m_Offset, m_Crc);
+		}
+		m_Size = offset;
+		return *this;
 	}
 
-	uint32_t VertexLayout::GetSize() const
+	const uint32_t& VertexLayout::GetOffset(const uint32_t& index)
 	{
-		return m_Elements.empty() ? 0 : m_Elements.back().GetOffsetAfter();
+		return m_Elements[index].m_Offset;
+	}
+
+	const uint32_t& VertexLayout::GetSize()
+	{
+		return m_Size;
+	}
+
+	const uint32_t& VertexLayout::GetCrc()
+	{
+		return m_Crc;
 	}
 }

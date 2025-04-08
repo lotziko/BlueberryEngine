@@ -16,7 +16,8 @@ namespace Blueberry
 		if (!InitializeDirectX(*(static_cast<HWND*>(data)), width, height))
 			return false;
 
-		m_Cache = GfxRenderStateCacheDX11(this);
+		m_StateCache = GfxRenderStateCacheDX11(this);
+		m_LayoutCache = GfxInputLayoutCacheDX11();
 		m_BindedTextures.reserve(64);
 
 		return true;
@@ -191,10 +192,10 @@ namespace Blueberry
 		return true;
 	}
 
-	bool GfxDeviceDX11::CreateVertexBufferImpl(const VertexLayout& layout, const uint32_t& vertexCount, GfxVertexBuffer*& buffer)
+	bool GfxDeviceDX11::CreateVertexBufferImpl(const uint32_t& vertexCount, const uint32_t& vertexSize, GfxVertexBuffer*& buffer)
 	{
 		auto dxBuffer = new GfxVertexBufferDX11(m_Device.Get(), m_DeviceContext.Get());
-		if (!dxBuffer->Initialize(layout, vertexCount))
+		if (!dxBuffer->Initialize(vertexCount, vertexSize))
 		{
 			return false;
 		}
@@ -408,16 +409,19 @@ namespace Blueberry
 			return;
 		}
 
-		const GfxRenderStateDX11 renderState = m_Cache.GetState(operation.material, operation.passIndex);
-
+		const GfxRenderStateDX11 renderState = m_StateCache.GetState(operation.material, operation.passIndex);
+		
 		if (!renderState.isValid)
 		{
 			return;
 		}
 
-		if (renderState.inputLayout != m_RenderState.inputLayout)
+		ID3D11InputLayout* inputLayout = m_LayoutCache.GetLayout(renderState.dxVertexShader, operation.layout);
+
+		if (inputLayout != m_InputLayout)
 		{
-			m_DeviceContext->IASetInputLayout(renderState.inputLayout);
+			m_DeviceContext->IASetInputLayout(inputLayout);
+			m_InputLayout = inputLayout;
 		}
 		if (renderState.vertexShader != m_RenderState.vertexShader)
 		{

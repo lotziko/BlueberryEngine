@@ -29,12 +29,14 @@ namespace Blueberry
 	class Material;
 	class GfxDeviceDX11;
 	class GfxTextureDX11;
+	class GfxVertexShaderDX11;
 
 	// store current state in gfxDevice and compare it with new, and modify if they are different
 	// also can do loop check for samplers, SRV and buffers
 	struct GfxRenderStateDX11
 	{
-		ID3D11InputLayout* inputLayout;
+		GfxVertexShaderDX11* dxVertexShader;
+
 		ID3D11VertexShader* vertexShader;
 		ID3D11GeometryShader* geometryShader;
 		ID3D11PixelShader* pixelShader;
@@ -79,9 +81,8 @@ namespace Blueberry
 
 		const GfxRenderStateDX11 GetState(Material* material, const uint8_t& passIndex);
 
-		ska::flat_hash_map<GfxRenderStateKeyDX11, std::pair<GfxRenderStateDX11, GfxGlobalBindingsStateDX11>> m_RenderStates;
-
 	private:
 		GfxDeviceDX11* m_Device;
+		ska::flat_hash_map<GfxRenderStateKeyDX11, std::pair<GfxRenderStateDX11, GfxGlobalBindingsStateDX11>> m_RenderStates;
 	};
 }

@@ -2,6 +2,7 @@
 
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Concrete\DX11\GfxRenderStateCacheDX11.h"
+#include "Concrete\DX11\GfxInputLayoutCacheDX11.h"
 
 namespace Blueberry
 {
@@ -39,7 +40,7 @@ namespace Blueberry
 		virtual bool CreateGeometryShaderImpl(void* geometryData, GfxGeometryShader*& shader) final;
 		virtual bool CreateFragmentShaderImpl(void* fragmentData, GfxFragmentShader*& shader) final;
 		virtual bool CreateComputeShaderImpl(void* computeData, GfxComputeShader*& shader) final;
-		virtual bool CreateVertexBufferImpl(const VertexLayout& layout, const uint32_t& vertexCount, GfxVertexBuffer*& buffer) final;
+		virtual bool CreateVertexBufferImpl(const uint32_t& vertexCount, const uint32_t& vertexSize, GfxVertexBuffer*& buffer) final;
 		virtual bool CreateIndexBufferImpl(const uint32_t& indexCount, GfxIndexBuffer*& buffer) final;
 		virtual bool CreateConstantBufferImpl(const uint32_t& byteCount, GfxConstantBuffer*& buffer) final;
 		virtual bool CreateStructuredBufferImpl(const uint32_t& elementCount, const uint32_t& elementSize, GfxStructuredBuffer*& buffer) final;
@@ -99,8 +100,10 @@ namespace Blueberry
 		ID3D11SamplerState* m_EmptySamplers[16];
 
 		uint32_t m_CurrentCrc = UINT32_MAX;
+		ID3D11InputLayout* m_InputLayout = nullptr;
 		GfxRenderStateDX11 m_RenderState = {};
-		GfxRenderStateCacheDX11 m_Cache;
+		GfxRenderStateCacheDX11 m_StateCache;
+		GfxInputLayoutCacheDX11 m_LayoutCache;
 
 		GfxVertexBufferDX11* m_VertexBuffer = nullptr;
 		GfxIndexBufferDX11* m_IndexBuffer = nullptr;
@@ -111,5 +114,6 @@ namespace Blueberry
 		Topology m_Topology = (Topology)-1;
 
 		friend class GfxRenderStateCacheDX11;
+		friend class GfxInputLayoutCacheDX11;
 	};
 }

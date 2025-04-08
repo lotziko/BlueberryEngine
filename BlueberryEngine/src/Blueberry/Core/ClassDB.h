@@ -18,10 +18,10 @@ namespace Blueberry
 		String,
 		ByteData,
 
-		IntByteArray,
-		FloatByteArray,
+		IntList,
+		FloatList,
 
-		StringArray,
+		StringList,
 
 		Enum,
 
@@ -32,13 +32,16 @@ namespace Blueberry
 		Color,
 		AABB,
 
+		// POD class of fixed size stored in objectType
+		Raw,
+
 		// Derived from Object
 		ObjectPtr,
 		ObjectPtrArray,
 
 		// Not derived from Object
 		Data,
-		DataArray
+		DataList
 	};
 
 	struct FieldInfo

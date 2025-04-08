@@ -16,7 +16,6 @@ Shader
 		{
 			float3 positionOS : POSITION;
 			float4 color : COLOR;
-			float2 texcoord : TEXCOORD0;
 		};
 
 		struct Varyings

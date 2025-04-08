@@ -21,14 +21,15 @@ namespace Blueberry
 	bool Renderer2D::Initialize()
 	{
 		VertexLayout layout = VertexLayout{}
-			.Append(VertexLayout::Position3D)
-			.Append(VertexLayout::Float4Color)
-			.Append(VertexLayout::TextureCoord);
+			.Append(VertexAttribute::Position, 12)
+			.Append(VertexAttribute::Color, 16)
+			.Append(VertexAttribute::Texcoord0, 8)
+			.Apply();
 
 		int size = layout.GetSize();
 		s_VertexData = BB_MALLOC_ARRAY(float, MAX_VERTICES * size / sizeof(float));
 
-		if (!GfxDevice::CreateVertexBuffer(layout, MAX_VERTICES, s_VertexBuffer))
+		if (!GfxDevice::CreateVertexBuffer(MAX_VERTICES, size, s_VertexBuffer))
 		{
 			return false;
 		}
@@ -168,7 +169,7 @@ namespace Blueberry
 			if (material != currentMaterial || texture != currentTexture)
 			{
 				GfxDevice::SetGlobalTexture(baseMapId, currentTexture->Get());
-				GfxDevice::Draw(GfxDrawingOperation(s_VertexBuffer, s_IndexBuffer, currentMaterial, indexCount, indexOffset, 0, Topology::TriangleList));
+				GfxDevice::Draw(GfxDrawingOperation(s_VertexBuffer, s_IndexBuffer, currentMaterial, 0, indexCount, indexOffset, 0, Topology::TriangleList));
 
 				currentMaterial = material;
 				currentTexture = texture;
@@ -181,7 +182,7 @@ namespace Blueberry
 		if (indexCount > 0)
 		{
 			GfxDevice::SetGlobalTexture(baseMapId, currentTexture->Get());
-			GfxDevice::Draw(GfxDrawingOperation(s_VertexBuffer, s_IndexBuffer, currentMaterial, indexCount, indexOffset, 0, Topology::TriangleList));
+			GfxDevice::Draw(GfxDrawingOperation(s_VertexBuffer, s_IndexBuffer, currentMaterial, 0, indexCount, indexOffset, 0, Topology::TriangleList));
 		}
 
 		s_QuadIndexCount = 0;

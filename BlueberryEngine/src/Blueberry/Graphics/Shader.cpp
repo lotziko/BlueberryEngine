@@ -192,8 +192,8 @@ namespace Blueberry
 		BIND_FIELD(FieldInfo(TO_STRING(m_DstBlendAlpha), &PassData::m_DstBlendAlpha, BindingType::Enum))
 		BIND_FIELD(FieldInfo(TO_STRING(m_ZTest), &PassData::m_ZTest, BindingType::Enum))
 		BIND_FIELD(FieldInfo(TO_STRING(m_ZWrite), &PassData::m_ZWrite, BindingType::Enum))
-		BIND_FIELD(FieldInfo(TO_STRING(m_VertexKeywords), &PassData::m_VertexKeywords, BindingType::StringArray))
-		BIND_FIELD(FieldInfo(TO_STRING(m_FragmentKeywords), &PassData::m_FragmentKeywords, BindingType::StringArray))
+		BIND_FIELD(FieldInfo(TO_STRING(m_VertexKeywords), &PassData::m_VertexKeywords, BindingType::StringList))
+		BIND_FIELD(FieldInfo(TO_STRING(m_FragmentKeywords), &PassData::m_FragmentKeywords, BindingType::StringList))
 		BIND_FIELD(FieldInfo(TO_STRING(m_VertexOffset), &PassData::m_VertexOffset, BindingType::Int))
 		BIND_FIELD(FieldInfo(TO_STRING(m_GeometryOffset), &PassData::m_GeometryOffset, BindingType::Int))
 		BIND_FIELD(FieldInfo(TO_STRING(m_FragmentOffset), &PassData::m_FragmentOffset, BindingType::Int))
@@ -236,8 +236,8 @@ namespace Blueberry
 	void ShaderData::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(ShaderData)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Passes), &ShaderData::m_Passes, BindingType::DataArray).SetObjectType(PassData::Type))
-		BIND_FIELD(FieldInfo(TO_STRING(m_TextureParameters), &ShaderData::m_TextureParameters, BindingType::DataArray).SetObjectType(TextureParameterData::Type))
+		BIND_FIELD(FieldInfo(TO_STRING(m_Passes), &ShaderData::m_Passes, BindingType::DataList).SetObjectType(PassData::Type))
+		BIND_FIELD(FieldInfo(TO_STRING(m_TextureParameters), &ShaderData::m_TextureParameters, BindingType::DataList).SetObjectType(TextureParameterData::Type))
 		END_OBJECT_BINDING()
 	}
 

@@ -1,63 +1,52 @@
 #pragma once
 
-#include <vector>
-
 namespace Blueberry
 {
+	enum class VertexAttribute
+	{
+		Position,
+		Normal,
+		Tangent,
+		Color,
+		Texcoord0,
+		Texcoord1,
+		Texcoord2,
+		Texcoord4,
+	};
+
+	static const uint32_t VERTEX_ATTRIBUTE_COUNT = 8;
+
 	class VertexLayout
 	{
 	public:
-		enum ElementType
-		{
-			Position2D,
-			Position3D,
-			Normal,
-			Tangent,
-			Float3Color,
-			Float4Color,
-			TextureCoord,
-			Index,
-		};
 		class Element
 		{
 		public:
-			Element(ElementType type, uint32_t offset);
+			Element() = default;
+			Element(const uint32_t& size);
 
-			static constexpr uint32_t GetSize(ElementType type);
-
-			ElementType GetType() const;
-			uint32_t GetOffset() const;
-			uint32_t GetOffsetAfter() const;
-			uint32_t GetSize() const;
+			const uint32_t& GetSize();
+			const uint32_t& GetOffset();
 
 		private:
-			ElementType m_Type;
-			uint32_t m_Offset;
+			uint32_t m_Offset = 0;
+			uint32_t m_Size = 0;
+
+			friend class VertexLayout;
 		};
 	public:
-		template<ElementType T>
-		const Element& Resolve() const;
-
-		VertexLayout& Append(ElementType type);
-
-		const Element& ResolveByIndex(uint32_t i) const;
-		uint32_t GetSize() const;
+		VertexLayout() = default;
+		virtual ~VertexLayout() = default;
+		
+		VertexLayout& Append(const VertexAttribute& type, const uint32_t& size);
+		VertexLayout& Apply();
+		const uint32_t& GetOffset(const uint32_t& index);
+		const uint32_t& GetSize();
+		const uint32_t& GetCrc();
 
 	private:
-		List<Element> m_Elements;
+		Element m_Elements[VERTEX_ATTRIBUTE_COUNT];
+		uint32_t m_Size = 0;
+		uint32_t m_Crc = UINT32_MAX;
 	};
-
-	template<VertexLayout::ElementType T>
-	inline const VertexLayout::Element& VertexLayout::Resolve() const
-	{
-		for (auto& element : m_Elements)
-		{
-			if (element.GetType() == T)
-			{
-				return element;
-			}
-			BB_ERROR("Could not resolve element type.");
-			return m_Elements.front();
-		}
-	}
 }

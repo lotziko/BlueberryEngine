@@ -1,6 +1,7 @@
 #pragma once
-#include "Blueberry\Graphics\VertexLayout.h"
+
 #include "Blueberry\Graphics\Enums.h"
+#include "Blueberry\Graphics\VertexLayout.h"
 #include "Blueberry\Core\DataPtr.h"
 
 namespace Blueberry
@@ -36,7 +37,7 @@ namespace Blueberry
 
 		const uint32_t& GetVertexCount();
 		const uint32_t& GetIndexCount();
-		const uint32_t& GetSubMeshCount();
+		const uint32_t GetSubMeshCount();
 		SubMeshData* GetSubMesh(const uint32_t& index);
 		
 		const List<Vector3>& GetVertices();
@@ -45,6 +46,7 @@ namespace Blueberry
 		void SetVertices(const Vector3* vertices, const uint32_t& vertexCount);
 		void SetNormals(const Vector3* normals, const uint32_t& vertexCount);
 		void SetTangents(const Vector4* tangents, const uint32_t& vertexCount);
+		void SetColors(const Color* colors, const uint32_t& vertexCount);
 		void SetIndices(const uint32_t* indices, const uint32_t& indexCount);
 		void SetUVs(const int& channel, const Vector2* uvs, const uint32_t& uvCount);
 		void SetSubMesh(const uint32_t& index, SubMeshData* data);
@@ -57,13 +59,11 @@ namespace Blueberry
 		const AABB& GetBounds();
 
 		void Apply();
+		const VertexLayout& GetLayout();
 
 		static Mesh* Create();
 
 		static void BindProperties();
-
-	private:
-		VertexLayout GetLayout();
 
 	private:
 		GfxVertexBuffer* m_VertexBuffer;
@@ -73,16 +73,17 @@ namespace Blueberry
 		List<Vector3> m_Vertices;
 		List<Vector3> m_Normals;
 		List<Vector4> m_Tangents;
+		List<Color> m_Colors;
 		List<uint32_t> m_Indices;
-		List<Vector2> m_UVs[8] = {};
+		List<Vector2> m_UVs[4] = {};
 
 		List<float> m_VertexData;
 		List<uint32_t> m_IndexData;
 		List<DataPtr<SubMeshData>> m_SubMeshes;
+		VertexLayout m_Layout;
 
 		uint32_t m_VertexCount;
 		uint32_t m_IndexCount;
-		uint32_t m_ChannelFlags;
 		AABB m_Bounds;
 
 		Topology m_Topology = Topology::TriangleList;

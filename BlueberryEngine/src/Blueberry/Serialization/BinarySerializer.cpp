@@ -127,7 +127,7 @@ namespace Blueberry
 				output.write(reinterpret_cast<char*>(data.data), data.size);
 			}
 			break;
-			case BindingType::IntByteArray:
+			case BindingType::IntList:
 			{
 				List<int> data = *value.Get<List<int>>();
 				size_t dataSize = data.size();
@@ -135,7 +135,7 @@ namespace Blueberry
 				output.write(reinterpret_cast<char*>(data.data()), data.size() * sizeof(int));
 			}
 			break;
-			case BindingType::FloatByteArray:
+			case BindingType::FloatList:
 			{
 				List<float> data = *value.Get<List<float>>();
 				size_t dataSize = data.size();
@@ -143,7 +143,7 @@ namespace Blueberry
 				output.write(reinterpret_cast<char*>(data.data()), data.size() * sizeof(float));
 			}
 			break;
-			case BindingType::StringArray:
+			case BindingType::StringList:
 			{
 				List<std::string> data = *value.Get<List<std::string>>();
 				size_t dataSize = data.size();
@@ -174,6 +174,9 @@ namespace Blueberry
 				break;
 			case BindingType::AABB:
 				output.write(reinterpret_cast<char*>(&(*value.Get<AABB>()).Center), 6 * sizeof(float));
+				break;
+			case BindingType::Raw:
+				output.write(reinterpret_cast<char*>(value.Get()), field.objectType);
 				break;
 			case BindingType::ObjectPtr:
 			{
@@ -221,7 +224,7 @@ namespace Blueberry
 				SerializeNode(output, context);
 			}
 			break;
-			case BindingType::DataArray:
+			case BindingType::DataList:
 			{
 				List<DataPtr<Data>>* arrayValue = value.Get<List<DataPtr<Data>>>();
 				size_t dataSize = arrayValue->size();
@@ -294,7 +297,7 @@ namespace Blueberry
 					*value.Get<ByteData>() = data;
 				}
 				break;
-				case BindingType::IntByteArray:
+				case BindingType::IntList:
 				{
 					size_t dataSize;
 					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
@@ -303,7 +306,7 @@ namespace Blueberry
 					*value.Get<List<int>>() = data;
 				}
 				break;
-				case BindingType::FloatByteArray:
+				case BindingType::FloatList:
 				{
 					size_t dataSize;
 					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
@@ -312,7 +315,7 @@ namespace Blueberry
 					*value.Get<List<float>>() = data;
 				}
 				break;
-				case BindingType::StringArray:
+				case BindingType::StringList:
 				{
 					size_t dataSize;
 					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
@@ -346,6 +349,12 @@ namespace Blueberry
 				case BindingType::AABB:
 					input.read(reinterpret_cast<char*>(&(*value.Get<AABB>()).Center), 6 * sizeof(float));
 					break;
+				case BindingType::Raw:
+				{
+					char* data = reinterpret_cast<char*>(value.Get());
+					input.read(data, field.objectType);
+				}
+				break;
 				case BindingType::ObjectPtr:
 				{
 					ObjectPtrData data = {};
@@ -375,7 +384,7 @@ namespace Blueberry
 					*value.Get<DataPtr<Data>>() = context.ptr;
 				}
 				break;
-				case BindingType::DataArray:
+				case BindingType::DataList:
 				{
 					size_t dataSize;
 					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));

@@ -20,4 +20,19 @@ namespace Blueberry
 		}
 		return ~crc; // same as crc ^ 0xFFFFFFFF
 	}
+
+	uint32_t CRCHelper::Calculate(uint32_t data, uint32_t previousCrc32)
+	{
+		size_t length = sizeof(uint32_t);
+		uint32_t crc = ~previousCrc32;
+		while (length--)
+		{
+			crc ^= data++;
+			for (unsigned int j = 0; j < 8; j++)
+			{
+				crc = (crc >> 1) ^ (-int(crc & 1) & Polynomial);
+			}
+		}
+		return ~crc; // same as crc ^ 0xFFFFFFFF
+	}
 }

@@ -60,7 +60,7 @@ namespace Blueberry
 	void ModelImporter::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(ModelImporter)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Materials), &ModelImporter::m_Materials, BindingType::DataArray).SetObjectType(ModelMaterialData::Type))
+		BIND_FIELD(FieldInfo(TO_STRING(m_Materials), &ModelImporter::m_Materials, BindingType::DataList).SetObjectType(ModelMaterialData::Type))
 		BIND_FIELD(FieldInfo(TO_STRING(m_Scale), &ModelImporter::m_Scale, BindingType::Float))
 		END_OBJECT_BINDING()
 	}
