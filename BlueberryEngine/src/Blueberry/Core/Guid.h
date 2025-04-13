@@ -8,6 +8,7 @@ namespace Blueberry
 	{
 	public:
 		Guid() = default;
+		Guid(const uint64_t& data1, const uint64_t& data2);
 
 		bool operator==(const Guid &other) const;
 		bool operator!=(const Guid &other) const;

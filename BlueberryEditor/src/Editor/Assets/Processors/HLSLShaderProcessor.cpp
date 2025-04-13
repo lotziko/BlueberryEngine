@@ -68,11 +68,11 @@ namespace Blueberry
 
 				if (!compilationPass.vertexEntryPoint.empty())
 				{
-					int keywordCount = compilationPass.vertexKeywords.size();
+					uint32_t keywordCount = compilationPass.vertexKeywords.size();
 					D3D_SHADER_MACRO keywords[256];
-					for (int i = 0; i < keywordCount; ++i)
+					for (int j = 0; j < keywordCount; ++j)
 					{
-						keywords[i].Name = compilationPass.vertexKeywords[i].c_str();
+						keywords[j].Name = compilationPass.vertexKeywords[j].c_str();
 					}
 
 					keywords[keywordCount].Name = nullptr;
@@ -80,11 +80,11 @@ namespace Blueberry
 
 					pass->SetVertexOffset(m_VariantsData.vertexShaderIndices.size());
 
-					for (size_t i = 0; i < vertexVariantCount; ++i)
+					for (size_t j = 0; j < vertexVariantCount; ++j)
 					{
-						for (int j = 0; j < keywordCount; ++j)
+						for (uint32_t k = 0; k < keywordCount; ++k)
 						{
-							keywords[j].Definition = i & j ? "1" : "0";
+							keywords[k].Definition = (1 << k) & j ? "1" : "0";
 						}
 
 						ComPtr<ID3DBlob> vertexBlob;
@@ -122,11 +122,11 @@ namespace Blueberry
 
 				if (!compilationPass.fragmentEntryPoint.empty())
 				{
-					int keywordCount = compilationPass.fragmentKeywords.size();
+					uint32_t keywordCount = compilationPass.fragmentKeywords.size();
 					D3D_SHADER_MACRO keywords[256];
-					for (int i = 0; i < keywordCount; ++i)
+					for (uint32_t j = 0; j < keywordCount; ++j)
 					{
-						keywords[i].Name = compilationPass.fragmentKeywords[i].c_str();
+						keywords[j].Name = compilationPass.fragmentKeywords[j].c_str();
 					}
 
 					keywords[keywordCount].Name = nullptr;
@@ -134,11 +134,11 @@ namespace Blueberry
 
 					pass->SetFragmentOffset(m_VariantsData.fragmentShaderIndices.size());
 
-					for (size_t i = 0; i < fragmentVariantCount; ++i)
+					for (size_t j = 0; j < fragmentVariantCount; ++j)
 					{
-						for (int j = 0; j < keywordCount; ++j)
+						for (uint32_t k = 0; k < keywordCount; ++k)
 						{
-							keywords[j].Definition = i & (j + 1) ? "1" : "0";
+							keywords[k].Definition = (1 << k) & j ? "1" : "0";
 						}
 
 						ComPtr<ID3DBlob> fragmentBlob;

@@ -4,7 +4,9 @@
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Scene\Components\MeshRenderer.h"
+#include "Blueberry\Scene\Components\SkyRenderer.h"
 
+#include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\Renderer2D.h"
 #include "Blueberry\Graphics\Mesh.h"
 #include "Blueberry\Graphics\Material.h"
@@ -297,6 +299,18 @@ namespace Blueberry
 		Camera* camera = results.camera;
 		PerCameraDataConstantBuffer::BindData(cameraData);
 		GatherOperations(results, camera);
+	}
+
+	void RenderContext::DrawSky(Scene* scene)
+	{
+		for (auto component : scene->GetIterator<SkyRenderer>())
+		{
+			Material* material = static_cast<SkyRenderer*>(component.second)->GetMaterial();
+			if (material != nullptr)
+			{
+				GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetCube(), material, 0));
+			}
+		}
 	}
 
 	void RenderContext::DrawShadows(CullingResults& results, ShadowDrawingSettings& shadowDrawingSettings)

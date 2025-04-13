@@ -9,6 +9,7 @@
 #include "Components\Renderer.h"
 #include "Components\SpriteRenderer.h"
 #include "Components\MeshRenderer.h"
+#include "Components\SkyRenderer.h"
 #include "Components\Camera.h"
 #include "Components\Light.h"
 #include "Components\PhysicsBody.h"
@@ -28,6 +29,7 @@ namespace Blueberry
 		REGISTER_ABSTRACT_CLASS(Renderer);
 		REGISTER_CLASS(SpriteRenderer);
 		REGISTER_CLASS(MeshRenderer);
+		REGISTER_CLASS(SkyRenderer);
 		REGISTER_CLASS(Camera);
 		REGISTER_CLASS(Light);
 		REGISTER_CLASS(PhysicsBody);

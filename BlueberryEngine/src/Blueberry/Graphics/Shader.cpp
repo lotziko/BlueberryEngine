@@ -8,7 +8,7 @@
 
 namespace Blueberry
 {
-	DATA_DEFINITION(TextureParameterData)
+	DATA_DEFINITION(PropertyData)
 	DATA_DEFINITION(PassData)
 	DATA_DEFINITION(ShaderData)
 	OBJECT_DEFINITION(Object, Shader)
@@ -30,31 +30,53 @@ namespace Blueberry
 		return mask;
 	}
 
-	const std::string& TextureParameterData::GetName() const
+	const std::string& PropertyData::GetName() const
 	{
 		return m_Name;
 	}
 
-	void TextureParameterData::SetName(const std::string& name)
+	void PropertyData::SetName(const std::string& name)
 	{
 		m_Name = name;
 	}
 
-	const std::string& TextureParameterData::GetDefaultTextureName() const
+	const PropertyData::PropertyType& PropertyData::GetType() const
+	{
+		return m_Type;
+	}
+
+	void PropertyData::SetType(const PropertyType& type)
+	{
+		m_Type = type;
+	}
+
+	const std::string& PropertyData::GetDefaultTextureName() const
 	{
 		return m_DefaultTextureName;
 	}
 
-	void TextureParameterData::SetDefaultTextureName(const std::string& name)
+	void PropertyData::SetDefaultTextureName(const std::string& name)
 	{
 		m_DefaultTextureName = name;
 	}
 
-	void TextureParameterData::BindProperties()
+	const TextureDimension& PropertyData::GetTextureDimension() const
 	{
-		BEGIN_OBJECT_BINDING(TextureParameterData)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Name), &TextureParameterData::m_Name, BindingType::String))
-		BIND_FIELD(FieldInfo(TO_STRING(m_DefaultTextureName), &TextureParameterData::m_DefaultTextureName, BindingType::String))
+		return m_TextureDimension;
+	}
+
+	void PropertyData::SetTextureDimension(const TextureDimension& dimension)
+	{
+		m_TextureDimension = dimension;
+	}
+
+	void PropertyData::BindProperties()
+	{
+		BEGIN_OBJECT_BINDING(PropertyData)
+		BIND_FIELD(FieldInfo(TO_STRING(m_Name), &PropertyData::m_Name, BindingType::String))
+		BIND_FIELD(FieldInfo(TO_STRING(m_Type), &PropertyData::m_Type, BindingType::Enum))
+		BIND_FIELD(FieldInfo(TO_STRING(m_DefaultTextureName), &PropertyData::m_DefaultTextureName, BindingType::String))
+		BIND_FIELD(FieldInfo(TO_STRING(m_TextureDimension), &PropertyData::m_TextureDimension, BindingType::Enum))
 		END_OBJECT_BINDING()
 	}
 
@@ -223,21 +245,21 @@ namespace Blueberry
 		}
 	}
 
-	const List<DataPtr<TextureParameterData>>& ShaderData::GetTextureParameters() const
+	const List<DataPtr<PropertyData>>& ShaderData::GetProperties() const
 	{
-		return m_TextureParameters;
+		return m_Properties;
 	}
 
-	void ShaderData::SetTextureParameters(const List<DataPtr<TextureParameterData>>& parameters)
+	void ShaderData::SetProperties(const List<DataPtr<PropertyData>>& properties)
 	{
-		m_TextureParameters = parameters;
+		m_Properties = properties;
 	}
 
 	void ShaderData::BindProperties()
 	{
 		BEGIN_OBJECT_BINDING(ShaderData)
 		BIND_FIELD(FieldInfo(TO_STRING(m_Passes), &ShaderData::m_Passes, BindingType::DataList).SetObjectType(PassData::Type))
-		BIND_FIELD(FieldInfo(TO_STRING(m_TextureParameters), &ShaderData::m_TextureParameters, BindingType::DataList).SetObjectType(TextureParameterData::Type))
+		BIND_FIELD(FieldInfo(TO_STRING(m_Properties), &ShaderData::m_Properties, BindingType::DataList).SetObjectType(PropertyData::Type))
 		END_OBJECT_BINDING()
 	}
 

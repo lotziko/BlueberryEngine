@@ -21,7 +21,7 @@ namespace Blueberry
 		REGISTER_CLASS(RenderTexture);
 		REGISTER_DATA_CLASS(SubMeshData);
 		REGISTER_CLASS(Mesh);
-		REGISTER_DATA_CLASS(TextureParameterData);
+		REGISTER_DATA_CLASS(PropertyData);
 		REGISTER_DATA_CLASS(PassData);
 		REGISTER_DATA_CLASS(ShaderData);
 		REGISTER_CLASS(Shader);

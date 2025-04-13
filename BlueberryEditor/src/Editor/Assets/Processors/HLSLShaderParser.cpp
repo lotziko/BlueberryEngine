@@ -179,7 +179,7 @@ namespace Blueberry
 		auto propertiesStart = std::sregex_iterator(propertiesBlock.begin(), propertiesBlock.end(), propertyRegex);
 		auto propertiesEnd = std::sregex_iterator();
 
-		List<DataPtr<TextureParameterData>> textureParameters;
+		List<DataPtr<PropertyData>> properties;
 		for (std::regex_iterator i = propertiesStart; i != propertiesEnd; ++i)
 		{
 			std::smatch match = *i;
@@ -189,19 +189,28 @@ namespace Blueberry
 				std::string name = match[2];
 				std::string value = match[3];
 
-				if (type == "Texture2D")
+				PropertyData* property = new PropertyData();
+				property->SetName(name);
+
+				if (type.rfind("Texture") != std::string::npos)
 				{
 					std::string defaultTextureName = value;
 					defaultTextureName.erase(std::remove(defaultTextureName.begin(), defaultTextureName.end(), '\"'), defaultTextureName.end());
-				
-					TextureParameterData* parameter = new TextureParameterData();
-					parameter->SetName(name);
-					parameter->SetDefaultTextureName(defaultTextureName);
-					textureParameters.emplace_back(DataPtr<TextureParameterData>(parameter));
+					property->SetType(PropertyData::PropertyType::Texture);
+					property->SetDefaultTextureName(defaultTextureName);
+					if (type == "Texture2D")
+					{
+						property->SetTextureDimension(TextureDimension::Texture2D);
+					}
+					else if (type == "TextureCube")
+					{
+						property->SetTextureDimension(TextureDimension::TextureCube);
+					}
 				}
+				properties.emplace_back(DataPtr<PropertyData>(property));
 			}
 		}
-		data.SetTextureParameters(textureParameters);
+		data.SetProperties(properties);
 	}
 
 	void ParseRenderingParameters(const std::string& passBlock, PassData& passData)

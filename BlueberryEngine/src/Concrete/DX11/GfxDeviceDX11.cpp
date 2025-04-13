@@ -52,6 +52,7 @@ namespace Blueberry
 		ID3D11SamplerState* emptySampler[1] = { nullptr };
 		m_DeviceContext->PSSetShaderResources(0, 1, emptySRV);
 		m_DeviceContext->PSSetSamplers(0, 1, emptySampler);
+		m_RenderState = {};
 
 		m_BindedConstantBuffers.clear();
 		m_BindedStructuredBuffers.clear();
@@ -326,6 +327,7 @@ namespace Blueberry
 	{
 		m_DeviceContext->PSSetShaderResources(0, 16, m_EmptyShaderResourceViews);
 		m_DeviceContext->PSSetSamplers(0, 16, m_EmptySamplers);
+		m_RenderState = {};
 
 		ID3D11RenderTargetView** renderTarget = nullptr;
 		if (renderTexture != nullptr)

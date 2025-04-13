@@ -3,6 +3,8 @@
 
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\Texture.h"
+#include "Blueberry\Graphics\Texture2D.h"
+#include "Blueberry\Graphics\TextureCube.h"
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Assets\ThumbnailCache.h"
 #include "Editor\Misc\ImGuiHelper.h"
@@ -27,33 +29,36 @@ namespace Blueberry
 			auto textureDatas = material->GetTextureDatas();
 			bool hasPropertyChanges = false;
 
-			for (auto const& textureParameter : data->GetTextureParameters())
+			for (auto const& propertyData : data->GetProperties())
 			{
-				TextureData* textureProperty = nullptr;
-				auto& textureParameterName = textureParameter.Get()->GetName();
-				Texture* texture = nullptr;
-				for (auto const& textureData : textureDatas)
+				if (propertyData.Get()->GetType() == PropertyData::PropertyType::Texture)
 				{
-					if (textureData.Get()->GetName() == textureParameterName)
+					TextureData* textureProperty = nullptr;
+					auto& textureParameterName = propertyData.Get()->GetName();
+					Texture* texture = nullptr;
+					for (auto const& textureData : textureDatas)
 					{
-						texture = textureData.Get()->GetTexture();
-						textureProperty = textureData.Get();
+						if (textureData.Get()->GetName() == textureParameterName)
+						{
+							texture = textureData.Get()->GetTexture();
+							textureProperty = textureData.Get();
+						}
 					}
-				}
 
-				if (textureProperty != nullptr)
-				{
-					if (ImGui::ObjectEdit(textureParameter.Get()->GetName().c_str(), (Object**)&texture, Texture::Type))
+					if (textureProperty != nullptr)
 					{
-						textureProperty->SetTexture(texture);
-						hasPropertyChanges = true;
+						if (ImGui::ObjectEdit(propertyData.Get()->GetName().c_str(), (Object**)&texture, propertyData.Get()->GetTextureDimension() == TextureDimension::TextureCube ? TextureCube::Type : Texture2D::Type))
+						{
+							textureProperty->SetTexture(texture);
+							hasPropertyChanges = true;
+						}
 					}
-				}
-				else
-				{
-					textureProperty = new TextureData();
-					textureProperty->SetName(textureParameter.Get()->GetName());
-					material->AddTextureData(textureProperty);
+					else
+					{
+						textureProperty = new TextureData();
+						textureProperty->SetName(propertyData.Get()->GetName());
+						material->AddTextureData(textureProperty);
+					}
 				}
 			}
 

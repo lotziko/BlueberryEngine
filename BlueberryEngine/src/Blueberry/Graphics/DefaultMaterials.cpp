@@ -54,20 +54,4 @@ namespace Blueberry
 		}
 		return s_VRMirrorViewMaterial;
 	}
-
-	Material* DefaultMaterials::GetSkybox()
-	{
-		if (s_SkyboxMaterial == nullptr)
-		{
-			Shader* shader = static_cast<Shader*>(AssetLoader::Load("assets/shaders/Skybox.shader"));
-			if (shader == nullptr)
-			{
-				BB_ERROR("Failed to load skybox shader.")
-					return false;
-			}
-			s_SkyboxMaterial = Material::Create(shader);
-			s_SkyboxMaterial->SetName("Skybox");
-		}
-		return s_SkyboxMaterial;
-	}
 }

@@ -1,5 +1,9 @@
 Shader
 {
+	Properties
+	{
+		TextureCube _BaseMap = "white"
+	}
 	Pass
 	{
 		Blend One Zero

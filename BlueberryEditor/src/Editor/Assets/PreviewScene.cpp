@@ -23,14 +23,15 @@ namespace Blueberry
 			m_Renderer->SetMesh(StandardMeshes::GetSphere());
 
 			Entity* lightEntity = m_Scene->CreateEntity("Light");
-			lightEntity->GetTransform()->SetPosition(Vector3(-4, -3, 3));
+			lightEntity->GetTransform()->SetPosition(Vector3(4, -3, 3));
 			Light* light = lightEntity->AddComponent<Light>();
 			light->SetType(LightType::Point);
+			light->SetCastingShadows(false);
 			light->SetRange(20);
 			light->SetIntensity(10);
 
-			Vector3 cameraPosition = Vector3(-0.4f, -0.05f, 5.0f);
-			Vector3 forward = cameraPosition - Vector3::Zero;
+			Vector3 cameraPosition = Vector3(0.4f, -0.05f, 5.0f);
+			Vector3 forward = Vector3::Zero - cameraPosition;
 			forward.Normalize();
 
 			Entity* cameraEntity = m_Scene->CreateEntity("Camera");
@@ -40,6 +41,7 @@ namespace Blueberry
 			m_Camera->SetOrthographic(false);
 			m_Camera->SetAspectRatio(1.0f);
 			m_Camera->SetFieldOfView(15.0f);
+			m_Camera->SetPixelSize(Vector2(target->GetWidth(), target->GetHeight()));
 		}
 		m_Renderer->SetMaterial(material);
 		DefaultRenderer::Draw(m_Scene, m_Camera, Rectangle(0, 0, target->GetWidth(), target->GetHeight()), Color(0, 0, 0, 1), target);

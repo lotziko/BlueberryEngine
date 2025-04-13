@@ -51,6 +51,7 @@ namespace Blueberry
 	public:
 		void Cull(Scene* scene, CameraData& cameraData, CullingResults& results);
 		void BindCamera(CullingResults& results, CameraData& cameraData);
+		void DrawSky(Scene* scene);
 		void DrawShadows(CullingResults& results, ShadowDrawingSettings& shadowDrawingSettings);
 		void DrawRenderers(CullingResults& results, DrawingSettings& drawingSettings);
 

@@ -2,6 +2,8 @@
 #include "GfxShaderDX11.h"
 #include "GfxDeviceDX11.h"
 
+#include "Blueberry\Tools\CRCHelper.h"
+
 namespace Blueberry
 {
 	constexpr uint32_t String4ToInt(const char* s)
@@ -73,12 +75,12 @@ namespace Blueberry
 
 		// Input layout
 		uint32_t parameterCount = vertexShaderDesc.InputParameters;
-		VertexLayout layout = {};
 		for (uint8_t i = 0; i < VERTEX_ATTRIBUTE_COUNT; ++i)
 		{
 			m_LayoutIndices[i] = UINT8_MAX;
 		}
 
+		m_Crc = 0;
 		for (unsigned int i = 0; i < parameterCount; ++i)
 		{
 			D3D11_SIGNATURE_PARAMETER_DESC paramDesc;
@@ -88,7 +90,7 @@ namespace Blueberry
 
 			inputElementDesc.SemanticName = paramDesc.SemanticName;
 			inputElementDesc.SemanticIndex = paramDesc.SemanticIndex;
-
+			
 			uint32_t size;
 			if (paramDesc.Mask == 1) 
 			{
@@ -120,39 +122,36 @@ namespace Blueberry
 			}
 			
 			uint32_t nameInt = *reinterpret_cast<const uint32_t*>(paramDesc.SemanticName);
+			m_Crc = CRCHelper::Calculate(nameInt, m_Crc);
+			m_Crc = CRCHelper::Calculate(size, m_Crc);
 			switch (nameInt)
 			{
 			case String4ToInt("POSI"): // POSITION
 				m_LayoutIndices[0] = i;
-				layout.Append(VertexAttribute::Position, size);
 				inputElementDesc.InputSlot = 0;
 				inputElementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 				inputElementDesc.InstanceDataStepRate = 0;
 				break;
 			case String4ToInt("NORM"): // NORMAL
 				m_LayoutIndices[1] = i;
-				layout.Append(VertexAttribute::Normal, size);
 				inputElementDesc.InputSlot = 0;
 				inputElementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 				inputElementDesc.InstanceDataStepRate = 0;
 				break;
 			case String4ToInt("TANG"): // TANGENT
 				m_LayoutIndices[2] = i;
-				layout.Append(VertexAttribute::Tangent, size);
 				inputElementDesc.InputSlot = 0;
 				inputElementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 				inputElementDesc.InstanceDataStepRate = 0;
 				break;
 			case String4ToInt("COLO"): // COLOR
 				m_LayoutIndices[3] = i;
-				layout.Append(VertexAttribute::Color, size);
 				inputElementDesc.InputSlot = 0;
 				inputElementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 				inputElementDesc.InstanceDataStepRate = 0;
 				break;
 			case String4ToInt("TEXC"): // TEXCOORD
 				m_LayoutIndices[4 + paramDesc.SemanticIndex] = i;
-				layout.Append(VertexAttribute::Normal, size);
 				inputElementDesc.InputSlot = 0;
 				inputElementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 				inputElementDesc.InstanceDataStepRate = 0;
@@ -168,8 +167,6 @@ namespace Blueberry
 			}
 			m_InputElementDescs.push_back(inputElementDesc);
 		}
-		layout.Apply();
-		m_Crc = layout.GetCrc();
 		m_Device = device;
 		return true;
 	}

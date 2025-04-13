@@ -6,7 +6,7 @@
 static uint _ViewIndex;
 static uint _RenderInstanceId;
 
-#if defined(MULTIVIEW)
+#if (MULTIVIEW)
 
 #define VIEW_INDEX							_ViewIndex
 #define VERTEX_INPUT_INSTANCE_ID			uint instanceID : SV_InstanceID; \
@@ -53,7 +53,7 @@ static uint _RenderInstanceId;
 #define LOAD_TEXTURE2D_ARRAY_MSAA(textureName, uv, index, sampleIndex)		textureName.Load(uint3(uv, index), sampleIndex)
 #define SAMPLE_TEXTURECUBE(textureName, samplerName, coord3)				textureName.Sample(samplerName, coord3)
 
-#if defined(MULTIVIEW)
+#if (MULTIVIEW)
 
 #define TEXTURE2D_X(textureName)								TEXTURE2D_ARRAY(textureName)
 #define TEXTURE2D_X_MSAA(textureName, samples)                  TEXTURE2D_ARRAY_MSAA(textureName, samples)

@@ -7,6 +7,12 @@
 
 namespace Blueberry
 {
+	Guid::Guid(const uint64_t& data1, const uint64_t& data2)
+	{
+		data[0] = data1;
+		data[1] = data2;
+	}
+
 	bool Guid::operator==(const Guid& other) const
 	{
 		return std::memcmp(this, &other, sizeof(GUID)) == 0;

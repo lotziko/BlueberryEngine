@@ -167,11 +167,14 @@ namespace Blueberry
 		if (m_Shader.IsValid() && m_Shader->GetState() == ObjectState::Default)
 		{
 			const ShaderData* shaderData = m_Shader->GetData();
-			for (auto& parameter : shaderData->GetTextureParameters())
+			for (auto& property : shaderData->GetProperties())
 			{
-				TextureParameterData* data = parameter.Get();
-				size_t key = TO_HASH(data->GetName());
-				m_BindedTextures.try_emplace(key, DefaultTextures::GetTexture(data->GetDefaultTextureName())->GetObjectId());
+				PropertyData* data = property.Get();
+				if (data->GetType() == PropertyData::PropertyType::Texture)
+				{
+					size_t key = TO_HASH(data->GetName());
+					m_BindedTextures.try_emplace(key, DefaultTextures::GetTexture(data->GetDefaultTextureName(), data->GetTextureDimension())->GetObjectId());
+				}
 			}
 		}
 		for (auto const& texture : m_Textures)

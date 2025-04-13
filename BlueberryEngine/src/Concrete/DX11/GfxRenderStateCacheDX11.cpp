@@ -29,7 +29,7 @@ namespace Blueberry
 
 	const GfxRenderStateDX11 GfxRenderStateCacheDX11::GetState(Material* material, const uint8_t& passIndex)
 	{
-		uint64_t keywordMask = static_cast<uint64_t>(Shader::GetActiveKeywordsMask()) | (static_cast<uint64_t>(material->GetActiveKeywordsMask() << 32));
+		uint64_t keywordMask = static_cast<uint64_t>(Shader::GetActiveKeywordsMask()) | (static_cast<uint64_t>(material->GetActiveKeywordsMask()) << 32);
 		uint32_t crc = material->GetCRC();
 		ObjectId objectId = material->GetObjectId();
 		

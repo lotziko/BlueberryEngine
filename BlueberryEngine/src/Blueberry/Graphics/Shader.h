@@ -22,25 +22,44 @@ namespace Blueberry
 		uint32_t m_MaxMask = 1;
 	};
 
-	class TextureParameterData : public Data
+	class PropertyData : public Data
 	{
-		DATA_DECLARATION(TextureParameterData)
+		DATA_DECLARATION(PropertyData)
 
 	public:
-		TextureParameterData() = default;
-		virtual ~TextureParameterData() = default;
+		enum class PropertyType
+		{
+			Texture,
+			Float,
+			Int,
+			Vector,
+			Color,
+		};
+
+	public:
+		PropertyData() = default;
+		virtual ~PropertyData() = default;
 
 		const std::string& GetName() const;
 		void SetName(const std::string& name);
 
+		const PropertyType& GetType() const;
+		void SetType(const PropertyType& type);
+
 		const std::string& GetDefaultTextureName() const;
 		void SetDefaultTextureName(const std::string& name);
+
+		const TextureDimension& GetTextureDimension() const;
+		void SetTextureDimension(const TextureDimension& dimension);
 
 		static void BindProperties();
 
 	private:
 		std::string m_Name;
+		PropertyType m_Type;
+
 		std::string m_DefaultTextureName;
+		TextureDimension m_TextureDimension;
 	};
 
 	class PassData : public Data
@@ -116,14 +135,14 @@ namespace Blueberry
 		const uint32_t& GetPassCount() const;
 		void SetPasses(const List<PassData*>& passes);
 
-		const List<DataPtr<TextureParameterData>>& GetTextureParameters() const;
-		void SetTextureParameters(const List<DataPtr<TextureParameterData>>& parameters);
+		const List<DataPtr<PropertyData>>& GetProperties() const;
+		void SetProperties(const List<DataPtr<PropertyData>>& properties);
 
 		static void BindProperties();
 
 	private:
 		List<DataPtr<PassData>> m_Passes;
-		List<DataPtr<TextureParameterData>> m_TextureParameters;
+		List<DataPtr<PropertyData>> m_Properties;
 	};
 
 	struct VariantsData
@@ -145,7 +164,7 @@ namespace Blueberry
 	class Shader : public Object
 	{
 		OBJECT_DECLARATION(Shader)
-	
+
 	public:
 
 		Shader() = default;

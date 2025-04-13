@@ -112,6 +112,7 @@ namespace Blueberry
 		// Forward pass
 		GfxDevice::SetRenderTarget(colorMSAARenderTarget->Get(), depthStencilMSAARenderTarget->Get());
 		GfxDevice::ClearColor({ 0.0f, 0.0f, 0.0f, 0.0f });
+		s_DefaultContext.DrawSky(scene);
 		drawingSettings.passIndex = 0;
 		s_DefaultContext.DrawRenderers(s_Results, drawingSettings);
 
