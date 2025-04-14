@@ -63,6 +63,7 @@ namespace Blueberry
 	private:
 		RenderTexture* m_ColorRenderTarget = nullptr;
 		RenderTexture* m_DepthStencilRenderTarget = nullptr;
+		RenderTexture* m_ColorCopyRenderTarget = nullptr;
 		Material* m_GridMaterial;
 		Camera* m_Camera;
 		SceneObjectPicker* m_ObjectPicker = nullptr;

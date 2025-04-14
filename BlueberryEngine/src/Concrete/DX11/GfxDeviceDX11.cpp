@@ -46,17 +46,7 @@ namespace Blueberry
 	void GfxDeviceDX11::SwapBuffersImpl()
 	{
 		m_SwapChain->Present(1, NULL);
-
-		// Clear
-		ID3D11ShaderResourceView* emptySRV[1] = { nullptr };
-		ID3D11SamplerState* emptySampler[1] = { nullptr };
-		m_DeviceContext->PSSetShaderResources(0, 1, emptySRV);
-		m_DeviceContext->PSSetSamplers(0, 1, emptySampler);
-		m_RenderState = {};
-
-		m_BindedConstantBuffers.clear();
-		m_BindedStructuredBuffers.clear();
-		m_BindedTextures.clear();
+		Clear();
 	}
 
 	void GfxDeviceDX11::SetViewportImpl(int x, int y, int width, int height)
@@ -147,6 +137,12 @@ namespace Blueberry
 	void GfxDeviceDX11::SetViewCountImpl(const uint32_t& count)
 	{
 		m_ViewCount = count;
+	}
+
+	void GfxDeviceDX11::SetDepthBiasImpl(const uint32_t& bias, const float& slopeBias)
+	{
+		m_DepthBias = bias;
+		m_SlopeDepthBias = slopeBias;
 	}
 
 	bool GfxDeviceDX11::CreateVertexShaderImpl(void* vertexData, GfxVertexShader*& shader)
@@ -325,9 +321,7 @@ namespace Blueberry
 
 	void GfxDeviceDX11::SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, const uint32_t& slice)
 	{
-		m_DeviceContext->PSSetShaderResources(0, 16, m_EmptyShaderResourceViews);
-		m_DeviceContext->PSSetSamplers(0, 16, m_EmptySamplers);
-		m_RenderState = {};
+		Clear();
 
 		ID3D11RenderTargetView** renderTarget = nullptr;
 		if (renderTexture != nullptr)
@@ -650,66 +644,6 @@ namespace Blueberry
 
 		m_DeviceContext->RSSetViewports(1, &viewport);
 
-		// None
-		{
-			D3D11_RASTERIZER_DESC rasterizerDesc;
-			ZeroMemory(&rasterizerDesc, sizeof(D3D11_RASTERIZER_DESC));
-
-			rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
-			rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
-			rasterizerDesc.MultisampleEnable = true;
-			rasterizerDesc.AntialiasedLineEnable = true;
-			rasterizerDesc.DepthBias = 8;
-			rasterizerDesc.SlopeScaledDepthBias = 2.13f;
-
-			hr = m_Device->CreateRasterizerState(&rasterizerDesc, m_CullNoneRasterizerState.GetAddressOf());
-			if (FAILED(hr))
-			{
-				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create cull none rasterizer state."));
-				return false;
-			}
-		}
-
-		// Front
-		{
-			D3D11_RASTERIZER_DESC rasterizerDesc;
-			ZeroMemory(&rasterizerDesc, sizeof(D3D11_RASTERIZER_DESC));
-
-			rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
-			rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_FRONT;
-			rasterizerDesc.MultisampleEnable = true;
-			rasterizerDesc.AntialiasedLineEnable = true;
-			rasterizerDesc.DepthBias = 8;
-			rasterizerDesc.SlopeScaledDepthBias = 2.13f;
-
-			hr = m_Device->CreateRasterizerState(&rasterizerDesc, m_CullFrontRasterizerState.GetAddressOf());
-			if (FAILED(hr))
-			{
-				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create cull front rasterizer state."));
-				return false;
-			}
-		}
-
-		// Back
-		{
-			D3D11_RASTERIZER_DESC rasterizerDesc;
-			ZeroMemory(&rasterizerDesc, sizeof(D3D11_RASTERIZER_DESC));
-
-			rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
-			rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
-			rasterizerDesc.MultisampleEnable = true;
-			rasterizerDesc.AntialiasedLineEnable = true;
-			rasterizerDesc.DepthBias = 8;
-			rasterizerDesc.SlopeScaledDepthBias = 2.13f;
-
-			hr = m_Device->CreateRasterizerState(&rasterizerDesc, m_CullBackRasterizerState.GetAddressOf());
-			if (FAILED(hr))
-			{
-				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create cull back rasterizer state."));
-				return false;
-			}
-		}
-
 		m_BindedRenderTarget = nullptr;
 		m_BindedDepthStencil = nullptr;
 
@@ -718,16 +652,51 @@ namespace Blueberry
 		return true;
 	}
 
+	void GfxDeviceDX11::Clear()
+	{
+		// Clear SRVs to avoid binding them both into targets and inputs
+		for (uint32_t i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT / 8; ++i)
+		{
+			m_RenderState.vertexShaderResourceViews[i] = nullptr;
+			m_RenderState.vertexSamplerStates[i] = nullptr;
+			m_RenderState.pixelShaderResourceViews[i] = nullptr;
+			m_RenderState.pixelSamplerStates[i] = nullptr;
+		}
+		m_DeviceContext->VSSetShaderResources(0, 16, m_EmptyShaderResourceViews);
+		m_DeviceContext->VSSetSamplers(0, 16, m_EmptySamplers);
+		m_DeviceContext->PSSetShaderResources(0, 16, m_EmptyShaderResourceViews);
+		m_DeviceContext->PSSetSamplers(0, 16, m_EmptySamplers);
+	}
+
 	ID3D11RasterizerState* GfxDeviceDX11::GetRasterizerState(const CullMode& mode)
 	{
-		switch (mode)
+		size_t key = static_cast<size_t>(mode) | static_cast<size_t>(m_DepthBias) << 8 | *(reinterpret_cast<size_t*>(&m_SlopeDepthBias)) << 16;
+		auto it = m_RasterizerStates.find(key);
+		if (it != m_RasterizerStates.end())
 		{
-		case CullMode::None:
-			return m_CullNoneRasterizerState.Get();
-		case CullMode::Front:
-			return m_CullFrontRasterizerState.Get();
-		case CullMode::Back:
-			return m_CullBackRasterizerState.Get();
+			return it->second.Get();
+		}
+		else
+		{
+			D3D11_RASTERIZER_DESC rasterizerDesc;
+			ZeroMemory(&rasterizerDesc, sizeof(D3D11_RASTERIZER_DESC));
+
+			rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
+			rasterizerDesc.CullMode = static_cast<D3D11_CULL_MODE>(static_cast<uint32_t>(mode) + 1);
+			rasterizerDesc.MultisampleEnable = true;
+			rasterizerDesc.AntialiasedLineEnable = true;
+			rasterizerDesc.DepthBias = m_DepthBias;
+			rasterizerDesc.SlopeScaledDepthBias = m_SlopeDepthBias;
+
+			ComPtr<ID3D11RasterizerState> state;
+			HRESULT hr = m_Device->CreateRasterizerState(&rasterizerDesc, state.GetAddressOf());
+			if (FAILED(hr))
+			{
+				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create cull back rasterizer state."));
+				return false;
+			}
+			m_RasterizerStates.insert_or_assign(key, state);
+			return state.Get();
 		}
 	}
 

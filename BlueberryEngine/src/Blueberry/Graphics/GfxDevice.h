@@ -36,6 +36,7 @@ namespace Blueberry
 
 		static const uint32_t& GetViewCount();
 		static void SetViewCount(const uint32_t& count);
+		static void SetDepthBias(const uint32_t& bias, const float& slopeBias);
 
 		static bool CreateVertexShader(void* vertexData, GfxVertexShader*& shader);
 		static bool CreateGeometryShader(void* geometryData, GfxGeometryShader*& shader);
@@ -81,6 +82,7 @@ namespace Blueberry
 
 		virtual const uint32_t& GetViewCountImpl() = 0;
 		virtual void SetViewCountImpl(const uint32_t& count) = 0;
+		virtual void SetDepthBiasImpl(const uint32_t& depthBias, const float& depthSlopeBias) = 0;
 
 		virtual bool CreateVertexShaderImpl(void* vertexData, GfxVertexShader*& shader) = 0;
 		virtual bool CreateGeometryShaderImpl(void* geometryData, GfxGeometryShader*& shader) = 0;

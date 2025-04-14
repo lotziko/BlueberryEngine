@@ -72,6 +72,11 @@ namespace Blueberry
 		s_Instance->SetViewCountImpl(count);
 	}
 
+	void GfxDevice::SetDepthBias(const uint32_t& bias, const float& slopeBias)
+	{
+		s_Instance->SetDepthBiasImpl(bias, slopeBias);
+	}
+
 	bool GfxDevice::CreateVertexShader(void* vertexData, GfxVertexShader*& shader)
 	{
 		return s_Instance->CreateVertexShaderImpl(vertexData, shader);

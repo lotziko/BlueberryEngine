@@ -128,6 +128,17 @@ namespace Blueberry
 		m_Properties.mipCount = m_ScratchImage.GetImageCount();
 	}
 
+	void PngTextureProcessor::CreateCube(const TextureFormat& format, const uint32_t& width, const uint32_t& height)
+	{
+		DXGI_FORMAT dxgiFormat = static_cast<DXGI_FORMAT>(format);
+		m_ScratchImage.InitializeCube(dxgiFormat, width, height, 1, 1);
+
+		m_Properties = {};
+		m_Properties.width = width;
+		m_Properties.height = height;
+		m_Properties.mipCount = 1;
+	}
+
 	void PngTextureProcessor::Compress(const TextureFormat& format)
 	{
 		DXGI_FORMAT dxgiFormat = static_cast<DXGI_FORMAT>(format);
@@ -169,5 +180,15 @@ namespace Blueberry
 		m_Properties.dataSize = m_ScratchImage.GetPixelsSize();
 		m_Properties.format = static_cast<TextureFormat>(image.format);
 		return m_Properties;
+	}
+
+	uint8_t* PngTextureProcessor::GetData()
+	{
+		return m_ScratchImage.GetImages()->pixels;
+	}
+
+	const size_t& PngTextureProcessor::GetDataSize()
+	{
+		return m_ScratchImage.GetPixelsSize();
 	}
 }

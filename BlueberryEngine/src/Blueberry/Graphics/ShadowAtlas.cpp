@@ -14,6 +14,7 @@ namespace Blueberry
 	{
 		m_AtlasTexture = RenderTexture::Create(width, height, 1, 1, TextureFormat::D32_Float, TextureDimension::Texture2D, WrapMode::Clamp, FilterMode::CompareDepth);
 		m_Requests = BB_MALLOC_ARRAY(ShadowRequest, maxLightCount);
+		m_Size = Vector2Int(width, height);
 	}
 
 	ShadowAtlas::~ShadowAtlas()
@@ -47,6 +48,7 @@ namespace Blueberry
 	{
 		PackRequests();
 
+		GfxDevice::SetDepthBias(1, 2.5f);
 		GfxDevice::SetRenderTarget(nullptr, m_AtlasTexture->Get());
 		GfxDevice::ClearDepth(1.0f);
 
@@ -79,6 +81,13 @@ namespace Blueberry
 			light->m_AtlasWorldToShadow[sliceIndex] = light->m_WorldToShadow[sliceIndex] * scaleBiasTransform * sliceTransform;
 			light->m_ShadowBounds[sliceIndex] = Vector4(sliceTransform._41, sliceTransform._42, sliceTransform._41 + sliceTransform._11, sliceTransform._42 + sliceTransform._22);
 		}
+
+		GfxDevice::SetDepthBias(0, 0);
+	}
+
+	const Vector2Int& ShadowAtlas::GetSize()
+	{
+		return m_Size;
 	}
 
 	RenderTexture* ShadowAtlas::GetAtlasTexture()

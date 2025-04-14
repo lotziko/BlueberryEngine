@@ -44,7 +44,7 @@ namespace Blueberry
 			m_Camera->SetPixelSize(Vector2(target->GetWidth(), target->GetHeight()));
 		}
 		m_Renderer->SetMaterial(material);
-		DefaultRenderer::Draw(m_Scene, m_Camera, Rectangle(0, 0, target->GetWidth(), target->GetHeight()), Color(0, 0, 0, 1), target);
+		DefaultRenderer::Draw(m_Scene, m_Camera, Rectangle(0, 0, target->GetWidth(), target->GetHeight()), Color(0, 0, 0, 1), target, nullptr, true);
 	}
 
 	void PreviewScene::Draw(Mesh* mesh, RenderTexture* target)

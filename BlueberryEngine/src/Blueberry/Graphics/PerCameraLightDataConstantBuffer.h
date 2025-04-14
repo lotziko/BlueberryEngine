@@ -16,7 +16,7 @@ namespace Blueberry
 	class PerCameraLightDataConstantBuffer
 	{
 	public:
-		static void BindData(const LightData& mainLight, const List<LightData>& lights);
+		static void BindData(const LightData& mainLight, const List<LightData>& lights, const Vector2Int& shadowAtlasSize);
 
 	private:
 		static inline GfxConstantBuffer* s_ConstantBuffer = nullptr;

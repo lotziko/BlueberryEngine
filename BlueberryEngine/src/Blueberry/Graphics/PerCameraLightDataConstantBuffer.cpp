@@ -65,7 +65,7 @@ namespace Blueberry
 		return lightAttenuation;
 	}
 
-	void PerCameraLightDataConstantBuffer::BindData(const LightData& mainLight, const List<LightData>& lights)
+	void PerCameraLightDataConstantBuffer::BindData(const LightData& mainLight, const List<LightData>& lights, const Vector2Int& shadowAtlasSize)
 	{
 		static size_t perCameraLightDataId = TO_HASH("PerCameraLightData");
 
@@ -139,8 +139,8 @@ namespace Blueberry
 		}
 		constants.lightsCount = Vector4(offset, 0.0f, 0.0f, 0.0f);
 
-		float texelEpsilonX = 1.0f / 2048;
-		float texelEpsilonY = 1.0f / 2048;
+		float texelEpsilonX = 1.0f / shadowAtlasSize.x;
+		float texelEpsilonY = 1.0f / shadowAtlasSize.y;
 		constants.shadow3x3PCFTermC0 = Vector4(20.0f / 267.0f, 33.0f / 267.0f, 55.0f / 267.0f, 0.0f);
 		constants.shadow3x3PCFTermC1 = Vector4(texelEpsilonX, texelEpsilonY, -texelEpsilonX, -texelEpsilonY);
 		constants.shadow3x3PCFTermC2 = Vector4(texelEpsilonX, texelEpsilonY, 0.0f, 0.0f);

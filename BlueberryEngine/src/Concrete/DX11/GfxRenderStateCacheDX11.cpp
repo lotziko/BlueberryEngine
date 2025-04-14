@@ -30,7 +30,7 @@ namespace Blueberry
 	const GfxRenderStateDX11 GfxRenderStateCacheDX11::GetState(Material* material, const uint8_t& passIndex)
 	{
 		uint64_t keywordMask = static_cast<uint64_t>(Shader::GetActiveKeywordsMask()) | (static_cast<uint64_t>(material->GetActiveKeywordsMask()) << 32);
-		uint32_t crc = material->GetCRC();
+		uint32_t crc = m_Device->GetCRC() ^ material->GetCRC();
 		ObjectId objectId = material->GetObjectId();
 		
 		GfxRenderStateDX11 renderState;
@@ -112,17 +112,16 @@ namespace Blueberry
 			}
 
 			// Fragment material textures
-			auto textureSlots = dxFragmentShader->m_TextureSlots;
-			for (auto& slot : textureSlots)
+			for (auto it = dxFragmentShader->m_TextureSlots.begin(); it != dxFragmentShader->m_TextureSlots.end(); it++)
 			{
-				Texture* texture = material->GetTexture(slot.first);
+				Texture* texture = material->GetTexture(it->first);
 				if (texture != nullptr)
 				{
 					auto dxTexture = static_cast<GfxTextureDX11*>(texture->Get());
-					renderState.pixelShaderResourceViews[slot.second.first] = dxTexture->m_ResourceView.Get();
-					if (slot.second.second != -1)
+					renderState.pixelShaderResourceViews[it->second.first] = dxTexture->m_ResourceView.Get();
+					if (it->second.second != -1)
 					{
-						renderState.pixelSamplerStates[slot.second.second] = dxTexture->m_SamplerState.Get();
+						renderState.pixelSamplerStates[it->second.second] = dxTexture->m_SamplerState.Get();
 					}
 				}
 			}

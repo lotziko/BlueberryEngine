@@ -42,7 +42,7 @@ namespace Blueberry
 		}
 	}
 
-	void RealtimeLights::BindLights(CullingResults& results)
+	void RealtimeLights::BindLights(CullingResults& results, ShadowAtlas* atlas)
 	{
 		LightData mainLight = {};
 		List<LightData> lights;
@@ -57,6 +57,6 @@ namespace Blueberry
 			auto transform = light->GetTransform();
 			lights.emplace_back(LightData{ transform, light });
 		}
-		PerCameraLightDataConstantBuffer::BindData(mainLight, lights);
+		PerCameraLightDataConstantBuffer::BindData(mainLight, lights, atlas->GetSize());
 	}
 }

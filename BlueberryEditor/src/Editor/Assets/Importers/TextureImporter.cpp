@@ -113,34 +113,39 @@ namespace Blueberry
 					ObjectDB::AllocateIdToGuid(texture, guid, Texture2DId);
 				}
 				texture->SetState(ObjectState::Default);
-				texture->SetData(static_cast<uint8_t*>(properties.data), properties.dataSize);
+				texture->SetData(properties.data, properties.dataSize);
 				texture->Apply();
 				object = texture;
 
 				AssetDB::SaveAssetObjectsToCache(List<Object*> { object });
-				FileHelper::Save(static_cast<uint8_t*>(properties.data), properties.dataSize, GetTexturePath());
+				FileHelper::Save(properties.data, properties.dataSize, GetTexturePath());
 			}
 			else if (m_TextureShape == TextureImporterShape::TextureCube)
 			{
+				TextureFormat originalFormat = properties.format;
+				TextureFormat compressedFormat = TextureFormat::BC6H_UFloat;
+
 				TextureCube* texture;
 				uint32_t size = std::min(properties.width, properties.height);
 				if (it != objects.end())
 				{
-					texture = TextureCube::Create(size, size, properties.mipCount, properties.format, m_WrapMode, m_FilterMode, static_cast<TextureCube*>(ObjectDB::GetObject(it->second)));
+					texture = TextureCube::Create(size, size, properties.mipCount, compressedFormat, m_WrapMode, m_FilterMode, static_cast<TextureCube*>(ObjectDB::GetObject(it->second)));
 				}
 				else
 				{
-					texture = TextureCube::Create(size, size, properties.mipCount, properties.format, m_WrapMode, m_FilterMode);
+					texture = TextureCube::Create(size, size, properties.mipCount, compressedFormat, m_WrapMode, m_FilterMode);
 					ObjectDB::AllocateIdToGuid(texture, guid, TextureCubeId);
 				}
 
-				Texture2D* temporaryTexture = Texture2D::Create(properties.width, properties.height, 1, properties.format);
-				temporaryTexture->SetData(static_cast<uint8_t*>(properties.data), properties.dataSize);
+				Texture2D* temporaryTexture = Texture2D::Create(properties.width, properties.height, 1, originalFormat);
+				temporaryTexture->SetData(properties.data, properties.dataSize);
 				temporaryTexture->Apply();
-				RenderTexture* temporaryTextureCube = RenderTexture::Create(size, size, 1, 1, properties.format, TextureDimension::TextureCube, WrapMode::Clamp, FilterMode::Linear, true);
+				RenderTexture* temporaryTextureCube = RenderTexture::Create(size, size, 1, 1, originalFormat, TextureDimension::TextureCube, WrapMode::Clamp, FilterMode::Linear, true);
 				uint8_t blockSize = properties.dataSize / (properties.width * properties.height);
 				size_t dataSize = size * size * 6 * blockSize;
-				uint8_t* data = BB_MALLOC_ARRAY(uint8_t, dataSize);
+
+				PngTextureProcessor cubeProcessor;
+				cubeProcessor.CreateCube(originalFormat, size, size);
 
 				if (s_EquirectangularToCubemapMaterial == nullptr)
 				{
@@ -154,18 +159,21 @@ namespace Blueberry
 				GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_EquirectangularToCubemapMaterial));
 				GfxDevice::SetRenderTarget(nullptr);
 				GfxDevice::SetViewCount(1);
-				GfxDevice::Read(temporaryTextureCube->Get(), data);
+				GfxDevice::Read(temporaryTextureCube->Get(), cubeProcessor.GetData());
+
+				cubeProcessor.Compress(compressedFormat);
+				properties = cubeProcessor.GetProperties();
 
 				Object::Destroy(temporaryTexture);
 				Object::Destroy(temporaryTextureCube);
 
-				texture->SetData(data, dataSize);
+				texture->SetData(properties.data, properties.dataSize);
 				texture->Apply();
 				texture->SetState(ObjectState::Default);
 				object = texture;
 
 				AssetDB::SaveAssetObjectsToCache(List<Object*> { object });
-				FileHelper::Save(data, dataSize, GetTexturePath());
+				FileHelper::Save(properties.data, properties.dataSize, GetTexturePath());
 			}
 
 			BB_INFO("Texture \"" << GetName() << "\" imported and created from: " + path);

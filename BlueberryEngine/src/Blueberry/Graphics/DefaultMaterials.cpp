@@ -39,6 +39,22 @@ namespace Blueberry
 		return s_BlitMaterial;
 	}
 
+	Material* DefaultMaterials::GetPostProcessing()
+	{
+		if (s_PostProcessingMaterial == nullptr)
+		{
+			Shader* shader = static_cast<Shader*>(AssetLoader::Load("assets/shaders/PostProcessing.shader"));
+			if (shader == nullptr)
+			{
+				BB_ERROR("Failed to load post processing shader.")
+					return false;
+			}
+			s_PostProcessingMaterial = Material::Create(shader);
+			s_PostProcessingMaterial->SetName("PostProcessing");
+		}
+		return s_PostProcessingMaterial;
+	}
+
 	Material* DefaultMaterials::GetVRMirrorView()
 	{
 		if (s_VRMirrorViewMaterial == nullptr)

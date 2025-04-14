@@ -29,6 +29,7 @@ namespace Blueberry
 		void Clear();
 		void Insert(Light* light, const uint32_t& size, const uint8_t& sliceCount);
 		void Draw(RenderContext& context, CullingResults& results);
+		const Vector2Int& GetSize();
 
 		RenderTexture* GetAtlasTexture();
 
@@ -38,6 +39,7 @@ namespace Blueberry
 	private:
 		RenderTexture* m_AtlasTexture;
 		ShadowRequest* m_Requests;
+		Vector2Int m_Size;
 		uint32_t m_MaxLightCount;
 		uint32_t m_RequestCount;
 	};

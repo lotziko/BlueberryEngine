@@ -7,6 +7,7 @@ namespace Blueberry
 	using Vector2 = DirectX::SimpleMath::Vector2;
 	using Vector3 = DirectX::SimpleMath::Vector3;
 	using Vector4 = DirectX::SimpleMath::Vector4;
+	using Vector2Int = DirectX::XMINT2;
 	using Vector3Int = DirectX::XMINT3;
 	using Vector4Int = DirectX::XMINT4;
 	using Quaternion = DirectX::SimpleMath::Quaternion;

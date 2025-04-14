@@ -9,7 +9,7 @@ namespace Blueberry
 	{
 		uint32_t width;
 		uint32_t height;
-		void* data;
+		uint8_t* data;
 		size_t dataSize;
 		uint32_t mipCount;
 		TextureFormat format;
@@ -24,8 +24,11 @@ namespace Blueberry
 		void Load(const std::string& path, const bool& srgb, const bool& generateMips);
 		void LoadDDS(const std::string& path);
 		void LoadHDR(const std::string& path);
+		void CreateCube(const TextureFormat& format, const uint32_t& width, const uint32_t& height);
 		void Compress(const TextureFormat& format);
 		const PngTextureProperties& GetProperties();
+		uint8_t* GetData();
+		const size_t& GetDataSize();
 
 	private:
 		DirectX::ScratchImage m_ScratchImage;

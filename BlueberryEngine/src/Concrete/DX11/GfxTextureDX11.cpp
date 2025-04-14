@@ -128,24 +128,45 @@ namespace Blueberry
 			DXGI_FORMAT format = static_cast<DXGI_FORMAT>(properties.format);
 			if (IsCompressed(format))
 			{
+				uint32_t arraySize = GetArraySize(properties.dimension, properties.depth);
 				uint32_t blockSize = GetBlockSize(format);
-				D3D11_SUBRESOURCE_DATA* subresourceDatas = new D3D11_SUBRESOURCE_DATA[properties.mipCount];
-				uint32_t width = properties.width;
-				uint32_t height = properties.height;
-				char* ptr = static_cast<char*>(properties.data);
-				for (uint32_t i = 0; i < properties.mipCount; ++i)
-				{
-					D3D11_SUBRESOURCE_DATA subresourceData;
-					subresourceData.pSysMem = ptr;
-					subresourceData.SysMemPitch = std::max(1u, (width + 3) / 4) * blockSize;
-					subresourceData.SysMemSlicePitch = 0;
-					subresourceDatas[i] = subresourceData;
 
-					ptr += subresourceData.SysMemPitch * std::max(1u, (height + 3) / 4);
-					width /= 2;
-					height /= 2;
+				if (arraySize > 1)
+				{
+					char* ptr = static_cast<char*>(properties.data);
+					D3D11_SUBRESOURCE_DATA* subresourceDatas = new D3D11_SUBRESOURCE_DATA[arraySize];
+					for (uint32_t i = 0; i < arraySize; ++i)
+					{
+						D3D11_SUBRESOURCE_DATA subresourceData;
+						subresourceData.pSysMem = ptr;
+						subresourceData.SysMemPitch = std::max(1u, (properties.width + 3) / 4) * blockSize;
+						subresourceData.SysMemSlicePitch = 0;
+						subresourceDatas[i] = subresourceData;
+
+						ptr += subresourceData.SysMemPitch * std::max(1u, (properties.width + 3) / 4);
+					}
+					return Initialize(subresourceDatas, properties);
 				}
-				return Initialize(subresourceDatas, properties);
+				else
+				{
+					D3D11_SUBRESOURCE_DATA* subresourceDatas = new D3D11_SUBRESOURCE_DATA[properties.mipCount];
+					uint32_t width = properties.width;
+					uint32_t height = properties.height;
+					char* ptr = static_cast<char*>(properties.data);
+					for (uint32_t i = 0; i < properties.mipCount; ++i)
+					{
+						D3D11_SUBRESOURCE_DATA subresourceData;
+						subresourceData.pSysMem = ptr;
+						subresourceData.SysMemPitch = std::max(1u, (width + 3) / 4) * blockSize;
+						subresourceData.SysMemSlicePitch = 0;
+						subresourceDatas[i] = subresourceData;
+
+						ptr += subresourceData.SysMemPitch * std::max(1u, (height + 3) / 4);
+						width /= 2;
+						height /= 2;
+					}
+					return Initialize(subresourceDatas, properties);
+				}
 			}
 			else
 			{
@@ -275,6 +296,10 @@ namespace Blueberry
 		{
 			return DXGI_FORMAT_R32_TYPELESS;
 		}
+		/*else if (format == DXGI_FORMAT_BC6H_UF16 || format == DXGI_FORMAT_BC6H_SF16)
+		{
+			return DXGI_FORMAT_BC6H_TYPELESS;
+		}*/
 		return format;
 	}
 

@@ -9,6 +9,6 @@ namespace Blueberry
 	{
 	public:
 		static void PrepareShadows(CullingResults& results, ShadowAtlas* atlas);
-		static void BindLights(CullingResults& results);
+		static void BindLights(CullingResults& results, ShadowAtlas* atlas);
 	};
 }

@@ -35,6 +35,7 @@ namespace Blueberry
 
 		virtual const uint32_t& GetViewCountImpl() final;
 		virtual void SetViewCountImpl(const uint32_t& count) final;
+		virtual void SetDepthBiasImpl(const uint32_t& bias, const float& slopeBias) final;
 
 		virtual bool CreateVertexShaderImpl(void* vertexData, GfxVertexShader*& shader) final;
 		virtual bool CreateGeometryShaderImpl(void* geometryData, GfxGeometryShader*& shader) final;
@@ -71,6 +72,8 @@ namespace Blueberry
 	private:
 		bool InitializeDirectX(HWND hwnd, int width, int height);
 
+		void Clear();
+
 		ID3D11RasterizerState* GetRasterizerState(const CullMode& mode);
 		ID3D11BlendState* GetBlendState(const BlendMode& blendSrcColor, const BlendMode& blendSrcAlpha, const BlendMode& blendDstColor, const BlendMode& blendDstAlpha);
 		ID3D11DepthStencilState* GetDepthStencilState(const ZTest& zTest, const ZWrite& zWrite);
@@ -84,10 +87,7 @@ namespace Blueberry
 		ComPtr<IDXGISwapChain> m_SwapChain;
 		ComPtr<ID3D11RenderTargetView> m_RenderTargetView;
 
-		ComPtr<ID3D11RasterizerState> m_CullNoneRasterizerState;
-		ComPtr<ID3D11RasterizerState> m_CullFrontRasterizerState;
-		ComPtr<ID3D11RasterizerState> m_CullBackRasterizerState;
-
+		Dictionary<size_t, ComPtr<ID3D11RasterizerState>> m_RasterizerStates;
 		Dictionary<size_t, ComPtr<ID3D11DepthStencilState>> m_DepthStencilStates;
 		Dictionary<size_t, ComPtr<ID3D11BlendState>> m_BlendStates;
 
@@ -111,6 +111,8 @@ namespace Blueberry
 		uint32_t m_InstanceOffset = 0;
 
 		uint32_t m_ViewCount = 1;
+		uint32_t m_DepthBias = 0;
+		float m_SlopeDepthBias = 0;
 		Topology m_Topology = (Topology)-1;
 
 		friend class GfxRenderStateCacheDX11;

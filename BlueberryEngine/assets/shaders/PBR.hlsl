@@ -114,9 +114,10 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 	float3 directDiffuseTerm = (float3)0;
 	float3 directSpecularTerm = (float3)0;
 
-	float3 indirectDiffuseTerm = CalculateIndirectDiffuse(float3(0.01, 0.01, 0.01), surfaceData.occlusion);
+	float3 indirectDiffuseTerm = CalculateIndirectDiffuse(float3(0.03, 0.03, 0.03), surfaceData.occlusion);
 	float3 indirectSpecularTerm = CalculateIndirectSpecular(inputData.normalWS, inputData.positionWS, inputData.viewDirectionWS, geometricRoughness, surfaceData.occlusion, reflectance);
 
+#if (SHADOWS)
 	if (_MainShadowCascades[0].w > 0)
 	{
 		float cascadeIndex = ComputeCascadeIndex(inputData.positionWS, _MainShadowCascades);
@@ -137,6 +138,7 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 		directDiffuseTerm += CalculateDirectDiffuse(inputData.normalWS, lightDirectionWS, lightColor, shadowAttenuation, falloff, diffuseExponent);
 		directSpecularTerm += CalculateDirectSpecular(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, shadowAttenuation, falloff, reflectance, geometricRoughness);
 	}
+#endif
 
 	for (int i = 0; i < int(_LightsCount.x); i++)
 	{
@@ -162,6 +164,7 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 		float3 lightColor = _LightColor[i].rgb;
 
 		float shadowAttenuation = 1.0;
+#if (SHADOWS)
 		if (_LightParam[i].x > 0)
 		{
 			shadowAttenuation = 0;
@@ -171,6 +174,7 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 				shadowAttenuation = ComputeShadowPCF3x3(positionSS, _ShadowTexture, _ShadowTexture_Sampler, _Shadow3x3PCFTermC0, _Shadow3x3PCFTermC1, _Shadow3x3PCFTermC2, _Shadow3x3PCFTermC3);
 			}
 		}
+#endif
 
 		directDiffuseTerm += CalculateDirectDiffuse(inputData.normalWS, lightDirectionWS, lightColor, distanceAttenuation * spotAttenuation * shadowAttenuation, falloff, diffuseExponent);
 		directSpecularTerm += CalculateDirectSpecular(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, distanceAttenuation * spotAttenuation * shadowAttenuation, falloff, reflectance, geometricRoughness);

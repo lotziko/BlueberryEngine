@@ -124,8 +124,6 @@ Shader
 				output.color += LOAD_TEXTURE2D_X_MSAA(_ScreenColorTexture, uv, i);
 			}
 			output.color /= 4;
-			// Gamma correction
-			output.color = float4(pow(output.color.rgb, 1.0 / 2.2), output.color.a);
 			return output;
 		}
 		HLSLEND

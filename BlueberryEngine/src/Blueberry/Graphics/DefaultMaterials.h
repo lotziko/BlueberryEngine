@@ -9,11 +9,13 @@ namespace Blueberry
 	public:
 		static Material* GetError();
 		static Material* GetBlit();
+		static Material* GetPostProcessing();
 		static Material* GetVRMirrorView();
 
 	private:
 		static inline Material* s_ErrorMaterial = nullptr;
 		static inline Material* s_BlitMaterial = nullptr;
+		static inline Material* s_PostProcessingMaterial = nullptr;
 		static inline Material* s_VRMirrorViewMaterial = nullptr;
 	};
 }

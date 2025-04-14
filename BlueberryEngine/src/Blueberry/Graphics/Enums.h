@@ -31,6 +31,7 @@ namespace Blueberry
 		BC3_UNorm = 77,
 		BC3_UNorm_SRGB = 78,
 		BC5_UNorm = 83,
+		BC6H_UFloat = 95,
 		BC7_UNorm = 98,
 		BC7_UNorm_SRGB = 99,
 	};
