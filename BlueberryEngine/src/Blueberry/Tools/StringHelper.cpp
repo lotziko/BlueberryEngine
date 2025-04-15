@@ -1,6 +1,8 @@
 #include "bbpch.h"
 #include "StringHelper.h"
 
+#include <cctype>
+
 namespace Blueberry
 {
 	void StringHelper::Split(const char* data, const char symbol, List<std::string>& result)
@@ -19,5 +21,16 @@ namespace Blueberry
 		{
 			result.push_back(str.substr(pos));
 		}
+	}
+
+	// Based on https://stackoverflow.com/questions/3152241/case-insensitive-stdstring-find
+	int32_t StringHelper::HasSubstring(const std::string& str1, const std::string& str2)
+	{
+		auto it = std::search(
+			str1.begin(), str1.end(),
+			str2.begin(), str2.end(),
+			[](unsigned char ch1, unsigned char ch2) { return std::toupper(ch1) == std::toupper(ch2); }
+		);
+		return (it != str1.end());
 	}
 }

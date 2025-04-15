@@ -9,6 +9,7 @@ namespace Blueberry
 		static bool GetResult(Object** object);
 
 	private:
+		static bool DrawNone(const bool& selected);
 		static bool DrawObject(Object* object, const bool& selected);
 	};
 }

@@ -26,6 +26,9 @@ project "ImGui"
         "misc/freetype/imgui_freetype.h",
         "misc/freetype/imgui_freetype.cpp",
 
+        "misc/cpp/imgui_stdlib.h",
+        "misc/cpp/imgui_stdlib.cpp",
+
 		"imgui_internal.h",
 		"imgui_widgets.cpp",
 		"imstb_rectpack.h",

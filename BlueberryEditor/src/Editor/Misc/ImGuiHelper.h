@@ -39,6 +39,8 @@ namespace ImGui
 	bool ObjectEdit(const char* label, Blueberry::Object** v, const std::size_t& type);
 	bool ObjectEdit(const char* label, Blueberry::ObjectPtr<Blueberry::Object>* v, const std::size_t& type);
 	bool ObjectArrayEdit(const char* label, Blueberry::List<Blueberry::ObjectPtr<Blueberry::Object>>* v, const std::size_t& type);
+	
+	bool SearchInputText(const char* hint, std::string* text);
 
 	void HorizontalSplitter(const char* strId, float* size, float minSize);
 

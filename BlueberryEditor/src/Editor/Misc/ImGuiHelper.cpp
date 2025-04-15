@@ -5,6 +5,7 @@
 #include "Blueberry\Assets\AssetLoader.h"
 #include "imgui\imgui_internal.h"
 #include "imgui\misc\freetype\imgui_freetype.h"
+#include "imgui\misc\cpp\imgui_stdlib.h"
 
 #include "Editor\Panels\Picking\ObjectPicker.h"
 
@@ -191,7 +192,7 @@ bool ImGui::ObjectEdit(const char* label, Blueberry::Object** v, const std::size
 	if (Blueberry::ObjectPicker::GetResult(v))
 	{
 		vObj = *v;
-		if (vObj->GetState() == Blueberry::ObjectState::AwaitingLoading && Blueberry::ObjectDB::HasGuid(vObj))
+		if (vObj != nullptr && vObj->GetState() == Blueberry::ObjectState::AwaitingLoading && Blueberry::ObjectDB::HasGuid(vObj))
 		{
 			Blueberry::AssetLoader::Load(Blueberry::ObjectDB::GetGuidFromObject(vObj));
 		}
@@ -247,6 +248,36 @@ bool ImGui::ObjectArrayEdit(const char* label, Blueberry::List<Blueberry::Object
 		}
 	}
 	return false;
+}
+
+bool ImGui::SearchInputText(const char* hint, std::string* text)
+{
+	// https://github.com/ocornut/imgui/issues/7510
+	ImGuiID id = ImGui::GetID("###search");
+	bool hovered = GImGui->HoveredIdPreviousFrame == id;
+	bool focused = GImGui->ActiveId == id;
+	if (focused)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Border, ImGui::GetStyleColorVec4(ImGuiCol_SeparatorActive));
+	}
+	else if (!hovered)
+	{
+		ImVec4 color = ImGui::GetStyleColorVec4(ImGuiCol_FrameBg);
+		color.x *= 0.9;
+		color.y *= 0.9;
+		color.z *= 0.9;
+		ImGui::PushStyleColor(ImGuiCol_FrameBg, color);
+	}
+	bool result = ImGui::InputTextWithHint("###search", hint, text);
+	if (focused)
+	{
+		ImGui::PopStyleColor();
+	}
+	else if (!hovered)
+	{
+		ImGui::PopStyleColor();
+	}
+	return result;
 }
 
 void ImGui::HorizontalSplitter(const char* strId, float* size, float minSize)

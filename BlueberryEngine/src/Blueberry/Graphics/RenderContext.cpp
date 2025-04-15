@@ -95,6 +95,10 @@ namespace Blueberry
 			{
 				auto meshRenderer = static_cast<MeshRenderer*>(renderer);
 				Mesh* mesh = meshRenderer->GetMesh();
+				if (mesh == nullptr)
+				{
+					continue;
+				}
 				Matrix matrix = meshRenderer->GetTransform()->GetLocalToWorldMatrix();
 				uint32_t subMeshCount = mesh->GetSubMeshCount();
 				if (subMeshCount > 1)

@@ -173,7 +173,7 @@ namespace Blueberry
 				if (data->GetType() == PropertyData::PropertyType::Texture)
 				{
 					size_t key = TO_HASH(data->GetName());
-					m_BindedTextures.try_emplace(key, DefaultTextures::GetTexture(data->GetDefaultTextureName(), data->GetTextureDimension())->GetObjectId());
+					m_BindedTextures.insert_or_assign(key, DefaultTextures::GetTexture(data->GetDefaultTextureName(), data->GetTextureDimension())->GetObjectId());
 				}
 			}
 		}

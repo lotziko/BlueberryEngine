@@ -14,6 +14,8 @@ namespace Blueberry
 {
 	static void* s_IdPtr = nullptr;
 	static const char* s_Label;
+	static std::string s_SearchName;
+	static List<Object*> s_AllObjects = {};
 	static List<Object*> s_Objects = {};
 	static Object* s_SelectedObject = nullptr;
 
@@ -21,10 +23,17 @@ namespace Blueberry
 	{
 		s_IdPtr = object;
 		s_Label = Blueberry::ClassDB::GetInfo(type).name.c_str();
+		s_SearchName.clear();
+		s_AllObjects.clear();
 		s_Objects.clear();
-		ObjectDB::GetObjects(type, s_Objects, true);
+		s_AllObjects.emplace_back(nullptr);
+		ObjectDB::GetObjects(type, s_AllObjects, true);
 		Object* objectValue = *object;
-		for (auto it = s_Objects.begin(); it < s_Objects.end(); ++it)
+		for (auto it = s_AllObjects.begin(); it < s_AllObjects.end(); ++it)
+		{
+			s_Objects.emplace_back(*it);
+		}
+		for (auto it = s_AllObjects.begin(); it < s_AllObjects.end(); ++it)
 		{
 			if (*it == objectValue)
 			{
@@ -53,6 +62,25 @@ namespace Blueberry
 		if (ImGui::BeginPopupModal(s_Label, &open))
 		{
 			ImGui::SetWindowSize(ImVec2(700 * Screen::GetScale(), 500 * Screen::GetScale()), ImGuiCond_FirstUseEver);
+			
+			ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX() + 2, ImGui::GetCursorPosY() + 1));
+			ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 2);
+			if (ImGui::SearchInputText("Search..", &s_SearchName))
+			{
+				std::string name = std::string(s_SearchName);
+				s_Objects.clear();
+				s_Objects.emplace_back(s_AllObjects[0]);
+				for (auto it = s_AllObjects.begin() + 1; it < s_AllObjects.end(); ++it)
+				{
+					if (StringHelper::HasSubstring((*it)->GetName(), name))
+					{
+						s_Objects.emplace_back(*it);
+					}
+				}
+			}
+			ImGui::PopItemWidth();
+
+			ImGui::BeginChild("Content");
 			ImVec2 pos = ImGui::GetCursorPos();
 			ImVec2 size = ImGui::GetContentRegionAvail();
 
@@ -61,7 +89,7 @@ namespace Blueberry
 			{
 				float expandedSpaceBetweenCells = (size.x - (maxCells * style.ProjectCellSize)) / (maxCells + 1);
 				uint32_t cellIndex = 0;
-				
+
 				for (uint32_t i = 0; i < s_Objects.size(); ++i)
 				{
 					pos.x += expandedSpaceBetweenCells;
@@ -69,11 +97,23 @@ namespace Blueberry
 					ImGui::SetCursorPos(pos);
 					Object* currentObject = s_Objects[i];
 					bool selected = s_SelectedObject == currentObject;
-					if (DrawObject(currentObject, selected))
+					if (i > 0)
 					{
-						*object = currentObject;
-						s_SelectedObject = currentObject;
-						hasResult = true;
+						if (DrawObject(currentObject, selected))
+						{
+							*object = currentObject;
+							s_SelectedObject = currentObject;
+							hasResult = true;
+						}
+					}
+					else
+					{
+						if (DrawNone(selected))
+						{
+							*object = nullptr;
+							s_SelectedObject = nullptr;
+							hasResult = true;
+						}
 					}
 					if (selected && ImGui::IsItemClicked(0))
 					{
@@ -100,11 +140,32 @@ namespace Blueberry
 				s_Label = nullptr;
 				s_SelectedObject = nullptr;
 			}
+			ImGui::EndChild();
 			ImGui::EndPopup();
 		}
 		ImGui::PopID();
 		ImGui::PopStyleColor(2);
 		return hasResult;
+	}
+
+	bool ObjectPicker::DrawNone(const bool& selected)
+	{
+		ImGui::EditorStyle& style = ImGui::GetEditorStyle();
+
+		bool isSelected = false;
+		ImVec2 screenPos = ImGui::GetCursorScreenPos();
+
+		ImGui::PushID(ImGuiID("None"));
+		ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 1.0f));
+
+		if (ImGui::Selectable("None", selected, ImGuiSelectableFlags_DontClosePopups, ImVec2(style.ProjectCellSize, style.ProjectCellSize)))
+		{
+			isSelected = true;
+		}
+
+		ImGui::PopStyleVar();
+		ImGui::PopID();
+		return isSelected;
 	}
 
 	bool ObjectPicker::DrawObject(Object* object, const bool& selected)
