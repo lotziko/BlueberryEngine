@@ -17,20 +17,17 @@
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(AssetImporter, TextureImporter)
+	OBJECT_DEFINITION(TextureImporter, AssetImporter)
+	{
+		DEFINE_BASE_FIELDS(TextureImporter, AssetImporter)
+		DEFINE_FIELD(TextureImporter, m_GenerateMipmaps, BindingType::Bool, {})
+		DEFINE_FIELD(TextureImporter, m_IsSRGB, BindingType::Bool, {})
+		DEFINE_FIELD(TextureImporter, m_WrapMode, BindingType::Enum, FieldOptions().SetEnumHint("Repeat,Clamp"))
+		DEFINE_FIELD(TextureImporter, m_FilterMode, BindingType::Enum, FieldOptions().SetEnumHint("Linear,Point"))
+		DEFINE_FIELD(TextureImporter, m_TextureShape, BindingType::Enum, FieldOptions().SetEnumHint("Texture2D,Texture2DArray,TextureCube,Texture3D"))
+	}
 
 	static Material* s_EquirectangularToCubemapMaterial = nullptr;
-
-	void TextureImporter::BindProperties()
-	{
-		BEGIN_OBJECT_BINDING(TextureImporter)
-		BIND_FIELD(FieldInfo(TO_STRING(m_GenerateMipmaps), &TextureImporter::m_GenerateMipmaps, BindingType::Bool))
-		BIND_FIELD(FieldInfo(TO_STRING(m_IsSRGB), &TextureImporter::m_IsSRGB, BindingType::Bool))
-		BIND_FIELD(FieldInfo(TO_STRING(m_WrapMode), &TextureImporter::m_WrapMode, BindingType::Enum).SetHintData("Repeat,Clamp"))
-		BIND_FIELD(FieldInfo(TO_STRING(m_FilterMode), &TextureImporter::m_FilterMode, BindingType::Enum).SetHintData("Linear,Point"))
-		BIND_FIELD(FieldInfo(TO_STRING(m_TextureShape), &TextureImporter::m_TextureShape, BindingType::Enum).SetHintData("Texture2D,Texture2DArray,TextureCube,Texture3D"))
-		END_OBJECT_BINDING()
-	}
 
 	void TextureImporter::ImportData()
 	{

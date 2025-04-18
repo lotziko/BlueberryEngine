@@ -20,8 +20,6 @@ namespace Blueberry
 		GfxTexture* Get();
 		void* GetHandle();
 
-		static void BindProperties();
-
 	protected:
 		GfxTexture* m_Texture = nullptr;
 		uint32_t m_Width = 0;

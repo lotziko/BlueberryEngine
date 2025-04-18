@@ -13,7 +13,11 @@
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(Component, PhysicsBody)
+	OBJECT_DEFINITION(PhysicsBody, Component)
+	{
+		DEFINE_BASE_FIELDS(PhysicsBody, Component)
+		DEFINE_FIELD(PhysicsBody, m_BodyType, BindingType::Enum, FieldOptions().SetEnumHint("Static,Kinematic,Dynamic"))
+	}
 
 	// ModelImporter will generate prefabs with static PhysicsBodies with mesh shape if it is choosed to
 
@@ -96,13 +100,5 @@ namespace Blueberry
 				m_Transform->SetRotation(Quaternion(rotation.GetX(), rotation.GetY(), rotation.GetZ(), rotation.GetW()));
 			}
 		}
-	}
-
-	void PhysicsBody::BindProperties()
-	{
-		BEGIN_OBJECT_BINDING(PhysicsBody)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Entity), &PhysicsBody::m_Entity, BindingType::ObjectPtr).SetObjectType(Entity::Type))
-		BIND_FIELD(FieldInfo(TO_STRING(m_BodyType), &PhysicsBody::m_BodyType, BindingType::Enum).SetHintData("Static,Kinematic,Dynamic"))
-		END_OBJECT_BINDING()
 	}
 }

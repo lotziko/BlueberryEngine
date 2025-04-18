@@ -11,8 +11,6 @@ namespace Blueberry
 	public:
 		const float& GetRadius();
 
-		static void BindProperties();
-
 	private:
 		virtual JPH::Shape* GetShape() override;
 

@@ -62,7 +62,7 @@ namespace Blueberry
 			for (int i = 0; i < compilationData.passes.size(); ++i)
 			{
 				auto& compilationPass = compilationData.passes[i];
-				PassData* pass = compilationData.dataPasses[i];
+				PassData& pass = compilationData.dataPasses[i];
 				size_t vertexVariantCount = std::max(static_cast<int>(pow(2, compilationPass.vertexKeywords.size())), 1);
 				size_t fragmentVariantCount = std::max(static_cast<int>(pow(2, compilationPass.fragmentKeywords.size())), 1);
 
@@ -78,7 +78,7 @@ namespace Blueberry
 					keywords[keywordCount].Name = nullptr;
 					keywords[keywordCount].Definition = nullptr;
 
-					pass->SetVertexOffset(m_VariantsData.vertexShaderIndices.size());
+					pass.SetVertexOffset(m_VariantsData.vertexShaderIndices.size());
 
 					for (size_t j = 0; j < vertexVariantCount; ++j)
 					{
@@ -104,7 +104,7 @@ namespace Blueberry
 
 				if (!compilationPass.geometryEntryPoint.empty())
 				{
-					pass->SetGeometryOffset(m_VariantsData.geometryShaderIndices.size());
+					pass.SetGeometryOffset(m_VariantsData.geometryShaderIndices.size());
 
 					ComPtr<ID3DBlob> geometryBlob;
 					if (!Compile(compilationPass.shaderCode, compilationPass.geometryEntryPoint.c_str(), "gs_5_0", nullptr, geometryBlob))
@@ -132,7 +132,7 @@ namespace Blueberry
 					keywords[keywordCount].Name = nullptr;
 					keywords[keywordCount].Definition = nullptr;
 
-					pass->SetFragmentOffset(m_VariantsData.fragmentShaderIndices.size());
+					pass.SetFragmentOffset(m_VariantsData.fragmentShaderIndices.size());
 
 					for (size_t j = 0; j < fragmentVariantCount; ++j)
 					{

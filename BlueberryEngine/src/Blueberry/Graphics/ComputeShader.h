@@ -15,8 +15,6 @@ namespace Blueberry
 		void Initialize(void* computeData);
 		static ComputeShader* Create(void* computeData);
 
-		static void BindProperties();
-
 	private:
 		GfxComputeShader* m_Shader;
 	};

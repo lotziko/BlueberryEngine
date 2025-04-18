@@ -9,9 +9,40 @@
 namespace Blueberry
 {
 	DATA_DEFINITION(PropertyData)
+	{
+		DEFINE_FIELD(PropertyData, m_Name, BindingType::String, {})
+		DEFINE_FIELD(PropertyData, m_Type, BindingType::Enum, {})
+		DEFINE_FIELD(PropertyData, m_DefaultTextureName, BindingType::String, {})
+		DEFINE_FIELD(PropertyData, m_TextureDimension, BindingType::Enum, {})
+	}
+
 	DATA_DEFINITION(PassData)
+	{
+		DEFINE_FIELD(PassData, m_CullMode, BindingType::Enum, {})
+		DEFINE_FIELD(PassData, m_SrcBlendColor, BindingType::Enum, {})
+		DEFINE_FIELD(PassData, m_SrcBlendAlpha, BindingType::Enum, {})
+		DEFINE_FIELD(PassData, m_DstBlendColor, BindingType::Enum, {})
+		DEFINE_FIELD(PassData, m_DstBlendAlpha, BindingType::Enum, {})
+		DEFINE_FIELD(PassData, m_ZTest, BindingType::Enum, {})
+		DEFINE_FIELD(PassData, m_ZWrite, BindingType::Enum, {})
+		DEFINE_FIELD(PassData, m_VertexKeywords, BindingType::StringList, {})
+		DEFINE_FIELD(PassData, m_FragmentKeywords, BindingType::StringList, {})
+		DEFINE_FIELD(PassData, m_VertexOffset, BindingType::Int, {})
+		DEFINE_FIELD(PassData, m_GeometryOffset, BindingType::Int, {})
+		DEFINE_FIELD(PassData, m_FragmentOffset, BindingType::Int, {})
+	}
+
 	DATA_DEFINITION(ShaderData)
-	OBJECT_DEFINITION(Object, Shader)
+	{
+		DEFINE_FIELD(ShaderData, m_Passes, BindingType::DataList, FieldOptions().SetObjectType(PassData::Type))
+		DEFINE_FIELD(ShaderData, m_Properties, BindingType::DataList, FieldOptions().SetObjectType(PropertyData::Type))
+	}
+
+	OBJECT_DEFINITION(Shader, Object)
+	{
+		DEFINE_BASE_FIELDS(Shader, Object)
+		DEFINE_FIELD(Shader, m_Data, BindingType::Data, FieldOptions().SetObjectType(ShaderData::Type))
+	}
 
 	HashSet<size_t> Shader::s_ActiveKeywords = {};
 	uint32_t Shader::s_ActiveKeywordsMask = 0;
@@ -68,16 +99,6 @@ namespace Blueberry
 	void PropertyData::SetTextureDimension(const TextureDimension& dimension)
 	{
 		m_TextureDimension = dimension;
-	}
-
-	void PropertyData::BindProperties()
-	{
-		BEGIN_OBJECT_BINDING(PropertyData)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Name), &PropertyData::m_Name, BindingType::String))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Type), &PropertyData::m_Type, BindingType::Enum))
-		BIND_FIELD(FieldInfo(TO_STRING(m_DefaultTextureName), &PropertyData::m_DefaultTextureName, BindingType::String))
-		BIND_FIELD(FieldInfo(TO_STRING(m_TextureDimension), &PropertyData::m_TextureDimension, BindingType::Enum))
-		END_OBJECT_BINDING()
 	}
 
 	const CullMode& PassData::GetCullMode() const
@@ -204,31 +225,9 @@ namespace Blueberry
 		m_FragmentOffset = offset;
 	}
 
-	void PassData::BindProperties()
+	const PassData& ShaderData::GetPass(const uint32_t& index) const
 	{
-		BEGIN_OBJECT_BINDING(PassData)
-		BIND_FIELD(FieldInfo(TO_STRING(m_CullMode), &PassData::m_CullMode, BindingType::Enum))
-		BIND_FIELD(FieldInfo(TO_STRING(m_SrcBlendColor), &PassData::m_SrcBlendColor, BindingType::Enum))
-		BIND_FIELD(FieldInfo(TO_STRING(m_SrcBlendAlpha), &PassData::m_SrcBlendAlpha, BindingType::Enum))
-		BIND_FIELD(FieldInfo(TO_STRING(m_DstBlendColor), &PassData::m_DstBlendColor, BindingType::Enum))
-		BIND_FIELD(FieldInfo(TO_STRING(m_DstBlendAlpha), &PassData::m_DstBlendAlpha, BindingType::Enum))
-		BIND_FIELD(FieldInfo(TO_STRING(m_ZTest), &PassData::m_ZTest, BindingType::Enum))
-		BIND_FIELD(FieldInfo(TO_STRING(m_ZWrite), &PassData::m_ZWrite, BindingType::Enum))
-		BIND_FIELD(FieldInfo(TO_STRING(m_VertexKeywords), &PassData::m_VertexKeywords, BindingType::StringList))
-		BIND_FIELD(FieldInfo(TO_STRING(m_FragmentKeywords), &PassData::m_FragmentKeywords, BindingType::StringList))
-		BIND_FIELD(FieldInfo(TO_STRING(m_VertexOffset), &PassData::m_VertexOffset, BindingType::Int))
-		BIND_FIELD(FieldInfo(TO_STRING(m_GeometryOffset), &PassData::m_GeometryOffset, BindingType::Int))
-		BIND_FIELD(FieldInfo(TO_STRING(m_FragmentOffset), &PassData::m_FragmentOffset, BindingType::Int))
-		END_OBJECT_BINDING()
-	}
-
-	const PassData* ShaderData::GetPass(const uint32_t& index) const
-	{
-		if (index < 0 || index >= m_Passes.size())
-		{
-			return nullptr;
-		}
-		return m_Passes[index].Get();
+		return m_Passes[index];
 	}
 
 	const uint32_t& ShaderData::GetPassCount() const
@@ -236,36 +235,24 @@ namespace Blueberry
 		return m_Passes.size();
 	}
 
-	void ShaderData::SetPasses(const List<PassData*>& passes)
+	void ShaderData::SetPasses(const DataList<PassData>& passes)
 	{
-		m_Passes.resize(passes.size());
-		for (int i = 0; i < passes.size(); ++i)
-		{
-			m_Passes[i] = DataPtr<PassData>(passes[i]);
-		}
+		m_Passes = passes;
 	}
 
-	const List<DataPtr<PropertyData>>& ShaderData::GetProperties() const
+	const DataList<PropertyData>& ShaderData::GetProperties() const
 	{
 		return m_Properties;
 	}
 
-	void ShaderData::SetProperties(const List<DataPtr<PropertyData>>& properties)
+	void ShaderData::SetProperties(const DataList<PropertyData>& properties)
 	{
 		m_Properties = properties;
 	}
 
-	void ShaderData::BindProperties()
+	const ShaderData& Shader::GetData() const
 	{
-		BEGIN_OBJECT_BINDING(ShaderData)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Passes), &ShaderData::m_Passes, BindingType::DataList).SetObjectType(PassData::Type))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Properties), &ShaderData::m_Properties, BindingType::DataList).SetObjectType(PropertyData::Type))
-		END_OBJECT_BINDING()
-	}
-
-	const ShaderData* Shader::GetData() const
-	{
-		return m_Data.Get();
+		return m_Data;
 	}
 
 	void Shader::Initialize(const VariantsData& variantsData)
@@ -305,7 +292,7 @@ namespace Blueberry
 	void Shader::Initialize(const VariantsData& variantsData, const ShaderData& data)
 	{
 		Initialize(variantsData);
-		m_Data = new ShaderData(data);
+		m_Data = data;
 	}
 
 	Shader* Shader::Create(const VariantsData& variantsData, const ShaderData& shaderData)
@@ -337,23 +324,15 @@ namespace Blueberry
 		return s_ActiveKeywordsMask;
 	}
 
-	void Shader::BindProperties()
-	{
-		BEGIN_OBJECT_BINDING(Shader)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Data), &Shader::m_Data, BindingType::Data).SetObjectType(ShaderData::Type))
-		END_OBJECT_BINDING()
-	}
-
 	const ShaderVariant Shader::GetVariant(const uint32_t& vertexKeywordFlags, const uint32_t& fragmentKeywordFlags, const uint8_t& passIndex)
 	{
 		if (m_PassesOffsets.size() == 0)
 		{
-			ShaderData* data = m_Data.Get();
-			m_PassesOffsets.resize(data->GetPassCount());
+			m_PassesOffsets.resize(m_Data.GetPassCount());
 			for (uint32_t i = 0; i < m_PassesOffsets.size(); ++i)
 			{
-				const PassData* passData = data->GetPass(i);
-				m_PassesOffsets[i] = std::make_tuple(passData->GetVertexOffset(), passData->GetGeometryOffset(), passData->GetFragmentOffset());
+				auto& passData = m_Data.GetPass(i);
+				m_PassesOffsets[i] = std::make_tuple(passData.GetVertexOffset(), passData.GetGeometryOffset(), passData.GetFragmentOffset());
 			}
 		}
 

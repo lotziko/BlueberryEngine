@@ -6,7 +6,10 @@
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(Texture, Texture2D)
+	OBJECT_DEFINITION(Texture2D, Texture)
+	{
+		DEFINE_BASE_FIELDS(Texture2D, Texture)
+	}
 
 	Texture2D::~Texture2D()
 	{
@@ -66,18 +69,5 @@ namespace Blueberry
 		texture->m_WrapMode = wrapMode;
 		texture->m_FilterMode = filterMode;
 		return texture;
-	}
-
-	void Texture2D::BindProperties()
-	{
-		BEGIN_OBJECT_BINDING(Texture2D)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Width), &Texture2D::m_Width, BindingType::Int))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Height), &Texture2D::m_Height, BindingType::Int))
-		BIND_FIELD(FieldInfo(TO_STRING(m_MipCount), &Texture2D::m_MipCount, BindingType::Int))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Format), &Texture2D::m_Format, BindingType::Enum))
-		BIND_FIELD(FieldInfo(TO_STRING(m_WrapMode), &Texture2D::m_WrapMode, BindingType::Enum).SetHintData("Repeat,Clamp"))
-		BIND_FIELD(FieldInfo(TO_STRING(m_FilterMode), &Texture2D::m_FilterMode, BindingType::Enum).SetHintData("Linear,Point"))
-		//BIND_FIELD(FieldInfo(TO_STRING(m_RawData), &Texture2D::m_RawData, BindingType::ByteData))
-		END_OBJECT_BINDING()
 	}
 }

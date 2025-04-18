@@ -19,7 +19,10 @@ namespace Blueberry
 		auto info = ClassDB::GetInfo(object->GetType());
 		for (auto& field : info.fields)
 		{
-			DrawField(object, field);
+			if (!field.options.isHidden)
+			{
+				DrawField(object, field);
+			}
 		}
 	}
 
@@ -36,8 +39,7 @@ namespace Blueberry
 		}
 		const char* nameLabel = name.c_str();
 
-		Variant value;
-		info.bind->Get(object, value);
+		Variant value = Variant(object, info.offset);
 		bool hasChanged = false;
 		switch (info.type)
 		{
@@ -60,7 +62,7 @@ namespace Blueberry
 			}
 			break;
 		case BindingType::Enum:
-			if (ImGui::EnumEdit(nameLabel, value.Get<int>(), static_cast<List<std::string>*>(info.hintData)))
+			if (ImGui::EnumEdit(nameLabel, value.Get<int>(), static_cast<List<std::string>*>(info.options.hintData)))
 			{
 				hasChanged = true;
 			}
@@ -78,13 +80,13 @@ namespace Blueberry
 			}
 			break;
 		case BindingType::ObjectPtr:
-			if (ImGui::ObjectEdit(nameLabel, value.Get<ObjectPtr<Object>>(), info.objectType))
+			if (ImGui::ObjectEdit(nameLabel, value.Get<ObjectPtr<Object>>(), info.options.objectType))
 			{
 				hasChanged = true;
 			}
 		break;
 		case BindingType::ObjectPtrArray:
-			if (ImGui::ObjectArrayEdit(nameLabel, value.Get<List<ObjectPtr<Object>>>(), info.objectType))
+			if (ImGui::ObjectArrayEdit(nameLabel, value.Get<List<ObjectPtr<Object>>>(), info.options.objectType))
 			{
 				hasChanged = true;
 			}

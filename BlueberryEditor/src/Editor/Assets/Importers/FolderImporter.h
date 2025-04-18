@@ -10,8 +10,6 @@ namespace Blueberry
 	public:
 		FolderImporter() = default;
 
-		static void BindProperties();
-
 	protected:
 		virtual void ImportData() override;
 	};

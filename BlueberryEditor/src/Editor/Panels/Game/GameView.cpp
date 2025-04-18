@@ -14,23 +14,17 @@
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(EditorWindow, GameView)
+	OBJECT_DEFINITION(GameView, EditorWindow)
+	{
+		DEFINE_BASE_FIELDS(GameView, EditorWindow)
+		EditorMenuManager::AddItem("Window/Game", &GameView::Open);
+	}
 	
 	void GameView::Open()
 	{
 		EditorWindow* window = GetWindow(GameView::Type);
 		window->SetTitle("Game");
 		window->Show();
-	}
-
-	void GameView::BindProperties()
-	{
-		BEGIN_OBJECT_BINDING(GameView)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Title), &GameView::m_Title, BindingType::String))
-		BIND_FIELD(FieldInfo(TO_STRING(m_RawData), &GameView::m_RawData, BindingType::ByteData))
-		END_OBJECT_BINDING()
-
-		EditorMenuManager::AddItem("Window/Game", &GameView::Open);
 	}
 
 	void GameView::OnDrawUI()

@@ -16,6 +16,7 @@ public:																			\
     static const size_t Type;													\
     static const size_t ParentType;												\
 	static const std::string TypeName;											\
+	static void DefineFields();													\
 public:																			\
     virtual bool IsClassType( const size_t classType ) const override;			\
 	virtual size_t GetType() const override;									\
@@ -27,7 +28,7 @@ public:																			\
 // variables used in type checking. Take special care to ensure that the 
 // proper parentclass is indicated or the run-time type information will be incorrect.
 //********************************************************************************
-#define OBJECT_DEFINITION( parentclass, childclass )								\
+#define OBJECT_DEFINITION( childclass, parentclass )								\
 const size_t childclass::Type = TO_OBJECT_TYPE(TO_STRING(childclass));				\
 const size_t childclass::ParentType = TO_OBJECT_TYPE(TO_STRING(parentclass));		\
 const std::string childclass::TypeName = TO_STRING(childclass);						\
@@ -45,6 +46,7 @@ std::string childclass::GetTypeName() const											\
 {																					\
 	return childclass::TypeName;													\
 }																					\
+void childclass::DefineFields()														\
 
 	using ObjectId = int32_t;
 
@@ -83,7 +85,7 @@ std::string childclass::GetTypeName() const											\
 		const bool IsDefaultState();
 		void SetState(const ObjectState& state);
 
-		static void BindProperties();
+		static void DefineFields();
 
 		template<class ObjectType>
 		static ObjectType* Create();
@@ -108,10 +110,12 @@ std::string childclass::GetTypeName() const											\
 public:																			\
     static const size_t Type;													\
 	static const std::string TypeName;											\
+	static void DefineFields();													\
 
-#define DATA_DEFINITION( childclass )											\
-const size_t childclass::Type = TO_OBJECT_TYPE(TO_STRING(childclass));			\
-const std::string childclass::TypeName = TO_STRING(childclass);					\
+#define DATA_DEFINITION( classname )											\
+const size_t classname::Type = TO_OBJECT_TYPE(TO_STRING(classname));			\
+const std::string classname::TypeName = TO_STRING(classname);					\
+void classname::DefineFields()													\
 
 	class Data
 	{

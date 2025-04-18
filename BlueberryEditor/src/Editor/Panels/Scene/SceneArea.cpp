@@ -32,7 +32,11 @@
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(EditorWindow, SceneArea)
+	OBJECT_DEFINITION(SceneArea, EditorWindow)
+	{
+		DEFINE_BASE_FIELDS(SceneArea, EditorWindow)
+		EditorMenuManager::AddItem("Window/Scene", &SceneArea::Open);
+	}
 
 	SceneArea::SceneArea()
 	{
@@ -111,16 +115,6 @@ namespace Blueberry
 		EditorWindow* window = GetWindow(SceneArea::Type);
 		window->SetTitle("Scene");
 		window->Show();
-	}
-
-	void SceneArea::BindProperties()
-	{
-		BEGIN_OBJECT_BINDING(SceneArea)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Title), &SceneArea::m_Title, BindingType::String))
-		BIND_FIELD(FieldInfo(TO_STRING(m_RawData), &SceneArea::m_RawData, BindingType::ByteData))
-		END_OBJECT_BINDING()
-
-		EditorMenuManager::AddItem("Window/Scene", &SceneArea::Open);
 	}
 
 	void SceneArea::OnDrawUI()

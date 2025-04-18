@@ -11,7 +11,10 @@
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(Object, AssetImporter)
+	OBJECT_DEFINITION(AssetImporter, Object)
+	{
+		DEFINE_BASE_FIELDS(AssetImporter, Object)
+	}
 
 	const Guid& AssetImporter::GetGuid()
 	{
@@ -146,10 +149,6 @@ namespace Blueberry
 		auto dataPath = Path::GetAssetsPath();
 		dataPath.append(importer->GetRelativeMetaFilePath());
 		serializer.Deserialize(dataPath.string());
-	}
-
-	void AssetImporter::BindProperties()
-	{
 	}
 
 	void AssetImporter::AddAssetObject(Object* object, const FileId& fileId)

@@ -8,7 +8,14 @@
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(Renderer, SpriteRenderer)
+	OBJECT_DEFINITION(SpriteRenderer, Renderer)
+	{
+		DEFINE_BASE_FIELDS(SpriteRenderer, Renderer)
+		DEFINE_FIELD(SpriteRenderer, m_Color, BindingType::Color, {})
+		DEFINE_FIELD(SpriteRenderer, m_Texture, BindingType::ObjectPtr, FieldOptions().SetObjectType(Texture::Type))
+		DEFINE_FIELD(SpriteRenderer, m_Material, BindingType::ObjectPtr, FieldOptions().SetObjectType(Material::Type))
+		DEFINE_FIELD(SpriteRenderer, m_SortingOrder, BindingType::Int, {})
+	}
 
 	const Color& SpriteRenderer::GetColor()
 	{
@@ -38,16 +45,5 @@ namespace Blueberry
 	void SpriteRenderer::SetMaterial(Material* material)
 	{
 		m_Material = material;
-	}
-
-	void SpriteRenderer::BindProperties()
-	{
-		BEGIN_OBJECT_BINDING(SpriteRenderer)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Entity), &SpriteRenderer::m_Entity, BindingType::ObjectPtr).SetObjectType(Entity::Type))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Color), &SpriteRenderer::m_Color, BindingType::Color))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Texture), &SpriteRenderer::m_Texture, BindingType::ObjectPtr).SetObjectType(Texture::Type))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Material), &SpriteRenderer::m_Material, BindingType::ObjectPtr).SetObjectType(Material::Type))
-		BIND_FIELD(FieldInfo(TO_STRING(m_SortingOrder), &SpriteRenderer::m_SortingOrder, BindingType::Int))
-		END_OBJECT_BINDING()
 	}
 }

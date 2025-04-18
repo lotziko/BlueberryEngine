@@ -2,13 +2,15 @@
 
 namespace Blueberry
 {
+	class Object;
+
 	class Variant
 	{
 	public:
 		Variant() = default;
-		
-		template<class ObjectType>
-		Variant(const ObjectType* data);
+
+		Variant(void* data);
+		Variant(void* data, const uint32_t& offset);
 
 		template<class ObjectType>
 		operator const ObjectType*();
@@ -21,12 +23,6 @@ namespace Blueberry
 	private:
 		void* m_Data;
 	};
-
-	template<class ObjectType>
-	inline Variant::Variant(const ObjectType* data)
-	{
-		m_Data = (void*)(data);
-	}
 
 	template<class ObjectType>
 	inline Variant::operator const ObjectType*()

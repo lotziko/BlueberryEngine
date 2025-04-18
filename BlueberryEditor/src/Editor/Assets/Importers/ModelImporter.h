@@ -2,7 +2,6 @@
 #include "Editor\Assets\AssetImporter.h"
 
 #include "Blueberry\Core\ObjectPtr.h"
-#include "Blueberry\Core\DataPtr.h"
 
 namespace fbxsdk
 {
@@ -28,8 +27,6 @@ namespace Blueberry
 		Material* GetMaterial();
 		void SetMaterial(Material* material);
 
-		static void BindProperties();
-
 	private:
 		std::string m_Name;
 		ObjectPtr<Material> m_Material;
@@ -42,12 +39,10 @@ namespace Blueberry
 	public:
 		ModelImporter() = default;
 
-		const List<DataPtr<ModelMaterialData>>& GetMaterials();
+		DataList<ModelMaterialData>& GetMaterials();
 		
 		const float& GetScale();
 		void SetScale(const float& scale);
-
-		static void BindProperties();
 
 	protected:
 		virtual void ImportData() override;
@@ -56,7 +51,7 @@ namespace Blueberry
 		void CreateMeshEntity(Transform* parent, fbxsdk::FbxNode* node, List<Object*>& objects);
 
 	private:
-		List<DataPtr<ModelMaterialData>> m_Materials;
+		DataList<ModelMaterialData> m_Materials;
 		float m_Scale = 1.0f;
 	};
 }

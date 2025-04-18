@@ -6,7 +6,10 @@
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(Texture, TextureCube)
+	OBJECT_DEFINITION(TextureCube, Texture)
+	{
+		DEFINE_BASE_FIELDS(TextureCube, Texture)
+	}
 
 	TextureCube::~TextureCube()
 	{
@@ -66,18 +69,5 @@ namespace Blueberry
 		texture->m_WrapMode = wrapMode;
 		texture->m_FilterMode = filterMode;
 		return texture;
-	}
-
-	void TextureCube::BindProperties()
-	{
-		BEGIN_OBJECT_BINDING(TextureCube)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Width), &TextureCube::m_Width, BindingType::Int))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Height), &TextureCube::m_Height, BindingType::Int))
-		BIND_FIELD(FieldInfo(TO_STRING(m_MipCount), &TextureCube::m_MipCount, BindingType::Int))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Format), &TextureCube::m_Format, BindingType::Enum))
-		BIND_FIELD(FieldInfo(TO_STRING(m_WrapMode), &TextureCube::m_WrapMode, BindingType::Enum).SetHintData("Repeat,Clamp"))
-		BIND_FIELD(FieldInfo(TO_STRING(m_FilterMode), &TextureCube::m_FilterMode, BindingType::Enum).SetHintData("Linear,Point"))
-		//BIND_FIELD(FieldInfo(TO_STRING(m_RawData), &Texture2D::m_RawData, BindingType::ByteData))
-		END_OBJECT_BINDING()
 	}
 }

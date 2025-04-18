@@ -5,7 +5,9 @@
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(Object, ComputeShader)
+	OBJECT_DEFINITION(ComputeShader, Object)
+	{
+	}
 
 	void ComputeShader::Initialize(void* computeData)
 	{
@@ -17,9 +19,5 @@ namespace Blueberry
 		ComputeShader* shader = Object::Create<ComputeShader>();
 		shader->Initialize(computeData);
 		return shader;
-	}
-
-	void ComputeShader::BindProperties()
-	{
 	}
 }

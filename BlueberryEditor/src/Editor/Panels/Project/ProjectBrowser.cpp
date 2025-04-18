@@ -22,7 +22,12 @@
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(EditorWindow, ProjectBrowser)
+	OBJECT_DEFINITION(ProjectBrowser, EditorWindow)
+	{
+		DEFINE_BASE_FIELDS(ProjectBrowser, EditorWindow)
+		DEFINE_FIELD(ProjectBrowser, m_FoldersColumnWidth, BindingType::Float, {})
+		EditorMenuManager::AddItem("Window/Project", &ProjectBrowser::Open);
+	}
 
 	ProjectBrowser::ProjectBrowser()
 	{
@@ -45,17 +50,6 @@ namespace Blueberry
 		EditorWindow* window = GetWindow(ProjectBrowser::Type);
 		window->SetTitle("Project");
 		window->Show();
-	}
-
-	void ProjectBrowser::BindProperties()
-	{
-		BEGIN_OBJECT_BINDING(ProjectBrowser)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Title), &ProjectBrowser::m_Title, BindingType::String))
-		BIND_FIELD(FieldInfo(TO_STRING(m_FoldersColumnWidth), &ProjectBrowser::m_FoldersColumnWidth, BindingType::Float))
-		BIND_FIELD(FieldInfo(TO_STRING(m_RawData), &ProjectBrowser::m_RawData, BindingType::ByteData))
-		END_OBJECT_BINDING()
-			
-		EditorMenuManager::AddItem("Window/Project", &ProjectBrowser::Open);
 	}
 
 	bool wasInit = false;

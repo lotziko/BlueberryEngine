@@ -19,7 +19,6 @@ namespace Blueberry
 		virtual ~SceneArea();
 
 		static void Open();
-		static void BindProperties();
 		
 		virtual void OnDrawUI() final;
 

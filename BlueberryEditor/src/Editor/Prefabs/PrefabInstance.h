@@ -21,8 +21,6 @@ namespace Blueberry
 
 		static PrefabInstance* Create(Entity* prefab);
 
-		static void BindProperties();
-
 	private:
 		void AddPrefabEntities(Entity* entity);
 		void RemovePrefabEntities(Entity* entity);

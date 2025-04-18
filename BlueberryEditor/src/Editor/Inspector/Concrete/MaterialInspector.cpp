@@ -29,34 +29,35 @@ namespace Blueberry
 			auto textureDatas = material->GetTextureDatas();
 			bool hasPropertyChanges = false;
 
-			for (auto const& propertyData : data->GetProperties())
+			for (auto const& propertyData : data.GetProperties())
 			{
-				if (propertyData.Get()->GetType() == PropertyData::PropertyType::Texture)
+				if (propertyData.GetType() == PropertyData::PropertyType::Texture)
 				{
-					TextureData* textureProperty = nullptr;
-					auto& textureParameterName = propertyData.Get()->GetName();
+					TextureData textureProperty = {};
+					bool hasProperty = false;
+					auto& textureParameterName = propertyData.GetName();
 					Texture* texture = nullptr;
-					for (auto const& textureData : textureDatas)
+					for (auto& textureData : textureDatas)
 					{
-						if (textureData.Get()->GetName() == textureParameterName)
+						if (textureData.GetName() == textureParameterName)
 						{
-							texture = textureData.Get()->GetTexture();
-							textureProperty = textureData.Get();
+							texture = textureData.GetTexture();
+							textureProperty = textureData;
+							hasProperty = true;
 						}
 					}
 
-					if (textureProperty != nullptr)
+					if (hasProperty)
 					{
-						if (ImGui::ObjectEdit(propertyData.Get()->GetName().c_str(), (Object**)&texture, propertyData.Get()->GetTextureDimension() == TextureDimension::TextureCube ? TextureCube::Type : Texture2D::Type))
+						if (ImGui::ObjectEdit(propertyData.GetName().c_str(), (Object**)&texture, propertyData.GetTextureDimension() == TextureDimension::TextureCube ? TextureCube::Type : Texture2D::Type))
 						{
-							textureProperty->SetTexture(texture);
+							textureProperty.SetTexture(texture);
 							hasPropertyChanges = true;
 						}
 					}
 					else
 					{
-						textureProperty = new TextureData();
-						textureProperty->SetName(propertyData.Get()->GetName());
+						textureProperty.SetName(propertyData.GetName());
 						material->AddTextureData(textureProperty);
 					}
 				}

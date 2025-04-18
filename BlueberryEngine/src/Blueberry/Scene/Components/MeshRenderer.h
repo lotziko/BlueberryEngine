@@ -30,8 +30,6 @@ namespace Blueberry
 
 		virtual const AABB& GetBounds() final;
 
-		static void BindProperties();
-
 	private:
 		ObjectPtr<Mesh> m_Mesh;
 		List<ObjectPtr<Material>> m_Materials;

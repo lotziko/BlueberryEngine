@@ -10,8 +10,6 @@ namespace Blueberry
 	public:
 		DefaultImporter() = default;
 
-		static void BindProperties();
-
 	protected:
 		virtual void ImportData() override;
 	};

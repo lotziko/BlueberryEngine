@@ -4,6 +4,8 @@
 namespace Blueberry
 {
 	Dictionary<size_t, ClassDB::ClassInfo> ClassDB::s_Classes = {};
+	List<FieldInfo> ClassDB::s_CurrentFieldInfos = {};
+	uint32_t ClassDB::s_CurrentOffset = 0;
 
 	const ClassDB::ClassInfo& ClassDB::GetInfo(const size_t& id)
 	{
@@ -32,24 +34,35 @@ namespace Blueberry
 		return false;
 	}
 
-	FieldInfo FieldInfo::SetHintData(char* hintData)
+	void ClassDB::DefineField(FieldInfo info)
 	{
-		if (type == BindingType::Enum)
-		{
-			auto names = new List<std::string>();
-			StringHelper::Split(hintData, ',', *names);
-			this->hintData = names;
-		}
-		else
-		{
-			this->hintData = hintData;
-		}
+		info.offset += s_CurrentOffset;
+		s_CurrentFieldInfos.emplace_back(std::move(info));
+	}
+
+	FieldOptions& FieldOptions::SetEnumHint(char* hintData)
+	{
+		auto names = new List<std::string>();
+		StringHelper::Split(hintData, ',', *names);
+		this->hintData = names;
 		return *this;
 	}
 
-	FieldInfo FieldInfo::SetObjectType(const size_t& objectType)
+	FieldOptions& FieldOptions::SetObjectType(const size_t& type)
 	{
-		this->objectType = objectType;
+		this->objectType = type;
+		return *this;
+	}
+
+	FieldOptions& FieldOptions::SetSize(const uint32_t& size)
+	{
+		this->size = size;
+		return *this;
+	}
+
+	FieldOptions& FieldOptions::SetHidden()
+	{
+		isHidden = true;
 		return *this;
 	}
 }

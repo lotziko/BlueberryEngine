@@ -8,11 +8,9 @@
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(AssetImporter, ShaderImporter)
-
-	void ShaderImporter::BindProperties()
+	OBJECT_DEFINITION(ShaderImporter, AssetImporter)
 	{
-		
+		DEFINE_BASE_FIELDS(ShaderImporter, AssetImporter)
 	}
 
 	void ShaderImporter::ImportData()

@@ -44,8 +44,6 @@ namespace Blueberry
 		void SetActive(const bool& active);
 		bool IsActiveInHierarchy();
 
-		static void BindProperties();
-
 	private:
 		void AddToCreatedComponents(Component* component);
 		void AddComponentToScene(Component* component, const size_t& type);

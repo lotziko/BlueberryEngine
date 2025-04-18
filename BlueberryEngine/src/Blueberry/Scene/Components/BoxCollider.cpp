@@ -9,19 +9,15 @@
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(Collider, BoxCollider)
+	OBJECT_DEFINITION(BoxCollider, Collider)
+	{
+		DEFINE_BASE_FIELDS(BoxCollider, Collider)
+		DEFINE_FIELD(BoxCollider, m_Size, BindingType::Vector3, {})
+	}
 
 	const Vector3& BoxCollider::GetSize()
 	{
 		return m_Size;
-	}
-
-	void BoxCollider::BindProperties()
-	{
-		BEGIN_OBJECT_BINDING(BoxCollider)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Entity), &BoxCollider::m_Entity, BindingType::ObjectPtr).SetObjectType(Entity::Type))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Size), &BoxCollider::m_Size, BindingType::Vector3))
-		END_OBJECT_BINDING()
 	}
 
 	JPH::Shape* BoxCollider::GetShape()

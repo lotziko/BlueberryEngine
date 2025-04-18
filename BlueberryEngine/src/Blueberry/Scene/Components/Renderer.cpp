@@ -3,7 +3,10 @@
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(Component, Renderer)
+	OBJECT_DEFINITION(Renderer, Component)
+	{
+		DEFINE_BASE_FIELDS(Renderer, Component)
+	}
 
 	const AABB& Renderer::GetBounds()
 	{
@@ -18,9 +21,5 @@ namespace Blueberry
 	void Renderer::SetSortingOrder(const int& sortingOrder)
 	{
 		m_SortingOrder = sortingOrder;
-	}
-
-	void Renderer::BindProperties()
-	{
 	}
 }

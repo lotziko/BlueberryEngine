@@ -7,7 +7,10 @@
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(Component, Collider)
+	OBJECT_DEFINITION(Collider, Component)
+	{
+		DEFINE_BASE_FIELDS(Collider, Component)
+	}
 
 	void Collider::OnBeginPlay()
 	{

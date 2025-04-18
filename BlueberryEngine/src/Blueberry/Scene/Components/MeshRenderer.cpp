@@ -12,7 +12,12 @@
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(Renderer, MeshRenderer)
+	OBJECT_DEFINITION(MeshRenderer, Renderer)
+	{
+		DEFINE_BASE_FIELDS(MeshRenderer, Renderer)
+		DEFINE_FIELD(MeshRenderer, m_Mesh, BindingType::ObjectPtr, FieldOptions().SetObjectType(Mesh::Type))
+		DEFINE_FIELD(MeshRenderer, m_Materials, BindingType::ObjectPtrArray, FieldOptions().SetObjectType(Material::Type))
+	}
 
 	void MeshRenderer::OnEnable()
 	{
@@ -112,15 +117,5 @@ namespace Blueberry
 			m_RecalculationFrame = transformRecalculationFrame;
 		}
 		return m_Bounds;
-	}
-
-	void MeshRenderer::BindProperties()
-	{
-		BEGIN_OBJECT_BINDING(MeshRenderer)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Entity), &MeshRenderer::m_Entity, BindingType::ObjectPtr).SetObjectType(Entity::Type))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Mesh), &MeshRenderer::m_Mesh, BindingType::ObjectPtr).SetObjectType(Mesh::Type))
-		//BIND_FIELD(FieldInfo(TO_STRING(m_Material), &MeshRenderer::m_Material, BindingType::ObjectPtr).SetObjectType(Material::Type))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Materials), &MeshRenderer::m_Materials, BindingType::ObjectPtrArray).SetObjectType(Material::Type))
-		END_OBJECT_BINDING()
 	}
 }

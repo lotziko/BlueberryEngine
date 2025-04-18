@@ -6,7 +6,17 @@
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(Component, Camera)
+	OBJECT_DEFINITION(Camera, Component)
+	{
+		DEFINE_BASE_FIELDS(Camera, Component)
+		DEFINE_FIELD(Camera, m_IsOrthographic, BindingType::Bool, {})
+		DEFINE_FIELD(Camera, m_OrthographicSize, BindingType::Float, {})
+		DEFINE_FIELD(Camera, m_PixelSize, BindingType::Vector2, {})
+		DEFINE_FIELD(Camera, m_FieldOfView, BindingType::Float, {})
+		DEFINE_FIELD(Camera, m_AspectRatio, BindingType::Float, {})
+		DEFINE_FIELD(Camera, m_ZNearPlane, BindingType::Float, {})
+		DEFINE_FIELD(Camera, m_ZFarPlane, BindingType::Float, {})
+	}
 
 	void Camera::OnEnable()
 	{
@@ -301,20 +311,5 @@ namespace Blueberry
 		m_InverseProjectionMatrix = m_ProjectionMatrix.Invert();
 		m_ViewProjectionMatrix = m_ViewMatrix * m_ProjectionMatrix;
 		m_InverseViewProjectionMatrix = m_ViewProjectionMatrix.Invert();
-	}
-
-	void Camera::BindProperties()
-	{
-		BEGIN_OBJECT_BINDING(Camera)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Entity), &Camera::m_Entity, BindingType::ObjectPtr).SetObjectType(Entity::Type))
-		BIND_FIELD(FieldInfo(TO_STRING(m_IsOrthographic), &Camera::m_IsOrthographic, BindingType::Bool))
-		BIND_FIELD(FieldInfo(TO_STRING(m_OrthographicSize), &Camera::m_OrthographicSize, BindingType::Float))
-		BIND_FIELD(FieldInfo(TO_STRING(m_PixelSize), &Camera::m_PixelSize, BindingType::Vector2))
-		BIND_FIELD(FieldInfo(TO_STRING(m_AspectRatio), &Camera::m_FieldOfView, BindingType::Float))
-		BIND_FIELD(FieldInfo(TO_STRING(m_FieldOfView), &Camera::m_FieldOfView, BindingType::Float))
-		BIND_FIELD(FieldInfo(TO_STRING(m_AspectRatio), &Camera::m_AspectRatio, BindingType::Float))
-		BIND_FIELD(FieldInfo(TO_STRING(m_ZNearPlane), &Camera::m_ZNearPlane, BindingType::Float))
-		BIND_FIELD(FieldInfo(TO_STRING(m_ZFarPlane), &Camera::m_ZFarPlane, BindingType::Float))
-		END_OBJECT_BINDING()
 	}
 }

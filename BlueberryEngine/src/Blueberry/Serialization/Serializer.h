@@ -26,6 +26,12 @@ namespace Blueberry
 				return { data, info };
 			}
 
+			static Context CreateNoOffset(void* data, const size_t& type)
+			{
+				const ClassDB::ClassInfo& info = ClassDB::GetInfo(type);
+				return { data, info };
+			}
+
 			static Context Create(Data* data, const ClassDB::ClassInfo& info)
 			{
 				return { data - info.offset, info };

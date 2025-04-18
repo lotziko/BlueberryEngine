@@ -16,7 +16,12 @@
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(Component, CharacterController)
+	OBJECT_DEFINITION(CharacterController, Component)
+	{
+		DEFINE_BASE_FIELDS(CharacterController, Component)
+		DEFINE_FIELD(CharacterController, m_Height, BindingType::Float, {})
+		DEFINE_FIELD(CharacterController, m_Radius, BindingType::Float, {})
+	}
 
 	struct CharacterController::CharacterData
 	{
@@ -123,14 +128,5 @@ namespace Blueberry
 	const float& CharacterController::GetRadius()
 	{
 		return m_Radius;
-	}
-
-	void CharacterController::BindProperties()
-	{
-		BEGIN_OBJECT_BINDING(CharacterController)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Entity), &CharacterController::m_Entity, BindingType::ObjectPtr).SetObjectType(Entity::Type))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Height), &CharacterController::m_Height, BindingType::Float))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Radius), &CharacterController::m_Radius, BindingType::Float))
-		END_OBJECT_BINDING()
 	}
 }

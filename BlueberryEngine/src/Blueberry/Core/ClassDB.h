@@ -3,7 +3,6 @@
 #include <string>
 #include "Blueberry\Core\Object.h"
 #include "Blueberry\Core\MethodBind.h"
-#include "Blueberry\Core\FieldBind.h"
 #include "Blueberry\Tools\StringHelper.h"
 
 namespace Blueberry
@@ -44,45 +43,35 @@ namespace Blueberry
 		DataList
 	};
 
+	struct FieldOptions
+	{
+		FieldOptions& SetEnumHint(char* hintData);
+		FieldOptions& SetObjectType(const size_t& type);
+		FieldOptions& SetSize(const uint32_t& size);
+		FieldOptions& SetHidden();
+
+		size_t objectType;
+		uint32_t size;
+		void* hintData;
+		bool isHidden;
+	};
+
 	struct FieldInfo
 	{
 		std::string name;
-		FieldBind* bind;
-		MethodBind* setter;
+		uint32_t offset;
 		BindingType type;
-		size_t objectType;
-		void* hintData;
-
-		template<class ObjectType, class FieldType>
-		FieldInfo(const std::string& name, FieldType ObjectType::* field, const BindingType& type);
-
-		FieldInfo SetHintData(char* hintData);
-		FieldInfo SetObjectType(const size_t& objectType);
-		template<class ObjectType, class FieldType>
-		FieldInfo SetSetter(void(ObjectType::* setter)(FieldType));
+		FieldOptions options;
 	};
 
 	class ClassDB
 	{
 	public:
-
-		struct BindingData
-		{
-			List<FieldInfo> fieldInfos;
-
-			BindingData& BindField(FieldInfo info)
-			{
-				fieldInfos.emplace_back(std::move(info));
-				return *this;
-			}
-		};
-
 		struct ClassInfo
 		{
 			std::string name;
 			size_t parentId;
 			Object*(*createInstance)() = nullptr;
-			Data*(*createDataInstance)() = nullptr;
 			bool isObject;
 			size_t offset;
 			List<FieldInfo> fields;
@@ -100,7 +89,12 @@ namespace Blueberry
 		template <class ObjectType>
 		static void RegisterData();
 		template<class ObjectType>
-		static void Bind(BindingData bindings);
+		static void Bind();
+
+		static void DefineField(FieldInfo info);
+
+		template <class ObjectType, class BaseObjectType>
+		static void DefineBaseFields();
 
 	private:
 		template<class ObjectType>
@@ -117,6 +111,8 @@ namespace Blueberry
 
 	private:
 		static Dictionary<size_t, ClassInfo> s_Classes;
+		static List<FieldInfo> s_CurrentFieldInfos;
+		static uint32_t s_CurrentOffset;
 	};
 
 	constexpr auto GetFieldName(std::string_view name)
@@ -128,9 +124,8 @@ namespace Blueberry
 	#define REGISTER_ABSTRACT_CLASS( classname ) ClassDB::RegisterAbstract<classname>();
 	#define REGISTER_DATA_CLASS( classname ) ClassDB::RegisterData<classname>();
 
-	#define BEGIN_OBJECT_BINDING( classname ) ClassDB::Bind<classname>(ClassDB::BindingData()
-	#define BIND_FIELD( fieldInfo ) .BindField(fieldInfo)
-	#define END_OBJECT_BINDING() );
+	#define DEFINE_BASE_FIELDS( className, baseClassName ) ClassDB::DefineBaseFields<className, baseClassName>();
+	#define DEFINE_FIELD( className, fieldName, fieldType, fieldOptions ) ClassDB::DefineField({ TO_STRING(fieldName), offsetof(className, className::fieldName), fieldType, fieldOptions });
 
 	template<class ObjectType>
 	inline void ClassDB::Register()
@@ -143,10 +138,11 @@ namespace Blueberry
 
 		if (s_Classes.count(id) == 0)
 		{
-			s_Classes.insert({ id, { name, parentId, createFunction, nullptr, true, offset } });
+			s_Classes.insert({ id, { name, parentId, createFunction, true, offset } });
 		}
 
-		ObjectType::BindProperties();
+		ObjectType::DefineFields();
+		ClassDB::Bind<ObjectType>();
 	}
 
 	template<class ObjectType>
@@ -158,10 +154,11 @@ namespace Blueberry
 
 		if (s_Classes.count(id) == 0)
 		{
-			s_Classes.insert({ id, { name, parentId, nullptr, nullptr, true, 0 } });
+			s_Classes.insert({ id, { name, parentId, nullptr, true, 0 } });
 		}
 
-		ObjectType::BindProperties();
+		ObjectType::DefineFields();
+		ClassDB::Bind<ObjectType>();
 	}
 
 	template<class ObjectType>
@@ -170,40 +167,38 @@ namespace Blueberry
 		size_t id = ObjectType::Type;
 		size_t parentId = 0;
 		std::string name = ObjectType::TypeName;
-		Data*(*createFunction)() = &ClassDB::CreateData<ObjectType>;
 		size_t offset = reinterpret_cast<char*>(static_cast<Data*>(reinterpret_cast<ObjectType*>(0x10000000))) - reinterpret_cast<char*>(0x10000000);
 
 		if (s_Classes.count(id) == 0)
 		{
-			s_Classes.insert({ id, { name, parentId, nullptr, createFunction, false, offset } });
+			s_Classes.insert({ id, { name, parentId, nullptr, false, offset } });
 		}
 
-		ObjectType::BindProperties();
+		ObjectType::DefineFields();
+		ClassDB::Bind<ObjectType>();
 	}
 
 	template<class ObjectType>
-	inline void ClassDB::Bind(BindingData bindings)
+	inline void ClassDB::Bind()
 	{
 		auto classInfoIt = s_Classes.find(ObjectType::Type);
 		if (classInfoIt != s_Classes.end())
 		{
-			for (FieldInfo info : bindings.fieldInfos)
+			for (FieldInfo info : s_CurrentFieldInfos)
 			{
 				classInfoIt->second.fields.emplace_back(info);
 				classInfoIt->second.fieldsMap.insert_or_assign(info.name, info);
 			}
 		}
+		s_CurrentFieldInfos.clear();
 	}
 
-	template<class ObjectType, class FieldType>
-	inline FieldInfo::FieldInfo(const std::string& name, FieldType ObjectType::* field, const BindingType& type) : name(name), bind(FieldBind::Create(reinterpret_cast<FieldType ObjectType::*>(field))), type(type), objectType(0), hintData(nullptr)
+	template<class ObjectType, class BaseObjectType>
+	inline void ClassDB::DefineBaseFields()
 	{
-	}
-
-	template<class ObjectType, class FieldType>
-	inline FieldInfo FieldInfo::SetSetter(void(ObjectType::* setter)(FieldType))
-	{
-		this->setter = MethodBind::Create(reinterpret_cast<void(void::*)(FieldType)>(setter));
-		return *this;
+		uint32_t offset = reinterpret_cast<char*>(static_cast<BaseObjectType*>(reinterpret_cast<ObjectType*>(0x10000000))) - reinterpret_cast<char*>(0x10000000);
+		s_CurrentOffset += offset;
+		BaseObjectType::DefineFields();
+		s_CurrentOffset -= offset;
 	}
 }

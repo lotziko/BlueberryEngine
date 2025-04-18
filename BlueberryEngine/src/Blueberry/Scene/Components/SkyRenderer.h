@@ -19,8 +19,6 @@ namespace Blueberry
 
 		Material* GetMaterial();
 
-		static void BindProperties();
-
 	private:
 		ObjectPtr<Material> m_Material;
 	};

@@ -6,7 +6,12 @@
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(Object, Entity)
+	OBJECT_DEFINITION(Entity, Object)
+	{
+		DEFINE_BASE_FIELDS(Entity, Object)
+		DEFINE_FIELD(Entity, m_Components, BindingType::ObjectPtrArray, FieldOptions().SetObjectType(Component::Type))
+		DEFINE_FIELD(Entity, m_IsActive, BindingType::Bool, {})
+	}
 
 	Entity::Entity(const std::string& name)
 	{
@@ -94,15 +99,6 @@ namespace Blueberry
 		{
 			return m_IsActiveInHierarchy == 1;
 		}
-	}
-
-	void Entity::BindProperties()
-	{
-		BEGIN_OBJECT_BINDING(Entity)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Name), &Entity::m_Name, BindingType::String))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Components), &Entity::m_Components, BindingType::ObjectPtrArray).SetObjectType(Component::Type))
-		BIND_FIELD(FieldInfo(TO_STRING(m_IsActive), &Entity::m_IsActive, BindingType::Bool))
-		END_OBJECT_BINDING()
 	}
 
 	void Entity::AddToCreatedComponents(Component* component)

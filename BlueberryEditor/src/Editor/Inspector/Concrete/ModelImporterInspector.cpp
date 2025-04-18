@@ -15,13 +15,12 @@ namespace Blueberry
 		ModelImporter* modelImporter = static_cast<ModelImporter*>(object);
 		modelImporter->ImportDataIfNeeded();
 
-		for (auto& materialPtr : modelImporter->GetMaterials())
+		for (auto& materialData : modelImporter->GetMaterials())
 		{
-			ModelMaterialData* data = materialPtr.Get();
-			Material* material = data->GetMaterial();
-			if (ImGui::ObjectEdit(data->GetName().c_str(), (Object**)&material, Material::Type))
+			Material* material = materialData.GetMaterial();
+			if (ImGui::ObjectEdit(materialData.GetName().c_str(), (Object**)&material, Material::Type))
 			{
-				data->SetMaterial(material);
+				materialData.SetMaterial(material);
 			}
 		}
 

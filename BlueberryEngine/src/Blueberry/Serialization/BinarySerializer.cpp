@@ -96,7 +96,8 @@ namespace Blueberry
 
 		for (auto& field : fields)
 		{
-			field.bind->Get(context.ptr, value);
+			value = Variant(context.ptr, field.offset);
+
 			size_t fieldNameSize = field.name.size();
 			output.write((char*)&fieldNameSize, sizeof(size_t));
 			output.write(field.name.c_str(), fieldNameSize);
@@ -176,15 +177,15 @@ namespace Blueberry
 				output.write(reinterpret_cast<char*>(&(*value.Get<AABB>()).Center), 6 * sizeof(float));
 				break;
 			case BindingType::Raw:
-				output.write(reinterpret_cast<char*>(value.Get()), field.objectType);
+				output.write(reinterpret_cast<char*>(value.Get()), field.options.size);
 				break;
 			case BindingType::ObjectPtr:
 			{
-				ObjectPtr<Object> objectRefValue = *value.Get<ObjectPtr<Object>>();
+				ObjectPtr<Object>* objectRefValue = value.Get<ObjectPtr<Object>>();
 				ObjectPtrData data = {};
-				if (objectRefValue.IsValid())
+				if (objectRefValue->IsValid())
 				{
-					data = GetPtrData(objectRefValue.Get());
+					data = GetPtrData(objectRefValue->Get());
 				}
 				else
 				{
@@ -195,12 +196,12 @@ namespace Blueberry
 			break;
 			case BindingType::ObjectPtrArray:
 			{
-				List<ObjectPtr<Object>> arrayValue = *value.Get<List<ObjectPtr<Object>>>();
-				size_t dataSize = arrayValue.size();
+				List<ObjectPtr<Object>>* arrayPointer = value.Get<List<ObjectPtr<Object>>>();
+				size_t dataSize = arrayPointer->size();
 				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 				if (dataSize > 0)
 				{
-					for (ObjectPtr<Object>& objectRefValue : arrayValue)
+					for (ObjectPtr<Object>& objectRefValue : *arrayPointer)
 					{
 						ObjectPtrData data = {};
 						if (objectRefValue.IsValid())
@@ -218,23 +219,22 @@ namespace Blueberry
 			break;
 			case BindingType::Data:
 			{
-				DataPtr<Data> dataValue = *value.Get<DataPtr<Data>>();
-				Data* data = dataValue.Get();
-				Context context = Context::CreateNoOffset(data, field.objectType);
+				Data* data = value.Get<Data>();
+				Context context = Context::CreateNoOffset(data, field.options.objectType);
 				SerializeNode(output, context);
 			}
 			break;
 			case BindingType::DataList:
 			{
-				List<DataPtr<Data>>* arrayValue = value.Get<List<DataPtr<Data>>>();
-				size_t dataSize = arrayValue->size();
+				DataListBase* dataArrayPointer = value.Get<DataListBase>();
+				uint32_t dataSize = dataArrayPointer->Size();
 				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 				if (dataSize > 0)
 				{
-					for (auto const& dataValue : *arrayValue)
+					for (uint32_t i = 0; i < dataSize; ++i)
 					{
-						Data* data = dataValue.Get();
-						Context context = Context::CreateNoOffset(data, field.objectType);
+						void* data = dataArrayPointer->Get(i);
+						Context context = Context::CreateNoOffset(data, field.options.objectType);
 						SerializeNode(output, context);
 					}
 				}
@@ -265,7 +265,7 @@ namespace Blueberry
 			if (fieldIt != fieldsMap.end())
 			{
 				auto& field = fieldIt->second;
-				field.bind->Get(context.ptr, value);
+				value = Variant(context.ptr, field.offset);
 
 				switch (field.type)
 				{
@@ -352,7 +352,7 @@ namespace Blueberry
 				case BindingType::Raw:
 				{
 					char* data = reinterpret_cast<char*>(value.Get());
-					input.read(data, field.objectType);
+					input.read(data, field.options.size);
 				}
 				break;
 				case BindingType::ObjectPtr:
@@ -377,25 +377,21 @@ namespace Blueberry
 				break;
 				case BindingType::Data:
 				{
-					const ClassDB::ClassInfo& info = ClassDB::GetInfo(field.objectType);
-					Data* instance = info.createDataInstance();
-					Context context = Context::Create(instance, info);
+					void* data = value.Get();
+					Context context = Context::CreateNoOffset(data, field.options.objectType);
 					DeserializeNode(input, context);
-					*value.Get<DataPtr<Data>>() = context.ptr;
 				}
 				break;
 				case BindingType::DataList:
 				{
 					size_t dataSize;
 					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
-					ClassDB::ClassInfo info = ClassDB::GetInfo(field.objectType);
-					List<DataPtr<Data>>* dataArrayPointer = value.Get<List<DataPtr<Data>>>();
+					DataListBase* dataArrayPointer = value.Get<DataListBase>();
 					for (size_t i = 0; i < dataSize; ++i)
 					{
-						Data* instance = info.createDataInstance();
-						Context context = Context::Create(instance, info);
+						void* data = dataArrayPointer->EmplaceBack();
+						Context context = Context::CreateNoOffset(data, field.options.objectType);
 						DeserializeNode(input, context);
-						dataArrayPointer->emplace_back(context.ptr);
 					}
 				}
 				break;

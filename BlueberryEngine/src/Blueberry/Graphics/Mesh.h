@@ -2,7 +2,6 @@
 
 #include "Blueberry\Graphics\Enums.h"
 #include "Blueberry\Graphics\VertexLayout.h"
-#include "Blueberry\Core\DataPtr.h"
 
 namespace Blueberry
 {
@@ -14,13 +13,11 @@ namespace Blueberry
 		DATA_DECLARATION(SubMeshData)
 
 	public:
-		const uint32_t& GetIndexStart();
+		const uint32_t& GetIndexStart() const;
 		void SetIndexStart(const uint32_t& indexStart);
 
-		const uint32_t& GetIndexCount();
+		const uint32_t& GetIndexCount() const;
 		void SetIndexCount(const uint32_t& indexCount);
-
-		static void BindProperties();
 
 	private:
 		uint32_t m_IndexStart;
@@ -38,7 +35,7 @@ namespace Blueberry
 		const uint32_t& GetVertexCount();
 		const uint32_t& GetIndexCount();
 		const uint32_t GetSubMeshCount();
-		SubMeshData* GetSubMesh(const uint32_t& index);
+		const SubMeshData& GetSubMesh(const uint32_t& index);
 		
 		const List<Vector3>& GetVertices();
 		const List<uint32_t>& GetIndices();
@@ -49,7 +46,7 @@ namespace Blueberry
 		void SetColors(const Color* colors, const uint32_t& vertexCount);
 		void SetIndices(const uint32_t* indices, const uint32_t& indexCount);
 		void SetUVs(const int& channel, const Vector2* uvs, const uint32_t& uvCount);
-		void SetSubMesh(const uint32_t& index, SubMeshData* data);
+		void SetSubMesh(const uint32_t& index, const SubMeshData& data);
 
 		void GenerateTangents();
 
@@ -62,8 +59,6 @@ namespace Blueberry
 		const VertexLayout& GetLayout();
 
 		static Mesh* Create();
-
-		static void BindProperties();
 
 	private:
 		GfxVertexBuffer* m_VertexBuffer;
@@ -79,7 +74,7 @@ namespace Blueberry
 
 		List<float> m_VertexData;
 		List<uint32_t> m_IndexData;
-		List<DataPtr<SubMeshData>> m_SubMeshes;
+		DataList<SubMeshData> m_SubMeshes;
 		VertexLayout m_Layout;
 
 		uint32_t m_VertexCount;

@@ -12,7 +12,18 @@
 namespace Blueberry
 {
 	DATA_DEFINITION(TextureData)
-	OBJECT_DEFINITION(Object, Material)
+	{
+		DEFINE_FIELD(TextureData, m_Name, BindingType::String, {})
+		DEFINE_FIELD(TextureData, m_Texture, BindingType::ObjectPtr, FieldOptions().SetObjectType(Texture::Type))
+	}
+
+	OBJECT_DEFINITION(Material, Object)
+	{
+		DEFINE_BASE_FIELDS(Material, Object)
+		DEFINE_FIELD(Material, m_Shader, BindingType::ObjectPtr, FieldOptions().SetObjectType(Shader::Type))
+		DEFINE_FIELD(Material, m_Textures, BindingType::DataList, FieldOptions().SetObjectType(TextureData::Type))
+		DEFINE_FIELD(Material, m_ActiveKeywords, BindingType::StringList, {})
+	}
 
 	const std::string& TextureData::GetName()
 	{
@@ -32,14 +43,6 @@ namespace Blueberry
 	void TextureData::SetTexture(Texture* texture)
 	{
 		m_Texture = texture;
-	}
-
-	void TextureData::BindProperties()
-	{
-		BEGIN_OBJECT_BINDING(TextureData)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Name), &TextureData::m_Name, BindingType::String))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Texture), &TextureData::m_Texture, BindingType::ObjectPtr).SetObjectType(Texture::Type))
-		END_OBJECT_BINDING()
 	}
 
 	Material* Material::Create(Shader* shader)
@@ -86,19 +89,19 @@ namespace Blueberry
 	{
 		if (m_Shader.IsValid())
 		{
-			return m_Shader.Get()->GetData();
+			return &m_Shader.Get()->GetData();
 		}
 		return nullptr;
 	}
 
-	List<DataPtr<TextureData>>& Material::GetTextureDatas()
+	DataList<TextureData>& Material::GetTextureDatas()
 	{
 		return m_Textures;
 	}
 
-	void Material::AddTextureData(TextureData* data)
+	void Material::AddTextureData(const TextureData& data)
 	{
-		m_Textures.emplace_back(DataPtr<TextureData>(data));
+		m_Textures.emplace_back(data);
 		FillTextureMap();
 	}
 
@@ -153,37 +156,33 @@ namespace Blueberry
 		return nullptr;
 	}
 
-	void Material::BindProperties()
-	{
-		BEGIN_OBJECT_BINDING(Material)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Shader), &Material::m_Shader, BindingType::ObjectPtr).SetObjectType(Shader::Type))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Textures), &Material::m_Textures, BindingType::DataList).SetObjectType(TextureData::Type))
-		BIND_FIELD(FieldInfo(TO_STRING(m_ActiveKeywords), &Material::m_ActiveKeywords, BindingType::StringList))
-		END_OBJECT_BINDING()
-	}
-
 	void Material::FillTextureMap()
 	{
 		if (m_Shader.IsValid() && m_Shader->GetState() == ObjectState::Default)
 		{
-			const ShaderData* shaderData = m_Shader->GetData();
-			for (auto& property : shaderData->GetProperties())
+			for (auto& property : m_Shader->GetData().GetProperties())
 			{
-				PropertyData* data = property.Get();
-				if (data->GetType() == PropertyData::PropertyType::Texture)
+				if (property.GetType() == PropertyData::PropertyType::Texture)
 				{
-					size_t key = TO_HASH(data->GetName());
-					m_BindedTextures.insert_or_assign(key, DefaultTextures::GetTexture(data->GetDefaultTextureName(), data->GetTextureDimension())->GetObjectId());
+					size_t key = TO_HASH(property.GetName());
+					Texture* texture = DefaultTextures::GetTexture(property.GetDefaultTextureName(), property.GetTextureDimension());
+					if (texture != nullptr)
+					{
+						m_BindedTextures.insert_or_assign(key, texture->GetObjectId());
+					}
+					else
+					{
+
+					}
 				}
 			}
 		}
 		for (auto const& texture : m_Textures)
 		{
-			TextureData* textureData = texture.Get();
-			if (textureData->m_Texture.IsValid())
+			if (texture.m_Texture.IsValid())
 			{
-				size_t key = TO_HASH(textureData->m_Name);
-				m_BindedTextures.insert_or_assign(key, textureData->m_Texture.Get()->GetObjectId());
+				size_t key = TO_HASH(texture.m_Name);
+				m_BindedTextures.insert_or_assign(key, texture.m_Texture.Get()->GetObjectId());
 			}
 		}
 	}

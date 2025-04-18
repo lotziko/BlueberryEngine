@@ -45,8 +45,6 @@ namespace Blueberry
 		const bool& IsDirty() const;
 		const size_t& GetRecalculationFrame() const;
 
-		static void BindProperties();
-
 	private:
 		void SetHierarchyDirty();
 		void RecalculateHierarchy();

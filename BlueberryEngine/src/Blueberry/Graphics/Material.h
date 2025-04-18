@@ -21,8 +21,6 @@ namespace Blueberry
 		Texture* GetTexture();
 		void SetTexture(Texture* texture);
 
-		static void BindProperties();
-
 	private:
 		std::string m_Name;
 		ObjectPtr<Texture> m_Texture;
@@ -50,8 +48,8 @@ namespace Blueberry
 		void ApplyProperties();
 
 		const ShaderData* GetShaderData();
-		List<DataPtr<TextureData>>& GetTextureDatas();
-		void AddTextureData(TextureData* data);
+		DataList<TextureData>& GetTextureDatas();
+		void AddTextureData(const TextureData& data);
 
 		void SetKeyword(const std::string& keyword, const bool& enabled);
 		const uint32_t& GetActiveKeywordsMask();
@@ -59,13 +57,11 @@ namespace Blueberry
 		const uint32_t& GetCRC();
 		Texture* GetTexture(const size_t& id);
 
-		static void BindProperties();
-
 	private:
 		void FillTextureMap();
 
 	private:
-		List<DataPtr<TextureData>> m_Textures;
+		DataList<TextureData> m_Textures;
 		List<std::string> m_ActiveKeywords;
 		ObjectPtr<Shader> m_Shader;
 

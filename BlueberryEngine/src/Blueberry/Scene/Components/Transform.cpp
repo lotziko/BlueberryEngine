@@ -6,7 +6,16 @@
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(Component, Transform)
+	OBJECT_DEFINITION(Transform, Component)
+	{
+		DEFINE_BASE_FIELDS(Transform, Component)
+		DEFINE_FIELD(Transform, m_LocalPosition, BindingType::Vector3, {})
+		DEFINE_FIELD(Transform, m_LocalRotation, BindingType::Quaternion, {})
+		DEFINE_FIELD(Transform, m_LocalScale, BindingType::Vector3, {})
+		DEFINE_FIELD(Transform, m_LocalRotationEulerHint, BindingType::Vector3, {})
+		DEFINE_FIELD(Transform, m_Parent, BindingType::ObjectPtr, FieldOptions().SetObjectType(Transform::Type))
+		DEFINE_FIELD(Transform, m_Children, BindingType::ObjectPtrArray, FieldOptions().SetObjectType(Transform::Type))
+	}
 
 	void Transform::OnDestroy()
 	{
@@ -206,19 +215,6 @@ namespace Blueberry
 	const size_t& Transform::GetRecalculationFrame() const
 	{
 		return m_RecalculationFrame;
-	}
-
-	void Transform::BindProperties()
-	{
-		BEGIN_OBJECT_BINDING(Transform)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Entity), &Transform::m_Entity, BindingType::ObjectPtr).SetObjectType(Entity::Type))
-		BIND_FIELD(FieldInfo(TO_STRING(m_LocalPosition), &Transform::m_LocalPosition, BindingType::Vector3))
-		BIND_FIELD(FieldInfo(TO_STRING(m_LocalRotation), &Transform::m_LocalRotation, BindingType::Quaternion))
-		BIND_FIELD(FieldInfo(TO_STRING(m_LocalScale), &Transform::m_LocalScale, BindingType::Vector3))
-		BIND_FIELD(FieldInfo(TO_STRING(m_LocalRotationEulerHint), &Transform::m_LocalRotationEulerHint, BindingType::Vector3))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Parent), &Transform::m_Parent, BindingType::ObjectPtr).SetObjectType(Transform::Type))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Children), &Transform::m_Children, BindingType::ObjectPtrArray).SetObjectType(Transform::Type))
-		END_OBJECT_BINDING()
 	}
 
 	void Transform::SetHierarchyDirty()

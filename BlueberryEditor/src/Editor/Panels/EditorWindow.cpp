@@ -10,7 +10,12 @@
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(Object, EditorWindow)
+	OBJECT_DEFINITION(EditorWindow, Object)
+	{
+		DEFINE_BASE_FIELDS(EditorWindow, Object)
+		DEFINE_FIELD(EditorWindow, m_Title, BindingType::String, {})
+		DEFINE_FIELD(EditorWindow, m_RawData, BindingType::Raw, FieldOptions().SetSize(33))
+	}
 
 	List<ObjectPtr<EditorWindow>> EditorWindow::s_ToRemoveWindows = {};
 	List<ObjectPtr<EditorWindow>> EditorWindow::s_ActiveWindows = {};
@@ -71,10 +76,6 @@ namespace Blueberry
 		m_Title = title;
 	}
 
-	void EditorWindow::BindProperties()
-	{
-	}
-
 	void EditorWindow::Load()
 	{
 		auto layoutPath = Path::GetDataPath();
@@ -92,10 +93,8 @@ namespace Blueberry
 				EditorWindow* activeWindow = static_cast<EditorWindow*>(pair.first);
 				activeWindow->Show();
 
-				char buffer[33];
-				memcpy(buffer, activeWindow->m_RawData.data, ARRAYSIZE(buffer));
-				activeWindow->m_Focused = buffer[32];
-				ImGui::WriteRawWindowData(activeWindow->m_Title.c_str(), buffer);
+				activeWindow->m_Focused = activeWindow->m_RawData[32];
+				ImGui::WriteRawWindowData(activeWindow->m_Title.c_str(), reinterpret_cast<char*>(activeWindow->m_RawData));
 			}
 		}
 
@@ -132,10 +131,8 @@ namespace Blueberry
 			for (auto& activeWindow : s_ActiveWindows)
 			{
 				const char* title = activeWindow->m_Title.c_str();
-				activeWindow->m_RawData.data = BB_MALLOC_ARRAY(uint8_t, 33);
-				activeWindow->m_RawData.size = 33;
-				ImGui::ReadRawWindowData(activeWindow->m_Title.c_str(), reinterpret_cast<char*>(activeWindow->m_RawData.data));
-				activeWindow->m_RawData.data[32] = activeWindow->m_Focused;
+				ImGui::ReadRawWindowData(activeWindow->m_Title.c_str(), reinterpret_cast<char*>(activeWindow->m_RawData));
+				activeWindow->m_RawData[32] = activeWindow->m_Focused;
 				serializer.AddObject(activeWindow.Get());
 			}
 			serializer.Serialize(layoutPath.string());

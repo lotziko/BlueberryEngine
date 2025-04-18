@@ -5,10 +5,9 @@
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(AssetImporter, NativeAssetImporter)
-
-	void NativeAssetImporter::BindProperties()
+	OBJECT_DEFINITION(NativeAssetImporter, AssetImporter)
 	{
+		DEFINE_BASE_FIELDS(NativeAssetImporter, AssetImporter)
 	}
 
 	void NativeAssetImporter::ImportData()

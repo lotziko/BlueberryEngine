@@ -15,7 +15,6 @@ namespace Blueberry
 		virtual ~SceneHierarchy() = default;
 
 		static void Open();
-		static void BindProperties();
 
 		virtual void OnDrawUI() final;
 

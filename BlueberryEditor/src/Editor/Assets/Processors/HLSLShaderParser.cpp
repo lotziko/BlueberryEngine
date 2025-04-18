@@ -179,7 +179,7 @@ namespace Blueberry
 		auto propertiesStart = std::sregex_iterator(propertiesBlock.begin(), propertiesBlock.end(), propertyRegex);
 		auto propertiesEnd = std::sregex_iterator();
 
-		List<DataPtr<PropertyData>> properties;
+		DataList<PropertyData> properties;
 		for (std::regex_iterator i = propertiesStart; i != propertiesEnd; ++i)
 		{
 			std::smatch match = *i;
@@ -189,25 +189,25 @@ namespace Blueberry
 				std::string name = match[2];
 				std::string value = match[3];
 
-				PropertyData* property = new PropertyData();
-				property->SetName(name);
+				PropertyData property = {};
+				property.SetName(name);
 
 				if (type.rfind("Texture") != std::string::npos)
 				{
 					std::string defaultTextureName = value;
 					defaultTextureName.erase(std::remove(defaultTextureName.begin(), defaultTextureName.end(), '\"'), defaultTextureName.end());
-					property->SetType(PropertyData::PropertyType::Texture);
-					property->SetDefaultTextureName(defaultTextureName);
+					property.SetType(PropertyData::PropertyType::Texture);
+					property.SetDefaultTextureName(defaultTextureName);
 					if (type == "Texture2D")
 					{
-						property->SetTextureDimension(TextureDimension::Texture2D);
+						property.SetTextureDimension(TextureDimension::Texture2D);
 					}
 					else if (type == "TextureCube")
 					{
-						property->SetTextureDimension(TextureDimension::TextureCube);
+						property.SetTextureDimension(TextureDimension::TextureCube);
 					}
 				}
-				properties.emplace_back(DataPtr<PropertyData>(property));
+				properties.emplace_back(property);
 			}
 		}
 		data.SetProperties(properties);
@@ -344,7 +344,7 @@ namespace Blueberry
 
 				compilationPass.shaderCode = codeBlock;
 				compilationData.passes.emplace_back(compilationPass);
-				compilationData.dataPasses.emplace_back(new PassData(passData));
+				compilationData.dataPasses.emplace_back(passData);
 			}
 			return true;
 		}

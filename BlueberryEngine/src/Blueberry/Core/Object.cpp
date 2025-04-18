@@ -66,11 +66,9 @@ namespace Blueberry
 		m_State = state;
 	}
 
-	void Object::BindProperties()
+	void Object::DefineFields()
 	{
-		BEGIN_OBJECT_BINDING(Object)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Name), &Object::m_Name, BindingType::String))
-		END_OBJECT_BINDING()
+		DEFINE_FIELD(Object, m_Name, BindingType::String, {})
 	}
 
 	Object* Object::Clone(Object* object)

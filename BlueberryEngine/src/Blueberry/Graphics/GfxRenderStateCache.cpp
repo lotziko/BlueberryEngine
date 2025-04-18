@@ -9,13 +9,14 @@ namespace Blueberry
 	{
 		GfxPassData data = {};
 		Shader* shader = material->GetShader();
-		const PassData* shaderPass = shader->GetData()->GetPass(passIndex);
-		if (shaderPass != nullptr)
+		auto& shaderData = shader->GetData();
+		if (passIndex >= 0 && passIndex < shaderData.GetPassCount())
 		{
+			auto& shaderPass = shaderData.GetPass(passIndex);
 			uint32_t vertexFlags = 0;
 			uint32_t fragmentFlags = 0;
-			const List<std::string>& vertexKeywords = shaderPass->GetVertexKeywords();
-			const List<std::string>& fragmentKeywords = shaderPass->GetFragmentKeywords();
+			const List<std::string>& vertexKeywords = shaderPass.GetVertexKeywords();
+			const List<std::string>& fragmentKeywords = shaderPass.GetFragmentKeywords();
 
 			if (material->m_ActiveKeywords.size() > 0)
 			{
@@ -60,13 +61,13 @@ namespace Blueberry
 			data.vertexShader = variant.vertexShader;
 			data.geometryShader = variant.geometryShader;
 			data.fragmentShader = variant.fragmentShader;
-			data.cullMode = shaderPass->GetCullMode();
-			data.blendSrcColor = shaderPass->GetBlendSrcColor();
-			data.blendSrcAlpha = shaderPass->GetBlendSrcAlpha();
-			data.blendDstColor = shaderPass->GetBlendDstColor();
-			data.blendDstAlpha = shaderPass->GetBlendDstAlpha();
-			data.zTest = shaderPass->GetZTest();
-			data.zWrite = shaderPass->GetZWrite();
+			data.cullMode = shaderPass.GetCullMode();
+			data.blendSrcColor = shaderPass.GetBlendSrcColor();
+			data.blendSrcAlpha = shaderPass.GetBlendSrcAlpha();
+			data.blendDstColor = shaderPass.GetBlendDstColor();
+			data.blendDstAlpha = shaderPass.GetBlendDstAlpha();
+			data.zTest = shaderPass.GetZTest();
+			data.zWrite = shaderPass.GetZWrite();
 			data.isValid = true;
 		}
 		else

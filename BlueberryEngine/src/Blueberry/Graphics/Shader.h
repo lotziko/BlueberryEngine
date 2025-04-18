@@ -3,7 +3,6 @@
 #include "Blueberry\Core\Object.h"
 #include "Blueberry\Graphics\Enums.h"
 #include "Blueberry\Graphics\GfxShader.h"
-#include "Blueberry\Core\DataPtr.h"
 
 namespace Blueberry
 {
@@ -51,8 +50,6 @@ namespace Blueberry
 
 		const TextureDimension& GetTextureDimension() const;
 		void SetTextureDimension(const TextureDimension& dimension);
-
-		static void BindProperties();
 
 	private:
 		std::string m_Name;
@@ -104,8 +101,6 @@ namespace Blueberry
 		const uint32_t& GetFragmentOffset() const;
 		void SetFragmentOffset(const uint32_t& offset);
 
-		static void BindProperties();
-
 	private:
 		CullMode m_CullMode = CullMode::Front;
 		BlendMode m_SrcBlendColor = BlendMode::One;
@@ -131,18 +126,16 @@ namespace Blueberry
 		ShaderData() = default;
 		virtual ~ShaderData() = default;
 
-		const PassData* GetPass(const uint32_t& index) const;
+		const PassData& GetPass(const uint32_t& index) const;
 		const uint32_t& GetPassCount() const;
-		void SetPasses(const List<PassData*>& passes);
+		void SetPasses(const DataList<PassData>& passes);
 
-		const List<DataPtr<PropertyData>>& GetProperties() const;
-		void SetProperties(const List<DataPtr<PropertyData>>& properties);
-
-		static void BindProperties();
+		const DataList<PropertyData>& GetProperties() const;
+		void SetProperties(const DataList<PropertyData>& properties);
 
 	private:
-		List<DataPtr<PassData>> m_Passes;
-		List<DataPtr<PropertyData>> m_Properties;
+		DataList<PassData> m_Passes;
+		DataList<PropertyData> m_Properties;
 	};
 
 	struct VariantsData
@@ -170,7 +163,7 @@ namespace Blueberry
 		Shader() = default;
 		virtual ~Shader() = default;
 
-		const ShaderData* GetData() const;
+		const ShaderData& GetData() const;
 
 		void Initialize(const VariantsData& variantsData);
 		void Initialize(const VariantsData& variantsData, const ShaderData& data);
@@ -180,13 +173,11 @@ namespace Blueberry
 		static void SetKeyword(const size_t& id, const bool& enabled);
 		static const uint32_t& GetActiveKeywordsMask();
 
-		static void BindProperties();
-
 	private:
 		const Shader::ShaderVariant GetVariant(const uint32_t& vertexKeywordFlags, const uint32_t& fragmentKeywordFlags, const uint8_t& passIndex);
 
 	private:
-		DataPtr<ShaderData> m_Data;
+		ShaderData m_Data;
 
 		List<GfxVertexShader*> m_VertexShaders;
 		List<GfxGeometryShader*> m_GeometryShaders;

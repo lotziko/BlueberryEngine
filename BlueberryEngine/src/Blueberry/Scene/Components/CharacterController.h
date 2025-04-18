@@ -21,8 +21,6 @@ namespace Blueberry
 		const float& GetHeight();
 		const float& GetRadius();
 
-		static void BindProperties();
-
 	private:
 		float m_Height = 2.0f;
 		float m_Radius = 0.3f;

@@ -24,8 +24,6 @@ namespace Blueberry
 		Material* GetMaterial();
 		void SetMaterial(Material* material);
 
-		static void BindProperties();
-
 	private:
 		Color m_Color = Color(1, 1, 1, 1);
 		ObjectPtr<Texture2D> m_Texture;

@@ -12,7 +12,17 @@
 namespace Blueberry
 {
 	DATA_DEFINITION(ModelMaterialData)
-	OBJECT_DEFINITION(AssetImporter, ModelImporter)
+	{
+		DEFINE_FIELD(ModelMaterialData, m_Name, BindingType::String, {})
+		DEFINE_FIELD(ModelMaterialData, m_Material, BindingType::ObjectPtr, FieldOptions().SetObjectType(Material::Type))
+	}
+
+	OBJECT_DEFINITION(ModelImporter, AssetImporter)
+	{
+		DEFINE_BASE_FIELDS(ModelImporter, AssetImporter)
+		DEFINE_FIELD(ModelImporter, m_Materials, BindingType::DataList, FieldOptions().SetObjectType(ModelMaterialData::Type))
+		DEFINE_FIELD(ModelImporter, m_Scale, BindingType::Float, {})
+	}
 
 	const std::string& ModelMaterialData::GetName()
 	{
@@ -34,15 +44,7 @@ namespace Blueberry
 		m_Material = material;
 	}
 
-	void ModelMaterialData::BindProperties()
-	{
-		BEGIN_OBJECT_BINDING(ModelMaterialData)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Name), &ModelMaterialData::m_Name, BindingType::String))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Material), &ModelMaterialData::m_Material, BindingType::ObjectPtr).SetObjectType(Material::Type))
-		END_OBJECT_BINDING()
-	}
-
-	const List<DataPtr<ModelMaterialData>>& ModelImporter::GetMaterials()
+	DataList<ModelMaterialData>& ModelImporter::GetMaterials()
 	{
 		return m_Materials;
 	}
@@ -55,14 +57,6 @@ namespace Blueberry
 	void ModelImporter::SetScale(const float& scale)
 	{
 		m_Scale = scale;
-	}
-
-	void ModelImporter::BindProperties()
-	{
-		BEGIN_OBJECT_BINDING(ModelImporter)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Materials), &ModelImporter::m_Materials, BindingType::DataList).SetObjectType(ModelMaterialData::Type))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Scale), &ModelImporter::m_Scale, BindingType::Float))
-		END_OBJECT_BINDING()
 	}
 
 	void ModelImporter::ImportData()
@@ -315,9 +309,9 @@ namespace Blueberry
 							subMeshSize += fbxMesh->mPolygons[j].mSize == 3 ? 3 : 6;
 						}
 					}
-					SubMeshData* subMesh = new SubMeshData();
-					subMesh->SetIndexStart(subMeshStart);
-					subMesh->SetIndexCount(subMeshSize);
+					SubMeshData subMesh = {};
+					subMesh.SetIndexStart(subMeshStart);
+					subMesh.SetIndexCount(subMeshSize);
 					mesh->SetSubMesh(i, subMesh);
 					subMeshStart += subMeshSize;
 				}
@@ -389,16 +383,16 @@ namespace Blueberry
 				fbxsdk::FbxSurfaceMaterial* fbxMaterial = node->GetMaterial(i);
 				std::string name = fbxMaterial->GetName();
 
-				auto index = std::find_if(m_Materials.begin(), m_Materials.end(), [name](DataPtr<ModelMaterialData> const& d) { return d.Get()->GetName() == name; });
+				auto index = std::find_if(m_Materials.begin(), m_Materials.end(), [name](ModelMaterialData& d) { return d.GetName() == name; });
 				if (index == m_Materials.end())
 				{
-					ModelMaterialData* data = new ModelMaterialData();
-					data->SetName(name);
+					ModelMaterialData data = {};
+					data.SetName(name);
 					m_Materials.emplace_back(data);
 				}
 				else
 				{
-					Material* material = index->Get()->GetMaterial();
+					Material* material = index->GetMaterial();
 					if (material != nullptr)
 					{
 						materials[i] = material;

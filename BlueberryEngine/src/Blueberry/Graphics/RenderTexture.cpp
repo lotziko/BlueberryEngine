@@ -2,10 +2,14 @@
 #include "RenderTexture.h"
 
 #include "Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Core\ClassDB.h"
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(Texture, RenderTexture)
+	OBJECT_DEFINITION(RenderTexture, Texture)
+	{
+		DEFINE_BASE_FIELDS(RenderTexture, Texture)
+	}
 
 	Dictionary<ObjectId, size_t> RenderTexture::s_TemporaryKeys = {};
 	Dictionary<size_t, List<std::pair<RenderTexture*, size_t>>> RenderTexture::s_TemporaryPool = {};

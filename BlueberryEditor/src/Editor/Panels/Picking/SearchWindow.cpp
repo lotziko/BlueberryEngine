@@ -5,7 +5,9 @@
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(EditorWindow, SearchWindow)
+	OBJECT_DEFINITION(SearchWindow, EditorWindow)
+	{
+	}
 
 	void SearchWindow::Open(const Vector2& position)
 	{

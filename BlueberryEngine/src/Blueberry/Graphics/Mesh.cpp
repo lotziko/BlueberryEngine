@@ -11,9 +11,24 @@
 namespace Blueberry
 {
 	DATA_DEFINITION(SubMeshData)
-	OBJECT_DEFINITION(Object, Mesh)
+	{
+		DEFINE_FIELD(SubMeshData, m_IndexStart, BindingType::Int, {})
+		DEFINE_FIELD(SubMeshData, m_IndexCount, BindingType::Int, {})
+	}
 
-	const uint32_t& SubMeshData::GetIndexStart()
+	OBJECT_DEFINITION(Mesh, Object)
+	{
+		DEFINE_BASE_FIELDS(Mesh, Object)
+		DEFINE_FIELD(Mesh, m_VertexData, BindingType::FloatList, {})
+		DEFINE_FIELD(Mesh, m_IndexData, BindingType::IntList, {})
+		DEFINE_FIELD(Mesh, m_VertexCount, BindingType::Int, {})
+		DEFINE_FIELD(Mesh, m_IndexCount, BindingType::Int, {})
+		DEFINE_FIELD(Mesh, m_SubMeshes, BindingType::DataList, FieldOptions().SetObjectType(SubMeshData::Type))
+		DEFINE_FIELD(Mesh, m_Layout, BindingType::Raw, FieldOptions().SetSize(sizeof(VertexLayout)))
+		DEFINE_FIELD(Mesh, m_Bounds, BindingType::AABB, {})
+	}
+
+	const uint32_t& SubMeshData::GetIndexStart() const
 	{
 		return m_IndexStart;
 	}
@@ -23,7 +38,7 @@ namespace Blueberry
 		m_IndexStart = indexStart;
 	}
 
-	const uint32_t& SubMeshData::GetIndexCount()
+	const uint32_t& SubMeshData::GetIndexCount() const
 	{
 		return m_IndexCount;
 	}
@@ -31,14 +46,6 @@ namespace Blueberry
 	void SubMeshData::SetIndexCount(const uint32_t& indexCount)
 	{
 		m_IndexCount = indexCount;
-	}
-
-	void SubMeshData::BindProperties()
-	{
-		BEGIN_OBJECT_BINDING(SubMeshData)
-		BIND_FIELD(FieldInfo(TO_STRING(m_IndexStart), &SubMeshData::m_IndexStart, BindingType::Int))
-		BIND_FIELD(FieldInfo(TO_STRING(m_IndexCount), &SubMeshData::m_IndexCount, BindingType::Int))
-		END_OBJECT_BINDING()
 	}
 
 	const int VERTICES_BIT = 1;
@@ -73,9 +80,9 @@ namespace Blueberry
 		return m_SubMeshes.size();
 	}
 
-	SubMeshData* Mesh::GetSubMesh(const uint32_t& index)
+	const SubMeshData& Mesh::GetSubMesh(const uint32_t& index)
 	{
-		return m_SubMeshes[index].Get();
+		return m_SubMeshes[index];
 	}
 
 	const List<Vector3>& Mesh::GetVertices()
@@ -156,7 +163,7 @@ namespace Blueberry
 		}
 	}
 
-	void Mesh::SetSubMesh(const uint32_t& index, SubMeshData* data)
+	void Mesh::SetSubMesh(const uint32_t& index, const SubMeshData& data)
 	{
 		if (index >= m_SubMeshes.size())
 		{
@@ -361,19 +368,5 @@ namespace Blueberry
 	{
 		Mesh* mesh = Object::Create<Mesh>();
 		return mesh;
-	}
-
-	void Mesh::BindProperties()
-	{
-		BEGIN_OBJECT_BINDING(Mesh)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Name), &Mesh::m_Name, BindingType::String))
-		BIND_FIELD(FieldInfo(TO_STRING(m_VertexData), &Mesh::m_VertexData, BindingType::FloatList))
-		BIND_FIELD(FieldInfo(TO_STRING(m_IndexData), &Mesh::m_IndexData, BindingType::IntList))
-		BIND_FIELD(FieldInfo(TO_STRING(m_VertexCount), &Mesh::m_VertexCount, BindingType::Int))
-		BIND_FIELD(FieldInfo(TO_STRING(m_IndexCount), &Mesh::m_IndexCount, BindingType::Int))
-		BIND_FIELD(FieldInfo(TO_STRING(m_SubMeshes), &Mesh::m_SubMeshes, BindingType::DataList).SetObjectType(SubMeshData::Type))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Layout), &Mesh::m_Layout, BindingType::Raw).SetObjectType(sizeof(VertexLayout)))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Bounds), &Mesh::m_Bounds, BindingType::AABB))
-		END_OBJECT_BINDING()
 	}
 }

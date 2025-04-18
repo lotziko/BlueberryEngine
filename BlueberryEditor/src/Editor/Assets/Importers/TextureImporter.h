@@ -19,8 +19,6 @@ namespace Blueberry
 	public:
 		TextureImporter() = default;
 
-		static void BindProperties();
-
 	protected:
 		virtual void ImportData() override;
 

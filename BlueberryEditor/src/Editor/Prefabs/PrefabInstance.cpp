@@ -8,7 +8,11 @@
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(Object, PrefabInstance)
+	OBJECT_DEFINITION(PrefabInstance, Object)
+	{
+		DEFINE_BASE_FIELDS(PrefabInstance, Object)
+		DEFINE_FIELD(PrefabInstance, m_Prefab, BindingType::ObjectPtr, FieldOptions().SetObjectType(Entity::Type))
+	}
 
 	Entity* PrefabInstance::GetEntity()
 	{
@@ -42,13 +46,6 @@ namespace Blueberry
 		instance->m_Prefab = prefab;
 		instance->OnCreate();
 		return instance;
-	}
-
-	void PrefabInstance::BindProperties()
-	{
-		BEGIN_OBJECT_BINDING(PrefabInstance)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Prefab), &PrefabInstance::m_Prefab, BindingType::ObjectPtr).SetObjectType(Entity::Type))
-		END_OBJECT_BINDING()
 	}
 
 	void PrefabInstance::AddPrefabEntities(Entity* entity)

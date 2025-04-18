@@ -25,8 +25,6 @@ namespace Blueberry
 		virtual void OnDisable() { };
 		virtual void OnUpdate() { };
 
-		static void BindProperties();
-
 	protected:
 		void AddToSceneComponents(const size_t& type);
 		void RemoveFromSceneComponents(const size_t& type);

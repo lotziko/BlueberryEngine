@@ -108,7 +108,6 @@ namespace Blueberry
 						Material* material = GfxDrawingOperation::GetValidMaterial(meshRenderer->GetMaterial(i));
 						if (material != nullptr)
 						{
-							SubMeshData* subMesh = mesh->GetSubMesh(i);
 							s_DrawingOperations.emplace_back(DrawingOperation{ matrix, mesh, mesh->GetObjectId(), static_cast<uint8_t>(i), material, material->GetObjectId(), 1 });
 						}
 					}
@@ -355,8 +354,8 @@ namespace Blueberry
 			}
 			else
 			{
-				SubMeshData* subMesh = operation.mesh->GetSubMesh(operation.submeshIndex);
-				GfxDevice::Draw(GfxDrawingOperation(operation.mesh, operation.material, subMesh->GetIndexCount(), subMesh->GetIndexStart(), operation.mesh->GetVertexCount(), passIndex, s_IndexBuffer, i, operation.instanceCount));
+				auto& subMesh = operation.mesh->GetSubMesh(operation.submeshIndex);
+				GfxDevice::Draw(GfxDrawingOperation(operation.mesh, operation.material, subMesh.GetIndexCount(), subMesh.GetIndexStart(), operation.mesh->GetVertexCount(), passIndex, s_IndexBuffer, i, operation.instanceCount));
 			}
 			i += operation.instanceCount;
 		}

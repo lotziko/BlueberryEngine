@@ -31,7 +31,6 @@ namespace Blueberry
 		virtual ~ProjectBrowser();
 
 		static void Open();
-		static void BindProperties();
 
 		virtual void OnDrawUI() final;
 

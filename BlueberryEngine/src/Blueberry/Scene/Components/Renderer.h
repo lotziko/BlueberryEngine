@@ -14,8 +14,6 @@ namespace Blueberry
 		const int& GetSortingOrder();
 		void SetSortingOrder(const int& sortingOrder);
 
-		static void BindProperties();
-
 	protected:
 		int m_SortingOrder = 0;
 	};

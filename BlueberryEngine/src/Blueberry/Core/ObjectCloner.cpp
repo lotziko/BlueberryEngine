@@ -27,8 +27,8 @@ namespace Blueberry
 		Variant cloneValue;
 		for (auto field : info.fields)
 		{
-			field.bind->Get(object, originalValue);
-			field.bind->Get(clone, cloneValue);
+			originalValue = Variant(object, field.offset);
+			cloneValue = Variant(clone, field.offset);
 
 			switch (field.type)
 			{

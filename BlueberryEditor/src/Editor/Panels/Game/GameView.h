@@ -15,7 +15,6 @@ namespace Blueberry
 		virtual ~GameView() = default;
 
 		static void Open();
-		static void BindProperties();
 
 		virtual void OnDrawUI();
 

@@ -21,8 +21,6 @@ namespace Blueberry
 
 		void SetTitle(const std::string& title);
 
-		static void BindProperties();
-
 		static void Load();
 		static void Save();
 
@@ -35,7 +33,7 @@ namespace Blueberry
 
 	protected:
 		std::string m_Title;
-		ByteData m_RawData = {};
+		uint8_t m_RawData[33];
 
 	private:
 		static List<ObjectPtr<EditorWindow>> s_ToRemoveWindows;

@@ -4,7 +4,6 @@
 #include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Core\ObjectPtr.h"
-#include "Blueberry\Core\DataPtr.h"
 #include "Editor\Serialization\YamlHelper.h"
 #include "Editor\Serialization\YamlSerializers.h"
 
@@ -74,7 +73,7 @@ namespace Blueberry
 		for (auto& field : context.info.fields)
 		{
 			key = ryml::to_csubstr(field.name);
-			field.bind->Get(context.ptr, value);
+			value = Variant(context.ptr, field.offset);
 
 			switch (field.type)
 			{
@@ -149,6 +148,14 @@ namespace Blueberry
 			case BindingType::Color:
 				objectNode[key] << *value.Get<Color>();
 				break;
+			case BindingType::Raw:
+			{
+				ByteData byteData;
+				byteData.data = value.Get<uint8_t>();
+				byteData.size = field.options.size;
+				objectNode[key] << byteData;
+			}
+			break;
 			case BindingType::ObjectPtr:
 			{
 				ObjectPtr<Object> objectRefValue = *value.Get<ObjectPtr<Object>>();
@@ -189,24 +196,23 @@ namespace Blueberry
 			break;
 			case BindingType::Data:
 			{
-				DataPtr<Data>* dataValue = value.Get<DataPtr<Data>>();
-				Data* instance = dataValue->Get();
-				Context context = Context::CreateNoOffset(instance, field.objectType);
+				Data* data = value.Get<Data>();
+				Context context = Context::CreateNoOffset(data, field.options.objectType);
 				SerializeNode(objectNode, context);
 			}
 			break;
 			case BindingType::DataList:
 			{
-				const ClassDB::ClassInfo& info = ClassDB::GetInfo(field.objectType);
-				List<DataPtr<Data>>* arrayValue = value.Get<List<DataPtr<Data>>>();
-				if (arrayValue->size() > 0)
+				DataListBase* dataArrayPointer = value.Get<DataListBase>();
+				uint32_t dataSize = dataArrayPointer->Size();
+				if (dataSize > 0)
 				{
 					ryml::NodeRef sequence = objectNode[key];
 					sequence |= ryml::SEQ;
-					for (auto& dataValue : *arrayValue)
+					for (uint32_t i = 0; i < dataSize; ++i)
 					{
-						Data* instance = dataValue.Get();
-						Context context = Context::CreateNoOffset(instance, field.objectType);
+						void* data = dataArrayPointer->Get(i);
+						Context context = Context::CreateNoOffset(data, field.options.objectType);
 						ryml::NodeRef node = sequence.append_child();
 						node |= ryml::MAP;
 						SerializeNode(node, context);
@@ -230,7 +236,7 @@ namespace Blueberry
 		for (auto& field : fields)
 		{
 			key = ryml::to_csubstr(field.name);
-			field.bind->Get(context.ptr, value);
+			value = Variant(context.ptr, field.offset);
 
 			if (objectNode.has_child(key))
 			{
@@ -298,6 +304,13 @@ namespace Blueberry
 				case BindingType::Color:
 					objectNode[key] >> *value.Get<Color>();
 					break;
+				case BindingType::Raw:
+				{
+					ByteData byteData;
+					objectNode[key] >> byteData;
+					memcpy(value.Get<uint8_t>(), byteData.data, byteData.size);
+				}
+				break;
 				case BindingType::ObjectPtr:
 				{
 					ObjectPtrData data = {};
@@ -319,23 +332,19 @@ namespace Blueberry
 				break;
 				case BindingType::Data:
 				{
-					const ClassDB::ClassInfo& info = ClassDB::GetInfo(field.objectType);
-					Data* instance = info.createDataInstance();
-					Context context = Context::Create(instance, info);
+					Data* data = value.Get<Data>();
+					Context context = Context::CreateNoOffset(data, field.options.objectType);
 					DeserializeNode(objectNode, context);
-					*value.Get<DataPtr<Data>>() = context.ptr;
 				}
 				break;
 				case BindingType::DataList:
 				{
-					const ClassDB::ClassInfo& info = ClassDB::GetInfo(field.objectType);
-					List<DataPtr<Data>>* dataArrayPointer = value.Get<List<DataPtr<Data>>>();
+					DataListBase* dataArrayPointer = value.Get<DataListBase>();
 					for (auto& child : objectNode[key].children())
 					{
-						Data* instance = info.createDataInstance();
-						Context context = Context::Create(instance, info);
+						void* data = dataArrayPointer->EmplaceBack();
+						Context context = Context::CreateNoOffset(data, field.options.objectType);
 						DeserializeNode(child, context);
-						dataArrayPointer->emplace_back(context.ptr);
 					}
 				}
 				break;

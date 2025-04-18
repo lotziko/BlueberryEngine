@@ -40,8 +40,6 @@ namespace Blueberry
 		const bool& IsCastingShadows();
 		void SetCastingShadows(const bool& castingShadows);
 
-		static void BindProperties();
-
 	private:
 		LightType m_Type = LightType::Point;
 		Color m_Color = Color(1.0f, 1.0f, 1.0f, 1.0f);

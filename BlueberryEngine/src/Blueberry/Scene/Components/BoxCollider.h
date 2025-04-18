@@ -11,8 +11,6 @@ namespace Blueberry
 	public:
 		const Vector3& GetSize();
 
-		static void BindProperties();
-
 	private:
 		virtual JPH::Shape* GetShape() override;
 

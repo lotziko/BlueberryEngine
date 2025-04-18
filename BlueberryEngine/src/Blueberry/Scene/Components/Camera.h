@@ -49,8 +49,6 @@ namespace Blueberry
 		Vector3 WorldToScreenPoint(Vector3 position);
 		Vector3 ScreenToWorldPoint(Vector3 position);
 
-		static void BindProperties();
-
 	private:
 		bool IsViewDirty();
 

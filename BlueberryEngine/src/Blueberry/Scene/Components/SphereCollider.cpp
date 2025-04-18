@@ -8,19 +8,15 @@
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(Collider, SphereCollider)
+	OBJECT_DEFINITION(SphereCollider, Collider)
+	{
+		DEFINE_BASE_FIELDS(SphereCollider, Collider)
+		DEFINE_FIELD(SphereCollider, m_Radius, BindingType::Float, {})
+	}
 
 	const float& SphereCollider::GetRadius()
 	{
 		return m_Radius;
-	}
-
-	void SphereCollider::BindProperties()
-	{
-		BEGIN_OBJECT_BINDING(SphereCollider)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Entity), &SphereCollider::m_Entity, BindingType::ObjectPtr).SetObjectType(Entity::Type))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Radius), &SphereCollider::m_Radius, BindingType::Float))
-		END_OBJECT_BINDING()
 	}
 
 	JPH::Shape* SphereCollider::GetShape()

@@ -30,8 +30,6 @@ namespace Blueberry
 		virtual void OnDisable() final;
 		virtual void OnUpdate() final;
 
-		static void BindProperties();
-
 	private:
 		BodyType m_BodyType;
 

@@ -14,7 +14,11 @@
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(EditorWindow, SceneInspector)
+	OBJECT_DEFINITION(SceneInspector, EditorWindow)
+	{
+		DEFINE_BASE_FIELDS(SceneInspector, EditorWindow)
+		EditorMenuManager::AddItem("Window/Inspector", &SceneInspector::Open);
+	}
 
 	SceneInspector::SceneInspector()
 	{
@@ -31,16 +35,6 @@ namespace Blueberry
 		EditorWindow* window = GetWindow(SceneInspector::Type);
 		window->SetTitle("Inspector");
 		window->Show();
-	}
-
-	void SceneInspector::BindProperties()
-	{
-		BEGIN_OBJECT_BINDING(SceneInspector)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Title), &SceneInspector::m_Title, BindingType::String))
-		BIND_FIELD(FieldInfo(TO_STRING(m_RawData), &SceneInspector::m_RawData, BindingType::ByteData))
-		END_OBJECT_BINDING()
-
-		EditorMenuManager::AddItem("Window/Inspector", &SceneInspector::Open);
 	}
 
 	void SceneInspector::OnDrawUI()

@@ -5,7 +5,11 @@
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(Object, Component)
+	OBJECT_DEFINITION(Component, Object)
+	{
+		DEFINE_BASE_FIELDS(Component, Object)
+		DEFINE_FIELD(Component, m_Entity, BindingType::ObjectPtr, FieldOptions().SetObjectType(Entity::Type).SetHidden())
+	}
 
 	Entity* Component::GetEntity()
 	{
@@ -20,10 +24,6 @@ namespace Blueberry
 	Scene* Component::GetScene()
 	{
 		return m_Entity.Get()->GetScene();
-	}
-
-	void Component::BindProperties()
-	{
 	}
 
 	void Component::AddToSceneComponents(const size_t& type)

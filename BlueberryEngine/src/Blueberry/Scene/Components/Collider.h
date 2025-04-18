@@ -13,6 +13,10 @@ namespace Blueberry
 	{
 		OBJECT_DECLARATION(Collider)
 
+	public:
+		Collider() = default;
+		virtual ~Collider() = default;
+
 	private:
 		virtual JPH::Shape* GetShape() = 0;
 

@@ -6,7 +6,11 @@
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(Component, SkyRenderer)
+	OBJECT_DEFINITION(SkyRenderer, Component)
+	{
+		DEFINE_BASE_FIELDS(SkyRenderer, Component)
+		DEFINE_FIELD(SkyRenderer, m_Material, BindingType::ObjectPtr, FieldOptions().SetObjectType(Material::Type))
+	}
 
 	void SkyRenderer::OnEnable()
 	{
@@ -21,13 +25,5 @@ namespace Blueberry
 	Material* SkyRenderer::GetMaterial()
 	{
 		return m_Material.Get();
-	}
-
-	void SkyRenderer::BindProperties()
-	{
-		BEGIN_OBJECT_BINDING(SkyRenderer)
-		BIND_FIELD(FieldInfo(TO_STRING(m_Entity), &SkyRenderer::m_Entity, BindingType::ObjectPtr).SetObjectType(Entity::Type))
-		BIND_FIELD(FieldInfo(TO_STRING(m_Material), &SkyRenderer::m_Material, BindingType::ObjectPtr).SetObjectType(Material::Type))
-		END_OBJECT_BINDING()
 	}
 }
