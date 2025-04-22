@@ -134,7 +134,7 @@ bool ImGui::IntEdit(const char* label, int* v)
 	return false;
 }
 
-bool ImGui::FloatEdit(const char* label, float* v)
+bool ImGui::FloatEdit(const char* label, float* v, float min, float max)
 {
 	ImGui::PushID(label);
 
@@ -142,7 +142,7 @@ bool ImGui::FloatEdit(const char* label, float* v)
 	ImGui::SameLine();
 	ImGui::SetCursorPosX(100);
 
-	if (ImGui::DragFloat("##float", v))
+	if (ImGui::DragFloat("##float", v, 1.0f, min, max))
 	{
 		ImGui::PopID();
 		return true;

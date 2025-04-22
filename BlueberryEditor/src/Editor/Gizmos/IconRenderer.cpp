@@ -43,12 +43,23 @@ namespace Blueberry
 		delete s_IconMaterial;
 	}
 
+	bool CompareOperations(const IconRenderer::IconInfo& i1, const IconRenderer::IconInfo& i2)
+	{
+		return i1.distanceToCamera > i2.distanceToCamera;
+	}
+
 	void IconRenderer::Draw(Scene* scene, Camera* camera)
 	{
 		if (s_IconsCache.size() == 0)
 		{
 			GenerateCache(scene);
 		}
+		Vector3 cameraPosition = camera->GetTransform()->GetPosition();
+		for (auto& info : s_IconsCache)
+		{
+			info.distanceToCamera = Vector3::DistanceSquared(cameraPosition, info.transform->GetPosition());
+		}
+		std::sort(s_IconsCache.begin(), s_IconsCache.end(), CompareOperations);
 
 		Vector3 cameraDirection = Vector3::Transform(Vector3::Forward, camera->GetTransform()->GetRotation());
 
@@ -59,13 +70,13 @@ namespace Blueberry
 				Vector3 position = info.transform->GetPosition();
 				Matrix modelMatrix = Matrix::CreateBillboard(position, position + cameraDirection, Vector3(0, -1, 0));
 
-				const char* path = info.inspector->GetIconPath(info.component.Get());
-				if (path != nullptr)
+				Texture* icon = info.inspector->GetIcon(info.component.Get());
+				if (icon != nullptr)
 				{
-					s_IconMaterial->SetTexture("_BaseMap", static_cast<Texture*>(AssetLoader::Load(path)));
-
+					s_IconMaterial->SetTexture("_BaseMap", static_cast<Texture*>(icon));
 					PerDrawConstantBuffer::BindData(modelMatrix);
-					GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_IconMaterial));
+					GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_IconMaterial, 0));
+					GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_IconMaterial, 1));
 				}
 			}
 		}
@@ -86,7 +97,7 @@ namespace Blueberry
 				ObjectInspector* inspector = ObjectInspectorDB::GetInspector(component->GetType());
 				if (inspector != nullptr)
 				{
-					if (inspector->GetIconPath(component) != nullptr)
+					if (inspector->GetIcon(component) != nullptr)
 					{
 						IconInfo info;
 						info.transform = entity->GetTransform();

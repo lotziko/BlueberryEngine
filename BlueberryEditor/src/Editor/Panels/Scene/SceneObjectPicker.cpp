@@ -141,7 +141,7 @@ namespace Blueberry
 				for (auto& component : entity->GetComponents())
 				{
 					ObjectInspector* inspector = ObjectInspectorDB::GetInspector(component->GetType());
-					if (inspector->GetIconPath(component) != nullptr)
+					if (inspector->GetIcon(component) != nullptr)
 					{
 						Vector3 position = entity->GetTransform()->GetPosition();
 						Matrix modelMatrix = Matrix::CreateScale(0.75f) * Matrix::CreateBillboard(position, position + cameraDirection, Vector3(0, -1, 0));

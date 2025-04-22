@@ -513,7 +513,9 @@ namespace Blueberry
 			GfxDevice::SetRenderTarget(nullptr);
 			return;
 		}
+		BB_PROFILE_BEGIN("Scene draw");
 		DefaultRenderer::Draw(scene, m_Camera, Rectangle(0, 0, viewportWidth, viewportHeight), background, m_ColorRenderTarget, m_DepthStencilRenderTarget);
+		BB_PROFILE_END();
 		GfxDevice::SetRenderTarget(m_ColorRenderTarget->Get(), m_DepthStencilRenderTarget->Get());
 		GfxDevice::SetViewport(0, 0, viewportWidth, viewportHeight);
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_GridMaterial));

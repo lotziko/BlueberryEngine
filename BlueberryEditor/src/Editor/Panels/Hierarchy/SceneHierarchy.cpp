@@ -35,12 +35,11 @@ namespace Blueberry
 
 		if (scene != nullptr)
 		{
-			for (auto& pair : scene->GetEntities())
+			for (auto& rootEntity : scene->GetRootEntities())
 			{
-				auto entity = pair.second;
-				if (entity.IsValid() && entity.Get()->GetTransform() != nullptr && entity.Get()->GetTransform()->GetParent() == nullptr)
+				if (rootEntity.IsValid() && rootEntity.Get()->GetTransform() != nullptr && rootEntity.Get()->GetTransform()->GetParent() == nullptr)
 				{
-					DrawEntity(entity.Get());
+					DrawEntity(rootEntity.Get());
 				}
 			}
 

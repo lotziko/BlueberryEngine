@@ -20,7 +20,7 @@ namespace Blueberry
 
 	bool Gizmos::Initialize()
 	{
-		Shader* lineShader = static_cast<Shader*>(AssetLoader::Load("assets/shaders/Color.shader"));
+		Shader* lineShader = static_cast<Shader*>(AssetLoader::Load("assets/shaders/Line.shader"));
 		if (lineShader == nullptr)
 		{
 			BB_ERROR("Failed to load gizmo line shader.")
@@ -263,7 +263,8 @@ namespace Blueberry
 
 		s_LineVertexBuffer->SetData(s_LineVertexData, s_LineCount * 2);
 
-		GfxDevice::Draw(GfxDrawingOperation(s_LineVertexBuffer, nullptr, s_LineMaterial, &s_LineLayout, 0, 0, s_LineCount * 2, Topology::LineList));
+		GfxDevice::Draw(GfxDrawingOperation(s_LineVertexBuffer, nullptr, s_LineMaterial, &s_LineLayout, 0, 0, s_LineCount * 2, Topology::LineList, 0));
+		GfxDevice::Draw(GfxDrawingOperation(s_LineVertexBuffer, nullptr, s_LineMaterial, &s_LineLayout, 0, 0, s_LineCount * 2, Topology::LineList, 1));
 		
 		s_LineCount = 0;
 		s_LineVertexDataPtr = s_LineVertexData;
@@ -310,6 +311,7 @@ namespace Blueberry
 
 		s_ArcVertexBuffer->SetData(s_ArcVertexData, s_ArcCount);
 
-		GfxDevice::Draw(GfxDrawingOperation(s_ArcVertexBuffer, nullptr, s_ArcMaterial, &s_ArcLayout, 0, 0, s_ArcCount, Topology::PointList));
+		GfxDevice::Draw(GfxDrawingOperation(s_ArcVertexBuffer, nullptr, s_ArcMaterial, &s_ArcLayout, 0, 0, s_ArcCount, Topology::PointList, 0));
+		GfxDevice::Draw(GfxDrawingOperation(s_ArcVertexBuffer, nullptr, s_ArcMaterial, &s_ArcLayout, 0, 1, s_ArcCount, Topology::PointList, 1));
 	}
 }

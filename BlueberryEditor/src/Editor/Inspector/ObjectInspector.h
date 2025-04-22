@@ -4,12 +4,12 @@
 
 namespace Blueberry
 {
-	class Texture2D;
+	class Texture;
 
 	class ObjectInspector
 	{
 	public:
-		virtual const char* GetIconPath(Object* object);
+		virtual Texture* GetIcon(Object* object);
 		virtual void Draw(Object* object);
 		virtual void DrawScene(Object* object);
 

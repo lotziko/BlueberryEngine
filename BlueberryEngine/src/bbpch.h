@@ -29,7 +29,7 @@
 #include "Blueberry\Tools\WindowsHelper.h"
 
 #include "Blueberry\Logging\Log.h"
-#include "Blueberry\Logging\TimeMeasurement.h"
+#include "Blueberry\Logging\Profiler.h"
 
 #include "flathashmap\flat_hash_map.hpp"
 

@@ -9,7 +9,7 @@
 
 namespace Blueberry
 {
-	const char* ObjectInspector::GetIconPath(Object* object)
+	Texture* ObjectInspector::GetIcon(Object* object)
 	{
 		return nullptr;
 	}

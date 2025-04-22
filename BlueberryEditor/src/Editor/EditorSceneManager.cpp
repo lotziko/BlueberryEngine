@@ -40,10 +40,10 @@ namespace Blueberry
 
 	void Serialize(Scene* scene, Serializer& serializer, const std::string& path)
 	{
-		for (auto& pair : scene->GetEntities())
+		for (auto& rootEntity : scene->GetRootEntities())
 		{
 			// Components are being added automatically
-			Entity* entity = pair.second.Get();
+			Entity* entity = rootEntity.Get();
 			PrefabInstance* prefabInstance = PrefabManager::GetInstance(entity);
 			if (prefabInstance != nullptr)
 			{
@@ -84,9 +84,9 @@ namespace Blueberry
 	{
 		if (s_Scene != nullptr)
 		{
-			for (auto& pair : s_Scene->GetEntities())
+			for (auto& rootEntity : s_Scene->GetRootEntities())
 			{
-				Entity* entity = pair.second.Get();
+				Entity* entity = rootEntity.Get();
 				if (PrefabManager::IsPartOfPrefabInstance(entity))
 				{
 					Object::Destroy(PrefabManager::GetInstance(entity));

@@ -6,7 +6,7 @@ namespace Blueberry
 {
 	class Scene;
 	class Camera;
-	class Texture2D;
+	class Texture;
 	class Material;
 	class Transform;
 	class Component;
@@ -14,11 +14,13 @@ namespace Blueberry
 
 	class IconRenderer
 	{
+	public:
 		struct IconInfo
 		{
 			ObjectPtr<Transform> transform;
 			ObjectPtr<Component> component;
 			ObjectInspector* inspector;
+			float distanceToCamera;
 		};
 
 	public:

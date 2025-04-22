@@ -4,6 +4,7 @@
 #include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Core\ObjectDB.h"
 #include "Blueberry\Core\ClassDB.h"
+#include "Blueberry\Core\Notifyable.h"
 
 namespace Blueberry
 {
@@ -40,5 +41,18 @@ namespace Blueberry
 			return m_Texture->GetHandle();
 		}
 		return nullptr;
+	}
+
+	void Texture::IncrementUpdateCount()
+	{
+		++m_UpdateCount;
+		for (auto dependency : m_Dependencies)
+		{
+			Object* object = ObjectDB::GetObject(dependency);
+			if (object != nullptr)
+			{
+				dynamic_cast<Notifyable*>(object)->OnNotify();
+			}
+		}
 	}
 }

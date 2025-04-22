@@ -7,10 +7,10 @@ namespace Blueberry
 	class LightInspector : public ObjectInspector
 	{
 	public:
-		LightInspector() = default;
+		LightInspector();
 		virtual ~LightInspector() = default;
 
-		virtual const char* GetIconPath(Object* object) override;
+		virtual Texture* GetIcon(Object* object) final;
 		virtual void DrawScene(Object* object) override;
 
 	private:

@@ -7,9 +7,10 @@ namespace Blueberry
 	class CameraInspector : public ObjectInspector
 	{
 	public:
+		CameraInspector();
 		virtual ~CameraInspector() = default;
 
-		virtual const char* GetIconPath(Object* object) override;
+		virtual Texture* GetIcon(Object* object) final;
 		virtual void Draw(Object* object) override;
 		virtual void DrawScene(Object* object) override;
 	};

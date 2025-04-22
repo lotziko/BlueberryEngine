@@ -74,6 +74,7 @@ namespace Blueberry
 
 	template <class T, size_t Size> using Array = std::array<T, Size>;
 	template <class T> using List = std::vector<T, STLAllocator<T>>;
+	template <class T> using Stack = std::stack<T, STLAllocator<T>>;
 	template <class Key, class T, class Hash = std::hash<Key>, class KeyEqual = std::equal_to<Key>> using Dictionary = std::unordered_map<Key, T, Hash, KeyEqual, STLAllocator<std::pair<const Key, T>>>;
 	template <class T, class Hash = std::hash<T>, class KeyEqual = std::equal_to<T>> using HashSet = std::unordered_set<T, Hash, KeyEqual, STLAllocator<T>>;
 }

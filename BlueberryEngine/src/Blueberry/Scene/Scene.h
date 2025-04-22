@@ -33,12 +33,14 @@ namespace Blueberry
 		void AddEntity(Entity* entity);
 		void DestroyEntity(Entity* entity);
 
-		const ska::flat_hash_map<ObjectId, ObjectPtr<Entity>>& GetEntities();
+		const Dictionary<ObjectId, ObjectPtr<Entity>>& GetEntities();
+		const List<ObjectPtr<Entity>>& GetRootEntities();
 
 		RendererTree& GetRendererTree();
 
 	private:
-		ska::flat_hash_map<ObjectId, ObjectPtr<Entity>> m_Entities;
+		Dictionary<ObjectId, ObjectPtr<Entity>> m_Entities;
+		List<ObjectPtr<Entity>> m_RootEntities;
 		List<Component*> m_CreatedComponents;
 		// Stores only components added using AddToSceneComponents()
 		ComponentManager m_ComponentManager;

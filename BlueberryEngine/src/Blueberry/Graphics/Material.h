@@ -1,7 +1,7 @@
 #pragma once
 #include "Blueberry\Core\ObjectPtr.h"
+#include "Blueberry\Core\Notifyable.h"
 #include "Blueberry\Graphics\Shader.h"
-//#include "Blueberry\Graphics\GfxDrawingOperation.h"
 
 namespace Blueberry
 {
@@ -29,7 +29,7 @@ namespace Blueberry
 	};
 
 	// New material properties will appear here after saving them in the inspector and calling update
-	class Material : public Object
+	class Material : public Object, public Notifyable
 	{
 		OBJECT_DECLARATION(Material)
 
@@ -56,6 +56,8 @@ namespace Blueberry
 
 		const uint32_t& GetCRC();
 		Texture* GetTexture(const size_t& id);
+
+		virtual void OnNotify() final;
 
 	private:
 		void FillTextureMap();

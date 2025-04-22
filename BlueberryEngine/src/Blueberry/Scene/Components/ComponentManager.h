@@ -7,16 +7,16 @@ namespace Blueberry
 	struct ComponentIterator
 	{
 	public:
-		ComponentIterator(ska::flat_hash_map<ObjectId, Component*>* data) : m_Data(data) {}
+		ComponentIterator(Dictionary<ObjectId, Component*>* data) : m_Data(data) {}
 
 		auto begin() { return m_Data->begin(); }
 		auto end() { return m_Data->end(); }
 
 	private:
-		ska::flat_hash_map<ObjectId, Component*>* m_Data;
+		Dictionary<ObjectId, Component*>* m_Data;
 	};
 
-	using ComponentMap = ska::flat_hash_map<ObjectId, Component*>;
+	using ComponentMap = Dictionary<ObjectId, Component*>;
 
 	class ComponentManager
 	{
@@ -34,7 +34,7 @@ namespace Blueberry
 		ComponentMap& GetComponents(const size_t& type);
 
 	private:
-		ska::flat_hash_map<size_t, ComponentMap> m_Components;
+		Dictionary<size_t, ComponentMap> m_Components;
 	};
 
 	template<class ComponentType>

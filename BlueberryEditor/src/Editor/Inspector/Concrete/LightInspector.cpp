@@ -7,19 +7,33 @@
 
 #include "Editor\Gizmos\Gizmos.h"
 
+#include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Graphics\RenderContext.h"
+#include "Blueberry\Graphics\Texture2D.h"
 
 namespace Blueberry
 {
-	const char* LightInspector::GetIconPath(Object* object)
+	static Texture* s_SpotIcon = nullptr;
+	static Texture* s_PointIcon = nullptr;
+
+	LightInspector::LightInspector()
+	{
+		if (s_SpotIcon == nullptr)
+		{
+			s_SpotIcon = static_cast<Texture*>(AssetLoader::Load("assets/icons/SpotLightIcon.png"));
+			s_PointIcon = static_cast<Texture*>(AssetLoader::Load("assets/icons/PointLightIcon.png"));
+		}
+	}
+
+	Texture* LightInspector::GetIcon(Object* object)
 	{
 		Light* light = static_cast<Light*>(object);
 		switch (light->GetType())
 		{
 		case LightType::Spot:
-			return "assets/icons/SpotLightIcon.png";
+			return s_SpotIcon;
 		case LightType::Point:
-			return "assets/icons/PointLightIcon.png";
+			return s_PointIcon;
 		default:
 			return nullptr;
 		}

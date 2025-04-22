@@ -25,16 +25,15 @@ namespace Blueberry
 
 		if (shader != nullptr && (shader->GetState() == ObjectState::Default))
 		{
-			auto data = shader->GetData();
-			auto textureDatas = material->GetTextureDatas();
+			auto& data = shader->GetData();
+			auto& textureDatas = material->GetTextureDatas();
 			bool hasPropertyChanges = false;
 
 			for (auto const& propertyData : data.GetProperties())
 			{
 				if (propertyData.GetType() == PropertyData::PropertyType::Texture)
 				{
-					TextureData textureProperty = {};
-					bool hasProperty = false;
+					TextureData* textureProperty = nullptr;
 					auto& textureParameterName = propertyData.GetName();
 					Texture* texture = nullptr;
 					for (auto& textureData : textureDatas)
@@ -42,23 +41,23 @@ namespace Blueberry
 						if (textureData.GetName() == textureParameterName)
 						{
 							texture = textureData.GetTexture();
-							textureProperty = textureData;
-							hasProperty = true;
+							textureProperty = &textureData;
 						}
 					}
 
-					if (hasProperty)
+					if (textureProperty != nullptr)
 					{
 						if (ImGui::ObjectEdit(propertyData.GetName().c_str(), (Object**)&texture, propertyData.GetTextureDimension() == TextureDimension::TextureCube ? TextureCube::Type : Texture2D::Type))
 						{
-							textureProperty.SetTexture(texture);
+							textureProperty->SetTexture(texture);
 							hasPropertyChanges = true;
 						}
 					}
 					else
 					{
-						textureProperty.SetName(propertyData.GetName());
-						material->AddTextureData(textureProperty);
+						TextureData newTextureProperty = {};
+						newTextureProperty.SetName(propertyData.GetName());
+						material->AddTextureData(newTextureProperty);
 					}
 				}
 			}

@@ -122,7 +122,7 @@ namespace Blueberry
 
 	void EditorLayer::OnWindowFocus()
 	{
-		//AssetDB::Refresh();
+		AssetDB::Refresh();
 	}
 
 	void EditorLayer::RequestFrameUpdate()

@@ -44,6 +44,7 @@ namespace Blueberry
 		}
 		else
 		{
+			uint32_t size = m_RenderStates.size();
 			renderState = {};
 			globalBindingsState = {};
 			GfxPassData passData = GetPassData(material, passIndex);

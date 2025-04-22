@@ -40,14 +40,15 @@ namespace Blueberry
 
 	void Scene::Destroy()
 	{
-		for (auto pair : m_Entities)
+		for (auto& rootEntity : m_RootEntities)
 		{
-			if (pair.second.IsValid())
+			if (rootEntity.IsValid())
 			{
-				DestroyEntity(pair.second.Get());
+				DestroyEntity(rootEntity.Get());
 			}
 		}
 		m_Entities.clear();
+		m_RootEntities.clear();
 	}
 
 	Entity* Scene::CreateEntity(const std::string& name = "Entity")
@@ -57,6 +58,7 @@ namespace Blueberry
 		entity->m_Scene = this;
 		entity->m_Name = name;
 		m_Entities[entity->GetObjectId()] = entity;
+		m_RootEntities.emplace_back(entity);
 
 		entity->AddComponent<Transform>();
 		entity->OnCreate();
@@ -68,6 +70,10 @@ namespace Blueberry
 		//BB_INFO("Entity is added.")
 		entity->m_Scene = this;
 		m_Entities[entity->GetObjectId()] = entity;
+		if (entity->GetTransform()->GetParent() == nullptr)
+		{
+			m_RootEntities.emplace_back(entity);
+		}
 		if (entity->IsActiveInHierarchy())
 		{
 			entity->UpdateComponents();
@@ -90,13 +96,29 @@ namespace Blueberry
 		}
 		//BB_INFO("Entity is destroyed.");
 		entity->OnDestroy();
+		if (entity->GetTransform()->GetParent() == nullptr)
+		{
+			for (auto it = m_RootEntities.begin(); it < m_RootEntities.end(); ++it)
+			{
+				if (it->Get() == entity)
+				{
+					m_RootEntities.erase(it);
+					break;
+				}
+			}
+		}
 		m_Entities.erase(entity->GetObjectId());
 		Object::Destroy(entity);
 	}
 
-	const ska::flat_hash_map<ObjectId, ObjectPtr<Entity>>& Scene::GetEntities()
+	const Dictionary<ObjectId, ObjectPtr<Entity>>& Scene::GetEntities()
 	{
 		return m_Entities;
+	}
+
+	const List<ObjectPtr<Entity>>& Scene::GetRootEntities()
+	{
+		return m_RootEntities;
 	}
 
 	RendererTree& Scene::GetRendererTree()

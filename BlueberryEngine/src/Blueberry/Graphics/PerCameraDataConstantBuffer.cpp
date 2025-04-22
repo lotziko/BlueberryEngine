@@ -59,7 +59,7 @@ namespace Blueberry
 			const Matrix& inverseView = GfxDevice::GetGPUMatrix(camera->GetInverseViewMatrix());
 			const Matrix& inverseProjection = GfxDevice::GetGPUMatrix(camera->GetInverseProjectionMatrix());
 			const Matrix& inverseViewProjection = GfxDevice::GetGPUMatrix(camera->GetInverseViewProjectionMatrix());
-			const Vector2& pixelSize = camera->GetPixelSize();
+			const Vector2& pixelSize = Vector2(cameraData.size.x, cameraData.size.y);
 			const Vector4& sizeInvSize = Vector4(pixelSize.x, pixelSize.y, 1.0f / pixelSize.x, 1.0f / pixelSize.y);
 
 			constants.viewMatrix[0] = view;

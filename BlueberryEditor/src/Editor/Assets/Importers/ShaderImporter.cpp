@@ -46,7 +46,9 @@ namespace Blueberry
 			if (processor.Compile(path))
 			{
 				processor.SaveVariants(GetShaderFolder());
-				object = Shader::Create(processor.GetVariantsData(), processor.GetShaderData());
+
+				object = Shader::Create(processor.GetVariantsData(), processor.GetShaderData(), static_cast<Shader*>(ObjectDB::GetObjectFromGuid(guid, 1)));
+				object->SetState(ObjectState::Default);
 				ObjectDB::AllocateIdToGuid(object, guid, 1);
 				AssetDB::SaveAssetObjectsToCache(List<Object*> { object });
 				BB_INFO("Shader \"" << GetName() << "\" imported and compiled from: " + path);

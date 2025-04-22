@@ -57,6 +57,7 @@ namespace Blueberry
 		if (existingTexture != nullptr)
 		{
 			texture = existingTexture;
+			texture->IncrementUpdateCount();
 		}
 		else
 		{

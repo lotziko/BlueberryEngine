@@ -76,11 +76,20 @@ namespace Blueberry
 
 	void Material::SetShader(Shader* shader)
 	{
+		if (m_Shader.Get() != nullptr)
+		{
+			m_Shader->m_Dependencies.erase(m_ObjectId);
+		}
 		m_Shader = shader;
+		m_Shader->m_Dependencies.emplace(m_ObjectId);
 	}
 
 	void Material::ApplyProperties()
 	{
+		if (m_Shader.Get() != nullptr)
+		{
+			m_Shader->m_Dependencies.emplace(m_ObjectId);
+		}
 		FillTextureMap();
 		m_Crc = UINT32_MAX;
 	}
@@ -134,9 +143,13 @@ namespace Blueberry
 		if (m_Crc == UINT32_MAX)
 		{
 			m_Crc = 0;
+			m_Crc = CRCHelper::Calculate(m_Shader->m_ObjectId, m_Crc);
+			m_Crc = CRCHelper::Calculate(m_Shader->m_UpdateCount, m_Crc);
 			for (auto& pair : m_BindedTextures)
 			{
+				Texture* texture = static_cast<Texture*>(ObjectDB::GetObject(pair.second));
 				m_Crc = CRCHelper::Calculate(&pair, sizeof(std::pair<size_t, ObjectId>), m_Crc);
+				m_Crc = CRCHelper::Calculate(texture->m_UpdateCount, m_Crc);
 			}
 			for (auto& keyword : m_ActiveKeywords)
 			{
@@ -154,6 +167,11 @@ namespace Blueberry
 			return static_cast<Texture*>(ObjectDB::GetObject(it->second));
 		}
 		return nullptr;
+	}
+
+	void Material::OnNotify()
+	{
+		m_Crc = UINT32_MAX;
 	}
 
 	void Material::FillTextureMap()
@@ -183,6 +201,7 @@ namespace Blueberry
 			{
 				size_t key = TO_HASH(texture.m_Name);
 				m_BindedTextures.insert_or_assign(key, texture.m_Texture.Get()->GetObjectId());
+				texture.m_Texture.Get()->m_Dependencies.emplace(m_ObjectId);
 			}
 		}
 	}

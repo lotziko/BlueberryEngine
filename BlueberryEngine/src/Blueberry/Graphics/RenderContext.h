@@ -14,6 +14,7 @@ namespace Blueberry
 	struct CameraData
 	{
 		Camera* camera;
+		Vector2Int size;
 		Matrix multiviewViewMatrix[2];
 		Matrix multiviewProjectionMatrix[2];
 		Rectangle multiviewViewport;

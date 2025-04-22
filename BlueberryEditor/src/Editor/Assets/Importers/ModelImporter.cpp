@@ -106,6 +106,9 @@ namespace Blueberry
 
 			fbxsdk::FbxScene* scene = fbxsdk::FbxScene::Create(manager, "scene");
 			importer->Import(scene);
+
+			fbxsdk::FbxGeometryConverter converter(manager);
+			converter.Triangulate(scene, true);
 			
 			int meshCount = 0;
 			for (int i = 0; i < scene->GetNodeCount(); ++i)
@@ -201,8 +204,6 @@ namespace Blueberry
 				return;
 			}
 
-			//fbxsdk::FbxGeometryConverter converter(manager);
-			//fbxMesh = static_cast<fbxsdk::FbxMesh*>(converter.Triangulate(fbxMesh, true));
 			if (fbxMesh == nullptr || fbxMesh->RemoveBadPolygons() < 0)
 			{
 				return;
@@ -334,7 +335,7 @@ namespace Blueberry
 					*indicesPtr++ = polygon.mIndex + 1;
 					*indicesPtr++ = polygon.mIndex + 2;
 				}
-				else
+				if (polygon.mSize == 4)
 				{
 					*indicesPtr++ = polygon.mIndex;
 					*indicesPtr++ = polygon.mIndex + 1;
@@ -342,6 +343,10 @@ namespace Blueberry
 					*indicesPtr++ = polygon.mIndex;
 					*indicesPtr++ = polygon.mIndex + 2;
 					*indicesPtr++ = polygon.mIndex + 3;
+				}
+				else if (polygon.mSize > 4)
+				{
+					BB_ERROR("Big polygon");
 				}
 			}
 			mesh->SetIndices(indices.data(), indicesCount);

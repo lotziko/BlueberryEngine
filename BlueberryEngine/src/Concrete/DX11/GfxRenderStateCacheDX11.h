@@ -83,6 +83,6 @@ namespace Blueberry
 
 	private:
 		GfxDeviceDX11* m_Device;
-		ska::flat_hash_map<GfxRenderStateKeyDX11, std::pair<GfxRenderStateDX11, GfxGlobalBindingsStateDX11>> m_RenderStates;
+		Dictionary<GfxRenderStateKeyDX11, std::pair<GfxRenderStateDX11, GfxGlobalBindingsStateDX11>> m_RenderStates;
 	};
 }

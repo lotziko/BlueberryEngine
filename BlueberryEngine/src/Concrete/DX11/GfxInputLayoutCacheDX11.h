@@ -14,6 +14,6 @@ namespace Blueberry
 		ID3D11InputLayout* GetLayout(GfxVertexShaderDX11* shader, VertexLayout* meshLayout);
 
 	private:
-		ska::flat_hash_map<size_t, ID3D11InputLayout*> m_InputLayouts;
+		Dictionary<size_t, ID3D11InputLayout*> m_InputLayouts;
 	};
 }

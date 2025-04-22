@@ -10,13 +10,25 @@
 #include "Editor\Gizmos\Gizmos.h"
 #include "Editor\Panels\Scene\SceneArea.h"
 
+#include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Graphics\RenderContext.h"
+#include "Blueberry\Graphics\Texture2D.h"
 
 namespace Blueberry
 {
-	const char* CameraInspector::GetIconPath(Object* object)
+	static Texture* s_Icon = nullptr;
+
+	CameraInspector::CameraInspector()
 	{
-		return "assets/icons/CameraIcon.png";
+		if (s_Icon == nullptr)
+		{
+			s_Icon = static_cast<Texture*>(AssetLoader::Load("assets/icons/CameraIcon.png"));
+		}
+	}
+
+	Texture* CameraInspector::GetIcon(Object* object)
+	{
+		return s_Icon;
 	}
 
 	void CameraInspector::Draw(Object* object)
@@ -43,7 +55,7 @@ namespace Blueberry
 		else
 		{
 			float fieldOfView = camera->GetFieldOfView();
-			if (ImGui::SliderFloat("Field of View", &fieldOfView, 0.01f, 179.0f, "%1f", 0))
+			if (ImGui::FloatEdit("Field of View", &fieldOfView, 0.01f, 179.0f))
 			{
 				camera->SetFieldOfView(fieldOfView);
 				hasChange = true;
@@ -51,9 +63,9 @@ namespace Blueberry
 		}
 
 		float nearClipPlane = camera->GetNearClipPlane();
-		if (ImGui::FloatEdit("Near plane", &nearClipPlane))
+		if (ImGui::FloatEdit("Near plane", &nearClipPlane, 0.01f))
 		{
-			camera->SetNearClipPlane(nearClipPlane);
+			camera->SetNearClipPlane(std::max(nearClipPlane, 0.01f));
 			hasChange = true;
 		}
 

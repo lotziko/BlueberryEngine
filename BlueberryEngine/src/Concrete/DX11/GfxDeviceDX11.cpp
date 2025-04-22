@@ -788,15 +788,15 @@ namespace Blueberry
 			m_CurrentCrc = 0;
 			for (auto& pair : m_BindedTextures)
 			{
-				m_CurrentCrc = CRCHelper::Calculate(&pair, sizeof(std::pair<size_t, GfxTextureDX11*>), m_CurrentCrc);
+				m_CurrentCrc = CRCHelper::Calculate(&pair, sizeof(size_t), m_CurrentCrc);
 			}
 			for (auto& pair : m_BindedConstantBuffers)
 			{
-				m_CurrentCrc = CRCHelper::Calculate(&pair, sizeof(std::pair<size_t, GfxConstantBufferDX11*>), m_CurrentCrc);
+				m_CurrentCrc = CRCHelper::Calculate(&pair, sizeof(size_t), m_CurrentCrc);
 			}
 			for (auto& pair : m_BindedStructuredBuffers)
 			{
-				m_CurrentCrc = CRCHelper::Calculate(&pair, sizeof(std::pair<size_t, GfxStructuredBufferDX11*>), m_CurrentCrc);
+				m_CurrentCrc = CRCHelper::Calculate(&pair, sizeof(size_t), m_CurrentCrc);
 			}
 		}
 		return m_CurrentCrc;

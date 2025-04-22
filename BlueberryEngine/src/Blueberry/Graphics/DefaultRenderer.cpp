@@ -66,6 +66,10 @@ namespace Blueberry
 			OpenXRRenderer::FillCameraData(cameraData);
 			viewport = cameraData.multiviewViewport;
 		}
+		else
+		{
+			cameraData.size = Vector2Int(colorOutput->GetWidth(), colorOutput->GetHeight());
+		}
 
 		colorMSAARenderTarget = RenderTexture::GetTemporary(viewport.width, viewport.height, viewCount, 4, TextureFormat::R16G16B16A16_Float, textureDimension);
 		normalMSAARenderTarget = RenderTexture::GetTemporary(viewport.width, viewport.height, viewCount, 4, TextureFormat::R8G8B8A8_UNorm, textureDimension);
@@ -76,7 +80,9 @@ namespace Blueberry
 		HBAORenderTarget = RenderTexture::GetTemporary(viewport.width, viewport.height, viewCount, 1, TextureFormat::R8G8B8A8_UNorm, textureDimension);
 		resultRenderTarget = RenderTexture::GetTemporary(viewport.width, viewport.height, viewCount, 1, TextureFormat::R8G8B8A8_UNorm, textureDimension);
 
+		BB_PROFILE_BEGIN("Culling");
 		s_DefaultContext.Cull(scene, cameraData, s_Results);
+		BB_PROFILE_END();
 
 		if (simplified)
 		{
@@ -84,6 +90,7 @@ namespace Blueberry
 		}
 		else
 		{
+			BB_PROFILE_BEGIN("Shadows");
 			// Prepare shadows
 			GfxDevice::SetViewCount(1);
 			s_ShadowAtlas->Clear();
@@ -93,12 +100,14 @@ namespace Blueberry
 			Shader::SetKeyword(s_ShadowsKeywordId, true);
 			s_ShadowAtlas->Draw(s_DefaultContext, s_Results);
 			GfxDevice::SetGlobalTexture(s_ShadowTextureId, s_ShadowAtlas->GetAtlasTexture()->Get());
+			BB_PROFILE_END();
 		}
 		
 		// Lights are binded after shadows finished rendering to have valid shadow matrices
 		RealtimeLights::BindLights(s_Results, s_ShadowAtlas);
-
+		
 		// Depth/normal prepass
+		BB_PROFILE_BEGIN("Depth/normals");
 		GfxDevice::SetViewCount(viewCount);
 		GfxDevice::SetRenderTarget(normalMSAARenderTarget->Get(), depthStencilMSAARenderTarget->Get());
 		GfxDevice::SetViewport(viewport.x, viewport.y, viewport.width, viewport.height);
@@ -108,6 +117,7 @@ namespace Blueberry
 		drawingSettings.passIndex = 1;
 		s_DefaultContext.BindCamera(s_Results, cameraData);
 		s_DefaultContext.DrawRenderers(s_Results, drawingSettings);
+		BB_PROFILE_END();
 
 		// Resolve depth/normal
 		GfxDevice::SetRenderTarget(colorNormalRenderTarget->Get(), depthStencilRenderTarget->Get());
@@ -124,11 +134,13 @@ namespace Blueberry
 		GfxDevice::SetGlobalTexture(s_HBAOTextureId, HBAORenderTarget->Get());
 		
 		// Forward pass
+		BB_PROFILE_BEGIN("Forward");
 		GfxDevice::SetRenderTarget(colorMSAARenderTarget->Get(), depthStencilMSAARenderTarget->Get());
 		GfxDevice::ClearColor({ 0.0f, 0.0f, 0.0f, 0.0f });
 		s_DefaultContext.DrawSky(scene);
 		drawingSettings.passIndex = 0;
 		s_DefaultContext.DrawRenderers(s_Results, drawingSettings);
+		BB_PROFILE_END();
 
 		// Resolve color
 		GfxDevice::SetRenderTarget(colorNormalRenderTarget->Get());

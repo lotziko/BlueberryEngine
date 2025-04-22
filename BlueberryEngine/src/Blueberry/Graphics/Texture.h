@@ -21,6 +21,9 @@ namespace Blueberry
 		void* GetHandle();
 
 	protected:
+		void IncrementUpdateCount();
+
+	protected:
 		GfxTexture* m_Texture = nullptr;
 		uint32_t m_Width = 0;
 		uint32_t m_Height = 0;
@@ -30,6 +33,9 @@ namespace Blueberry
 		WrapMode m_WrapMode = WrapMode::Clamp;
 		FilterMode m_FilterMode = FilterMode::Linear;
 		ByteData m_RawData = {};
+
+		uint32_t m_UpdateCount = 0;
+		HashSet<ObjectId> m_Dependencies;
 
 		friend class Material;
 		friend struct GfxDrawingOperation;

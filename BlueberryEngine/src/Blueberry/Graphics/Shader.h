@@ -168,13 +168,14 @@ namespace Blueberry
 		void Initialize(const VariantsData& variantsData);
 		void Initialize(const VariantsData& variantsData, const ShaderData& data);
 
-		static Shader* Create(const VariantsData& variantsData, const ShaderData& shaderData);
+		static Shader* Create(const VariantsData& variantsData, const ShaderData& shaderData, Shader* existingShader = nullptr);
 
 		static void SetKeyword(const size_t& id, const bool& enabled);
 		static const uint32_t& GetActiveKeywordsMask();
 
 	private:
 		const Shader::ShaderVariant GetVariant(const uint32_t& vertexKeywordFlags, const uint32_t& fragmentKeywordFlags, const uint8_t& passIndex);
+		void IncrementUpdateCount();
 
 	private:
 		ShaderData m_Data;
@@ -184,6 +185,8 @@ namespace Blueberry
 		List<GfxFragmentShader*> m_FragmentShaders;
 		List<std::tuple<uint32_t, uint32_t, uint32_t>> m_PassesOffsets;
 		KeywordDB m_LocalKeywords = {};
+		uint32_t m_UpdateCount = 0;
+		HashSet<ObjectId> m_Dependencies;
 
 		static HashSet<size_t> s_ActiveKeywords;
 		static uint32_t s_ActiveKeywordsMask;

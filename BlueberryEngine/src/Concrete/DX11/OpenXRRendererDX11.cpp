@@ -436,6 +436,7 @@ namespace Blueberry
 			return;
 		}
 
+		cameraData.size = Vector2Int(m_MultiviewViewport.width, m_MultiviewViewport.height);
 		cameraData.isMultiview = true;
 		for (uint32_t i = 0; i < 2; i++)
 		{

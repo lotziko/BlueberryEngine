@@ -2,7 +2,9 @@
 #include "Shader.h"
 
 #include "Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Core\ObjectDB.h"
 #include "Blueberry\Core\ClassDB.h"
+#include "Blueberry\Core\Notifyable.h"
 
 #include "Blueberry\Graphics\DefaultTextures.h"
 
@@ -257,6 +259,35 @@ namespace Blueberry
 
 	void Shader::Initialize(const VariantsData& variantsData)
 	{
+		if (m_VertexShaders.size() > 0)
+		{
+			for (auto it = m_VertexShaders.begin(); it < m_VertexShaders.end(); ++it)
+			{
+				delete *it;
+			}
+			m_VertexShaders.clear();
+		}
+		if (m_GeometryShaders.size() > 0)
+		{
+			for (auto it = m_GeometryShaders.begin(); it < m_GeometryShaders.end(); ++it)
+			{
+				delete *it;
+			}
+			m_GeometryShaders.clear();
+		}
+		if (m_FragmentShaders.size() > 0)
+		{
+			for (auto it = m_FragmentShaders.begin(); it < m_FragmentShaders.end(); ++it)
+			{
+				delete *it;
+			}
+			m_FragmentShaders.clear();
+		}
+		if (m_PassesOffsets.size() > 0)
+		{
+			m_PassesOffsets.clear();
+		}
+
 		int vertexShadersCount = variantsData.vertexShaderIndices.size();
 		m_VertexShaders.resize(vertexShadersCount);
 		for (int i = 0; i < vertexShadersCount; ++i)
@@ -295,9 +326,18 @@ namespace Blueberry
 		m_Data = data;
 	}
 
-	Shader* Shader::Create(const VariantsData& variantsData, const ShaderData& shaderData)
+	Shader* Shader::Create(const VariantsData& variantsData, const ShaderData& shaderData, Shader* existingShader)
 	{
-		Shader* shader = Object::Create<Shader>();
+		Shader* shader = nullptr;
+		if (existingShader != nullptr)
+		{
+			shader = existingShader;
+			shader->IncrementUpdateCount();
+		}
+		else
+		{
+			shader = Object::Create<Shader>();
+		}
 		shader->Initialize(variantsData, shaderData);
 		return shader;
 	}
@@ -338,5 +378,18 @@ namespace Blueberry
 
 		auto offsets = m_PassesOffsets[passIndex];
 		return { m_VertexShaders[std::get<0>(offsets) + vertexKeywordFlags], m_GeometryShaders[std::get<1>(offsets)], m_FragmentShaders[std::get<2>(offsets) + fragmentKeywordFlags] };
+	}
+
+	void Shader::IncrementUpdateCount()
+	{
+		++m_UpdateCount;
+		for (auto dependency : m_Dependencies)
+		{
+			Object* object = ObjectDB::GetObject(dependency);
+			if (object != nullptr)
+			{
+				dynamic_cast<Notifyable*>(object)->OnNotify();
+			}
+		}
 	}
 }

@@ -34,7 +34,7 @@ namespace ImGui
 	bool EnumEdit(const char* label, int* v, const Blueberry::List<std::string>* names);
 	bool BoolEdit(const char* label, bool* v);
 	bool IntEdit(const char* label, int* v);
-	bool FloatEdit(const char* label, float* v);
+	bool FloatEdit(const char* label, float* v, float min = 0, float max = 0);
 	bool ColorEdit(const char* label, Blueberry::Color* v);
 	bool ObjectEdit(const char* label, Blueberry::Object** v, const std::size_t& type);
 	bool ObjectEdit(const char* label, Blueberry::ObjectPtr<Blueberry::Object>* v, const std::size_t& type);
