@@ -53,6 +53,9 @@ namespace Blueberry
 		m_Camera->m_IsVR = false;
 		cameraEntity->OnCreate();
 
+		m_ColorRenderTarget = RenderTexture::Create(Screen::GetWidth(), Screen::GetHeight(), 1, 1, TextureFormat::R8G8B8A8_UNorm);
+		m_DepthStencilRenderTarget = RenderTexture::Create(Screen::GetWidth(), Screen::GetHeight(), 1, 1, TextureFormat::D24_UNorm);
+
 		Selection::GetSelectionChanged().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
 		EditorSceneManager::GetSceneLoaded().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
 		WindowEvents::GetWindowFocused().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
@@ -63,6 +66,9 @@ namespace Blueberry
 	SceneArea::~SceneArea()
 	{
 		delete m_ObjectPicker;
+
+		Object::Destroy(m_ColorRenderTarget);
+		Object::Destroy(m_DepthStencilRenderTarget);
 
 		Selection::GetSelectionChanged().RemoveCallback<SceneArea, &SceneArea::RequestRedraw>(this);
 		EditorSceneManager::GetSceneLoaded().RemoveCallback<SceneArea, &SceneArea::RequestRedraw>(this);
@@ -243,7 +249,7 @@ namespace Blueberry
 			s_SceneRedrawRequested = false;
 		}
 
-		ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(m_ColorRenderTarget->GetHandle()), ImVec2(pos.x, pos.y), ImVec2(pos.x + size.x, pos.y + size.y), ImVec2(0, 0), ImVec2(1, 1));
+		ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(m_ColorRenderTarget->GetHandle()), ImVec2(pos.x, pos.y), ImVec2(pos.x + size.x, pos.y + size.y), ImVec2(0, 0), ImVec2(size.x / Screen::GetWidth(), size.y / Screen::GetHeight()));
 		DrawControls();
 		DrawGizmos(Rectangle(pos.x, pos.y, size.x, size.y));
 	}
@@ -391,15 +397,6 @@ namespace Blueberry
 		Vector2 currentSize = m_Camera->GetPixelSize();
 		if (currentSize.x != width || currentSize.y != height)
 		{
-			if (m_ColorRenderTarget != nullptr)
-			{
-				Object::Destroy(m_ColorRenderTarget);
-				Object::Destroy(m_DepthStencilRenderTarget);
-			}
-
-			m_ColorRenderTarget = RenderTexture::Create(width, height, 1, 1, TextureFormat::R8G8B8A8_UNorm);
-			m_DepthStencilRenderTarget = RenderTexture::Create(width, height, 1, 1, TextureFormat::D24_UNorm);
-
 			m_Camera->SetPixelSize(Vector2(width, height));
 			RequestRedrawAll();
 		}

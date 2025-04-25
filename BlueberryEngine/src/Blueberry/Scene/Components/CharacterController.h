@@ -22,6 +22,7 @@ namespace Blueberry
 		const float& GetRadius();
 
 	private:
+		ObjectPtr<Transform> m_CameraTransform;
 		float m_Height = 2.0f;
 		float m_Radius = 0.3f;
 
@@ -29,5 +30,6 @@ namespace Blueberry
 
 		Transform* m_Transform;
 		CharacterData* m_CharacterData;
+		float m_VerticalRotation;
 	};
 }

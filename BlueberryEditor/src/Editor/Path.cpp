@@ -7,6 +7,7 @@ namespace Blueberry
 	std::filesystem::path Path::s_AssetCachePath = "Data\\AssetCache";
 	std::filesystem::path Path::s_ShaderCachePath = "Data\\ShaderCache";
 	std::filesystem::path Path::s_TextureCachePath = "Data\\TextureCache";
+	std::filesystem::path Path::s_PhysicsShapeCachePath = "Data\\PhysicsShapeCache";
 	std::filesystem::path Path::s_ThumbnailCachePath = "Data\\ThumbnailCache";
 
 	const std::filesystem::path& Path::GetAssetsPath()
@@ -34,6 +35,11 @@ namespace Blueberry
 		return s_TextureCachePath;
 	}
 
+	const std::filesystem::path& Path::GetPhysicsShapeCachePath()
+	{
+		return s_PhysicsShapeCachePath;
+	}
+
 	const std::filesystem::path& Path::GetThumbnailCachePath()
 	{
 		return s_ThumbnailCachePath;
@@ -56,6 +62,9 @@ namespace Blueberry
 		auto textureCachePath = dataPath;
 		textureCachePath.append(L"\\TextureCache");
 		s_TextureCachePath = textureCachePath;
+		auto physicsShapeCachePath = dataPath;
+		physicsShapeCachePath.append(L"\\PhysicsShapeCache");
+		s_PhysicsShapeCachePath = physicsShapeCachePath;
 		auto thumbnailCachePath = dataPath;
 		thumbnailCachePath.append(L"\\ThumbnailCache");
 		s_ThumbnailCachePath = thumbnailCachePath;

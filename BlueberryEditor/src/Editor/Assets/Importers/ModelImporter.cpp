@@ -6,8 +6,11 @@
 #include "Blueberry\Scene\Components\MeshRenderer.h"
 #include "Blueberry\Graphics\Mesh.h"
 #include "Blueberry\Graphics\Material.h"
+#include "Blueberry\Physics\PhysicsShapeCache.h"
+#include "Blueberry\Tools\FileHelper.h"
 
-#include "fbxsdk.h"
+#include <fbxsdk.h>
+#include <fstream>
 
 namespace Blueberry
 {
@@ -22,6 +25,7 @@ namespace Blueberry
 		DEFINE_BASE_FIELDS(ModelImporter, AssetImporter)
 		DEFINE_FIELD(ModelImporter, m_Materials, BindingType::DataList, FieldOptions().SetObjectType(ModelMaterialData::Type))
 		DEFINE_FIELD(ModelImporter, m_Scale, BindingType::Float, {})
+		DEFINE_FIELD(ModelImporter, m_GeneratePhysicsShape, BindingType::Bool, {})
 	}
 
 	const std::string& ModelMaterialData::GetName()
@@ -59,6 +63,16 @@ namespace Blueberry
 		m_Scale = scale;
 	}
 
+	const bool& ModelImporter::GetGeneratePhysicsShape()
+	{
+		return m_GeneratePhysicsShape;
+	}
+
+	void ModelImporter::SetGeneratePhysicsShape(const bool& generate)
+	{
+		m_GeneratePhysicsShape = generate;
+	}
+
 	void ModelImporter::ImportData()
 	{
 		Guid guid = GetGuid();
@@ -77,7 +91,18 @@ namespace Blueberry
 
 				if (object->IsClassType(Mesh::Type))
 				{
-					(static_cast<Mesh*>(object))->Apply();
+					Mesh* mesh = static_cast<Mesh*>(object);
+					if (m_GeneratePhysicsShape)
+					{
+						std::ifstream input;
+						input.open(GetPhysicsShapePath(id), std::ofstream::binary);
+						if (input.is_open())
+						{
+							PhysicsShapeCache::Load(mesh, input);
+							input.close();
+						}
+					}
+					mesh->Apply();
 					AddAssetObject(object, id);
 					//BB_INFO("Mesh \"" << object->GetName() << "\" imported from cache.");
 				}
@@ -379,6 +404,13 @@ namespace Blueberry
 			{
 				mesh->GenerateTangents();
 			}
+			if (m_GeneratePhysicsShape)
+			{
+				std::ofstream output;
+				output.open(GetPhysicsShapePath(meshFileId), std::ofstream::binary);
+				PhysicsShapeCache::Bake(mesh, output);
+				output.close();
+			}
 			mesh->Apply();
 
 			List<Material*> materials;
@@ -416,5 +448,16 @@ namespace Blueberry
 			fbxsdk::FbxNode* childNode = node->GetChild(i);
 			CreateMeshEntity(transform, childNode, objects);
 		}
+	}
+
+	std::string ModelImporter::GetPhysicsShapePath(const size_t& fileId)
+	{
+		std::filesystem::path dataPath = Path::GetPhysicsShapeCachePath();
+		if (!std::filesystem::exists(dataPath))
+		{
+			std::filesystem::create_directories(dataPath);
+		}
+		dataPath.append(GetGuid().ToString().append(std::to_string(fileId)).append(".shape"));
+		return dataPath.string();
 	}
 }

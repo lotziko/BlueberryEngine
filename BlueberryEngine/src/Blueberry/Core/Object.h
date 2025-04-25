@@ -69,7 +69,7 @@ void childclass::DefineFields()														\
 
 	public:
 		Object();
-		~Object();
+		virtual ~Object();
 
 		virtual bool IsClassType(const size_t classType) const;
 		virtual size_t GetType() const;

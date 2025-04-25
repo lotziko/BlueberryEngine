@@ -53,6 +53,7 @@ namespace Blueberry
 		}
 		Gizmos::Initialize();
 		IconRenderer::Initialize();
+		Physics::Initialize();
 		EditorWindow::Load();
 		WindowEvents::GetWindowResized().AddCallback<EditorLayer, &EditorLayer::OnWindowResize>(this);
 		WindowEvents::GetWindowFocused().AddCallback<EditorLayer, &EditorLayer::OnWindowFocus>(this);
@@ -67,6 +68,7 @@ namespace Blueberry
 		}
 		Gizmos::Shutdown();
 		IconRenderer::Shutdown();
+		Physics::Shutdown();
 		if (OpenXRRenderer::IsActive())
 		{
 			OpenXRRenderer::Shutdown();
@@ -160,7 +162,7 @@ namespace Blueberry
 				{
 					if (ImGui::Button("Stop"))
 					{
-						Physics::Shutdown();
+						Physics::Disable();
 						OpenXRRenderer::Shutdown();
 						EditorSceneManager::Stop();
 					}
@@ -169,7 +171,7 @@ namespace Blueberry
 				{
 					if (ImGui::Button("Run"))
 					{
-						Physics::Initialize();
+						Physics::Enable();
 						OpenXRRenderer::Initialize();
 						EditorSceneManager::Run();
 					}
@@ -193,7 +195,7 @@ namespace Blueberry
 					{
 						if (ImGui::Button("Stop"))
 						{
-							Physics::Shutdown();
+							Physics::Disable();
 							OpenXRRenderer::Shutdown();
 							EditorSceneManager::Stop();
 						}
@@ -202,7 +204,7 @@ namespace Blueberry
 					{
 						if (ImGui::Button("Run"))
 						{
-							Physics::Initialize();
+							Physics::Enable();
 							OpenXRRenderer::Initialize();
 							EditorSceneManager::Run();
 						}

@@ -114,9 +114,21 @@ namespace Blueberry
 	bool Physics::Initialize()
 	{
 		RegisterDefaultAllocator();
+
 		Factory::sInstance = new JPH::Factory();
 		RegisterTypes();
+		return true;
+	}
 
+	void Physics::Shutdown()
+	{
+		UnregisterTypes();
+		delete Factory::sInstance;
+		Factory::sInstance = nullptr;
+	}
+
+	void Physics::Enable()
+	{
 		temp_allocator = new TempAllocatorImpl(10 * 1024 * 1024);
 		job_system = new JobSystemThreadPool(cMaxPhysicsJobs, cMaxPhysicsBarriers, thread::hardware_concurrency() - 1);
 
@@ -127,7 +139,7 @@ namespace Blueberry
 
 		s_PhysicsSystem = new PhysicsSystem();
 		s_PhysicsSystem->Init(cMaxBodies, cNumBodyMutexes, cMaxBodyPairs, cMaxContactConstraints, broad_phase_layer_interface, object_vs_broadphase_layer_filter, object_vs_object_layer_filter);
-		
+
 		// Increase sleep threshold
 		PhysicsSettings settings = s_PhysicsSystem->GetPhysicsSettings();
 		settings.mPointVelocitySleepThreshold /= 4;
@@ -139,16 +151,10 @@ namespace Blueberry
 		BodyCreationSettings floor_settings(floor_shape, RVec3(0.0f, -1.0f, 0.0f), Quat::sIdentity(), EMotionType::Static, Layers::NON_MOVING);
 		Body *floor = s_PhysicsSystem->GetBodyInterface().CreateBody(floor_settings);
 		s_PhysicsSystem->GetBodyInterface().AddBody(floor->GetID(), EActivation::DontActivate);
-
-		return true;
 	}
 
-	void Physics::Shutdown()
+	void Physics::Disable()
 	{
-		UnregisterTypes();
-
-		delete Factory::sInstance;
-		Factory::sInstance = nullptr;
 	}
 
 	void Physics::Update(const float& deltaTime)

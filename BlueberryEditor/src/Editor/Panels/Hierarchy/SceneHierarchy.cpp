@@ -48,7 +48,7 @@ namespace Blueberry
 				Selection::SetActiveObject(nullptr);
 			}
 
-			if (ImGui::BeginPopupContextWindow(0))
+			if (scene->GetRootEntities().size() == 0 && ImGui::BeginPopupContextWindow())
 			{
 				DrawCreateEntity();
 				ImGui::EndPopup();
@@ -74,7 +74,7 @@ namespace Blueberry
 		bool opened = ImGui::TreeNodeEx(static_cast<void*>(entity), flags, "");
 		if (!ImGui::IsItemToggledOpen())
 		{
-			if (ImGui::IsItemClicked())
+			if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(0))
 			{
 				Selection::SetActiveObject(entity);
 			}

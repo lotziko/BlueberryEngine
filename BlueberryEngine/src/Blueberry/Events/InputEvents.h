@@ -22,14 +22,16 @@ namespace Blueberry
 	class MouseMoveEventArgs
 	{
 	public:
-		MouseMoveEventArgs(float x, float y) : m_Position(x, y)
+		MouseMoveEventArgs(float x, float y, float deltaX, float deltaY) : m_Position(x, y), m_Delta(deltaX, deltaY)
 		{
 		}
 
 		const Vector2& GetPosition() const;
+		const Vector2& GetDelta() const;
 
 	private:
 		Vector2 m_Position;
+		Vector2 m_Delta;
 	};
 
 	using KeyDownEvent = Event<KeyEventArgs>;

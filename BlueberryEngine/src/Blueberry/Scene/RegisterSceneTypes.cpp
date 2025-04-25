@@ -16,6 +16,7 @@
 #include "Components\Collider.h"
 #include "Components\BoxCollider.h"
 #include "Components\SphereCollider.h"
+#include "Components\MeshCollider.h"
 #include "Components\CharacterController.h"
 
 namespace Blueberry
@@ -36,6 +37,7 @@ namespace Blueberry
 		REGISTER_ABSTRACT_CLASS(Collider);
 		REGISTER_CLASS(BoxCollider);
 		REGISTER_CLASS(SphereCollider);
+		REGISTER_CLASS(MeshCollider);
 		REGISTER_CLASS(CharacterController);
 	}
 }

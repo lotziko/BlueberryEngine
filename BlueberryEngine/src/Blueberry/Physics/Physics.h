@@ -13,6 +13,9 @@ namespace Blueberry
 		static bool Initialize();
 		static void Shutdown();
 
+		static void Enable();
+		static void Disable();
+
 		static void Update(const float& deltaTime);
 
 	private:

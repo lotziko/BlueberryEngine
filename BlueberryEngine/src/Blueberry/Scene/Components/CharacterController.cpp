@@ -6,6 +6,7 @@
 #include "Blueberry\Physics\Physics.h"
 
 #include "Blueberry\Input\Input.h"
+#include "Blueberry\Input\Cursor.h"
 
 #include <Jolt\Jolt.h>
 #include <Jolt\Physics\PhysicsScene.h>
@@ -19,6 +20,7 @@ namespace Blueberry
 	OBJECT_DEFINITION(CharacterController, Component)
 	{
 		DEFINE_BASE_FIELDS(CharacterController, Component)
+		DEFINE_FIELD(CharacterController, m_CameraTransform, BindingType::ObjectPtr, FieldOptions().SetObjectType(Transform::Type))
 		DEFINE_FIELD(CharacterController, m_Height, BindingType::Float, {})
 		DEFINE_FIELD(CharacterController, m_Radius, BindingType::Float, {})
 	}
@@ -62,6 +64,8 @@ namespace Blueberry
 				bodyInterface.RemoveBody(m_CharacterData->bodyId);
 			}
 		}
+		Cursor::SetLocked(false);
+		Cursor::SetHidden(false);
 	}
 
 	void CharacterController::OnUpdate()
@@ -83,6 +87,8 @@ namespace Blueberry
 			m_CharacterData->character = new JPH::Character(&settings, JPH::RVec3(position.x, position.y, position.z), JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w), 0, Physics::s_PhysicsSystem);
 			m_CharacterData->character->AddToPhysicsSystem();
 			m_CharacterData->bodyId = m_CharacterData->character->GetBodyID();
+			Cursor::SetLocked(true);
+			Cursor::SetHidden(true);
 		}
 		else
 		{
@@ -94,7 +100,8 @@ namespace Blueberry
 				float turnSpeed = 3.0f / 60;
 
 				Vector2 movementAxis = Vector2(Input::IsKeyDown('D') ? 1 : 0 + Input::IsKeyDown('A') ? -1 : 0, Input::IsKeyDown('W') ? 1 : 0 + Input::IsKeyDown('S') ? -1 : 0);
-				float turnAxis = Input::IsKeyDown('Q') ? -1 : 0 + Input::IsKeyDown('E') ? 1 : 0;
+				Vector2 turnAxis = Input::GetMouseDelta() / 15.0f;
+				//float turnAxis = Input::IsKeyDown('Q') ? -1 : 0 + Input::IsKeyDown('E') ? 1 : 0;
 				/*Vector2 mousePosition = Input::GetMousePosition();
 				static Vector2 previousMousePosition;
 				float turnAxis = -(mousePosition - previousMousePosition).x;
@@ -105,7 +112,14 @@ namespace Blueberry
 				Vector3 right = Vector3::Transform(Vector3::UnitX, rotation);
 				Vector3 velocity = (right * movementAxis.x + forward * movementAxis.y) * movementSpeed;
 
-				rotation *= Quaternion::CreateFromAxisAngle(Vector3::UnitY, turnAxis * turnSpeed);
+				Quaternion cameraRotation = Vector3::Zero;
+				m_VerticalRotation = std::clamp(m_VerticalRotation + turnAxis.y * 2, -89.0f, 89.0f);
+				cameraRotation = Quaternion::CreateFromYawPitchRoll(0, ToRadians(m_VerticalRotation), 0);
+				cameraRotation.Normalize();
+
+				m_CameraTransform->SetLocalRotation(cameraRotation);
+
+				rotation *= Quaternion::CreateFromAxisAngle(Vector3::UnitY, turnAxis.x * turnSpeed);
 				rotation.Normalize();
 
 				character->SetRotation(JPH::QuatArg(rotation.x, rotation.y, rotation.z, rotation.w));

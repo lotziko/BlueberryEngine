@@ -1,6 +1,8 @@
 #include "bbpch.h"
 #include "WindowsWindow.h"
 
+#include "Blueberry\Core\Screen.h"
+#include "Blueberry\Input\Cursor.h"
 #include "Blueberry\Events\WindowEvents.h"
 #include "Blueberry\Events\InputEvents.h"
 
@@ -209,7 +211,28 @@ namespace Blueberry
 		{
 			int xPos = static_cast<int>(LOWORD(lParam));
 			int yPos = static_cast<int>(HIWORD(lParam));
-			MouseMoveEventArgs args(xPos, yPos);
+			int xDelta = 0;
+			int yDelta = 0;
+			if (Screen::IsAllowCursorLock() && Cursor::IsLocked())
+			{
+				Rectangle viewport = Screen::GetGameViewport();
+				if (viewport.width > 0)
+				{
+					RECT rect;
+					if (GetClientRect(hwnd, &rect))
+					{
+						Vector2 viewportCenter = viewport.Center();
+						POINT point;
+						point.x = rect.left + static_cast<int>(viewportCenter.x);
+						point.y = rect.top + static_cast<int>(viewportCenter.y);
+						xDelta = xPos - point.x;
+						yDelta = yPos - point.y;
+						ClientToScreen(hwnd, &point);
+						SetCursorPos(point.x, point.y);
+					}
+				}
+			}
+			MouseMoveEventArgs args(xPos, yPos, xDelta, yDelta);
 			InputEvents::GetMouseMoved().Invoke(args);
 			return 0;
 		}

@@ -44,14 +44,19 @@ namespace Blueberry
 		const float& GetScale();
 		void SetScale(const float& scale);
 
+		const bool& GetGeneratePhysicsShape();
+		void SetGeneratePhysicsShape(const bool& generate);
+
 	protected:
 		virtual void ImportData() override;
 
 	private:
 		void CreateMeshEntity(Transform* parent, fbxsdk::FbxNode* node, List<Object*>& objects);
+		std::string GetPhysicsShapePath(const size_t& fileId);
 
 	private:
 		DataList<ModelMaterialData> m_Materials;
 		float m_Scale = 1.0f;
+		bool m_GeneratePhysicsShape = true;
 	};
 }

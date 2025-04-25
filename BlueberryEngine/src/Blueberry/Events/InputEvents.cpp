@@ -18,6 +18,11 @@ namespace Blueberry
 		return m_Position;
 	}
 
+	const Vector2& MouseMoveEventArgs::GetDelta() const
+	{
+		return m_Delta;
+	}
+
 	KeyDownEvent& InputEvents::GetKeyDown()
 	{
 		return s_KeyDown;

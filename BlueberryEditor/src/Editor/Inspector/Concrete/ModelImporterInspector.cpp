@@ -30,6 +30,12 @@ namespace Blueberry
 			modelImporter->SetScale(scale);
 		}
 
+		bool generatePhysicsShape = modelImporter->GetGeneratePhysicsShape();
+		if (ImGui::BoolEdit("Generate Physics Shape", &generatePhysicsShape))
+		{
+			modelImporter->SetGeneratePhysicsShape(generatePhysicsShape);
+		}
+
 		if (ImGui::Button("Save"))
 		{
 			AssetDB::SetDirty(object);

@@ -1,6 +1,8 @@
 #include "bbpch.h"
 #include "Input.h"
 
+#include "Blueberry\Core\Screen.h"
+
 namespace Blueberry
 {
 	void Input::Initialize()
@@ -35,10 +37,21 @@ namespace Blueberry
 	void Input::OnMouseMove(const MouseMoveEventArgs& args)
 	{
 		s_MousePosition = args.GetPosition();
+		s_MouseDelta = args.GetDelta();
+		s_DeltaFrame = Time::GetFrameCount();
 	}
 
 	Vector2 Input::GetMousePosition()
 	{
 		return s_MousePosition;
+	}
+
+	Vector2 Input::GetMouseDelta()
+	{
+		if (s_DeltaFrame != Time::GetFrameCount())
+		{
+			return Vector2::Zero;
+		}
+		return s_MouseDelta;
 	}
 }

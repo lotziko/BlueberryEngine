@@ -9,6 +9,7 @@
 #include "Blueberry\Graphics\DefaultRenderer.h"
 #include "Blueberry\Graphics\RenderTexture.h"
 #include "Blueberry\Scene\Scene.h"
+#include "Blueberry\Input\Cursor.h"
 
 #include "imgui\imgui.h"
 
@@ -31,6 +32,21 @@ namespace Blueberry
 	{
 		ImVec2 pos = ImGui::GetCursorScreenPos();
 		ImVec2 size = ImGui::GetContentRegionAvail();
+
+		if (ImGui::IsWindowFocused())
+		{
+			Screen::SetAllowCursorLock(true);
+			Screen::SetGameViewport(Rectangle(0, 0, size.x, size.y));
+			if (Cursor::IsHidden())
+			{
+				ImGui::SetMouseCursor(ImGuiMouseCursor_None);
+			}
+		}
+		if (ImGui::IsKeyDown(ImGuiKey_Escape))
+		{
+			Screen::SetAllowCursorLock(false);
+			ImGui::SetNextWindowFocus();
+		}
 
 		Scene* scene = EditorSceneManager::GetScene();
 		if (scene != nullptr)
