@@ -30,6 +30,7 @@ namespace Blueberry
 
 		Transform* m_Transform;
 		CharacterData* m_CharacterData;
-		float m_VerticalRotation;
+		Vector2 m_Rotation;
+		Vector3 m_Velocity;
 	};
 }

@@ -5,15 +5,27 @@
 #include "Blueberry\Graphics\Texture.h"
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\TextureCube.h"
+#include "Blueberry\Graphics\RenderTexture.h"
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Assets\ThumbnailCache.h"
 #include "Editor\Misc\ImGuiHelper.h"
+#include "Editor\Preview\MaterialPreview.h"
 #include "imgui\imgui.h"
 
 #include "Editor\Panels\Scene\SceneArea.h"
 
 namespace Blueberry
 {
+	MaterialInspector::MaterialInspector()
+	{
+		m_RenderTexture = RenderTexture::Create(512, 512, 1);
+	}
+
+	MaterialInspector::~MaterialInspector()
+	{
+		Object::Destroy(m_RenderTexture);
+	}
+
 	void MaterialInspector::Draw(Object* object)
 	{
 		Material* material = static_cast<Material*>(object);
@@ -75,5 +87,11 @@ namespace Blueberry
 			AssetDB::SetDirty(material);
 			AssetDB::SaveAssets();
 		}
+
+		static MaterialPreview preview;
+		preview.Draw(material, m_RenderTexture);
+
+		ImVec2 size = ImGui::GetContentRegionAvail();
+		ImGui::Image(reinterpret_cast<ImTextureID>(m_RenderTexture->GetHandle()), ImVec2(size.x, (m_RenderTexture->GetHeight() * size.x) / static_cast<float>(m_RenderTexture->GetWidth())), ImVec2(0, 1), ImVec2(1, 0));
 	}
 }

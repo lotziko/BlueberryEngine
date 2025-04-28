@@ -60,6 +60,8 @@ namespace Blueberry
 	void MeshRenderer::SetMesh(Mesh* mesh)
 	{
 		m_Mesh = mesh;
+		m_RecalculationFrame = 0;
+		Update();
 	}
 
 	Material* MeshRenderer::GetMaterial(const uint32_t& index)

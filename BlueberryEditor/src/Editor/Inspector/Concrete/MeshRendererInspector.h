@@ -4,12 +4,11 @@
 
 namespace Blueberry
 {
-	class TransformInspector : public ObjectInspector
+	class MeshRendererInspector : public ObjectInspector
 	{
 	public:
-		virtual ~TransformInspector() = default;
+		virtual ~MeshRendererInspector() = default;
 
-		virtual void Draw(Object* object) override;
 		virtual void DrawScene(Object* object) override;
 	};
 }

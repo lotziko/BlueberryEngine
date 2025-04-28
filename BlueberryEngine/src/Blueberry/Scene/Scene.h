@@ -13,7 +13,7 @@ namespace Blueberry
 	class Scene
 	{
 	public:
-		BB_OVERRIDE_NEW_DELETE;
+		BB_OVERRIDE_NEW_DELETE
 
 		Scene();
 

@@ -45,6 +45,13 @@ namespace Blueberry
 
 		if (isOrthographic)
 		{
+			float orthographicSize = camera->GetOrthographicSize();
+			if (ImGui::FloatEdit("Orthographic size", &orthographicSize))
+			{
+				camera->SetOrthographicSize(orthographicSize);
+				hasChange = true;
+			}
+
 			Vector2 pixelSize = camera->GetPixelSize();
 			if (ImGui::DragVector2("Pixel size", &pixelSize))
 			{

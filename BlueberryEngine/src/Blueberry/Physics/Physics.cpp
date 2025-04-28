@@ -104,7 +104,6 @@ public:
 
 namespace Blueberry
 {
-	TempAllocatorImpl* temp_allocator;
 	JobSystemThreadPool* job_system;
 
 	BPLayerInterfaceImpl broad_phase_layer_interface;
@@ -129,7 +128,7 @@ namespace Blueberry
 
 	void Physics::Enable()
 	{
-		temp_allocator = new TempAllocatorImpl(10 * 1024 * 1024);
+		s_TempAllocator = new TempAllocatorImpl(10 * 1024 * 1024);
 		job_system = new JobSystemThreadPool(cMaxPhysicsJobs, cMaxPhysicsBarriers, thread::hardware_concurrency() - 1);
 
 		const uint cMaxBodies = 1024;
@@ -160,6 +159,6 @@ namespace Blueberry
 	void Physics::Update(const float& deltaTime)
 	{
 		const int cCollisionSteps = 1;
-		s_PhysicsSystem->Update(deltaTime, cCollisionSteps, temp_allocator, job_system);
+		s_PhysicsSystem->Update(deltaTime, cCollisionSteps, s_TempAllocator, job_system);
 	}
 }

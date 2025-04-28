@@ -9,13 +9,14 @@
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\DefaultMaterials.h"
 
-#include "PreviewScene.h"
+#include "Editor\Preview\MaterialPreview.h"
+#include "Editor\Preview\MeshPreview.h"
 
 namespace Blueberry
 {
 	bool ThumbnailRenderer::CanDraw(const std::size_t& type)
 	{
-		return type == Texture2D::Type || type == Material::Type;
+		return type == Texture2D::Type || type == Material::Type || type == Mesh::Type;
 	}
 
 	bool ThumbnailRenderer::Draw(unsigned char* output, const uint32_t& size, Object* asset)
@@ -39,16 +40,16 @@ namespace Blueberry
 		}
 		else if (asset->IsClassType(Material::Type))
 		{
-			static PreviewScene previewScene;
-			previewScene.Draw(static_cast<Material*>(asset), s_ThumbnailRenderTarget);
+			static MaterialPreview preview;
+			preview.Draw(static_cast<Material*>(asset), s_ThumbnailRenderTarget);
 			GfxDevice::Read(s_ThumbnailRenderTarget->Get(), output, Rectangle(0, 0, size, size));
 			GfxDevice::SetRenderTarget(nullptr);
 			return true;
 		}
 		else if (asset->IsClassType(Mesh::Type))
 		{
-			static PreviewScene previewScene;
-			previewScene.Draw(static_cast<Mesh*>(asset), s_ThumbnailRenderTarget);
+			static MeshPreview preview;
+			preview.Draw(static_cast<Mesh*>(asset), s_ThumbnailRenderTarget);
 			GfxDevice::Read(s_ThumbnailRenderTarget->Get(), output, Rectangle(0, 0, size, size));
 			GfxDevice::SetRenderTarget(nullptr);
 			return true;

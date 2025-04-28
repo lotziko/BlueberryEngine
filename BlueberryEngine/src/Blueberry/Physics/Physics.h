@@ -3,6 +3,7 @@
 namespace JPH
 {
 	class PhysicsSystem;
+	class TempAllocatorImpl;
 }
 
 namespace Blueberry
@@ -19,6 +20,7 @@ namespace Blueberry
 		static void Update(const float& deltaTime);
 
 	private:
+		static inline JPH::TempAllocatorImpl* s_TempAllocator;
 		static inline JPH::PhysicsSystem* s_PhysicsSystem = nullptr;
 
 		friend class PhysicsBody;

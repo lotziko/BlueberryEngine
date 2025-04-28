@@ -1,5 +1,5 @@
 #include "bbpch.h"
-#include "PreviewScene.h"
+#include "MaterialPreview.h"
 
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Scene\Components\Light.h"
@@ -9,10 +9,11 @@
 #include "Blueberry\Graphics\DefaultMaterials.h"
 #include "Blueberry\Graphics\DefaultRenderer.h"
 #include "Blueberry\Graphics\RenderTexture.h"
+#include "Blueberry\Graphics\Material.h"
 
 namespace Blueberry
 {
-	void PreviewScene::Draw(Material* material, RenderTexture* target)
+	void MaterialPreview::Draw(Material* material, RenderTexture* target)
 	{
 		if (m_Scene == nullptr)
 		{
@@ -45,10 +46,5 @@ namespace Blueberry
 		}
 		m_Renderer->SetMaterial(material);
 		DefaultRenderer::Draw(m_Scene, m_Camera, Rectangle(0, 0, target->GetWidth(), target->GetHeight()), Color(0, 0, 0, 1), target, nullptr, true);
-	}
-
-	void PreviewScene::Draw(Mesh* mesh, RenderTexture* target)
-	{
-		// TODO
 	}
 }

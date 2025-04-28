@@ -6,11 +6,11 @@ namespace Blueberry
 {
 	class RenderTexture;
 
-	class MaterialInspector : public ObjectInspector
+	class MeshInspector : public ObjectInspector
 	{
 	public:
-		MaterialInspector();
-		virtual ~MaterialInspector();
+		MeshInspector();
+		virtual ~MeshInspector();
 
 		virtual void Draw(Object* object) override;
 

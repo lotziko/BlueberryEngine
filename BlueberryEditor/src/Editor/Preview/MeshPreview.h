@@ -2,21 +2,21 @@
 
 namespace Blueberry
 {
-	class Material;
 	class Mesh;
 	class RenderTexture;
 	class Scene;
+	class Material;
 	class MeshRenderer;
 	class Camera;
 
-	class PreviewScene
+	class MeshPreview
 	{
 	public:
-		void Draw(Material* material, RenderTexture* target);
 		void Draw(Mesh* mesh, RenderTexture* target);
 
 	private:
 		Scene* m_Scene;
+		Material* m_MeshPreviewMaterial;
 		MeshRenderer* m_Renderer;
 		Camera* m_Camera;
 	};

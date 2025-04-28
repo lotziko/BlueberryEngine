@@ -9,6 +9,9 @@ namespace Blueberry
 	class ObjectInspector
 	{
 	public:
+		ObjectInspector() = default;
+		virtual ~ObjectInspector() = default;
+
 		virtual Texture* GetIcon(Object* object);
 		virtual void Draw(Object* object);
 		virtual void DrawScene(Object* object);

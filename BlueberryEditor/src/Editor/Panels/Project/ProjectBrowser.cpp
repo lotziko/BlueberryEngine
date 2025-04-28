@@ -208,11 +208,13 @@ namespace Blueberry
 						ImGui::SetCursorPos(ImVec2(position.x + style.ProjectCellSize, position.y + style.ProjectCellSize / 2 - style.ProjectExpandIconSize / 2));
 						ImGui::SetItemAllowOverlap();
 						ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
+						ImGui::PushID(asset.objects[0]->GetObjectId());
 						if (ImGui::ArrowButtonEx("##Arrow", asset.expanded ? ImGuiDir_Left : ImGuiDir_Right, ImVec2(style.ProjectExpandIconSize, style.ProjectExpandIconSize)))
 						{
 							asset.expanded = !asset.expanded;
 							InspectorExpandedItemsCache::Set(asset.pathString, asset.expanded);
 						}
+						ImGui::PopID();
 						ImGui::PopStyleColor();
 					}
 				}
@@ -419,7 +421,8 @@ namespace Blueberry
 				{
 					Object* mainObject = ObjectDB::GetObjectFromGuid(importer->GetGuid(), importer->GetMainObject());
 					AssetInfo info = {};
-					info.path = relativePath.string();
+					info.path = relativePath;
+					info.pathString = relativePath.string();
 					info.importer = importer;
 					if (mainObject != nullptr)
 					{
