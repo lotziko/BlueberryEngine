@@ -1,7 +1,7 @@
-#include "bbpch.h"
 #include "ObjectCloner.h"
 
 #include "Blueberry\Core\ClassDB.h"
+#include "..\Core\Variant.h"
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Scene\Components\Component.h"
 #include "Blueberry\Scene\Components\Transform.h"
@@ -42,7 +42,7 @@ namespace Blueberry
 				*cloneValue.Get<float>() = *originalValue.Get<float>();
 				break;
 			case BindingType::String:
-				*cloneValue.Get<std::string>() = *originalValue.Get<std::string>();
+				*cloneValue.Get<String>() = *originalValue.Get<String>();
 				break;
 			case BindingType::ObjectPtr:
 			{

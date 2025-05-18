@@ -1,7 +1,7 @@
-#include "bbpch.h"
 #include "ComputeShader.h"
 
-#include "Blueberry\Graphics\GfxDevice.h"
+#include "..\Graphics\GfxDevice.h"
+#include "..\Graphics\GfxComputeShader.h"
 
 namespace Blueberry
 {

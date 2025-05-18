@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Blueberry\Core\Base.h"
+#include "Blueberry\Core\Object.h"
 #include "GfxDrawingOperation.h"
 
 namespace Blueberry

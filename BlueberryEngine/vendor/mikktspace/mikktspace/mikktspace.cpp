@@ -1,4 +1,3 @@
-#include "bbpch.h"
 /** \file mikktspace/mikktspace.c
  *  \ingroup mikktspace
  */

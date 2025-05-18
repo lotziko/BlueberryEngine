@@ -1,13 +1,20 @@
-#include "bbpch.h"
 #include "JobSystem.h"
 
+#include "Blueberry\Core\Memory.h"
+
 #include <atomic> 
+#include <cassert>
+#include <sstream>
 #include <condition_variable>
+#include <Windows.h>
 
 // Based on https://github.com/turanszkij/JobSystem/blob/master/JobSystem.cpp
 
 namespace Blueberry
 {
+#undef max
+#undef min
+
 	// Fixed size very simple thread safe ring buffer
 	template <typename T, size_t capacity>
 	class ThreadSafeRingBuffer

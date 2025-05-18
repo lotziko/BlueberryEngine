@@ -2,6 +2,7 @@
 #include "Editor\Assets\AssetImporter.h"
 
 #include "Blueberry\Core\ObjectPtr.h"
+#include "Blueberry\Core\DataList.h"
 
 namespace fbxsdk
 {
@@ -21,14 +22,14 @@ namespace Blueberry
 		ModelMaterialData() = default;
 		virtual ~ModelMaterialData() = default;
 
-		const std::string& GetName();
-		void SetName(const std::string& name);
+		const String& GetName();
+		void SetName(const String& name);
 
 		Material* GetMaterial();
 		void SetMaterial(Material* material);
 
 	private:
-		std::string m_Name;
+		String m_Name;
 		ObjectPtr<Material> m_Material;
 	};
 

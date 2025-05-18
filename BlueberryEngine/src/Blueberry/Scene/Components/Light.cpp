@@ -1,7 +1,7 @@
-#include "bbpch.h"
-#include "Light.h"
+#include "Blueberry\Scene\Components\Light.h"
 
 #include "Blueberry\Scene\Entity.h"
+#include "Blueberry\Core\ClassDB.h"
 
 namespace Blueberry
 {

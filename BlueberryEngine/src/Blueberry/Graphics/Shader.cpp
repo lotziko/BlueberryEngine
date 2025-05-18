@@ -1,12 +1,11 @@
-#include "bbpch.h"
-#include "Shader.h"
+#include "Blueberry\Graphics\Shader.h"
 
-#include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Core\ObjectDB.h"
-#include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Core\Notifyable.h"
-
-#include "Blueberry\Graphics\DefaultTextures.h"
+#include "Blueberry\Core\ClassDB.h"
+#include "..\Graphics\GfxDevice.h"
+#include "..\Graphics\GfxShader.h"
+#include "..\Graphics\DefaultTextures.h"
 
 namespace Blueberry
 {
@@ -50,7 +49,7 @@ namespace Blueberry
 	uint32_t Shader::s_ActiveKeywordsMask = 0;
 	KeywordDB Shader::s_GlobalKeywords = {};
 
-	const uint32_t& KeywordDB::GetMask(const size_t& id)
+	const uint32_t KeywordDB::GetMask(const size_t& id)
 	{
 		auto it = m_KeywordMask.find(id);
 		if (it != m_KeywordMask.end())
@@ -63,12 +62,12 @@ namespace Blueberry
 		return mask;
 	}
 
-	const std::string& PropertyData::GetName() const
+	const String& PropertyData::GetName() const
 	{
 		return m_Name;
 	}
 
-	void PropertyData::SetName(const std::string& name)
+	void PropertyData::SetName(const String& name)
 	{
 		m_Name = name;
 	}
@@ -83,12 +82,12 @@ namespace Blueberry
 		m_Type = type;
 	}
 
-	const std::string& PropertyData::GetDefaultTextureName() const
+	const String& PropertyData::GetDefaultTextureName() const
 	{
 		return m_DefaultTextureName;
 	}
 
-	void PropertyData::SetDefaultTextureName(const std::string& name)
+	void PropertyData::SetDefaultTextureName(const String& name)
 	{
 		m_DefaultTextureName = name;
 	}
@@ -177,22 +176,22 @@ namespace Blueberry
 		m_ZWrite = zWrite;
 	}
 
-	const List<std::string>& PassData::GetVertexKeywords() const
+	const List<String>& PassData::GetVertexKeywords() const
 	{
 		return m_VertexKeywords;
 	}
 
-	void PassData::SetVertexKeywords(const List<std::string>& keywords)
+	void PassData::SetVertexKeywords(const List<String>& keywords)
 	{
 		m_VertexKeywords = keywords;
 	}
 
-	const List<std::string>& PassData::GetFragmentKeywords() const
+	const List<String>& PassData::GetFragmentKeywords() const
 	{
 		return m_FragmentKeywords;
 	}
 
-	void PassData::SetFragmentKeywords(const List<std::string>& keywords)
+	void PassData::SetFragmentKeywords(const List<String>& keywords)
 	{
 		m_FragmentKeywords = keywords;
 	}
@@ -232,7 +231,7 @@ namespace Blueberry
 		return m_Passes[index];
 	}
 
-	const uint32_t& ShaderData::GetPassCount() const
+	const size_t ShaderData::GetPassCount() const
 	{
 		return m_Passes.size();
 	}
@@ -288,18 +287,18 @@ namespace Blueberry
 			m_PassesOffsets.clear();
 		}
 
-		int vertexShadersCount = variantsData.vertexShaderIndices.size();
+		size_t vertexShadersCount = variantsData.vertexShaderIndices.size();
 		m_VertexShaders.resize(vertexShadersCount);
-		for (int i = 0; i < vertexShadersCount; ++i)
+		for (size_t i = 0; i < vertexShadersCount; ++i)
 		{
 			GfxVertexShader* vertexShader;
 			GfxDevice::CreateVertexShader(variantsData.shaders[variantsData.vertexShaderIndices[i]], vertexShader);
 			m_VertexShaders[i] = vertexShader;
 		}
 
-		int geometryShadersCount = variantsData.geometryShaderIndices.size();
+		size_t geometryShadersCount = variantsData.geometryShaderIndices.size();
 		m_GeometryShaders.resize(geometryShadersCount);
-		for (int i = 0; i < geometryShadersCount; ++i)
+		for (size_t i = 0; i < geometryShadersCount; ++i)
 		{
 			GfxGeometryShader* geometryShader = nullptr;
 			uint32_t index = variantsData.geometryShaderIndices[i];
@@ -310,9 +309,9 @@ namespace Blueberry
 			m_GeometryShaders[i] = geometryShader;
 		}
 
-		int fragmentShadersCount = variantsData.fragmentShaderIndices.size();
+		size_t fragmentShadersCount = variantsData.fragmentShaderIndices.size();
 		m_FragmentShaders.resize(fragmentShadersCount);
-		for (int i = 0; i < fragmentShadersCount; ++i)
+		for (size_t i = 0; i < fragmentShadersCount; ++i)
 		{
 			GfxFragmentShader* fragmentShader;
 			GfxDevice::CreateFragmentShader(variantsData.shaders[variantsData.fragmentShaderIndices[i]], fragmentShader);

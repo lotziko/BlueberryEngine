@@ -1,13 +1,14 @@
-#include "bbpch.h"
 #include "ImGuiHelper.h"
 
+#include "Blueberry\Core\Screen.h"
 #include "Blueberry\Core\ObjectPtr.h"
 #include "Blueberry\Assets\AssetLoader.h"
-#include "imgui\imgui_internal.h"
-#include "imgui\misc\freetype\imgui_freetype.h"
-#include "imgui\misc\cpp\imgui_stdlib.h"
 
 #include "Editor\Panels\Picking\ObjectPicker.h"
+
+#include <imgui\imgui_internal.h>
+#include <imgui\misc\freetype\imgui_freetype.h>
+#include <imgui\misc\cpp\imgui_stdlib.h>
 
 ImGui::EditorContext* ImGui::GEditor = NULL;
 
@@ -64,7 +65,7 @@ bool ImGui::DragVector3(const char* label, Blueberry::Vector3* v)
 	return false;
 }
 
-bool ImGui::EnumEdit(const char* label, int* v, const Blueberry::List<std::string>* names)
+bool ImGui::EnumEdit(const char* label, int* v, const Blueberry::List<Blueberry::String>* names)
 {
 	if (names == nullptr || names->size() == 0)
 	{
@@ -174,7 +175,7 @@ bool ImGui::ColorEdit(const char* label, Blueberry::Color* v)
 	return false;
 }
 
-bool ImGui::ObjectEdit(const char* label, Blueberry::Object** v, const std::size_t& type)
+bool ImGui::ObjectEdit(const char* label, Blueberry::Object** v, const size_t& type)
 {
 	bool result = false;
 
@@ -225,7 +226,7 @@ bool ImGui::ObjectEdit(const char* label, Blueberry::Object** v, const std::size
 	return result;
 }
 
-bool ImGui::ObjectEdit(const char* label, Blueberry::ObjectPtr<Blueberry::Object>* v, const std::size_t& type)
+bool ImGui::ObjectEdit(const char* label, Blueberry::ObjectPtr<Blueberry::Object>* v, const size_t& type)
 {
 	Blueberry::Object* object = v->Get();
 	if (ObjectEdit(label, &object, type))
@@ -236,7 +237,7 @@ bool ImGui::ObjectEdit(const char* label, Blueberry::ObjectPtr<Blueberry::Object
 	return false;
 }
 
-bool ImGui::ObjectArrayEdit(const char* label, Blueberry::List<Blueberry::ObjectPtr<Blueberry::Object>>* v, const std::size_t& type)
+bool ImGui::ObjectArrayEdit(const char* label, Blueberry::List<Blueberry::ObjectPtr<Blueberry::Object>>* v, const size_t& type)
 {
 	ImGui::Text(label);
 	for (int i = 0; i < v->size(); ++i)
@@ -263,9 +264,9 @@ bool ImGui::SearchInputText(const char* hint, std::string* text)
 	else if (!hovered)
 	{
 		ImVec4 color = ImGui::GetStyleColorVec4(ImGuiCol_FrameBg);
-		color.x *= 0.9;
-		color.y *= 0.9;
-		color.z *= 0.9;
+		color.x *= 0.9f;
+		color.y *= 0.9f;
+		color.z *= 0.9f;
 		ImGui::PushStyleColor(ImGuiCol_FrameBg, color);
 	}
 	bool result = ImGui::InputTextWithHint("###search", hint, text);

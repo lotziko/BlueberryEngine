@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "MenuTree.h"
 
 #include "Blueberry\Tools\StringHelper.h"
@@ -15,9 +14,9 @@ namespace Blueberry
 		return m_Root;
 	}
 
-	void MenuTree::Add(const std::string& path, void(*clickCallback)())
+	void MenuTree::Add(const String& path, void(*clickCallback)())
 	{
-		List<std::string> splittedPath;
+		List<String> splittedPath;
 		StringHelper::Split(path.c_str(), '/', splittedPath);
 		MenuTreeNode* currentNode = &m_Root;
 		for (auto pathIt = splittedPath.begin(); pathIt < splittedPath.end(); ++pathIt)

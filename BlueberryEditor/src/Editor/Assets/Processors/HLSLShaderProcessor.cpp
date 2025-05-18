@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "HLSLShaderProcessor.h"
 
 #include "Blueberry\Tools\StringConverter.h"
@@ -9,12 +8,13 @@
 
 #include <filesystem>
 #include <fstream>
+#include <d3dcompiler.h>
 
 namespace Blueberry
 {
 	HRESULT HLSLShaderProcessorInclude::Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes)
 	{
-		std::string filePath("assets/shaders/" + std::string(pFileName));
+		String filePath("assets/shaders/" + String(pFileName));
 		if (!std::filesystem::exists(filePath))
 		{
 			return E_FAIL;
@@ -25,7 +25,7 @@ namespace Blueberry
 		char* buffer;
 
 		std::ifstream infile;
-		infile.open(filePath, std::ios::binary);
+		infile.open(filePath.data(), std::ios::binary);
 		infile.seekg(0, std::ios::end);
 		dataSize = infile.tellg();
 		infile.seekg(0, std::ios::beg);
@@ -54,7 +54,7 @@ namespace Blueberry
 		m_Blobs.clear();
 	}
 
-	bool HLSLShaderProcessor::Compile(const std::string& path)
+	bool HLSLShaderProcessor::Compile(const String& path)
 	{
 		ShaderCompilationData compilationData = {};
 		if (HLSLShaderParser::Parse(path, m_ShaderData, compilationData))
@@ -161,7 +161,7 @@ namespace Blueberry
 		return true;
 	}
 
-	void HLSLShaderProcessor::SaveVariants(const std::string& folderPath)
+	void HLSLShaderProcessor::SaveVariants(const String& folderPath)
 	{
 		std::filesystem::path indexesPath = folderPath;
 		indexesPath.append("indexes");
@@ -188,12 +188,12 @@ namespace Blueberry
 			ComPtr<ID3DBlob> blob = m_Blobs[i];
 			if (blob->GetBufferSize() > 0)
 			{
-				D3DWriteBlobToFile(blob.Get(), StringConverter::StringToWide(path.string()).c_str(), true);
+				D3DWriteBlobToFile(blob.Get(), StringConverter::StringToWide(String(path.string())).c_str(), true);
 			}
 		}
 	}
 
-	bool HLSLShaderProcessor::LoadVariants(const std::string& folderPath)
+	bool HLSLShaderProcessor::LoadVariants(const String& folderPath)
 	{
 		std::filesystem::path indexesPath = folderPath;
 		indexesPath.append("indexes");
@@ -223,11 +223,11 @@ namespace Blueberry
 				ComPtr<ID3DBlob> blob;
 				std::filesystem::path path = folderPath;
 				path.append(std::to_string(i));
-				std::string stringPath = path.string();
+				String stringPath = String(path.string());
 				HRESULT hr = D3DReadFileToBlob(StringConverter::StringToWide(stringPath).c_str(), blob.GetAddressOf());
 				if (FAILED(hr))
 				{
-					BB_ERROR("Failed to load shader: " + std::string(stringPath.begin(), stringPath.end()));
+					BB_ERROR("Failed to load shader: " + String(stringPath.begin(), stringPath.end()));
 					return false;
 				}
 				m_Blobs.emplace_back(blob);
@@ -248,7 +248,7 @@ namespace Blueberry
 		return m_VariantsData;
 	}
 
-	bool HLSLShaderProcessor::Compile(const std::string& shaderCode, const char* entryPoint, const char* model, D3D_SHADER_MACRO* keywords, ComPtr<ID3DBlob>& blob)
+	bool HLSLShaderProcessor::Compile(const String& shaderCode, const char* entryPoint, const char* model, D3D_SHADER_MACRO* keywords, ComPtr<ID3DBlob>& blob)
 	{
 		uint32_t flags = D3DCOMPILE_ENABLE_STRICTNESS;
 

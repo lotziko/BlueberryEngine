@@ -1,5 +1,5 @@
-#include "bbpch.h"
 #include "ModelImporter.h"
+
 #include "Editor\Assets\AssetDB.h"
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Scene\Components\Transform.h"
@@ -28,12 +28,12 @@ namespace Blueberry
 		DEFINE_FIELD(ModelImporter, m_GeneratePhysicsShape, BindingType::Bool, {})
 	}
 
-	const std::string& ModelMaterialData::GetName()
+	const String& ModelMaterialData::GetName()
 	{
 		return m_Name;
 	}
 
-	void ModelMaterialData::SetName(const std::string& name)
+	void ModelMaterialData::SetName(const String& name)
 	{
 		m_Name = name;
 	}
@@ -174,8 +174,8 @@ namespace Blueberry
 		Guid guid = GetGuid();
 		const auto& importedObjects = ObjectDB::GetObjectsFromGuid(guid);
 
-		std::string nodeName = node->GetName();
-		size_t entityFileId = TO_HASH(std::string(nodeName).append("_Entity"));
+		String nodeName = node->GetName();
+		size_t entityFileId = TO_HASH(String(nodeName).append("_Entity"));
 		Entity* entity = nullptr;
 		auto it = importedObjects.find(entityFileId);
 		if (it != importedObjects.end())
@@ -418,7 +418,7 @@ namespace Blueberry
 			for (uint32_t i = 0; i < materialCount; ++i)
 			{
 				fbxsdk::FbxSurfaceMaterial* fbxMaterial = node->GetMaterial(i);
-				std::string name = fbxMaterial->GetName();
+				String name = fbxMaterial->GetName();
 
 				auto index = std::find_if(m_Materials.begin(), m_Materials.end(), [name](ModelMaterialData& d) { return d.GetName() == name; });
 				if (index == m_Materials.end())

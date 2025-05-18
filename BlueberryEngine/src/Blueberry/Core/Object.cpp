@@ -1,15 +1,14 @@
-#include "bbpch.h"
-#include "Object.h"
+#include "Blueberry\Core\Object.h"
 
-#include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Core\ObjectDB.h"
-#include "Blueberry\Core\ObjectCloner.h"
+#include "Blueberry\Core\ClassDB.h"
+#include "ObjectCloner.h"
 
 namespace Blueberry
 {
 	const size_t Object::Type = TO_OBJECT_TYPE(TO_STRING(Object));
 	const size_t Object::ParentType = 0;
-	const std::string Object::TypeName = "Object";
+	const String Object::TypeName = "Object";
 	
 	Object::Object()
 	{
@@ -31,7 +30,7 @@ namespace Blueberry
 		return Type;
 	}
 
-	std::string Object::GetTypeName() const
+	String Object::GetTypeName() const
 	{
 		return TypeName;
 	}
@@ -41,12 +40,12 @@ namespace Blueberry
 		return m_ObjectId;
 	}
 
-	const std::string& Object::GetName()
+	const String& Object::GetName()
 	{
 		return m_Name;
 	}
 
-	void Object::SetName(const std::string& name)
+	void Object::SetName(const String& name)
 	{
 		m_Name = name;
 	}

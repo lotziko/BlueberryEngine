@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "ModelImporterInspector.h"
 
 #include "Blueberry\Graphics\Material.h"
@@ -6,7 +5,7 @@
 #include "Editor\Assets\Importers\ModelImporter.h"
 #include "Editor\Misc\ImGuiHelper.h"
 
-#include "imgui\imgui.h"
+#include <imgui\imgui.h>
 
 namespace Blueberry
 {

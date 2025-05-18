@@ -1,9 +1,8 @@
-#include "bbpch.h"
 #include "DefaultMaterials.h"
 
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\Material.h"
-#include "Blueberry\Assets\AssetLoader.h"
+#include "..\Assets\AssetLoader.h"
 
 namespace Blueberry
 {

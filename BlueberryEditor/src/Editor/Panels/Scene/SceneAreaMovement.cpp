@@ -1,7 +1,7 @@
-#include "bbpch.h"
 #include "SceneAreaMovement.h"
 #include "SceneArea.h"
 #include "Editor\Misc\SceneHelper.h"
+#include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Components\Camera.h"
 
 namespace Blueberry

@@ -1,4 +1,3 @@
-#include "bbpch.h"
 /* rpmalloc.c  -  Memory allocator  -  Public Domain  -  2016-2020 Mattias Jansson
  *
  * This library provides a cross-platform lock free thread caching malloc implementation in C11.

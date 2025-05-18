@@ -1,7 +1,11 @@
 #pragma once
 
+#include "Blueberry\Core\Base.h"
+
 namespace Blueberry
 {
+	class Object;
+
 	class ObjectPicker
 	{
 	public:

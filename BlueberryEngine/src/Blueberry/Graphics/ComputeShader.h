@@ -1,10 +1,11 @@
 #pragma once
 
 #include "Blueberry\Core\Object.h"
-#include "Blueberry\Graphics\GfxComputeShader.h"
 
 namespace Blueberry
 {
+	class GfxComputeShader;
+
 	class ComputeShader : public Object
 	{
 		OBJECT_DECLARATION(ComputeShader)

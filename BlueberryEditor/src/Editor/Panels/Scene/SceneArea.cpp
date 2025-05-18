@@ -1,6 +1,6 @@
-#include "bbpch.h"
 #include "SceneArea.h"
 
+#include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Graphics\RenderTexture.h"
 #include "Blueberry\Graphics\GfxDevice.h"
@@ -18,17 +18,19 @@
 #include "Editor\Menu\EditorMenuManager.h"
 
 #include "Blueberry\Core\Screen.h"
+#include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Graphics\DefaultRenderer.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Events\WindowEvents.h"
+#include "Blueberry\Logging\Profiler.h"
 
 #include "SceneAreaMovement.h"
 
-#include "imgui\imgui.h"
-#include "imgui\imguizmo.h"
+#include <imgui\imgui.h>
+#include <imgui\imguizmo.h>
 
 namespace Blueberry
 {
@@ -221,7 +223,7 @@ namespace Blueberry
 		{
 			if (ImGui::IsMouseClicked(0) && mousePos.x >= pos.x && mousePos.y >= pos.y && mousePos.x <= pos.x + size.x && mousePos.y <= pos.y + size.y)
 			{
-				Object* pickedObject = m_ObjectPicker->Pick(EditorSceneManager::GetScene(), m_Camera, (int)(mousePos.x - pos.x), (int)(mousePos.y - pos.y));
+				Object* pickedObject = m_ObjectPicker->Pick(EditorSceneManager::GetScene(), m_Camera, static_cast<int>(mousePos.x - pos.x), static_cast<int>(mousePos.y - pos.y));
 				if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
 				{
 					Selection::AddActiveObject(pickedObject);

@@ -1,8 +1,9 @@
-#include "bbpch.h"
-#include "RenderTexture.h"
+#include "Blueberry\Graphics\RenderTexture.h"
 
-#include "Blueberry\Graphics\GfxDevice.h"
+#include "..\Graphics\GfxDevice.h"
+#include "..\Graphics\GfxTexture.h"
 #include "Blueberry\Core\ClassDB.h"
+#include "..\Core\Time.h"
 
 namespace Blueberry
 {
@@ -60,7 +61,7 @@ namespace Blueberry
 		for (auto it = s_TemporaryPool.begin(); it != s_TemporaryPool.end(); ++it)
 		{
 			auto& vector = it->second;
-			for (int i = vector.size() - 1; i >= 0; --i)
+			for (int i = static_cast<int>(vector.size() - 1); i >= 0; --i)
 			{
 				auto& pair = vector[i];
 				// Release textures older than 5 frames

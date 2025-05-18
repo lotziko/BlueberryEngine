@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "SceneInspector.h"
 
 #include "InspectorExpandedItemsCache.h"
@@ -10,7 +9,7 @@
 #include "Editor\Selection.h"
 #include "Editor\Menu\EditorMenuManager.h"
 
-#include "imgui\imgui.h"
+#include <imgui\imgui.h>
 
 namespace Blueberry
 {
@@ -42,7 +41,7 @@ namespace Blueberry
 		Object* selectedObject = Selection::GetActiveObject();
 		if (selectedObject != nullptr)
 		{
-			std::size_t type = selectedObject->GetType();
+			size_t type = selectedObject->GetType();
 			ObjectInspector* inspector = ObjectInspectorDB::GetInspector(type);
 			if (inspector != nullptr)
 			{

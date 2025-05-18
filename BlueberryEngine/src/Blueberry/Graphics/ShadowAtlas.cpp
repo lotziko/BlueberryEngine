@@ -1,10 +1,9 @@
-#include "bbpch.h"
 #include "ShadowAtlas.h"
 
-#include "Blueberry\Graphics\RenderContext.h"
+#include "..\Graphics\RenderContext.h"
+#include "..\Graphics\GfxDevice.h"
+#include "..\Graphics\LightHelper.h"
 #include "Blueberry\Graphics\RenderTexture.h"
-#include "Blueberry\Graphics\GfxDevice.h"
-#include "Blueberry\Graphics\LightHelper.h"
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Components\Light.h"
 
@@ -34,9 +33,9 @@ namespace Blueberry
 			
 		}
 
-		for (int i = 0; i < sliceCount; ++i)
+		for (uint8_t i = 0; i < sliceCount; ++i)
 		{
-			ShadowRequest request = { size, 0, 0, light, i };
+			ShadowRequest request = { size, 0u, 0u, light, i };
 			m_Requests[m_RequestCount] = request;
 			++m_RequestCount;
 		}
@@ -52,7 +51,7 @@ namespace Blueberry
 		GfxDevice::SetRenderTarget(nullptr, m_AtlasTexture->Get());
 		GfxDevice::ClearDepth(1.0f);
 
-		for (int i = 0; i < m_RequestCount; ++i)
+		for (uint32_t i = 0; i < m_RequestCount; ++i)
 		{
 			ShadowRequest request = m_Requests[i];
 			uint8_t sliceIndex = request.sliceIndex;

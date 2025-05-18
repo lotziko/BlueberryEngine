@@ -1,6 +1,9 @@
 #pragma once
-#include "Blueberry\Graphics\GfxShader.h"
+
+#include "..\..\Blueberry\Graphics\GfxShader.h"
 #include "Blueberry\Graphics\VertexLayout.h"
+#include "..\Windows\ComPtr.h"
+#include "DX11.h"
 
 namespace Blueberry
 {

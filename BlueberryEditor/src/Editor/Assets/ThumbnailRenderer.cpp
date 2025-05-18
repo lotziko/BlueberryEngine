@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "ThumbnailRenderer.h"
 
 #include "Blueberry\Graphics\RenderTexture.h"
@@ -14,7 +13,7 @@
 
 namespace Blueberry
 {
-	bool ThumbnailRenderer::CanDraw(const std::size_t& type)
+	bool ThumbnailRenderer::CanDraw(const size_t& type)
 	{
 		return type == Texture2D::Type || type == Material::Type || type == Mesh::Type;
 	}
@@ -28,7 +27,7 @@ namespace Blueberry
 
 		if (asset->IsClassType(Texture2D::Type))
 		{
-			static std::size_t blitTextureId = TO_HASH("_BlitTexture");
+			static size_t blitTextureId = TO_HASH("_BlitTexture");
 			Texture2D* importedTexture = static_cast<Texture2D*>(asset);
 			GfxDevice::SetRenderTarget(s_ThumbnailRenderTarget->Get());
 			GfxDevice::SetViewport(0, 0, size, size);

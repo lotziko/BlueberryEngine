@@ -4,6 +4,7 @@ namespace Blueberry
 {
 	std::filesystem::path Path::s_AssetsPath = "Assets";
 	std::filesystem::path Path::s_DataPath = "Data";
+	std::filesystem::path Path::s_AssemblyPath = "Source";
 	std::filesystem::path Path::s_AssetCachePath = "Data\\AssetCache";
 	std::filesystem::path Path::s_ShaderCachePath = "Data\\ShaderCache";
 	std::filesystem::path Path::s_TextureCachePath = "Data\\TextureCache";
@@ -18,6 +19,11 @@ namespace Blueberry
 	const std::filesystem::path& Path::GetDataPath()
 	{
 		return s_DataPath;
+	}
+
+	const std::filesystem::path& Path::GetAssemblyPath()
+	{
+		return s_AssemblyPath;
 	}
 
 	const std::filesystem::path& Path::GetAssetCachePath()
@@ -53,6 +59,9 @@ namespace Blueberry
 		auto dataPath = path;
 		dataPath.append(L"\\Data");
 		s_DataPath = dataPath;
+		auto assemblyPath = path;
+		assemblyPath.append(L"\\Source");
+		s_AssemblyPath = assemblyPath;
 		auto assetCachePath = dataPath;
 		assetCachePath.append(L"\\AssetCache");
 		s_AssetCachePath = assetCachePath;

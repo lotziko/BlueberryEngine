@@ -1,5 +1,8 @@
 #pragma once
 
+#include "Blueberry\Core\Base.h"
+#include "Blueberry\Core\Object.h"
+
 namespace Blueberry
 {
 	class PrefabInstance;
@@ -13,7 +16,7 @@ namespace Blueberry
 		static PrefabInstance* GetInstance(Entity* entity);
 		static PrefabInstance* CreateInstance(Entity* entity);
 
-		static void CreatePrefab(const std::string& path, Entity* entity);
+		static void CreatePrefab(const String& path, Entity* entity);
 		static void UnpackPrefabInstance(Entity* entity);
 
 	private:

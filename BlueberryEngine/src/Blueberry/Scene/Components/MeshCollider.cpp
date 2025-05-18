@@ -1,10 +1,10 @@
-#include "bbpch.h"
-#include "MeshCollider.h"
+#include "Blueberry\Scene\Components\MeshCollider.h"
 
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Graphics\Mesh.h"
-#include "Blueberry\Physics\PhysicsShapeCache.h"
+#include "..\..\Physics\PhysicsShapeCache.h"
+#include "Blueberry\Core\ClassDB.h"
 
 namespace Blueberry
 {

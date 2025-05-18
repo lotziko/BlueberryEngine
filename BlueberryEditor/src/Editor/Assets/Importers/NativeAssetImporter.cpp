@@ -1,5 +1,5 @@
-#include "bbpch.h"
 #include "NativeAssetImporter.h"
+
 #include "Editor\Serialization\YamlSerializer.h"
 #include "Blueberry\Core\ObjectDB.h"
 

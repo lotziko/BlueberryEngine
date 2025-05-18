@@ -1,8 +1,8 @@
-#include "bbpch.h"
-#include "SkyRenderer.h"
+#include "Blueberry\Scene\Components\SkyRenderer.h"
 
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Graphics\Material.h"
+#include "Blueberry\Core\ClassDB.h"
 
 namespace Blueberry
 {

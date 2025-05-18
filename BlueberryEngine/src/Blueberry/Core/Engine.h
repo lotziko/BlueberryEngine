@@ -1,11 +1,14 @@
 #pragma once
 
-#include "Blueberry\Core\LayerStack.h"
-#include "Blueberry\Core\Window.h"
-#include "Blueberry\Events\Event.h"
+#include "Blueberry\Core\Base.h"
 
 namespace Blueberry
 {
+	struct WindowProperties;
+	class Window;
+	class Layer;
+	class LayerStack;
+
 	class Engine
 	{
 	public:

@@ -1,6 +1,5 @@
-#include "bbpch.h"
-
 #include "AssetImporter.h"
+
 #include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Assets\AssetLoader.h"
 
@@ -21,26 +20,26 @@ namespace Blueberry
 		return m_Guid;
 	}
 
-	std::string AssetImporter::GetFilePath()
+	String AssetImporter::GetFilePath()
 	{
 		auto dataPath = Path::GetAssetsPath();
 		dataPath.append(m_RelativePath);
-		return dataPath.string();
+		return String(dataPath.string());
 	}
 
-	std::string AssetImporter::GetMetaFilePath()
+	String AssetImporter::GetMetaFilePath()
 	{
 		auto dataPath = Path::GetAssetsPath();
 		dataPath.append(m_RelativeMetaPath);
-		return dataPath.string();
+		return String(dataPath.string());
 	}
 
-	const std::string& AssetImporter::GetRelativeFilePath()
+	const String& AssetImporter::GetRelativeFilePath()
 	{
 		return m_RelativePath;
 	}
 
-	const std::string& AssetImporter::GetRelativeMetaFilePath()
+	const String& AssetImporter::GetRelativeMetaFilePath()
 	{
 		return m_RelativeMetaPath;
 	}
@@ -105,7 +104,7 @@ namespace Blueberry
 		m_RequireSave = false;
 	}
 
-	AssetImporter* AssetImporter::CreateNew(const std::size_t& type, const std::filesystem::path& relativePath, const std::filesystem::path& relativeMetaPath)
+	AssetImporter* AssetImporter::CreateNew(const size_t& type, const std::filesystem::path& relativePath, const std::filesystem::path& relativeMetaPath)
 	{
 		auto info = ClassDB::GetInfo(type);
 		AssetImporter* importer = static_cast<AssetImporter*>(info.createInstance());
@@ -123,7 +122,7 @@ namespace Blueberry
 		YamlMetaSerializer serializer;
 		auto dataPath = Path::GetAssetsPath();
 		dataPath.append(relativeMetaPath.string());
-		serializer.Deserialize(dataPath.string());
+		serializer.Deserialize(String(dataPath.string()));
 
 		auto& deserializedObjects = serializer.GetDeserializedObjects();
 		if (deserializedObjects.size() > 0)
@@ -148,7 +147,7 @@ namespace Blueberry
 		serializer.AddObject(importer);
 		auto dataPath = Path::GetAssetsPath();
 		dataPath.append(importer->GetRelativeMetaFilePath());
-		serializer.Deserialize(dataPath.string());
+		serializer.Deserialize(String(dataPath.string()));
 	}
 
 	void AssetImporter::AddAssetObject(Object* object, const FileId& fileId)

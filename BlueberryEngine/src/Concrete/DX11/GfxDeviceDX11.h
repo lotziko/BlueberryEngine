@@ -1,8 +1,11 @@
 #pragma once
 
-#include "Blueberry\Graphics\GfxDevice.h"
-#include "Concrete\DX11\GfxRenderStateCacheDX11.h"
-#include "Concrete\DX11\GfxInputLayoutCacheDX11.h"
+#include "..\..\Blueberry\Graphics\GfxDevice.h"
+#include "..\..\Concrete\Windows\ComPtr.h"
+
+#include "GfxRenderStateCacheDX11.h"
+#include "GfxInputLayoutCacheDX11.h"
+#include "DX11.h"
 
 namespace Blueberry
 {

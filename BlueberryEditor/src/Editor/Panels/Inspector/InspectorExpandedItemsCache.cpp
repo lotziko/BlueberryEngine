@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "InspectorExpandedItemsCache.h"
 
 #include "Editor\Path.h"
@@ -7,7 +6,7 @@
 
 namespace Blueberry
 {
-	HashSet<std::string> InspectorExpandedItemsCache::s_InspectorExpandedItemsCache = {};
+	HashSet<String> InspectorExpandedItemsCache::s_InspectorExpandedItemsCache = {};
 
 	void InspectorExpandedItemsCache::Load()
 	{
@@ -19,7 +18,7 @@ namespace Blueberry
 			std::ifstream input;
 			input.open(dataPath, std::ifstream::binary);
 
-			std::string line;
+			String line;
 			while (std::getline(input, line))
 			{
 				s_InspectorExpandedItemsCache.insert(line);
@@ -43,12 +42,12 @@ namespace Blueberry
 		output.close();
 	}
 
-	bool InspectorExpandedItemsCache::Get(const std::string& name)
+	bool InspectorExpandedItemsCache::Get(const String& name)
 	{
 		return s_InspectorExpandedItemsCache.count(name) > 0;
 	}
 
-	void InspectorExpandedItemsCache::Set(const std::string& name, const bool& expanded)
+	void InspectorExpandedItemsCache::Set(const String& name, const bool& expanded)
 	{
 		if (expanded)
 		{

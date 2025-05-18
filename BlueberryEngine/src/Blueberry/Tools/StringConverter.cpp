@@ -1,11 +1,10 @@
-#include "bbpch.h"
-#include "StringConverter.h"
+#include "Blueberry\Tools\StringConverter.h"
 
 namespace Blueberry
 {
-	std::wstring StringConverter::StringToWide(std::string str)
+	WString StringConverter::StringToWide(String str)
 	{
-		std::wstring wide_string(str.begin(), str.end());
+		WString wide_string(str.begin(), str.end());
 		return wide_string;
 	}
 }

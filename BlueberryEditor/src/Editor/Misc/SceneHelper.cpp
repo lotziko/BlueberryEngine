@@ -1,5 +1,5 @@
-#include "bbpch.h"
 #include "SceneHelper.h"
+
 #include "Blueberry\Scene\Components\Camera.h"
 
 namespace Blueberry

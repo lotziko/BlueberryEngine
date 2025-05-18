@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Blueberry\Core\Base.h"
+
 namespace Blueberry
 {
 	class Object;
@@ -9,7 +11,7 @@ namespace Blueberry
 	class ThumbnailRenderer
 	{
 	public:
-		static bool CanDraw(const std::size_t& type);
+		static bool CanDraw(const size_t& type);
 		static bool Draw(unsigned char* output, const uint32_t& size, Object* asset);
 
 	private:

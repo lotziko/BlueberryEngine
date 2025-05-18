@@ -1,7 +1,7 @@
-#include "bbpch.h"
-#include "SphereCollider.h"
+#include "Blueberry\Scene\Components\SphereCollider.h"
 
 #include "Blueberry\Scene\Entity.h"
+#include "Blueberry\Core\ClassDB.h"
 
 #include <Jolt\Jolt.h>
 #include <Jolt\Physics\Collision\Shape\SphereShape.h>

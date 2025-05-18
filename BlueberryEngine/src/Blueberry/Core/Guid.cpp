@@ -1,5 +1,4 @@
-#include "bbpch.h"
-#include "Guid.h"
+#include "Blueberry\Core\Guid.h"
 
 #include "Blueberry\Tools\ByteConverter.h"
 #include <iomanip>
@@ -15,12 +14,12 @@ namespace Blueberry
 
 	bool Guid::operator==(const Guid& other) const
 	{
-		return std::memcmp(this, &other, sizeof(GUID)) == 0;
+		return std::memcmp(this, &other, sizeof(Guid)) == 0;
 	}
 
 	bool Guid::operator!=(const Guid& other) const
 	{
-		return std::memcmp(this, &other, sizeof(GUID)) != 0;
+		return std::memcmp(this, &other, sizeof(Guid)) != 0;
 	}
 
 	bool Guid::operator<(const Guid &other) const
@@ -28,12 +27,12 @@ namespace Blueberry
 		return (data[0] < other.data[0] || (data[0] == other.data[0] && data[1] < other.data[1]));
 	}
 
-	std::string Guid::ToString() const
+	String Guid::ToString() const
 	{
 		char dst[33];
 		dst[32] = '\0';
 		ByteConverter::BytesToHexString(data, dst, 16);
-		return std::string(dst, 32);
+		return String(dst, 32);
 	}
 
 	Guid Guid::Create()

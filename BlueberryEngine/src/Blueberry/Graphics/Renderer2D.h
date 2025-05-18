@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Blueberry\Math\Math.h"
+#include "Blueberry\Core\Base.h"
 #include "Blueberry\Core\ObjectPtr.h"
 
 namespace Blueberry

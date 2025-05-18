@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "AssetLoader.h"
 
 namespace Blueberry
@@ -18,7 +17,7 @@ namespace Blueberry
 		return s_Instance->LoadImpl(guid, fileId);
 	}
 
-	Object* AssetLoader::Load(const std::string& path)
+	Object* AssetLoader::Load(const String& path)
 	{
 		return s_Instance->LoadImpl(path);
 	}

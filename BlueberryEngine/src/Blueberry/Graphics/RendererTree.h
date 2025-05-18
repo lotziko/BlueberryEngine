@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Blueberry\Core\Object.h"
 #include "Octree.h"
 
 namespace Blueberry

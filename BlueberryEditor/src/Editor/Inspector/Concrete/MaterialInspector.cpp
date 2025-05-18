@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "MaterialInspector.h"
 
 #include "Blueberry\Graphics\Material.h"
@@ -10,9 +9,9 @@
 #include "Editor\Assets\ThumbnailCache.h"
 #include "Editor\Misc\ImGuiHelper.h"
 #include "Editor\Preview\MaterialPreview.h"
-#include "imgui\imgui.h"
-
 #include "Editor\Panels\Scene\SceneArea.h"
+
+#include <imgui\imgui.h>
 
 namespace Blueberry
 {

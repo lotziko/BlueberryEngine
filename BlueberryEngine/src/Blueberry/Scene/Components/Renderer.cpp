@@ -1,5 +1,6 @@
-#include "bbpch.h"
-#include "Renderer.h"
+#include "Blueberry\Scene\Components\Renderer.h"
+
+#include "Blueberry\Core\ClassDB.h"
 
 namespace Blueberry
 {

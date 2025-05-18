@@ -2,6 +2,7 @@
 
 namespace Blueberry
 {
+	class Object;
 	class Camera;
 	class GfxTexture;
 	class Scene;

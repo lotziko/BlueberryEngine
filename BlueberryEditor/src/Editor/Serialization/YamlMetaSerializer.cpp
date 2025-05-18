@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "YamlMetaSerializer.h"
 
 #include "Blueberry\Core\ClassDB.h"
@@ -17,7 +16,7 @@ namespace Blueberry
 		m_Guid = guid;
 	}
 
-	void YamlMetaSerializer::Serialize(const std::string& path)
+	void YamlMetaSerializer::Serialize(const String& path)
 	{
 		m_AssetGuid = ObjectDB::GetGuidFromObject(m_ObjectsToSerialize[0]);
 		ryml::Tree tree;
@@ -34,7 +33,7 @@ namespace Blueberry
 		YamlHelper::Save(tree, path);
 	}
 
-	void YamlMetaSerializer::Deserialize(const std::string& path)
+	void YamlMetaSerializer::Deserialize(const String& path)
 	{
 		ryml::Tree tree;
 		YamlHelper::Load(tree, path);
@@ -42,7 +41,7 @@ namespace Blueberry
 		root[0] >> m_Guid;
 		ryml::ConstNodeRef node = root[1];
 		ryml::csubstr key = node.key();
-		std::string typeName(key.str, key.size());
+		String typeName(key.str, key.size());
 		ClassDB::ClassInfo info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
 		// Importer is only created during first deserialization
 		if (m_FileIdToObject.size() == 0)

@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "RegisterEditorTypes.h"
 
 #include "Blueberry\Core\ClassDB.h"

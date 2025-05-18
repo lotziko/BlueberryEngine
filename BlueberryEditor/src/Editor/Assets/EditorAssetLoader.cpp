@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "EditorAssetLoader.h"
 
 #include <filesystem>
@@ -34,7 +33,7 @@ namespace Blueberry
 		return nullptr;
 	}
 
-	Object* EditorAssetLoader::LoadImpl(const std::string& path)
+	Object* EditorAssetLoader::LoadImpl(const String& path)
 	{
 		auto it = m_LoadedAssets.find(path);
 		if (it != m_LoadedAssets.end())
@@ -51,7 +50,7 @@ namespace Blueberry
 			if (processor.Compile(path))
 			{
 				Shader* shader = Shader::Create(processor.GetVariantsData(), processor.GetShaderData());
-				shader->SetName(assetPath.stem().string());
+				shader->SetName(assetPath.stem().string().data());
 				m_LoadedAssets.insert_or_assign(path, shader);
 				return shader;
 			}
@@ -63,7 +62,7 @@ namespace Blueberry
 			processor.Load(path, false, false);
 			PngTextureProperties properties = processor.GetProperties();
 			Texture2D* texture = Texture2D::Create(properties.width, properties.height, properties.mipCount, properties.format);
-			texture->SetName(assetPath.stem().string());
+			texture->SetName(assetPath.stem().string().data());
 			texture->SetData(static_cast<uint8_t*>(properties.data), properties.dataSize);
 			texture->Apply();
 			m_LoadedAssets.insert_or_assign(path, texture);

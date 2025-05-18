@@ -1,10 +1,11 @@
 #pragma once
 
-#include "Blueberry\Events\InputEvents.h"
+#include "Blueberry\Core\Base.h"
+#include "..\Events\InputEvents.h"
 
 namespace Blueberry
 {
-	class Input
+	class BB_API Input
 	{
 	public:
 		static void Initialize();

@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "RegisterGraphicsTypes.h"
 
 #include "Blueberry\Core\ClassDB.h"

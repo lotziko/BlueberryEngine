@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Blueberry\Core\Base.h"
+
 namespace Blueberry
 {
 	class Texture;
@@ -10,7 +12,7 @@ namespace Blueberry
 	class DefaultTextures
 	{
 	public:
-		static Texture* GetTexture(const std::string& name, const TextureDimension& dimension);
+		static Texture* GetTexture(const String& name, const TextureDimension& dimension);
 		static Texture2D* GetWhite2D();
 		static Texture2D* GetNormal2D();
 		static TextureCube* GetWhiteCube();

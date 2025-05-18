@@ -1,8 +1,8 @@
-#include "bbpch.h"
-#include "Transform.h"
+#include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Entity.h"
-#include "Blueberry\Scene\Scene.h"
+#include "..\..\Scene\Scene.h"
 #include "Blueberry\Core\ClassDB.h"
+#include "..\..\Core\Time.h"
 
 namespace Blueberry
 {
@@ -204,7 +204,7 @@ namespace Blueberry
 		m_Parent = parent;
 		m_Parent->m_Children.emplace_back(this);
 		// Reset activity
-		m_Entity->UpdateHierarchy(-1);
+		m_Entity->UpdateHierarchy(true);
 	}
 
 	const bool& Transform::IsDirty() const

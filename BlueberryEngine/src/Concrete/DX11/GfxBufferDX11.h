@@ -1,6 +1,8 @@
 #pragma once
 
-#include "Blueberry\Graphics\GfxBuffer.h"
+#include "..\..\Blueberry\Graphics\GfxBuffer.h"
+#include "..\Windows\ComPtr.h"
+#include "DX11.h"
 
 namespace Blueberry
 {

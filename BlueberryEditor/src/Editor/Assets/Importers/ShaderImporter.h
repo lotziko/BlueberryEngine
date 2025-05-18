@@ -14,6 +14,6 @@ namespace Blueberry
 		virtual void ImportData() override;
 
 	private:
-		std::string GetShaderFolder();
+		String GetShaderFolder();
 	};
 }

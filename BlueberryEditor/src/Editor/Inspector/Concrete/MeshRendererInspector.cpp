@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "MeshRendererInspector.h"
 
 #include "Blueberry\Scene\Components\MeshRenderer.h"

@@ -1,18 +1,17 @@
-#include "bbpch.h"
-#include "StringHelper.h"
+#include "Blueberry\Tools\StringHelper.h"
 
 #include <cctype>
 
 namespace Blueberry
 {
-	void StringHelper::Split(const char* data, const char symbol, List<std::string>& result)
+	void StringHelper::Split(const char* data, const char symbol, List<String>& result)
 	{
-		std::string str(data);
+		String str(data);
 		// Based on https://sentry.io/answers/split-string-in-cpp/
 		// and https://stackoverflow.com/questions/19605720/error-in-strtok-split-using-c
 
-		std::string::size_type pos = 0, f;
-		while (((f = str.find(symbol, pos)) != std::string::npos))
+		String::size_type pos = 0, f;
+		while (((f = str.find(symbol, pos)) != String::npos))
 		{
 			result.push_back(str.substr(pos, f - pos));
 			pos = f + 1;
@@ -24,7 +23,7 @@ namespace Blueberry
 	}
 
 	// Based on https://stackoverflow.com/questions/3152241/case-insensitive-stdstring-find
-	int32_t StringHelper::HasSubstring(const std::string& str1, const std::string& str2)
+	int32_t StringHelper::HasSubstring(const String& str1, const String& str2)
 	{
 		auto it = std::search(
 			str1.begin(), str1.end(),

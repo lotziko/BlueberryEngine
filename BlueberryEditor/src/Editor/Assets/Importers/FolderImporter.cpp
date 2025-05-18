@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "FolderImporter.h"
 
 #include "Blueberry\Core\ClassDB.h"

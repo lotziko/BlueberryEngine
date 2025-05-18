@@ -1,10 +1,11 @@
-#include "bbpch.h"
 #include "SceneHierarchy.h"
 
 #include "Blueberry\Core\Base.h"
 #include "Blueberry\Core\Object.h"
 #include "Blueberry\Scene\Entity.h"
+#include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Scene.h"
+#include "Blueberry\Core\ClassDB.h"
 
 #include "Editor\Selection.h"
 #include "Editor\EditorSceneManager.h"
@@ -130,12 +131,12 @@ namespace Blueberry
 
 				if (isEntityStartedRenaming)
 				{
-					std::string name = entity->GetName();
+					String name = entity->GetName();
 					strncpy(buf, name.c_str(), sizeof(buf) - 1);
 					ImGui::SetKeyboardFocusHere();
 				}
 
-				std::string name = entity->GetName();
+				String name = entity->GetName();
 				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
 				ImGui::InputText("###rename", buf, 256, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
 

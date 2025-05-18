@@ -1,10 +1,10 @@
-#include "bbpch.h"
 #include "WindowsWindow.h"
 
-#include "Blueberry\Core\Screen.h"
-#include "Blueberry\Input\Cursor.h"
-#include "Blueberry\Events\WindowEvents.h"
-#include "Blueberry\Events\InputEvents.h"
+#include "..\..\Blueberry\Core\Screen.h"
+#include "..\..\Blueberry\Input\Cursor.h"
+#include "..\..\Blueberry\Events\WindowEvents.h"
+#include "..\..\Blueberry\Events\InputEvents.h"
+#include "WindowsHelper.h"
 
 #include "Blueberry\Tools\StringConverter.h"
 #include "imgui\imgui.h"
@@ -18,8 +18,8 @@ namespace Blueberry
 {
 	WindowsWindow::WindowsWindow(const WindowProperties& properties)
 	{
-		std::string windowTitle = properties.Title;
-		std::string windowClass = "WindowClass";
+		String windowTitle = properties.Title;
+		String windowClass = "WindowClass";
 
 		m_HInstance = *(static_cast<HINSTANCE*>(properties.Data));
 		m_WindowTitle = windowTitle;
@@ -232,7 +232,7 @@ namespace Blueberry
 					}
 				}
 			}
-			MouseMoveEventArgs args(xPos, yPos, xDelta, yDelta);
+			MouseMoveEventArgs args(static_cast<float>(xPos), static_cast<float>(yPos), static_cast<float>(xDelta), static_cast<float>(yDelta));
 			InputEvents::GetMouseMoved().Invoke(args);
 			return 0;
 		}
@@ -253,6 +253,11 @@ namespace Blueberry
 		case WM_SETFOCUS:
 		{
 			WindowEvents::GetWindowFocused().Invoke();
+			return 0;
+		}
+		case WM_KILLFOCUS:
+		{
+			WindowEvents::GetWindowUnfocused().Invoke();
 			return 0;
 		}
 

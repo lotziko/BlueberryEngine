@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "GfxRenderStateCache.h"
 
 #include "Blueberry\Graphics\Material.h"
@@ -15,8 +14,8 @@ namespace Blueberry
 			auto& shaderPass = shaderData.GetPass(passIndex);
 			uint32_t vertexFlags = 0;
 			uint32_t fragmentFlags = 0;
-			const List<std::string>& vertexKeywords = shaderPass.GetVertexKeywords();
-			const List<std::string>& fragmentKeywords = shaderPass.GetFragmentKeywords();
+			const List<String>& vertexKeywords = shaderPass.GetVertexKeywords();
+			const List<String>& fragmentKeywords = shaderPass.GetFragmentKeywords();
 
 			if (material->m_ActiveKeywords.size() > 0)
 			{

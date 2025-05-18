@@ -1,8 +1,8 @@
-#include "bbpch.h"
 #include "PrefabInstance.h"
 
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Entity.h"
+#include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Core\ObjectCloner.h"
 #include "Editor\Prefabs\PrefabManager.h"
 

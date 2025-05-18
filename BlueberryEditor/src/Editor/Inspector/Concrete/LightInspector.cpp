@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "LightInspector.h"
 
 #include "Blueberry\Scene\Entity.h"

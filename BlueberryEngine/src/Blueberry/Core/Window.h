@@ -1,15 +1,17 @@
 #pragma once
 
+#include "Blueberry\Core\Base.h"
+
 namespace Blueberry
 {
 	struct WindowProperties
 	{
-		std::string Title;
+		String Title;
 		int Width;
 		int Height;
 		void* Data;
 
-		WindowProperties(std::string title, int width, int height, void* data) : Title(title), Width(width), Height(height), Data(data)
+		WindowProperties(String title, int width, int height, void* data) : Title(title), Width(width), Height(height), Data(data)
 		{
 		}
 	};

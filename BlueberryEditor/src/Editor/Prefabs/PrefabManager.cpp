@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "PrefabManager.h"
 
 #include "Blueberry\Scene\Entity.h"
@@ -46,15 +45,15 @@ namespace Blueberry
 		return instance;
 	}
 
-	void PrefabManager::CreatePrefab(const std::string& path, Entity* entity)
+	void PrefabManager::CreatePrefab(const String& path, Entity* entity)
 	{
-		std::string prefabName(entity->GetName());
+		String prefabName(entity->GetName());
 		prefabName.append(".prefab");
 
 		auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
 		relativePath.append(prefabName);
 
-		AssetDB::CreateAsset(entity, relativePath.string());
+		AssetDB::CreateAsset(entity, relativePath.string().data());
 		AssetDB::SaveAssets();
 		AssetDB::Refresh();
 	}

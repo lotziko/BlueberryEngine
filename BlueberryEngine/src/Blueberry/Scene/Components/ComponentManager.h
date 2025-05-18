@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Blueberry\Scene\Entity.h"
+#include "Blueberry\Scene\Components\Component.h"
 
 namespace Blueberry
 {

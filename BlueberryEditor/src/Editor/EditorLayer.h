@@ -26,6 +26,7 @@ namespace Blueberry
 		virtual void OnDraw() override;
 		void OnWindowResize(const WindowResizeEventArgs& event);
 		void OnWindowFocus();
+		void OnWindowUnfocus();
 
 		static void RequestFrameUpdate();
 
@@ -36,6 +37,7 @@ namespace Blueberry
 
 	private:
 		Scene* m_Scene = nullptr;
+		bool m_Focused = true;
 
 		static inline bool s_FrameUpdateRequested = true;
 	};

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Blueberry\Events\Event.h"
+#include "Blueberry\Core\Base.h"
+#include "..\Events\Event.h"
 
 namespace Blueberry
 {

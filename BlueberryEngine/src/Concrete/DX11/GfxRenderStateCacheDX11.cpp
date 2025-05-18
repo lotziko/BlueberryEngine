@@ -1,15 +1,14 @@
-#include "bbpch.h"
 #include "GfxRenderStateCacheDX11.h"
 
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\Texture.h"
-#include "Concrete\DX11\GfxDeviceDX11.h"
+#include "..\DX11\GfxDeviceDX11.h"
 
-#include "Blueberry\Graphics\GfxShader.h"
-#include "Concrete\DX11\GfxShaderDX11.h"
-#include "Concrete\DX11\GfxTextureDX11.h"
-#include "Concrete\DX11\GfxBufferDX11.h"
+#include "..\..\Blueberry\Graphics\GfxShader.h"
+#include "..\DX11\GfxShaderDX11.h"
+#include "..\DX11\GfxTextureDX11.h"
+#include "..\DX11\GfxBufferDX11.h"
 
 namespace Blueberry
 {
@@ -44,7 +43,7 @@ namespace Blueberry
 		}
 		else
 		{
-			uint32_t size = m_RenderStates.size();
+			uint32_t size = static_cast<uint32_t>(m_RenderStates.size());
 			renderState = {};
 			globalBindingsState = {};
 			GfxPassData passData = GetPassData(material, passIndex);

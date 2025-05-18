@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Blueberry\Graphics\Shader.h"
+#include "Concrete\Windows\ComPtr.h"
+#include "Concrete\DX11\DX11.h"
 
 namespace Blueberry
 {
@@ -16,15 +18,15 @@ namespace Blueberry
 		HLSLShaderProcessor() = default;
 		~HLSLShaderProcessor();
 
-		bool Compile(const std::string& path);
-		void SaveVariants(const std::string& folderPath);
-		bool LoadVariants(const std::string& folderPath);
+		bool Compile(const String& path);
+		void SaveVariants(const String& folderPath);
+		bool LoadVariants(const String& folderPath);
 
 		const ShaderData& GetShaderData();
 		const VariantsData& GetVariantsData();
 
 	private:
-		bool Compile(const std::string& shaderCode, const char* entryPoint, const char* model, D3D_SHADER_MACRO* keywords, ComPtr<ID3DBlob>& blob);
+		bool Compile(const String& shaderCode, const char* entryPoint, const char* model, D3D_SHADER_MACRO* keywords, ComPtr<ID3DBlob>& blob);
 	
 	private:
 		ShaderData m_ShaderData;

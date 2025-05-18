@@ -1,11 +1,10 @@
-#include "bbpch.h"
 #include "Scene.h"
 
-#include "Blueberry\Serialization\Serializer.h"
+#include "Blueberry\Scene\Entity.h"
+#include "Blueberry\Scene\Components\Transform.h"
+#include "Blueberry\Scene\Components\Component.h"
+#include "..\Serialization\Serializer.h"
 #include "Blueberry\Core\ClassDB.h"
-
-#include "Blueberry\Scene\Components\PhysicsBody.h"
-#include "Blueberry\Scene\Components\CharacterController.h"
 
 namespace Blueberry
 {
@@ -51,7 +50,7 @@ namespace Blueberry
 		m_RootEntities.clear();
 	}
 
-	Entity* Scene::CreateEntity(const std::string& name = "Entity")
+	Entity* Scene::CreateEntity(const String& name = "Entity")
 	{
 		//BB_INFO("Entity is created.")
 		Entity* entity = Object::Create<Entity>();

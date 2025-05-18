@@ -1,5 +1,4 @@
-#include "bbpch.h"
-#include "SpriteRenderer.h"
+#include "Blueberry\Scene\Components\SpriteRenderer.h"
 
 #include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Graphics\Texture2D.h"

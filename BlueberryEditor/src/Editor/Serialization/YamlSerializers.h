@@ -1,11 +1,12 @@
 #pragma once
 
-#include "rapidyaml\ryml.h"
 #include "Blueberry\Math\Math.h"
 #include "Blueberry\Core\ObjectPtr.h"
 #include "Blueberry\Core\Structs.h"
 #include "Blueberry\Core\Guid.h"
 #include "Blueberry\Tools\ByteConverter.h"
+
+#include <rapidyaml\ryml.h>
 
 namespace DirectX::SimpleMath
 {
@@ -41,4 +42,7 @@ namespace Blueberry
 
 	void write(ryml::NodeRef* n, const ObjectPtrData& val);
 	bool read(const ryml::ConstNodeRef& n, ObjectPtrData* val);
+
+	size_t to_chars(ryml::substr buf, Blueberry::String const& val);
+	bool from_chars(ryml::csubstr buf, Blueberry::String* v);
 }

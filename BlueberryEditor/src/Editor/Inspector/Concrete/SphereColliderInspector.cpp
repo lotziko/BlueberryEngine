@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "SphereColliderInspector.h"
 
 #include "Blueberry\Scene\Entity.h"

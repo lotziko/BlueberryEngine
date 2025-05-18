@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "ImporterInfoCache.h"
 
 #include "Editor\Path.h"
@@ -75,7 +74,7 @@ namespace Blueberry
 			{
 				FileId fileId = std::get<0>(object);
 				size_t type = std::get<1>(object);
-				std::string name = std::get<2>(object);
+				String name = std::get<2>(object);
 
 				// Do not create the imported object if it already exists
 				if (!ObjectDB::HasGuidAndFileId(guid, fileId))

@@ -1,12 +1,13 @@
 #pragma once
 
+#include "Blueberry\Core\Base.h"
 #include <filesystem>
 
 namespace Blueberry
 {
 	struct FolderTreeNode
 	{
-		std::string name;
+		String name;
 		std::filesystem::path path;
 		List<FolderTreeNode> children;
 	};
@@ -17,7 +18,7 @@ namespace Blueberry
 		FolderTree() = default;
 
 		const FolderTreeNode& GetRoot();
-		void Update(const std::string& root);
+		void Update(const String& root);
 
 	private:
 		void Populate(FolderTreeNode* parent);

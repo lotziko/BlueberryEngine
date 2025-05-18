@@ -1,11 +1,10 @@
-#include "bbpch.h"
 #include "GfxDevice.h"
 
 #include "GraphicsAPI.h"
 
 #include "Blueberry\Graphics\Mesh.h"
 
-#include "Concrete\DX11\GfxDeviceDX11.h"
+#include "..\..\Concrete\DX11\GfxDeviceDX11.h"
 
 namespace Blueberry
 {

@@ -1,7 +1,8 @@
-#include "bbpch.h"
 #include "ObjectInspector.h"
+
 #include "Blueberry\Core\ObjectPtr.h"
 #include "Blueberry\Core\ClassDB.h"
+#include "Blueberry\Core\Variant.h"
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Misc\ImGuiHelper.h"
 #include "Editor\Panels\Scene\SceneArea.h"
@@ -32,7 +33,7 @@ namespace Blueberry
 
 	void ObjectInspector::DrawField(Object* object, FieldInfo& info)
 	{
-		std::string name = info.name;
+		String name = info.name;
 		if (name.rfind("m_", 0) == 0)
 		{
 			name.replace(0, 2, "");
@@ -62,7 +63,7 @@ namespace Blueberry
 			}
 			break;
 		case BindingType::Enum:
-			if (ImGui::EnumEdit(nameLabel, value.Get<int>(), static_cast<List<std::string>*>(info.options.hintData)))
+			if (ImGui::EnumEdit(nameLabel, value.Get<int>(), static_cast<List<String>*>(info.options.hintData)))
 			{
 				hasChanged = true;
 			}

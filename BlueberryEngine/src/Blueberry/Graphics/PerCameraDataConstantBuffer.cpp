@@ -1,8 +1,8 @@
-#include "bbpch.h"
 #include "PerCameraDataConstantBuffer.h"
 
 #include "Blueberry\Scene\Components\Camera.h"
-#include "Blueberry\Graphics\RenderContext.h"
+#include "Blueberry\Scene\Components\Transform.h"
+#include "..\Graphics\RenderContext.h"
 #include "GfxDevice.h"
 #include "GfxBuffer.h"
 
@@ -59,7 +59,7 @@ namespace Blueberry
 			const Matrix& inverseView = GfxDevice::GetGPUMatrix(camera->GetInverseViewMatrix());
 			const Matrix& inverseProjection = GfxDevice::GetGPUMatrix(camera->GetInverseProjectionMatrix());
 			const Matrix& inverseViewProjection = GfxDevice::GetGPUMatrix(camera->GetInverseViewProjectionMatrix());
-			const Vector2& pixelSize = Vector2(cameraData.size.x, cameraData.size.y);
+			const Vector2& pixelSize = Vector2(static_cast<float>(cameraData.size.x), static_cast<float>(cameraData.size.y));
 			const Vector4& sizeInvSize = Vector4(pixelSize.x, pixelSize.y, 1.0f / pixelSize.x, 1.0f / pixelSize.y);
 
 			constants.viewMatrix[0] = view;
@@ -80,7 +80,7 @@ namespace Blueberry
 				const Matrix& inverseView = GfxDevice::GetGPUMatrix(cameraData.multiviewViewMatrix[i].Invert());
 				const Matrix& inverseProjection = GfxDevice::GetGPUMatrix(cameraData.multiviewProjectionMatrix[i].Invert());
 				const Matrix& inverseViewProjection = GfxDevice::GetGPUMatrix((cameraData.multiviewViewMatrix[i] * cameraData.multiviewProjectionMatrix[i]).Invert());
-				const Vector2& pixelSize = Vector2(cameraData.multiviewViewport.width, cameraData.multiviewViewport.height);
+				const Vector2& pixelSize = Vector2(static_cast<float>(cameraData.multiviewViewport.width), static_cast<float>(cameraData.multiviewViewport.height));
 				const Vector4& sizeInvSize = Vector4(pixelSize.x, pixelSize.y, 1.0f / pixelSize.x, 1.0f / pixelSize.y);
 
 				constants.viewMatrix[i] = view;

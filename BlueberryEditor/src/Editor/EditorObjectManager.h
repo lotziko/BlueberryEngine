@@ -12,7 +12,7 @@ namespace Blueberry
 	class EditorObjectManager
 	{
 	public:
-		static Entity* CreateEntity(const std::string& name);
+		static Entity* CreateEntity(const String& name);
 		static void DestroyEntity(Entity* entity);
 
 		static EntityCreateEvent& GetEntityCreated();

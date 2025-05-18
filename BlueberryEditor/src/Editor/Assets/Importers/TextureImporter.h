@@ -23,7 +23,7 @@ namespace Blueberry
 		virtual void ImportData() override;
 
 	private:
-		std::string GetTexturePath();
+		String GetTexturePath();
 
 		bool m_GenerateMipmaps = true;
 		bool m_IsSRGB = true;

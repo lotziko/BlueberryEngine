@@ -1,9 +1,8 @@
-#include "bbpch.h"
 #include "OpenXRRenderer.h"
 
 #include "GraphicsAPI.h"
 
-#include "Concrete\DX11\OpenXRRendererDX11.h"
+#include "..\..\Concrete\DX11\OpenXRRendererDX11.h"
 
 namespace Blueberry
 {

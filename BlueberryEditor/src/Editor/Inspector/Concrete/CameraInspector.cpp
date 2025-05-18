@@ -1,10 +1,8 @@
-#include "bbpch.h"
 #include "CameraInspector.h"
 
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Components\Camera.h"
 
-#include "imgui\imgui.h"
 #include "Editor\Misc\ImGuiHelper.h"
 
 #include "Editor\Gizmos\Gizmos.h"
@@ -13,6 +11,8 @@
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Graphics\RenderContext.h"
 #include "Blueberry\Graphics\Texture2D.h"
+
+#include <imgui\imgui.h>
 
 namespace Blueberry
 {

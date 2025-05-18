@@ -1,14 +1,18 @@
 #pragma once
 
-#include "EnityComponent.h"
+#include "Blueberry\Core\Base.h"
+#include "Blueberry\Core\Object.h"
+#include "Blueberry\Core\ObjectPtr.h"
 #include "Components\ComponentManager.h"
-#include "Blueberry\Events\Event.h"
-#include "Blueberry\Graphics\RendererTree.h"
+#include "..\Events\Event.h"
+#include "..\Graphics\RendererTree.h"
 
 namespace Blueberry
 {
 	class Camera;
 	class Serializer;
+	class Entity;
+	class Component;
 
 	class Scene
 	{
@@ -29,7 +33,7 @@ namespace Blueberry
 
 		void Destroy();
 
-		Entity* CreateEntity(const std::string& name);
+		Entity* CreateEntity(const String& name);
 		void AddEntity(Entity* entity);
 		void DestroyEntity(Entity* entity);
 

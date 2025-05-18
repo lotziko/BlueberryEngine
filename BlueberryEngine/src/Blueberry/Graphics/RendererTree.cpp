@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "RendererTree.h"
 
 namespace Blueberry

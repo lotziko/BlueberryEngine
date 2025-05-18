@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "GizmoRenderer.h"
 
 #include "Blueberry\Scene\Entity.h"

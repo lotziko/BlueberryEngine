@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Blueberry\Core\Delegate.h"
-#include <map>
+#include "Blueberry\Core\Base.h"
+#include "..\Core\Delegate.h"
 
 namespace Blueberry
 {

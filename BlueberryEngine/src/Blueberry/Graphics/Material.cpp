@@ -1,11 +1,10 @@
-#include "bbpch.h"
-#include "Material.h"
+#include "Blueberry\Graphics\Material.h"
 
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\Texture.h"
 #include "Blueberry\Graphics\Texture2D.h"
-#include "Blueberry\Graphics\GfxTexture.h"
-#include "Blueberry\Graphics\DefaultTextures.h"
+#include "..\Graphics\GfxTexture.h"
+#include "..\Graphics\DefaultTextures.h"
 #include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Tools\CRCHelper.h"
 
@@ -25,12 +24,12 @@ namespace Blueberry
 		DEFINE_FIELD(Material, m_ActiveKeywords, BindingType::StringList, {})
 	}
 
-	const std::string& TextureData::GetName()
+	const String& TextureData::GetName()
 	{
 		return m_Name;
 	}
 
-	void TextureData::SetName(const std::string& name)
+	void TextureData::SetName(const String& name)
 	{
 		m_Name = name;
 	}
@@ -59,7 +58,7 @@ namespace Blueberry
 		m_Crc = UINT32_MAX;
 	}
 
-	void Material::SetTexture(std::string name, Texture* texture)
+	void Material::SetTexture(String name, Texture* texture)
 	{
 		SetTexture(TO_HASH(name), texture);
 	}
@@ -114,7 +113,7 @@ namespace Blueberry
 		FillTextureMap();
 	}
 
-	void Material::SetKeyword(const std::string& keyword, const bool& enabled)
+	void Material::SetKeyword(const String& keyword, const bool& enabled)
 	{
 		// TODO use an unordered_map
 		auto it = std::find(m_ActiveKeywords.begin(), m_ActiveKeywords.end(), keyword);

@@ -1,5 +1,6 @@
-#include "bbpch.h"
 #include "GfxTextureDX11.h"
+
+#include "..\Windows\WindowsHelper.h"
 
 namespace Blueberry
 {
@@ -7,14 +8,14 @@ namespace Blueberry
 	{
 	}
 
-	GfxTextureDX11::~GfxTextureDX11()
+	/*GfxTextureDX11::~GfxTextureDX11()
 	{
 		m_Texture = nullptr;
 		m_ResourceView = nullptr;
 		m_SamplerState = nullptr;
 		m_RenderTargetView = nullptr;
 		m_DepthStencilView = nullptr;
-	}
+	}*/
 
 	uint32_t GetBlockSize(DXGI_FORMAT format)
 	{
@@ -171,7 +172,7 @@ namespace Blueberry
 			else
 			{
 				uint32_t arraySize = GetArraySize(properties.dimension, properties.depth);
-				uint32_t blockSize = properties.dataSize / (properties.width * properties.height * arraySize);
+				uint32_t blockSize = static_cast<uint32_t>(properties.dataSize / (properties.width * properties.height * arraySize));
 
 				if (arraySize > 1)
 				{

@@ -1,14 +1,14 @@
-#include "bbpch.h"
 #include "DefaultTextures.h"
 
+#include "Blueberry\Core\Base.h"
 #include "Blueberry\Graphics\Texture.h"
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\TextureCube.h"
-#include "Blueberry\Assets\AssetLoader.h"
+#include "..\Assets\AssetLoader.h"
 
 namespace Blueberry
 {
-	Texture* DefaultTextures::GetTexture(const std::string& name, const TextureDimension& dimension)
+	Texture* DefaultTextures::GetTexture(const String& name, const TextureDimension& dimension)
 	{
 		if (dimension == TextureDimension::Texture2D)
 		{

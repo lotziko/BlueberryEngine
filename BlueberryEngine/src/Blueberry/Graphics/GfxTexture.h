@@ -6,7 +6,7 @@ namespace Blueberry
 	{
 	public:
 		BB_OVERRIDE_NEW_DELETE
-
+		
 		virtual ~GfxTexture() = default;
 
 		virtual uint32_t GetWidth() const = 0;

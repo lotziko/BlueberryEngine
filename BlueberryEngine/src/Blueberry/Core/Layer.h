@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string>
+#include "Blueberry\Core\Base.h"
 
 namespace Blueberry
 {
@@ -9,7 +9,7 @@ namespace Blueberry
 	public:
 		BB_OVERRIDE_NEW_DELETE
 
-		Layer(const std::string& name = "Layer");
+		Layer(const String& name = "Layer");
 		virtual ~Layer() = default;
 
 		virtual void OnAttach() {}
@@ -17,8 +17,8 @@ namespace Blueberry
 		virtual void OnUpdate() {}
 		virtual void OnDraw() {}
 
-		const std::string& GetName() const;
+		const String& GetName() const;
 	protected:
-		std::string m_Name;
+		String m_Name;
 	};
 }

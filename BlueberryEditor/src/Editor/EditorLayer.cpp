@@ -1,6 +1,6 @@
-#include "bbpch.h"
 #include "EditorLayer.h"
 
+#include "Blueberry\Core\Time.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\RenderTexture.h"
 #include "Blueberry\Graphics\ImGuiRenderer.h"
@@ -15,14 +15,11 @@
 #include "Editor\Panels\Scene\SceneArea.h"
 #include "Editor\Panels\Game\GameView.h"
 
-#include "imgui\imgui.h"
-#include "imgui\imguizmo.h"
-#include "imgui\imgui_internal.h"
-
 #include "Editor\RegisterEditorTypes.h"
 #include "Editor\Assets\RegisterAssetImporters.h"
 #include "Editor\Assets\RegisterIcons.h"
 #include "Editor\Assets\AssetDB.h"
+#include "Editor\Assets\AssemblyManager.h"
 #include "Editor\Gizmos\Gizmos.h"
 #include "Editor\Gizmos\IconRenderer.h"
 #include "Editor\Menu\EditorMenuManager.h"
@@ -30,6 +27,9 @@
 #include "Blueberry\Graphics\OpenXRRenderer.h"
 
 #include <fstream>
+#include <imgui\imgui.h>
+#include <imgui\imguizmo.h>
+#include <imgui\imgui_internal.h>
 
 namespace Blueberry
 {
@@ -41,6 +41,8 @@ namespace Blueberry
 		AssetDB::Refresh();
 
 		RegisterObjectInspectors();
+		AssemblyManager::Build(false);
+		AssemblyManager::Load();
 
 		if (ImGuiRenderer::Initialize())
 		{
@@ -57,6 +59,7 @@ namespace Blueberry
 		EditorWindow::Load();
 		WindowEvents::GetWindowResized().AddCallback<EditorLayer, &EditorLayer::OnWindowResize>(this);
 		WindowEvents::GetWindowFocused().AddCallback<EditorLayer, &EditorLayer::OnWindowFocus>(this);
+		WindowEvents::GetWindowUnfocused().AddCallback<EditorLayer, &EditorLayer::OnWindowUnfocus>(this);
 	}
 
 	void EditorLayer::OnDetach()
@@ -75,45 +78,52 @@ namespace Blueberry
 		}
 		WindowEvents::GetWindowResized().RemoveCallback<EditorLayer, &EditorLayer::OnWindowResize>(this);
 		WindowEvents::GetWindowFocused().RemoveCallback<EditorLayer, &EditorLayer::OnWindowFocus>(this);
+		WindowEvents::GetWindowUnfocused().RemoveCallback<EditorLayer, &EditorLayer::OnWindowUnfocus>(this);
 	}
 
 	void EditorLayer::OnUpdate()
 	{
-		if (EditorSceneManager::IsRunning())
+		if (m_Focused)
 		{
-			Scene* scene = EditorSceneManager::GetScene();
-			if (scene != nullptr)
+			if (EditorSceneManager::IsRunning())
 			{
-				Physics::Update(1.0f / 60.0f);
-				scene->Update(1.0f / 60.0f);
+				Scene* scene = EditorSceneManager::GetScene();
+				if (scene != nullptr)
+				{
+					Physics::Update(1.0f / 60.0f);
+					scene->Update(1.0f / 60.0f);
+				}
 			}
 		}
 	}
 
 	void EditorLayer::OnDraw()
 	{
-		if (EditorSceneManager::IsRunning())
+		if (m_Focused)
 		{
-			SceneArea::RequestRedrawAll();
-		}
+			if (EditorSceneManager::IsRunning())
+			{
+				SceneArea::RequestRedrawAll();
+			}
 
-		GfxDevice::ClearColor({ 0, 0, 0, 1 });
+			GfxDevice::ClearColor({ 0, 0, 0, 1 });
 
-		OpenXRRenderer::BeginFrame();
-		ImGuiRenderer::Begin();
-		DrawMenuBar();
-		//DrawTopBar();
-		DrawDockSpace();
-		ImGuiRenderer::End();
-		OpenXRRenderer::EndFrame();
+			OpenXRRenderer::BeginFrame();
+			ImGuiRenderer::Begin();
+			DrawMenuBar();
+			//DrawTopBar();
+			DrawDockSpace();
+			ImGuiRenderer::End();
+			OpenXRRenderer::EndFrame();
 
-		GfxDevice::SwapBuffers();
+			GfxDevice::SwapBuffers();
 
-		if (s_FrameUpdateRequested)
-		{
-			Time::IncrementFrameCount();
-			RenderTexture::UpdateTemporary();
-			s_FrameUpdateRequested = false;
+			if (s_FrameUpdateRequested)
+			{
+				Time::IncrementFrameCount();
+				RenderTexture::UpdateTemporary();
+				s_FrameUpdateRequested = false;
+			}
 		}
 	}
 
@@ -125,6 +135,22 @@ namespace Blueberry
 	void EditorLayer::OnWindowFocus()
 	{
 		AssetDB::Refresh();
+
+		if (AssemblyManager::Build())
+		{
+			EditorSceneManager::Save();
+			EditorSceneManager::Unload();
+			AssemblyManager::Unload();
+			AssemblyManager::Load();
+			EditorSceneManager::Reload();
+		}
+
+		m_Focused = true;
+	}
+
+	void EditorLayer::OnWindowUnfocus()
+	{
+		m_Focused = false;
 	}
 
 	void EditorLayer::RequestFrameUpdate()

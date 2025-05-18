@@ -15,10 +15,10 @@ namespace Blueberry
 		AssetImporter() = default;
 
 		const Guid& GetGuid();
-		std::string GetFilePath();
-		std::string GetMetaFilePath();
-		const std::string& GetRelativeFilePath();
-		const std::string& GetRelativeMetaFilePath();
+		String GetFilePath();
+		String GetMetaFilePath();
+		const String& GetRelativeFilePath();
+		const String& GetRelativeMetaFilePath();
 		const FileId& GetMainObject();
 		const Dictionary<FileId, ObjectId>& GetAssetObjects();
 		const bool IsImported();
@@ -40,8 +40,8 @@ namespace Blueberry
 
 	private:
 		Guid m_Guid;
-		std::string m_RelativePath;
-		std::string m_RelativeMetaPath;
+		String m_RelativePath;
+		String m_RelativeMetaPath;
 		FileId m_MainObject;
 		Dictionary<FileId, ObjectId> m_AssetObjects = {};
 		//Texture2D* m_Icon = nullptr;

@@ -1,5 +1,8 @@
 #pragma once
 
+#include "Blueberry\Core\Base.h"
+#include "Blueberry\Core\Object.h"
+
 namespace Blueberry
 {
 	class OctreeNode
@@ -37,8 +40,8 @@ namespace Blueberry
 		float m_MinNodeSize;
 		float m_Looseness;
 		List<std::pair<AABB, ObjectId>> m_Objects;
-		std::array<AABB, 8> m_ChildBounds;
-		std::array<std::shared_ptr<OctreeNode>, 8> m_Children;
+		Array<AABB, 8> m_ChildBounds;
+		Array<std::shared_ptr<OctreeNode>, 8> m_Children;
 
 		friend class Octree;
 	};

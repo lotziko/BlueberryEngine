@@ -8,17 +8,17 @@ namespace Blueberry
 	{
 		struct Pass
 		{
-			std::string shaderCode;
+			String shaderCode;
 
-			std::string vertexEntryPoint;
-			std::string geometryEntryPoint;
-			std::string fragmentEntryPoint;
+			String vertexEntryPoint;
+			String geometryEntryPoint;
+			String fragmentEntryPoint;
 
-			List<std::string> vertexKeywords;
-			List<std::string> fragmentKeywords;
+			List<String> vertexKeywords;
+			List<String> fragmentKeywords;
 
-			List<std::string> globalVertexKeywords;
-			List<std::string> globalFragmentKeywords;
+			List<String> globalVertexKeywords;
+			List<String> globalFragmentKeywords;
 		};
 
 		List<Pass> passes;
@@ -28,6 +28,6 @@ namespace Blueberry
 	class HLSLShaderParser
 	{
 	public:
-		static bool Parse(const std::string& path, ShaderData& shaderData, ShaderCompilationData& compilationData);
+		static bool Parse(const String& path, ShaderData& shaderData, ShaderCompilationData& compilationData);
 	};
 }

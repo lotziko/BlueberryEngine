@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "TextureImporter.h"
 
 #include "Blueberry\Graphics\Texture2D.h"
@@ -31,10 +30,10 @@ namespace Blueberry
 
 	void TextureImporter::ImportData()
 	{
-		static std::size_t Texture2DId = 1;
-		static std::size_t TextureCubeId = 3;
+		static size_t Texture2DId = 1;
+		static size_t TextureCubeId = 3;
 
-		std::size_t id = static_cast<std::size_t>(m_TextureShape) + 1;
+		size_t id = static_cast<size_t>(m_TextureShape) + 1;
 		Guid guid = GetGuid();
 		// TODO check if dirty too
 
@@ -73,7 +72,7 @@ namespace Blueberry
 		}
 		else
 		{
-			std::string path = GetFilePath();
+			String path = GetFilePath();
 			
 			PngTextureProcessor processor;
 			std::string extension = std::filesystem::path(path).extension().string();
@@ -138,7 +137,7 @@ namespace Blueberry
 				temporaryTexture->SetData(properties.data, properties.dataSize);
 				temporaryTexture->Apply();
 				RenderTexture* temporaryTextureCube = RenderTexture::Create(size, size, 1, 1, originalFormat, TextureDimension::TextureCube, WrapMode::Clamp, FilterMode::Linear, true);
-				uint8_t blockSize = properties.dataSize / (properties.width * properties.height);
+				uint32_t blockSize = static_cast<uint32_t>(properties.dataSize / (properties.width * properties.height));
 				size_t dataSize = size * size * 6 * blockSize;
 
 				PngTextureProcessor cubeProcessor;
@@ -179,7 +178,7 @@ namespace Blueberry
 		SetMainObject(id);
 	}
 
-	std::string TextureImporter::GetTexturePath()
+	String TextureImporter::GetTexturePath()
 	{
 		std::filesystem::path dataPath = Path::GetTextureCachePath();
 		if (!std::filesystem::exists(dataPath))
@@ -187,6 +186,6 @@ namespace Blueberry
 			std::filesystem::create_directories(dataPath);
 		}
 		dataPath.append(GetGuid().ToString().append(".texture"));
-		return dataPath.string();
+		return String(dataPath.string());
 	}
 }

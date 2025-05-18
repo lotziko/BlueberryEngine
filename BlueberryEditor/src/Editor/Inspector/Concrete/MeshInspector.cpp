@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "MeshInspector.h"
 
 #include "Blueberry\Graphics\Mesh.h"
@@ -6,7 +5,7 @@
 
 #include "Editor\Preview\MeshPreview.h"
 
-#include "imgui\imgui.h"
+#include <imgui\imgui.h>
 
 namespace Blueberry
 {

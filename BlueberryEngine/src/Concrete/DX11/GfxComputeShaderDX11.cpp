@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "GfxComputeShaderDX11.h"
 
 namespace Blueberry

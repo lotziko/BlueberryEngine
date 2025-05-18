@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "Screen.h"
 
 namespace Blueberry

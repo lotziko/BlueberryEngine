@@ -49,7 +49,7 @@ namespace Blueberry
 					size_t type = std::get<1>(tuple);
 					os.write((char*)&type, sizeof(size_t));
 
-					std::string name = std::get<2>(tuple);
+					String name = std::get<2>(tuple);
 					size_t nameSize = name.size();
 					os.write((char*)&nameSize, sizeof(size_t));
 					os.write(name.data(), nameSize);
@@ -57,7 +57,7 @@ namespace Blueberry
 			}
 
 			FileId mainObject;
-			List<std::tuple<FileId, std::size_t, std::string>> objects;
+			List<std::tuple<FileId, size_t, String>> objects;
 		};
 
 	public:

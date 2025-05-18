@@ -1,5 +1,4 @@
-#include "bbpch.h"
-#include "CRCHelper.h"
+#include "Blueberry\Tools\CRCHelper.h"
 
 namespace Blueberry
 {

@@ -1,20 +1,21 @@
-#include "bbpch.h"
 #include "BinarySerializer.h"
 
 #include "Blueberry\Core\ClassDB.h"
-#include "Blueberry\Assets\AssetLoader.h"
+#include "..\Core\Variant.h"
+#include "..\Assets\AssetLoader.h"
 #include "Blueberry\Core\ObjectPtr.h"
 #include "Blueberry\Core\Structs.h"
-#include <fstream>
+#include "Blueberry\Core\DataList.h"
 
-#include "Blueberry\Graphics\Shader.h"
+#include <fstream>
+#include <sstream>
 
 namespace Blueberry
 {
-	void BinarySerializer::Serialize(const std::string& path)
+	void BinarySerializer::Serialize(const String& path)
 	{
 		m_AssetGuid = ObjectDB::GetGuidFromObject(m_ObjectsToSerialize[0]);
-		std::ofstream output(path, std::ofstream::binary);
+		std::ofstream output(path.data(), std::ofstream::binary);
 		if (output.is_open())
 		{
 			size_t objectCount = 0;
@@ -27,7 +28,7 @@ namespace Blueberry
 				FileId fileId = GetFileId(object);
 				headers.write((char*)&fileId, sizeof(FileId));
 
-				std::string typeName = object->GetTypeName();
+				String typeName = object->GetTypeName();
 				size_t typeNameSize = typeName.size();
 				headers.write((char*)&typeNameSize, sizeof(size_t));
 				headers.write(typeName.c_str(), typeNameSize);
@@ -44,9 +45,9 @@ namespace Blueberry
 		}
 	}
 
-	void BinarySerializer::Deserialize(const std::string& path)
+	void BinarySerializer::Deserialize(const String& path)
 	{
-		std::ifstream input(path, std::ifstream::binary);
+		std::ifstream input(path.data(), std::ifstream::binary);
 		if (input.is_open())
 		{
 			size_t objectCount;
@@ -59,7 +60,7 @@ namespace Blueberry
 				size_t typeNameSize;
 				input.read(reinterpret_cast<char*>(&typeNameSize), sizeof(size_t));
 
-				std::string typeName(typeNameSize, ' ');
+				String typeName(typeNameSize, ' ');
 				input.read(typeName.data(), typeNameSize);
 
 				auto it = m_FileIdToObject.find(fileId);
@@ -115,7 +116,7 @@ namespace Blueberry
 				break;
 			case BindingType::String:
 			{
-				std::string data = *value.Get<std::string>();
+				String data = *value.Get<String>();
 				size_t stringSize = data.size();
 				output.write(reinterpret_cast<char*>(&stringSize), sizeof(size_t));
 				output.write(data.data(), stringSize);
@@ -146,12 +147,12 @@ namespace Blueberry
 			break;
 			case BindingType::StringList:
 			{
-				List<std::string> data = *value.Get<List<std::string>>();
+				List<String> data = *value.Get<List<String>>();
 				size_t dataSize = data.size();
 				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 				for (size_t i = 0; i < dataSize; ++i)
 				{
-					std::string string = data[i];
+					String string = data[i];
 					size_t stringSize = string.size();
 					output.write(reinterpret_cast<char*>(&stringSize), sizeof(size_t));
 					output.write(string.data(), stringSize);
@@ -227,7 +228,7 @@ namespace Blueberry
 			case BindingType::DataList:
 			{
 				DataListBase* dataArrayPointer = value.Get<DataListBase>();
-				uint32_t dataSize = dataArrayPointer->Size();
+				uint32_t dataSize = static_cast<uint32_t>(dataArrayPointer->Size());
 				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 				if (dataSize > 0)
 				{
@@ -258,7 +259,7 @@ namespace Blueberry
 		{
 			size_t fieldNameSize;
 			input.read(reinterpret_cast<char*>(&fieldNameSize), sizeof(size_t));
-			std::string fieldName(fieldNameSize, ' ');
+			String fieldName(fieldNameSize, ' ');
 			input.read(fieldName.data(), fieldNameSize);
 
 			auto fieldIt = fieldsMap.find(fieldName);
@@ -282,9 +283,9 @@ namespace Blueberry
 				{
 					size_t stringSize;
 					input.read(reinterpret_cast<char*>(&stringSize), sizeof(size_t));
-					std::string data(stringSize, ' ');
+					String data(stringSize, ' ');
 					input.read(data.data(), stringSize);
-					*value.Get<std::string>() = data;
+					*value.Get<String>() = data;
 				}
 				break;
 				case BindingType::ByteData:
@@ -319,16 +320,16 @@ namespace Blueberry
 				{
 					size_t dataSize;
 					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
-					List<std::string> data(dataSize);
+					List<String> data(dataSize);
 					for (size_t i = 0; i < dataSize; ++i)
 					{
 						size_t stringSize;
 						input.read(reinterpret_cast<char*>(&stringSize), sizeof(size_t));
-						std::string string(stringSize, ' ');
+						String string(stringSize, ' ');
 						input.read(string.data(), stringSize);
 						data[i] = string;
 					}
-					*value.Get<List<std::string>>() = data;
+					*value.Get<List<String>>() = data;
 				}
 				break;
 				case BindingType::Enum:

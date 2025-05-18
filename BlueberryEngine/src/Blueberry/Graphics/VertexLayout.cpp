@@ -1,5 +1,4 @@
-#include "bbpch.h"
-#include "VertexLayout.h"
+#include "Blueberry\Graphics\VertexLayout.h"
 
 #include "Blueberry\Tools\CRCHelper.h"
 

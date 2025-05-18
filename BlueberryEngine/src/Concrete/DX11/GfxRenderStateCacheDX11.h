@@ -1,6 +1,8 @@
 #pragma once
 
-#include "Blueberry\Graphics\GfxRenderStateCache.h"
+#include "Blueberry\Core\Object.h"
+#include "..\..\Blueberry\Graphics\GfxRenderStateCache.h"
+#include "DX11.h"
 
 namespace Blueberry
 {

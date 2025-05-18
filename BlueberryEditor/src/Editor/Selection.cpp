@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "Selection.h"
 
 namespace Blueberry

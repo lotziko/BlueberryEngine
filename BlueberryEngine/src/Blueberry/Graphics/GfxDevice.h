@@ -1,7 +1,7 @@
 #pragma once
 
 #include "GfxDrawingOperation.h"
-#include "Structs.h"
+#include "Blueberry\Graphics\Structs.h"
 
 namespace Blueberry
 {

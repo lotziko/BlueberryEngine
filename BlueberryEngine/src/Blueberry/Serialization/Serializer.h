@@ -1,10 +1,12 @@
 #pragma once
+
 #include "Blueberry\Core\Structs.h"
 #include "Blueberry\Core\ClassDB.h"
 
 namespace Blueberry
 {
 	using FileId = uint64_t;
+	class Object;
 
 	class Serializer
 	{
@@ -41,8 +43,8 @@ namespace Blueberry
 	public:
 		void AddObject(Object* object);
 		void AddObject(Object* object, const FileId& fileId);
-		virtual void Serialize(const std::string& path) = 0;
-		virtual void Deserialize(const std::string& path) = 0;
+		virtual void Serialize(const String& path) = 0;
+		virtual void Deserialize(const String& path) = 0;
 
 		List<std::pair<Object*, FileId>>& GetDeserializedObjects();
 

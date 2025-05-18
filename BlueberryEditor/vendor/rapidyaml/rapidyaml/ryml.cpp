@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "ryml.h"
 
 #define C4CORE_SINGLE_HDR_DEFINE_NOW

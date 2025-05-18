@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "ObjectInspectorDB.h"
 #include "ObjectInspector.h"
 
@@ -6,16 +5,16 @@
 
 namespace Blueberry
 {
-	Dictionary<std::size_t, ObjectInspector*> ObjectInspectorDB::s_Inspectors = {};
+	Dictionary<size_t, ObjectInspector*> ObjectInspectorDB::s_Inspectors = {};
 
-	Dictionary<std::size_t, ObjectInspector*>& Blueberry::ObjectInspectorDB::GetInspectors()
+	Dictionary<size_t, ObjectInspector*>& Blueberry::ObjectInspectorDB::GetInspectors()
 	{
 		return s_Inspectors;
 	}
 
-	ObjectInspector* ObjectInspectorDB::GetInspector(const std::size_t& id)
+	ObjectInspector* ObjectInspectorDB::GetInspector(const size_t& id)
 	{
-		std::size_t inheritsId = id;
+		size_t inheritsId = id;
 		while (true)
 		{
 			auto inspectorIt = s_Inspectors.find(inheritsId);
@@ -32,7 +31,7 @@ namespace Blueberry
 		return nullptr;
 	}
 
-	void ObjectInspectorDB::Register(const std::size_t& id, ObjectInspector* inspector)
+	void ObjectInspectorDB::Register(const size_t& id, ObjectInspector* inspector)
 	{
 		if (s_Inspectors.count(id) == 0)
 		{

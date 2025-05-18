@@ -1,21 +1,21 @@
-#include "bbpch.h"
 #include "DefaultRenderer.h"
 
-#include "Blueberry\Core\Screen.h"
-#include "Blueberry\Assets\AssetLoader.h"
-#include "Blueberry\Graphics\GfxDevice.h"
+#include "..\Core\Screen.h"
+#include "..\Assets\AssetLoader.h"
+#include "..\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\RenderTexture.h"
 #include "Blueberry\Graphics\TextureCube.h"
-#include "Blueberry\Graphics\StandardMeshes.h"
-#include "Blueberry\Graphics\DefaultMaterials.h"
-#include "Blueberry\Graphics\RenderContext.h"
-#include "Blueberry\Graphics\HBAORenderer.h"
-#include "Blueberry\Graphics\ShadowAtlas.h"
-#include "Blueberry\Graphics\RealtimeLights.h"
+#include "..\Graphics\StandardMeshes.h"
+#include "..\Graphics\DefaultMaterials.h"
+#include "..\Graphics\RenderContext.h"
+#include "..\Graphics\HBAORenderer.h"
+#include "..\Graphics\ShadowAtlas.h"
+#include "..\Graphics\RealtimeLights.h"
 #include "Blueberry\Scene\Components\Camera.h"
+#include "..\Logging\Profiler.h"
 
-#include "Blueberry\Graphics\OpenXRRenderer.h"
+#include "..\Graphics\OpenXRRenderer.h"
 
 namespace Blueberry
 {

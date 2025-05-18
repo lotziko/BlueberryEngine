@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "EntityInspector.h"
 
 #include "Blueberry\Scene\Entity.h"
@@ -13,7 +12,7 @@
 
 namespace Blueberry
 {
-	bool ShouldHideType(const std::size_t type, const ClassDB::ClassInfo& info)
+	bool ShouldHideType(const size_t type, const ClassDB::ClassInfo& info)
 	{
 		if (info.createInstance == nullptr)
 		{
@@ -43,8 +42,8 @@ namespace Blueberry
 
 		for (auto component : components)
 		{
-			std::size_t type = component->GetType();
-			std::string name = component->GetTypeName();
+			size_t type = component->GetType();
+			String name = component->GetTypeName();
 			ObjectInspector* inspector = ObjectInspectorDB::GetInspector(type);
 
 			if (inspector != nullptr)

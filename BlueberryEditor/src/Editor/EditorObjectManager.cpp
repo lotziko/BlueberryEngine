@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "EditorObjectManager.h"
 
 #include "EditorSceneManager.h"
@@ -9,7 +8,7 @@ namespace Blueberry
 	EntityCreateEvent EditorObjectManager::s_EntityCreated = {};
 	EntityDestroyEvent EditorObjectManager::s_EntityDestroyed = {};
 
-	Entity* EditorObjectManager::CreateEntity(const std::string& name)
+	Entity* EditorObjectManager::CreateEntity(const String& name)
 	{
 		Entity* entity = EditorSceneManager::GetScene()->CreateEntity(name);
 		s_EntityCreated.Invoke();

@@ -1,15 +1,16 @@
-#include "bbpch.h"
 #include "YamlSerializer.h"
 
 #include "Blueberry\Core\ClassDB.h"
+#include "Blueberry\Core\Variant.h"
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Core\ObjectPtr.h"
+#include "Blueberry\Core\DataList.h"
 #include "Editor\Serialization\YamlHelper.h"
 #include "Editor\Serialization\YamlSerializers.h"
 
 namespace Blueberry
 {
-	void YamlSerializer::Serialize(const std::string& path)
+	void YamlSerializer::Serialize(const String& path)
 	{
 		m_AssetGuid = ObjectDB::GetGuidFromObject(m_ObjectsToSerialize[0]);
 		ryml::Tree tree;
@@ -28,7 +29,7 @@ namespace Blueberry
 		YamlHelper::Save(tree, path);
 	}
 
-	void YamlSerializer::Deserialize(const std::string& path)
+	void YamlSerializer::Deserialize(const String& path)
 	{
 		ryml::Tree tree;
 		YamlHelper::Load(tree, path);
@@ -44,7 +45,7 @@ namespace Blueberry
 				if (it == m_FileIdToObject.end())
 				{
 					ryml::csubstr key = node.key();
-					std::string typeName(key.str, key.size());
+					String typeName(key.str, key.size());
 					ClassDB::ClassInfo info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
 					Object* instance = info.createInstance();
 					AddDeserializedObject(instance, fileId);
@@ -72,7 +73,7 @@ namespace Blueberry
 
 		for (auto& field : context.info.fields)
 		{
-			key = ryml::to_csubstr(field.name);
+			key = ryml::to_csubstr(field.name.data());
 			value = Variant(context.ptr, field.offset);
 
 			switch (field.type)
@@ -87,7 +88,7 @@ namespace Blueberry
 				objectNode[key] << *value.Get<float>();
 				break;
 			case BindingType::String:
-				objectNode[key] << *value.Get<std::string>();
+				objectNode[key] << *value.Get<String>();
 				break;
 			case BindingType::ByteData:
 			{
@@ -118,7 +119,7 @@ namespace Blueberry
 			break;
 			case BindingType::StringList:
 			{
-				List<std::string> arrayValue = *value.Get<List<std::string>>();
+				List<String> arrayValue = *value.Get<List<String>>();
 				if (arrayValue.size() > 0)
 				{
 					ryml::NodeRef sequence = objectNode[key];
@@ -204,7 +205,7 @@ namespace Blueberry
 			case BindingType::DataList:
 			{
 				DataListBase* dataArrayPointer = value.Get<DataListBase>();
-				uint32_t dataSize = dataArrayPointer->Size();
+				uint32_t dataSize = static_cast<uint32_t>(dataArrayPointer->Size());
 				if (dataSize > 0)
 				{
 					ryml::NodeRef sequence = objectNode[key];
@@ -235,7 +236,7 @@ namespace Blueberry
 		auto fields = context.info.fields;
 		for (auto& field : fields)
 		{
-			key = ryml::to_csubstr(field.name);
+			key = ryml::to_csubstr(field.name.data());
 			value = Variant(context.ptr, field.offset);
 
 			if (objectNode.has_child(key))
@@ -252,7 +253,7 @@ namespace Blueberry
 					objectNode[key] >> *value.Get<float>();
 					break;
 				case BindingType::String:
-					objectNode[key] >> *value.Get<std::string>();
+					objectNode[key] >> *value.Get<String>();
 					break;
 				case BindingType::ByteData:
 					objectNode[key] >> *value.Get<ByteData>();
@@ -277,10 +278,10 @@ namespace Blueberry
 				break;
 				case BindingType::StringList:
 				{
-					List<std::string>* arrayPointer = value.Get<List<std::string>>();
+					List<String>* arrayPointer = value.Get<List<String>>();
 					for (auto& child : objectNode[key].children())
 					{
-						std::string stringValue;
+						String stringValue;
 						child >> stringValue;
 						arrayPointer->emplace_back(stringValue);
 					}

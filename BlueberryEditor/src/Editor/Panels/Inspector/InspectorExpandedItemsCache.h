@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Blueberry\Core\Base.h"
+
 namespace Blueberry
 {
 	class InspectorExpandedItemsCache
@@ -8,10 +10,10 @@ namespace Blueberry
 		static void Load();
 		static void Save();
 
-		static bool Get(const std::string& name);
-		static void Set(const std::string& name, const bool& expanded);
+		static bool Get(const String& name);
+		static void Set(const String& name, const bool& expanded);
 
 	private:
-		static HashSet<std::string> s_InspectorExpandedItemsCache;
+		static HashSet<String> s_InspectorExpandedItemsCache;
 	};
 }

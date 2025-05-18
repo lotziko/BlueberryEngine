@@ -1,8 +1,8 @@
-#include "bbpch.h"
-#include "Entity.h"
+#include "Blueberry\Scene\Entity.h"
 
+#include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Core\ClassDB.h"
-#include "Blueberry\Scene\Scene.h"
+#include "..\Scene\Scene.h"
 
 namespace Blueberry
 {
@@ -13,7 +13,7 @@ namespace Blueberry
 		DEFINE_FIELD(Entity, m_IsActive, BindingType::Bool, {})
 	}
 
-	Entity::Entity(const std::string& name)
+	Entity::Entity(const String& name)
 	{
 		SetName(name);
 	}

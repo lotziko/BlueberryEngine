@@ -1,12 +1,11 @@
-#include "bbpch.h"
-#include "Mesh.h"
+#include "Blueberry\Graphics\Mesh.h"
 
 #include "Blueberry\Core\ClassDB.h"
-#include "Blueberry\Graphics\GfxDevice.h"
-#include "Blueberry\Graphics\GfxBuffer.h"
+#include "..\Graphics\GfxDevice.h"
+#include "..\Graphics\GfxBuffer.h"
 #include "Blueberry\Tools\CRCHelper.h"
 
-#include "mikktspace\mikktspace.h"
+#include <mikktspace\mikktspace.h>
 
 namespace Blueberry
 {
@@ -77,7 +76,7 @@ namespace Blueberry
 
 	const uint32_t Mesh::GetSubMeshCount()
 	{
-		return m_SubMeshes.size();
+		return static_cast<uint32_t>(m_SubMeshes.size());
 	}
 
 	const SubMeshData& Mesh::GetSubMesh(const uint32_t& index)
@@ -92,7 +91,7 @@ namespace Blueberry
 			m_Vertices.reserve(m_VertexCount);
 			float* begin = m_VertexData.data();
 			float* end = begin + m_VertexData.size();
-			uint32_t vertexSize = m_VertexData.size() / m_VertexCount;
+			uint32_t vertexSize = static_cast<uint32_t>(m_VertexData.size() / m_VertexCount);
 			for (float* it = begin; it < end; it += vertexSize)
 			{
 				m_Vertices.emplace_back(Vector3(*it, *(it + 1), *(it + 2)));
@@ -352,7 +351,7 @@ namespace Blueberry
 		}
 
 		// TODO handle old buffers instead
-		GfxDevice::CreateVertexBuffer(m_VertexCount, (m_VertexData.size() * sizeof(float)) / m_VertexCount, m_VertexBuffer);
+		GfxDevice::CreateVertexBuffer(m_VertexCount, static_cast<uint32_t>((m_VertexData.size() * sizeof(float)) / m_VertexCount), m_VertexBuffer);
 		GfxDevice::CreateIndexBuffer(m_IndexCount, m_IndexBuffer);
 
 		m_VertexBuffer->SetData(m_VertexData.data(), m_VertexCount);

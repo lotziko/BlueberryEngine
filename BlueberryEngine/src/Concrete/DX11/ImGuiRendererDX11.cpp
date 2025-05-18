@@ -1,13 +1,12 @@
-#include "bbpch.h"
 #include "ImGuiRendererDX11.h"
 
-#include "Blueberry\Graphics\GfxDevice.h"
-#include "Concrete\DX11\GfxDeviceDX11.h"
+#include "..\..\Blueberry\Graphics\GfxDevice.h"
+#include "..\DX11\GfxDeviceDX11.h"
 
-#include "imgui\imgui.h"
-#include "imgui\imguizmo.h"
-#include "imgui\backends\imgui_impl_win32.h"
-#include "imgui\backends\imgui_impl_dx11.h"
+#include <imgui\imgui.h>
+#include <imgui\imguizmo.h>
+#include <imgui\backends\imgui_impl_win32.h>
+#include <imgui\backends\imgui_impl_dx11.h>
 
 namespace Blueberry
 {

@@ -1,14 +1,16 @@
-#include "bbpch.h"
 #include "ObjectPicker.h"
 
-#include "imgui\imgui.h"
 #include "Blueberry\Core\ObjectDB.h"
+#include "Blueberry\Core\ClassDB.h"
+#include "Blueberry\Core\Screen.h"
 #include "Blueberry\Graphics\Texture2D.h"
 
 #include "Editor\Selection.h"
 #include "Editor\Assets\IconDB.h"
 #include "Editor\Assets\ThumbnailCache.h"
 #include "Editor\Misc\ImGuiHelper.h"
+
+#include <imgui\imgui.h>
 
 namespace Blueberry
 {
@@ -67,7 +69,7 @@ namespace Blueberry
 			ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 2);
 			if (ImGui::SearchInputText("Search..", &s_SearchName))
 			{
-				std::string name = std::string(s_SearchName);
+				String name = String(s_SearchName);
 				s_Objects.clear();
 				s_Objects.emplace_back(s_AllObjects[0]);
 				for (auto it = s_AllObjects.begin() + 1; it < s_AllObjects.end(); ++it)

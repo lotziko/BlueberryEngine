@@ -1,7 +1,7 @@
-#include "bbpch.h"
 #include "EditorSceneManager.h"
 
 #include "Blueberry\Scene\Scene.h"
+#include "Blueberry\Scene\Components\SpriteRenderer.h"
 
 #include "Editor\Path.h"
 #include "Editor\Assets\AssetDB.h"
@@ -14,11 +14,11 @@
 namespace Blueberry
 {
 	Scene* EditorSceneManager::s_Scene = nullptr;
-	std::string EditorSceneManager::s_Path = "";
+	String EditorSceneManager::s_Path = "";
 	SceneLoadEvent EditorSceneManager::s_SceneLoaded = {};
 	bool EditorSceneManager::s_IsRunning = false;
 
-	void EditorSceneManager::CreateEmpty(const std::string& path)
+	void EditorSceneManager::CreateEmpty(const String& path)
 	{
 		s_Scene = new Scene();
 		s_Scene->Initialize();
@@ -38,7 +38,7 @@ namespace Blueberry
 		return s_Scene;
 	}
 
-	void Serialize(Scene* scene, Serializer& serializer, const std::string& path)
+	void Serialize(Scene* scene, Serializer& serializer, const String& path)
 	{
 		for (auto& rootEntity : scene->GetRootEntities())
 		{
@@ -57,7 +57,7 @@ namespace Blueberry
 		serializer.Serialize(path);
 	}
 
-	void Deserialize(Scene* scene, Serializer& serializer, const std::string& path)
+	void Deserialize(Scene* scene, Serializer& serializer, const String& path)
 	{
 		serializer.Deserialize(path);
 		for (auto& object : serializer.GetDeserializedObjects())
@@ -80,7 +80,38 @@ namespace Blueberry
 		}
 	}
 
-	void EditorSceneManager::Load(const std::string& path)
+	void EditorSceneManager::Load(const String& path)
+	{
+		Unload();
+
+		s_Scene = new Scene();
+		s_Scene->Initialize();
+
+		YamlSerializer serializer;
+		Deserialize(s_Scene, serializer, path);
+		s_Path = path;
+		s_SceneLoaded.Invoke();
+	}
+
+	void EditorSceneManager::Reload()
+	{
+		if (s_Scene == nullptr)
+		{
+			return;
+		}
+		Load(s_Path);
+	}
+
+	void EditorSceneManager::Save()
+	{
+		if (s_Scene != nullptr)
+		{
+			YamlSerializer serializer;
+			Serialize(s_Scene, serializer, s_Path);
+		}
+	}
+
+	void EditorSceneManager::Unload()
 	{
 		if (s_Scene != nullptr)
 		{
@@ -94,20 +125,6 @@ namespace Blueberry
 			}
 			s_Scene->Destroy();
 		}
-
-		s_Scene = new Scene();
-		s_Scene->Initialize();
-
-		YamlSerializer serializer;
-		Deserialize(s_Scene, serializer, path);
-		s_Path = path;
-		s_SceneLoaded.Invoke();
-	}
-
-	void EditorSceneManager::Save()
-	{
-		YamlSerializer serializer;
-		Serialize(s_Scene, serializer, s_Path);
 	}
 
 	void EditorSceneManager::Run()

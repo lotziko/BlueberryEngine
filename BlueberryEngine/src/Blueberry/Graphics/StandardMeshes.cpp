@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "StandardMeshes.h"
 
 #include "Blueberry\Graphics\Mesh.h"

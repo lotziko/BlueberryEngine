@@ -1,31 +1,31 @@
-#include "bbpch.h"
 #include "RegisterSceneTypes.h"
 
 #include "Blueberry\Core\ClassDB.h"
 
 #include "Blueberry\Core\Object.h"
-#include "Components\Component.h"
-#include "Components\Transform.h"
-#include "Components\Renderer.h"
-#include "Components\SpriteRenderer.h"
-#include "Components\MeshRenderer.h"
-#include "Components\SkyRenderer.h"
-#include "Components\Camera.h"
-#include "Components\Light.h"
-#include "Components\PhysicsBody.h"
-#include "Components\Collider.h"
-#include "Components\BoxCollider.h"
-#include "Components\SphereCollider.h"
-#include "Components\MeshCollider.h"
-#include "Components\CharacterController.h"
+#include "Blueberry\Scene\Entity.h"
+#include "Blueberry\Scene\Components\Component.h"
+#include "Blueberry\Scene\Components\Transform.h"
+#include "Blueberry\Scene\Components\Renderer.h"
+#include "Blueberry\Scene\Components\SpriteRenderer.h"
+#include "Blueberry\Scene\Components\MeshRenderer.h"
+#include "Blueberry\Scene\Components\SkyRenderer.h"
+#include "Blueberry\Scene\Components\Camera.h"
+#include "Blueberry\Scene\Components\Light.h"
+#include "Blueberry\Scene\Components\PhysicsBody.h"
+#include "Blueberry\Scene\Components\Collider.h"
+#include "Blueberry\Scene\Components\BoxCollider.h"
+#include "Blueberry\Scene\Components\SphereCollider.h"
+#include "Blueberry\Scene\Components\MeshCollider.h"
+#include "Blueberry\Scene\Components\CharacterController.h"
 
 namespace Blueberry
 {
 	void RegisterSceneTypes()
 	{
 		REGISTER_ABSTRACT_CLASS(Object);
-		REGISTER_ABSTRACT_CLASS(Component);
 		REGISTER_CLASS(Entity);
+		REGISTER_ABSTRACT_CLASS(Component);
 		REGISTER_CLASS(Transform);
 		REGISTER_ABSTRACT_CLASS(Renderer);
 		REGISTER_CLASS(SpriteRenderer);

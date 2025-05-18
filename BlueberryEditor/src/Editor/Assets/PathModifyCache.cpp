@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "PathModifyCache.h"
 
 #include "Editor\Path.h"
@@ -9,7 +8,7 @@
 // On creating of importer create dummy objects with corresponding fileIds and then pass them to deserializer when needed
 namespace Blueberry
 {
-	Dictionary<std::string, WriteInfo> PathModifyCache::s_PathModifyCache = {};
+	Dictionary<String, WriteInfo> PathModifyCache::s_PathModifyCache = {};
 
 	void PathModifyCache::Load()
 	{
@@ -28,7 +27,7 @@ namespace Blueberry
 				WriteInfo writeInfo;
 				size_t pathSize;
 				input.read((char*)&pathSize, sizeof(size_t));
-				std::string path(pathSize, ' ');
+				String path(pathSize, ' ');
 				input.read(path.data(), pathSize);
 				input.read((char*)&writeInfo.assetLastWrite, sizeof(long long));
 				input.read((char*)&writeInfo.metaLastWrite, sizeof(long long));
@@ -50,7 +49,7 @@ namespace Blueberry
 
 		for (auto& pair : s_PathModifyCache)
 		{
-			std::string path = pair.first;
+			String path = pair.first;
 			long long assetLastWrite = pair.second.assetLastWrite;
 			long long metaLastWrite = pair.second.metaLastWrite;
 			size_t pathSize = path.size();
@@ -62,7 +61,7 @@ namespace Blueberry
 		output.close();
 	}
 
-	WriteInfo PathModifyCache::Get(const std::string& path)
+	WriteInfo PathModifyCache::Get(const String& path)
 	{
 		auto it = s_PathModifyCache.find(path);
 		if (it != s_PathModifyCache.end())
@@ -72,7 +71,7 @@ namespace Blueberry
 		return WriteInfo();
 	}
 
-	void PathModifyCache::Set(const std::string& path, const WriteInfo& writeInfo)
+	void PathModifyCache::Set(const String& path, const WriteInfo& writeInfo)
 	{
 		s_PathModifyCache.insert_or_assign(path, writeInfo);
 	}

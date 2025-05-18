@@ -1,12 +1,12 @@
-#include "bbpch.h"
-#include "CharacterController.h"
+#include "Blueberry\Scene\Components\CharacterController.h"
 
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Entity.h"
-#include "Blueberry\Physics\Physics.h"
 
-#include "Blueberry\Input\Input.h"
-#include "Blueberry\Input\Cursor.h"
+#include "..\..\Physics\Physics.h"
+#include "Blueberry\Core\ClassDB.h"
+#include "..\..\Input\Input.h"
+#include "..\..\Input\Cursor.h"
 
 #include <Jolt\Jolt.h>
 #include <Jolt\Physics\PhysicsScene.h>
@@ -53,30 +53,27 @@ namespace Blueberry
 	static constexpr float	cCharacterRadiusCrouching = 0.3f;
 	static constexpr float	cInnerShapeFraction = 0.9f;
 
-	struct CharacterController::CharacterData
+	struct CharacterController::PrivateData
 	{
 		JPH::Ref<JPH::CharacterVirtual> character;
 		JPH::RefConst<JPH::Shape> shape;
 		JPH::BodyID bodyId;
 	};
 
-	CharacterController::~CharacterController()
+	CharacterController::CharacterController()
 	{
-		if (m_CharacterData != nullptr)
-		{
-			delete m_CharacterData;
-		}
+		m_PrivateData = reinterpret_cast<PrivateData*>(&m_PrivateStorage);
 	}
 
 	void CharacterController::OnEnable()
 	{
 		AddToSceneComponents(UpdatableComponent::Type);
-		if (m_CharacterData != nullptr)
+		if (m_Initialized)
 		{
 			JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
-			if (!bodyInterface.IsAdded(m_CharacterData->bodyId))
+			if (!bodyInterface.IsAdded(m_PrivateData->bodyId))
 			{
-				bodyInterface.AddBody(m_CharacterData->bodyId, JPH::EActivation::Activate);
+				bodyInterface.AddBody(m_PrivateData->bodyId, JPH::EActivation::Activate);
 			}
 		}
 	}
@@ -84,12 +81,12 @@ namespace Blueberry
 	void CharacterController::OnDisable()
 	{
 		RemoveFromSceneComponents(UpdatableComponent::Type);
-		if (m_CharacterData != nullptr)
+		if (m_Initialized)
 		{
 			JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
-			if (bodyInterface.IsAdded(m_CharacterData->bodyId))
+			if (bodyInterface.IsAdded(m_PrivateData->bodyId))
 			{
-				bodyInterface.RemoveBody(m_CharacterData->bodyId);
+				bodyInterface.RemoveBody(m_PrivateData->bodyId);
 			}
 		}
 		Cursor::SetLocked(false);
@@ -98,19 +95,19 @@ namespace Blueberry
 
 	void CharacterController::OnUpdate()
 	{
-		if (m_CharacterData == nullptr)
+		if (!m_Initialized)
 		{
 			m_Transform = GetTransform();
-			m_CharacterData = new CharacterData();
+			m_Initialized = true;
 			Vector3 position = m_Transform->GetPosition();
 			Quaternion rotation = m_Transform->GetRotation();
 
-			m_CharacterData->shape = JPH::RotatedTranslatedShapeSettings(JPH::Vec3(0, 0.5f * m_Height + m_Radius, 0), JPH::Quat::sIdentity(), new JPH::CapsuleShape(0.5f * m_Height, m_Radius)).Create().Get();
+			m_PrivateData->shape = JPH::RotatedTranslatedShapeSettings(JPH::Vec3(0, 0.5f * m_Height + m_Radius, 0), JPH::Quat::sIdentity(), new JPH::CapsuleShape(0.5f * m_Height, m_Radius)).Create().Get();
 
 			JPH::CharacterVirtualSettings settings;
 			settings.mMaxSlopeAngle = sMaxSlopeAngle;
 			settings.mMaxStrength = sMaxStrength;
-			settings.mShape = m_CharacterData->shape;
+			settings.mShape = m_PrivateData->shape;
 			settings.mMass = 100.0f;
 			settings.mBackFaceMode = sBackFaceMode;
 			settings.mCharacterPadding = sCharacterPadding;
@@ -118,13 +115,13 @@ namespace Blueberry
 			settings.mPredictiveContactDistance = sPredictiveContactDistance;
 			settings.mSupportingVolume = JPH::Plane(JPH::Vec3::sAxisY(), -cCharacterRadiusStanding); // Accept contacts that touch the lower sphere of the capsule
 			
-			m_CharacterData->character = new JPH::CharacterVirtual(&settings, JPH::RVec3(position.x, position.y, position.z), JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w), 0, Physics::s_PhysicsSystem);
+			m_PrivateData->character = new JPH::CharacterVirtual(&settings, JPH::RVec3(position.x, position.y, position.z), JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w), 0, Physics::s_PhysicsSystem);
 			Cursor::SetLocked(true);
 			Cursor::SetHidden(true);
 		}
 		else
 		{
-			auto& character = m_CharacterData->character;
+			auto& character = m_PrivateData->character;
 
 			// Input
 			{
@@ -150,7 +147,7 @@ namespace Blueberry
 				m_CameraTransform->SetLocalRotation(verticalRotation);
 
 				// Movement input
-				Vector2 movementAxis = Vector2(Input::IsKeyDown('D') ? 1 : 0 + Input::IsKeyDown('A') ? -1 : 0, Input::IsKeyDown('W') ? 1 : 0 + Input::IsKeyDown('S') ? -1 : 0);
+				Vector2 movementAxis = Vector2(static_cast<float>(Input::IsKeyDown('D') ? 1 : 0 + Input::IsKeyDown('A') ? -1 : 0), static_cast<float>(Input::IsKeyDown('W') ? 1 : 0 + Input::IsKeyDown('S') ? -1 : 0));
 
 				Quaternion rotation = m_Transform->GetRotation();
 				Vector3 forward = Vector3::Transform(Vector3::UnitZ, rotation);

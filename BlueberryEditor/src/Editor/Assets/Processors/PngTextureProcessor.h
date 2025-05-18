@@ -1,7 +1,11 @@
 #pragma once
 
+#include "Blueberry\Core\Base.h"
 #include "Blueberry\Graphics\Enums.h"
-#include "directxtex\DirectXTex.h"
+#include "Concrete\Windows\ComPtr.h"
+#include "Concrete\DX11\DX11.h"
+
+#include <directxtex\DirectXTex.h>
 
 namespace Blueberry
 {
@@ -21,14 +25,14 @@ namespace Blueberry
 		PngTextureProcessor() = default;
 		~PngTextureProcessor();
 
-		void Load(const std::string& path, const bool& srgb, const bool& generateMips);
-		void LoadDDS(const std::string& path);
-		void LoadHDR(const std::string& path);
+		void Load(const String& path, const bool& srgb, const bool& generateMips);
+		void LoadDDS(const String& path);
+		void LoadHDR(const String& path);
 		void CreateCube(const TextureFormat& format, const uint32_t& width, const uint32_t& height);
 		void Compress(const TextureFormat& format);
 		const PngTextureProperties& GetProperties();
 		uint8_t* GetData();
-		const size_t& GetDataSize();
+		const size_t GetDataSize();
 
 	private:
 		DirectX::ScratchImage m_ScratchImage;

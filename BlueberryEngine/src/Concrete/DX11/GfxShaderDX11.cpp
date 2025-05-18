@@ -1,8 +1,10 @@
-#include "bbpch.h"
 #include "GfxShaderDX11.h"
 #include "GfxDeviceDX11.h"
 
 #include "Blueberry\Tools\CRCHelper.h"
+#include "..\Windows\WindowsHelper.h"
+
+#include <d3dcompiler.h>
 
 namespace Blueberry
 {
@@ -48,11 +50,11 @@ namespace Blueberry
 			constantBufferReflection->GetDesc(&shaderBufferDesc);
 			if (shaderBufferDesc.Type == D3D_CT_CBUFFER)
 			{
-				m_ConstantBufferSlots.insert({ TO_HASH(std::string(shaderBufferDesc.Name)), i });
+				m_ConstantBufferSlots.insert({ TO_HASH(String(shaderBufferDesc.Name)), i });
 			}
 			else if (shaderBufferDesc.Type == D3D_CT_RESOURCE_BIND_INFO)
 			{
-				m_StructuredBufferSlots.insert({ TO_HASH(std::string(shaderBufferDesc.Name)), std::make_pair(i, 0) });
+				m_StructuredBufferSlots.insert({ TO_HASH(String(shaderBufferDesc.Name)), std::make_pair(i, 0) });
 			}
 		}
 
@@ -68,7 +70,7 @@ namespace Blueberry
 			}
 			else if (inputBindDesc.Type == D3D_SIT_STRUCTURED)
 			{
-				auto pair = &m_StructuredBufferSlots[TO_HASH(std::string(inputBindDesc.Name))];
+				auto pair = &m_StructuredBufferSlots[TO_HASH(String(inputBindDesc.Name))];
 				pair->second = i;
 			}
 		}
@@ -174,7 +176,7 @@ namespace Blueberry
 	ID3D11InputLayout* GfxVertexShaderDX11::CreateLayout()
 	{
 		ID3D11InputLayout* layout;
-		HRESULT hr = m_Device->CreateInputLayout(m_InputElementDescs.data(), m_InputElementDescs.size(), m_ShaderBuffer->GetBufferPointer(), m_ShaderBuffer->GetBufferSize(), &layout);
+		HRESULT hr = m_Device->CreateInputLayout(m_InputElementDescs.data(), static_cast<UINT>(m_InputElementDescs.size()), m_ShaderBuffer->GetBufferPointer(), m_ShaderBuffer->GetBufferSize(), &layout);
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error creating input layout."));
@@ -218,7 +220,7 @@ namespace Blueberry
 			ID3D11ShaderReflectionConstantBuffer* constantBufferReflection = geometryShaderReflection->GetConstantBufferByIndex(i);
 			D3D11_SHADER_BUFFER_DESC shaderBufferDesc;
 			constantBufferReflection->GetDesc(&shaderBufferDesc);
-			m_ConstantBufferSlots.insert({ TO_HASH(std::string(shaderBufferDesc.Name)), i });
+			m_ConstantBufferSlots.insert({ TO_HASH(String(shaderBufferDesc.Name)), i });
 		}
 
 		return true;
@@ -259,7 +261,7 @@ namespace Blueberry
 			ID3D11ShaderReflectionConstantBuffer* constantBufferReflection = pixelShaderReflection->GetConstantBufferByIndex(i);
 			D3D11_SHADER_BUFFER_DESC shaderBufferDesc;
 			constantBufferReflection->GetDesc(&shaderBufferDesc);
-			m_ConstantBufferSlots.insert({ TO_HASH(std::string(shaderBufferDesc.Name)), i });
+			m_ConstantBufferSlots.insert({ TO_HASH(String(shaderBufferDesc.Name)), i });
 		}
 
 		unsigned int resourceBindingCount = pixelShaderDesc.BoundResources;
@@ -287,7 +289,7 @@ namespace Blueberry
 						}
 					}
 				}
-				m_TextureSlots.insert({ TO_HASH(std::string(inputBindDesc.Name)), std::make_pair(inputBindDesc.BindPoint, samplerSlot) });
+				m_TextureSlots.insert({ TO_HASH(String(inputBindDesc.Name)), std::make_pair(inputBindDesc.BindPoint, samplerSlot) });
 			}
 			else if (inputBindDesc.Type == D3D_SIT_STRUCTURED)
 			{

@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "ShaderImporter.h"
 
 #include "Blueberry\Graphics\Shader.h"
@@ -40,7 +39,7 @@ namespace Blueberry
 		}
 		else
 		{
-			std::string path = GetFilePath();
+			String path = GetFilePath();
 			HLSLShaderProcessor processor;
 			
 			if (processor.Compile(path))
@@ -62,7 +61,7 @@ namespace Blueberry
 		SetMainObject(1);
 	}
 
-	std::string ShaderImporter::GetShaderFolder()
+	String ShaderImporter::GetShaderFolder()
 	{
 		std::filesystem::path dataPath = Path::GetShaderCachePath();
 		dataPath.append(GetGuid().ToString());
@@ -70,6 +69,6 @@ namespace Blueberry
 		{
 			std::filesystem::create_directories(dataPath);
 		}
-		return dataPath.string();
+		return dataPath.string().data();
 	}
 }

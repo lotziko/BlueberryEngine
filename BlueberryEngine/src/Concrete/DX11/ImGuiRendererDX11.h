@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Blueberry\Graphics\ImGuiRenderer.h"
+#include "..\..\Blueberry\Graphics\ImGuiRenderer.h"
+#include "DX11.h"
 
 namespace Blueberry
 {

@@ -1,23 +1,25 @@
-#include "bbpch.h"
 #include "RenderContext.h"
 
-#include "Blueberry\Scene\Scene.h"
+#include "..\Scene\Scene.h"
+#include "..\Core\Time.h"
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Scene\Components\MeshRenderer.h"
 #include "Blueberry\Scene\Components\SkyRenderer.h"
+#include "Blueberry\Scene\Components\Light.h"
+#include "Blueberry\Scene\Components\Transform.h"
 
-#include "Blueberry\Graphics\StandardMeshes.h"
-#include "Blueberry\Graphics\Renderer2D.h"
+#include "..\Graphics\StandardMeshes.h"
+#include "..\Graphics\Renderer2D.h"
 #include "Blueberry\Graphics\Mesh.h"
 #include "Blueberry\Graphics\Material.h"
-#include "Blueberry\Graphics\GfxDevice.h"
-#include "Blueberry\Graphics\GfxBuffer.h"
-#include "Blueberry\Graphics\PerCameraDataConstantBuffer.h"
-#include "Blueberry\Graphics\PerDrawDataConstantBuffer.h"
-#include "Blueberry\Threading\JobSystem.h"
+#include "..\Graphics\GfxDevice.h"
+#include "..\Graphics\GfxBuffer.h"
+#include "..\Graphics\PerCameraDataConstantBuffer.h"
+#include "..\Graphics\PerDrawDataConstantBuffer.h"
+#include "..\Threading\JobSystem.h"
 
-#include "Blueberry\Graphics\LightHelper.h"
-#include "Blueberry\Graphics\RendererTree.h"
+#include "..\Graphics\LightHelper.h"
+#include "..\Graphics\RendererTree.h"
 
 namespace Blueberry
 {
@@ -53,7 +55,7 @@ namespace Blueberry
 
 	void BindOperationsRenderers()
 	{
-		uint32_t operationCount = s_DrawingOperations.size();
+		uint32_t operationCount = static_cast<uint32_t>(s_DrawingOperations.size());
 		Matrix matrices[INSTANCE_BUFFER_SIZE];
 		for (uint32_t i = 0; i < operationCount; ++i)
 		{
@@ -75,8 +77,9 @@ namespace Blueberry
 
 		s_DrawingOperations.clear();
 
-		int cullerIndex = 0;
-		for (int i = 0; i < results.cullerInfos.size(); ++i)
+		uint32_t cullerIndex = 0;
+		uint32_t cullerCount = static_cast<uint32_t>(results.cullerInfos.size());
+		for (uint32_t i = 0; i < cullerCount; ++i)
 		{
 			auto& cullerInfo = results.cullerInfos[i];
 			if (cullerInfo.object == cullerObject && cullerInfo.index == index)
@@ -288,7 +291,7 @@ namespace Blueberry
 			}
 		}
 
-		JobSystem::Dispatch(results.cullerInfos.size(), 1, [&results, scene](JobDispatchArgs args)
+		JobSystem::Dispatch(static_cast<uint32_t>(results.cullerInfos.size()), 1, [&results, scene](JobDispatchArgs args)
 		{
 			scene->GetRendererTree().Cull(results.cullerInfos[args.jobIndex].planes, results.cullerInfos[args.jobIndex].renderers);
 		});
@@ -344,7 +347,7 @@ namespace Blueberry
 		}
 
 		// Draw meshes
-		uint32_t operationCount = s_DrawingOperations.size();
+		uint32_t operationCount = static_cast<uint32_t>(s_DrawingOperations.size());
 		for (uint32_t i = 0; i < operationCount;)
 		{
 			auto& operation = s_DrawingOperations[i];

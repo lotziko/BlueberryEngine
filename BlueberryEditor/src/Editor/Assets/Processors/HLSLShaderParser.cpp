@@ -1,13 +1,14 @@
-#include "bbpch.h"
 #include "HLSLShaderParser.h"
 
 #include "Blueberry\Tools\FileHelper.h"
 #include "Blueberry\Tools\StringHelper.h"
 #include "Editor\Assets\Processors\HLSLShaderProcessor.h"
 
+#include <regex>
+
 namespace Blueberry
 {
-	bool CheckBrackets(const std::string& text)
+	bool CheckBrackets(const String& text)
 	{
 		int counter = 0;
 		for (size_t i = 0; i < text.length(); ++i)
@@ -24,7 +25,7 @@ namespace Blueberry
 		return counter == 0;
 	}
 
-	bool ParseBlock(std::string& text, const std::string& name, const std::string& begin, const std::string& end, std::string& result)
+	bool ParseBlock(String& text, const String& name, const String& begin, const String& end, String& result)
 	{
 		// Check brackets
 		if (!CheckBrackets(text))
@@ -36,7 +37,7 @@ namespace Blueberry
 		size_t offset = 0;
 		if (name.length() > 0)
 		{
-			if ((offset = text.find(name, 0)) != std::string::npos)
+			if ((offset = text.find(name, 0)) != String::npos)
 			{
 				offset += name.length();
 			}
@@ -47,7 +48,7 @@ namespace Blueberry
 		}
 
 		// Check begin
-		if ((offset = text.find(begin, offset)) != std::string::npos)
+		if ((offset = text.find(begin, offset)) != String::npos)
 		{
 			offset += begin.length();
 		}
@@ -173,7 +174,7 @@ namespace Blueberry
 		return ZWrite::On;
 	}
 
-	void ParseProperties(const std::string& propertiesBlock, ShaderData& data)
+	void ParseProperties(const String& propertiesBlock, ShaderData& data)
 	{
 		std::regex propertyRegex("([\\w-]+)\\s*([\\w-]+)\\s*[\\=]\\s*(.*)[\r?\n]");
 		auto propertiesStart = std::sregex_iterator(propertiesBlock.begin(), propertiesBlock.end(), propertyRegex);
@@ -190,14 +191,14 @@ namespace Blueberry
 				std::string value = match[3];
 
 				PropertyData property = {};
-				property.SetName(name);
+				property.SetName(name.data());
 
-				if (type.rfind("Texture") != std::string::npos)
+				if (type.rfind("Texture") != String::npos)
 				{
 					std::string defaultTextureName = value;
 					defaultTextureName.erase(std::remove(defaultTextureName.begin(), defaultTextureName.end(), '\"'), defaultTextureName.end());
 					property.SetType(PropertyData::PropertyType::Texture);
-					property.SetDefaultTextureName(defaultTextureName);
+					property.SetDefaultTextureName(defaultTextureName.data());
 					if (type == "Texture2D")
 					{
 						property.SetTextureDimension(TextureDimension::Texture2D);
@@ -213,7 +214,7 @@ namespace Blueberry
 		data.SetProperties(properties);
 	}
 
-	void ParseRenderingParameters(const std::string& passBlock, PassData& passData)
+	void ParseRenderingParameters(const String& passBlock, PassData& passData)
 	{
 		std::smatch match;
 		std::regex cullRegex("Cull\\s*([\\w-]+)[\r?\n]");
@@ -249,26 +250,26 @@ namespace Blueberry
 		}
 	}
 
-	void ParsePragmas(const std::string& codeBlock, PassData& passData, ShaderCompilationData::Pass& compilationPass)
+	void ParsePragmas(const String& codeBlock, PassData& passData, ShaderCompilationData::Pass& compilationPass)
 	{
 		// TODO do real preprocessing
 		std::smatch match;
 		std::regex vertexEntryPointRegex("#pragma\\s*vertex\\s*([\\w-]+)[\r?\n]");
 		if (std::regex_search(codeBlock, match, vertexEntryPointRegex))
 		{
-			compilationPass.vertexEntryPoint = match[1];
+			compilationPass.vertexEntryPoint = match[1].str();
 		}
 
 		std::regex geometryEntryPointRegex("#pragma\\s*geometry\\s*([\\w-]+)[\r?\n]");
 		if (std::regex_search(codeBlock, match, geometryEntryPointRegex))
 		{
-			compilationPass.geometryEntryPoint = match[1];
+			compilationPass.geometryEntryPoint = match[1].str();
 		}
 
 		std::regex fragmentEntryPointRegex("#pragma\\s*fragment\\s*([\\w-]+)[\r?\n]");
 		if (std::regex_search(codeBlock, match, fragmentEntryPointRegex))
 		{
-			compilationPass.fragmentEntryPoint = match[1];
+			compilationPass.fragmentEntryPoint = match[1].str();
 		}
 
 		std::regex parameterRegex("#pragma\\s*keyword_([\\w-]+)\\s*(.*)");
@@ -302,21 +303,21 @@ namespace Blueberry
 		passData.SetFragmentKeywords(compilationPass.fragmentKeywords);
 	}
 
-	bool HLSLShaderParser::Parse(const std::string& path, ShaderData& shaderData, ShaderCompilationData& compilationData)
+	bool HLSLShaderParser::Parse(const String& path, ShaderData& shaderData, ShaderCompilationData& compilationData)
 	{
-		std::string shader;
+		String shader;
 		FileHelper::Load(shader, path);
 
-		std::string shaderBlock;
+		String shaderBlock;
 		if (ParseBlock(shader, "Shader", "{", "}", shaderBlock))
 		{
-			std::string propertiesBlock;
+			String propertiesBlock;
 			if (ParseBlock(shaderBlock, "Properties", "{", "}", propertiesBlock))
 			{
 				ParseProperties(propertiesBlock, shaderData);
 			}
 
-			std::string passBlock;
+			String passBlock;
 			while (ParseBlock(shaderBlock, "Pass", "{", "}", passBlock))
 			{
 				// Replace "Pass" keyword to parse the next one
@@ -326,7 +327,7 @@ namespace Blueberry
 				ShaderCompilationData::Pass compilationPass = {};
 				PassData passData = {};
 
-				std::string codeBlock;
+				String codeBlock;
 				if (!ParseBlock(passBlock, "", "HLSLBEGIN", "HLSLEND", codeBlock))
 				{
 					return false;
@@ -336,7 +337,7 @@ namespace Blueberry
 				ParsePragmas(codeBlock, passData, compilationPass);
 
 				size_t offset = 0;
-				while ((offset = codeBlock.find("#pragma")) != std::string::npos)
+				while ((offset = codeBlock.find("#pragma")) != String::npos)
 				{
 					size_t end = codeBlock.find("\n", offset);
 					codeBlock.replace(offset, end - offset, " ");

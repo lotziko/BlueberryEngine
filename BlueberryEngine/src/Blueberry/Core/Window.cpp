@@ -1,8 +1,11 @@
-#include "bbpch.h"
 #include "Window.h"
 
-#include "Blueberry\Core\Screen.h"
-#include "Concrete\Windows\WindowsWindow.h"
+#include "..\Core\LayerStack.h"
+#include "..\Core\Window.h"
+#include "..\Events\Event.h"
+
+#include "..\Core\Screen.h"
+#include "..\..\Concrete\Windows\WindowsWindow.h"
 
 namespace Blueberry
 {

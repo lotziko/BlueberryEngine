@@ -1,10 +1,10 @@
-#include "bbpch.h"
 #include "WindowEvents.h"
 
 namespace Blueberry
 {
 	WindowResizeEvent WindowEvents::s_WindowResized = {};
 	WindowFocusEvent WindowEvents::s_WindowFocused = {};
+	WindowUnfocusEvent WindowEvents::s_WindowUnfocused = {};
 
 	uint32_t WindowResizeEventArgs::GetWidth() const
 	{
@@ -24,5 +24,10 @@ namespace Blueberry
 	WindowFocusEvent& WindowEvents::GetWindowFocused()
 	{
 		return s_WindowFocused;
+	}
+
+	WindowUnfocusEvent& WindowEvents::GetWindowUnfocused()
+	{
+		return s_WindowUnfocused;
 	}
 }

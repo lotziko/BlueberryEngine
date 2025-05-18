@@ -23,6 +23,7 @@ project "BlueberryEditor"
 	includedirs
 	{
 		"src",
+		"%{wks.location}/BlueberryEngine/include",
 		"%{wks.location}/BlueberryEngine/src",
 		"%{IncludeDir.imgui}",
 		"%{IncludeDir.stb}",
@@ -42,14 +43,18 @@ project "BlueberryEditor"
 	{
 		"{COPYDIR} %{wks.location}/BlueberryEditor/assets %{cfg.targetdir}/assets",
 		"{COPYDIR} %{wks.location}/BlueberryEngine/assets %{cfg.targetdir}/assets",
+		"{COPYDIR} %{wks.location}/BlueberryEngine/include %{cfg.targetdir}/include",
 		"{COPYFILE} %{wks.location}/BlueberryEditor/vendor/fbxsdk/lib/vs2017/x64/release/libfbxsdk.dll %{cfg.targetdir}/libfbxsdk.dll",
 		"{COPYFILE} %{wks.location}/BlueberryEngine/vendor/hbao/lib/GFSDK_SSAO_D3D11.win64.dll %{cfg.targetdir}/GFSDK_SSAO_D3D11.win64.dll",
 		"{COPYFILE} %{wks.location}/BlueberryEngine/vendor/openxr/native/x64/release/bin/openxr_loader.dll %{cfg.targetdir}/openxr_loader.dll",
+		"{COPYFILE} %{wks.location}/BlueberryEngine/bin/" .. outputdir .. "/BlueberryEngine/BlueberryEngine.lib %{cfg.targetdir}/BlueberryEngine.lib",
+		"{COPYFILE} %{wks.location}/BlueberryEditor/vendor/fastbuild/bin/FBuild.exe %{cfg.targetdir}/FBuild.exe",
 	}
 
 	filter "system:windows"
 
 	filter "configurations:Debug"
+		defines "BB_DEBUG"
 		runtime "Debug"
 		symbols "on"
 

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Blueberry\Graphics\HBAORenderer.h"
+#include "..\..\Blueberry\Graphics\HBAORenderer.h"
+#include "DX11.h"
 
 class GFSDK_SSAO_Context_D3D11;
 

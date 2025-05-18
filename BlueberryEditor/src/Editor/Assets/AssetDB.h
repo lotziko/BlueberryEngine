@@ -17,7 +17,7 @@ namespace Blueberry
 	public:
 		static void Refresh();
 
-		static AssetImporter* GetImporter(const std::string& path);
+		static AssetImporter* GetImporter(const String& path);
 		static AssetImporter* GetImporter(const Guid& guid);
 
 		template<class ObjectType>
@@ -26,11 +26,11 @@ namespace Blueberry
 		// Use inside importers only
 		static List<std::pair<Object*, FileId>> AssetDB::LoadAssetObjects(const Guid& guid, const Dictionary<FileId, ObjectId>& existingObjects);
 
-		static const std::string GetRelativeAssetPath(Object* object);
-		static std::string GetAssetCachedDataPath(Object* object);
+		static const String GetRelativeAssetPath(Object* object);
+		static String GetAssetCachedDataPath(Object* object);
 
 		static bool HasAssetWithGuidInData(const Guid& guid);
-		static void CreateAsset(Object* object, const std::string& relativePath);
+		static void CreateAsset(Object* object, const String& relativePath);
 		static void SaveAssetObjectsToCache(const List<Object*>& objects);
 		static void SetDirty(Object* object);
 		static void DeleteAssetFromData(const Guid& guid);
@@ -42,12 +42,12 @@ namespace Blueberry
 		static AssetImporter* CreateOrGetImporter(const std::filesystem::path& path);
 
 	public:
-		static void Register(const std::string& extension, const std::size_t& importerType);
+		static void Register(const String& extension, const size_t& importerType);
 
 	private:
-		static Dictionary<std::string, std::size_t> s_ImporterTypes;
-		static Dictionary<std::string, AssetImporter*> s_Importers;
-		static Dictionary<Guid, std::string> s_GuidToPath;
+		static Dictionary<String, size_t> s_ImporterTypes;
+		static Dictionary<String, AssetImporter*> s_Importers;
+		static Dictionary<Guid, String> s_GuidToPath;
 		static List<ObjectId> s_DirtyAssets;
 		static AssetDBRefreshEvent s_AssetDBRefreshed;
 	};

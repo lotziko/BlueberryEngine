@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "SceneObjectPicker.h"
 
 #include "Editor\Selection.h"
@@ -6,7 +5,10 @@
 #include "Editor\Inspector\ObjectInspectorDB.h"
 #include "Blueberry\Core\Screen.h"
 #include "Blueberry\Assets\AssetLoader.h"
+#include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Components\Camera.h"
+#include "Blueberry\Scene\Components\MeshRenderer.h"
+#include "Blueberry\Scene\Components\SpriteRenderer.h"
 #include "Blueberry\Graphics\Renderer2D.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\GfxDevice.h"
@@ -37,7 +39,7 @@ namespace Blueberry
 
 		static void BindData(Color indexColor)
 		{
-			static std::size_t objectDataId = TO_HASH("PerObjectData");
+			static size_t objectDataId = TO_HASH("PerObjectData");
 
 			if (s_ConstantBuffer == nullptr)
 			{
@@ -97,7 +99,7 @@ namespace Blueberry
 		uint32_t index = 1;
 
 		GfxDevice::SetRenderTarget(m_SceneRenderTarget, m_SceneDepthStencil);
-		GfxDevice::SetViewport(0, 0, camera->GetPixelSize().x, camera->GetPixelSize().y);
+		GfxDevice::SetViewport(0, 0, static_cast<int>(camera->GetPixelSize().x), static_cast<int>(camera->GetPixelSize().y));
 		GfxDevice::ClearColor({ 0, 0, 0, 0 });
 		GfxDevice::ClearDepth(1.0f);
 		Renderer2D::Begin();
@@ -172,7 +174,7 @@ namespace Blueberry
 
 	void SceneObjectPicker::DrawOutline(Scene* scene, Camera* camera, GfxTexture* renderTarget)
 	{
-		static std::size_t pickingTextureId = TO_HASH("_PickingTexture");
+		static size_t pickingTextureId = TO_HASH("_PickingTexture");
 
 		if (scene == nullptr)
 		{
@@ -182,7 +184,7 @@ namespace Blueberry
 		PerCameraDataConstantBuffer::BindData(camera);
 
 		GfxDevice::SetRenderTarget(m_SceneRenderTarget);
-		GfxDevice::SetViewport(0, 0, camera->GetPixelSize().x, camera->GetPixelSize().y);
+		GfxDevice::SetViewport(0, 0, static_cast<int>(camera->GetPixelSize().x), static_cast<int>(camera->GetPixelSize().y));
 		GfxDevice::ClearColor({ 0, 0, 0, 0 });
 		GfxDevice::ClearDepth(1.0f);
 

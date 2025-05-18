@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Blueberry\Events\Event.h"
+#include "Blueberry\Core\Base.h"
+#include "..\Events\Event.h"
 
 namespace Blueberry
 {
@@ -21,15 +22,18 @@ namespace Blueberry
 
 	using WindowResizeEvent = Event<WindowResizeEventArgs>;
 	using WindowFocusEvent = Event<>;
+	using WindowUnfocusEvent = Event<>;
 
 	class WindowEvents
 	{
 	public:
 		static WindowResizeEvent& GetWindowResized();
 		static WindowFocusEvent& GetWindowFocused();
+		static WindowUnfocusEvent& GetWindowUnfocused();
 
 	private:
 		static WindowResizeEvent s_WindowResized;
 		static WindowFocusEvent s_WindowFocused;
+		static WindowUnfocusEvent s_WindowUnfocused;
 	};
 }

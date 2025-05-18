@@ -1,16 +1,15 @@
-#include "bbpch.h"
 #include "OpenXRRendererDX11.h"
 
 // Tell OpenXR what platform code we'll be using
 #define XR_USE_PLATFORM_WIN32
 #define XR_USE_GRAPHICS_API_D3D11
 
-#include "Blueberry\Core\Engine.h"
-#include "Blueberry\Graphics\GfxDevice.h"
-#include "Blueberry\Graphics\RenderContext.h"
+#include "..\..\Blueberry\Core\Engine.h"
+#include "..\..\Blueberry\Graphics\GfxDevice.h"
+#include "..\..\Blueberry\Graphics\RenderContext.h"
 #include "Blueberry\Graphics\RenderTexture.h"
-#include "Concrete\DX11\GfxDeviceDX11.h"
-#include "Concrete\DX11\GfxTextureDX11.h"
+#include "..\DX11\GfxDeviceDX11.h"
+#include "..\DX11\GfxTextureDX11.h"
 
 #include "openxr\openxr.h"
 #include "openxr\openxr_platform.h"
@@ -173,7 +172,7 @@ namespace Blueberry
 
 		// Initialize OpenXR with the extensions we've found!
 		XrInstanceCreateInfo createInfo = { XR_TYPE_INSTANCE_CREATE_INFO };
-		createInfo.enabledExtensionCount = useExtensions.size();
+		createInfo.enabledExtensionCount = static_cast<uint32_t>(useExtensions.size());
 		createInfo.enabledExtensionNames = useExtensions.data();
 		createInfo.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
 		strcpy_s(createInfo.applicationInfo.applicationName, "Test App");

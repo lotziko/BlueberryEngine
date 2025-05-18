@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "RegisterIcons.h"
 
 #include "IconDB.h"

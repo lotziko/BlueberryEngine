@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Blueberry\Graphics\OpenXRRenderer.h"
+#include "Blueberry\Core\Base.h"
+#include "..\..\Blueberry\Graphics\OpenXRRenderer.h"
 
 namespace Blueberry
 {

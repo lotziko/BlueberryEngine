@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "Octree.h"
 
 namespace Blueberry
@@ -243,7 +242,7 @@ namespace Blueberry
 					return;
 				}
 
-				for (int i = m_Objects.size() - 1; i >= 0; i--)
+				for (int i = static_cast<int>(m_Objects.size() - 1); i >= 0; i--)
 				{
 					std::pair<AABB, ObjectId> object = m_Objects[i];
 					AABB objectBounds = object.first;
@@ -320,7 +319,7 @@ namespace Blueberry
 
 	bool OctreeNode::ShouldMerge()
 	{
-		uint32_t totalObjects = m_Objects.size();
+		uint32_t totalObjects = static_cast<uint32_t>(m_Objects.size());
 		if (m_Children[0])
 		{
 			for (uint32_t i = 0; i < 8; ++i)
@@ -330,7 +329,7 @@ namespace Blueberry
 				{
 					return false;
 				}
-				totalObjects += child->m_Objects.size();
+				totalObjects += static_cast<uint32_t>(child->m_Objects.size());
 			}
 		}
 		return totalObjects <= MAX_OBJECTS_COUNT;
@@ -341,8 +340,7 @@ namespace Blueberry
 		for (uint32_t i = 0; i < 8; ++i)
 		{
 			OctreeNode* child = m_Children[i].get();
-			int numObjects = child->m_Objects.size();
-			for (int j = numObjects - 1; j >= 0; --j)
+			for (int j = static_cast<int>(child->m_Objects.size()) - 1; j >= 0; --j)
 			{
 				m_Objects.emplace_back(child->m_Objects[j]);
 			}

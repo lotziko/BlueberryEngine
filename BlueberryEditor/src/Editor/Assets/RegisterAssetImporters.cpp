@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "RegisterAssetImporters.h"
 
 #include "Editor\Assets\AssetDB.h"

@@ -1,7 +1,6 @@
-#include "bbpch.h"
-#include "Camera.h"
+#include "Blueberry\Scene\Components\Camera.h"
 
-#include "Blueberry\Scene\EnityComponent.h"
+#include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Core\ClassDB.h"
 
 namespace Blueberry

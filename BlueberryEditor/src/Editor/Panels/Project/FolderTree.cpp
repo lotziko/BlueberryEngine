@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "FolderTree.h"
 
 namespace Blueberry
@@ -8,7 +7,7 @@ namespace Blueberry
 		return m_Root;
 	}
 
-	void FolderTree::Update(const std::string& root)
+	void FolderTree::Update(const String& root)
 	{
 		std::filesystem::path path = root;
 		m_Root = {};

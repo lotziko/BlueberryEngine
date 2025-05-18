@@ -1,7 +1,7 @@
-#include "bbpch.h"
 #include "MaterialPreview.h"
 
 #include "Blueberry\Scene\Scene.h"
+#include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Components\Light.h"
 #include "Blueberry\Scene\Components\MeshRenderer.h"
 #include "Blueberry\Scene\Components\Camera.h"

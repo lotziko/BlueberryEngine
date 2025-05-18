@@ -1,9 +1,10 @@
-#include "bbpch.h"
 #include "StatisticsWindow.h"
 
-#include "imgui\imgui.h"
-
+#include "Blueberry\Core\ClassDB.h"
+#include "Blueberry\Logging\Profiler.h"
 #include "Editor\Menu\EditorMenuManager.h"
+
+#include <imgui\imgui.h>
 
 namespace Blueberry
 {

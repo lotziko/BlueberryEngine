@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Blueberry\Core\Base.h"
+
 namespace Blueberry
 {
 	class Texture;
@@ -9,10 +11,10 @@ namespace Blueberry
 	{
 	public:
 		static Texture* GetAssetIcon(Object* asset);
-		static void Register(const std::size_t& type, const std::string& path);
+		static void Register(const size_t& type, const String& path);
 
 	private:
-		static Dictionary<std::size_t, Texture*> s_AssetIcons;
+		static Dictionary<size_t, Texture*> s_AssetIcons;
 	};
 
 #define REGISTER_ICON( objectType, path ) IconDB::Register(objectType, path);

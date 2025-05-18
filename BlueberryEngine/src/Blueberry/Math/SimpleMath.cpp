@@ -8,8 +8,7 @@
 // http://go.microsoft.com/fwlink/?LinkID=615561
 //-------------------------------------------------------------------------------------
 
-#include "bbpch.h"
-#include "SimpleMath.h"
+#include "Blueberry\Math\SimpleMath.h"
 
 /****************************************************************************
  *

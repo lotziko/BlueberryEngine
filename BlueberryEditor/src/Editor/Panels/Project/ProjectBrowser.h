@@ -18,7 +18,7 @@ namespace Blueberry
 		struct AssetInfo
 		{
 			std::filesystem::path path;
-			std::string pathString;
+			String pathString;
 			AssetImporter* importer;
 			List<Object*> objects; // First object is main
 			List<Vector2> positions;

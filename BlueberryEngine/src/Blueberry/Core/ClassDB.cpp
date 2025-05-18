@@ -1,5 +1,4 @@
-#include "bbpch.h"
-#include "ClassDB.h"
+#include "Blueberry\Core\ClassDB.h"
 
 namespace Blueberry
 {
@@ -42,7 +41,7 @@ namespace Blueberry
 
 	FieldOptions& FieldOptions::SetEnumHint(char* hintData)
 	{
-		auto names = new List<std::string>();
+		auto names = new List<String>();
 		StringHelper::Split(hintData, ',', *names);
 		this->hintData = names;
 		return *this;

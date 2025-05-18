@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "MeshPreview.h"
 
 #include "Blueberry\Scene\Scene.h"

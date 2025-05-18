@@ -1,10 +1,12 @@
 #pragma once
 
+#include "Blueberry\Core\Base.h"
+
 namespace Blueberry
 {
 	struct MenuTreeNode
 	{
-		std::string name;
+		String name;
 		List<MenuTreeNode> children;
 		void(*clickCallback)();
 	};
@@ -15,7 +17,7 @@ namespace Blueberry
 		MenuTree();
 
 		const MenuTreeNode& GetRoot();
-		void Add(const std::string& path, void(*clickCallback)());
+		void Add(const String& path, void(*clickCallback)());
 
 	private:
 		MenuTreeNode m_Root;

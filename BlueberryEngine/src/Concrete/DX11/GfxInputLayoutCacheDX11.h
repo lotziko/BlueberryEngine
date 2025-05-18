@@ -1,5 +1,8 @@
 #pragma once
 
+#include "Blueberry\Core\Base.h"
+#include "DX11.h"
+
 namespace Blueberry
 {
 	class GfxDeviceDX11;

@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "ProjectBrowser.h"
 
 #include "Editor\Path.h"
@@ -13,12 +12,13 @@
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Scene\Components\Component.h"
-#include "imgui\imgui_internal.h"
 
 #include "Editor\Assets\ThumbnailCache.h"
 #include "Editor\Assets\IconDB.h"
 #include "Editor\Menu\EditorMenuManager.h"
 #include "Editor\Misc\ImGuiHelper.h"
+
+#include <imgui\imgui_internal.h>
 
 namespace Blueberry
 {
@@ -164,7 +164,7 @@ namespace Blueberry
 						Blueberry::Object* object = Blueberry::ObjectDB::GetObject(*id);
 						if (object != nullptr && object->IsClassType(Entity::Type) && ImGui::AcceptDragDropPayload("OBJECT_ID"))
 						{
-							PrefabManager::CreatePrefab(m_CurrentDirectory.string(), static_cast<Entity*>(object));
+							PrefabManager::CreatePrefab(m_CurrentDirectory.string().data(), static_cast<Entity*>(object));
 							UpdateFiles();
 						}
 					}
@@ -231,7 +231,7 @@ namespace Blueberry
 		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 0.0f);
 		if (ImGui::BeginChild("Bottom panel"))
 		{
-			std::string path = AssetDB::GetRelativeAssetPath(Selection::GetActiveObject());
+			String path = AssetDB::GetRelativeAssetPath(Selection::GetActiveObject());
 			if (path.size() > 0)
 			{
 				ImGui::Text(path.c_str());
@@ -282,7 +282,7 @@ namespace Blueberry
 				relativePath.append(materialName);
 
 				Material* material = Object::Create<Material>();
-				AssetDB::CreateAsset(material, relativePath.string());
+				AssetDB::CreateAsset(material, relativePath.string().data());
 				AssetDB::SaveAssets();
 				AssetDB::Refresh();
 
@@ -364,7 +364,7 @@ namespace Blueberry
 		}
 		else
 		{
-			std::string stringPath = asset.importer->GetFilePath();
+			String stringPath = asset.importer->GetFilePath();
 			std::filesystem::path filePath = stringPath;
 			if (filePath.extension() == ".scene")
 			{
@@ -385,7 +385,7 @@ namespace Blueberry
 
 	void ProjectBrowser::UpdateTree()
 	{
-		m_FolderTree.Update(Path::GetAssetsPath().string());
+		m_FolderTree.Update(Path::GetAssetsPath().string().data());
 	}
 
 	void ProjectBrowser::UpdateFiles()
@@ -402,7 +402,7 @@ namespace Blueberry
 				AssetInfo info = {};
 				info.path = path;
 				info.pathString = path.string();
-				info.importer = AssetDB::GetImporter(relativePath.string());
+				info.importer = AssetDB::GetImporter(relativePath.string().data());
 				info.objects.emplace_back(nullptr);
 				info.positions.resize(1);
 				info.isDirectory = true;
@@ -416,7 +416,7 @@ namespace Blueberry
 			if (!it.is_directory() && path.extension() != ".meta")
 			{
 				auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
-				AssetImporter* importer = AssetDB::GetImporter(relativePath.string());
+				AssetImporter* importer = AssetDB::GetImporter(relativePath.string().data());
 				if (importer != nullptr)
 				{
 					Object* mainObject = ObjectDB::GetObjectFromGuid(importer->GetGuid(), importer->GetMainObject());

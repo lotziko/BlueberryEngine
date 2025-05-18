@@ -1,10 +1,9 @@
-#include "bbpch.h"
 #include "GfxInputLayoutCacheDX11.h"
 
 #include "Blueberry\Graphics\VertexLayout.h"
 
-#include "Concrete\DX11\GfxDeviceDX11.h"
-#include "Concrete\DX11\GfxShaderDX11.h"
+#include "..\DX11\GfxDeviceDX11.h"
+#include "..\DX11\GfxShaderDX11.h"
 
 namespace Blueberry
 {

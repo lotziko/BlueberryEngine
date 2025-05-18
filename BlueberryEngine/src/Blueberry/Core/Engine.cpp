@@ -1,17 +1,17 @@
-#include "bbpch.h"
 #include "Engine.h"
 
-#include "Blueberry\Scene\Scene.h"
-#include "Blueberry\Scene\RegisterSceneTypes.h"
-#include "Blueberry\Graphics\GfxDevice.h"
-#include "Blueberry\Graphics\Renderer2D.h"
-#include "Blueberry\Graphics\DefaultRenderer.h"
-#include "Blueberry\Input\Input.h"
-#include "Blueberry\Threading\JobSystem.h"
-#include "Blueberry\Graphics\RegisterGraphicsTypes.h"
-#include "Blueberry\Graphics\DefaultShaders.h"
-
-#include "Blueberry\Core\Layer.h"
+#include "..\Core\LayerStack.h"
+#include "..\Core\Window.h"
+#include "..\Core\Layer.h"
+#include "..\Scene\Scene.h"
+#include "..\Scene\RegisterSceneTypes.h"
+#include "..\Graphics\GfxDevice.h"
+#include "..\Graphics\Renderer2D.h"
+#include "..\Graphics\DefaultRenderer.h"
+#include "..\Input\Input.h"
+#include "..\Threading\JobSystem.h"
+#include "..\Graphics\RegisterGraphicsTypes.h"
+#include "..\Graphics\DefaultShaders.h"
 
 #include <chrono>
 #include <thread>

@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "EditorWindow.h"
 
 #include "Editor\Path.h"
@@ -87,7 +86,7 @@ namespace Blueberry
 		if (std::filesystem::exists(layoutPath))
 		{
 			YamlSerializer serializer;
-			serializer.Deserialize(layoutPath.string());
+			serializer.Deserialize(layoutPath.string().data());
 			for (auto& pair : serializer.GetDeserializedObjects())
 			{
 				EditorWindow* activeWindow = static_cast<EditorWindow*>(pair.first);
@@ -135,7 +134,7 @@ namespace Blueberry
 				activeWindow->m_RawData[32] = activeWindow->m_Focused;
 				serializer.AddObject(activeWindow.Get());
 			}
-			serializer.Serialize(layoutPath.string());
+			serializer.Serialize(layoutPath.string().data());
 
 			ImGui::PrepareDockNodeData();
 			uint32_t nodeCount = ImGui::GetDockNodeDataCount();

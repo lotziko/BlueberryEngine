@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "PerCameraLightDataConstantBuffer.h"
 
 #include "Blueberry\Scene\Components\Transform.h"
@@ -119,7 +118,7 @@ namespace Blueberry
 				position = Vector4(pos.x, pos.y, pos.z, 1.0f);
 			}
 
-			Vector4 lightParam = Vector4(light->IsCastingShadows() ? 1 : 0, 0, 0, range * range);
+			Vector4 lightParam = Vector4(light->IsCastingShadows() ? 1.0f : 0.0f, 0.0f, 0.0f, range * range);
 			Vector4 lightPosition = position;
 			Vector4 lightColor = Vector4(color.x * intensity, color.y * intensity, color.z * intensity, 1.0f);
 			Vector4 lightAttenuation = GetAttenuation(type, range, outerSpotAngle, innerSpotAngle);

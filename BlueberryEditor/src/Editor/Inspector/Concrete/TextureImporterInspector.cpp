@@ -1,12 +1,13 @@
-#include "bbpch.h"
 #include "TextureImporterInspector.h"
+
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Assets\Importers\TextureImporter.h"
 #include "Editor\Assets\ThumbnailCache.h"
 #include "Blueberry\Graphics\Texture.h"
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Core\ObjectDB.h"
-#include "imgui\imgui.h"
+
+#include <imgui\imgui.h>
 
 namespace Blueberry
 {

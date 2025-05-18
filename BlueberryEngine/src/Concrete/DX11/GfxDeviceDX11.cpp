@@ -1,5 +1,5 @@
-#include "bbpch.h"
 #include "GfxDeviceDX11.h"
+
 #include "GfxShaderDX11.h"
 #include "GfxComputeShaderDX11.h"
 #include "GfxBufferDX11.h"
@@ -8,6 +8,7 @@
 #include "HBAORendererDX11.h"
 #include "Blueberry\Graphics\Enums.h"
 #include "Blueberry\Tools\CRCHelper.h"
+#include "..\Windows\WindowsHelper.h"
 
 namespace Blueberry
 {

@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "PngTextureProcessor.h"
 
 #include "Blueberry\Tools\StringConverter.h"
@@ -16,7 +15,7 @@ namespace Blueberry
 		}
 	}
 
-	void PngTextureProcessor::Load(const std::string& path, const bool& srgb, const bool& generateMips)
+	void PngTextureProcessor::Load(const String& path, const bool& srgb, const bool& generateMips)
 	{
 		HRESULT hr = DirectX::LoadFromWICFile(StringConverter::StringToWide(path).c_str(), (srgb ? DirectX::WIC_FLAGS_DEFAULT_SRGB : DirectX::WIC_FLAGS_IGNORE_SRGB) | DirectX::WIC_FLAGS_FORCE_RGB, nullptr, m_ScratchImage);
 		if (FAILED(hr))
@@ -35,9 +34,9 @@ namespace Blueberry
 
 		DirectX::Image image = *m_ScratchImage.GetImages();
 		m_Properties = {};
-		m_Properties.width = image.width;
-		m_Properties.height = image.height;
-		m_Properties.mipCount = GetMipCount(image.width, image.height, generateMips);
+		m_Properties.width = static_cast<uint32_t>(image.width);
+		m_Properties.height = static_cast<uint32_t>(image.height);
+		m_Properties.mipCount = GetMipCount(static_cast<uint32_t>(image.width), static_cast<uint32_t>(image.height), generateMips);
 	}
 
 	void FlipDDS(const DXGI_FORMAT& format, unsigned char* image, const uint32_t& mipCount, uint32_t width, uint32_t height)
@@ -59,7 +58,7 @@ namespace Blueberry
 			break;
 		}
 
-		for (int i = 0; i < mipCount; ++i)
+		for (uint32_t i = 0; i < mipCount; ++i)
 		{
 			switch (format)
 			{
@@ -85,7 +84,7 @@ namespace Blueberry
 		}
 	}
 
-	void PngTextureProcessor::LoadDDS(const std::string& path)
+	void PngTextureProcessor::LoadDDS(const String& path)
 	{
 		HRESULT hr = DirectX::LoadFromDDSFile(StringConverter::StringToWide(path).c_str(), DirectX::DDS_FLAGS::DDS_FLAGS_NONE, nullptr, m_ScratchImage);
 		if (FAILED(hr))
@@ -95,15 +94,15 @@ namespace Blueberry
 		}
 
 		DirectX::Image image = *m_ScratchImage.GetImages();
-		FlipDDS(m_ScratchImage.GetMetadata().format, m_ScratchImage.GetPixels(), m_ScratchImage.GetImageCount(), image.width, image.height);
+		FlipDDS(m_ScratchImage.GetMetadata().format, m_ScratchImage.GetPixels(), static_cast<uint32_t>(m_ScratchImage.GetImageCount()), static_cast<uint32_t>(image.width), static_cast<uint32_t>(image.height));
 
 		m_Properties = {};
-		m_Properties.width = image.width;
-		m_Properties.height = image.height;
-		m_Properties.mipCount = m_ScratchImage.GetImageCount();
+		m_Properties.width = static_cast<uint32_t>(image.width);
+		m_Properties.height = static_cast<uint32_t>(image.height);
+		m_Properties.mipCount = static_cast<uint32_t>(m_ScratchImage.GetImageCount());
 	}
 
-	void PngTextureProcessor::LoadHDR(const std::string& path)
+	void PngTextureProcessor::LoadHDR(const String& path)
 	{
 		HRESULT hr = DirectX::LoadFromHDRFile(StringConverter::StringToWide(path).c_str(), nullptr, m_ScratchImage);
 		if (FAILED(hr))
@@ -123,9 +122,9 @@ namespace Blueberry
 
 		DirectX::Image image = *m_ScratchImage.GetImages();
 		m_Properties = {};
-		m_Properties.width = image.width;
-		m_Properties.height = image.height;
-		m_Properties.mipCount = m_ScratchImage.GetImageCount();
+		m_Properties.width = static_cast<uint32_t>(image.width);
+		m_Properties.height = static_cast<uint32_t>(image.height);
+		m_Properties.mipCount = static_cast<uint32_t>(m_ScratchImage.GetImageCount());
 	}
 
 	void PngTextureProcessor::CreateCube(const TextureFormat& format, const uint32_t& width, const uint32_t& height)
@@ -187,7 +186,7 @@ namespace Blueberry
 		return m_ScratchImage.GetImages()->pixels;
 	}
 
-	const size_t& PngTextureProcessor::GetDataSize()
+	const size_t PngTextureProcessor::GetDataSize()
 	{
 		return m_ScratchImage.GetPixelsSize();
 	}

@@ -1,7 +1,7 @@
-#include "bbpch.h"
 #include "Input.h"
 
-#include "Blueberry\Core\Screen.h"
+#include "..\Core\Time.h"
+#include "..\Core\Screen.h"
 
 namespace Blueberry
 {

@@ -1,12 +1,12 @@
-#include "bbpch.h"
 #include "SpriteRendererInspector.h"
 
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Scene\Components\SpriteRenderer.h"
 
-#include "imgui\imgui.h"
 #include "Editor\Misc\ImGuiHelper.h"
+
+#include <imgui\imgui.h>
 
 namespace Blueberry
 {

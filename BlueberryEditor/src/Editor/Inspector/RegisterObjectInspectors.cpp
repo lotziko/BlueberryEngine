@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "RegisterObjectInspectors.h"
 
 #include "ObjectInspectorDB.h"

@@ -1,8 +1,8 @@
-#include "bbpch.h"
-#include "BoxCollider.h"
+#include "Blueberry\Scene\Components\BoxCollider.h"
 
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Scene\Components\Transform.h"
+#include "Blueberry\Core\ClassDB.h"
 
 #include <Jolt\Jolt.h>
 #include <Jolt\Physics\Collision\Shape\BoxShape.h>

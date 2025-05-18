@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "ThumbnailCache.h"
 
 #include "Blueberry\Graphics\GfxDevice.h"
@@ -71,7 +70,7 @@ namespace Blueberry
 
 		unsigned char* data;
 		size_t length;
-		FileHelper::Load(data, length, thumbnailPath.string());
+		FileHelper::Load(data, length, thumbnailPath.string().data());
 
 		Texture2D* thumbnail = Texture2D::Create(THUMBNAIL_SIZE, THUMBNAIL_SIZE);
 		thumbnail->SetData(data, THUMBNAIL_DATA_SIZE);
@@ -89,7 +88,7 @@ namespace Blueberry
 			std::filesystem::create_directories(thumbnailPath);
 		}
 		thumbnailPath.append(pair.first.ToString().append(std::to_string(pair.second)));
-		FileHelper::Save(thumbnail, THUMBNAIL_DATA_SIZE, thumbnailPath.string());
+		FileHelper::Save(thumbnail, THUMBNAIL_DATA_SIZE, thumbnailPath.string().data());
 	}
 
 	Texture2D* ThumbnailCache::DrawAndSave(Object* asset)

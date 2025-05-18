@@ -1,7 +1,7 @@
-#include "bbpch.h"
 #include "Serializer.h"
+
 #include "Blueberry\Core\ObjectDB.h"
-#include "Blueberry\Assets\AssetLoader.h"
+#include "..\Assets\AssetLoader.h"
 
 #include <iomanip>
 #include <random>
@@ -98,7 +98,7 @@ namespace Blueberry
 		Object* result;
 		if (data.guid.data[0] > 0)
 		{
-			std::string guid1 = data.guid.ToString();
+			String guid1 = data.guid.ToString();
 			result = ObjectDB::GetObjectFromGuid(data.guid, data.fileId);
 			if (result == nullptr || result->GetState() == ObjectState::AwaitingLoading)
 			{

@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "GameView.h"
 
 #include "Editor\EditorLayer.h"
@@ -6,12 +5,14 @@
 #include "Editor\Menu\EditorMenuManager.h"
 
 #include "Blueberry\Core\Screen.h"
+#include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Graphics\DefaultRenderer.h"
 #include "Blueberry\Graphics\RenderTexture.h"
 #include "Blueberry\Scene\Scene.h"
+#include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Input\Cursor.h"
 
-#include "imgui\imgui.h"
+#include <imgui\imgui.h>
 
 namespace Blueberry
 {

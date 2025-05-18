@@ -1,9 +1,8 @@
-#include "bbpch.h"
 #include "RealtimeLights.h"
 
-#include "Blueberry\Graphics\RenderContext.h"
-#include "Blueberry\Graphics\ShadowAtlas.h"
-#include "Blueberry\Graphics\PerCameraLightDataConstantBuffer.h"
+#include "..\Graphics\RenderContext.h"
+#include "..\Graphics\ShadowAtlas.h"
+#include "..\Graphics\PerCameraLightDataConstantBuffer.h"
 #include "Blueberry\Scene\Components\Light.h"
 
 namespace Blueberry

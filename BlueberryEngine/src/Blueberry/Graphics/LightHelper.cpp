@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "LightHelper.h"
 
 #include "Blueberry\Scene\Components\Light.h"

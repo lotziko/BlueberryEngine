@@ -1,12 +1,13 @@
-#include "bbpch.h"
-#include "PhysicsBody.h"
+#include "Blueberry\Scene\Components\PhysicsBody.h"
 
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Components\Collider.h"
-#include "Blueberry\Physics\Physics.h"
+#include "..\..\Physics\Physics.h"
+#include "Blueberry\Core\ClassDB.h"
 
 #include <Jolt\Jolt.h>
+#include <Jolt\Physics\Body\BodyID.h>
 #include <Jolt\Physics\PhysicsSystem.h>
 #include <Jolt\Physics\Collision\Shape\StaticCompoundShape.h>
 #include <Jolt\Physics\Body\BodyCreationSettings.h>
@@ -19,6 +20,16 @@ namespace Blueberry
 		DEFINE_FIELD(PhysicsBody, m_BodyType, BindingType::Enum, FieldOptions().SetEnumHint("Static,Kinematic,Dynamic"))
 	}
 
+	struct PhysicsBody::PrivateData
+	{
+		JPH::BodyID bodyId;
+	};
+
+	PhysicsBody::PhysicsBody()
+	{
+		m_PrivateData = reinterpret_cast<PrivateData*>(&m_PrivateStorage);
+	}
+
 	// ModelImporter will generate prefabs with static PhysicsBodies with mesh shape if it is choosed to
 
 	void PhysicsBody::OnEnable()
@@ -27,9 +38,9 @@ namespace Blueberry
 		if (m_IsInitialized)
 		{
 			JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
-			if (!bodyInterface.IsAdded(m_BodyId))
+			if (!bodyInterface.IsAdded(m_PrivateData->bodyId))
 			{
-				bodyInterface.AddBody(m_BodyId, JPH::EActivation::Activate);
+				bodyInterface.AddBody(m_PrivateData->bodyId, JPH::EActivation::Activate);
 			}
 		}
 	}
@@ -40,9 +51,9 @@ namespace Blueberry
 		if (m_IsInitialized)
 		{
 			JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
-			if (bodyInterface.IsAdded(m_BodyId))
+			if (bodyInterface.IsAdded(m_PrivateData->bodyId))
 			{
-				bodyInterface.RemoveBody(m_BodyId);
+				bodyInterface.RemoveBody(m_PrivateData->bodyId);
 			}
 		}
 	}
@@ -63,7 +74,7 @@ namespace Blueberry
 				shape = m_Colliders[0]->GetShape();
 				JPH::EMotionType motionType = static_cast<JPH::EMotionType>(m_BodyType);
 				JPH::BodyCreationSettings settings(shape, JPH::RVec3(position.x, position.y, position.z), JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w), motionType, 1);
-				m_BodyId = bodyInterface.CreateAndAddBody(settings, JPH::EActivation::Activate);
+				m_PrivateData->bodyId = bodyInterface.CreateAndAddBody(settings, JPH::EActivation::Activate);
 			}
 			else if (collidersCount > 1)
 			{
@@ -85,17 +96,17 @@ namespace Blueberry
 				}
 				JPH::EMotionType motionType = static_cast<JPH::EMotionType>(m_BodyType);
 				JPH::BodyCreationSettings settings(shapeSettings, JPH::RVec3(position.x, position.y, position.z), JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w), motionType, 1);
-				m_BodyId = bodyInterface.CreateAndAddBody(settings, JPH::EActivation::Activate);
+				m_PrivateData->bodyId = bodyInterface.CreateAndAddBody(settings, JPH::EActivation::Activate);
 			}
 			m_IsInitialized = true;
 		}
-		else if (!m_BodyId.IsInvalid())
+		else if (!m_PrivateData->bodyId.IsInvalid())
 		{
 			JPH::RVec3 position;
 			JPH::Quat rotation;
-			if (bodyInterface.IsActive(m_BodyId))
+			if (bodyInterface.IsActive(m_PrivateData->bodyId))
 			{
-				bodyInterface.GetPositionAndRotation(m_BodyId, position, rotation);
+				bodyInterface.GetPositionAndRotation(m_PrivateData->bodyId, position, rotation);
 				m_Transform->SetPosition(Vector3(position[0], position[1], position[2]));
 				m_Transform->SetRotation(Quaternion(rotation.GetX(), rotation.GetY(), rotation.GetZ(), rotation.GetW()));
 			}

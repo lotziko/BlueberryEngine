@@ -1,7 +1,7 @@
-#include "bbpch.h"
-#include "TextureCube.h"
+#include "Blueberry\Graphics\TextureCube.h"
 
-#include "Blueberry\Graphics\GfxDevice.h"
+#include "..\Graphics\GfxDevice.h"
+#include "..\Graphics\GfxTexture.h"
 #include "Blueberry\Core\ClassDB.h"
 
 namespace Blueberry

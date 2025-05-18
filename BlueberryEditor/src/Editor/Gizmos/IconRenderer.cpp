@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "IconRenderer.h"
 
 #include "Editor\EditorSceneManager.h"
@@ -15,6 +14,8 @@
 #include "Blueberry\Graphics\Texture.h"
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Scene\Components\Light.h"
+#include "Blueberry\Scene\Components\Camera.h"
+#include "Blueberry\Scene\Components\Transform.h"
 
 namespace Blueberry
 {

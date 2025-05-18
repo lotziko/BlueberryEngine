@@ -11,8 +11,8 @@ namespace Blueberry
 		const Guid& GetGuid();
 		void SetGuid(const Guid& guid);
 
-		virtual void Serialize(const std::string& path) override;
-		virtual void Deserialize(const std::string& path) override;
+		virtual void Serialize(const String& path) override;
+		virtual void Deserialize(const String& path) override;
 	private:
 		Guid m_Guid;
 	};

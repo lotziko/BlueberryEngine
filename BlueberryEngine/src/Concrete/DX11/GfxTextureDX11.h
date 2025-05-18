@@ -1,6 +1,9 @@
 #pragma once
+
 #include "Blueberry\Graphics\Structs.h"
-#include "Blueberry\Graphics\GfxTexture.h"
+#include "..\..\Blueberry\Graphics\GfxTexture.h"
+#include "..\Windows\ComPtr.h"
+#include "DX11.h"
 
 namespace Blueberry
 {
@@ -8,7 +11,7 @@ namespace Blueberry
 	{
 	public:
 		GfxTextureDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
-		virtual ~GfxTextureDX11() final;
+		~GfxTextureDX11() = default;
 		
 		bool Create(const TextureProperties& properties);
 

@@ -1,15 +1,14 @@
-#include "bbpch.h"
 #include "TransformInspector.h"
 
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Components\Camera.h"
 
-#include "imgui\imgui.h"
-#include "imgui\imguizmo.h"
 #include "Editor\Misc\ImGuiHelper.h"
-
 #include "Editor\Preferences.h"
 #include "Editor\Panels\Scene\SceneArea.h"
+
+#include <imgui\imgui.h>
+#include <imgui\imguizmo.h>
 
 namespace Blueberry
 {

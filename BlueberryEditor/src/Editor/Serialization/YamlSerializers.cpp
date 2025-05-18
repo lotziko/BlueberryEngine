@@ -1,4 +1,3 @@
-#include "bbpch.h"
 #include "YamlSerializers.h"
 
 namespace DirectX::SimpleMath
@@ -167,5 +166,27 @@ namespace Blueberry
 			val->guid = {};
 		}
 		return true;
+	}
+
+	// ryml std::string
+	bool from_chars(ryml::csubstr buf, Blueberry::String* v)
+	{
+		v->resize(buf.len);
+		if (buf.len)
+		{
+			memcpy(&(*v)[0], buf.str, buf.len);
+		}
+		return true;
+	}
+
+	// ryml std::string
+	size_t to_chars(ryml::substr buf, Blueberry::String const& val)
+	{
+		size_t len = buf.len < val.size() ? buf.len : val.size();
+		if (len)
+		{
+			memcpy(buf.str, val.data(), len);
+		}
+		return val.size();
 	}
 }

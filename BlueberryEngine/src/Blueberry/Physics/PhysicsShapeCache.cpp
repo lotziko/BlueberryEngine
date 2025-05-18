@@ -1,6 +1,7 @@
-#include "bbpch.h"
 #include "PhysicsShapeCache.h"
 
+#include "Blueberry\Core\Base.h"
+#include "Blueberry\Core\Object.h"
 #include "Blueberry\Graphics\Mesh.h"
 
 #include <Jolt\Jolt.h>

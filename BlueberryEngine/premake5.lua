@@ -7,11 +7,12 @@ project "BlueberryEngine"
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 
-	pchheader "bbpch.h"
-	pchsource "src/bbpch.cpp"
+	--pchheader "bbpch.h"
+	--pchsource "src/bbpch.cpp"
 
 	files
 	{
+		"include/**.h",
 		"src/**.h",
 		"src/**.cpp",
 		"vendor/mikktspace/**.h",
@@ -24,7 +25,7 @@ project "BlueberryEngine"
 
 	includedirs
 	{
-		"src",
+		"include",
 		"%{IncludeDir.imgui}",
 		"%{IncludeDir.jolt}",
 		"%{IncludeDir.mikktspace}",

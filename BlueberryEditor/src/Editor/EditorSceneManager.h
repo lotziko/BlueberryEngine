@@ -12,9 +12,11 @@ namespace Blueberry
 	{
 	public:
 		static Scene* GetScene();
-		static void CreateEmpty(const std::string& path);
-		static void Load(const std::string& path);
+		static void CreateEmpty(const String& path);
+		static void Load(const String& path);
+		static void Reload();
 		static void Save();
+		static void Unload();
 
 		static void Run();
 		static void Stop();
@@ -24,7 +26,7 @@ namespace Blueberry
 
 	private:
 		static Scene* s_Scene;
-		static std::string s_Path;
+		static String s_Path;
 		static SceneLoadEvent s_SceneLoaded;
 		static bool s_IsRunning;
 	};

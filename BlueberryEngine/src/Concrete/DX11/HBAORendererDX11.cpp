@@ -1,11 +1,10 @@
-#include "bbpch.h"
 #include "HBAORendererDX11.h"
 
 #include "hbao\GFSDK_SSAO.h"
 #include "Blueberry\Graphics\RenderTexture.h"
-#include "Blueberry\Graphics\GfxDevice.h"
-#include "Concrete\DX11\GfxDeviceDX11.h"
-#include "Concrete\DX11\GfxTextureDX11.h"
+#include "..\..\Blueberry\Graphics\GfxDevice.h"
+#include "..\DX11\GfxDeviceDX11.h"
+#include "..\DX11\GfxTextureDX11.h"
 
 namespace Blueberry
 {
