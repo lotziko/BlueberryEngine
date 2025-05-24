@@ -47,7 +47,8 @@ Shader
 
 		float4 SkyboxFragment(Varyings input) : SV_TARGET
 		{
-			return SAMPLE_TEXTURECUBE(_BaseMap, _BaseMap_Sampler, input.texcoord);
+			float4 color = SAMPLE_TEXTURECUBE(_BaseMap, _BaseMap_Sampler, input.texcoord);
+			return color;
 		}
 		HLSLEND
 	}

@@ -43,7 +43,13 @@ namespace Blueberry
 
 			if (s_ConstantBuffer == nullptr)
 			{
-				GfxDevice::CreateConstantBuffer(sizeof(CONSTANTS) * 1, s_ConstantBuffer);
+				BufferProperties constantBufferProperties = {};
+				constantBufferProperties.type = BufferType::Constant;
+				constantBufferProperties.elementCount = 1;
+				constantBufferProperties.elementSize = sizeof(CONSTANTS) * 1;
+				constantBufferProperties.isWritable = true;
+
+				GfxDevice::CreateBuffer(constantBufferProperties, s_ConstantBuffer);
 			}
 
 			CONSTANTS constants
@@ -52,11 +58,11 @@ namespace Blueberry
 			};
 
 			s_ConstantBuffer->SetData(reinterpret_cast<char*>(&constants), sizeof(constants));
-			GfxDevice::SetGlobalConstantBuffer(objectDataId, s_ConstantBuffer);
+			GfxDevice::SetGlobalBuffer(objectDataId, s_ConstantBuffer);
 		}
 
 	private:
-		static inline GfxConstantBuffer* s_ConstantBuffer = nullptr;
+		static inline GfxBuffer* s_ConstantBuffer = nullptr;
 	};
 
 	SceneObjectPicker::SceneObjectPicker()
@@ -91,7 +97,7 @@ namespace Blueberry
 			return nullptr;
 		}
 
-		PerCameraDataConstantBuffer::BindData(camera);
+		PerCameraDataConstantBuffer::BindData(camera, m_SceneRenderTarget);
 
 		Rectangle area = Rectangle(std::min(std::max(positionX, 0), static_cast<int>(camera->GetPixelSize().x)), std::min(std::max(positionY, 0), static_cast<int>(camera->GetPixelSize().y)), 1, 1);
 		unsigned char pixel[4];
@@ -181,7 +187,7 @@ namespace Blueberry
 			return;
 		}
 
-		PerCameraDataConstantBuffer::BindData(camera);
+		PerCameraDataConstantBuffer::BindData(camera, renderTarget);
 
 		GfxDevice::SetRenderTarget(m_SceneRenderTarget);
 		GfxDevice::SetViewport(0, 0, static_cast<int>(camera->GetPixelSize().x), static_cast<int>(camera->GetPixelSize().y));

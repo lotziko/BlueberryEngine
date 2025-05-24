@@ -5,9 +5,7 @@
 namespace Blueberry
 {
 	class Material;
-	class GfxVertexBuffer;
-	class GfxIndexBuffer;
-	class GfxConstantBuffer;
+	class GfxBuffer;
 
 	class Gizmos
 	{
@@ -54,8 +52,8 @@ namespace Blueberry
 		static inline Material* s_ArcMaterial = nullptr;
 		static inline Color s_CurrentColor = Color();
 
-		static inline GfxVertexBuffer* s_LineVertexBuffer = nullptr;
-		static inline GfxVertexBuffer* s_ArcVertexBuffer = nullptr;
+		static inline GfxBuffer* s_LineVertexBuffer = nullptr;
+		static inline GfxBuffer* s_ArcVertexBuffer = nullptr;
 
 		static inline float* s_LineVertexData = nullptr;
 		static inline float* s_LineVertexDataPtr = nullptr;

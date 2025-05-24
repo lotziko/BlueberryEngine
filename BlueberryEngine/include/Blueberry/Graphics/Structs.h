@@ -15,6 +15,7 @@ namespace Blueberry
 		size_t dataSize;
 		bool isRenderTarget;
 		bool isReadable;
+		bool isUnorderedAccess;
 		uint32_t antiAliasing;
 		uint32_t mipCount;
 		TextureFormat format;
@@ -22,5 +23,18 @@ namespace Blueberry
 		WrapMode wrapMode;
 		FilterMode filterMode;
 		uint8_t slices;
+	};
+
+	struct BB_API BufferProperties
+	{
+		BufferType type;
+		uint32_t elementSize;
+		uint32_t elementCount;
+		void* data;
+		size_t dataSize;
+		bool isReadable;
+		bool isWritable;
+		bool isUnorderedAccess;
+		BufferFormat format;
 	};
 }

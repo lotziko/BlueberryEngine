@@ -35,6 +35,7 @@ cbuffer PerCameraData
 	float4 _CameraForwardDirectionWS;
 	float4 _CameraNearFarClipPlane;
 	float4 _CameraSizeInvSize;
+	float4 _RenderTargetSizeInvSize;
 };
 
 cbuffer PerCameraLightData

@@ -28,7 +28,13 @@ namespace Blueberry
 		int size = layout.GetSize();
 		s_VertexData = BB_MALLOC_ARRAY(float, MAX_VERTICES * size / sizeof(float));
 
-		if (!GfxDevice::CreateVertexBuffer(MAX_VERTICES, size, s_VertexBuffer))
+		BufferProperties vertexBufferProperties = {};
+		vertexBufferProperties.type = BufferType::Vertex;
+		vertexBufferProperties.elementCount = MAX_VERTICES;
+		vertexBufferProperties.elementSize = size;
+		vertexBufferProperties.isWritable = true;
+		
+		if (!GfxDevice::CreateBuffer(vertexBufferProperties, s_VertexBuffer))
 		{
 			return false;
 		}
@@ -48,11 +54,17 @@ namespace Blueberry
 			offset += 4;
 		}
 		
-		if (!GfxDevice::CreateIndexBuffer(MAX_INDICES, s_IndexBuffer))
+		BufferProperties indexBufferProperties = {};
+		indexBufferProperties.type = BufferType::Index;
+		indexBufferProperties.elementCount = MAX_INDICES;
+		indexBufferProperties.elementSize = sizeof(uint32_t);
+		indexBufferProperties.isWritable = true;
+
+		if (!GfxDevice::CreateBuffer(indexBufferProperties, s_IndexBuffer))
 		{
 			return false;
 		}
-		s_IndexBuffer->SetData(indexData, MAX_INDICES);
+		s_IndexBuffer->SetData(indexData, MAX_INDICES * sizeof(uint32_t));
 		BB_FREE(indexData);
 
 		s_DrawingDatas = BB_MALLOC_ARRAY(DrawingData, MAX_SPRITES);
@@ -153,7 +165,7 @@ namespace Blueberry
 			s_QuadIndexCount += 6;
 		}
 
-		s_VertexBuffer->SetData(s_VertexData, s_QuadIndexCount / 6 * 4);
+		s_VertexBuffer->SetData(s_VertexData, (s_QuadIndexCount / 6 * 4) * s_VertexBuffer->GetElementSize());
 
 		// Draw quads
 		Material* currentMaterial = s_DrawingDatas->material;

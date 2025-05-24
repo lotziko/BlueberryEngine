@@ -27,6 +27,7 @@ namespace Blueberry
 
 	PhysicsBody::PhysicsBody()
 	{
+		ZeroMemory(m_PrivateStorage, sizeof(PrivateData));
 		m_PrivateData = reinterpret_cast<PrivateData*>(&m_PrivateStorage);
 	}
 

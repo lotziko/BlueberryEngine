@@ -5,11 +5,7 @@
 
 namespace Blueberry
 {
-	class GfxVertexBuffer;
-	class GfxIndexBuffer;
-	class GfxConstantBuffer;
-	class GfxStructuredBuffer;
-	class GfxComputeBuffer;
+	class GfxBuffer;
 	class GfxTexture;
 	class GfxVertexShader;
 	class GfxGeometryShader;
@@ -42,11 +38,7 @@ namespace Blueberry
 		static bool CreateGeometryShader(void* geometryData, GfxGeometryShader*& shader);
 		static bool CreateFragmentShader(void* fragmentData, GfxFragmentShader*& shader);
 		static bool CreateComputeShader(void* computeData, GfxComputeShader*& shader);
-		static bool CreateVertexBuffer(const uint32_t& vertexCount, const uint32_t& vertexSize, GfxVertexBuffer*& buffer);
-		static bool CreateIndexBuffer(const uint32_t& indexCount, GfxIndexBuffer*& buffer);
-		static bool CreateConstantBuffer(const uint32_t& byteCount, GfxConstantBuffer*& buffer);
-		static bool CreateStructuredBuffer(const uint32_t& elementCount, const uint32_t& elementSize, GfxStructuredBuffer*& buffer);
-		static bool CreateComputeBuffer(const uint32_t& elementCount, const uint32_t& elementSize, GfxComputeBuffer*& buffer);
+		static bool CreateBuffer(const BufferProperties& properties, GfxBuffer*& buffer);
 		static bool CreateTexture(const TextureProperties& properties, GfxTexture*& texture);
 
 		static void Copy(GfxTexture* source, GfxTexture* target);
@@ -58,12 +50,11 @@ namespace Blueberry
 		static void SetRenderTarget(GfxTexture* renderTexture, GfxTexture* depthStencilTexture);
 		static void SetRenderTarget(GfxTexture* renderTexture, const uint32_t& slice);
 		static void SetRenderTarget(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, const uint32_t& slice);
-		static void SetGlobalConstantBuffer(const size_t& id, GfxConstantBuffer* buffer);
-		static void SetGlobalStructuredBuffer(const size_t& id, GfxStructuredBuffer* buffer);
+		static void SetGlobalBuffer(const size_t& id, GfxBuffer* buffer);
 		static void SetGlobalTexture(const size_t& id, GfxTexture* texture);
 		static void Draw(const GfxDrawingOperation& operation);
 
-		static void Dispatch(GfxComputeShader*& shader, const uint32_t& threadGroupsX, const uint32_t& threadGroupsY, const uint32_t& threadGroupsZ);
+		static void Dispatch(GfxComputeShader* shader, const uint32_t& threadGroupsX, const uint32_t& threadGroupsY, const uint32_t& threadGroupsZ);
 
 		static Matrix GetGPUMatrix(const Matrix& viewProjection);
 
@@ -88,11 +79,7 @@ namespace Blueberry
 		virtual bool CreateGeometryShaderImpl(void* geometryData, GfxGeometryShader*& shader) = 0;
 		virtual bool CreateFragmentShaderImpl(void* fragmentData, GfxFragmentShader*& shader) = 0;
 		virtual bool CreateComputeShaderImpl(void* computeData, GfxComputeShader*& shader) = 0;
-		virtual bool CreateVertexBufferImpl(const uint32_t& vertexCount, const uint32_t& vertexSize, GfxVertexBuffer*& buffer) = 0;
-		virtual bool CreateIndexBufferImpl(const uint32_t& indexCount, GfxIndexBuffer*& buffer) = 0;
-		virtual bool CreateConstantBufferImpl(const uint32_t& byteCount, GfxConstantBuffer*& buffer) = 0;
-		virtual bool CreateStructuredBufferImpl(const uint32_t& elementCount, const uint32_t& elementSize, GfxStructuredBuffer*& buffer) = 0;
-		virtual bool CreateComputeBufferImpl(const uint32_t& elementCount, const uint32_t& elementSize, GfxComputeBuffer*& buffer) = 0;
+		virtual bool CreateBufferImpl(const BufferProperties& properties, GfxBuffer*& buffer) = 0;
 		virtual bool CreateTextureImpl(const TextureProperties& properties, GfxTexture*& texture) const = 0;
 		
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target) const = 0;
@@ -102,12 +89,11 @@ namespace Blueberry
 
 		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture) = 0;
 		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, const uint32_t& slice) = 0;
-		virtual void SetGlobalConstantBufferImpl(const size_t& id, GfxConstantBuffer* buffer) = 0;
-		virtual void SetGlobalStructuredBufferImpl(const size_t& id, GfxStructuredBuffer* buffer) = 0;
+		virtual void SetGlobalBufferImpl(const size_t& id, GfxBuffer* buffer) = 0;
 		virtual void SetGlobalTextureImpl(const size_t& id, GfxTexture* texture) = 0;
 		virtual void DrawImpl(const GfxDrawingOperation& operation) = 0;
 
-		virtual void DispatchImpl(GfxComputeShader*& shader, const uint32_t& threadGroupsX, const uint32_t& threadGroupsY, const uint32_t& threadGroupsZ) const = 0;
+		virtual void DispatchImpl(GfxComputeShader* shader, const uint32_t& threadGroupsX, const uint32_t& threadGroupsY, const uint32_t& threadGroupsZ) = 0;
 
 		virtual Matrix GetGPUMatrixImpl(const Matrix& viewProjection) const = 0;
 

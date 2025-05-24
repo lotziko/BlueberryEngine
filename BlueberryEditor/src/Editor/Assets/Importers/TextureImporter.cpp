@@ -86,10 +86,10 @@ namespace Blueberry
 			}
 			else
 			{
-				processor.Load(path, m_IsSRGB, m_GenerateMipmaps);
+				processor.Load(path, m_GenerateMipmaps);
 				if (m_TextureShape == TextureImporterShape::Texture2D)
 				{
-					processor.Compress(TextureFormat::BC7_UNorm);
+					processor.Compress(TextureFormat::BC7_UNorm, m_IsSRGB);
 				}
 			}
 			PngTextureProperties properties = processor.GetProperties();
@@ -157,13 +157,15 @@ namespace Blueberry
 				GfxDevice::SetViewCount(1);
 				GfxDevice::Read(temporaryTextureCube->Get(), cubeProcessor.GetData());
 
-				cubeProcessor.Compress(compressedFormat);
+				cubeProcessor.Compress(compressedFormat, m_IsSRGB);
 				properties = cubeProcessor.GetProperties();
 
 				Object::Destroy(temporaryTexture);
 				Object::Destroy(temporaryTextureCube);
 
-				texture->SetData(properties.data, properties.dataSize);
+				uint8_t* textureData = BB_MALLOC_ARRAY(uint8_t, properties.dataSize);
+				memcpy(textureData, properties.data, properties.dataSize);
+				texture->SetData(textureData, properties.dataSize);
 				texture->Apply();
 				texture->SetState(ObjectState::Default);
 				object = texture;

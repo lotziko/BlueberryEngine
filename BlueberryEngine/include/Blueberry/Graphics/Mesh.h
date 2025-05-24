@@ -8,8 +8,7 @@
 
 namespace Blueberry
 {
-	class GfxVertexBuffer;
-	class GfxIndexBuffer;
+	class GfxBuffer;
 
 	class BB_API SubMeshData : public Data
 	{
@@ -64,8 +63,8 @@ namespace Blueberry
 		static Mesh* Create();
 
 	private:
-		GfxVertexBuffer* m_VertexBuffer;
-		GfxIndexBuffer* m_IndexBuffer;
+		GfxBuffer* m_VertexBuffer;
+		GfxBuffer* m_IndexBuffer;
 		bool m_BufferIsDirty = false;
 
 		List<Vector3> m_Vertices;

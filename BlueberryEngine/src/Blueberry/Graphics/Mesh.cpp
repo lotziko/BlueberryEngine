@@ -351,11 +351,32 @@ namespace Blueberry
 		}
 
 		// TODO handle old buffers instead
-		GfxDevice::CreateVertexBuffer(m_VertexCount, static_cast<uint32_t>((m_VertexData.size() * sizeof(float)) / m_VertexCount), m_VertexBuffer);
-		GfxDevice::CreateIndexBuffer(m_IndexCount, m_IndexBuffer);
+		if (m_VertexBuffer != nullptr)
+		{
+			delete m_VertexBuffer;
+		}
+		if (m_IndexBuffer != nullptr)
+		{
+			delete m_IndexBuffer;
+		}
 
-		m_VertexBuffer->SetData(m_VertexData.data(), m_VertexCount);
-		m_IndexBuffer->SetData(m_IndexData.data(), m_IndexCount);
+		BufferProperties vertexBufferProperties = {};
+		vertexBufferProperties.type = BufferType::Vertex;
+		vertexBufferProperties.elementCount = m_VertexCount;
+		vertexBufferProperties.elementSize = static_cast<uint32_t>((m_VertexData.size() * sizeof(float)) / m_VertexCount);
+		vertexBufferProperties.data = m_VertexData.data();
+		vertexBufferProperties.dataSize = m_VertexCount * vertexBufferProperties.elementSize;
+		vertexBufferProperties.isWritable = true;
+		GfxDevice::CreateBuffer(vertexBufferProperties, m_VertexBuffer);
+
+		BufferProperties indexBufferProperties = {};
+		indexBufferProperties.type = BufferType::Index;
+		indexBufferProperties.elementCount = m_IndexCount;
+		indexBufferProperties.elementSize = sizeof(uint32_t);
+		indexBufferProperties.data = m_IndexData.data();
+		indexBufferProperties.dataSize = m_IndexCount * indexBufferProperties.elementSize;
+		indexBufferProperties.isWritable = true;
+		GfxDevice::CreateBuffer(indexBufferProperties, m_IndexBuffer);
 	}
 
 	const VertexLayout& Mesh::GetLayout()

@@ -1,0 +1,78 @@
+#pragma compute CSLuminanceHistogram
+#pragma compute CSLuminanceAverage
+
+// https://bruop.github.io/exposure/
+
+#define RGB_TO_LUMINANCE float3(0.2125, 0.7154, 0.0721)
+#define EPSILON 0.005
+
+cbuffer _ExposureData
+{
+	float _MinLogLuminance;
+	float _LogLuminanceRange;
+	float _InverseLogLuminanceRange;
+	float _NumPixels;
+	float2 _Viewport;
+	float2 _Dummy;
+};
+
+Texture2D<float4> _ScreenColorTexture;
+RWBuffer<uint> _Histogram;
+RWBuffer<float> _Result;
+
+groupshared uint _HistogramShared[256];
+
+uint ColorToBin(float3 hdrColor, float minLogLum, float inverseLogLumRange)
+{
+	float lum = dot(hdrColor, RGB_TO_LUMINANCE);
+	if (lum < EPSILON)
+	{
+		return 0;
+	}
+	float logLum = clamp((log2(lum) - minLogLum) * inverseLogLumRange, 0.0, 1.0);
+	return uint(logLum * 254.0 + 1.0);
+}
+
+[numthreads(16, 16, 1)]
+void CSLuminanceHistogram(uint3 id : SV_DispatchThreadID, uint groupIndex : SV_GroupIndex)
+{
+	_HistogramShared[groupIndex] = 0;
+	GroupMemoryBarrierWithGroupSync();
+
+	if (id.x < (uint)_Viewport.x && id.y < (uint)_Viewport.y)
+	{
+		float3 hdrColor = _ScreenColorTexture.Load(int3(id.xy, 0)).rgb;
+		uint binIndex = ColorToBin(hdrColor, _MinLogLuminance, _InverseLogLuminanceRange);
+		InterlockedAdd(_HistogramShared[binIndex], 1);
+	}
+	GroupMemoryBarrierWithGroupSync();
+
+	InterlockedAdd(_Histogram[groupIndex], _HistogramShared[groupIndex]);
+}
+
+[numthreads(256, 1, 1)]
+void CSLuminanceAverage(uint3 id : SV_DispatchThreadID, uint groupIndex : SV_GroupIndex)
+{
+	uint countForThisBin = _Histogram[groupIndex];
+	_HistogramShared[groupIndex] = countForThisBin * groupIndex;
+	GroupMemoryBarrierWithGroupSync();
+
+	_Histogram[groupIndex] = 0;
+
+	[unroll]
+	for (uint cutoff = (256 >> 1); cutoff > 0; cutoff >>= 1) 
+	{
+		if (uint(groupIndex) < cutoff)
+		{
+			_HistogramShared[groupIndex] += _HistogramShared[groupIndex + cutoff];
+		}
+		GroupMemoryBarrierWithGroupSync();
+	}
+
+	if (id.x + id.y + id.z == 0)
+	{
+		float weightedLogAverage = (_HistogramShared[0] / max(_NumPixels - float(countForThisBin), 1.0)) - 1.0;
+		float weightedAvgLum = exp2(((weightedLogAverage / 254.0) * _LogLuminanceRange) + _MinLogLuminance);
+		_Result[0] = weightedAvgLum;
+	}
+}

@@ -13,7 +13,7 @@ namespace Blueberry
 		Light* light;
 	};
 
-	class GfxConstantBuffer;
+	class GfxBuffer;
 
 	class PerCameraLightDataConstantBuffer
 	{
@@ -21,6 +21,6 @@ namespace Blueberry
 		static void BindData(const LightData& mainLight, const List<LightData>& lights, const Vector2Int& shadowAtlasSize);
 
 	private:
-		static inline GfxConstantBuffer* s_ConstantBuffer = nullptr;
+		static inline GfxBuffer* s_ConstantBuffer = nullptr;
 	};
 }

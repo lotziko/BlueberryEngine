@@ -31,7 +31,7 @@ namespace Blueberry
 		Transform* m_Transform;
 		PrivateData* m_PrivateData;
 		alignas(8) char m_PrivateStorage[24];
-		bool m_Initialized;
+		bool m_IsInitialized = false;
 		Vector2 m_Rotation;
 		Vector3 m_Velocity;
 	};

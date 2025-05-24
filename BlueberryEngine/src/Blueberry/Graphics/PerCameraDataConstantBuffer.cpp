@@ -4,6 +4,7 @@
 #include "Blueberry\Scene\Components\Transform.h"
 #include "..\Graphics\RenderContext.h"
 #include "GfxDevice.h"
+#include "GfxTexture.h"
 #include "GfxBuffer.h"
 
 namespace Blueberry
@@ -23,13 +24,16 @@ namespace Blueberry
 		Vector4 cameraForwardDirectionWS;
 		Vector4 cameraNearFarClipPlane;
 		Vector4 cameraSizeInvSize;
+		Vector4 renderTargetSizeInvSize;
 	};
 
 	static size_t perCameraDataId = TO_HASH("PerCameraData");
 
-	void PerCameraDataConstantBuffer::BindData(Camera* camera)
+	void PerCameraDataConstantBuffer::BindData(Camera* camera, GfxTexture* target)
 	{
 		CameraData cameraData = { camera };
+		cameraData.size = Vector2Int(static_cast<int>(camera->GetPixelSize().x), static_cast<int>(camera->GetPixelSize().y));
+		cameraData.renderTargetSize = Vector2Int(static_cast<int>(target->GetWidth()), static_cast<int>(target->GetHeight()));
 		BindData(cameraData);
 	}
 
@@ -37,7 +41,13 @@ namespace Blueberry
 	{
 		if (s_ConstantBuffer == nullptr)
 		{
-			GfxDevice::CreateConstantBuffer(sizeof(CONSTANTS) * 1, s_ConstantBuffer);
+			BufferProperties constantBufferProperties = {};
+			constantBufferProperties.type = BufferType::Constant;
+			constantBufferProperties.elementCount = 1;
+			constantBufferProperties.elementSize = sizeof(CONSTANTS) * 1;
+			constantBufferProperties.isWritable = true;
+
+			GfxDevice::CreateBuffer(constantBufferProperties, s_ConstantBuffer);
 		}
 
 		Camera* camera = cameraData.camera;
@@ -61,6 +71,8 @@ namespace Blueberry
 			const Matrix& inverseViewProjection = GfxDevice::GetGPUMatrix(camera->GetInverseViewProjectionMatrix());
 			const Vector2& pixelSize = Vector2(static_cast<float>(cameraData.size.x), static_cast<float>(cameraData.size.y));
 			const Vector4& sizeInvSize = Vector4(pixelSize.x, pixelSize.y, 1.0f / pixelSize.x, 1.0f / pixelSize.y);
+			const Vector2& renderTargetPixelSize = Vector2(static_cast<float>(cameraData.renderTargetSize.x), static_cast<float>(cameraData.renderTargetSize.y));
+			const Vector4& renderTargetSizeInvSize = Vector4(renderTargetPixelSize.x, renderTargetPixelSize.y, 1.0f / renderTargetPixelSize.x, 1.0f / renderTargetPixelSize.y);
 
 			constants.viewMatrix[0] = view;
 			constants.projectionMatrix[0] = projection;
@@ -69,6 +81,7 @@ namespace Blueberry
 			constants.inverseProjectionMatrix[0] = inverseProjection;
 			constants.inverseViewProjectionMatrix[0] = inverseViewProjection;
 			constants.cameraSizeInvSize = sizeInvSize;
+			constants.renderTargetSizeInvSize = renderTargetSizeInvSize;
 		}
 		else
 		{
@@ -90,6 +103,7 @@ namespace Blueberry
 				constants.inverseProjectionMatrix[i] = inverseProjection;
 				constants.inverseViewProjectionMatrix[i] = inverseViewProjection;
 				constants.cameraSizeInvSize = sizeInvSize;
+				constants.renderTargetSizeInvSize = sizeInvSize;
 			}
 		}
 		constants.cameraPositionWS = position;
@@ -97,14 +111,20 @@ namespace Blueberry
 		constants.cameraNearFarClipPlane = nearFar;
 
 		s_ConstantBuffer->SetData(reinterpret_cast<char*>(&constants), sizeof(constants));
-		GfxDevice::SetGlobalConstantBuffer(perCameraDataId, s_ConstantBuffer);
+		GfxDevice::SetGlobalBuffer(perCameraDataId, s_ConstantBuffer);
 	}
 
 	void PerCameraDataConstantBuffer::BindData(const Matrix& viewProjection)
 	{
 		if (s_ConstantBuffer == nullptr)
 		{
-			GfxDevice::CreateConstantBuffer(sizeof(CONSTANTS) * 1, s_ConstantBuffer);
+			BufferProperties constantBufferProperties = {};
+			constantBufferProperties.type = BufferType::Constant;
+			constantBufferProperties.elementCount = 1;
+			constantBufferProperties.elementSize = sizeof(CONSTANTS) * 1;
+			constantBufferProperties.isWritable = true;
+
+			GfxDevice::CreateBuffer(constantBufferProperties, s_ConstantBuffer);
 		}
 
 		CONSTANTS constants = {};
@@ -112,6 +132,6 @@ namespace Blueberry
 		constants.viewProjectionMatrix[0] = GfxDevice::GetGPUMatrix(viewProjection);
 
 		s_ConstantBuffer->SetData(reinterpret_cast<char*>(&constants), sizeof(constants));
-		GfxDevice::SetGlobalConstantBuffer(perCameraDataId, s_ConstantBuffer);
+		GfxDevice::SetGlobalBuffer(perCameraDataId, s_ConstantBuffer);
 	}
 }

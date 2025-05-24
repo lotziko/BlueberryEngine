@@ -2,16 +2,17 @@
 
 #include "..\Core\Screen.h"
 #include "..\Assets\AssetLoader.h"
-#include "..\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\RenderTexture.h"
 #include "Blueberry\Graphics\TextureCube.h"
-#include "..\Graphics\StandardMeshes.h"
-#include "..\Graphics\DefaultMaterials.h"
-#include "..\Graphics\RenderContext.h"
-#include "..\Graphics\HBAORenderer.h"
-#include "..\Graphics\ShadowAtlas.h"
-#include "..\Graphics\RealtimeLights.h"
+#include "GfxDevice.h"
+#include "StandardMeshes.h"
+#include "DefaultMaterials.h"
+#include "RenderContext.h"
+#include "HBAORenderer.h"
+#include "ShadowAtlas.h"
+#include "RealtimeLights.h"
+#include "PostProcessing.h"
 #include "Blueberry\Scene\Components\Camera.h"
 #include "..\Logging\Profiler.h"
 
@@ -71,13 +72,14 @@ namespace Blueberry
 		else
 		{
 			cameraData.size = Vector2Int(viewport.width, viewport.height);
+			cameraData.renderTargetSize = size;
 		}
 
 		colorMSAARenderTarget = RenderTexture::GetTemporary(size.x, size.y, viewCount, 4, TextureFormat::R16G16B16A16_Float, textureDimension);
 		normalMSAARenderTarget = RenderTexture::GetTemporary(size.x, size.y, viewCount, 4, TextureFormat::R8G8B8A8_UNorm, textureDimension);
 		depthStencilMSAARenderTarget = RenderTexture::GetTemporary(size.x, size.y, viewCount, 4, TextureFormat::D24_UNorm, textureDimension);
 
-		colorNormalRenderTarget = RenderTexture::GetTemporary(size.x, size.y, viewCount, 1, TextureFormat::R8G8B8A8_UNorm, textureDimension);
+		colorNormalRenderTarget = RenderTexture::GetTemporary(size.x, size.y, viewCount, 1, TextureFormat::R16G16B16A16_Float, textureDimension);
 		depthStencilRenderTarget = RenderTexture::GetTemporary(size.x, size.y, viewCount, 1, TextureFormat::D24_UNorm, textureDimension);
 		HBAORenderTarget = RenderTexture::GetTemporary(size.x, size.y, viewCount, 1, TextureFormat::R8G8B8A8_UNorm, textureDimension);
 		resultRenderTarget = RenderTexture::GetTemporary(size.x, size.y, viewCount, 1, TextureFormat::R8G8B8A8_UNorm, textureDimension);
@@ -117,6 +119,7 @@ namespace Blueberry
 		GfxDevice::ClearDepth(1.0f);
 		DrawingSettings drawingSettings = {};
 		drawingSettings.passIndex = 1;
+		drawingSettings.sortingMode = SortingMode::FrontToBack;
 		s_DefaultContext.BindCamera(s_Results, cameraData);
 		s_DefaultContext.DrawRenderers(s_Results, drawingSettings);
 		BB_PROFILE_END();
@@ -130,9 +133,7 @@ namespace Blueberry
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_ResolveMSAAMaterial, 0));
 
 		// HBAO
-		//HBAORenderer::Draw(depthStencilRenderTarget->Get(), colorNormalRenderTarget->Get(), camera->GetViewMatrix(), camera->GetProjectionMatrix(), viewport, HBAORenderTarget->Get());
-		GfxDevice::SetRenderTarget(HBAORenderTarget->Get());
-		GfxDevice::ClearColor({ 1.0f, 1.0f, 1.0f, 1.0f });
+		HBAORenderer::Draw(depthStencilRenderTarget->Get(), colorNormalRenderTarget->Get(), camera->GetViewMatrix(), camera->GetProjectionMatrix(), viewport, HBAORenderTarget->Get());
 		GfxDevice::SetGlobalTexture(s_HBAOTextureId, HBAORenderTarget->Get());
 		
 		// Forward pass
@@ -141,6 +142,7 @@ namespace Blueberry
 		GfxDevice::ClearColor({ 0.0f, 0.0f, 0.0f, 0.0f });
 		s_DefaultContext.DrawSky(scene);
 		drawingSettings.passIndex = 0;
+		drawingSettings.sortingMode = SortingMode::Default;
 		s_DefaultContext.DrawRenderers(s_Results, drawingSettings);
 		BB_PROFILE_END();
 
@@ -150,6 +152,9 @@ namespace Blueberry
 		GfxDevice::SetGlobalTexture(s_ScreenColorTextureId, colorMSAARenderTarget->Get());
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_ResolveMSAAMaterial, 1));
 		
+		GfxDevice::SetRenderTarget(nullptr);
+		PostProcessing::Draw(colorNormalRenderTarget->Get(), viewport);
+
 		// Tonemapping
 		// Gamma correction is done manually together with MSAA resolve to avoid using SRGB swapchain
 		GfxDevice::SetRenderTarget(resultRenderTarget->Get());

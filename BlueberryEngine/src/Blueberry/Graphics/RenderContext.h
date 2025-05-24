@@ -17,6 +17,7 @@ namespace Blueberry
 	{
 		Camera* camera;
 		Vector2Int size;
+		Vector2Int renderTargetSize;
 		Matrix multiviewViewMatrix[2];
 		Matrix multiviewProjectionMatrix[2];
 		Rectangle multiviewViewport;
@@ -31,6 +32,7 @@ namespace Blueberry
 			uint8_t index;
 			DirectX::XMVECTOR planes[6];
 			List<ObjectId> renderers;
+			Matrix viewMatrix;
 		};
 
 		Camera* camera;
@@ -38,9 +40,16 @@ namespace Blueberry
 		List<CullerInfo> cullerInfos;
 	};
 
+	enum class SortingMode
+	{
+		Default,
+		FrontToBack
+	};
+
 	struct DrawingSettings
 	{
 		uint8_t passIndex;
+		SortingMode sortingMode;
 	};
 
 	struct ShadowDrawingSettings
@@ -59,7 +68,7 @@ namespace Blueberry
 		void DrawRenderers(CullingResults& results, DrawingSettings& drawingSettings);
 
 	private:
-		static inline GfxVertexBuffer* s_IndexBuffer = nullptr;
+		static inline GfxBuffer* s_IndexBuffer = nullptr;
 		static inline size_t s_LastCullingFrame = 0;
 	};
 }

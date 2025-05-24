@@ -14,7 +14,7 @@ float3 NormalTSToNormalWS(float3 normalTS, float3 normalWS, float3 tangentWS, fl
 
 float3 GetNormalizedViewDirectionWS(float3 positionWS)
 {
-	return normalize(CAMERA_FORWARD_DIRECTION_WS - positionWS);
+	return normalize(CAMERA_POSITION_WS - positionWS);
 }
 
 float3 TransformObjectToWorld(float3 positionOS)

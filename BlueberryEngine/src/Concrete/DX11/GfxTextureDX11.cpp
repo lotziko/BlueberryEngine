@@ -8,15 +8,6 @@ namespace Blueberry
 	{
 	}
 
-	/*GfxTextureDX11::~GfxTextureDX11()
-	{
-		m_Texture = nullptr;
-		m_ResourceView = nullptr;
-		m_SamplerState = nullptr;
-		m_RenderTargetView = nullptr;
-		m_DepthStencilView = nullptr;
-	}*/
-
 	uint32_t GetBlockSize(DXGI_FORMAT format)
 	{
 		switch (format)
@@ -119,7 +110,7 @@ namespace Blueberry
 		return std::min(1u, depth);
 	}
 
-	bool GfxTextureDX11::Create(const TextureProperties& properties)
+	bool GfxTextureDX11::Initialize(const TextureProperties& properties)
 	{
 		m_Width = properties.width;
 		m_Height = properties.height;

@@ -25,8 +25,9 @@ namespace Blueberry
 		Scene* scene = GetScene();
 		if (scene != nullptr)
 		{
-			m_TreeBounds = GetBounds();
-			scene->GetRendererTree().Add(m_ObjectId, m_TreeBounds);
+			m_Bounds = GetBounds();
+			m_PreviousBounds = m_Bounds;
+			scene->GetRendererTree().Add(m_ObjectId, m_Bounds);
 		}
 	}
 
@@ -36,18 +37,17 @@ namespace Blueberry
 		Scene* scene = GetScene();
 		if (scene != nullptr)
 		{
-			scene->GetRendererTree().Remove(m_ObjectId, m_TreeBounds);
+			scene->GetRendererTree().Remove(m_ObjectId, m_Bounds);
 		}
 	}
 
-	void MeshRenderer::Update()
+	void MeshRenderer::OnPreCull()
 	{
-		size_t transformRecalculationFrame = GetTransform()->GetRecalculationFrame();
-		if (m_RecalculationFrame < transformRecalculationFrame)
+		UpdateBounds();
+		if (m_CullingDirty)
 		{
-			AABB newBounds = GetBounds();
-			GetScene()->GetRendererTree().Update(m_ObjectId, m_TreeBounds, newBounds);
-			m_TreeBounds = newBounds;
+			GetScene()->GetRendererTree().Update(m_ObjectId, m_PreviousBounds, m_Bounds);
+			m_CullingDirty = false;
 		}
 	}
 
@@ -60,7 +60,6 @@ namespace Blueberry
 	{
 		m_Mesh = mesh;
 		m_RecalculationFrame = 0;
-		Update();
 	}
 
 	Material* MeshRenderer::GetMaterial(const uint32_t& index)
@@ -97,9 +96,15 @@ namespace Blueberry
 			return m_Bounds;
 		}
 		
+		UpdateBounds();
+		return m_Bounds;
+	}
+
+	void MeshRenderer::UpdateBounds()
+	{
 		Transform* transform = GetTransform();
 		size_t transformRecalculationFrame = transform->GetRecalculationFrame();
-		if (m_RecalculationFrame <= transformRecalculationFrame)
+		if (m_RecalculationFrame < transformRecalculationFrame)
 		{
 			AABB bounds = m_Mesh->GetBounds();
 			Matrix matrix = transform->GetLocalToWorldMatrix();
@@ -114,9 +119,13 @@ namespace Blueberry
 			}
 
 			AABB::CreateFromPoints(bounds, 8, corners, sizeof(Vector3));
+			if (!m_CullingDirty)
+			{
+				m_PreviousBounds = m_Bounds;
+				m_CullingDirty = true;
+			}
 			m_Bounds = bounds;
 			m_RecalculationFrame = transformRecalculationFrame;
 		}
-		return m_Bounds;
 	}
 }

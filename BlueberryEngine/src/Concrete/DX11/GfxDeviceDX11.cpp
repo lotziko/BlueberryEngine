@@ -190,54 +190,10 @@ namespace Blueberry
 		return true;
 	}
 
-	bool GfxDeviceDX11::CreateVertexBufferImpl(const uint32_t& vertexCount, const uint32_t& vertexSize, GfxVertexBuffer*& buffer)
+	bool GfxDeviceDX11::CreateBufferImpl(const BufferProperties& properties, GfxBuffer*& buffer)
 	{
-		auto dxBuffer = new GfxVertexBufferDX11(m_Device.Get(), m_DeviceContext.Get());
-		if (!dxBuffer->Initialize(vertexCount, vertexSize))
-		{
-			return false;
-		}
-		buffer = dxBuffer;
-		return true;
-	}
-
-	bool GfxDeviceDX11::CreateIndexBufferImpl(const uint32_t& indexCount, GfxIndexBuffer*& buffer)
-	{
-		auto dxBuffer = new GfxIndexBufferDX11(m_Device.Get(), m_DeviceContext.Get());
-		if (!dxBuffer->Initialize(indexCount))
-		{
-			return false;
-		}
-		buffer = dxBuffer;
-		return true;
-	}
-
-	bool GfxDeviceDX11::CreateConstantBufferImpl(const uint32_t& byteCount, GfxConstantBuffer*& buffer)
-	{
-		auto dxBuffer = new GfxConstantBufferDX11(m_Device.Get(), m_DeviceContext.Get());
-		if (!dxBuffer->Initialize(byteCount))
-		{
-			return false;
-		}
-		buffer = dxBuffer;
-		return true;
-	}
-
-	bool GfxDeviceDX11::CreateStructuredBufferImpl(const uint32_t& elementCount, const uint32_t& elementSize, GfxStructuredBuffer*& buffer)
-	{
-		auto dxBuffer = new GfxStructuredBufferDX11(m_Device.Get(), m_DeviceContext.Get());
-		if (!dxBuffer->Initialize(elementCount, elementSize))
-		{
-			return false;
-		}
-		buffer = dxBuffer;
-		return true;
-	}
-
-	bool GfxDeviceDX11::CreateComputeBufferImpl(const uint32_t& elementCount, const uint32_t& elementSize, GfxComputeBuffer*& buffer)
-	{
-		auto dxBuffer = new GfxComputeBufferDX11(m_Device.Get(), m_DeviceContext.Get());
-		if (!dxBuffer->Initialize(elementCount, elementSize))
+		auto dxBuffer = new GfxBufferDX11(m_Device.Get(), m_DeviceContext.Get());
+		if (!dxBuffer->Initialize(properties))
 		{
 			return false;
 		}
@@ -248,7 +204,7 @@ namespace Blueberry
 	bool GfxDeviceDX11::CreateTextureImpl(const TextureProperties& properties, GfxTexture*& texture) const
 	{
 		auto dxTexture = new GfxTextureDX11(m_Device.Get(), m_DeviceContext.Get());
-		if (!dxTexture->Create(properties))
+		if (!dxTexture->Initialize(properties))
 		{
 			return false;
 		}
@@ -357,17 +313,10 @@ namespace Blueberry
 		}
 	}
 
-	void GfxDeviceDX11::SetGlobalConstantBufferImpl(const size_t& id, GfxConstantBuffer* buffer)
+	void GfxDeviceDX11::SetGlobalBufferImpl(const size_t& id, GfxBuffer* buffer)
 	{
-		auto dxConstantBuffer = static_cast<GfxConstantBufferDX11*>(buffer);
-		m_BindedConstantBuffers.insert_or_assign(id, dxConstantBuffer);
-		m_CurrentCrc = UINT32_MAX;
-	}
-
-	void GfxDeviceDX11::SetGlobalStructuredBufferImpl(const size_t& id, GfxStructuredBuffer* buffer)
-	{
-		auto dxStructuredBuffer = static_cast<GfxStructuredBufferDX11*>(buffer);
-		m_BindedStructuredBuffers.insert_or_assign(id, dxStructuredBuffer);
+		auto dxBuffer = static_cast<GfxBufferDX11*>(buffer);
+		m_BindedBuffers.insert_or_assign(id, dxBuffer);
 		m_CurrentCrc = UINT32_MAX;
 	}
 
@@ -486,22 +435,23 @@ namespace Blueberry
 			m_DeviceContext->IASetPrimitiveTopology(GetPrimitiveTopology(operation.topology));
 		}
 
-		auto dxVertexBuffer = static_cast<GfxVertexBufferDX11*>(operation.vertexBuffer);
+		auto dxVertexBuffer = static_cast<GfxBufferDX11*>(operation.vertexBuffer);
 		if (dxVertexBuffer != m_VertexBuffer)
 		{
+			uint32_t byteOffset = 0;
 			m_VertexBuffer = dxVertexBuffer;
-			m_DeviceContext->IASetVertexBuffers(0, 1, dxVertexBuffer->m_Buffer.GetAddressOf(), &dxVertexBuffer->m_Stride, &dxVertexBuffer->m_Offset);
+			m_DeviceContext->IASetVertexBuffers(0, 1, dxVertexBuffer->m_Buffer.GetAddressOf(), &dxVertexBuffer->m_ElementSize, &byteOffset);
 		}
 
-		auto dxInstanceBuffer = static_cast<GfxVertexBufferDX11*>(operation.instanceBuffer);
+		auto dxInstanceBuffer = static_cast<GfxBufferDX11*>(operation.instanceBuffer);
 		if (dxInstanceBuffer != m_InstanceBuffer || operation.instanceOffset != m_InstanceOffset)
 		{
 			m_InstanceBuffer = dxInstanceBuffer;
 			m_InstanceOffset = operation.instanceOffset;
 			if (dxInstanceBuffer != nullptr)
 			{
-				uint32_t byteOffset = m_InstanceBuffer ? m_InstanceOffset * m_InstanceBuffer->m_Stride : 0;
-				m_DeviceContext->IASetVertexBuffers(1, 1, dxInstanceBuffer->m_Buffer.GetAddressOf(), &dxInstanceBuffer->m_Stride, &byteOffset);
+				uint32_t byteOffset = m_InstanceBuffer ? m_InstanceOffset * m_InstanceBuffer->m_ElementSize : 0;
+				m_DeviceContext->IASetVertexBuffers(1, 1, dxInstanceBuffer->m_Buffer.GetAddressOf(), &dxInstanceBuffer->m_ElementSize, &byteOffset);
 			}
 		}
 
@@ -518,7 +468,7 @@ namespace Blueberry
 		}
 		else
 		{
-			auto dxIndexBuffer = static_cast<GfxIndexBufferDX11*>(operation.indexBuffer);
+			auto dxIndexBuffer = static_cast<GfxBufferDX11*>(operation.indexBuffer);
 			if (dxIndexBuffer != m_IndexBuffer)
 			{
 				m_IndexBuffer = dxIndexBuffer;
@@ -537,9 +487,45 @@ namespace Blueberry
 		m_RenderState = renderState;
 	}
 
-	void GfxDeviceDX11::DispatchImpl(GfxComputeShader*& shader, const uint32_t& threadGroupsX, const uint32_t& threadGroupsY, const uint32_t& threadGroupsZ) const
+	void GfxDeviceDX11::DispatchImpl(GfxComputeShader* shader, const uint32_t& threadGroupsX, const uint32_t& threadGroupsY, const uint32_t& threadGroupsZ)
 	{
 		auto dxShader = static_cast<GfxComputeShaderDX11*>(shader);
+
+		// Constant buffers
+		for (auto it = dxShader->m_ConstantBufferSlots.begin(); it != dxShader->m_ConstantBufferSlots.end(); it++)
+		{
+			auto pair = m_BindedBuffers.find(it->first);
+			if (pair != m_BindedBuffers.end())
+			{
+				m_DeviceContext->CSSetConstantBuffers(it->second, 1, pair->second->m_Buffer.GetAddressOf());
+			}
+		}
+
+		// Compute buffers
+		for (auto it = dxShader->m_ComputeBufferSlots.begin(); it != dxShader->m_ComputeBufferSlots.end(); it++)
+		{
+			auto pair = m_BindedBuffers.find(it->first);
+			if (pair != m_BindedBuffers.end())
+			{
+				m_DeviceContext->CSSetUnorderedAccessViews(it->second, 1, pair->second->m_UnorderedAccessView.GetAddressOf(), NULL);
+			}
+		}
+
+		// Textures
+		for (auto it = dxShader->m_TextureSlots.begin(); it != dxShader->m_TextureSlots.end(); it++)
+		{
+			for (auto it1 = m_BindedTextures.begin(); it1 < m_BindedTextures.end(); ++it1)
+			{
+				if (it1->first == it->first)
+				{
+					m_DeviceContext->CSSetShaderResources(it->second.first, 1, it1->second->m_ResourceView.GetAddressOf());
+					if (it->second.second != 255)
+					{
+						m_DeviceContext->CSSetSamplers(it->second.second, 1, it1->second->m_SamplerState.GetAddressOf());
+					}
+				}
+			}
+		}
 
 		m_DeviceContext->CSSetShader(dxShader->m_ComputeShader.Get(), NULL, 0);
 		m_DeviceContext->Dispatch(threadGroupsX, threadGroupsY, threadGroupsZ);
@@ -791,11 +777,7 @@ namespace Blueberry
 			{
 				m_CurrentCrc = CRCHelper::Calculate(&pair, sizeof(size_t), m_CurrentCrc);
 			}
-			for (auto& pair : m_BindedConstantBuffers)
-			{
-				m_CurrentCrc = CRCHelper::Calculate(&pair, sizeof(size_t), m_CurrentCrc);
-			}
-			for (auto& pair : m_BindedStructuredBuffers)
+			for (auto& pair : m_BindedBuffers)
 			{
 				m_CurrentCrc = CRCHelper::Calculate(&pair, sizeof(size_t), m_CurrentCrc);
 			}

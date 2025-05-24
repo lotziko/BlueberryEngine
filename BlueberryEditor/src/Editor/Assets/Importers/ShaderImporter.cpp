@@ -16,10 +16,6 @@ namespace Blueberry
 	{
 		Guid guid = GetGuid();
 
-		HLSLShaderProcessor vertexProcessor;
-		HLSLShaderProcessor geometryProcessor;
-		HLSLShaderProcessor fragmentProcessor;
-
 		Shader* object;
 		if (AssetDB::HasAssetWithGuidInData(guid))
 		{

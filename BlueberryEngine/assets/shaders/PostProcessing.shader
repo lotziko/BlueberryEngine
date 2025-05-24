@@ -29,6 +29,11 @@ Shader
 			VERTEX_OUTPUT_VIEW_INDEX
 		};
 
+		cbuffer _PostProcessingData
+		{
+			float4 _ExposureTime;
+		};
+
 		Varyings PostProcessingVertex(Attributes input)
 		{
 			Varyings output;
@@ -47,18 +52,45 @@ Shader
 		}
 
 		TEXTURE2D(_ScreenColorTexture);	SAMPLER(_ScreenColorTexture_Sampler);
+		TEXTURE2D(_BlueNoiseLUT); SAMPLER(_BlueNoiseLUT_Sampler);
+
+		float3 Uncharted2Tonemap(float3 x)
+		{
+			float A = 0.15;
+			float B = 0.50;
+			float C = 0.10;
+			float D = 0.20;
+			float E = 0.02;
+			float F = 0.30;
+			float W = 11.2;
+
+			float3 curr = ((x * (A * x + C * B) + D * E) /
+				(x * (A * x + B) + D * F)) - E / F;
+
+			float whiteScale = ((W * (A * W + C * B) + D * E) /
+				(W * (A * W + B) + D * F)) - E / F;
+
+			return curr / whiteScale;
+		}
+
+		float3 LinearToSRGB(float3 color)
+		{
+			return color <= 0.0031308f	? color * 12.92f : pow(color, 1.0f / 2.4f) * 1.055f - 0.055f;
+		}
 
 		float4 PostProcessingFragment(Varyings input) : SV_TARGET
 		{
 			// TODO bloom
 			float4 color = SAMPLE_TEXTURE2D_X(_ScreenColorTexture, _ScreenColorTexture_Sampler, input.texcoord);
-			float exposure = 1;
 
 			float3 mixedColor = color.rgb;
-			float3 tonemappedColor = TonemapFilmic(exposure * mixedColor);
+			float3 tonemappedColor = TonemapFilmic(mixedColor * _ExposureTime.x);
 
 			// Gamma correction
-			tonemappedColor = pow(tonemappedColor, 1.0 / 2.2);
+			tonemappedColor = LinearToSRGB(tonemappedColor);
+
+			float3 blueNoise = (SAMPLE_TEXTURE2D(_BlueNoiseLUT, _BlueNoiseLUT_Sampler, input.texcoord * RENDER_TARGET_SIZE_INV_SIZE.xy / 256.0 + _ExposureTime.yy).rgb - 0.5) / 255;
+			tonemappedColor += blueNoise;
 
 			return float4(tonemappedColor, color.a);
 		}

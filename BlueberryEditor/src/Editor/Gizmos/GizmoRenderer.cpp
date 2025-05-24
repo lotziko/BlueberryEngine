@@ -13,11 +13,13 @@
 
 #include "Blueberry\Graphics\OpenXRRenderer.h"
 
+#include "Blueberry\Scene\Scene.h"
+
 namespace Blueberry
 {
-	void GizmoRenderer::Draw(Scene* scene, Camera* camera)
+	void GizmoRenderer::Draw(Scene* scene, Camera* camera, GfxTexture* target)
 	{
-		PerCameraDataConstantBuffer::BindData(camera);
+		PerCameraDataConstantBuffer::BindData(camera, target);
 
 		// TODO add cache and draw also child entities
 
@@ -48,7 +50,7 @@ namespace Blueberry
 		Gizmos::SetColor(Color(1, 1, 1, 1));
 		Gizmos::Begin();
 		List<AABB> bounds = {};
-		RendererTree::GatherBounds(bounds);
+		scene->GetRendererTree().GatherBounds(bounds);
 		for (int i = 0; i < bounds.size(); ++i)
 		{
 			Gizmos::DrawBox(bounds[i].Center, (Vector3)bounds[i].Extents * 2);

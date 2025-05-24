@@ -114,8 +114,8 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 	float3 directDiffuseTerm = (float3)0;
 	float3 directSpecularTerm = (float3)0;
 
-	float3 indirectDiffuseTerm = CalculateIndirectDiffuse(float3(0.03, 0.03, 0.03), surfaceData.occlusion);
-	float3 indirectSpecularTerm = CalculateIndirectSpecular(inputData.normalWS, inputData.positionWS, inputData.viewDirectionWS, geometricRoughness, surfaceData.occlusion, reflectance);
+	float3 indirectDiffuseTerm = CalculateIndirectDiffuse(float3(0.04, 0.04, 0.04), surfaceData.occlusion);
+	float3 indirectSpecularTerm = float3(0, 0, 0);//CalculateIndirectSpecular(inputData.normalWS, inputData.positionWS, inputData.viewDirectionWS, geometricRoughness, surfaceData.occlusion, reflectance);
 
 #if (SHADOWS)
 	if (_MainShadowCascades[0].w > 0)

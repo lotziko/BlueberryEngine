@@ -33,6 +33,7 @@ static uint _RenderInstanceId;
 #define CAMERA_POSITION_WS					_CameraPositionWS
 #define CAMERA_FORWARD_DIRECTION_WS			_CameraForwardDirectionWS
 #define CAMERA_SIZE_INV_SIZE				_CameraSizeInvSize
+#define RENDER_TARGET_SIZE_INV_SIZE			_RenderTargetSizeInvSize
 
 
 #define TEXTURE2D(textureName)							Texture2D textureName

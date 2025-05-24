@@ -86,7 +86,7 @@ namespace Blueberry
 		{
 			motion += Vector3::Transform(Vector3::Right, rotation);
 		}
-		else if (ImGui::IsKeyDown(ImGuiKey_A))
+		if (ImGui::IsKeyDown(ImGuiKey_A))
 		{
 			motion += Vector3::Transform(Vector3::Left, rotation);
 		}
@@ -94,7 +94,7 @@ namespace Blueberry
 		{
 			motion += Vector3::Transform(Vector3::Up, rotation);
 		}
-		else if (ImGui::IsKeyDown(ImGuiKey_Q))
+		if (ImGui::IsKeyDown(ImGuiKey_Q))
 		{
 			motion += Vector3::Transform(Vector3::Down, rotation);
 		}
@@ -102,10 +102,11 @@ namespace Blueberry
 		{
 			motion += Vector3::Transform(Vector3::Forward, rotation);
 		}
-		else if (ImGui::IsKeyDown(ImGuiKey_S))
+		if (ImGui::IsKeyDown(ImGuiKey_S))
 		{
 			motion += Vector3::Transform(Vector3::Backward, rotation);
 		}
+		motion.Normalize();
 
 		if (ImGui::IsKeyDown(ImGuiKey_LeftShift))
 		{
@@ -492,7 +493,7 @@ namespace Blueberry
 		{
 			GfxDevice::SetRenderTarget(m_ColorRenderTarget->Get(), m_DepthStencilRenderTarget->Get());
 			GfxDevice::SetViewport(0, 0, viewport.width, viewport.height);
-			GizmoRenderer::Draw(scene, m_Camera);
+			GizmoRenderer::Draw(scene, m_Camera, m_ColorRenderTarget->Get());
 			GfxDevice::SetRenderTarget(nullptr);
 		}
 		drawList->PopClipRect();

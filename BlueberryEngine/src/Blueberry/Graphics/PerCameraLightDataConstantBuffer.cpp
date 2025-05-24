@@ -70,7 +70,13 @@ namespace Blueberry
 
 		if (s_ConstantBuffer == nullptr)
 		{
-			GfxDevice::CreateConstantBuffer(sizeof(CONSTANTS) * 1, s_ConstantBuffer);
+			BufferProperties constantBufferProperties = {};
+			constantBufferProperties.type = BufferType::Constant;
+			constantBufferProperties.elementCount = 1;
+			constantBufferProperties.elementSize = sizeof(CONSTANTS) * 1;
+			constantBufferProperties.isWritable = true;
+
+			GfxDevice::CreateBuffer(constantBufferProperties, s_ConstantBuffer);
 		}
 
 		CONSTANTS constants = {};
@@ -146,6 +152,6 @@ namespace Blueberry
 		constants.shadow3x3PCFTermC3 = Vector4(-texelEpsilonX, -texelEpsilonY, 0.0f, 0.0f);
 
 		s_ConstantBuffer->SetData(reinterpret_cast<char*>(&constants), sizeof(constants));
-		GfxDevice::SetGlobalConstantBuffer(perCameraLightDataId, s_ConstantBuffer);
+		GfxDevice::SetGlobalBuffer(perCameraLightDataId, s_ConstantBuffer);
 	}
 }

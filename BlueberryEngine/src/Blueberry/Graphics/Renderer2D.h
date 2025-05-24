@@ -7,9 +7,7 @@ namespace Blueberry
 {
 	class Texture2D;
 	class Material;
-	class GfxVertexBuffer;
-	class GfxIndexBuffer;
-	class GfxConstantBuffer;
+	class GfxBuffer;
 
 	class Renderer2D
 	{
@@ -39,8 +37,8 @@ namespace Blueberry
 		static bool SortBySortingOrder(DrawingData first, DrawingData second);
 
 	private:
-		static inline GfxVertexBuffer* s_VertexBuffer = nullptr;
-		static inline GfxIndexBuffer* s_IndexBuffer = nullptr;
+		static inline GfxBuffer* s_VertexBuffer = nullptr;
+		static inline GfxBuffer* s_IndexBuffer = nullptr;
 
 		static inline float* s_VertexData = nullptr;
 		static inline float* s_VertexDataPtr = nullptr;

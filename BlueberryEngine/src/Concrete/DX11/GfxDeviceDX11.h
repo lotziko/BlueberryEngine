@@ -10,13 +10,10 @@
 namespace Blueberry
 {
 	class GfxTextureDX11;
-	class GfxConstantBufferDX11;
-	class GfxStructuredBufferDX11;
+	class GfxBufferDX11;
 	class GfxVertexShaderDX11;
 	class GfxGeometryShaderDX11;
 	class GfxFragmentShaderDX11;
-	class GfxVertexBufferDX11;
-	class GfxIndexBufferDX11;
 	struct GfxRenderStateDX11;
 
 	class GfxDeviceDX11 final : public GfxDevice
@@ -44,11 +41,7 @@ namespace Blueberry
 		virtual bool CreateGeometryShaderImpl(void* geometryData, GfxGeometryShader*& shader) final;
 		virtual bool CreateFragmentShaderImpl(void* fragmentData, GfxFragmentShader*& shader) final;
 		virtual bool CreateComputeShaderImpl(void* computeData, GfxComputeShader*& shader) final;
-		virtual bool CreateVertexBufferImpl(const uint32_t& vertexCount, const uint32_t& vertexSize, GfxVertexBuffer*& buffer) final;
-		virtual bool CreateIndexBufferImpl(const uint32_t& indexCount, GfxIndexBuffer*& buffer) final;
-		virtual bool CreateConstantBufferImpl(const uint32_t& byteCount, GfxConstantBuffer*& buffer) final;
-		virtual bool CreateStructuredBufferImpl(const uint32_t& elementCount, const uint32_t& elementSize, GfxStructuredBuffer*& buffer) final;
-		virtual bool CreateComputeBufferImpl(const uint32_t& elementCount, const uint32_t& elementSize, GfxComputeBuffer*& buffer) final;
+		virtual bool CreateBufferImpl(const BufferProperties& properties, GfxBuffer*& buffer) final;
 		virtual bool CreateTextureImpl(const TextureProperties& properties, GfxTexture*& texture) const final;
 
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target) const final;
@@ -58,12 +51,11 @@ namespace Blueberry
 
 		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture) final;
 		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, const uint32_t& slice) final;
-		virtual void SetGlobalConstantBufferImpl(const size_t& id, GfxConstantBuffer* buffer) final;
-		virtual void SetGlobalStructuredBufferImpl(const size_t& id, GfxStructuredBuffer* buffer) final;
+		virtual void SetGlobalBufferImpl(const size_t& id, GfxBuffer* buffer) final;
 		virtual void SetGlobalTextureImpl(const size_t& id, GfxTexture* texture) final;
 		virtual void DrawImpl(const GfxDrawingOperation& operation) final;
 
-		virtual void DispatchImpl(GfxComputeShader*& shader, const uint32_t& threadGroupsX, const uint32_t& threadGroupsY, const uint32_t& threadGroupsZ) const final;
+		virtual void DispatchImpl(GfxComputeShader* shader, const uint32_t& threadGroupsX, const uint32_t& threadGroupsY, const uint32_t& threadGroupsZ) final;
 
 		virtual Matrix GetGPUMatrixImpl(const Matrix& viewProjection) const final;
 
@@ -96,8 +88,7 @@ namespace Blueberry
 
 		GfxTextureDX11* m_BindedRenderTarget;
 		GfxTextureDX11* m_BindedDepthStencil;
-		Dictionary<size_t, GfxConstantBufferDX11*> m_BindedConstantBuffers;
-		Dictionary<size_t, GfxStructuredBufferDX11*> m_BindedStructuredBuffers;
+		Dictionary<size_t, GfxBufferDX11*> m_BindedBuffers;
 		List<std::pair<size_t, GfxTextureDX11*>> m_BindedTextures;
 		ID3D11ShaderResourceView* m_EmptyShaderResourceViews[16];
 		ID3D11SamplerState* m_EmptySamplers[16];
@@ -108,9 +99,9 @@ namespace Blueberry
 		GfxRenderStateCacheDX11 m_StateCache;
 		GfxInputLayoutCacheDX11 m_LayoutCache;
 
-		GfxVertexBufferDX11* m_VertexBuffer = nullptr;
-		GfxIndexBufferDX11* m_IndexBuffer = nullptr;
-		GfxVertexBufferDX11* m_InstanceBuffer = nullptr;
+		GfxBufferDX11* m_VertexBuffer = nullptr;
+		GfxBufferDX11* m_IndexBuffer = nullptr;
+		GfxBufferDX11* m_InstanceBuffer = nullptr;
 		uint32_t m_InstanceOffset = 0;
 
 		uint32_t m_ViewCount = 1;

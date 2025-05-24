@@ -65,8 +65,8 @@ namespace Blueberry
 			// Vertex global constant buffers
 			for (auto it = dxVertexShader->m_ConstantBufferSlots.begin(); it != dxVertexShader->m_ConstantBufferSlots.end(); it++)
 			{
-				auto pair = m_Device->m_BindedConstantBuffers.find(it->first);
-				if (pair != m_Device->m_BindedConstantBuffers.end())
+				auto pair = m_Device->m_BindedBuffers.find(it->first);
+				if (pair != m_Device->m_BindedBuffers.end())
 				{
 					renderState.vertexConstantBuffers[it->second] = pair->second->m_Buffer.Get();
 				}
@@ -75,8 +75,8 @@ namespace Blueberry
 			// Vertex global structured buffers
 			for (auto it = dxVertexShader->m_StructuredBufferSlots.begin(); it != dxVertexShader->m_StructuredBufferSlots.end(); it++)
 			{
-				auto pair = m_Device->m_BindedStructuredBuffers.find(it->first);
-				if (pair != m_Device->m_BindedStructuredBuffers.end())
+				auto pair = m_Device->m_BindedBuffers.find(it->first);
+				if (pair != m_Device->m_BindedBuffers.end())
 				{
 					uint32_t bufferSlotIndex = it->second.first;
 					uint32_t shaderResourceViewSlotIndex = it->second.second;
@@ -92,8 +92,8 @@ namespace Blueberry
 				// Geometry global constant buffers
 				for (auto it = dxGeometryShader->m_ConstantBufferSlots.begin(); it != dxGeometryShader->m_ConstantBufferSlots.end(); it++)
 				{
-					auto pair = m_Device->m_BindedConstantBuffers.find(it->first);
-					if (pair != m_Device->m_BindedConstantBuffers.end())
+					auto pair = m_Device->m_BindedBuffers.find(it->first);
+					if (pair != m_Device->m_BindedBuffers.end())
 					{
 						renderState.geometryConstantBuffers[it->second] = pair->second->m_Buffer.Get();
 					}
@@ -104,8 +104,8 @@ namespace Blueberry
 			// Fragment global constant buffers
 			for (auto it = dxFragmentShader->m_ConstantBufferSlots.begin(); it != dxFragmentShader->m_ConstantBufferSlots.end(); it++)
 			{
-				auto pair = m_Device->m_BindedConstantBuffers.find(it->first);
-				if (pair != m_Device->m_BindedConstantBuffers.end())
+				auto pair = m_Device->m_BindedBuffers.find(it->first);
+				if (pair != m_Device->m_BindedBuffers.end())
 				{
 					renderState.pixelConstantBuffers[it->second] = pair->second->m_Buffer.Get();
 				}
@@ -119,7 +119,7 @@ namespace Blueberry
 				{
 					auto dxTexture = static_cast<GfxTextureDX11*>(texture->Get());
 					renderState.pixelShaderResourceViews[it->second.first] = dxTexture->m_ResourceView.Get();
-					if (it->second.second != -1)
+					if (it->second.second != 255)
 					{
 						renderState.pixelSamplerStates[it->second.second] = dxTexture->m_SamplerState.Get();
 					}
@@ -158,7 +158,7 @@ namespace Blueberry
 			if (dxTexture != nullptr)
 			{
 				renderState.pixelShaderResourceViews[data.srvSlot] = dxTexture->m_ResourceView.Get();
-				if (data.samplerSlot != -1)
+				if (data.samplerSlot != 255)
 				{
 					renderState.pixelSamplerStates[data.samplerSlot] = dxTexture->m_SamplerState.Get();
 				}

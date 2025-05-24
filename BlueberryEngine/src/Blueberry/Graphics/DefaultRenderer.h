@@ -10,6 +10,7 @@ namespace Blueberry
 	class Material;
 	class HBAORenderer;
 	class ShadowAtlas;
+	class AutoExposure;
 
 	class TextureCube;
 

@@ -96,29 +96,9 @@ namespace Blueberry
 		return s_Instance->CreateComputeShaderImpl(computeData, shader);
 	}
 
-	bool GfxDevice::CreateVertexBuffer(const uint32_t& vertexCount, const uint32_t& vertexSize, GfxVertexBuffer*& buffer)
+	bool GfxDevice::CreateBuffer(const BufferProperties& properties, GfxBuffer*& buffer)
 	{
-		return s_Instance->CreateVertexBufferImpl(vertexCount, vertexSize, buffer);
-	}
-
-	bool GfxDevice::CreateIndexBuffer(const uint32_t& indexCount, GfxIndexBuffer*& buffer)
-	{
-		return s_Instance->CreateIndexBufferImpl(indexCount, buffer);
-	}
-
-	bool GfxDevice::CreateConstantBuffer(const uint32_t& byteCount, GfxConstantBuffer*& buffer)
-	{
-		return s_Instance->CreateConstantBufferImpl(byteCount, buffer);
-	}
-
-	bool GfxDevice::CreateStructuredBuffer(const uint32_t& elementCount, const uint32_t& elementSize, GfxStructuredBuffer*& buffer)
-	{
-		return s_Instance->CreateStructuredBufferImpl(elementCount, elementSize, buffer);
-	}
-
-	bool GfxDevice::CreateComputeBuffer(const uint32_t& elementCount, const uint32_t& elementSize, GfxComputeBuffer*& buffer)
-	{
-		return s_Instance->CreateComputeBufferImpl(elementCount, elementSize, buffer);
+		return s_Instance->CreateBufferImpl(properties, buffer);
 	}
 
 	bool GfxDevice::CreateTexture(const TextureProperties& properties, GfxTexture*& texture)
@@ -166,14 +146,9 @@ namespace Blueberry
 		s_Instance->SetRenderTargetImpl(renderTexture, depthStencilTexture, slice);
 	}
 
-	void GfxDevice::SetGlobalConstantBuffer(const size_t& id, GfxConstantBuffer* buffer)
+	void GfxDevice::SetGlobalBuffer(const size_t& id, GfxBuffer* buffer)
 	{
-		s_Instance->SetGlobalConstantBufferImpl(id, buffer);
-	}
-
-	void GfxDevice::SetGlobalStructuredBuffer(const size_t& id, GfxStructuredBuffer* buffer)
-	{
-		s_Instance->SetGlobalStructuredBufferImpl(id, buffer);
+		s_Instance->SetGlobalBufferImpl(id, buffer);
 	}
 
 	void GfxDevice::SetGlobalTexture(const size_t& id, GfxTexture* texture)
@@ -186,7 +161,7 @@ namespace Blueberry
 		s_Instance->DrawImpl(operation);
 	}
 
-	void GfxDevice::Dispatch(GfxComputeShader*& shader, const uint32_t& threadGroupsX, const uint32_t& threadGroupsY, const uint32_t& threadGroupsZ)
+	void GfxDevice::Dispatch(GfxComputeShader* shader, const uint32_t& threadGroupsX, const uint32_t& threadGroupsY, const uint32_t& threadGroupsZ)
 	{
 		s_Instance->DispatchImpl(shader, threadGroupsX, threadGroupsY, threadGroupsZ);
 	}

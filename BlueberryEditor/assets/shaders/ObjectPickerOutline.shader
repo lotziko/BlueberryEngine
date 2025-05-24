@@ -36,7 +36,7 @@ Shader
 		
 		float4 ObjectPickerOutlineFragment(Varyings input) : SV_TARGET
 		{
-			float2 offset = float2(3.0 / 1920.0, 3.0 / 1080.0);
+			float2 offset = float2(3.0 * RENDER_TARGET_SIZE_INV_SIZE.z, 3.0 * RENDER_TARGET_SIZE_INV_SIZE.w);
 
 			float4 sample1 = SAMPLE_TEXTURE2D(_PickingTexture, _PickingTexture_Sampler, input.texcoord);
 

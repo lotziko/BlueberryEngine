@@ -13,7 +13,7 @@ namespace Blueberry
 		GfxTextureDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
 		~GfxTextureDX11() = default;
 		
-		bool Create(const TextureProperties& properties);
+		bool Initialize(const TextureProperties& properties);
 
 		ID3D11Resource* GetTexture() const;
 		ID3D11ShaderResourceView* GetSRV() const;
@@ -36,6 +36,7 @@ namespace Blueberry
 		ComPtr<ID3D11SamplerState> m_SamplerState;
 		ComPtr<ID3D11RenderTargetView> m_RenderTargetView;
 		ComPtr<ID3D11DepthStencilView> m_DepthStencilView;
+		ComPtr<ID3D11UnorderedAccessView> m_UnorderedAccessView;
 		ComPtr<ID3D11Resource> m_StagingTexture;
 
 		List<ComPtr<ID3D11RenderTargetView>> m_SlicesRenderTargetViews;

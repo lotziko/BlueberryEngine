@@ -43,16 +43,16 @@ namespace Blueberry
 		Input.DepthData.Viewport.Height = viewport.height;
 
 		//Input.NormalData.Enable = true;
-		Input.NormalData.pFullResNormalTextureSRV = (static_cast<GfxTextureDX11*>(normals))->GetSRV();
+		/*Input.NormalData.pFullResNormalTextureSRV = (static_cast<GfxTextureDX11*>(normals))->GetSRV();
 		Input.NormalData.WorldToViewMatrix.Data = GFSDK_SSAO_Float4x4((const GFSDK_SSAO_FLOAT*)&view);
 		Input.NormalData.WorldToViewMatrix.Layout = GFSDK_SSAO_ROW_MAJOR_ORDER;
 		Input.NormalData.DecodeScale = 2;
-		Input.NormalData.DecodeBias = -1;
+		Input.NormalData.DecodeBias = -1;*/
 
 		GFSDK_SSAO_Parameters Params;
 		Params.Radius = 2.f;
 		Params.Bias = 0.1f;
-		Params.PowerExponent = 2.f;
+		Params.PowerExponent = 1.f;
 		Params.Blur.Enable = true;
 		Params.Blur.Radius = GFSDK_SSAO_BLUR_RADIUS_4;
 		Params.Blur.Sharpness = 16.f;

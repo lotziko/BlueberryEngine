@@ -23,7 +23,7 @@
 
 namespace Blueberry
 {
-	const uint32_t INSTANCE_BUFFER_SIZE = 2048;
+	const uint32_t INSTANCE_BUFFER_SIZE = 8192;
 	
 	struct DrawingOperation
 	{
@@ -34,13 +34,17 @@ namespace Blueberry
 		Material* material;
 		ObjectId materialId;
 		uint8_t instanceCount;
+		float distance;
 	};
 	
 	static List<DrawingOperation> s_DrawingOperations = {};
 	static List<MeshRenderer*> s_MeshRenderers = {};
-	static std::pair<Object*, uint8_t> s_LastCullerInfo = {};
+	static std::tuple<Object*, uint8_t, SortingMode> s_LastCullerInfo = {};
+	static Object* s_CurrentCuller = nullptr;
+	static uint8_t s_CurrentCullerIndex = 0;
+	static List<Matrix> s_Matrices = {};
 
-	bool CompareOperations(const DrawingOperation& o1, const DrawingOperation& o2)
+	bool CompareOperationsDefault(const DrawingOperation& o1, const DrawingOperation& o2)
 	{
 		if (o1.materialId != o2.materialId)
 		{
@@ -50,41 +54,52 @@ namespace Blueberry
 		{
 			return o1.meshId < o2.meshId;
 		}
-		return o1.submeshIndex < o2.submeshIndex;
+		if (o1.submeshIndex != o2.submeshIndex)
+		{
+			return o1.submeshIndex < o2.submeshIndex;
+		}
+		return o1.distance < o2.distance;
+	}
+
+	bool CompareOperationsFrontToBack(const DrawingOperation& o1, const DrawingOperation& o2)
+	{
+		return o1.distance < o2.distance;
 	}
 
 	void BindOperationsRenderers()
 	{
+		s_Matrices.clear();
 		uint32_t operationCount = static_cast<uint32_t>(s_DrawingOperations.size());
-		Matrix matrices[INSTANCE_BUFFER_SIZE];
 		for (uint32_t i = 0; i < operationCount; ++i)
 		{
-			matrices[i] = GfxDevice::GetGPUMatrix(s_DrawingOperations[i].matrix);
+			s_Matrices.emplace_back(std::move(GfxDevice::GetGPUMatrix(s_DrawingOperations[i].matrix)));
 		}
-		PerDrawConstantBuffer::BindDataInstanced(matrices, operationCount);
+		PerDrawConstantBuffer::BindDataInstanced(s_Matrices.data(), operationCount);
 	}
 
-	void GatherOperations(const CullingResults& results, Object* cullerObject, const uint8_t& index = 0)
+	void GatherOperations(const CullingResults& results, Object* cullerObject, const uint8_t& index = 0, const SortingMode& sortingMode = SortingMode::Default)
 	{
-		if (s_LastCullerInfo.first == cullerObject && s_LastCullerInfo.second == index)
+		if (std::get<0>(s_LastCullerInfo) == cullerObject && std::get<1>(s_LastCullerInfo) == index && std::get<2>(s_LastCullerInfo) == sortingMode)
 		{
 			return;
 		}
 		else
 		{
-			s_LastCullerInfo = std::make_pair(cullerObject, index);
+			s_LastCullerInfo = std::make_tuple(cullerObject, index, sortingMode);
 		}
 
 		s_DrawingOperations.clear();
 
 		uint32_t cullerIndex = 0;
 		uint32_t cullerCount = static_cast<uint32_t>(results.cullerInfos.size());
+		Matrix cullerViewMatrix;
 		for (uint32_t i = 0; i < cullerCount; ++i)
 		{
 			auto& cullerInfo = results.cullerInfos[i];
 			if (cullerInfo.object == cullerObject && cullerInfo.index == index)
 			{
 				cullerIndex = i;
+				cullerViewMatrix = cullerInfo.viewMatrix;
 				break;
 			}
 		}
@@ -103,6 +118,7 @@ namespace Blueberry
 					continue;
 				}
 				Matrix matrix = meshRenderer->GetTransform()->GetLocalToWorldMatrix();
+				float distance = 0;//Vector3::Transform(meshRenderer->GetBounds().Center, cullerViewMatrix).z;
 				uint32_t subMeshCount = mesh->GetSubMeshCount();
 				if (subMeshCount > 1)
 				{
@@ -111,7 +127,7 @@ namespace Blueberry
 						Material* material = GfxDrawingOperation::GetValidMaterial(meshRenderer->GetMaterial(i));
 						if (material != nullptr)
 						{
-							s_DrawingOperations.emplace_back(DrawingOperation{ matrix, mesh, mesh->GetObjectId(), static_cast<uint8_t>(i), material, material->GetObjectId(), 1 });
+							s_DrawingOperations.emplace_back(std::move(DrawingOperation{ matrix, mesh, mesh->GetObjectId(), static_cast<uint8_t>(i), material, material->GetObjectId(), 1, distance }));
 						}
 					}
 				}
@@ -120,12 +136,19 @@ namespace Blueberry
 					Material* material = GfxDrawingOperation::GetValidMaterial(meshRenderer->GetMaterial());
 					if (material != nullptr)
 					{
-						s_DrawingOperations.emplace_back(DrawingOperation{ matrix, mesh, mesh->GetObjectId(), 255, material, material->GetObjectId(), 1 });
+						s_DrawingOperations.emplace_back(std::move(DrawingOperation{ matrix, mesh, mesh->GetObjectId(), 255, material, material->GetObjectId(), 1, distance }));
 					}
 				}
 			}
 		}
-		std::sort(s_DrawingOperations.begin(), s_DrawingOperations.end(), CompareOperations);
+		//if (sortingMode == SortingMode::Default)
+		{
+			std::sort(s_DrawingOperations.begin(), s_DrawingOperations.end(), CompareOperationsDefault);
+		}
+		/*else
+		{
+			std::sort(s_DrawingOperations.begin(), s_DrawingOperations.end(), CompareOperationsFrontToBack);
+		}*/
 
 		BindOperationsRenderers();
 	}
@@ -150,6 +173,7 @@ namespace Blueberry
 
 		CullingResults::CullerInfo cameraFrustumInfo = {};
 		cameraFrustumInfo.object = camera;
+		cameraFrustumInfo.viewMatrix = camera->GetViewMatrix();
 		cameraFrustum.GetPlanes(&cameraFrustumInfo.planes[0], &cameraFrustumInfo.planes[1], &cameraFrustumInfo.planes[2], &cameraFrustumInfo.planes[3], &cameraFrustumInfo.planes[4], &cameraFrustumInfo.planes[5]);
 		results.cullerInfos.emplace_back(cameraFrustumInfo);
 
@@ -159,7 +183,7 @@ namespace Blueberry
 			for (auto component : scene->GetIterator<MeshRenderer>())
 			{
 				auto meshRenderer = static_cast<MeshRenderer*>(component.second);
-				meshRenderer->Update();
+				meshRenderer->OnPreCull();
 			}
 			s_LastCullingFrame = Time::GetFrameCount();
 		}
@@ -270,6 +294,7 @@ namespace Blueberry
 							GetOrthographicPlanes(viewProjection.Invert(), &lightCullerInfo.planes[0], &lightCullerInfo.planes[1], &lightCullerInfo.planes[2], &lightCullerInfo.planes[3], &lightCullerInfo.planes[4], &lightCullerInfo.planes[5]);
 
 							lightCullerInfo.index = i;
+							lightCullerInfo.viewMatrix = view;
 							results.cullerInfos.emplace_back(lightCullerInfo);
 						}
 					}
@@ -285,6 +310,7 @@ namespace Blueberry
 						lightFrustum.GetPlanes(&lightCullerInfo.planes[0], &lightCullerInfo.planes[1], &lightCullerInfo.planes[2], &lightCullerInfo.planes[3], &lightCullerInfo.planes[4], &lightCullerInfo.planes[5]);
 						light->m_WorldToShadow[0] = view * projection;
 
+						lightCullerInfo.viewMatrix = view;
 						results.cullerInfos.emplace_back(lightCullerInfo);
 					}
 				}
@@ -297,14 +323,15 @@ namespace Blueberry
 		});
 		JobSystem::Wait();
 
-		s_LastCullerInfo = std::make_pair(nullptr, 0);
+		s_LastCullerInfo = std::make_tuple(nullptr, 0, SortingMode::Default);
 	}
 
 	void RenderContext::BindCamera(CullingResults& results, CameraData& cameraData)
 	{
 		Camera* camera = results.camera;
 		PerCameraDataConstantBuffer::BindData(cameraData);
-		GatherOperations(results, camera);
+		s_CurrentCuller = camera;
+		s_CurrentCullerIndex = 0;
 	}
 
 	void RenderContext::DrawSky(Scene* scene)
@@ -324,10 +351,12 @@ namespace Blueberry
 		Light* light = shadowDrawingSettings.light;
 
 		PerCameraDataConstantBuffer::BindData(light->m_WorldToShadow[shadowDrawingSettings.sliceIndex]);
-		GatherOperations(results, light, shadowDrawingSettings.sliceIndex);
+		s_CurrentCuller = light;
+		s_CurrentCullerIndex = shadowDrawingSettings.sliceIndex;
 
 		DrawingSettings drawingSettings = {};
 		drawingSettings.passIndex = 2; // Shadow caster
+		drawingSettings.sortingMode = SortingMode::FrontToBack;
 		DrawRenderers(results, drawingSettings);
 	}
 
@@ -337,14 +366,24 @@ namespace Blueberry
 
 		if (s_IndexBuffer == nullptr)
 		{
-			GfxDevice::CreateVertexBuffer(INSTANCE_BUFFER_SIZE, sizeof(uint32_t), s_IndexBuffer);
 			uint32_t indices[INSTANCE_BUFFER_SIZE];
 			for (uint32_t i = 0; i < INSTANCE_BUFFER_SIZE; ++i)
 			{
 				indices[i] = i;
 			}
-			s_IndexBuffer->SetData(reinterpret_cast<float*>(indices), INSTANCE_BUFFER_SIZE);
+
+			BufferProperties vertexBufferProperties = {};
+			vertexBufferProperties.type = BufferType::Vertex;
+			vertexBufferProperties.elementCount = INSTANCE_BUFFER_SIZE;
+			vertexBufferProperties.elementSize = sizeof(uint32_t);
+			vertexBufferProperties.data = indices;
+			vertexBufferProperties.dataSize = INSTANCE_BUFFER_SIZE * sizeof(uint32_t);
+			vertexBufferProperties.isWritable = true;
+
+			GfxDevice::CreateBuffer(vertexBufferProperties, s_IndexBuffer);
 		}
+
+		GatherOperations(results, s_CurrentCuller, s_CurrentCullerIndex, drawingSettings.sortingMode);
 
 		// Draw meshes
 		uint32_t operationCount = static_cast<uint32_t>(s_DrawingOperations.size());

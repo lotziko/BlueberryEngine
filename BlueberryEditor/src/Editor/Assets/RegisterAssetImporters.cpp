@@ -3,6 +3,7 @@
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Assets\Importers\TextureImporter.h"
 #include "Editor\Assets\Importers\ShaderImporter.h"
+#include "Editor\Assets\Importers\ComputeShaderImporter.h"
 #include "Editor\Assets\Importers\DefaultImporter.h"
 #include "Editor\Assets\Importers\NativeAssetImporter.h"
 #include "Editor\Assets\Importers\ModelImporter.h"
@@ -16,6 +17,7 @@ namespace Blueberry
 		REGISTER_ABSTRACT_CLASS(AssetImporter);
 		REGISTER_CLASS(TextureImporter);
 		REGISTER_CLASS(ShaderImporter);
+		REGISTER_CLASS(ComputeShaderImporter);
 		REGISTER_CLASS(DefaultImporter);
 		REGISTER_CLASS(NativeAssetImporter);
 		REGISTER_DATA_CLASS(ModelMaterialData);
@@ -28,6 +30,7 @@ namespace Blueberry
 		REGISTER_ASSET_IMPORTER(".dds", TextureImporter::Type);
 		REGISTER_ASSET_IMPORTER(".hdr", TextureImporter::Type);
 		REGISTER_ASSET_IMPORTER(".shader", ShaderImporter::Type);
+		REGISTER_ASSET_IMPORTER(".compute", ComputeShaderImporter::Type);
 		REGISTER_ASSET_IMPORTER(".scene", DefaultImporter::Type);
 		REGISTER_ASSET_IMPORTER(".material", NativeAssetImporter::Type);
 		REGISTER_ASSET_IMPORTER(".prefab", NativeAssetImporter::Type);

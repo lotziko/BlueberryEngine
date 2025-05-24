@@ -62,13 +62,14 @@ namespace Blueberry
 
 	CharacterController::CharacterController()
 	{
+		ZeroMemory(m_PrivateStorage, sizeof(PrivateData));
 		m_PrivateData = reinterpret_cast<PrivateData*>(&m_PrivateStorage);
 	}
 
 	void CharacterController::OnEnable()
 	{
 		AddToSceneComponents(UpdatableComponent::Type);
-		if (m_Initialized)
+		if (m_IsInitialized)
 		{
 			JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
 			if (!bodyInterface.IsAdded(m_PrivateData->bodyId))
@@ -81,7 +82,7 @@ namespace Blueberry
 	void CharacterController::OnDisable()
 	{
 		RemoveFromSceneComponents(UpdatableComponent::Type);
-		if (m_Initialized)
+		if (m_IsInitialized)
 		{
 			JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
 			if (bodyInterface.IsAdded(m_PrivateData->bodyId))
@@ -95,10 +96,9 @@ namespace Blueberry
 
 	void CharacterController::OnUpdate()
 	{
-		if (!m_Initialized)
+		if (!m_IsInitialized)
 		{
 			m_Transform = GetTransform();
-			m_Initialized = true;
 			Vector3 position = m_Transform->GetPosition();
 			Quaternion rotation = m_Transform->GetRotation();
 
@@ -118,6 +118,7 @@ namespace Blueberry
 			m_PrivateData->character = new JPH::CharacterVirtual(&settings, JPH::RVec3(position.x, position.y, position.z), JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w), 0, Physics::s_PhysicsSystem);
 			Cursor::SetLocked(true);
 			Cursor::SetHidden(true);
+			m_IsInitialized = true;
 		}
 		else
 		{

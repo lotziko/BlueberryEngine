@@ -5,8 +5,7 @@
 namespace Blueberry
 {
 	class Camera;
-	class GfxConstantBuffer;
-	class GfxStructuredBuffer;
+	class GfxBuffer;
 
 	class PerDrawConstantBuffer
 	{
@@ -15,8 +14,8 @@ namespace Blueberry
 		static void BindDataInstanced(Matrix* localToWorldMatrices, const uint32_t& count);
 
 	private:
-		static inline GfxStructuredBuffer* s_StructuredBuffer = nullptr;
-		static inline GfxConstantBuffer* s_ConstantBuffer = nullptr;
-		static inline GfxConstantBuffer* s_ConstantBufferInstanced = nullptr;
+		static inline GfxBuffer* s_StructuredBuffer = nullptr;
+		static inline GfxBuffer* s_ConstantBuffer = nullptr;
+		static inline GfxBuffer* s_ConstantBufferInstanced = nullptr;
 	};
 }

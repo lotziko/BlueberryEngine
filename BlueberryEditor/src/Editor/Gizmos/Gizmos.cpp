@@ -43,7 +43,13 @@ namespace Blueberry
 		int lineSize = s_LineLayout.GetSize();
 		s_LineVertexData = new float[MAX_VERTICES * lineSize / sizeof(float)];
 
-		if (!GfxDevice::CreateVertexBuffer(MAX_VERTICES, lineSize, s_LineVertexBuffer))
+		BufferProperties lineBufferProperties = {};
+		lineBufferProperties.type = BufferType::Vertex;
+		lineBufferProperties.elementCount = MAX_VERTICES;
+		lineBufferProperties.elementSize = lineSize;
+		lineBufferProperties.isWritable = true;
+
+		if (!GfxDevice::CreateBuffer(lineBufferProperties, s_LineVertexBuffer))
 		{
 			return false;
 		}
@@ -60,7 +66,13 @@ namespace Blueberry
 		int arcSize = s_ArcLayout.GetSize();
 		s_ArcVertexData = new float[MAX_VERTICES * arcSize / sizeof(float)];
 
-		if (!GfxDevice::CreateVertexBuffer(MAX_VERTICES, arcSize, s_ArcVertexBuffer))
+		BufferProperties arcBufferProperties = {};
+		arcBufferProperties.type = BufferType::Vertex;
+		arcBufferProperties.elementCount = MAX_VERTICES;
+		arcBufferProperties.elementSize = arcSize;
+		arcBufferProperties.isWritable = true;
+
+		if (!GfxDevice::CreateBuffer(arcBufferProperties, s_ArcVertexBuffer))
 		{
 			return false;
 		}
@@ -260,7 +272,7 @@ namespace Blueberry
 			s_LineVertexDataPtr += 14;
 		}
 
-		s_LineVertexBuffer->SetData(s_LineVertexData, s_LineCount * 2);
+		s_LineVertexBuffer->SetData(s_LineVertexData, s_LineCount * 2 * s_LineVertexBuffer->GetElementSize());
 
 		GfxDevice::Draw(GfxDrawingOperation(s_LineVertexBuffer, nullptr, s_LineMaterial, &s_LineLayout, 0, 0, s_LineCount * 2, Topology::LineList, 0));
 		GfxDevice::Draw(GfxDrawingOperation(s_LineVertexBuffer, nullptr, s_LineMaterial, &s_LineLayout, 0, 0, s_LineCount * 2, Topology::LineList, 1));
@@ -308,7 +320,7 @@ namespace Blueberry
 			s_ArcVertexDataPtr += 15;
 		}
 
-		s_ArcVertexBuffer->SetData(s_ArcVertexData, s_ArcCount);
+		s_ArcVertexBuffer->SetData(s_ArcVertexData, s_ArcCount * s_ArcVertexBuffer->GetElementSize());
 
 		GfxDevice::Draw(GfxDrawingOperation(s_ArcVertexBuffer, nullptr, s_ArcMaterial, &s_ArcLayout, 0, 0, s_ArcCount, Topology::PointList, 0));
 		GfxDevice::Draw(GfxDrawingOperation(s_ArcVertexBuffer, nullptr, s_ArcMaterial, &s_ArcLayout, 0, 1, s_ArcCount, Topology::PointList, 1));

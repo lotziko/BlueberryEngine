@@ -15,9 +15,9 @@ namespace Blueberry
 		}
 	}
 
-	void PngTextureProcessor::Load(const String& path, const bool& srgb, const bool& generateMips)
+	void PngTextureProcessor::Load(const String& path, const bool& generateMips)
 	{
-		HRESULT hr = DirectX::LoadFromWICFile(StringConverter::StringToWide(path).c_str(), (srgb ? DirectX::WIC_FLAGS_DEFAULT_SRGB : DirectX::WIC_FLAGS_IGNORE_SRGB) | DirectX::WIC_FLAGS_FORCE_RGB, nullptr, m_ScratchImage);
+		HRESULT hr = DirectX::LoadFromWICFile(StringConverter::StringToWide(path).c_str(), DirectX::WIC_FLAGS_NONE, nullptr, m_ScratchImage);
 		if (FAILED(hr))
 		{
 			BB_ERROR("Failed to load texture from file.");
@@ -138,13 +138,15 @@ namespace Blueberry
 		m_Properties.mipCount = 1;
 	}
 
-	void PngTextureProcessor::Compress(const TextureFormat& format)
+	void PngTextureProcessor::Compress(const TextureFormat& format, const bool& srgb)
 	{
 		DXGI_FORMAT dxgiFormat = static_cast<DXGI_FORMAT>(format);
 		const DirectX::Image* image = m_ScratchImage.GetImage(0, 0, 0);
-		if (DirectX::IsSRGB(image->format))
+		bool needOverride = false;
+		if (!DirectX::IsSRGB(image->format) && srgb)
 		{
-			dxgiFormat = DirectX::MakeSRGB(dxgiFormat);
+			dxgiFormat = DirectX::MakeLinear(dxgiFormat);
+			needOverride = true;
 		}
 		if (!DirectX::IsCompressed(dxgiFormat) || (image->width % 4 > 0) || (image->height % 4 > 0))
 		{
@@ -170,6 +172,10 @@ namespace Blueberry
 			return;
 		}
 		m_ScratchImage = std::move(compressedScratchImage);
+		if (needOverride)
+		{
+			m_ScratchImage.OverrideFormat(DirectX::MakeSRGB(dxgiFormat));
+		}
 	}
 
 	const PngTextureProperties& PngTextureProcessor::GetProperties()
