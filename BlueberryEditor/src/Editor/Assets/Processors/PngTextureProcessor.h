@@ -25,14 +25,16 @@ namespace Blueberry
 		PngTextureProcessor() = default;
 		~PngTextureProcessor();
 
-		void Load(const String& path, const bool& generateMips);
+		void Load(const String& path, const bool& srgb, const bool& generateMips);
 		void LoadDDS(const String& path);
 		void LoadHDR(const String& path);
 		void CreateCube(const TextureFormat& format, const uint32_t& width, const uint32_t& height);
 		void Compress(const TextureFormat& format, const bool& srgb);
+		void CompressNormals();
 		const PngTextureProperties& GetProperties();
 		uint8_t* GetData();
 		const size_t GetDataSize();
+		uint8_t GetChannels();
 
 	private:
 		DirectX::ScratchImage m_ScratchImage;

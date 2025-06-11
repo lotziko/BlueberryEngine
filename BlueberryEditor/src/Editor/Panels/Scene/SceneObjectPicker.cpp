@@ -15,8 +15,8 @@
 #include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Graphics\GfxBuffer.h"
 #include "Blueberry\Scene\Scene.h"
-#include "Blueberry\Graphics\PerCameraDataConstantBuffer.h"
-#include "Blueberry\Graphics\PerDrawDataConstantBuffer.h"
+#include "Blueberry\Graphics\Buffers\PerCameraDataConstantBuffer.h"
+#include "Blueberry\Graphics\Buffers\PerDrawDataConstantBuffer.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
 
 namespace Blueberry
@@ -132,7 +132,7 @@ namespace Blueberry
 			Mesh* mesh = meshRenderer->GetMesh();
 			if (mesh != nullptr)
 			{
-				PerDrawConstantBuffer::BindData(entity->GetTransform()->GetLocalToWorldMatrix());
+				PerDrawDataConstantBuffer::BindData(entity->GetTransform()->GetLocalToWorldMatrix());
 				PerObjectDataConstantBuffer::BindData(ConvertIndexToColor(index));
 				GfxDevice::Draw(GfxDrawingOperation(mesh, m_MeshObjectPickerMaterial));
 				validObjects[index] = entity->GetObjectId();
@@ -153,7 +153,7 @@ namespace Blueberry
 					{
 						Vector3 position = entity->GetTransform()->GetPosition();
 						Matrix modelMatrix = Matrix::CreateScale(0.75f) * Matrix::CreateBillboard(position, position + cameraDirection, Vector3(0, -1, 0));
-						PerDrawConstantBuffer::BindData(modelMatrix);
+						PerDrawDataConstantBuffer::BindData(modelMatrix);
 						PerObjectDataConstantBuffer::BindData(ConvertIndexToColor(index));
 						GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_MeshObjectPickerMaterial));
 						validObjects[index] = entity->GetObjectId();
@@ -218,7 +218,7 @@ namespace Blueberry
 				Mesh* mesh = meshRenderer->GetMesh();
 				if (mesh != nullptr)
 				{
-					PerDrawConstantBuffer::BindData(entity->GetTransform()->GetLocalToWorldMatrix());
+					PerDrawDataConstantBuffer::BindData(entity->GetTransform()->GetLocalToWorldMatrix());
 					PerObjectDataConstantBuffer::BindData(ConvertIndexToColor(10000));
 					GfxDevice::Draw(GfxDrawingOperation(mesh, m_MeshObjectPickerMaterial));
 				}

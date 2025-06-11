@@ -366,7 +366,7 @@ namespace Blueberry
 		vertexBufferProperties.elementSize = static_cast<uint32_t>((m_VertexData.size() * sizeof(float)) / m_VertexCount);
 		vertexBufferProperties.data = m_VertexData.data();
 		vertexBufferProperties.dataSize = m_VertexCount * vertexBufferProperties.elementSize;
-		vertexBufferProperties.isWritable = true;
+		vertexBufferProperties.isWritable = false;
 		GfxDevice::CreateBuffer(vertexBufferProperties, m_VertexBuffer);
 
 		BufferProperties indexBufferProperties = {};
@@ -375,7 +375,7 @@ namespace Blueberry
 		indexBufferProperties.elementSize = sizeof(uint32_t);
 		indexBufferProperties.data = m_IndexData.data();
 		indexBufferProperties.dataSize = m_IndexCount * indexBufferProperties.elementSize;
-		indexBufferProperties.isWritable = true;
+		indexBufferProperties.isWritable = false;
 		GfxDevice::CreateBuffer(indexBufferProperties, m_IndexBuffer);
 	}
 

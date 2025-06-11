@@ -1,7 +1,8 @@
 #include "MeshInspector.h"
 
 #include "Blueberry\Graphics\Mesh.h"
-#include "Blueberry\Graphics\RenderTexture.h"
+#include "Blueberry\Graphics\GfxTexture.h"
+#include "Blueberry\Graphics\GfxRenderTexturePool.h"
 
 #include "Editor\Preview\MeshPreview.h"
 
@@ -11,12 +12,12 @@ namespace Blueberry
 {
 	MeshInspector::MeshInspector()
 	{
-		m_RenderTexture = RenderTexture::Create(512, 512, 1);
+		m_RenderTexture = GfxRenderTexturePool::Get(512, 512, 1);
 	}
 
 	MeshInspector::~MeshInspector()
 	{
-		Object::Destroy(m_RenderTexture);
+		GfxRenderTexturePool::Release(m_RenderTexture);
 	}
 
 	void MeshInspector::Draw(Object* object)

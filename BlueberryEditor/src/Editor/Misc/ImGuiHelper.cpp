@@ -101,6 +101,60 @@ bool ImGui::EnumEdit(const char* label, int* v, const Blueberry::List<Blueberry:
 	return false;
 }
 
+bool ImGui::EnumEdit(const char* label, int* v, const Blueberry::List<std::pair<Blueberry::String, int>>* nameValues)
+{
+	if (nameValues == nullptr || nameValues->size() == 0)
+	{
+		return false;
+	}
+
+	ImGui::PushID(label);
+
+	ImGui::Text(label);
+	ImGui::SameLine();
+	ImGui::SetCursorPosX(100);
+
+	int value = *v;
+	int size = static_cast<int>(nameValues->size());
+	const char* preview = nullptr;
+	for (int i = 0; i < size; i++)
+	{
+		auto& pair = nameValues->at(i);
+		if (pair.second == value)
+		{
+			preview = nameValues->at(i).first.c_str();
+			break;
+		}
+	}
+
+	if (ImGui::BeginCombo("##enum", preview))
+	{
+		for (int i = 0; i < size; i++)
+		{
+			if (i < 0)
+			{
+				BB_INFO("What");
+			}
+			auto& pair = nameValues->at(i);
+			bool isSelected = value == pair.second;
+			if (ImGui::Selectable(pair.first.c_str(), isSelected))
+			{
+				*v = pair.second;
+			}
+
+			if (isSelected)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+		ImGui::EndCombo();
+		ImGui::PopID();
+		return true;
+	}
+	ImGui::PopID();
+	return false;
+}
+
 bool ImGui::BoolEdit(const char* label, bool* v)
 {
 	ImGui::PushID(label);

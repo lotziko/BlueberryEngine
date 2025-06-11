@@ -431,7 +431,7 @@ namespace Blueberry
 					for (auto& pair : importer->GetAssetObjects())
 					{
 						Object* object = ObjectDB::GetObject(pair.second);
-						if (object != nullptr)
+						if (object != nullptr && object != mainObject)
 						{
 							info.objects.emplace_back(object);
 						}

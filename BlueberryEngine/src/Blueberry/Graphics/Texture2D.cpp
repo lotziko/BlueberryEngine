@@ -19,7 +19,8 @@ namespace Blueberry
 		}
 		if (m_RawData.data != nullptr)
 		{
-			BB_FREE(m_RawData.data);
+			// Need a better solution because it may store data not in rpmalloc
+			//BB_FREE(m_RawData.data);
 		}
 	}
 

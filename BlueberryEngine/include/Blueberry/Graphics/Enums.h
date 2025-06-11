@@ -24,13 +24,18 @@ namespace Blueberry
 		R8G8B8A8_UNorm = 28,
 		R8G8B8A8_UNorm_SRGB = 29,
 		R8G8B8A8_UInt = 30,
+		D32_Float = 40,
 		R24G8_Typeless = 44,
 		D24_UNorm = 45,
-		D32_Float = 40,
+		R8G8_UNorm = 49,
+		R8_UNorm = 61,
 		BC1_UNorm = 71,
+		BC1_UNorm_SRGB = 72,
 		BC2_UNorm = 74,
+		BC2_UNorm_SRGB = 75,
 		BC3_UNorm = 77,
 		BC3_UNorm_SRGB = 78,
+		BC4_UNorm = 80,
 		BC5_UNorm = 83,
 		BC6H_UFloat = 95,
 		BC7_UNorm = 98,
@@ -57,6 +62,8 @@ namespace Blueberry
 		Texture2D,
 		Texture2DArray,
 		TextureCube,
+		TextureCubeArray,
+		Texture3D
 	};
 
 	enum class CullMode

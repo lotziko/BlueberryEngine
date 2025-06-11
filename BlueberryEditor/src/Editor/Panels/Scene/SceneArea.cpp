@@ -2,9 +2,9 @@
 
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Components\Camera.h"
-#include "Blueberry\Graphics\RenderTexture.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\GfxTexture.h"
+#include "Blueberry\Graphics\GfxRenderTexturePool.h"
 
 #include "Editor\Preferences.h"
 #include "Editor\EditorLayer.h"
@@ -20,7 +20,7 @@
 #include "Blueberry\Core\Screen.h"
 #include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Scene\Scene.h"
-#include "Blueberry\Graphics\DefaultRenderer.h"
+#include "Blueberry\Graphics\Concrete\DefaultRenderer.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Assets\AssetLoader.h"
@@ -55,8 +55,8 @@ namespace Blueberry
 		m_Camera->m_IsVR = false;
 		cameraEntity->OnCreate();
 
-		m_ColorRenderTarget = RenderTexture::Create(Screen::GetWidth(), Screen::GetHeight(), 1, 1, TextureFormat::R8G8B8A8_UNorm);
-		m_DepthStencilRenderTarget = RenderTexture::Create(Screen::GetWidth(), Screen::GetHeight(), 1, 1, TextureFormat::D24_UNorm);
+		m_ColorRenderTarget = GfxRenderTexturePool::Get(Screen::GetWidth(), Screen::GetHeight(), 1, 1, TextureFormat::R8G8B8A8_UNorm);
+		m_DepthStencilRenderTarget = GfxRenderTexturePool::Get(Screen::GetWidth(), Screen::GetHeight(), 1, 1, TextureFormat::D24_UNorm);
 
 		Selection::GetSelectionChanged().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
 		EditorSceneManager::GetSceneLoaded().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
@@ -69,8 +69,8 @@ namespace Blueberry
 	{
 		delete m_ObjectPicker;
 
-		Object::Destroy(m_ColorRenderTarget);
-		Object::Destroy(m_DepthStencilRenderTarget);
+		GfxRenderTexturePool::Release(m_ColorRenderTarget);
+		GfxRenderTexturePool::Release(m_DepthStencilRenderTarget);
 
 		Selection::GetSelectionChanged().RemoveCallback<SceneArea, &SceneArea::RequestRedraw>(this);
 		EditorSceneManager::GetSceneLoaded().RemoveCallback<SceneArea, &SceneArea::RequestRedraw>(this);
@@ -248,7 +248,7 @@ namespace Blueberry
 		{
 			DrawScene(size.x, size.y);
 
-			m_ObjectPicker->DrawOutline(EditorSceneManager::GetScene(), m_Camera, m_ColorRenderTarget->Get());
+			m_ObjectPicker->DrawOutline(EditorSceneManager::GetScene(), m_Camera, m_ColorRenderTarget);
 			s_SceneRedrawRequested = false;
 		}
 
@@ -491,9 +491,9 @@ namespace Blueberry
 		Scene* scene = EditorSceneManager::GetScene();
 		if (scene != nullptr)
 		{
-			GfxDevice::SetRenderTarget(m_ColorRenderTarget->Get(), m_DepthStencilRenderTarget->Get());
+			GfxDevice::SetRenderTarget(m_ColorRenderTarget, m_DepthStencilRenderTarget);
 			GfxDevice::SetViewport(0, 0, viewport.width, viewport.height);
-			GizmoRenderer::Draw(scene, m_Camera, m_ColorRenderTarget->Get());
+			GizmoRenderer::Draw(scene, m_Camera, m_ColorRenderTarget);
 			GfxDevice::SetRenderTarget(nullptr);
 		}
 		drawList->PopClipRect();
@@ -508,7 +508,7 @@ namespace Blueberry
 		Scene* scene = EditorSceneManager::GetScene();
 		if (scene == nullptr)
 		{
-			GfxDevice::SetRenderTarget(m_ColorRenderTarget->Get());
+			GfxDevice::SetRenderTarget(m_ColorRenderTarget);
 			GfxDevice::ClearColor(background);
 			GfxDevice::SetRenderTarget(nullptr);
 			return;
@@ -516,7 +516,7 @@ namespace Blueberry
 		BB_PROFILE_BEGIN("Scene draw");
 		DefaultRenderer::Draw(scene, m_Camera, Rectangle(0, 0, viewportWidth, viewportHeight), background, m_ColorRenderTarget, m_DepthStencilRenderTarget);
 		BB_PROFILE_END();
-		GfxDevice::SetRenderTarget(m_ColorRenderTarget->Get(), m_DepthStencilRenderTarget->Get());
+		GfxDevice::SetRenderTarget(m_ColorRenderTarget, m_DepthStencilRenderTarget);
 		GfxDevice::SetViewport(0, 0, viewportWidth, viewportHeight);
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_GridMaterial));
 		IconRenderer::Draw(scene, m_Camera);

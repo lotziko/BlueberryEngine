@@ -34,6 +34,7 @@ namespace Blueberry
 
 		uint32_t m_ElementSize;
 		uint32_t m_ElementCount;
+		BufferType m_Type;
 
 		friend class GfxDeviceDX11;
 		friend class GfxRenderStateCacheDX11;

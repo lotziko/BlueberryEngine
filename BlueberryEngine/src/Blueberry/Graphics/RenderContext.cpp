@@ -8,18 +8,17 @@
 #include "Blueberry\Scene\Components\Light.h"
 #include "Blueberry\Scene\Components\Transform.h"
 
-#include "..\Graphics\StandardMeshes.h"
-#include "..\Graphics\Renderer2D.h"
 #include "Blueberry\Graphics\Mesh.h"
 #include "Blueberry\Graphics\Material.h"
-#include "..\Graphics\GfxDevice.h"
-#include "..\Graphics\GfxBuffer.h"
-#include "..\Graphics\PerCameraDataConstantBuffer.h"
-#include "..\Graphics\PerDrawDataConstantBuffer.h"
+#include "StandardMeshes.h"
+#include "Renderer2D.h"
+#include "LightHelper.h"
+#include "RendererTree.h"
+#include "GfxDevice.h"
+#include "GfxBuffer.h"
+#include "Buffers\PerCameraDataConstantBuffer.h"
+#include "Buffers\PerDrawDataConstantBuffer.h"
 #include "..\Threading\JobSystem.h"
-
-#include "..\Graphics\LightHelper.h"
-#include "..\Graphics\RendererTree.h"
 
 namespace Blueberry
 {
@@ -74,7 +73,7 @@ namespace Blueberry
 		{
 			s_Matrices.emplace_back(std::move(GfxDevice::GetGPUMatrix(s_DrawingOperations[i].matrix)));
 		}
-		PerDrawConstantBuffer::BindDataInstanced(s_Matrices.data(), operationCount);
+		PerDrawDataConstantBuffer::BindDataInstanced(s_Matrices.data(), operationCount);
 	}
 
 	void GatherOperations(const CullingResults& results, Object* cullerObject, const uint8_t& index = 0, const SortingMode& sortingMode = SortingMode::Default)
@@ -118,7 +117,7 @@ namespace Blueberry
 					continue;
 				}
 				Matrix matrix = meshRenderer->GetTransform()->GetLocalToWorldMatrix();
-				float distance = 0;//Vector3::Transform(meshRenderer->GetBounds().Center, cullerViewMatrix).z;
+				float distance = Vector3::Transform(meshRenderer->GetBounds().Center, cullerViewMatrix).z;
 				uint32_t subMeshCount = mesh->GetSubMeshCount();
 				if (subMeshCount > 1)
 				{
@@ -141,14 +140,14 @@ namespace Blueberry
 				}
 			}
 		}
-		//if (sortingMode == SortingMode::Default)
+		if (sortingMode == SortingMode::Default)
 		{
 			std::sort(s_DrawingOperations.begin(), s_DrawingOperations.end(), CompareOperationsDefault);
 		}
-		/*else
+		else
 		{
 			std::sort(s_DrawingOperations.begin(), s_DrawingOperations.end(), CompareOperationsFrontToBack);
-		}*/
+		}
 
 		BindOperationsRenderers();
 	}
@@ -177,6 +176,11 @@ namespace Blueberry
 		cameraFrustum.GetPlanes(&cameraFrustumInfo.planes[0], &cameraFrustumInfo.planes[1], &cameraFrustumInfo.planes[2], &cameraFrustumInfo.planes[3], &cameraFrustumInfo.planes[4], &cameraFrustumInfo.planes[5]);
 		results.cullerInfos.emplace_back(cameraFrustumInfo);
 
+		for (auto component : scene->GetIterator<SkyRenderer>())
+		{
+			results.skyRenderer = static_cast<SkyRenderer*>(component.second);
+		}
+
 		if (s_LastCullingFrame < Time::GetFrameCount())
 		{
 			// TODO move to frame start or find the other away to react on the transform movement
@@ -204,7 +208,8 @@ namespace Blueberry
 				
 				if (light->IsCastingShadows())
 				{
-					if (light->GetType() == LightType::Directional)
+					LightType type = light->GetType();
+					if (type == LightType::Directional)
 					{
 						float planes[] = { 0.01f, 5.0f, 15.0f, 43.0f };//{ 0.01f, 5.0f, 20.0f, 100.0f };
 
@@ -298,7 +303,7 @@ namespace Blueberry
 							results.cullerInfos.emplace_back(lightCullerInfo);
 						}
 					}
-					else
+					else if (type == LightType::Spot)
 					{
 						Matrix view = LightHelper::GetViewMatrix(light);
 						Matrix projection = LightHelper::GetProjectionMatrix(light);
@@ -334,11 +339,11 @@ namespace Blueberry
 		s_CurrentCullerIndex = 0;
 	}
 
-	void RenderContext::DrawSky(Scene* scene)
+	void RenderContext::DrawSky(CullingResults& results)
 	{
-		for (auto component : scene->GetIterator<SkyRenderer>())
+		if (results.skyRenderer != nullptr)
 		{
-			Material* material = static_cast<SkyRenderer*>(component.second)->GetMaterial();
+			Material* material = results.skyRenderer->GetMaterial();
 			if (material != nullptr)
 			{
 				GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetCube(), material, 0));
@@ -378,7 +383,7 @@ namespace Blueberry
 			vertexBufferProperties.elementSize = sizeof(uint32_t);
 			vertexBufferProperties.data = indices;
 			vertexBufferProperties.dataSize = INSTANCE_BUFFER_SIZE * sizeof(uint32_t);
-			vertexBufferProperties.isWritable = true;
+			vertexBufferProperties.isWritable = false;
 
 			GfxDevice::CreateBuffer(vertexBufferProperties, s_IndexBuffer);
 		}

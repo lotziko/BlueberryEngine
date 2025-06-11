@@ -11,6 +11,8 @@ namespace Blueberry
 		Point
 	};
 
+	class Texture;
+
 	class BB_API Light : public Component
 	{
 		OBJECT_DECLARATION(Light)
@@ -40,6 +42,12 @@ namespace Blueberry
 		const bool& IsCastingShadows();
 		void SetCastingShadows(const bool& castingShadows);
 
+		const bool& IsCastingFog();
+		void SetCastingFog(const bool& castingFog);
+
+		Texture* GetCookie();
+		void SetCookie(Texture* cookie);
+
 	private:
 		LightType m_Type = LightType::Point;
 		Color m_Color = Color(1.0f, 1.0f, 1.0f, 1.0f);
@@ -48,6 +56,8 @@ namespace Blueberry
 		float m_OuterSpotAngle = 30.0f;
 		float m_InnerSpotAngle = 15.0f;
 		bool m_IsCastingShadows = true;
+		bool m_IsCastingFog = true;
+		ObjectPtr<Texture> m_Cookie;
 
 	private:
 		uint8_t m_SliceCount = 1;
@@ -55,9 +65,12 @@ namespace Blueberry
 		Matrix m_AtlasWorldToShadow[6];
 		Vector4 m_ShadowBounds[6];
 		Vector4 m_ShadowCascades[6];
+		Matrix m_WorldToCookie[6];
 
 		friend class RenderContext;
 		friend class ShadowAtlas;
+		friend class CookieAtlas;
 		friend class PerCameraLightDataConstantBuffer;
+		friend class FogLightDataConstantBuffer;
 	};
 }

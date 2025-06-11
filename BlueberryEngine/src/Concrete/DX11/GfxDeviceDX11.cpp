@@ -46,8 +46,18 @@ namespace Blueberry
 
 	void GfxDeviceDX11::SwapBuffersImpl()
 	{
+		static ID3DUserDefinedAnnotation* annotation = nullptr;
+		if (annotation != nullptr)
+		{
+			annotation->EndEvent();
+			annotation->Release();
+		}
+
 		m_SwapChain->Present(1, NULL);
 		Clear();
+
+		m_DeviceContext->QueryInterface(__uuidof(ID3DUserDefinedAnnotation), (void**)&annotation);
+		annotation->BeginEvent(L"Frame");
 	}
 
 	void GfxDeviceDX11::SetViewportImpl(int x, int y, int width, int height)
@@ -383,6 +393,7 @@ namespace Blueberry
 		}
 		for (uint32_t i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT / 8; ++i)
 		{
+			// Maybe bind all at once?
 			if (renderState.vertexShaderResourceViews[i] != m_RenderState.vertexShaderResourceViews[i])
 			{
 				m_DeviceContext->VSSetShaderResources(i, 1, &renderState.vertexShaderResourceViews[i]);
@@ -491,44 +502,89 @@ namespace Blueberry
 	{
 		auto dxShader = static_cast<GfxComputeShaderDX11*>(shader);
 
-		// Constant buffers
-		for (auto it = dxShader->m_ConstantBufferSlots.begin(); it != dxShader->m_ConstantBufferSlots.end(); it++)
+		for (auto& pair : m_BindedBuffers)
 		{
-			auto pair = m_BindedBuffers.find(it->first);
-			if (pair != m_BindedBuffers.end())
+			size_t id = pair.first;
+			BufferType type = pair.second->m_Type;
+			if (type == BufferType::Raw)
 			{
-				m_DeviceContext->CSSetConstantBuffers(it->second, 1, pair->second->m_Buffer.GetAddressOf());
-			}
-		}
-
-		// Compute buffers
-		for (auto it = dxShader->m_ComputeBufferSlots.begin(); it != dxShader->m_ComputeBufferSlots.end(); it++)
-		{
-			auto pair = m_BindedBuffers.find(it->first);
-			if (pair != m_BindedBuffers.end())
-			{
-				m_DeviceContext->CSSetUnorderedAccessViews(it->second, 1, pair->second->m_UnorderedAccessView.GetAddressOf(), NULL);
-			}
-		}
-
-		// Textures
-		for (auto it = dxShader->m_TextureSlots.begin(); it != dxShader->m_TextureSlots.end(); it++)
-		{
-			for (auto it1 = m_BindedTextures.begin(); it1 < m_BindedTextures.end(); ++it1)
-			{
-				if (it1->first == it->first)
+				for (uint32_t i = 0; i < dxShader->m_UAVSlots.size(); ++i)
 				{
-					m_DeviceContext->CSSetShaderResources(it->second.first, 1, it1->second->m_ResourceView.GetAddressOf());
-					if (it->second.second != 255)
+					size_t slotId = dxShader->m_UAVSlots[i];
+					if (id == slotId)
 					{
-						m_DeviceContext->CSSetSamplers(it->second.second, 1, it1->second->m_SamplerState.GetAddressOf());
+						m_DeviceContext->CSSetUnorderedAccessViews(i, 1, pair.second->m_UnorderedAccessView.GetAddressOf(), NULL);
+						break;
+					}
+				}
+			}
+			else if (type == BufferType::Constant)
+			{
+				for (uint32_t i = 0; i < dxShader->m_ConstantBufferSlots.size(); ++i)
+				{
+					size_t slotId = dxShader->m_ConstantBufferSlots[i];
+					if (id == slotId)
+					{
+						m_DeviceContext->CSSetConstantBuffers(i, 1, pair.second->m_Buffer.GetAddressOf());
+						break;
+					}
+				}
+			}
+			else if (type == BufferType::Structured)
+			{
+				for (uint32_t i = 0; i < dxShader->m_SRVSlots.size(); ++i)
+				{
+					size_t slotId = dxShader->m_SRVSlots[i];
+					if (id == slotId)
+					{
+						m_DeviceContext->CSSetShaderResources(i, 1, pair.second->m_ShaderResourceView.GetAddressOf());
+					}
+				}
+				for (uint32_t i = 0; i < dxShader->m_UAVSlots.size(); ++i)
+				{
+					size_t slotId = dxShader->m_UAVSlots[i];
+					if (id == slotId)
+					{
+						m_DeviceContext->CSSetUnorderedAccessViews(i, 1, pair.second->m_UnorderedAccessView.GetAddressOf(), NULL);
 					}
 				}
 			}
 		}
-
+		
+		for (auto& pair : m_BindedTextures)
+		{
+			size_t id = pair.first;
+			for (uint32_t i = 0; i < dxShader->m_SRVSlots.size(); ++i)
+			{
+				size_t slotId = dxShader->m_SRVSlots[i];
+				if (id == slotId)
+				{
+					m_DeviceContext->CSSetShaderResources(i, 1, pair.second->m_ResourceView.GetAddressOf());
+				}
+			}
+			for (uint32_t i = 0; i < dxShader->m_UAVSlots.size(); ++i)
+			{
+				size_t slotId = dxShader->m_UAVSlots[i];
+				if (id == slotId)
+				{
+					m_DeviceContext->CSSetUnorderedAccessViews(i, 1, pair.second->m_UnorderedAccessView.GetAddressOf(), NULL);
+				}
+			}
+			for (uint32_t i = 0; i < dxShader->m_SamplerSlots.size(); ++i)
+			{
+				size_t slotId = dxShader->m_SamplerSlots[i];
+				if (id == slotId)
+				{
+					m_DeviceContext->CSSetSamplers(i, 1, pair.second->m_SamplerState.GetAddressOf());
+				}
+			}
+		}
 		m_DeviceContext->CSSetShader(dxShader->m_ComputeShader.Get(), NULL, 0);
 		m_DeviceContext->Dispatch(threadGroupsX, threadGroupsY, threadGroupsZ);
+
+		m_DeviceContext->CSSetShaderResources(0, 16, m_EmptyShaderResourceViews);
+		m_DeviceContext->CSSetSamplers(0, 16, m_EmptySamplers);
+		m_DeviceContext->CSSetUnorderedAccessViews(0, 8, m_EmptyUnorderedAccessViews, NULL);
 	}
 
 	Matrix GfxDeviceDX11::GetGPUMatrixImpl(const Matrix& viewProjection) const

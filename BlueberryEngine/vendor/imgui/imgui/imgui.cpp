@@ -22969,13 +22969,13 @@ void ImGui::PrepareDockNodeData()
 void ImGui::ReadRawWindowData(const char* title, char* target)
 {
     ImGuiWindowSettings* settings = ImGui::FindWindowSettingsByID(ImGui::FindWindowByName(title)->ID);
-    memcpy(target, settings, 32);
+    memcpy(target, settings, 36);
 }
 
 void ImGui::WriteRawWindowData(const char* title, char* source)
 {
     ImGuiWindowSettings* settings = ImGui::CreateNewWindowSettings(title);
-    memcpy(settings, source, 32);
+    memcpy(settings, source, 36);
     settings->WantApply = true;
 }
 

@@ -10,6 +10,7 @@ namespace Blueberry
 	{
 		DEFINE_BASE_FIELDS(SkyRenderer, Component)
 		DEFINE_FIELD(SkyRenderer, m_Material, BindingType::ObjectPtr, FieldOptions().SetObjectType(Material::Type))
+		DEFINE_FIELD(SkyRenderer, m_AmbientColor, BindingType::Color, {})
 	}
 
 	void SkyRenderer::OnEnable()
@@ -25,5 +26,10 @@ namespace Blueberry
 	Material* SkyRenderer::GetMaterial()
 	{
 		return m_Material.Get();
+	}
+
+	const Color& SkyRenderer::GetAmbientColor()
+	{
+		return m_AmbientColor;
 	}
 }

@@ -48,6 +48,7 @@ Shader
 		float4 SkyboxFragment(Varyings input) : SV_TARGET
 		{
 			float4 color = SAMPLE_TEXTURECUBE(_BaseMap, _BaseMap_Sampler, input.texcoord);
+			color = ApplyVolumetricFog(color, input.positionCS.xy * CAMERA_SIZE_INV_SIZE.zw, 1);
 			return color;
 		}
 		HLSLEND

@@ -27,11 +27,23 @@ float ComputeCascadeIndex(float3 positionWS, float4 cascades[3])
 	return half(4.0) - dot(weights, half4(4, 3, 2, 1));
 }
 
+float4 ApplyShadowBias(float4 positionSS)
+{
+	positionSS.z = saturate(positionSS.z - 0.0001);
+	return positionSS;
+}
+
+float4 ApplyShadowBias(float4 positionSS, float3 normalWS, float3 lightDirectionWS)
+{
+	float bias = max(0.0005 * (1.0 - dot(normalWS, lightDirectionWS)), 0.0001);
+	positionSS.z = saturate(positionSS.z - bias);
+	return positionSS;
+}
+
 float ComputeShadowPCF3x3(float4 positionSS, Texture2D shadowmap, SamplerComparisonState shadowmapSampler, float4 shadowTerm0, float4 shadowTerm1, float4 shadowTerm2, float4 shadowTerm3)
 {
 	float attenuation = 0;
-	positionSS.z = saturate(positionSS.z - 0.000001);
-
+	
 	float4 attenuation4;
 	attenuation4.x = SAMPLE_TEXTURE2D_SHADOW(shadowmap, shadowmapSampler, positionSS.xy + shadowTerm1.xy, positionSS.z).r;
 	attenuation4.y = SAMPLE_TEXTURE2D_SHADOW(shadowmap, shadowmapSampler, positionSS.xy + shadowTerm1.zy, positionSS.z).r;

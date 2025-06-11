@@ -7,7 +7,7 @@
 
 namespace Blueberry
 {
-	class RenderTexture;
+	class GfxTexture;
 	class Camera;
 
 	class SceneArea : public EditorWindow
@@ -60,9 +60,9 @@ namespace Blueberry
 		void RequestRedraw();
 
 	private:
-		RenderTexture* m_ColorRenderTarget = nullptr;
-		RenderTexture* m_DepthStencilRenderTarget = nullptr;
-		RenderTexture* m_ColorCopyRenderTarget = nullptr;
+		GfxTexture* m_ColorRenderTarget = nullptr;
+		GfxTexture* m_DepthStencilRenderTarget = nullptr;
+		GfxTexture* m_ColorCopyRenderTarget = nullptr;
 		Material* m_GridMaterial;
 		Camera* m_Camera;
 		SceneObjectPicker* m_ObjectPicker = nullptr;

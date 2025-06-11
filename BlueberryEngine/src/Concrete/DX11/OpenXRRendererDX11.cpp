@@ -7,7 +7,6 @@
 #include "..\..\Blueberry\Core\Engine.h"
 #include "..\..\Blueberry\Graphics\GfxDevice.h"
 #include "..\..\Blueberry\Graphics\RenderContext.h"
-#include "Blueberry\Graphics\RenderTexture.h"
 #include "..\DX11\GfxDeviceDX11.h"
 #include "..\DX11\GfxTextureDX11.h"
 
@@ -445,7 +444,7 @@ namespace Blueberry
 		cameraData.multiviewViewport = m_MultiviewViewport;
 	}
 
-	void OpenXRRendererDX11::SubmitColorRenderTargetImpl(RenderTexture* renderTarget)
+	void OpenXRRendererDX11::SubmitColorRenderTargetImpl(GfxTexture* renderTarget)
 	{
 		if (s_XrSession == XR_NULL_HANDLE)
 		{
@@ -455,7 +454,7 @@ namespace Blueberry
 		m_SubmittedColorRenderTarget = renderTarget;
 		uint32_t imgId = s_CompositionData.imgId;
 
-		ID3D11Resource* source = (static_cast<GfxTextureDX11*>(renderTarget->Get()))->GetTexture();
+		ID3D11Resource* source = (static_cast<GfxTextureDX11*>(renderTarget))->GetTexture();
 		ID3D11Resource* target = s_XrSwapchains[0].surfaceData[imgId].texture;
 		if (target != nullptr)
 		{

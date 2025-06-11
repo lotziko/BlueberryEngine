@@ -35,7 +35,7 @@ Shader
 			return output;
 		}
 
-		TEXTURE2D(_BaseMap);	SAMPLER(_BaseMap_Sampler);
+		TEXTURE2D(_EquirectangularTexture);	SAMPLER(_EquirectangularTexture_Sampler);
 
 		// https://www.youtube.com/watch?v=wU7Yq_j-tqA
 		float3 GetDirection(uint face, float2 uv)
@@ -58,7 +58,7 @@ Shader
 			float theta = asin(direction.y);
 			float u = (phi + PI) / (2.0f * PI);
 			float v = (theta + PI / 2.0f) / PI;
-			return SAMPLE_TEXTURE2D(_BaseMap, _BaseMap_Sampler, float2(u, v)).rgb;
+			return SAMPLE_TEXTURE2D(_EquirectangularTexture, _EquirectangularTexture_Sampler, float2(u, v)).rgb;
 		}
 
 		float4 EquirectangularToCubemapFragment(Varyings input) : SV_TARGET

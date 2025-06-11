@@ -4,7 +4,8 @@
 #include "Blueberry\Graphics\Texture.h"
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\TextureCube.h"
-#include "Blueberry\Graphics\RenderTexture.h"
+#include "Blueberry\Graphics\GfxTexture.h"
+#include "Blueberry\Graphics\GfxRenderTexturePool.h"
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Assets\ThumbnailCache.h"
 #include "Editor\Misc\ImGuiHelper.h"
@@ -17,12 +18,12 @@ namespace Blueberry
 {
 	MaterialInspector::MaterialInspector()
 	{
-		m_RenderTexture = RenderTexture::Create(512, 512, 1);
+		m_RenderTexture = GfxRenderTexturePool::Get(512, 512, 1);
 	}
 
 	MaterialInspector::~MaterialInspector()
 	{
-		Object::Destroy(m_RenderTexture);
+		GfxRenderTexturePool::Release(m_RenderTexture);
 	}
 
 	void MaterialInspector::Draw(Object* object)

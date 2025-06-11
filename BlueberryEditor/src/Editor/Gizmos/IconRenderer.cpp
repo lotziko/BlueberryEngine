@@ -6,7 +6,7 @@
 #include "Editor\Inspector\ObjectInspectorDB.h"
 
 #include "Blueberry\Scene\Scene.h"
-#include "Blueberry\Graphics\PerDrawDataConstantBuffer.h"
+#include "Blueberry\Graphics\Buffers\PerDrawDataConstantBuffer.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\Shader.h"
@@ -75,7 +75,7 @@ namespace Blueberry
 				if (icon != nullptr)
 				{
 					s_IconMaterial->SetTexture("_BaseMap", static_cast<Texture*>(icon));
-					PerDrawConstantBuffer::BindData(modelMatrix);
+					PerDrawDataConstantBuffer::BindData(modelMatrix);
 					GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_IconMaterial, 0));
 					GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_IconMaterial, 1));
 				}

@@ -4,7 +4,7 @@
 
 namespace Blueberry
 {
-	class RenderTexture;
+	class GfxTexture;
 
 	class GameView : public EditorWindow
 	{
@@ -19,6 +19,6 @@ namespace Blueberry
 		virtual void OnDrawUI();
 
 	private:
-		RenderTexture* m_RenderTarget = nullptr;
+		GfxTexture* m_RenderTarget = nullptr;
 	};
 }

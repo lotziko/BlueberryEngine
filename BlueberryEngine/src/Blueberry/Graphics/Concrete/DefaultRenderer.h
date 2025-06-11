@@ -6,7 +6,7 @@ namespace Blueberry
 {
 	class Scene;
 	class Camera;
-	class RenderTexture;
+	class GfxTexture;
 	class Material;
 	class HBAORenderer;
 	class ShadowAtlas;
@@ -20,7 +20,7 @@ namespace Blueberry
 		static void Initialize();
 		static void Shutdown();
 		
-		static void Draw(Scene* scene, Camera* camera, Rectangle viewport, Color background, RenderTexture* colorOutput = nullptr, RenderTexture* depthOutput = nullptr, const bool& simplified = false);
+		static void Draw(Scene* scene, Camera* camera, Rectangle viewport, Color background, GfxTexture* colorOutput = nullptr, GfxTexture* depthOutput = nullptr, const bool& simplified = false);
 		
 	private:
 		static inline Material* s_ResolveMSAAMaterial = nullptr;

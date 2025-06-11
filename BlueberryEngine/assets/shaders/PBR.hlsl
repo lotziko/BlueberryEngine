@@ -114,14 +114,14 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 	float3 directDiffuseTerm = (float3)0;
 	float3 directSpecularTerm = (float3)0;
 
-	float3 indirectDiffuseTerm = CalculateIndirectDiffuse(float3(0.04, 0.04, 0.04), surfaceData.occlusion);
+	float3 indirectDiffuseTerm = CalculateIndirectDiffuse(_AmbientLightColor.rgb, surfaceData.occlusion);
 	float3 indirectSpecularTerm = float3(0, 0, 0);//CalculateIndirectSpecular(inputData.normalWS, inputData.positionWS, inputData.viewDirectionWS, geometricRoughness, surfaceData.occlusion, reflectance);
 
 #if (SHADOWS)
 	if (_MainShadowCascades[0].w > 0)
 	{
 		float cascadeIndex = ComputeCascadeIndex(inputData.positionWS, _MainShadowCascades);
-		float4 positionSS = TransformWorldToShadow(inputData.positionWS, _MainWorldToShadow[cascadeIndex]);
+		float4 positionSS = ApplyShadowBias(TransformWorldToShadow(inputData.positionWS, _MainWorldToShadow[cascadeIndex]), inputData.normalWS, _MainLightDirection.xyz);
 
 		//return float4(1 * (cascadeIndex == 0), 1 * (cascadeIndex == 1), 1 * (cascadeIndex == 2), 1);
 
@@ -163,12 +163,20 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 		float falloff = LightFalloff(distanceSqr);
 		float3 lightColor = _LightColor[i].rgb;
 
+		float cookieAttenuation = 1.0;
+		if (_LightParam[i].y > 0)
+		{
+			float4 positionLCS = TransformWorldToShadow(inputData.positionWS, _WorldToCookie[i]);
+			cookieAttenuation = SAMPLE_TEXTURE3D_LOD(_CookieTexture, _CookieTexture_Sampler, positionLCS.xyz, 0).r;
+			cookieAttenuation *= (positionLCS.x > 0.0 && positionLCS.x < 1.0 && positionLCS.y > 0.0 && positionLCS.y < 1.0);
+		}
+
 		float shadowAttenuation = 1.0;
 #if (SHADOWS)
 		if (_LightParam[i].x > 0)
 		{
 			shadowAttenuation = 0;
-			float4 positionSS = TransformWorldToShadow(inputData.positionWS, _WorldToShadow[i]);
+			float4 positionSS = ApplyShadowBias(TransformWorldToShadow(inputData.positionWS, _WorldToShadow[i]));//, inputData.normalWS, lightDirectionWS);
 			if (!IsOutOfBounds(positionSS, _ShadowBounds[i]))
 			{
 				shadowAttenuation = ComputeShadowPCF3x3(positionSS, _ShadowTexture, _ShadowTexture_Sampler, _Shadow3x3PCFTermC0, _Shadow3x3PCFTermC1, _Shadow3x3PCFTermC2, _Shadow3x3PCFTermC3);
@@ -176,7 +184,7 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 		}
 #endif
 
-		directDiffuseTerm += CalculateDirectDiffuse(inputData.normalWS, lightDirectionWS, lightColor, distanceAttenuation * spotAttenuation * shadowAttenuation, falloff, diffuseExponent);
+		directDiffuseTerm += CalculateDirectDiffuse(inputData.normalWS, lightDirectionWS, lightColor, distanceAttenuation * spotAttenuation * cookieAttenuation * shadowAttenuation, falloff, diffuseExponent);
 		directSpecularTerm += CalculateDirectSpecular(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, distanceAttenuation * spotAttenuation * shadowAttenuation, falloff, reflectance, geometricRoughness);
 	}
 

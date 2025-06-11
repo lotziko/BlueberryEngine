@@ -14,7 +14,7 @@ namespace Blueberry
 		{
 			D3D11_SUBRESOURCE_DATA subresourceData;
 			subresourceData.pSysMem = properties.data;
-			subresourceData.SysMemPitch = properties.dataSize;
+			subresourceData.SysMemPitch = static_cast<UINT>(properties.dataSize);
 			subresourceData.SysMemSlicePitch = 0;
 			return Initialize(&subresourceData, properties);
 		}
@@ -69,6 +69,7 @@ namespace Blueberry
 		case BufferType::Structured:
 			return D3D11_BIND_SHADER_RESOURCE;
 		case BufferType::Constant:
+		default:
 			return D3D11_BIND_CONSTANT_BUFFER;
 		}
 	}
@@ -77,6 +78,7 @@ namespace Blueberry
 	{
 		m_ElementCount = properties.elementCount;
 		m_ElementSize = properties.elementSize;
+		m_Type = properties.type;
 		uint32_t byteCount = m_ElementCount * m_ElementSize;
 		
 		D3D11_BUFFER_DESC bufferDesc;

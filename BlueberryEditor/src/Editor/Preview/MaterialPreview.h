@@ -3,7 +3,7 @@
 namespace Blueberry
 {
 	class Material;
-	class RenderTexture;
+	class GfxTexture;
 	class Scene;
 	class MeshRenderer;
 	class Camera;
@@ -11,7 +11,7 @@ namespace Blueberry
 	class MaterialPreview
 	{
 	public:
-		void Draw(Material* material, RenderTexture* target);
+		void Draw(Material* material, GfxTexture* target);
 
 	private:
 		Scene* m_Scene;

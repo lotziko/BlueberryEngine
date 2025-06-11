@@ -33,12 +33,12 @@ namespace Blueberry
 
 	protected:
 		std::string m_Title;
-		uint8_t m_RawData[33];
+		uint8_t m_RawData[37];
 
 	private:
 		static List<ObjectPtr<EditorWindow>> s_ToRemoveWindows;
 		static List<ObjectPtr<EditorWindow>> s_ActiveWindows;
-		bool m_Focused;
-		int m_Flags;
+		bool m_Focused = false;
+		int m_Flags = 0;
 	};
 }

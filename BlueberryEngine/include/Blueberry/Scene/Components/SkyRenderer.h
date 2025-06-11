@@ -19,7 +19,10 @@ namespace Blueberry
 
 		Material* GetMaterial();
 
+		const Color& GetAmbientColor();
+
 	private:
 		ObjectPtr<Material> m_Material;
+		Color m_AmbientColor;
 	};
 }

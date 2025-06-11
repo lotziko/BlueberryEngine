@@ -3,15 +3,15 @@
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Scene\Components\MeshRenderer.h"
 #include "Blueberry\Scene\Components\Camera.h"
-#include "Blueberry\Graphics\DefaultRenderer.h"
-#include "Blueberry\Graphics\RenderTexture.h"
+#include "Blueberry\Graphics\Concrete\DefaultRenderer.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\Shader.h"
+#include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Assets\AssetLoader.h"
 
 namespace Blueberry
 {
-	void MeshPreview::Draw(Mesh* mesh, RenderTexture* target)
+	void MeshPreview::Draw(Mesh* mesh, GfxTexture* target)
 	{
 		if (m_Scene == nullptr)
 		{

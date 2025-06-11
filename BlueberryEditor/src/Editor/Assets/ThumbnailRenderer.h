@@ -6,7 +6,7 @@ namespace Blueberry
 {
 	class Object;
 	class Texture2D;
-	class RenderTexture;
+	class GfxTexture;
 
 	class ThumbnailRenderer
 	{
@@ -15,6 +15,6 @@ namespace Blueberry
 		static bool Draw(unsigned char* output, const uint32_t& size, Object* asset);
 
 	private:
-		static inline RenderTexture* s_ThumbnailRenderTarget = nullptr;
+		static inline GfxTexture* s_ThumbnailRenderTarget = nullptr;
 	};
 }

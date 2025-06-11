@@ -2,6 +2,7 @@
 
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Core\ClassDB.h"
+#include "Blueberry\Graphics\Texture.h"
 
 namespace Blueberry
 {
@@ -15,6 +16,8 @@ namespace Blueberry
 		DEFINE_FIELD(Light, m_OuterSpotAngle, BindingType::Float, {})
 		DEFINE_FIELD(Light, m_InnerSpotAngle, BindingType::Float, {})
 		DEFINE_FIELD(Light, m_IsCastingShadows, BindingType::Bool, {})
+		DEFINE_FIELD(Light, m_IsCastingFog, BindingType::Bool, {})
+		DEFINE_FIELD(Light, m_Cookie, BindingType::ObjectPtr, FieldOptions().SetObjectType(Texture::Type))
 	}
 
 	void Light::OnEnable()
@@ -85,5 +88,25 @@ namespace Blueberry
 	void Light::SetCastingShadows(const bool& castingShadows)
 	{
 		m_IsCastingShadows = castingShadows;
+	}
+
+	const bool& Light::IsCastingFog()
+	{
+		return m_IsCastingFog;
+	}
+
+	void Light::SetCastingFog(const bool& castingFog)
+	{
+		m_IsCastingFog = castingFog;
+	}
+
+	Texture* Light::GetCookie()
+	{
+		return m_Cookie.Get();
+	}
+
+	void Light::SetCookie(Texture* cookie)
+	{
+		m_Cookie = cookie;
 	}
 }

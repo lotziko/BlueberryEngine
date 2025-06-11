@@ -5,7 +5,7 @@
 
 namespace Blueberry
 {
-	class RenderTexture;
+	class GfxTexture;
 
 	class OpenXRRendererDX11 : public OpenXRRenderer
 	{
@@ -16,13 +16,13 @@ namespace Blueberry
 
 		virtual void BeginFrameImpl() final;
 		virtual void FillCameraDataImpl(CameraData& cameraData) final;
-		virtual void SubmitColorRenderTargetImpl(RenderTexture* renderTarget) final;
+		virtual void SubmitColorRenderTargetImpl(GfxTexture* renderTarget) final;
 		virtual void EndFrameImpl() final;
 
 	private:
 		Matrix m_MultiviewViewMatrix[2];
 		Matrix m_MultiviewProjectionMatrix[2];
 		Rectangle m_MultiviewViewport;
-		RenderTexture* m_SubmittedColorRenderTarget;
+		GfxTexture* m_SubmittedColorRenderTarget;
 	};
 }

@@ -9,6 +9,7 @@ namespace Blueberry
 	class Scene;
 	class Renderer;
 	class Camera;
+	class SkyRenderer;
 	class Light;
 	class Material;
 	class MeshRenderer;
@@ -36,6 +37,7 @@ namespace Blueberry
 		};
 
 		Camera* camera;
+		SkyRenderer* skyRenderer;
 		List<Light*> lights;
 		List<CullerInfo> cullerInfos;
 	};
@@ -63,7 +65,7 @@ namespace Blueberry
 	public:
 		void Cull(Scene* scene, CameraData& cameraData, CullingResults& results);
 		void BindCamera(CullingResults& results, CameraData& cameraData);
-		void DrawSky(Scene* scene);
+		void DrawSky(CullingResults& results);
 		void DrawShadows(CullingResults& results, ShadowDrawingSettings& shadowDrawingSettings);
 		void DrawRenderers(CullingResults& results, DrawingSettings& drawingSettings);
 

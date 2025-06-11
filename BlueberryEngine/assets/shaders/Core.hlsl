@@ -6,5 +6,6 @@
 #include "Structs.hlsl"
 #include "Math.hlsl"
 #include "PBR.hlsl"
+#include "VolumetricFog.hlsl"
 
 #endif

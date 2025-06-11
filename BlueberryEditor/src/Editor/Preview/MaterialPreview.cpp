@@ -7,13 +7,13 @@
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\DefaultMaterials.h"
-#include "Blueberry\Graphics\DefaultRenderer.h"
-#include "Blueberry\Graphics\RenderTexture.h"
+#include "Blueberry\Graphics\Concrete\DefaultRenderer.h"
+#include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Graphics\Material.h"
 
 namespace Blueberry
 {
-	void MaterialPreview::Draw(Material* material, RenderTexture* target)
+	void MaterialPreview::Draw(Material* material, GfxTexture* target)
 	{
 		if (m_Scene == nullptr)
 		{

@@ -43,6 +43,7 @@ static uint _RenderInstanceId;
 #define TEXTURE2D_ARRAY_MSAA(textureName, samples)		Texture2DMSArray<float4, samples> textureName
 #define TEXTURE2D_ARRAY_MSAA_FLOAT(textureName, samples)Texture2DMSArray<float, samples> textureName
 #define TEXTURECUBE(textureName)						TextureCube textureName
+#define TEXTURE3D(textureName)							Texture3D textureName
 
 #define SAMPLER(samplerName)							SamplerState samplerName
 #define SAMPLER_CMP(samplerName)						SamplerComparisonState samplerName
@@ -53,6 +54,8 @@ static uint _RenderInstanceId;
 #define LOAD_TEXTURE2D_MSAA(textureName, uv, sampleIndex)					textureName.Load(uv, sampleIndex)
 #define LOAD_TEXTURE2D_ARRAY_MSAA(textureName, uv, index, sampleIndex)		textureName.Load(uint3(uv, index), sampleIndex)
 #define SAMPLE_TEXTURECUBE(textureName, samplerName, coord3)				textureName.Sample(samplerName, coord3)
+#define SAMPLE_TEXTURE3D(textureName, samplerName, coord3)					textureName.Sample(samplerName, coord3)
+#define SAMPLE_TEXTURE3D_LOD(textureName, samplerName, coord3, lod)			textureName.SampleLevel(samplerName, coord3, lod)
 
 #if (MULTIVIEW)
 

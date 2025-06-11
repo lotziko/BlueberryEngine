@@ -15,6 +15,7 @@ namespace Blueberry
 		size_t dataSize;
 		bool isRenderTarget;
 		bool isReadable;
+		bool isWritable;
 		bool isUnorderedAccess;
 		uint32_t antiAliasing;
 		uint32_t mipCount;

@@ -6,8 +6,9 @@
 
 #include "Blueberry\Core\Screen.h"
 #include "Blueberry\Core\ClassDB.h"
-#include "Blueberry\Graphics\DefaultRenderer.h"
-#include "Blueberry\Graphics\RenderTexture.h"
+#include "Blueberry\Graphics\Concrete\DefaultRenderer.h"
+#include "Blueberry\Graphics\GfxTexture.h"
+#include "Blueberry\Graphics\GfxRenderTexturePool.h"
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Input\Cursor.h"
@@ -46,7 +47,7 @@ namespace Blueberry
 		if (ImGui::IsKeyDown(ImGuiKey_Escape))
 		{
 			Screen::SetAllowCursorLock(false);
-			ImGui::SetNextWindowFocus();
+			ImGui::SetWindowFocus(nullptr);
 		}
 
 		Scene* scene = EditorSceneManager::GetScene();
@@ -93,9 +94,9 @@ namespace Blueberry
 				{
 					if (m_RenderTarget != nullptr)
 					{
-						Object::Destroy(m_RenderTarget);
+						GfxRenderTexturePool::Release(m_RenderTarget);
 					}
-					m_RenderTarget = RenderTexture::Create(viewport.x, viewport.y, 1, 1, TextureFormat::R8G8B8A8_UNorm);
+					m_RenderTarget = GfxRenderTexturePool::Get(viewport.x, viewport.y, 1, 1, TextureFormat::R8G8B8A8_UNorm);
 					camera->SetPixelSize(Vector2(width, height));
 				}
 

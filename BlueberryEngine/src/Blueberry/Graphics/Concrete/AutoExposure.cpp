@@ -1,10 +1,10 @@
 #include "AutoExposure.h"
 
-#include "..\Assets\AssetLoader.h"
+#include "..\..\Assets\AssetLoader.h"
 #include "Blueberry\Graphics\ComputeShader.h"
-#include "GfxBuffer.h"
-#include "GfxDevice.h"
-#include "GfxTexture.h"
+#include "..\GfxBuffer.h"
+#include "..\GfxDevice.h"
+#include "..\GfxTexture.h"
 
 namespace Blueberry
 {
@@ -51,8 +51,9 @@ namespace Blueberry
 
 		if (s_RecalculateTimer == 0)
 		{
-			float minLogLum = -8.0f;
-			float maxLogLum = 3.5f;
+			s_RecalculateTimer = 60;
+			float minLogLum = -8.0f / 2;
+			float maxLogLum = 3.5f / 2;
 			float histogramParams[8] = { minLogLum, maxLogLum - minLogLum, 1.0f / (maxLogLum - minLogLum), static_cast<float>(viewport.width * viewport.height), static_cast<float>(viewport.width), static_cast<float>(viewport.height), 0, 0 };
 			s_ExposureData->SetData(reinterpret_cast<char*>(histogramParams), sizeof(float) * 8);
 
@@ -66,6 +67,10 @@ namespace Blueberry
 			GfxDevice::Dispatch(s_ExposureShader->GetKernel(0), groupsX, groupsY, 1);
 			GfxDevice::Dispatch(s_ExposureShader->GetKernel(1), 1, 1, 1);
 			s_Result->GetData(&s_TargetExposure);
+		}
+		else
+		{
+			--s_RecalculateTimer;
 		}
 		float adaptationSpeed = 1.0f;
 		float deltaTime = 1.0f / 60.0f;

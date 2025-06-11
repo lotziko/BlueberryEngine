@@ -7,7 +7,7 @@
 #include "..\Scene\RegisterSceneTypes.h"
 #include "..\Graphics\GfxDevice.h"
 #include "..\Graphics\Renderer2D.h"
-#include "..\Graphics\DefaultRenderer.h"
+#include "..\Graphics\Concrete\DefaultRenderer.h"
 #include "..\Input\Input.h"
 #include "..\Threading\JobSystem.h"
 #include "..\Graphics\RegisterGraphicsTypes.h"

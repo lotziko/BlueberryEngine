@@ -35,61 +35,51 @@ namespace Blueberry
 		D3D11_SHADER_DESC computeShaderDesc;
 		computeShaderReflection->GetDesc(&computeShaderDesc);
 
-		uint32_t constantBufferCount = computeShaderDesc.ConstantBuffers;
-
-		for (uint32_t i = 0; i < constantBufferCount; i++)
-		{
-			ID3D11ShaderReflectionConstantBuffer* constantBufferReflection = computeShaderReflection->GetConstantBufferByIndex(i);
-			D3D11_SHADER_BUFFER_DESC shaderBufferDesc;
-			constantBufferReflection->GetDesc(&shaderBufferDesc);
-			if (shaderBufferDesc.Type == D3D_CT_CBUFFER)
-			{
-				m_ConstantBufferSlots.insert({ TO_HASH(String(shaderBufferDesc.Name)), i });
-			}
-			else if (shaderBufferDesc.Type == D3D_CT_RESOURCE_BIND_INFO)
-			{
-				m_StructuredBufferSlots.insert({ TO_HASH(String(shaderBufferDesc.Name)), std::make_pair(i, 0) });
-			}
-		}
-
 		unsigned int resourceBindingCount = computeShaderDesc.BoundResources;
+
+		m_SRVSlots.reserve(16);
+		m_ConstantBufferSlots.reserve(14);
+		m_UAVSlots.reserve(8);
+		m_SamplerSlots.reserve(16);
 
 		for (uint32_t i = 0; i < resourceBindingCount; i++)
 		{
 			D3D11_SHADER_INPUT_BIND_DESC inputBindDesc;
 			computeShaderReflection->GetResourceBindingDesc(i, &inputBindDesc);
-			if (inputBindDesc.Type == D3D_SIT_TEXTURE)
+			switch (inputBindDesc.Type)
 			{
-				uint32_t samplerSlot = -1;
-				if (inputBindDesc.NumSamples > 8)
+			case D3D_SIT_TEXTURE:
+				m_SRVSlots.insert(m_SRVSlots.begin() + inputBindDesc.BindPoint, TO_HASH(String(inputBindDesc.Name)));
+				break;
+			case D3D_SIT_CBUFFER:
+				m_ConstantBufferSlots.insert(m_ConstantBufferSlots.begin() + inputBindDesc.BindPoint, TO_HASH(String(inputBindDesc.Name)));
+				break;
+			case D3D_SIT_STRUCTURED:
+				m_SRVSlots.insert(m_SRVSlots.begin() + inputBindDesc.BindPoint, TO_HASH(String(inputBindDesc.Name)));
+				break;
+			case D3D_SIT_UAV_RWTYPED:
+				m_UAVSlots.insert(m_UAVSlots.begin() + inputBindDesc.BindPoint, TO_HASH(String(inputBindDesc.Name)));
+				break;
+			case D3D10_SIT_SAMPLER:
+			{
+				String samplerName = String(inputBindDesc.Name);
+				auto pos = samplerName.find("_Sampler");
+				if (pos != std::string::npos)
 				{
-					for (uint32_t j = 0; j < resourceBindingCount; j++)
-					{
-						D3D11_SHADER_INPUT_BIND_DESC samplerInputBindDesc;
-						computeShaderReflection->GetResourceBindingDesc(j, &samplerInputBindDesc);
-						if (samplerInputBindDesc.Type == D3D10_SIT_SAMPLER)
-						{
-							if (strncmp(samplerInputBindDesc.Name, inputBindDesc.Name, strlen(inputBindDesc.Name)) == 0)
-							{
-								samplerSlot = samplerInputBindDesc.BindPoint;
-								break;
-							}
-						}
-					}
+					samplerName.replace(pos, samplerName.length() - pos, "");
 				}
-				m_TextureSlots.insert({ TO_HASH(String(inputBindDesc.Name)), std::make_pair(inputBindDesc.BindPoint, samplerSlot) });
+				else
+				{
+					BB_ERROR("Wrong sampler name.");
+				}
+				m_SamplerSlots.insert(m_SamplerSlots.begin() + inputBindDesc.BindPoint, TO_HASH(samplerName));
 			}
-			else if (inputBindDesc.Type == D3D_SIT_UAV_RWTYPED)
-			{
-				m_ComputeBufferSlots.insert({ TO_HASH(String(inputBindDesc.Name)), inputBindDesc.BindPoint });
-			}
-			else if (inputBindDesc.Type == D3D_SIT_STRUCTURED)
-			{
-				auto pair = &m_StructuredBufferSlots[TO_HASH(String(inputBindDesc.Name))];
-				pair->second = i;
+			break;
+			default:
+				BB_ERROR("Missing input type.");
+				break;
 			}
 		}
-
 		return true;
 	}
 }

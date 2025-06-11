@@ -6,19 +6,14 @@ namespace Blueberry
 {
 	class Transform;
 	class Light;
-
-	struct LightData
-	{
-		Transform* transform;
-		Light* light;
-	};
+	class SkyRenderer;
 
 	class GfxBuffer;
 
 	class PerCameraLightDataConstantBuffer
 	{
 	public:
-		static void BindData(const LightData& mainLight, const List<LightData>& lights, const Vector2Int& shadowAtlasSize);
+		static void BindData(Light* mainLight, SkyRenderer* skyRenderer, const List<Light*>& lights, const Vector2Int& shadowAtlasSize);
 
 	private:
 		static inline GfxBuffer* s_ConstantBuffer = nullptr;

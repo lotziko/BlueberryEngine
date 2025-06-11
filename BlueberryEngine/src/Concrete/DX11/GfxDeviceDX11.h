@@ -92,6 +92,7 @@ namespace Blueberry
 		List<std::pair<size_t, GfxTextureDX11*>> m_BindedTextures;
 		ID3D11ShaderResourceView* m_EmptyShaderResourceViews[16];
 		ID3D11SamplerState* m_EmptySamplers[16];
+		ID3D11UnorderedAccessView* m_EmptyUnorderedAccessViews[8];
 
 		uint32_t m_CurrentCrc = UINT32_MAX;
 		ID3D11InputLayout* m_InputLayout = nullptr;

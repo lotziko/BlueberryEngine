@@ -6,7 +6,7 @@
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\VertexLayout.h"
-#include "Blueberry\Graphics\PerDrawDataConstantBuffer.h"
+#include "Blueberry\Graphics\Buffers\PerDrawDataConstantBuffer.h"
 
 namespace Blueberry
 {
@@ -115,7 +115,7 @@ namespace Blueberry
 
 	void Gizmos::SetMatrix(const Matrix& matrix)
 	{
-		PerDrawConstantBuffer::BindData(matrix);
+		PerDrawDataConstantBuffer::BindData(matrix);
 	}
 
 	void Gizmos::DrawLine(const Vector3& start, const Vector3& end)

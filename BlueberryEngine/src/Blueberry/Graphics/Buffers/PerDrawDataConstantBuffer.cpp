@@ -1,16 +1,16 @@
 #include "PerDrawDataConstantBuffer.h"
 
-#include "GfxDevice.h"
-#include "GfxBuffer.h"
+#include "..\GfxDevice.h"
+#include "..\GfxBuffer.h"
 
 namespace Blueberry
 {
-	struct CONSTANTS
+	struct PerDrawData
 	{
 		Matrix modelMatrix;
 	};
 
-	void PerDrawConstantBuffer::BindData(const Matrix& localToWorldMatrix)
+	void PerDrawDataConstantBuffer::BindData(const Matrix& localToWorldMatrix)
 	{
 		static size_t perDrawDataId = TO_HASH("PerDrawData");
 
@@ -19,7 +19,7 @@ namespace Blueberry
 			BufferProperties constantBufferProperties = {};
 			constantBufferProperties.type = BufferType::Constant;
 			constantBufferProperties.elementCount = 1;
-			constantBufferProperties.elementSize = sizeof(CONSTANTS) * 1;
+			constantBufferProperties.elementSize = sizeof(PerDrawData) * 1;
 			constantBufferProperties.isWritable = true;
 
 			GfxDevice::CreateBuffer(constantBufferProperties, s_ConstantBuffer);
@@ -27,7 +27,7 @@ namespace Blueberry
 
 		const Matrix& modelMatrix = GfxDevice::GetGPUMatrix(localToWorldMatrix);
 
-		CONSTANTS constants =
+		PerDrawData constants =
 		{
 			modelMatrix
 		};
@@ -36,7 +36,7 @@ namespace Blueberry
 		GfxDevice::SetGlobalBuffer(perDrawDataId, s_ConstantBuffer);
 	}
 
-	void PerDrawConstantBuffer::BindDataInstanced(Matrix* localToWorldMatrices, const uint32_t& count)
+	void PerDrawDataConstantBuffer::BindDataInstanced(Matrix* localToWorldMatrices, const uint32_t& count)
 	{
 		static size_t perDrawDataId = TO_HASH("_PerDrawData");
 
@@ -45,13 +45,13 @@ namespace Blueberry
 			BufferProperties structuredBufferProperties = {};
 			structuredBufferProperties.type = BufferType::Structured;
 			structuredBufferProperties.elementCount = 2048;
-			structuredBufferProperties.elementSize = sizeof(CONSTANTS);
+			structuredBufferProperties.elementSize = sizeof(PerDrawData);
 			structuredBufferProperties.isWritable = true;
 
 			GfxDevice::CreateBuffer(structuredBufferProperties, s_StructuredBuffer);
 		}
 
-		s_StructuredBuffer->SetData(localToWorldMatrices, count * sizeof(CONSTANTS));
+		s_StructuredBuffer->SetData(localToWorldMatrices, count * sizeof(PerDrawData));
 		GfxDevice::SetGlobalBuffer(perDrawDataId, s_StructuredBuffer);
 	}
 }

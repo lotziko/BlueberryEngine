@@ -2,7 +2,6 @@
 
 #include "Blueberry\Core\Time.h"
 #include "Blueberry\Graphics\GfxDevice.h"
-#include "Blueberry\Graphics\RenderTexture.h"
 #include "Blueberry\Graphics\ImGuiRenderer.h"
 #include "Blueberry\Math\Math.h"
 #include "Blueberry\Events\WindowEvents.h"
@@ -121,7 +120,6 @@ namespace Blueberry
 			if (s_FrameUpdateRequested)
 			{
 				Time::IncrementFrameCount();
-				RenderTexture::UpdateTemporary();
 				s_FrameUpdateRequested = false;
 			}
 		}

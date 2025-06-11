@@ -7,7 +7,7 @@ namespace Blueberry
 	class Camera;
 	class GfxBuffer;
 
-	class PerDrawConstantBuffer
+	class PerDrawDataConstantBuffer
 	{
 	public:
 		static void BindData(const Matrix& localToWorldMatrix);

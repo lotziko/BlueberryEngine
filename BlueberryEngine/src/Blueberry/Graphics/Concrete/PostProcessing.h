@@ -10,9 +10,10 @@ namespace Blueberry
 	class PostProcessing
 	{
 	public:
+		static void Initialize();
 		static void Draw(GfxTexture* color, const Rectangle& viewport);
 
 	private:
-		static inline Texture2D* m_BlueNoiseLUT = nullptr;
+		static inline Texture2D* s_BlueNoiseLUT = nullptr;
 	};
 }

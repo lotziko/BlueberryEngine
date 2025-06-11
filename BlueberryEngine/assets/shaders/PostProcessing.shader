@@ -52,7 +52,6 @@ Shader
 		}
 
 		TEXTURE2D(_ScreenColorTexture);	SAMPLER(_ScreenColorTexture_Sampler);
-		TEXTURE2D(_BlueNoiseLUT); SAMPLER(_BlueNoiseLUT_Sampler);
 
 		float3 Uncharted2Tonemap(float3 x)
 		{

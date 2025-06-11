@@ -37,4 +37,14 @@ float3 TransformObjectToWorldNormal(float3 normalOS)
 	return normalize(mul(float4(normalOS, 0.0f), OBJECT_TO_WORLD_MATRIX).xyz);
 }
 
+float Linearize01Depth(float depth, float2 params)
+{
+	return 1.0 / (params.x * depth + params.y);
+}
+
+float3 ReconstructNormal(float3 normal)
+{
+	return normalize(float3(normal.x, normal.y, sqrt(saturate(1 - dot(normal.xy, normal.xy)))));
+}
+
 #endif

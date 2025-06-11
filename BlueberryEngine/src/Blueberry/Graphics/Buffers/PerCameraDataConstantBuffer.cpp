@@ -2,16 +2,16 @@
 
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Scene\Components\Transform.h"
-#include "..\Graphics\RenderContext.h"
-#include "GfxDevice.h"
-#include "GfxTexture.h"
-#include "GfxBuffer.h"
+#include "..\RenderContext.h"
+#include "..\GfxDevice.h"
+#include "..\GfxTexture.h"
+#include "..\GfxBuffer.h"
 
 namespace Blueberry
 {
 	#define MAX_VIEW_COUNT 2
 
-	struct CONSTANTS
+	struct PerCameraData
 	{
 		Vector4Int viewCount;
 		Matrix viewMatrix[MAX_VIEW_COUNT];
@@ -25,9 +25,10 @@ namespace Blueberry
 		Vector4 cameraNearFarClipPlane;
 		Vector4 cameraSizeInvSize;
 		Vector4 renderTargetSizeInvSize;
+		Vector4 fogNearFarClipPlane;
 	};
 
-	static size_t perCameraDataId = TO_HASH("PerCameraData");
+	static size_t s_PerCameraDataId = TO_HASH("PerCameraData");
 
 	void PerCameraDataConstantBuffer::BindData(Camera* camera, GfxTexture* target)
 	{
@@ -44,7 +45,7 @@ namespace Blueberry
 			BufferProperties constantBufferProperties = {};
 			constantBufferProperties.type = BufferType::Constant;
 			constantBufferProperties.elementCount = 1;
-			constantBufferProperties.elementSize = sizeof(CONSTANTS) * 1;
+			constantBufferProperties.elementSize = sizeof(PerCameraData) * 1;
 			constantBufferProperties.isWritable = true;
 
 			GfxDevice::CreateBuffer(constantBufferProperties, s_ConstantBuffer);
@@ -54,13 +55,14 @@ namespace Blueberry
 		Transform* transform = camera->GetTransform();
 
 		const int viewCount = GfxDevice::GetViewCount();
-		CONSTANTS constants = {};
+		PerCameraData constants = {};
 		constants.viewCount = { viewCount, 0, 0, 0 };
 
 		const Vector4& position = Vector4(transform->GetPosition());
 		const Vector4& direction = Vector4(Vector3::Transform(Vector3::Forward, transform->GetRotation()));
-		const Vector4& nearFar = Vector4(camera->GetNearClipPlane(), camera->GetFarClipPlane(), 0, 0);
-		
+		const Vector4& nearFar = Vector4(camera->GetNearClipPlane(), camera->GetFarClipPlane(), 1.0f - camera->GetFarClipPlane() / camera->GetNearClipPlane(), camera->GetFarClipPlane() / camera->GetNearClipPlane());
+		const Vector4& fogNearFar = Vector4(camera->GetNearClipPlane(), 128, camera->GetNearClipPlane() / 128, camera->GetFarClipPlane() / 128);
+
 		if (viewCount == 1)
 		{
 			const Matrix& view = GfxDevice::GetGPUMatrix(camera->GetViewMatrix());
@@ -109,9 +111,10 @@ namespace Blueberry
 		constants.cameraPositionWS = position;
 		constants.cameraForwardDirectionWS = direction;
 		constants.cameraNearFarClipPlane = nearFar;
+		constants.fogNearFarClipPlane = fogNearFar;
 
-		s_ConstantBuffer->SetData(reinterpret_cast<char*>(&constants), sizeof(constants));
-		GfxDevice::SetGlobalBuffer(perCameraDataId, s_ConstantBuffer);
+		s_ConstantBuffer->SetData(reinterpret_cast<char*>(&constants), sizeof(PerCameraData));
+		GfxDevice::SetGlobalBuffer(s_PerCameraDataId, s_ConstantBuffer);
 	}
 
 	void PerCameraDataConstantBuffer::BindData(const Matrix& viewProjection)
@@ -121,17 +124,17 @@ namespace Blueberry
 			BufferProperties constantBufferProperties = {};
 			constantBufferProperties.type = BufferType::Constant;
 			constantBufferProperties.elementCount = 1;
-			constantBufferProperties.elementSize = sizeof(CONSTANTS) * 1;
+			constantBufferProperties.elementSize = sizeof(PerCameraData) * 1;
 			constantBufferProperties.isWritable = true;
 
 			GfxDevice::CreateBuffer(constantBufferProperties, s_ConstantBuffer);
 		}
 
-		CONSTANTS constants = {};
+		PerCameraData constants = {};
 		constants.viewCount = { 1, 0, 0, 0 };
 		constants.viewProjectionMatrix[0] = GfxDevice::GetGPUMatrix(viewProjection);
 
-		s_ConstantBuffer->SetData(reinterpret_cast<char*>(&constants), sizeof(constants));
-		GfxDevice::SetGlobalBuffer(perCameraDataId, s_ConstantBuffer);
+		s_ConstantBuffer->SetData(reinterpret_cast<char*>(&constants), sizeof(PerCameraData));
+		GfxDevice::SetGlobalBuffer(s_PerCameraDataId, s_ConstantBuffer);
 	}
 }

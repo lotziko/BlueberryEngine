@@ -13,6 +13,6 @@ namespace Blueberry
 		virtual uint32_t GetHeight() const = 0;
 		virtual void* GetHandle() = 0;
 
-		virtual void SetData(void* data) = 0;
+		virtual void SetData(void* data, const uint32_t& size) = 0;
 	};
 }

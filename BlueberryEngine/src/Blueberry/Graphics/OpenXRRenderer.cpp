@@ -54,7 +54,7 @@ namespace Blueberry
 		s_Instance->FillCameraDataImpl(cameraData);
 	}
 
-	void OpenXRRenderer::SubmitColorRenderTarget(RenderTexture* renderTarget)
+	void OpenXRRenderer::SubmitColorRenderTarget(GfxTexture* renderTarget)
 	{
 		if (s_Instance == nullptr)
 		{

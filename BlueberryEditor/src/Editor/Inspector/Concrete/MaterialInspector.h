@@ -4,7 +4,7 @@
 
 namespace Blueberry
 {
-	class RenderTexture;
+	class GfxTexture;
 
 	class MaterialInspector : public ObjectInspector
 	{
@@ -15,6 +15,6 @@ namespace Blueberry
 		virtual void Draw(Object* object) override;
 
 	private:
-		RenderTexture* m_RenderTexture;
+		GfxTexture* m_RenderTexture;
 	};
 }

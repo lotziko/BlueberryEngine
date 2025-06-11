@@ -4,7 +4,7 @@
 
 namespace Blueberry
 {
-	class RenderTexture;
+	class GfxTexture;
 	class Light;
 	class RenderContext;
 	struct CullingResults;
@@ -33,13 +33,13 @@ namespace Blueberry
 		void Draw(RenderContext& context, CullingResults& results);
 		const Vector2Int& GetSize();
 
-		RenderTexture* GetAtlasTexture();
+		GfxTexture* GetAtlasTexture();
 
 	private:
 		void PackRequests();
 
 	private:
-		RenderTexture* m_AtlasTexture;
+		GfxTexture* m_AtlasTexture;
 		ShadowRequest* m_Requests;
 		Vector2Int m_Size;
 		uint32_t m_MaxLightCount;

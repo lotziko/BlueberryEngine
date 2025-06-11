@@ -23,5 +23,10 @@ namespace Blueberry
 		ID3D11DeviceContext* m_DeviceContext;
 
 		friend class GfxDeviceDX11;
+
+		List<size_t> m_SRVSlots = {};
+		List<size_t> m_UAVSlots = {};
+		List<size_t> m_ConstantBufferSlots = {};
+		List<size_t> m_SamplerSlots = {};
 	};
 }

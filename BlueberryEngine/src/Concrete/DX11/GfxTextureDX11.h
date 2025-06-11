@@ -11,7 +11,7 @@ namespace Blueberry
 	{
 	public:
 		GfxTextureDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
-		~GfxTextureDX11() = default;
+		virtual ~GfxTextureDX11() = default;
 		
 		bool Initialize(const TextureProperties& properties);
 
@@ -24,7 +24,7 @@ namespace Blueberry
 		virtual uint32_t GetHeight() const override;
 		virtual void* GetHandle() override;
 
-		virtual void SetData(void* data) override;
+		virtual void SetData(void* data, const uint32_t& size) override;
 
 	private:
 		uint32_t GetQualityLevel(const DXGI_FORMAT& format, const uint32_t& antiAliasing);
@@ -43,6 +43,7 @@ namespace Blueberry
 
 		uint32_t m_Width;
 		uint32_t m_Height;
+		uint32_t m_Depth;
 		uint32_t m_ArraySize;
 
 		ID3D11Device* m_Device;

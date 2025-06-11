@@ -1,9 +1,10 @@
 #include "ShadowAtlas.h"
 
-#include "..\Graphics\RenderContext.h"
-#include "..\Graphics\GfxDevice.h"
-#include "..\Graphics\LightHelper.h"
-#include "Blueberry\Graphics\RenderTexture.h"
+#include "..\RenderContext.h"
+#include "..\GfxDevice.h"
+#include "..\LightHelper.h"
+#include "..\GfxTexture.h"
+#include "..\GfxRenderTexturePool.h"
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Components\Light.h"
 
@@ -11,7 +12,7 @@ namespace Blueberry
 {
 	ShadowAtlas::ShadowAtlas(const uint32_t& width, const uint32_t& height, const uint32_t& maxLightCount) : m_MaxLightCount(maxLightCount)
 	{
-		m_AtlasTexture = RenderTexture::Create(width, height, 1, 1, TextureFormat::D32_Float, TextureDimension::Texture2D, WrapMode::Clamp, FilterMode::CompareDepth);
+		m_AtlasTexture = GfxRenderTexturePool::Get(width, height, 1, 1, TextureFormat::D32_Float, TextureDimension::Texture2D, WrapMode::Clamp, FilterMode::CompareDepth);
 		m_Requests = BB_MALLOC_ARRAY(ShadowRequest, maxLightCount);
 		m_Size = Vector2Int(width, height);
 	}
@@ -48,7 +49,7 @@ namespace Blueberry
 		PackRequests();
 
 		GfxDevice::SetDepthBias(1, 2.5f);
-		GfxDevice::SetRenderTarget(nullptr, m_AtlasTexture->Get());
+		GfxDevice::SetRenderTarget(nullptr, m_AtlasTexture);
 		GfxDevice::ClearDepth(1.0f);
 
 		for (uint32_t i = 0; i < m_RequestCount; ++i)
@@ -82,6 +83,7 @@ namespace Blueberry
 		}
 
 		GfxDevice::SetDepthBias(0, 0);
+		GfxDevice::SetRenderTarget(nullptr);
 	}
 
 	const Vector2Int& ShadowAtlas::GetSize()
@@ -89,7 +91,7 @@ namespace Blueberry
 		return m_Size;
 	}
 
-	RenderTexture* ShadowAtlas::GetAtlasTexture()
+	GfxTexture* ShadowAtlas::GetAtlasTexture()
 	{
 		return m_AtlasTexture;
 	}

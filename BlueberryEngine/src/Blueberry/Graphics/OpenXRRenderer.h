@@ -4,7 +4,7 @@
 
 namespace Blueberry
 {
-	class RenderTexture;
+	class GfxTexture;
 	struct CameraData;
 
 	class OpenXRRenderer
@@ -18,7 +18,7 @@ namespace Blueberry
 
 		static void BeginFrame();
 		static void FillCameraData(CameraData& cameraData);
-		static void SubmitColorRenderTarget(RenderTexture* renderTarget);
+		static void SubmitColorRenderTarget(GfxTexture* renderTarget);
 		static void EndFrame();
 
 	protected:
@@ -28,7 +28,7 @@ namespace Blueberry
 
 		virtual void BeginFrameImpl() = 0;
 		virtual void FillCameraDataImpl(CameraData& cameraData) = 0;
-		virtual void SubmitColorRenderTargetImpl(RenderTexture* renderTarget) = 0;
+		virtual void SubmitColorRenderTargetImpl(GfxTexture* renderTarget) = 0;
 		virtual void EndFrameImpl() = 0;
 
 	private:

@@ -1,8 +1,8 @@
 #include "RealtimeLights.h"
 
-#include "..\Graphics\RenderContext.h"
-#include "..\Graphics\ShadowAtlas.h"
-#include "..\Graphics\PerCameraLightDataConstantBuffer.h"
+#include "..\RenderContext.h"
+#include "..\Buffers\PerCameraLightDataConstantBuffer.h"
+#include "ShadowAtlas.h"
 #include "Blueberry\Scene\Components\Light.h"
 
 namespace Blueberry
@@ -43,19 +43,17 @@ namespace Blueberry
 
 	void RealtimeLights::BindLights(CullingResults& results, ShadowAtlas* atlas)
 	{
-		LightData mainLight = {};
-		List<LightData> lights;
+		Light* mainLight = nullptr;
+		List<Light*> lights = {};
 		for (Light* light : results.lights)
 		{
 			if (light->GetType() == LightType::Directional && light->IsCastingShadows())
 			{
-				mainLight.transform = light->GetTransform();
-				mainLight.light = light;
+				mainLight = light;
 				continue;
 			}
-			auto transform = light->GetTransform();
-			lights.emplace_back(LightData{ transform, light });
+			lights.emplace_back(light);
 		}
-		PerCameraLightDataConstantBuffer::BindData(mainLight, lights, atlas->GetSize());
+		PerCameraLightDataConstantBuffer::BindData(mainLight, results.skyRenderer, lights, atlas->GetSize());
 	}
 }

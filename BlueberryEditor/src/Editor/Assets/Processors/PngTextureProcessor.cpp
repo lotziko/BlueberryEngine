@@ -15,9 +15,10 @@ namespace Blueberry
 		}
 	}
 
-	void PngTextureProcessor::Load(const String& path, const bool& generateMips)
+	void PngTextureProcessor::Load(const String& path, const bool& srgb, const bool& generateMips)
 	{
-		HRESULT hr = DirectX::LoadFromWICFile(StringConverter::StringToWide(path).c_str(), DirectX::WIC_FLAGS_NONE, nullptr, m_ScratchImage);
+		DirectX::TexMetadata metadata;
+		HRESULT hr = DirectX::LoadFromWICFile(StringConverter::StringToWide(path).c_str(), srgb ? DirectX::WIC_FLAGS_NONE : DirectX::WIC_FLAGS_IGNORE_SRGB, &metadata, m_ScratchImage);
 		if (FAILED(hr))
 		{
 			BB_ERROR("Failed to load texture from file.");
@@ -84,6 +85,20 @@ namespace Blueberry
 		}
 	}
 
+	bool CanCompressOnGPU(DXGI_FORMAT format)
+	{
+		switch (format)
+		{
+		case DXGI_FORMAT_BC6H_UF16:
+		case DXGI_FORMAT_BC6H_SF16:
+		case DXGI_FORMAT_BC7_UNORM:
+		case DXGI_FORMAT_BC7_UNORM_SRGB:
+			return true;
+		default:
+			return false;
+		}
+	}
+
 	void PngTextureProcessor::LoadDDS(const String& path)
 	{
 		HRESULT hr = DirectX::LoadFromDDSFile(StringConverter::StringToWide(path).c_str(), DirectX::DDS_FLAGS::DDS_FLAGS_NONE, nullptr, m_ScratchImage);
@@ -142,13 +157,7 @@ namespace Blueberry
 	{
 		DXGI_FORMAT dxgiFormat = static_cast<DXGI_FORMAT>(format);
 		const DirectX::Image* image = m_ScratchImage.GetImage(0, 0, 0);
-		bool needOverride = false;
-		if (!DirectX::IsSRGB(image->format) && srgb)
-		{
-			dxgiFormat = DirectX::MakeLinear(dxgiFormat);
-			needOverride = true;
-		}
-		if (!DirectX::IsCompressed(dxgiFormat) || (image->width % 4 > 0) || (image->height % 4 > 0))
+		if (DirectX::IsCompressed(dxgiFormat) && (image->width % 4 > 0) && (image->height % 4 > 0) || dxgiFormat == m_ScratchImage.GetMetadata().format)
 		{
 			return;
 		}
@@ -165,16 +174,38 @@ namespace Blueberry
 		}
 
 		DirectX::ScratchImage compressedScratchImage;
-		HRESULT hr = DirectX::Compress(s_Device.Get(), m_ScratchImage.GetImages(), m_ScratchImage.GetImageCount(), m_ScratchImage.GetMetadata(), dxgiFormat, DirectX::TEX_COMPRESS_DEFAULT, DirectX::TEX_THRESHOLD_DEFAULT, compressedScratchImage);
+		HRESULT hr;
+		if (DirectX::IsCompressed(dxgiFormat))
+		{
+			if (CanCompressOnGPU(dxgiFormat))
+			{
+				hr = DirectX::Compress(s_Device.Get(), m_ScratchImage.GetImages(), m_ScratchImage.GetImageCount(), m_ScratchImage.GetMetadata(), dxgiFormat, srgb ? DirectX::TEX_COMPRESS_SRGB : DirectX::TEX_COMPRESS_DEFAULT, DirectX::TEX_THRESHOLD_DEFAULT, compressedScratchImage);
+			}
+			else
+			{
+				hr = DirectX::Compress(m_ScratchImage.GetImages(), m_ScratchImage.GetImageCount(), m_ScratchImage.GetMetadata(), dxgiFormat, srgb ? DirectX::TEX_COMPRESS_SRGB : DirectX::TEX_COMPRESS_DEFAULT, DirectX::TEX_THRESHOLD_DEFAULT, compressedScratchImage);
+			}
+		}
+		else
+		{
+			DirectX::Convert(m_ScratchImage.GetImages(), m_ScratchImage.GetImageCount(), m_ScratchImage.GetMetadata(), dxgiFormat, DirectX::TEX_FILTER_DEFAULT, DirectX::TEX_THRESHOLD_DEFAULT, compressedScratchImage);
+		}
 		if (FAILED(hr))
 		{
 			BB_ERROR("Failed to compress texture.");
 			return;
 		}
 		m_ScratchImage = std::move(compressedScratchImage);
-		if (needOverride)
+	}
+
+	void PngTextureProcessor::CompressNormals()
+	{
+		uint8_t* ptr = m_ScratchImage.GetImages()->pixels;
+		uint8_t* end = ptr + m_ScratchImage.GetPixelsSize();
+		for (; ptr < end; ptr += 4)
 		{
-			m_ScratchImage.OverrideFormat(DirectX::MakeSRGB(dxgiFormat));
+			*(ptr + 2) = *(ptr + 3);
+			*(ptr + 3) = 0;
 		}
 	}
 
@@ -195,5 +226,21 @@ namespace Blueberry
 	const size_t PngTextureProcessor::GetDataSize()
 	{
 		return m_ScratchImage.GetPixelsSize();
+	}
+
+	uint8_t PngTextureProcessor::GetChannels()
+	{
+		uint8_t* ptr = m_ScratchImage.GetImages()->pixels;
+		uint8_t* end = ptr + m_ScratchImage.GetPixelsSize();
+		bool grayscale = true;
+		for (; ptr < end; ptr += 4)
+		{
+			if (ptr[0] != ptr[1] || ptr[1] != ptr[2])
+			{
+				grayscale = false;
+			}
+		}
+		BB_INFO(grayscale);
+		return 0;
 	}
 }

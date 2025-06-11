@@ -128,6 +128,7 @@ namespace Blueberry
 
 			// Can replace this with an index to binded global textures
 			// Fragment global textures
+			// Has a possiblity to collide with material textures if has same name
 			for (auto it = dxFragmentShader->m_TextureSlots.begin(); it != dxFragmentShader->m_TextureSlots.end(); it++)
 			{
 				for (auto it1 = m_Device->m_BindedTextures.begin(); it1 < m_Device->m_BindedTextures.end(); ++it1)

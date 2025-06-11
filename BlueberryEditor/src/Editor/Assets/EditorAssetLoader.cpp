@@ -47,7 +47,7 @@ namespace Blueberry
 		if (extension == ".png")
 		{
 			PngTextureProcessor processor;
-			processor.Load(path, false);
+			processor.Load(path, true, false);
 			PngTextureProperties properties = processor.GetProperties();
 			Texture2D* texture = Texture2D::Create(properties.width, properties.height, properties.mipCount, properties.format, WrapMode::Repeat);
 			texture->SetName(assetPath.stem().string().data());
