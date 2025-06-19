@@ -501,7 +501,10 @@ namespace Blueberry
 	void GfxDeviceDX11::DispatchImpl(GfxComputeShader* shader, const uint32_t& threadGroupsX, const uint32_t& threadGroupsY, const uint32_t& threadGroupsZ)
 	{
 		auto dxShader = static_cast<GfxComputeShaderDX11*>(shader);
-
+		if (dxShader == nullptr)
+		{
+			return;
+		}
 		for (auto& pair : m_BindedBuffers)
 		{
 			size_t id = pair.first;

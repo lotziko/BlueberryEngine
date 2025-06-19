@@ -10,7 +10,7 @@ namespace Blueberry
 	class FogLightDataConstantBuffer
 	{
 	public:
-		static void BindData(const List<Light*>& lights, const Vector2Int& shadowAtlasSize);
+		static void BindData(Light* mainLight, const List<Light*>& lights, const Vector2Int& shadowAtlasSize);
 
 	private:
 		static inline GfxBuffer* s_ConstantBuffer = nullptr;

@@ -4,14 +4,22 @@
 #include "..\GfxBuffer.h"
 #include "..\LightHelper.h"
 
+#include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Components\Light.h"
 
 namespace Blueberry
 {
+	#define MAIN_LIGHT_CASCADES 3
 	#define MAX_REALTIME_LIGHTS 128
 
 	struct FogLightData
 	{
+		Vector4 mainLightColor;
+		Vector4 mainLightDirection;
+		Matrix mainWorldToShadow[MAIN_LIGHT_CASCADES + 1];
+		Vector4 mainShadowBounds[MAIN_LIGHT_CASCADES + 1];
+		Vector4 mainShadowCascades[MAIN_LIGHT_CASCADES];
+
 		Vector4 lightsCount;
 		Vector4 lightParam[MAX_REALTIME_LIGHTS];
 		Vector4 lightPosition[MAX_REALTIME_LIGHTS];
@@ -29,7 +37,7 @@ namespace Blueberry
 
 	static size_t s_FogLightDataId = TO_HASH("_FogLightData");
 
-	void FogLightDataConstantBuffer::BindData(const List<Light*>& lights, const Vector2Int& shadowAtlasSize)
+	void FogLightDataConstantBuffer::BindData(Light* mainLight, const List<Light*>& lights, const Vector2Int& shadowAtlasSize)
 	{
 		if (s_ConstantBuffer == nullptr)
 		{
@@ -43,6 +51,19 @@ namespace Blueberry
 		}
 
 		FogLightData constants = {};
+
+		if (mainLight != nullptr)
+		{
+			Light* light = mainLight;
+			constants.mainLightDirection = static_cast<Vector4>(Vector3::Transform(Vector3::Backward, mainLight->GetTransform()->GetRotation()));
+			constants.mainLightColor = light->GetColor() * light->GetIntensity();
+			for (int i = 0; i < light->m_SliceCount; ++i)
+			{
+				constants.mainWorldToShadow[i] = GfxDevice::GetGPUMatrix(light->m_AtlasWorldToShadow[i]);
+				constants.mainShadowBounds[i] = light->m_ShadowBounds[i];
+				constants.mainShadowCascades[i] = light->m_ShadowCascades[i];
+			}
+		}
 
 		uint8_t offset = 0;
 		for (int i = 0; i < lights.size(); i++)

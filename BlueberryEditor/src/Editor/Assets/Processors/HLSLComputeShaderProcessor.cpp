@@ -29,7 +29,9 @@ namespace Blueberry
 				ComPtr<ID3DBlob> computeBlob;
 				if (!Compile(compilationData.shaderCode, compilationData.computeEntryPoints[i].c_str(), "cs_5_0", computeBlob))
 				{
-					return false;
+					m_Blobs.emplace_back(nullptr);
+					m_Shaders.emplace_back(nullptr);
+					continue;
 				}
 				m_Blobs.emplace_back(computeBlob);
 				m_Shaders.emplace_back(computeBlob.Get());

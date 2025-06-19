@@ -1,9 +1,12 @@
 #pragma compute CSInject
 #pragma compute CSScatter
+#pragma compute CSBlurHorizontal
+#pragma compute CSBlurVertical
 
 #include "RealtimeLights.hlsl"
 #include "RealtimeShadows.hlsl"
 
+#define MAIN_LIGHT_CASCADES 3
 #define MAX_REALTIME_LIGHTS 128
 #define MAX_LIGHTS 128
 
@@ -15,6 +18,12 @@ SAMPLER(_CookieTexture_Sampler);
 
 cbuffer _FogLightData
 {
+	float4 _MainLightColor;
+	float4 _MainLightDirection;
+	float4x4 _MainWorldToShadow[MAIN_LIGHT_CASCADES + 1]; // extra empty cascade for far distances
+	float4 _MainShadowBounds[MAIN_LIGHT_CASCADES + 1];
+	float4 _MainShadowCascades[MAIN_LIGHT_CASCADES];
+
 	float4 _LightsCount;
 	float4 _LightParam[MAX_REALTIME_LIGHTS]; // x greater than 0 - has shadow, w - light.range * light.range
 	float4 _LightPosition[MAX_REALTIME_LIGHTS];
@@ -49,6 +58,23 @@ cbuffer _FogViewData
 float3 CalculateLight(float3 positionWS)
 {
 	float3 light = 0;
+
+	if (_MainShadowCascades[0].w > 0)
+	{
+		float cascadeIndex = ComputeCascadeIndex(positionWS, _MainShadowCascades);
+		float4 positionSS = TransformWorldToShadow(positionWS, _MainWorldToShadow[cascadeIndex]);
+
+		float shadowAttenuation = 1;
+		if (!IsOutOfBounds(positionSS, _MainShadowBounds[cascadeIndex]))
+		{
+			shadowAttenuation = ComputeShadowPCF3x3(positionSS, _ShadowTexture, _ShadowTexture_Sampler, _Shadow3x3PCFTermC0, _Shadow3x3PCFTermC1, _Shadow3x3PCFTermC2, _Shadow3x3PCFTermC3);
+		}
+
+		float3 lightDirectionWS = _MainLightDirection.xyz;
+		float3 lightColor = _MainLightColor.rgb;
+		light += lightColor * shadowAttenuation;
+	}
+
 	for (int i = 0; i < int(_LightsCount.x); ++i)
 	{
 		float3 posToLight = _LightPosition[i].xyz - positionWS * _LightPosition[i].w;
@@ -111,7 +137,7 @@ float4 DecodeColor(float4 color)
 }
 
 RWTexture3D<float4> _InjectFogVolume;
-Texture3D<half4> _PreviousFrameInjectFogVolume;
+Texture3D<float4> _PreviousFrameInjectFogVolume;
 SamplerState _PreviousFrameInjectFogVolume_Sampler;
 
 static const float2 kJitterOffsets[32] = {
@@ -154,60 +180,10 @@ float Linear01Depth(float z)
 	return 1.0 / (_FogNearRange.x * z + _FogNearRange.y);
 }
 
-float4 SamplePreviousColor(float3 positionWS, float4x4 previousViewProj, uint viewIndex)
-{
-	float4 positionCS = mul(previousViewProj, float4(positionWS, 1));
-	float3 positionNDC = (positionCS.xyz * rcp(positionCS.w));
-
-	positionNDC.xy = positionNDC.xy * 0.5 + 0.5;
-	float isInBounds = (positionNDC.x > 0.0 && positionNDC.x < 1.0 && positionNDC.y > 0.0 && positionNDC.y < 1.0);
-	positionNDC.x = positionNDC.x * _ViewInvCount + viewIndex * 0.5;
-	float depth = (Linear01Depth(positionNDC.z) - _FogNearRange.z) * _FogNearRange.w; // Depth is in range [near/far, 1], so transform it to [0, 1] for sampling
-
-	float4 previousColor = _PreviousFrameInjectFogVolume.SampleLevel(_PreviousFrameInjectFogVolume_Sampler, float3(positionNDC.xy, depth), 0);
-	return previousColor * isInBounds;
-}
-
-[numthreads(8, 8, 1)]
-void CSInject(uint3 id : SV_DispatchThreadID)
-{
-	uint viewIndex = id.z;
-	uint3 positionFVS = uint3((uint)_FrustumVolumeSize.x * viewIndex + id.x, id.y, 0);
-
-	uint jitterIndex = (id.y * 6547 + id.x * 4159) & 31;
-	float3 positionWSJitter = (_ViewDX[viewIndex].xyz * kJitterOffsets[jitterIndex].x + _ViewDY[viewIndex].xyz * kJitterOffsets[jitterIndex].y) / 4000;
-
-	float3 positionFS = float3(id.x + 0.5, id.y + 0.5, 0) * _FrustumVolumeInvSize.xyz;// FS means frustum space
-	float3 vectorFS = _ViewDY[viewIndex].xyz * positionFS.y + (_ViewDX[viewIndex].xyz * positionFS.x + _ViewCorner[viewIndex].xyz); // Vector to far plane
-
-	uint steps = (uint)_FrustumVolumeSize.z;
-
-	for (uint z = 0; z < steps; ++z)
-	{
-		positionFVS.z = z;
-		positionFS.z = pow(z * _FrustumVolumeInvSize.w, 2); // .w has size.z - 1 value to match [0, 1] depth range here
-		float zVS = _FogNearRange.z + positionFS.z * (1 - _FogNearRange.z); // Depth is in range [0, 1], so transform it to [near/far, 1] to match the frustum
-		float3 positionWS = _ViewPos[viewIndex].xyz + vectorFS * zVS;
-
-		float4 color = float4(0, 0, 0, 1);//DecodeColor(SampleBakedColor(positionWS + positionWSJitter));
-		float3 light = CalculateLight(positionWS);// + positionWSJitter);
-		color.rgb += light * color.a;
-
-		//float4 previousColor = DecodeColor(SamplePreviousColor(positionWS, _PreviousViewProj[viewIndex], viewIndex));
-
-		//_InjectFogVolume[positionFVS] = EncodeColor(float4((previousColor.rgb - color.rgb) * 0.9 + color.rgb, color.a));
-		_InjectFogVolume[positionFVS] = color;
-	}
-}
-
-Texture3D<float4> _InjectedFogVolume;
-SamplerState _InjectedFogVolume_Sampler;
-RWTexture3D<float4> _ScatterFogVolume;
-
-float4 ScatterStep(float3 accumulatedLight, float accumulatedTransmittance, float3 sliceLight, float sliceDensity)
+float4 ScatterStep(float3 accumulatedLight, float accumulatedTransmittance, float3 sliceLight, float sliceDensity, float stepSize)
 {
 	sliceDensity = max(sliceDensity, 0.000001);
-	float sliceTransmittance = exp(-sliceDensity * _FrustumVolumeInvSize.z);
+	float sliceTransmittance = exp(-sliceDensity * stepSize);
 
 	// Seb Hillaire's improved transmission by calculating an integral over slice depth instead of
 	// constant per slice value. Light still constant per slice, but that's acceptable. See slide 28 of
@@ -220,6 +196,40 @@ float4 ScatterStep(float3 accumulatedLight, float accumulatedTransmittance, floa
 
 	return float4(accumulatedLight, accumulatedTransmittance);
 }
+
+[numthreads(16, 16, 1)]
+void CSInject(uint3 id : SV_DispatchThreadID)
+{
+	uint viewIndex = id.z;
+	uint3 positionFVS = uint3((uint)_FrustumVolumeSize.x * viewIndex + id.x, id.y, 0);
+
+	uint jitterIndex = (id.y * 6547 + id.x * 4159) & 31;
+	float3 positionWSJitter = (_ViewDX[viewIndex].xyz * kJitterOffsets[jitterIndex].x + _ViewDY[viewIndex].xyz * kJitterOffsets[jitterIndex].y) / 4000;
+
+	float3 positionFS = float3(id.x + 0.5, id.y + 0.5, 0) * _FrustumVolumeInvSize.xyz;// FS means frustum space
+	float3 vectorFS = _ViewDY[viewIndex].xyz * positionFS.y + (_ViewDX[viewIndex].xyz * positionFS.x + _ViewCorner[viewIndex].xyz); // Vector to far plane
+
+	uint steps = (uint)_FrustumVolumeSize.z;
+	float4 accum = float4(0, 0, 0, 1);
+
+	for (uint z = 0; z < steps; ++z)
+	{
+		positionFVS.z = z;
+		positionFS.z = pow(z * _FrustumVolumeInvSize.w, 2); // .w has size.z - 1 value to match [0, 1] depth range here
+		float zVS = _FogNearRange.z + positionFS.z * (1 - _FogNearRange.z); // Depth is in range [0, 1], so transform it to [near/far, 1] to match the frustum
+		float3 positionWS = _ViewPos[viewIndex].xyz + vectorFS * zVS;
+
+		float4 color = float4(0, 0, 0, 1);//DecodeColor(SampleBakedColor(positionWS + positionWSJitter));
+		float3 light = CalculateLight(positionWS + positionWSJitter * (z * _FrustumVolumeInvSize.z));
+		color.rgb += light * color.a;
+
+		_InjectFogVolume[positionFVS] = color;
+	}
+}
+
+Texture3D<float4> _InjectedFogVolume;
+SamplerState _InjectedFogVolume_Sampler;
+RWTexture3D<float4> _ScatterFogVolume;
 
 [numthreads(8, 8, 1)]
 void CSScatter(uint3 id : SV_DispatchThreadID)
@@ -246,9 +256,48 @@ void CSScatter(uint3 id : SV_DispatchThreadID)
 		float4 slice6 = _InjectedFogVolume.SampleLevel(_InjectedFogVolume_Sampler, positionVS + float3(0.5, 0.5, -0.5) * _FrustumVolumeInvSize.xyz, 0);
 		float4 slice7 = _InjectedFogVolume.SampleLevel(_InjectedFogVolume_Sampler, positionVS + float3(0.5, 0.5, 0.5) * _FrustumVolumeInvSize.xyz, 0);
 
-		float4 slice = DecodeColor((slice0 + slice1 + slice2 + slice3 + slice4 + slice5 + slice6 + slice7) * 0.125);
+		float4 slice = (slice0 + slice1 + slice2 + slice3 + slice4 + slice5 + slice6 + slice7) * 0.125;
 
-		accum = ScatterStep(accum.rgb, accum.a, slice.rgb, slice.a);
+		float stepSize = pow((z + 1) *  _FrustumVolumeInvSize.z, 2) - pow(z * _FrustumVolumeInvSize.z, 2);
+		accum = ScatterStep(accum.rgb, accum.a, slice.rgb, slice.a, stepSize);
 		_ScatterFogVolume[pos] = accum;
 	}
+}
+
+
+Texture3D<float4> _ScatterNoBlurFogVolume;
+RWTexture3D<float4> _ScatterBlurFogVolume;
+
+static const uint2 kBlurOffsets[5] = {
+	uint2(-2, 0),
+	uint2(-1, 0),
+	uint2(0, 0),
+	uint2(1, 0),
+	uint2(2, 0),
+};
+
+[numthreads(8, 8, 8)]
+void CSBlurHorizontal(uint3 id : SV_DispatchThreadID)
+{
+	uint2 size = (uint2)_FrustumVolumeSize.xy - 1;
+	float4 result = 0;
+	for (int i = 0; i < 5; i++)
+	{
+		uint3 pos = uint3(min(max(id.xy + kBlurOffsets[i], uint2(0, 0)), size), id.z);
+		result += _ScatterNoBlurFogVolume[pos] * 0.2;
+	}
+	_ScatterBlurFogVolume[id] = result;
+}
+
+[numthreads(8, 8, 8)]
+void CSBlurVertical(uint3 id : SV_DispatchThreadID)
+{
+	uint2 size = (uint2)_FrustumVolumeSize.xy - 1;
+	float4 result = 0;
+	for (int i = 0; i < 5; i++)
+	{
+		uint3 pos = uint3(min(max(id.xy + kBlurOffsets[i].yx, uint2(0, 0)), size), id.z);
+		result += _ScatterNoBlurFogVolume[pos] * 0.2;
+	}
+	_ScatterBlurFogVolume[id] = result;
 }

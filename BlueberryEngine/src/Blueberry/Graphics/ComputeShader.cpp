@@ -58,9 +58,16 @@ namespace Blueberry
 		m_ComputeShaders.resize(computeShadersCount);
 		for (size_t i = 0; i < computeShadersCount; ++i)
 		{
-			GfxComputeShader* computeShader;
-			GfxDevice::CreateComputeShader(shaders[i], computeShader);
-			m_ComputeShaders[i] = computeShader;
+			if (shaders[i] != nullptr)
+			{
+				GfxComputeShader* computeShader;
+				GfxDevice::CreateComputeShader(shaders[i], computeShader);
+				m_ComputeShaders[i] = computeShader;
+			}
+			else
+			{
+				m_ComputeShaders[i] = nullptr;
+			}
 		}
 	}
 
@@ -87,6 +94,10 @@ namespace Blueberry
 
 	GfxComputeShader* ComputeShader::GetKernel(const uint8_t& index)
 	{
+		if (index >= static_cast<uint8_t>(m_ComputeShaders.size()))
+		{
+			return nullptr;
+		}
 		return m_ComputeShaders[index];
 	}
 }

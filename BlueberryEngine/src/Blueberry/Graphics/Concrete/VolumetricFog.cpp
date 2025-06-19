@@ -33,8 +33,9 @@ namespace Blueberry
 
 	static Vector3Int s_FrustumVolumeSize = Vector3Int(128, 96, 128);
 	static size_t s_InjectFogVolumeId = TO_HASH("_InjectFogVolume");
-	static size_t s_PreviousFrameInjectFogVolumeId = TO_HASH("_PreviousFrameInjectFogVolume");
 	static size_t s_InjectedFogVolumeId = TO_HASH("_InjectedFogVolume");
+	static size_t s_ScatterNoBlurFogVolumeId = TO_HASH("_ScatterNoBlurFogVolume");
+	static size_t s_ScatterBlurFogVolumeId = TO_HASH("_ScatterBlurFogVolume");
 	static size_t s_ScatterFogVolumeId = TO_HASH("_ScatterFogVolume");
 	static size_t s_VolumetricFogTextureId = TO_HASH("_VolumetricFogTexture");
 
@@ -51,7 +52,7 @@ namespace Blueberry
 			textureProperties.depth = s_FrustumVolumeSize.z;
 			textureProperties.antiAliasing = 1;
 			textureProperties.mipCount = 1;
-			textureProperties.format = TextureFormat::R8G8B8A8_UNorm;
+			textureProperties.format = TextureFormat::R16G16B16A16_UNorm;
 			textureProperties.dimension = TextureDimension::Texture3D;
 			textureProperties.wrapMode = WrapMode::Clamp;
 			textureProperties.filterMode = FilterMode::Linear;
@@ -60,29 +61,43 @@ namespace Blueberry
 			textureProperties.isWritable = false;
 			textureProperties.isUnorderedAccess = true;
 			
-			GfxDevice::CreateTexture(textureProperties, s_FrustumInjectVolume0);
-			GfxDevice::CreateTexture(textureProperties, s_FrustumInjectVolume1);
-			textureProperties.format = TextureFormat::R16G16B16A16_UNorm;
-			GfxDevice::CreateTexture(textureProperties, s_FrustumScatterVolume);
+			GfxDevice::CreateTexture(textureProperties, s_FrustumVolume0);
+			GfxDevice::CreateTexture(textureProperties, s_FrustumVolume1);
 		}
 
-		List<Light*> lights;
+		Light* mainLight = nullptr;
+		List<Light*> lights = {};
 		for (Light* light : results.lights)
 		{
-			if (light->IsCastingFog())
+			if (!light->IsCastingFog())
 			{
-				lights.emplace_back(light);
+				continue;
 			}
+			if (light->GetType() == LightType::Directional && light->IsCastingShadows())
+			{
+				mainLight = light;
+				continue;
+			}
+			lights.emplace_back(light);
 		}
 		bool isEven = Time::GetFrameCount() % 2 == 0;
-		FogLightDataConstantBuffer::BindData(lights, atlas->GetSize());
+		FogLightDataConstantBuffer::BindData(mainLight, lights, atlas->GetSize());
 		FogViewDataConstantBuffer::BindData(data, s_FrustumVolumeSize);
-		GfxDevice::SetGlobalTexture(s_InjectFogVolumeId, isEven ? s_FrustumInjectVolume0 : s_FrustumInjectVolume1);
-		GfxDevice::SetGlobalTexture(s_PreviousFrameInjectFogVolumeId, isEven ? s_FrustumInjectVolume1 : s_FrustumInjectVolume0);
-		GfxDevice::Dispatch(s_VolumetricFogShader->GetKernel(0), s_FrustumVolumeSize.x / 8, s_FrustumVolumeSize.y / 8, 1);
-		GfxDevice::SetGlobalTexture(s_InjectedFogVolumeId, isEven ? s_FrustumInjectVolume0 : s_FrustumInjectVolume1);
-		GfxDevice::SetGlobalTexture(s_ScatterFogVolumeId, s_FrustumScatterVolume);
+		GfxDevice::SetGlobalTexture(s_InjectFogVolumeId, s_FrustumVolume0);
+		GfxDevice::Dispatch(s_VolumetricFogShader->GetKernel(0), s_FrustumVolumeSize.x / 16, s_FrustumVolumeSize.y / 16, 1);
+		
+		GfxDevice::SetGlobalTexture(s_InjectedFogVolumeId, s_FrustumVolume0);
+		GfxDevice::SetGlobalTexture(s_ScatterFogVolumeId, s_FrustumVolume1);
 		GfxDevice::Dispatch(s_VolumetricFogShader->GetKernel(1), s_FrustumVolumeSize.x / 8, s_FrustumVolumeSize.y / 8, 1);
-		GfxDevice::SetGlobalTexture(s_VolumetricFogTextureId, s_FrustumScatterVolume);
+
+		GfxDevice::SetGlobalTexture(s_ScatterNoBlurFogVolumeId, s_FrustumVolume1);
+		GfxDevice::SetGlobalTexture(s_ScatterBlurFogVolumeId, s_FrustumVolume0);
+		GfxDevice::Dispatch(s_VolumetricFogShader->GetKernel(2), s_FrustumVolumeSize.x / 8, s_FrustumVolumeSize.y / 8, s_FrustumVolumeSize.z / 8);
+		
+		GfxDevice::SetGlobalTexture(s_ScatterNoBlurFogVolumeId, s_FrustumVolume0);
+		GfxDevice::SetGlobalTexture(s_ScatterBlurFogVolumeId, s_FrustumVolume1);
+		GfxDevice::Dispatch(s_VolumetricFogShader->GetKernel(3), s_FrustumVolumeSize.x / 8, s_FrustumVolumeSize.y / 8, s_FrustumVolumeSize.z / 8);
+		
+		GfxDevice::SetGlobalTexture(s_VolumetricFogTextureId, s_FrustumVolume1);
 	}
 }

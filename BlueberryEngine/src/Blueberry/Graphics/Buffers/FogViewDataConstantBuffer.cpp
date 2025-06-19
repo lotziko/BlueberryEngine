@@ -49,7 +49,8 @@ namespace Blueberry
 
 		Matrix view = camera->GetViewMatrix();
 		Matrix projection = Matrix::CreatePerspectiveFieldOfView(ToRadians(camera->GetFieldOfView()), camera->GetAspectRatio(), fogNearClipPlane, fogFarClipPlane);
-		Vector4 position = camera->GetTransform()->GetPosition();
+		Transform* transform = camera->GetTransform();
+		Vector4 position = transform->GetPosition();
 
 		Frustum frustum = {};
 		frustum.CreateFromMatrix(frustum, projection, false);
@@ -67,9 +68,8 @@ namespace Blueberry
 		constants.viewDY[0] = topLeft - bottomLeft;
 		constants.viewCorner[0] = bottomLeft;
 		constants.viewPos[0] = position;
-		constants.previousViewProj[0] = previousViewProj;
+		constants.previousViewProj[0] = GfxDevice::GetGPUMatrix(previousViewProj);
 		constants.fogNearRange = Vector4(1.0f - fogFarClipPlane / fogNearClipPlane, fogFarClipPlane / fogNearClipPlane, fogNearClipPlane / fogFarClipPlane, 1.0f / (1.0f - fogNearClipPlane / fogFarClipPlane));
-		//constants.fogLogNearRange = Vector4(fogNearClipPlane, std::log2(fogFarClipPlane / fogNearClipPlane), 1 / fogNearClipPlane, 1 / (std::log2(fogFarClipPlane / fogNearClipPlane)));
 		constants.frustumVolumeInvSize = Vector4(1.0f / frustumVolumeSize.x, 1.0f / frustumVolumeSize.y, 1.0f / frustumVolumeSize.z, 1.0f / (frustumVolumeSize.z - 1.0f));
 		constants.frustumVolumeSize = Vector4(frustumVolumeSize.x, frustumVolumeSize.y, frustumVolumeSize.z, 0);
 	

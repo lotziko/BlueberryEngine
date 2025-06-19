@@ -268,7 +268,7 @@ namespace Blueberry
 
 							float radius = frustumSphere.Radius;
 							Vector3 center = frustumSphere.Center;
-							const float shadowSize = 1024.0f;
+							const float shadowSize = 2048;
 
 							// https://www.gamedev.net/forums/topic/497259-stable-cascaded-shadow-maps/
 

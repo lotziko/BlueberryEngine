@@ -228,7 +228,7 @@ namespace Blueberry
 			case BindingType::DataList:
 			{
 				DataListBase* dataArrayPointer = value.Get<DataListBase>();
-				uint32_t dataSize = static_cast<uint32_t>(dataArrayPointer->Size());
+				size_t dataSize = dataArrayPointer->Size();
 				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 				if (dataSize > 0)
 				{

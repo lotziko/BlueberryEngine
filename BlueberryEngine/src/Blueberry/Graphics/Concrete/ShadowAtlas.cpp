@@ -48,7 +48,7 @@ namespace Blueberry
 	{
 		PackRequests();
 
-		GfxDevice::SetDepthBias(1, 2.5f);
+		GfxDevice::SetDepthBias(0.0005, 1.0);
 		GfxDevice::SetRenderTarget(nullptr, m_AtlasTexture);
 		GfxDevice::ClearDepth(1.0f);
 
