@@ -54,6 +54,7 @@ static uint _RenderInstanceId;
 #define LOAD_TEXTURE2D_MSAA(textureName, uv, sampleIndex)					textureName.Load(uv, sampleIndex)
 #define LOAD_TEXTURE2D_ARRAY_MSAA(textureName, uv, index, sampleIndex)		textureName.Load(uint3(uv, index), sampleIndex)
 #define SAMPLE_TEXTURECUBE(textureName, samplerName, coord3)				textureName.Sample(samplerName, coord3)
+#define SAMPLE_TEXTURECUBE_LOD(textureName, samplerName, coord3, lod)		textureName.SampleLevel(samplerName, coord3, lod)
 #define SAMPLE_TEXTURE3D(textureName, samplerName, coord3)					textureName.Sample(samplerName, coord3)
 #define SAMPLE_TEXTURE3D_LOD(textureName, samplerName, coord3, lod)			textureName.SampleLevel(samplerName, coord3, lod)
 

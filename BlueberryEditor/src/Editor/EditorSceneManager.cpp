@@ -38,6 +38,11 @@ namespace Blueberry
 		return s_Scene;
 	}
 
+	const String& EditorSceneManager::GetPath()
+	{
+		return s_Path;
+	}
+
 	void Serialize(Scene* scene, Serializer& serializer, const String& path)
 	{
 		for (auto& rootEntity : scene->GetRootEntities())

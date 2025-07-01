@@ -1,6 +1,7 @@
 #include "ThumbnailRenderer.h"
 
 #include "Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Graphics\GfxRenderTexturePool.h"
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\Material.h"
@@ -22,7 +23,7 @@ namespace Blueberry
 	{
 		if (s_ThumbnailRenderTarget == nullptr)
 		{
-			s_ThumbnailRenderTarget = GfxRenderTexturePool::Get(size, size, 1, 1, TextureFormat::R8G8B8A8_UNorm, TextureDimension::Texture2D, WrapMode::Clamp, FilterMode::Linear, true);
+			s_ThumbnailRenderTarget = GfxRenderTexturePool::Get(size, size, 1, 1, TextureFormat::R8G8B8A8_UNorm, TextureDimension::Texture2D, WrapMode::Clamp, FilterMode::Bilinear, true);
 		}
 
 		if (asset->IsClassType(Texture2D::Type))
@@ -33,24 +34,24 @@ namespace Blueberry
 			GfxDevice::SetViewport(0, 0, size, size);
 			GfxDevice::SetGlobalTexture(blitTextureId, importedTexture->Get());
 			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetBlit()));
-			GfxDevice::Read(s_ThumbnailRenderTarget, output, Rectangle(0, 0, size, size));
 			GfxDevice::SetRenderTarget(nullptr);
+			s_ThumbnailRenderTarget->GetData(output, Rectangle(0, 0, size, size));
 			return true;
 		}
 		else if (asset->IsClassType(Material::Type))
 		{
 			static MaterialPreview preview;
 			preview.Draw(static_cast<Material*>(asset), s_ThumbnailRenderTarget);
-			GfxDevice::Read(s_ThumbnailRenderTarget, output, Rectangle(0, 0, size, size));
 			GfxDevice::SetRenderTarget(nullptr);
+			s_ThumbnailRenderTarget->GetData(output, Rectangle(0, 0, size, size));
 			return true;
 		}
 		else if (asset->IsClassType(Mesh::Type))
 		{
 			static MeshPreview preview;
 			preview.Draw(static_cast<Mesh*>(asset), s_ThumbnailRenderTarget);
-			GfxDevice::Read(s_ThumbnailRenderTarget, output, Rectangle(0, 0, size, size));
 			GfxDevice::SetRenderTarget(nullptr);
+			s_ThumbnailRenderTarget->GetData(output, Rectangle(0, 0, size, size));
 			return true;
 		}
 		return false;

@@ -12,6 +12,7 @@ namespace Blueberry
 	{
 	public:
 		static void CalculateFrustum(const CullingResults& results, const CameraData& data, ShadowAtlas* atlas);
+		static GfxTexture* GetFrustumTexture();
 
 	private:
 		static inline ComputeShader* s_VolumetricFogShader = nullptr;

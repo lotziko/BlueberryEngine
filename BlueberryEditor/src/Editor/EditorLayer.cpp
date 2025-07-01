@@ -37,7 +37,6 @@ namespace Blueberry
 		RegisterEditorTypes();
 		RegisterAssetImporters();
 		RegisterIcons();
-		AssetDB::Refresh();
 
 		RegisterObjectInspectors();
 		AssemblyManager::Build(false);
@@ -56,6 +55,9 @@ namespace Blueberry
 		IconRenderer::Initialize();
 		Physics::Initialize();
 		EditorWindow::Load();
+
+		AssetDB::Refresh();
+
 		WindowEvents::GetWindowResized().AddCallback<EditorLayer, &EditorLayer::OnWindowResize>(this);
 		WindowEvents::GetWindowFocused().AddCallback<EditorLayer, &EditorLayer::OnWindowFocus>(this);
 		WindowEvents::GetWindowUnfocused().AddCallback<EditorLayer, &EditorLayer::OnWindowUnfocus>(this);

@@ -13,6 +13,10 @@ namespace Blueberry
 		virtual uint32_t GetHeight() const = 0;
 		virtual void* GetHandle() = 0;
 
-		virtual void SetData(void* data, const uint32_t& size) = 0;
+		virtual void GetData(void* target, const Rectangle& area) = 0;
+		virtual void GetData(void* target) = 0;
+		virtual void SetData(void* data, const size_t& size) = 0;
+
+		virtual void GenerateMipMaps() = 0;
 	};
 }

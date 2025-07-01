@@ -43,8 +43,6 @@ namespace Blueberry
 
 		static void Copy(GfxTexture* source, GfxTexture* target);
 		static void Copy(GfxTexture* source, GfxTexture* target, const Rectangle& area);
-		static void Read(GfxTexture* source, void* target);
-		static void Read(GfxTexture* source, void* target, const Rectangle& area);
 
 		static void SetRenderTarget(GfxTexture* renderTexture);
 		static void SetRenderTarget(GfxTexture* renderTexture, GfxTexture* depthStencilTexture);
@@ -84,8 +82,6 @@ namespace Blueberry
 		
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target) const = 0;
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Rectangle& area) const = 0;
-		virtual void ReadImpl(GfxTexture* source, void* target) const = 0;
-		virtual void ReadImpl(GfxTexture* source, void* target, const Rectangle& area) const = 0;
 
 		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture) = 0;
 		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, const uint32_t& slice) = 0;

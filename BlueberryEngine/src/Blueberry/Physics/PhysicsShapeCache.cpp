@@ -71,7 +71,7 @@ namespace Blueberry
 
 	void PhysicsShapeCache::Bake(Mesh* mesh, std::ofstream& stream)
 	{
-		JPH::TriangleList triangles;
+		JPH::TriangleList triangles = {};
 		auto& vertices = mesh->GetVertices();
 		auto& indices = mesh->GetIndices();
 		triangles.resize(indices.size() / 3);

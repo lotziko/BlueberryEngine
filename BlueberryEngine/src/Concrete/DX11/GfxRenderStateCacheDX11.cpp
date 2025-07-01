@@ -115,7 +115,7 @@ namespace Blueberry
 			for (auto it = dxFragmentShader->m_TextureSlots.begin(); it != dxFragmentShader->m_TextureSlots.end(); it++)
 			{
 				Texture* texture = material->GetTexture(it->first);
-				if (texture != nullptr)
+				if (texture != nullptr && texture->GetState() == ObjectState::Default)
 				{
 					auto dxTexture = static_cast<GfxTextureDX11*>(texture->Get());
 					renderState.pixelShaderResourceViews[it->second.first] = dxTexture->m_ResourceView.Get();

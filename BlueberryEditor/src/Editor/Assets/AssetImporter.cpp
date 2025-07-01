@@ -104,6 +104,13 @@ namespace Blueberry
 		m_RequireSave = false;
 	}
 
+	void AssetImporter::SaveAndReimport()
+	{
+		Save();
+		ResetImport();
+		ImportData();
+	}
+
 	AssetImporter* AssetImporter::CreateNew(const size_t& type, const std::filesystem::path& relativePath, const std::filesystem::path& relativeMetaPath)
 	{
 		auto info = ClassDB::GetInfo(type);

@@ -46,8 +46,6 @@ namespace Blueberry
 
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target) const final;
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Rectangle& area) const final;
-		virtual void ReadImpl(GfxTexture* source, void* target) const final;
-		virtual void ReadImpl(GfxTexture* source, void* target, const Rectangle& area) const final;
 
 		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture) final;
 		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, const uint32_t& slice) final;

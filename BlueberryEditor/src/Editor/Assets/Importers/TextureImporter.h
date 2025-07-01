@@ -4,50 +4,72 @@
 
 namespace Blueberry
 {
-	enum class TextureImporterType
-	{
-		Default,
-		BaseMap,
-		NormalMap,
-		Mask,
-		Cookie,
-	};
-
-	enum class TextureImporterFormat
-	{
-		None,
-		RGBA32,
-		RGB24,
-		RG16,
-		R8,
-		BC1,
-		BC3,
-		BC4,
-		BC5,
-		BC6H,
-		BC7
-	};
-
-	enum class TextureImporterShape
-	{
-		Texture2D,
-		Texture2DArray,
-		TextureCube,
-		Texture3D
-	};
-
 	class TextureImporter : public AssetImporter
 	{
 		OBJECT_DECLARATION(TextureImporter)
 
 	public:
+		enum class TextureType
+		{
+			Default,
+			BaseMap,
+			NormalMap,
+			Mask,
+			Cookie,
+		};
+
+		enum class TextureFormat
+		{
+			None,
+			RGBA32,
+			RGB24,
+			RG16,
+			R8,
+			BC1,
+			BC3,
+			BC4,
+			BC5,
+			BC6H,
+			BC7
+		};
+
+		enum class TextureShape
+		{
+			Texture2D,
+			Texture2DArray,
+			TextureCube,
+			Texture3D
+		};
+
+		enum class TextureCubeType
+		{
+			Equirectangular,
+			Slices
+		};
+
+		enum class TextureCubeIBLType
+		{
+			None,
+			Specular
+		};
+
+	public:
 		TextureImporter() = default;
 
-		const TextureImporterType& GetTextureType();
-		void SetTextureType(const TextureImporterType& type);
+		const TextureShape& GetTextureShape();
+		void SetTextureShape(const TextureShape& shape);
 
-		const TextureImporterFormat& GetTextureFormat();
-		void SetTextureFormat(const TextureImporterFormat& format);
+		const TextureType& GetTextureType();
+		void SetTextureType(const TextureType& type);
+
+		const TextureFormat& GetTextureFormat();
+		void SetTextureFormat(const TextureFormat& format);
+
+		const TextureCubeType& GetTextureCubeType();
+		void SetTextureCubeType(const TextureCubeType& cubeType);
+
+		const TextureCubeIBLType& GetTextureCubeIBLType();
+		void SetTextureCubeIBLType(const TextureCubeIBLType& cubeIBLType);
 
 		const bool& GetGenerateMipMaps();
 		void SetGenerateMipMaps(const bool& generate);
@@ -55,20 +77,28 @@ namespace Blueberry
 		const bool& IsSRGB();
 		void SetSRGB(const bool& srgb);
 
+		const WrapMode& GetWrapMode();
+		void SetWrapMode(const WrapMode& wrapMode);
+
+		const FilterMode& GetFilterMode();
+		void SetFilterMode(const FilterMode& filterMode);
+
 	protected:
 		virtual void ImportData() override;
 
 	private:
 		String GetTexturePath();
-		TextureFormat GetFormat();
+		Blueberry::TextureFormat GetFormat();
 
 	private:
 		bool m_GenerateMipmaps = true;
 		bool m_IsSRGB = true;
 		WrapMode m_WrapMode = WrapMode::Clamp;
-		FilterMode m_FilterMode = FilterMode::Linear;
-		TextureImporterShape m_TextureShape = TextureImporterShape::Texture2D;
-		TextureImporterType m_TextureType = TextureImporterType::Default;
-		TextureImporterFormat m_TextureFormat = TextureImporterFormat::RGBA32;
+		FilterMode m_FilterMode = FilterMode::Bilinear;
+		TextureShape m_TextureShape = TextureShape::Texture2D;
+		TextureType m_TextureType = TextureType::Default;
+		TextureFormat m_TextureFormat = TextureFormat::RGBA32;
+		TextureCubeType m_TextureCubeType = TextureCubeType::Equirectangular;
+		TextureCubeIBLType m_TextureCubeIBLType = TextureCubeIBLType::None;
 	};
 }

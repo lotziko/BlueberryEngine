@@ -5,24 +5,65 @@
 
 namespace Blueberry
 {
-	Matrix LightHelper::GetViewMatrix(Light* light, const uint8_t& slice)
+	static Matrix s_PointLightMatrices[6] =
+	{
+		Matrix::CreateLookAt(Vector3::Zero, Vector3::Forward, Vector3::Up),
+		Matrix::CreateLookAt(Vector3::Zero, Vector3::Backward, Vector3::Up),
+		Matrix::CreateLookAt(Vector3::Zero, Vector3::Left, Vector3::Up),
+		Matrix::CreateLookAt(Vector3::Zero, Vector3::Right, Vector3::Up),
+		Matrix::CreateLookAt(Vector3::Zero, Vector3::Up, Vector3::Backward),
+		Matrix::CreateLookAt(Vector3::Zero, Vector3::Down, Vector3::Forward)
+	};
+
+	static Vector3 s_PointLightDirection[6] =
+	{
+		Vector3::Forward, Vector3::Backward, Vector3::Left, Vector3::Right, Vector3::Up, Vector3::Down
+	};
+
+	static Vector3 s_PointLightUp[6] =
+	{
+		Vector3::Up, Vector3::Up, Vector3::Up, Vector3::Up, Vector3::Backward, Vector3::Forward
+	};
+
+	Matrix LightHelper::GetViewMatrix(Light* light, Transform* transform, const uint8_t& slice)
 	{
 		switch (light->GetType())
 		{
 		case LightType::Spot:
 		case LightType::Directional:
-			return light->GetTransform()->GetWorldToLocalMatrix();
+			return transform->GetWorldToLocalMatrix();
+		case LightType::Point:
+		{
+			Vector3 position = transform->GetPosition();
+			return Matrix::CreateLookAt(position, position + s_PointLightDirection[slice], s_PointLightUp[slice]); // Something broken here
+		}
 		default:
 			return Matrix::Identity;
 		}
 	}
 
-	Matrix LightHelper::GetProjectionMatrix(Light* light, const uint8_t& slice)
+	Matrix LightHelper::GetInverseViewMatrix(Light* light, Transform* transform, const uint8_t& slice)
+	{
+		switch (light->GetType())
+		{
+		case LightType::Spot:
+		case LightType::Directional:
+			return transform->GetLocalToWorldMatrix();
+		case LightType::Point:
+			return s_PointLightMatrices[slice] * transform->GetLocalToWorldMatrix(); // Something broken here
+		default:
+			return Matrix::Identity;
+		}
+	}
+
+	Matrix LightHelper::GetProjectionMatrix(Light* light, const float& guardAngle)
 	{
 		switch (light->GetType())
 		{
 		case LightType::Spot:
 			return Matrix::CreatePerspectiveFieldOfView(ToRadians(light->GetOuterSpotAngle()), 1, 0.01f, light->GetRange());
+		case LightType::Point:
+			return Matrix::CreatePerspectiveFieldOfView(ToRadians(90 + guardAngle), 1, 0.01f, light->GetRange());
 		default:
 			return Matrix::Identity;
 		}
@@ -87,7 +128,7 @@ namespace Blueberry
 			position = Vector4(pos.x, pos.y, pos.z, 1.0f);
 		}
 
-		data.lightParam = Vector4(light->IsCastingShadows() ? 1.0f : 0.0f, light->GetCookie() == nullptr ? 0.0f : 1.0f, 0.0f, range * range);
+		data.lightParam = Vector4(light->IsCastingShadows() ? 1.0f : 0.0f, light->GetCookie() != nullptr || (light->GetType() == LightType::Point && light->IsCastingShadows()) ? 1.0f : 0.0f, 0.0f, range * range);
 		data.lightPosition = position;
 		data.lightColor = Vector4(color.x * intensity, color.y * intensity, color.z * intensity, 1.0f);
 		data.lightAttenuation = GetAttenuation(type, range, outerSpotAngle, innerSpotAngle);

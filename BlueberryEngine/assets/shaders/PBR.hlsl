@@ -5,10 +5,10 @@
 #include "RealtimeLights.hlsl"
 #include "RealtimeShadows.hlsl"
 
-float CalculateGeometricRoughnessFactor(half3 geometricNormalWs)
+float CalculateGeometricRoughnessFactor(float3 geometricNormalWs)
 {
-	half3 normalWsDdx = ddx(geometricNormalWs.xyz);
-	half3 normalWsDdy = ddy(geometricNormalWs.xyz);
+	float3 normalWsDdx = ddx(geometricNormalWs.xyz);
+	float3 normalWsDdy = ddy(geometricNormalWs.xyz);
 	return pow(saturate(max(dot(normalWsDdx.xyz, normalWsDdx.xyz), dot(normalWsDdy.xyz, normalWsDdy.xyz))), 0.333);
 }
 
@@ -19,9 +19,9 @@ float AdjustRoughnessByGeometricNormal(float roughness, float3 geometricNormalWs
 	return roughness;
 }
 
-half2 CalculateFresnelResponse(half NdotV, half roughness)
+float2 CalculateFresnelResponse(float NdotV, float roughness)
 {
-	return pow(float2(0, 0), 2);
+	return pow(SAMPLE_TEXTURE2D(_BRDFIntegrationLUT, _BRDFIntegrationLUT_Sampler, float2(NdotV, roughness)).rg, 2);
 }
 
 void RoughnessEllipseToScaleAndExp(float roughness, out float2 diffuseExponent, out float2 specularExponent, out float2 specularScale)
@@ -51,7 +51,7 @@ float CalculateDistributionGGX(float3 NDotH, float roughness)
 	return num / denom;
 }
 
-half CalculateGeometrySchlickGGX(float NDotV, float roughness)
+float CalculateGeometrySchlickGGX(float NDotV, float roughness)
 {
 	float r = (roughness + 1.0);
 	float k = (r * r) / 8.0;
@@ -62,16 +62,16 @@ half CalculateGeometrySchlickGGX(float NDotV, float roughness)
 	return num / denom;
 }
 
-half3 CalculateFresnelSchlick(float LDotH, float3 reflectance)
+float3 CalculateFresnelSchlick(float LDotH, float3 reflectance)
 {
 	return reflectance + (1.0 - reflectance) * pow(1.0 - LDotH, 5);
 }
 
-half3 CalculateDirectSpecular(float3 normalWS, float3 viewDirectionWS, float3 lightDirectionWS, float3 lightColor, float attenuation, float falloff, float3 reflectance, float roughness)
+float3 CalculateDirectSpecular(float3 normalWS, float3 viewDirectionWS, float3 lightDirectionWS, float3 lightColor, float attenuation, float falloff, float3 reflectance, float roughness)
 {
-	float3 halfAngleDirWS = normalize(lightDirectionWS.xyz + viewDirectionWS.xyz);
-	float LDotH = max(0, dot(lightDirectionWS.xyz, halfAngleDirWS.xyz));
-	float NDotH = max(0, dot(normalWS.xyz, halfAngleDirWS.xyz));
+	float3 floatAngleDirWS = normalize(lightDirectionWS.xyz + viewDirectionWS.xyz);
+	float LDotH = max(0, dot(lightDirectionWS.xyz, floatAngleDirWS.xyz));
+	float NDotH = max(0, dot(normalWS.xyz, floatAngleDirWS.xyz));
 	float NDotL = max(0, dot(normalWS.xyz, lightDirectionWS.xyz));
 	float NDotV = max(0, dot(normalWS.xyz, viewDirectionWS.xyz));
 
@@ -85,18 +85,18 @@ half3 CalculateDirectSpecular(float3 normalWS, float3 viewDirectionWS, float3 li
 	return (numerator / denominator) * NDotL * lightColor * attenuation * falloff;
 }
 
-half3 CalculateIndirectDiffuse(half3 bakedGI, half occlusion)
+float3 CalculateIndirectDiffuse(float3 bakedGI, float occlusion)
 {
 	return bakedGI;
 }
 
-half3 CalculateIndirectSpecular(half3 normalWS, half3 positionWS, half3 viewDirectionWS, half roughness, half occlusion, half3 reflectance)
+float3 CalculateIndirectSpecular(float3 normalWS, float3 positionWS, float3 viewDirectionWS, float roughness, float occlusion, float3 reflectance)
 {
-	half3 reflectVector = reflect(-viewDirectionWS, normalWS);
-	half NDotV = max(0, dot(normalWS.xyz, viewDirectionWS.xyz));
+	float3 reflectVector = reflect(-viewDirectionWS, normalWS);
+	float NDotV = max(0, dot(normalWS.xyz, viewDirectionWS.xyz));
 
-	half3 envirnonmentReflection = max(0, float3(0, 0, 0));
-	half2 fresnelResponse = CalculateFresnelResponse(NDotV, roughness);
+	float3 envirnonmentReflection = max(0, SAMPLE_TEXTURECUBE_LOD(_ReflectionTexture, _ReflectionTexture_Sampler, reflectVector, roughness * 5).rgb);
+	float2 fresnelResponse = CalculateFresnelResponse(NDotV, roughness);
 
 	return envirnonmentReflection * (reflectance * fresnelResponse.x + fresnelResponse.y);
 }
@@ -109,13 +109,15 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 	float geometricRoughness = AdjustRoughnessByGeometricNormal(surfaceData.roughness, inputData.normalGS);
 	RoughnessEllipseToScaleAndExp(geometricRoughness, diffuseExponent, specularExponent, specularScale);
 
+	//float3 reflectance = 0.04;
+	//reflectance = lerp(reflectance, surfaceData.albedo.rgb, surfaceData.metallic);
 	float3 reflectance = ((surfaceData.albedo.rgb - 0.04) * surfaceData.metallic + 0.04) * (1 - geometricRoughness);
 
 	float3 directDiffuseTerm = (float3)0;
 	float3 directSpecularTerm = (float3)0;
 
 	float3 indirectDiffuseTerm = CalculateIndirectDiffuse(_AmbientLightColor.rgb, surfaceData.occlusion);
-	float3 indirectSpecularTerm = float3(0, 0, 0);//CalculateIndirectSpecular(inputData.normalWS, inputData.positionWS, inputData.viewDirectionWS, geometricRoughness, surfaceData.occlusion, reflectance);
+	float3 indirectSpecularTerm = CalculateIndirectSpecular(inputData.normalWS, inputData.positionWS, inputData.viewDirectionWS, geometricRoughness, surfaceData.occlusion, reflectance);
 
 #if (SHADOWS)
 	if (_MainShadowCascades[0].w > 0)
@@ -185,7 +187,7 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 #endif
 
 		directDiffuseTerm += CalculateDirectDiffuse(inputData.normalWS, lightDirectionWS, lightColor, distanceAttenuation * spotAttenuation * cookieAttenuation * shadowAttenuation, falloff, diffuseExponent);
-		directSpecularTerm += CalculateDirectSpecular(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, distanceAttenuation * spotAttenuation * shadowAttenuation, falloff, reflectance, geometricRoughness);
+		directSpecularTerm += CalculateDirectSpecular(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, distanceAttenuation * spotAttenuation * cookieAttenuation * shadowAttenuation, falloff, reflectance, geometricRoughness);
 	}
 
 	directDiffuseTerm *= (1.0 - reflectance);

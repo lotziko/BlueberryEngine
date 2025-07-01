@@ -29,11 +29,6 @@ namespace Blueberry
 
 	void ShadowAtlas::Insert(Light* light, const uint32_t& size, const uint8_t& sliceCount)
 	{
-		if (light->GetType() != LightType::Point)
-		{
-			
-		}
-
 		for (uint8_t i = 0; i < sliceCount; ++i)
 		{
 			ShadowRequest request = { size, 0u, 0u, light, i };

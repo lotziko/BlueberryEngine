@@ -116,16 +116,6 @@ namespace Blueberry
 		s_Instance->CopyImpl(source, target, area);
 	}
 
-	void GfxDevice::Read(GfxTexture* source, void* target)
-	{
-		s_Instance->ReadImpl(source, target);
-	}
-
-	void GfxDevice::Read(GfxTexture* source, void* target, const Rectangle& area)
-	{
-		s_Instance->ReadImpl(source, target, area);
-	}
-
 	void GfxDevice::SetRenderTarget(GfxTexture* renderTexture)
 	{
 		s_Instance->SetRenderTargetImpl(renderTexture, nullptr);

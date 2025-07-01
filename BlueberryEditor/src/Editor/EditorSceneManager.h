@@ -12,6 +12,7 @@ namespace Blueberry
 	{
 	public:
 		static Scene* GetScene();
+		static const String& GetPath();
 		static void CreateEmpty(const String& path);
 		static void Load(const String& path);
 		static void Reload();

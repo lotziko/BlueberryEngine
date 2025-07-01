@@ -160,6 +160,11 @@ namespace Blueberry
 
 	Texture* Material::GetTexture(const size_t& id)
 	{
+		if (m_BindedTextures.size() < m_Textures.size())
+		{
+			ApplyProperties();
+		}
+
 		auto it = m_BindedTextures.find(id);
 		if (it != m_BindedTextures.end())
 		{
@@ -200,7 +205,11 @@ namespace Blueberry
 			{
 				size_t key = TO_HASH(texture.m_Name);
 				m_BindedTextures.insert_or_assign(key, texture.m_Texture.Get()->GetObjectId());
-				texture.m_Texture.Get()->m_Dependencies.emplace(m_ObjectId);
+				Texture* tex = texture.m_Texture.Get();
+				if (tex->GetState() == ObjectState::Default)
+				{
+					tex->m_Dependencies.emplace(m_ObjectId);
+				}
 			}
 		}
 	}

@@ -8,9 +8,11 @@
 
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Assets\AssetImporter.h"
-#include "Editor\Assets\Processors\PngTextureProcessor.h"
 #include "Editor\Assets\Processors\HLSLShaderProcessor.h"
 #include "Editor\Assets\Processors\HLSLComputeShaderProcessor.h"
+#include "Editor\Misc\TextureHelper.h"
+
+#include <directxtex\DirectXTex.h>
 
 namespace Blueberry
 {
@@ -46,12 +48,13 @@ namespace Blueberry
 		std::string extension = assetPath.extension().string();
 		if (extension == ".png")
 		{
-			PngTextureProcessor processor;
-			processor.Load(path, true, false);
-			PngTextureProperties properties = processor.GetProperties();
-			Texture2D* texture = Texture2D::Create(properties.width, properties.height, properties.mipCount, properties.format, WrapMode::Repeat);
+			DirectX::ScratchImage image = {};
+			TextureHelper::Load(image, path, ".png", true);
+			TextureHelper::Flip(image);
+			auto metadata = image.GetMetadata();
+			Texture2D* texture = Texture2D::Create(metadata.width, metadata.height, metadata.mipLevels, static_cast<TextureFormat>(metadata.format), WrapMode::Repeat);
 			texture->SetName(assetPath.stem().string().data());
-			texture->SetData(static_cast<uint8_t*>(properties.data), properties.dataSize);
+			texture->SetData(static_cast<uint8_t*>(image.GetPixels()), image.GetPixelsSize());
 			texture->Apply();
 			m_LoadedAssets.insert_or_assign(path, texture);
 			return texture;

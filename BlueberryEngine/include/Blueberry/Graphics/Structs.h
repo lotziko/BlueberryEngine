@@ -24,6 +24,7 @@ namespace Blueberry
 		WrapMode wrapMode;
 		FilterMode filterMode;
 		uint8_t slices;
+		bool generateMipMaps;
 	};
 
 	struct BB_API BufferProperties

@@ -17,7 +17,7 @@ namespace Blueberry
 	public:
 		static void Refresh();
 
-		static AssetImporter* GetImporter(const String& path);
+		static AssetImporter* GetImporter(const String& relativePath);
 		static AssetImporter* GetImporter(const Guid& guid);
 
 		template<class ObjectType>

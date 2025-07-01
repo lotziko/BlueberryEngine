@@ -10,8 +10,10 @@ namespace Blueberry
 
 	enum class FilterMode
 	{
-		Linear,
 		Point,
+		Bilinear,
+		Trilinear,
+		Anisotropic,
 
 		CompareDepth
 	};

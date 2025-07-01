@@ -37,7 +37,6 @@ namespace Blueberry
 	static size_t s_ScatterNoBlurFogVolumeId = TO_HASH("_ScatterNoBlurFogVolume");
 	static size_t s_ScatterBlurFogVolumeId = TO_HASH("_ScatterBlurFogVolume");
 	static size_t s_ScatterFogVolumeId = TO_HASH("_ScatterFogVolume");
-	static size_t s_VolumetricFogTextureId = TO_HASH("_VolumetricFogTexture");
 
 	void VolumetricFog::CalculateFrustum(const CullingResults& results, const CameraData& data, ShadowAtlas* atlas)
 	{
@@ -55,7 +54,7 @@ namespace Blueberry
 			textureProperties.format = TextureFormat::R16G16B16A16_UNorm;
 			textureProperties.dimension = TextureDimension::Texture3D;
 			textureProperties.wrapMode = WrapMode::Clamp;
-			textureProperties.filterMode = FilterMode::Linear;
+			textureProperties.filterMode = FilterMode::Bilinear;
 			textureProperties.isRenderTarget = false;
 			textureProperties.isReadable = false;
 			textureProperties.isWritable = false;
@@ -97,7 +96,10 @@ namespace Blueberry
 		GfxDevice::SetGlobalTexture(s_ScatterNoBlurFogVolumeId, s_FrustumVolume0);
 		GfxDevice::SetGlobalTexture(s_ScatterBlurFogVolumeId, s_FrustumVolume1);
 		GfxDevice::Dispatch(s_VolumetricFogShader->GetKernel(3), s_FrustumVolumeSize.x / 8, s_FrustumVolumeSize.y / 8, s_FrustumVolumeSize.z / 8);
-		
-		GfxDevice::SetGlobalTexture(s_VolumetricFogTextureId, s_FrustumVolume1);
+	}
+
+	GfxTexture* VolumetricFog::GetFrustumTexture()
+	{
+		return s_FrustumVolume1;
 	}
 }

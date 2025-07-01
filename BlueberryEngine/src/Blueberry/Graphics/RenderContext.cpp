@@ -5,12 +5,14 @@
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Scene\Components\MeshRenderer.h"
 #include "Blueberry\Scene\Components\SkyRenderer.h"
+#include "Blueberry\Graphics\Texture.h"
 #include "Blueberry\Scene\Components\Light.h"
 #include "Blueberry\Scene\Components\Transform.h"
 
 #include "Blueberry\Graphics\Mesh.h"
 #include "Blueberry\Graphics\Material.h"
 #include "StandardMeshes.h"
+#include "DefaultTextures.h"
 #include "Renderer2D.h"
 #include "LightHelper.h"
 #include "RendererTree.h"
@@ -19,6 +21,8 @@
 #include "Buffers\PerCameraDataConstantBuffer.h"
 #include "Buffers\PerDrawDataConstantBuffer.h"
 #include "..\Threading\JobSystem.h"
+
+#include "Blueberry\Graphics\TextureCube.h"
 
 namespace Blueberry
 {
@@ -78,6 +82,7 @@ namespace Blueberry
 
 	void GatherOperations(const CullingResults& results, Object* cullerObject, const uint8_t& index = 0, const SortingMode& sortingMode = SortingMode::Default)
 	{
+		// TODO store data of frame instead of s_LastCullerInfo
 		if (std::get<0>(s_LastCullerInfo) == cullerObject && std::get<1>(s_LastCullerInfo) == index && std::get<2>(s_LastCullerInfo) == sortingMode)
 		{
 			return;
@@ -305,7 +310,7 @@ namespace Blueberry
 					}
 					else if (type == LightType::Spot)
 					{
-						Matrix view = LightHelper::GetViewMatrix(light);
+						Matrix view = LightHelper::GetViewMatrix(light, transform);
 						Matrix projection = LightHelper::GetProjectionMatrix(light);
 
 						Frustum lightFrustum;
@@ -317,6 +322,24 @@ namespace Blueberry
 
 						lightCullerInfo.viewMatrix = view;
 						results.cullerInfos.emplace_back(lightCullerInfo);
+					}
+					else if (type == LightType::Point)
+					{
+						Matrix projection = LightHelper::GetProjectionMatrix(light, 2.03f);
+						for (uint32_t i = 0; i < 6; ++i)
+						{
+							Matrix view = LightHelper::GetViewMatrix(light, transform, i);
+							Frustum lightFrustum;
+							lightFrustum.CreateFromMatrix(lightFrustum, projection, false);
+							lightFrustum.Transform(lightFrustum, view.Invert());
+
+							lightFrustum.GetPlanes(&lightCullerInfo.planes[0], &lightCullerInfo.planes[1], &lightCullerInfo.planes[2], &lightCullerInfo.planes[3], &lightCullerInfo.planes[4], &lightCullerInfo.planes[5]);
+							light->m_WorldToShadow[i] = view * projection;
+
+							lightCullerInfo.index = i;
+							lightCullerInfo.viewMatrix = view;
+							results.cullerInfos.emplace_back(lightCullerInfo);
+						}
 					}
 				}
 			}
@@ -346,6 +369,14 @@ namespace Blueberry
 			Material* material = results.skyRenderer->GetMaterial();
 			if (material != nullptr)
 			{
+				// Generate IBL 128x128 texture and store in project or in scene (in sky renderer) instead
+				// Also generate same IBL for reflection probes
+				// Can generate IBLs in engine method similar to Unity
+				TextureCube* reflectionTexture = results.skyRenderer->GetReflectionTexture();
+				if (reflectionTexture != nullptr)
+				{
+					GfxDevice::SetGlobalTexture(TO_HASH("_ReflectionTexture"), reflectionTexture->Get());
+				}
 				GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetCube(), material, 0));
 			}
 		}

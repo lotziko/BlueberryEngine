@@ -75,7 +75,13 @@ SAMPLER(_CookieTexture_Sampler);
 TEXTURE3D(_VolumetricFogTexture);
 SAMPLER(_VolumetricFogTexture_Sampler);
 
+TEXTURECUBE(_ReflectionTexture);
+SAMPLER(_ReflectionTexture_Sampler);
+
 TEXTURE2D(_BlueNoiseLUT);
 SAMPLER(_BlueNoiseLUT_Sampler);
+
+TEXTURE2D(_BRDFIntegrationLUT);
+SAMPLER(_BRDFIntegrationLUT_Sampler);
 
 #endif

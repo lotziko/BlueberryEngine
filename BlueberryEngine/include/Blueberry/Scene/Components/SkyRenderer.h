@@ -5,6 +5,7 @@
 namespace Blueberry
 {
 	class Material;
+	class TextureCube;
 
 	class BB_API SkyRenderer : public Component
 	{
@@ -20,9 +21,14 @@ namespace Blueberry
 		Material* GetMaterial();
 
 		const Color& GetAmbientColor();
+		void SetAmbientColor(const Color& color);
+
+		TextureCube* GetReflectionTexture();
+		void SetReflectionTexture(TextureCube* texture);
 
 	private:
 		ObjectPtr<Material> m_Material;
 		Color m_AmbientColor;
+		ObjectPtr<TextureCube> m_ReflectionTexture;
 	};
 }

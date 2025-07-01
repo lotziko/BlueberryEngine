@@ -24,11 +24,15 @@ namespace Blueberry
 		virtual uint32_t GetHeight() const override;
 		virtual void* GetHandle() override;
 
-		virtual void SetData(void* data, const uint32_t& size) override;
+		virtual void GetData(void* target, const Rectangle& area) override;
+		virtual void GetData(void* target) override;
+		virtual void SetData(void* data, const size_t& size) override;
+
+		virtual void GenerateMipMaps() override;
 
 	private:
 		uint32_t GetQualityLevel(const DXGI_FORMAT& format, const uint32_t& antiAliasing);
-		bool Initialize(D3D11_SUBRESOURCE_DATA* subresourceData, const TextureProperties& properties);
+		bool Initialize(D3D11_SUBRESOURCE_DATA* subresourceData, const uint32_t& subresourceCount, const TextureProperties& properties);
 
 	private:
 		ComPtr<ID3D11Resource> m_Texture;
@@ -41,10 +45,12 @@ namespace Blueberry
 
 		List<ComPtr<ID3D11RenderTargetView>> m_SlicesRenderTargetViews;
 
-		uint32_t m_Width;
-		uint32_t m_Height;
-		uint32_t m_Depth;
-		uint32_t m_ArraySize;
+		DXGI_FORMAT m_Format = DXGI_FORMAT_UNKNOWN;
+		uint32_t m_Width = 0;
+		uint32_t m_Height = 0;
+		uint32_t m_Depth = 0;
+		uint32_t m_ArraySize = 0;
+		uint32_t m_MipLevels = 1;
 
 		ID3D11Device* m_Device;
 		ID3D11DeviceContext* m_DeviceContext;

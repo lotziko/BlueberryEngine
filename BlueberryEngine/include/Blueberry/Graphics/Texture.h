@@ -33,7 +33,7 @@ namespace Blueberry
 		TextureFormat m_Format = TextureFormat::R8G8B8A8_UNorm;
 		TextureDimension m_Dimension = TextureDimension::Texture2D;
 		WrapMode m_WrapMode = WrapMode::Clamp;
-		FilterMode m_FilterMode = FilterMode::Linear;
+		FilterMode m_FilterMode = FilterMode::Bilinear;
 		ByteData m_RawData = {};
 
 		uint32_t m_UpdateCount = 0;

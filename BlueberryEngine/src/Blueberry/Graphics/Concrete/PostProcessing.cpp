@@ -10,13 +10,16 @@
 namespace Blueberry
 {
 	static size_t s_BlueNoiseLUTId = TO_HASH("_BlueNoiseLUT");
+	static size_t s_BRDFIntegrationLUTId = TO_HASH("_BRDFIntegrationLUT");
 
 	void PostProcessing::Initialize()
 	{
 		if (s_BlueNoiseLUT == nullptr)
 		{
 			s_BlueNoiseLUT = static_cast<Texture2D*>(AssetLoader::Load("assets/textures/BlueNoiseLUT.png"));
+			s_BRDFIntegrationLUT = static_cast<Texture2D*>(AssetLoader::Load("assets/textures/BRDFIntegrationLUT.png"));
 			GfxDevice::SetGlobalTexture(s_BlueNoiseLUTId, s_BlueNoiseLUT->Get());
+			GfxDevice::SetGlobalTexture(s_BRDFIntegrationLUTId, s_BRDFIntegrationLUT->Get());
 		}
 	}
 

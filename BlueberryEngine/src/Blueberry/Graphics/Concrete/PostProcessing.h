@@ -15,5 +15,6 @@ namespace Blueberry
 
 	private:
 		static inline Texture2D* s_BlueNoiseLUT = nullptr;
+		static inline Texture2D* s_BRDFIntegrationLUT = nullptr;
 	};
 }

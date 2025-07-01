@@ -165,7 +165,7 @@ namespace Blueberry
 		}
 
 		GfxDevice::SetRenderTarget(nullptr);
-		GfxDevice::Read(m_SceneRenderTarget, pixel, area);
+		m_SceneRenderTarget->GetData(pixel, area);
 
 		if (pixel[0] > 0 || pixel[1] > 0)
 		{

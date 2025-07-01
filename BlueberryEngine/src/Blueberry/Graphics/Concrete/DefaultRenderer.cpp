@@ -5,11 +5,14 @@
 #include "..\..\Logging\Profiler.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\TextureCube.h"
+#include "Blueberry\Graphics\Texture2D.h"
+#include "Blueberry\Graphics\Texture3D.h"
 #include "..\GfxDevice.h"
 #include "..\GfxTexture.h"
 #include "..\GfxRenderTexturePool.h"
 #include "..\StandardMeshes.h"
 #include "..\DefaultMaterials.h"
+#include "..\DefaultTextures.h"
 #include "..\RenderContext.h"
 #include "..\HBAORenderer.h"
 #include "ShadowAtlas.h"
@@ -32,6 +35,7 @@ namespace Blueberry
 	static size_t s_ShadowTextureId = TO_HASH("_ShadowTexture");
 	static size_t s_CookieTextureId = TO_HASH("_CookieTexture");
 	static size_t s_HBAOTextureId = TO_HASH("_ScreenOcclusionTexture");
+	static size_t s_VolumetricFogTextureId = TO_HASH("_VolumetricFogTexture");
 	static size_t s_MultiviewKeywordId = TO_HASH("MULTIVIEW");
 	static size_t s_ShadowsKeywordId = TO_HASH("SHADOWS");
 
@@ -97,6 +101,8 @@ namespace Blueberry
 		if (simplified)
 		{
 			Shader::SetKeyword(s_ShadowsKeywordId, false);
+			GfxDevice::SetGlobalTexture(s_CookieTextureId, DefaultTextures::GetWhite3D()->Get());
+			GfxDevice::SetGlobalTexture(s_VolumetricFogTextureId, DefaultTextures::GetBlack3D()->Get());
 		}
 		else
 		{
@@ -115,6 +121,7 @@ namespace Blueberry
 			BB_PROFILE_END();
 
 			VolumetricFog::CalculateFrustum(s_Results, cameraData, s_ShadowAtlas);
+			GfxDevice::SetGlobalTexture(s_VolumetricFogTextureId, VolumetricFog::GetFrustumTexture());
 		}
 		
 		// Lights are binded after shadows finished rendering to have valid shadow matrices
@@ -143,8 +150,15 @@ namespace Blueberry
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_ResolveMSAAMaterial, 0));
 
 		// HBAO
-		HBAORenderer::Draw(depthStencilRenderTarget, colorNormalRenderTarget, camera->GetViewMatrix(), camera->GetProjectionMatrix(), viewport, HBAORenderTarget);
-		GfxDevice::SetGlobalTexture(s_HBAOTextureId, HBAORenderTarget);
+		if (simplified)
+		{
+			GfxDevice::SetGlobalTexture(s_HBAOTextureId, DefaultTextures::GetWhite2D()->Get());
+		}
+		else
+		{
+			HBAORenderer::Draw(depthStencilRenderTarget, colorNormalRenderTarget, camera->GetViewMatrix(), camera->GetProjectionMatrix(), viewport, HBAORenderTarget);
+			GfxDevice::SetGlobalTexture(s_HBAOTextureId, HBAORenderTarget);
+		}
 
 		// Forward pass
 		BB_PROFILE_BEGIN("Forward");
@@ -163,7 +177,10 @@ namespace Blueberry
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_ResolveMSAAMaterial, 1));
 		
 		GfxDevice::SetRenderTarget(nullptr);
-		PostProcessing::Draw(colorNormalRenderTarget, viewport);
+		if (!simplified)
+		{
+			PostProcessing::Draw(colorNormalRenderTarget, viewport);
+		}
 
 		// Tonemapping
 		// Gamma correction is done manually together with MSAA resolve to avoid using SRGB swapchain

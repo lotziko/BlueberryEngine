@@ -2,18 +2,12 @@
 
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\TextureCube.h"
-#include "Blueberry\Graphics\GfxTexture.h"
-#include "Blueberry\Graphics\GfxRenderTexturePool.h"
-#include "Blueberry\Graphics\GfxDevice.h"
-#include "Blueberry\Graphics\StandardMeshes.h"
-#include "Blueberry\Graphics\Shader.h"
-#include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Tools\FileHelper.h"
-#include "Blueberry\Assets\AssetLoader.h"
 #include "Editor\Assets\AssetDB.h"
-#include "Editor\Assets\Processors\PngTextureProcessor.h"
+#include "Editor\Misc\TextureHelper.h"
+#include "Editor\Assets\Processors\ReflectionGenerator.h"
 
-#include "Blueberry\Graphics\Concrete\DefaultRenderer.h"
+#include <directxtex\DirectXTex.h>
 
 namespace Blueberry
 {
@@ -23,32 +17,62 @@ namespace Blueberry
 		DEFINE_FIELD(TextureImporter, m_GenerateMipmaps, BindingType::Bool, {})
 		DEFINE_FIELD(TextureImporter, m_IsSRGB, BindingType::Bool, {})
 		DEFINE_FIELD(TextureImporter, m_WrapMode, BindingType::Enum, FieldOptions().SetEnumHint("Repeat,Clamp"))
-		DEFINE_FIELD(TextureImporter, m_FilterMode, BindingType::Enum, FieldOptions().SetEnumHint("Linear,Point"))
+		DEFINE_FIELD(TextureImporter, m_FilterMode, BindingType::Enum, FieldOptions().SetEnumHint("Point,Bilinear,Trilinear,Anisotropic"))
 		DEFINE_FIELD(TextureImporter, m_TextureShape, BindingType::Enum, FieldOptions().SetEnumHint("Texture2D,Texture2DArray,TextureCube,Texture3D"))
 		DEFINE_FIELD(TextureImporter, m_TextureType, BindingType::Enum, {})
 		DEFINE_FIELD(TextureImporter, m_TextureFormat, BindingType::Enum, {})
+		DEFINE_FIELD(TextureImporter, m_TextureCubeType, BindingType::Enum, {})
+		DEFINE_FIELD(TextureImporter, m_TextureCubeIBLType, BindingType::Enum, {})
 	}
 
-	static Material* s_EquirectangularToCubemapMaterial = nullptr;
+	const TextureImporter::TextureShape& TextureImporter::GetTextureShape()
+	{
+		return m_TextureShape;
+	}
 
-	const TextureImporterType& TextureImporter::GetTextureType()
+	void TextureImporter::SetTextureShape(const TextureShape& shape)
+	{
+		m_TextureShape = shape;
+	}
+
+	const TextureImporter::TextureType& TextureImporter::GetTextureType()
 	{
 		return m_TextureType;
 	}
 
-	void TextureImporter::SetTextureType(const TextureImporterType& type)
+	void TextureImporter::SetTextureType(const TextureType& type)
 	{
 		m_TextureType = type;
 	}
 
-	const TextureImporterFormat& TextureImporter::GetTextureFormat()
+	const TextureImporter::TextureFormat& TextureImporter::GetTextureFormat()
 	{
 		return m_TextureFormat;
 	}
 
-	void TextureImporter::SetTextureFormat(const TextureImporterFormat& format)
+	void TextureImporter::SetTextureFormat(const TextureFormat& format)
 	{
 		m_TextureFormat = format;
+	}
+
+	const TextureImporter::TextureCubeType& TextureImporter::GetTextureCubeType()
+	{
+		return m_TextureCubeType;
+	}
+
+	void TextureImporter::SetTextureCubeType(const TextureCubeType& cubeType)
+	{
+		m_TextureCubeType = cubeType;
+	}
+
+	const TextureImporter::TextureCubeIBLType& TextureImporter::GetTextureCubeIBLType()
+	{
+		return m_TextureCubeIBLType;
+	}
+
+	void TextureImporter::SetTextureCubeIBLType(const TextureCubeIBLType& cubeIBLType)
+	{
+		m_TextureCubeIBLType = cubeIBLType;
 	}
 
 	const bool& TextureImporter::GetGenerateMipMaps()
@@ -71,17 +95,33 @@ namespace Blueberry
 		m_IsSRGB = srgb;
 	}
 
+	const WrapMode& TextureImporter::GetWrapMode()
+	{
+		return m_WrapMode;
+	}
+
+	void TextureImporter::SetWrapMode(const WrapMode& wrapMode)
+	{
+		m_WrapMode = wrapMode;
+	}
+
+	const FilterMode& TextureImporter::GetFilterMode()
+	{
+		return m_FilterMode;
+	}
+
+	void TextureImporter::SetFilterMode(const FilterMode& filterMode)
+	{
+		m_FilterMode = filterMode;
+	}
+
 	void TextureImporter::ImportData()
 	{
-		static size_t Texture2DId = 1;
-		static size_t TextureCubeId = 3;
-
-		size_t id = static_cast<size_t>(m_TextureShape) + 1;
 		Guid guid = GetGuid();
-		// TODO check if dirty too
+		FileId id = static_cast<size_t>(m_TextureShape) + 1;
 
 		Texture* object;
-		if (AssetDB::HasAssetWithGuidInData(guid))
+		if (AssetDB::HasAssetWithGuidInData(guid) && ObjectDB::HasGuidAndFileId(guid, id))
 		{
 			auto objects = AssetDB::LoadAssetObjects(guid, ObjectDB::GetObjectsFromGuid(guid));
 			if (objects.size() == 1)
@@ -116,112 +156,91 @@ namespace Blueberry
 		else
 		{
 			String path = GetFilePath();
+			String extension = String(std::filesystem::path(path).extension().string());
+			DirectX::ScratchImage image = {};
+			TextureHelper::Load(image, path, extension, m_IsSRGB);
+			TextureHelper::Flip(image);
 			
-			PngTextureProcessor processor;
-			std::string extension = std::filesystem::path(path).extension().string();
-			if (extension == ".dds")
-			{
-				processor.LoadDDS(path);
-			}
-			else if (extension == ".hdr")
-			{
-				processor.LoadHDR(path);
-			}
-			else
-			{
-				processor.Load(path, m_IsSRGB, m_GenerateMipmaps);
-				if (m_TextureType == TextureImporterType::NormalMap)
-				{
-					processor.CompressNormals();
-				}
-				if (m_TextureShape == TextureImporterShape::Texture2D)
-				{
-					processor.Compress(GetFormat(), m_IsSRGB);
-				}
-			}
-			PngTextureProperties properties = processor.GetProperties();
-
 			const auto& objects = ObjectDB::GetObjectsFromGuid(guid);
 			auto it = objects.find(id);
-			if (m_TextureShape == TextureImporterShape::Texture2D)
+			if (m_TextureShape == TextureShape::Texture2D)
 			{
+				if (m_GenerateMipmaps)
+				{
+					TextureHelper::GenerateMipMaps(image);
+				}
+
+				Blueberry::TextureFormat format = GetFormat();
+				TextureHelper::Compress(image, format, m_IsSRGB);
+				auto metadata = image.GetMetadata();
+
 				Texture2D* texture;
 				if (it != objects.end())
 				{
-					texture = Texture2D::Create(properties.width, properties.height, properties.mipCount, properties.format, m_WrapMode, m_FilterMode, static_cast<Texture2D*>(ObjectDB::GetObject(it->second)));
+					texture = Texture2D::Create(metadata.width, metadata.height, metadata.mipLevels, format, m_WrapMode, m_FilterMode, static_cast<Texture2D*>(ObjectDB::GetObject(it->second)));
 				}
 				else
 				{
-					texture = Texture2D::Create(properties.width, properties.height, properties.mipCount, properties.format, m_WrapMode, m_FilterMode);
-					ObjectDB::AllocateIdToGuid(texture, guid, Texture2DId);
+					texture = Texture2D::Create(metadata.width, metadata.height, metadata.mipLevels, format, m_WrapMode, m_FilterMode);
+					ObjectDB::AllocateIdToGuid(texture, guid, id);
 				}
+
+				uint8_t* textureData = BB_MALLOC_ARRAY(uint8_t, image.GetPixelsSize());
+				memcpy(textureData, image.GetPixels(), image.GetPixelsSize());
 				texture->SetState(ObjectState::Default);
-				texture->SetData(properties.data, properties.dataSize);
+				texture->SetData(textureData, image.GetPixelsSize());
 				texture->Apply();
 				object = texture;
 
 				AssetDB::SaveAssetObjectsToCache(List<Object*> { object });
-				FileHelper::Save(properties.data, properties.dataSize, GetTexturePath());
+				FileHelper::Save(image.GetPixels(), image.GetPixelsSize(), GetTexturePath());
 			}
-			else if (m_TextureShape == TextureImporterShape::TextureCube)
+			else if (m_TextureShape == TextureShape::TextureCube)
 			{
-				TextureFormat uncompressedFormat = properties.format;
-				TextureFormat compressedFormat = (extension == ".hdr" ? TextureFormat::BC6H_UFloat : GetFormat());
-				
+				Blueberry::TextureFormat uncompressedFormat = static_cast<Blueberry::TextureFormat>(image.GetMetadata().format);
+				Blueberry::TextureFormat compressedFormat = (extension == ".hdr" ? Blueberry::TextureFormat::BC6H_UFloat : GetFormat());
+
+				if (m_TextureCubeType == TextureCubeType::Equirectangular)
+				{
+					TextureHelper::EquirectangularToTextureCube(image, uncompressedFormat);
+				}
+				else if (m_TextureCubeType == TextureCubeType::Slices)
+				{
+					TextureHelper::SlicesToTextureCube(image);
+				}
+
+				if (m_TextureCubeIBLType == TextureCubeIBLType::Specular)
+				{
+					TextureHelper::ConvoluteSpecularTextureCube(image);
+				}
+
+				TextureHelper::Compress(image, compressedFormat, m_IsSRGB);
+
+				auto metadata = image.GetMetadata();
 				TextureCube* texture;
-				uint32_t size = std::min(properties.width, properties.height);
+				uint32_t size = std::min(metadata.width, metadata.height);
+				uint32_t mipCount = metadata.mipLevels;
 				if (it != objects.end())
 				{
-					texture = TextureCube::Create(size, size, 1, compressedFormat, m_WrapMode, m_FilterMode, static_cast<TextureCube*>(ObjectDB::GetObject(it->second)));
+					texture = TextureCube::Create(size, size, mipCount, compressedFormat, m_WrapMode, m_FilterMode, static_cast<TextureCube*>(ObjectDB::GetObject(it->second)));
 				}
 				else
 				{
-					texture = TextureCube::Create(size, size, 1, compressedFormat, m_WrapMode, m_FilterMode);
-					ObjectDB::AllocateIdToGuid(texture, guid, TextureCubeId);
+					texture = TextureCube::Create(size, size, mipCount, compressedFormat, m_WrapMode, m_FilterMode);
+					ObjectDB::AllocateIdToGuid(texture, guid, id);
 				}
 
-				Texture2D* temporaryTexture = Texture2D::Create(properties.width, properties.height, 1, uncompressedFormat);
-				temporaryTexture->SetData(properties.data, properties.dataSize);
-				temporaryTexture->Apply();
-				GfxTexture* temporaryTextureCube = GfxRenderTexturePool::Get(size, size, 1, 1, uncompressedFormat, TextureDimension::TextureCube, WrapMode::Clamp, FilterMode::Linear, true);
-				uint32_t blockSize = static_cast<uint32_t>(properties.dataSize / (properties.width * properties.height));
-				size_t dataSize = size * size * 6 * blockSize;
-
-				PngTextureProcessor cubeProcessor;
-				cubeProcessor.CreateCube(uncompressedFormat, size, size);
-
-				if (s_EquirectangularToCubemapMaterial == nullptr)
-				{
-					s_EquirectangularToCubemapMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/EquirectangularToCubemap.shader")));
-				}
-
-				GfxDevice::SetViewCount(6);
-				GfxDevice::SetRenderTarget(temporaryTextureCube);
-				GfxDevice::SetViewport(0, 0, size, size);
-				GfxDevice::SetGlobalTexture(TO_HASH("_EquirectangularTexture"), temporaryTexture->Get());
-				GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_EquirectangularToCubemapMaterial));
-				GfxDevice::SetRenderTarget(nullptr);
-				GfxDevice::SetViewCount(1);
-				GfxDevice::Read(temporaryTextureCube, cubeProcessor.GetData());
-
-				cubeProcessor.Compress(compressedFormat, m_IsSRGB);
-				properties = cubeProcessor.GetProperties();
-
-				Object::Destroy(temporaryTexture);
-				GfxRenderTexturePool::Release(temporaryTextureCube);
-
-				uint8_t* textureData = BB_MALLOC_ARRAY(uint8_t, properties.dataSize);
-				memcpy(textureData, properties.data, properties.dataSize);
-				texture->SetData(textureData, properties.dataSize);
+				uint8_t* textureData = BB_MALLOC_ARRAY(uint8_t, image.GetPixelsSize());
+				memcpy(textureData, image.GetPixels(), image.GetPixelsSize());
+				texture->SetData(textureData, image.GetPixelsSize());
 				texture->Apply();
 				texture->SetState(ObjectState::Default);
 				object = texture;
 
 				AssetDB::SaveAssetObjectsToCache(List<Object*> { object });
-				FileHelper::Save(properties.data, properties.dataSize, GetTexturePath());
+				FileHelper::Save(image.GetPixels(), image.GetPixelsSize(), GetTexturePath());
 			}
-
-			BB_INFO("Texture \"" << GetName() << "\" imported and created from: " + path);
+			//BB_INFO("Texture \"" << GetName() << "\" imported and created from: " + path);
 		}
 		object->SetName(GetName());
 		SetMainObject(id);
@@ -238,32 +257,32 @@ namespace Blueberry
 		return String(dataPath.string());
 	}
 
-	TextureFormat TextureImporter::GetFormat()
+	Blueberry::TextureFormat TextureImporter::GetFormat()
 	{
 		switch (m_TextureFormat)
 		{
-		case TextureImporterFormat::RGBA32:
-			return m_IsSRGB ? TextureFormat::R8G8B8A8_UNorm_SRGB : TextureFormat::R8G8B8A8_UNorm;
-		case TextureImporterFormat::RGB24:
-			return m_IsSRGB ? TextureFormat::R8G8B8A8_UNorm_SRGB : TextureFormat::R8G8B8A8_UNorm;
-		case TextureImporterFormat::RG16:
-			return TextureFormat::R8G8_UNorm;
-		case TextureImporterFormat::R8:
-			return TextureFormat::R8_UNorm;
-		case TextureImporterFormat::BC1:
-			return m_IsSRGB ? TextureFormat::BC1_UNorm_SRGB : TextureFormat::BC1_UNorm;
-		case TextureImporterFormat::BC3:
-			return m_IsSRGB ? TextureFormat::BC3_UNorm_SRGB : TextureFormat::BC3_UNorm;
-		case TextureImporterFormat::BC4:
-			return TextureFormat::BC4_UNorm;
-		case TextureImporterFormat::BC5:
-			return TextureFormat::BC5_UNorm;
-		case TextureImporterFormat::BC6H:
-			return TextureFormat::BC6H_UFloat;
-		case TextureImporterFormat::BC7:
-			return m_IsSRGB ? TextureFormat::BC7_UNorm_SRGB : TextureFormat::BC7_UNorm;
+		case TextureFormat::RGBA32:
+			return m_IsSRGB ? Blueberry::TextureFormat::R8G8B8A8_UNorm_SRGB : Blueberry::TextureFormat::R8G8B8A8_UNorm;
+		case TextureFormat::RGB24:
+			return m_IsSRGB ? Blueberry::TextureFormat::R8G8B8A8_UNorm_SRGB : Blueberry::TextureFormat::R8G8B8A8_UNorm;
+		case TextureFormat::RG16:
+			return Blueberry::TextureFormat::R8G8_UNorm;
+		case TextureFormat::R8:
+			return Blueberry::TextureFormat::R8_UNorm;
+		case TextureFormat::BC1:
+			return m_IsSRGB ? Blueberry::TextureFormat::BC1_UNorm_SRGB : Blueberry::TextureFormat::BC1_UNorm;
+		case TextureFormat::BC3:
+			return m_IsSRGB ? Blueberry::TextureFormat::BC3_UNorm_SRGB : Blueberry::TextureFormat::BC3_UNorm;
+		case TextureFormat::BC4:
+			return Blueberry::TextureFormat::BC4_UNorm;
+		case TextureFormat::BC5:
+			return Blueberry::TextureFormat::BC5_UNorm;
+		case TextureFormat::BC6H:
+			return Blueberry::TextureFormat::BC6H_UFloat;
+		case TextureFormat::BC7:
+			return m_IsSRGB ? Blueberry::TextureFormat::BC7_UNorm_SRGB : Blueberry::TextureFormat::BC7_UNorm;
 		default:
-			return TextureFormat::R8G8B8A8_UNorm;
+			return Blueberry::TextureFormat::R8G8B8A8_UNorm;
 		}
 	}
 }

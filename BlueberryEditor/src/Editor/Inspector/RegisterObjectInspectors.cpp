@@ -7,6 +7,7 @@
 #include "Concrete\CameraInspector.h"
 #include "Concrete\SpriteRendererInspector.h"
 #include "Concrete\MeshRendererInspector.h"
+#include "Concrete\SkyRendererInspector.h"
 #include "Concrete\LightInspector.h"
 #include "Concrete\SphereColliderInspector.h"
 #include "Concrete\BoxColliderInspector.h"
@@ -26,6 +27,7 @@ namespace Blueberry
 		REGISTER_OBJECT_INSPECTOR(CameraInspector, Camera);
 		REGISTER_OBJECT_INSPECTOR(SpriteRendererInspector, SpriteRenderer);
 		REGISTER_OBJECT_INSPECTOR(MeshRendererInspector, MeshRenderer);
+		REGISTER_OBJECT_INSPECTOR(SkyRendererInspector, SkyRenderer);
 		REGISTER_OBJECT_INSPECTOR(LightInspector, Light);
 		REGISTER_OBJECT_INSPECTOR(SphereColliderInspector, SphereCollider);
 		REGISTER_OBJECT_INSPECTOR(BoxColliderInspector, BoxCollider);

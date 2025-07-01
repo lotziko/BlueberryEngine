@@ -5,6 +5,7 @@
 #include "Blueberry\Scene\Components\Light.h"
 #include "Blueberry\Scene\Components\MeshRenderer.h"
 #include "Blueberry\Scene\Components\Camera.h"
+#include "Blueberry\Scene\Components\SkyRenderer.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\DefaultMaterials.h"
 #include "Blueberry\Graphics\Concrete\DefaultRenderer.h"
@@ -43,6 +44,10 @@ namespace Blueberry
 			m_Camera->SetAspectRatio(1.0f);
 			m_Camera->SetFieldOfView(15.0f);
 			m_Camera->SetPixelSize(Vector2(target->GetWidth(), target->GetHeight()));
+
+			Entity* skyEntity = m_Scene->CreateEntity("Sky");
+			SkyRenderer* skyRenderer = skyEntity->AddComponent<SkyRenderer>();
+			skyRenderer->SetAmbientColor(Color(0.01f, 0.01f, 0.01f, 1));
 		}
 		m_Renderer->SetMaterial(material);
 		DefaultRenderer::Draw(m_Scene, m_Camera, Rectangle(0, 0, target->GetWidth(), target->GetHeight()), Color(0, 0, 0, 1), target, nullptr, true);
