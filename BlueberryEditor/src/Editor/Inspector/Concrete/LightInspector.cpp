@@ -7,7 +7,6 @@
 #include "Editor\Gizmos\Gizmos.h"
 
 #include "Blueberry\Assets\AssetLoader.h"
-#include "Blueberry\Graphics\RenderContext.h"
 #include "Blueberry\Graphics\Texture2D.h"
 
 namespace Blueberry

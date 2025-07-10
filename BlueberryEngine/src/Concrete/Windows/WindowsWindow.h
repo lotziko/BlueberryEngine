@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Blueberry\Core\Base.h"
-#include "..\..\Blueberry\Core\Window.h"
+#include "Blueberry\Core\Window.h"
 
 namespace Blueberry
 {

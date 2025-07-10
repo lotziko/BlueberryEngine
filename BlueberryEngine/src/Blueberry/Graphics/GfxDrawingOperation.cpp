@@ -1,10 +1,10 @@
-#include "GfxDrawingOperation.h"
+#include "Blueberry\Graphics\GfxDrawingOperation.h"
 
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\Texture.h"
 #include "Blueberry\Graphics\Mesh.h"
-#include "..\Graphics\DefaultMaterials.h"
+#include "Blueberry\Graphics\DefaultMaterials.h"
 
 namespace Blueberry
 {

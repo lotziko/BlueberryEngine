@@ -1,7 +1,7 @@
-#include "Input.h"
+#include "Blueberry\Input\Input.h"
 
-#include "..\Core\Time.h"
-#include "..\Core\Screen.h"
+#include "Blueberry\Core\Time.h"
+#include "Blueberry\Core\Screen.h"
 
 namespace Blueberry
 {

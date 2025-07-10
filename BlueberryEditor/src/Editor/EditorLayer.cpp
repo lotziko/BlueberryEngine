@@ -23,7 +23,7 @@
 #include "Editor\Gizmos\IconRenderer.h"
 #include "Editor\Menu\EditorMenuManager.h"
 
-#include "Blueberry\Graphics\OpenXRRenderer.h"
+//#include "Blueberry\Graphics\OpenXRRenderer.h"
 
 #include <fstream>
 #include <imgui\imgui.h>
@@ -73,10 +73,10 @@ namespace Blueberry
 		Gizmos::Shutdown();
 		IconRenderer::Shutdown();
 		Physics::Shutdown();
-		if (OpenXRRenderer::IsActive())
+		/*if (OpenXRRenderer::IsActive())
 		{
 			OpenXRRenderer::Shutdown();
-		}
+		}*/
 		WindowEvents::GetWindowResized().RemoveCallback<EditorLayer, &EditorLayer::OnWindowResize>(this);
 		WindowEvents::GetWindowFocused().RemoveCallback<EditorLayer, &EditorLayer::OnWindowFocus>(this);
 		WindowEvents::GetWindowUnfocused().RemoveCallback<EditorLayer, &EditorLayer::OnWindowUnfocus>(this);
@@ -109,13 +109,13 @@ namespace Blueberry
 
 			GfxDevice::ClearColor({ 0, 0, 0, 1 });
 
-			OpenXRRenderer::BeginFrame();
+			//OpenXRRenderer::BeginFrame();
 			ImGuiRenderer::Begin();
 			DrawMenuBar();
 			//DrawTopBar();
 			DrawDockSpace();
 			ImGuiRenderer::End();
-			OpenXRRenderer::EndFrame();
+			//OpenXRRenderer::EndFrame();
 
 			GfxDevice::SwapBuffers();
 
@@ -189,7 +189,7 @@ namespace Blueberry
 					if (ImGui::Button("Stop"))
 					{
 						Physics::Disable();
-						OpenXRRenderer::Shutdown();
+						//OpenXRRenderer::Shutdown();
 						EditorSceneManager::Stop();
 					}
 				}
@@ -198,7 +198,7 @@ namespace Blueberry
 					if (ImGui::Button("Run"))
 					{
 						Physics::Enable();
-						OpenXRRenderer::Initialize();
+						//OpenXRRenderer::Initialize();
 						EditorSceneManager::Run();
 					}
 				}
@@ -222,7 +222,7 @@ namespace Blueberry
 						if (ImGui::Button("Stop"))
 						{
 							Physics::Disable();
-							OpenXRRenderer::Shutdown();
+							//OpenXRRenderer::Shutdown();
 							EditorSceneManager::Stop();
 						}
 					}
@@ -231,7 +231,7 @@ namespace Blueberry
 						if (ImGui::Button("Run"))
 						{
 							Physics::Enable();
-							OpenXRRenderer::Initialize();
+							//OpenXRRenderer::Initialize();
 							EditorSceneManager::Run();
 						}
 					}

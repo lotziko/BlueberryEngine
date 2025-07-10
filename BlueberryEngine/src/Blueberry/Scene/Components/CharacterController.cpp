@@ -3,10 +3,10 @@
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Entity.h"
 
-#include "..\..\Physics\Physics.h"
+#include "Blueberry\Physics\Physics.h"
 #include "Blueberry\Core\ClassDB.h"
-#include "..\..\Input\Input.h"
-#include "..\..\Input\Cursor.h"
+#include "Blueberry\Input\Input.h"
+#include "Blueberry\Input\Cursor.h"
 
 #include <Jolt\Jolt.h>
 #include <Jolt\Physics\PhysicsScene.h>

@@ -21,6 +21,7 @@ namespace Blueberry
 	enum class TextureFormat
 	{
 		None = 0,
+		R32G32B32A32_Float = 2,
 		R16G16B16A16_Float = 10,
 		R16G16B16A16_UNorm = 11,
 		R8G8B8A8_UNorm = 28,

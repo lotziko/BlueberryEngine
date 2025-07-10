@@ -4,8 +4,8 @@
 #include "Blueberry\Scene\Components\Light.h"
 #include "Blueberry\Scene\Components\SkyRenderer.h"
 
-#include "..\GfxDevice.h"
-#include "..\GfxBuffer.h"
+#include "Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\GfxBuffer.h"
 #include "..\LightHelper.h"
 
 namespace Blueberry

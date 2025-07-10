@@ -3,8 +3,8 @@
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\Texture.h"
 #include "Blueberry\Graphics\Texture2D.h"
-#include "..\Graphics\GfxTexture.h"
-#include "..\Graphics\DefaultTextures.h"
+#include "Blueberry\Graphics\GfxTexture.h"
+#include "Blueberry\Graphics\DefaultTextures.h"
 #include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Tools\CRCHelper.h"
 

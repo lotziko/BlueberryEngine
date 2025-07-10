@@ -5,7 +5,7 @@
 #include "Blueberry\Graphics\TextureCube.h"
 #include "Blueberry\Core\ClassDB.h"
 
-#include "..\..\Graphics\DefaultTextures.h"
+#include "Blueberry\Graphics\DefaultTextures.h"
 
 namespace Blueberry
 {

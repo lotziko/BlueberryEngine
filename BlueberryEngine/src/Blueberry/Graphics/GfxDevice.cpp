@@ -1,4 +1,4 @@
-#include "GfxDevice.h"
+#include "Blueberry\Graphics\GfxDevice.h"
 
 #include "GraphicsAPI.h"
 

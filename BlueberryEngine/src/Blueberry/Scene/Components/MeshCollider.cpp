@@ -3,7 +3,7 @@
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Graphics\Mesh.h"
-#include "..\..\Physics\PhysicsShapeCache.h"
+#include "Blueberry\Physics\PhysicsShapeCache.h"
 #include "Blueberry\Core\ClassDB.h"
 
 namespace Blueberry

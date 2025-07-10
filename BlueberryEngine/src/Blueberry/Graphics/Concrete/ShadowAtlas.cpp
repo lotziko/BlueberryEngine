@@ -1,10 +1,10 @@
 #include "ShadowAtlas.h"
 
 #include "..\RenderContext.h"
-#include "..\GfxDevice.h"
+#include "Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\GfxTexture.h"
 #include "..\LightHelper.h"
-#include "..\GfxTexture.h"
-#include "..\GfxRenderTexturePool.h"
+#include "Blueberry\Graphics\GfxRenderTexturePool.h"
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Components\Light.h"
 

@@ -11,7 +11,7 @@
 
 #include "Blueberry\Graphics\RendererTree.h"
 
-#include "Blueberry\Graphics\OpenXRRenderer.h"
+//#include "Blueberry\Graphics\OpenXRRenderer.h"
 
 #include "Blueberry\Scene\Scene.h"
 

@@ -1,7 +1,7 @@
 #include "HBAORendererDX11.h"
 
 #include "hbao\GFSDK_SSAO.h"
-#include "..\..\Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\GfxDevice.h"
 #include "..\DX11\GfxDeviceDX11.h"
 #include "..\DX11\GfxTextureDX11.h"
 

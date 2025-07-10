@@ -2,7 +2,7 @@
 
 #include "Blueberry\Core\ClassDB.h"
 
-#include "..\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\GfxDevice.h"
 #include "..\Graphics\GfxComputeShader.h"
 
 namespace Blueberry

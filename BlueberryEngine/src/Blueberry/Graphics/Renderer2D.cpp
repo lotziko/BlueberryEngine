@@ -1,7 +1,7 @@
-#include "Renderer2D.h"
+#include "Blueberry\Graphics\Renderer2D.h"
 
-#include "..\Graphics\GfxBuffer.h"
-#include "..\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\GfxBuffer.h"
+#include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\Texture2D.h"

@@ -1,7 +1,7 @@
-#include "ObjectCloner.h"
+#include "Blueberry\Core\ObjectCloner.h"
 
 #include "Blueberry\Core\ClassDB.h"
-#include "..\Core\Variant.h"
+#include "Blueberry\Core\Variant.h"
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Scene\Components\Component.h"
 #include "Blueberry\Scene\Components\Transform.h"

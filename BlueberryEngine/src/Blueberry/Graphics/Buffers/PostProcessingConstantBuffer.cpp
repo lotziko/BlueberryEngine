@@ -1,9 +1,9 @@
 #include "PostProcessingConstantBuffer.h"
 
-#include "..\GfxDevice.h"
-#include "..\GfxBuffer.h"
+#include "Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\GfxBuffer.h"
 
-#include "..\..\Core\Time.h"
+#include "Blueberry\Core\Time.h"
 
 namespace Blueberry
 {

@@ -40,6 +40,8 @@ namespace Blueberry
 		const SubMeshData& GetSubMesh(const uint32_t& index);
 		
 		const List<Vector3>& GetVertices();
+		const List<Vector3>& GetNormals();
+		const List<Vector4>& GetTangents();
 		const List<uint32_t>& GetIndices();
 
 		void SetVertices(const Vector3* vertices, const uint32_t& vertexCount);

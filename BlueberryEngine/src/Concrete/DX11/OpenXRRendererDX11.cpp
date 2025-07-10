@@ -4,8 +4,8 @@
 #define XR_USE_PLATFORM_WIN32
 #define XR_USE_GRAPHICS_API_D3D11
 
-#include "..\..\Blueberry\Core\Engine.h"
-#include "..\..\Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Core\Engine.h"
+#include "Blueberry\Graphics\GfxDevice.h"
 #include "..\..\Blueberry\Graphics\RenderContext.h"
 #include "..\DX11\GfxDeviceDX11.h"
 #include "..\DX11\GfxTextureDX11.h"

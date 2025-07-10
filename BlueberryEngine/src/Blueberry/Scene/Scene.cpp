@@ -1,9 +1,9 @@
-#include "Scene.h"
+#include "Blueberry\Scene\Scene.h"
 
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Components\Component.h"
-#include "..\Serialization\Serializer.h"
+#include "Blueberry\Serialization\Serializer.h"
 #include "Blueberry\Core\ClassDB.h"
 
 namespace Blueberry

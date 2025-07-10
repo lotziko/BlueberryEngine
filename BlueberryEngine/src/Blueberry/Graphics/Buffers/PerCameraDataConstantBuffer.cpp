@@ -1,11 +1,11 @@
-#include "PerCameraDataConstantBuffer.h"
+#include "Blueberry\Graphics\Buffers\PerCameraDataConstantBuffer.h"
 
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Scene\Components\Transform.h"
 #include "..\RenderContext.h"
-#include "..\GfxDevice.h"
-#include "..\GfxTexture.h"
-#include "..\GfxBuffer.h"
+#include "Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\GfxTexture.h"
+#include "Blueberry\Graphics\GfxBuffer.h"
 
 namespace Blueberry
 {

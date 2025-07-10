@@ -1,8 +1,8 @@
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Entity.h"
-#include "..\..\Scene\Scene.h"
+#include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Core\ClassDB.h"
-#include "..\..\Core\Time.h"
+#include "Blueberry\Core\Time.h"
 
 namespace Blueberry
 {

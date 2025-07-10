@@ -1,4 +1,4 @@
-#include "Variant.h"
+#include "Blueberry\Core\Variant.h"
 
 namespace Blueberry
 {

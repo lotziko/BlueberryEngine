@@ -1,7 +1,7 @@
-#include "DefaultShaders.h"
+#include "Blueberry\Graphics\DefaultShaders.h"
 
 #include "Blueberry\Graphics\Shader.h"
-#include "..\Assets\AssetLoader.h"
+#include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Core\ObjectDB.h"
 
 namespace Blueberry

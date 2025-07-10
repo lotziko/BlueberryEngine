@@ -2,10 +2,10 @@
 
 #include "..\RenderContext.h"
 #include "..\LightHelper.h"
-#include "..\GfxRenderTexturePool.h"
-#include "..\GfxDevice.h"
-#include "..\StandardMeshes.h"
-#include "..\DefaultMaterials.h"
+#include "Blueberry\Graphics\GfxRenderTexturePool.h"
+#include "Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\StandardMeshes.h"
+#include "Blueberry\Graphics\DefaultMaterials.h"
 #include "Blueberry\Graphics\Texture.h"
 #include "Blueberry\Scene\Components\Light.h"
 

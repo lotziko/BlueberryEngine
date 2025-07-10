@@ -2,7 +2,7 @@
 
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Core\ClassDB.h"
-#include "..\Scene\Scene.h"
+#include "Blueberry\Scene\Scene.h"
 
 namespace Blueberry
 {

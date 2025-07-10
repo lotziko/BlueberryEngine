@@ -1,8 +1,8 @@
-#include "BinarySerializer.h"
+#include "Blueberry\Serialization\BinarySerializer.h"
 
 #include "Blueberry\Core\ClassDB.h"
-#include "..\Core\Variant.h"
-#include "..\Assets\AssetLoader.h"
+#include "Blueberry\Core\Variant.h"
+#include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Core\ObjectPtr.h"
 #include "Blueberry\Core\Structs.h"
 #include "Blueberry\Core\DataList.h"

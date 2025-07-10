@@ -1,4 +1,4 @@
-#include "Cursor.h"
+#include "Blueberry\Input\Cursor.h"
 
 namespace Blueberry
 {

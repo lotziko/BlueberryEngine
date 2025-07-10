@@ -1,13 +1,14 @@
 #include "WindowsWindow.h"
 
-#include "..\..\Blueberry\Core\Screen.h"
-#include "..\..\Blueberry\Input\Cursor.h"
-#include "..\..\Blueberry\Events\WindowEvents.h"
-#include "..\..\Blueberry\Events\InputEvents.h"
+#include "Blueberry\Core\Screen.h"
+#include "Blueberry\Input\Cursor.h"
+#include "Blueberry\Events\WindowEvents.h"
+#include "Blueberry\Events\InputEvents.h"
 #include "WindowsHelper.h"
 
 #include "Blueberry\Tools\StringConverter.h"
-#include "imgui\imgui.h"
+
+#include <imgui\imgui.h>
 
 // Forward declare message handler from imgui_impl_win32.cpp
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);

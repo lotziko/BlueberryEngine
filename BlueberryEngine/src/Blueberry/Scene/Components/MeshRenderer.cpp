@@ -1,8 +1,8 @@
 #include "Blueberry\Scene\Components\MeshRenderer.h"
 
-#include "..\Scene.h"
+#include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Core\ClassDB.h"
-#include "..\..\Graphics\RendererTree.h"
+#include "Blueberry\Graphics\RendererTree.h"
 #include "Blueberry\Graphics\Mesh.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Scene\Entity.h"

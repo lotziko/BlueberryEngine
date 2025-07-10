@@ -1,10 +1,10 @@
 #include "AutoExposure.h"
 
-#include "..\..\Assets\AssetLoader.h"
+#include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Graphics\ComputeShader.h"
-#include "..\GfxBuffer.h"
-#include "..\GfxDevice.h"
-#include "..\GfxTexture.h"
+#include "Blueberry\Graphics\GfxBuffer.h"
+#include "Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\GfxTexture.h"
 
 namespace Blueberry
 {

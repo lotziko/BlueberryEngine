@@ -24,3 +24,4 @@ group ""
 
 include "BlueberryEngine"
 include "BlueberryEditor"
+include "BlueberryBaking"

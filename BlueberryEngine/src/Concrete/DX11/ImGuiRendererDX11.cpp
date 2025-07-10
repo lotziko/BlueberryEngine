@@ -1,6 +1,6 @@
 #include "ImGuiRendererDX11.h"
 
-#include "..\..\Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\GfxDevice.h"
 #include "..\DX11\GfxDeviceDX11.h"
 
 #include <imgui\imgui.h>

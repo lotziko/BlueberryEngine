@@ -1,7 +1,7 @@
-#include "Serializer.h"
+#include "Blueberry\Serialization\Serializer.h"
 
 #include "Blueberry\Core\ObjectDB.h"
-#include "..\Assets\AssetLoader.h"
+#include "Blueberry\Assets\AssetLoader.h"
 
 #include <iomanip>
 #include <random>

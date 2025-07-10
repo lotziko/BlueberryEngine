@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Blueberry\Graphics\Structs.h"
-#include "..\..\Blueberry\Graphics\GfxTexture.h"
-#include "..\Windows\ComPtr.h"
-#include "DX11.h"
+#include "Blueberry\Graphics\GfxTexture.h"
+#include "Concrete\Windows\ComPtr.h"
+#include "Concrete\DX11\DX11.h"
 
 namespace Blueberry
 {

@@ -2,7 +2,7 @@
 
 #include "Blueberry\Core\Base.h"
 #include "Blueberry\Core\Object.h"
-#include "GfxDrawingOperation.h"
+#include "Blueberry\Graphics\GfxDrawingOperation.h"
 
 namespace Blueberry
 {

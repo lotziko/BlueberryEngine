@@ -67,6 +67,8 @@ namespace Blueberry
 		Camera* m_Camera;
 		SceneObjectPicker* m_ObjectPicker = nullptr;
 
+		GfxTexture* m_LightmappingRenderTarget = nullptr;
+
 		Vector3 m_Position = Vector3(0, 0, 0);
 		Quaternion m_Rotation = Quaternion::Identity;
 		Vector2 m_PreviousDragDelta = Vector2::Zero;

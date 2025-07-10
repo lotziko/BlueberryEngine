@@ -1,7 +1,7 @@
 #include "FogViewDataConstantBuffer.h"
 
-#include "..\GfxDevice.h"
-#include "..\GfxBuffer.h"
+#include "Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\GfxBuffer.h"
 #include "..\RenderContext.h"
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Scene\Components\Transform.h"

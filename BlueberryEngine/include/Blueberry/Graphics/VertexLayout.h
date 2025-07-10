@@ -42,6 +42,8 @@ namespace Blueberry
 		
 		VertexLayout& Append(const VertexAttribute& type, const uint32_t& size);
 		VertexLayout& Apply();
+		const bool Has(const VertexAttribute& type);
+		const uint32_t& GetOffset(const VertexAttribute& type);
 		const uint32_t& GetOffset(const uint32_t& index);
 		const uint32_t& GetSize();
 		const uint32_t& GetCrc();

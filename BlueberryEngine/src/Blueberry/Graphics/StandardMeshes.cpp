@@ -1,4 +1,4 @@
-#include "StandardMeshes.h"
+#include "Blueberry\Graphics\StandardMeshes.h"
 
 #include "Blueberry\Graphics\Mesh.h"
 

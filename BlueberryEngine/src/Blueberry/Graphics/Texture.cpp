@@ -2,7 +2,7 @@
 
 #include "Blueberry\Core\ObjectDB.h"
 #include "Blueberry\Core\Notifyable.h"
-#include "..\Graphics\GfxTexture.h"
+#include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Core\ClassDB.h"
 
 namespace Blueberry

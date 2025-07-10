@@ -1,8 +1,8 @@
 #include "Blueberry\Graphics\Mesh.h"
 
 #include "Blueberry\Core\ClassDB.h"
-#include "..\Graphics\GfxDevice.h"
-#include "..\Graphics\GfxBuffer.h"
+#include "Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\GfxBuffer.h"
 #include "Blueberry\Tools\CRCHelper.h"
 
 #include <mikktspace\mikktspace.h>
@@ -99,6 +99,46 @@ namespace Blueberry
 		}
 
 		return m_Vertices;
+	}
+
+	const List<Vector3>& Mesh::GetNormals()
+	{
+		if (!m_Layout.Has(VertexAttribute::Normal))
+		{
+			return m_Normals;
+		}
+		if (m_Normals.size() == 0 && m_VertexData.size() > 0)
+		{
+			m_Normals.reserve(m_VertexCount);
+			float* begin = m_VertexData.data() + m_Layout.GetOffset(VertexAttribute::Normal) / sizeof(float);
+			float* end = begin + m_VertexData.size();
+			uint32_t vertexSize = static_cast<uint32_t>(m_VertexData.size() / m_VertexCount);
+			for (float* it = begin; it < end; it += vertexSize)
+			{
+				m_Normals.emplace_back(Vector3(*it, *(it + 1), *(it + 2)));
+			}
+		}
+		return m_Normals;
+	}
+
+	const List<Vector4>& Mesh::GetTangents()
+	{
+		if (!m_Layout.Has(VertexAttribute::Tangent))
+		{
+			return m_Tangents;
+		}
+		if (m_Tangents.size() == 0 && m_VertexData.size() > 0)
+		{
+			m_Tangents.reserve(m_VertexCount);
+			float* begin = m_VertexData.data() + m_Layout.GetOffset(VertexAttribute::Tangent) / sizeof(float);
+			float* end = begin + m_VertexData.size();
+			uint32_t vertexSize = static_cast<uint32_t>(m_VertexData.size() / m_VertexCount);
+			for (float* it = begin; it < end; it += vertexSize)
+			{
+				m_Tangents.emplace_back(Vector4(*it, *(it + 1), *(it + 2), *(it + 3)));
+			}
+		}
+		return m_Tangents;
 	}
 
 	const List<uint32_t>& Mesh::GetIndices()

@@ -2,8 +2,8 @@
 
 #include "Blueberry\Core\Base.h"
 #include "..\..\Blueberry\Graphics\GfxComputeShader.h"
-#include "..\Windows\ComPtr.h"
-#include "DX11.h"
+#include "Concrete\Windows\ComPtr.h"
+#include "Concrete\DX11\DX11.h"
 
 namespace Blueberry
 {

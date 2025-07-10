@@ -1,7 +1,7 @@
 #include "FogLightDataConstantBuffer.h"
 
-#include "..\GfxDevice.h"
-#include "..\GfxBuffer.h"
+#include "Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\GfxBuffer.h"
 #include "..\LightHelper.h"
 
 #include "Blueberry\Scene\Components\Transform.h"

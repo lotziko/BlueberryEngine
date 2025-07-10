@@ -4,8 +4,8 @@ project "BlueberryEngine"
 	cppdialect "C++17"
 	systemversion "latest"
 
-	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
-	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
+	targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
+	objdir ("%{wks.location}/bin-int/" .. outputdir .. "/%{prj.name}")
 
 	--pchheader "bbpch.h"
 	--pchsource "src/bbpch.cpp"
@@ -39,8 +39,8 @@ project "BlueberryEngine"
 	{
 		"Imgui",
 		"Jolt",
-		"%{LibraryDir.hbao}",
-		"%{LibraryDir.openxr}",
+		"%{Library.hbao}",
+		"%{Library.openxr}",
 	}
 
 	filter "system:windows"
@@ -55,3 +55,4 @@ project "BlueberryEngine"
 	filter "configurations:Release"
 		staticruntime "off"
 		runtime "Release"
+		optimize "on"

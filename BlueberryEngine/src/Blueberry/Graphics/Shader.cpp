@@ -3,9 +3,9 @@
 #include "Blueberry\Core\ObjectDB.h"
 #include "Blueberry\Core\Notifyable.h"
 #include "Blueberry\Core\ClassDB.h"
-#include "..\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\GfxDevice.h"
 #include "..\Graphics\GfxShader.h"
-#include "..\Graphics\DefaultTextures.h"
+#include "Blueberry\Graphics\DefaultTextures.h"
 
 namespace Blueberry
 {

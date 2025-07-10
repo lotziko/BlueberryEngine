@@ -1,8 +1,8 @@
-#include "GfxRenderTexturePool.h"
+#include "Blueberry\Graphics\GfxRenderTexturePool.h"
 
-#include "GfxDevice.h"
-#include "GfxTexture.h"
-#include "..\Core\Time.h"
+#include "Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\GfxTexture.h"
+#include "Blueberry\Core\Time.h"
 
 namespace Blueberry
 {

@@ -1,8 +1,8 @@
 #include "VolumetricFog.h"
 
-#include "..\..\Assets\AssetLoader.h"
-#include "..\..\Core\Time.h"
-#include "..\GfxDevice.h"
+#include "Blueberry\Assets\AssetLoader.h"
+#include "Blueberry\Core\Time.h"
+#include "Blueberry\Graphics\GfxDevice.h"
 #include "..\RenderContext.h"
 #include "..\Buffers\FogLightDataConstantBuffer.h"
 #include "..\Buffers\FogViewDataConstantBuffer.h"

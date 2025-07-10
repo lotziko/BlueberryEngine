@@ -1,7 +1,7 @@
-#include "PerDrawDataConstantBuffer.h"
+#include "Blueberry\Graphics\Buffers\PerDrawDataConstantBuffer.h"
 
-#include "..\GfxDevice.h"
-#include "..\GfxBuffer.h"
+#include "Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\GfxBuffer.h"
 
 namespace Blueberry
 {

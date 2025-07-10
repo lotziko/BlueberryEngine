@@ -9,7 +9,6 @@
 #include "Editor\Panels\Scene\SceneArea.h"
 
 #include "Blueberry\Assets\AssetLoader.h"
-#include "Blueberry\Graphics\RenderContext.h"
 #include "Blueberry\Graphics\Texture2D.h"
 
 #include <imgui\imgui.h>

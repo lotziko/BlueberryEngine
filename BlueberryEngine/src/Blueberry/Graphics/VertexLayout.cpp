@@ -43,6 +43,16 @@ namespace Blueberry
 		return *this;
 	}
 
+	const bool VertexLayout::Has(const VertexAttribute& type)
+	{
+		return m_Elements[static_cast<uint32_t>(type)].m_Size > 0;
+	}
+
+	const uint32_t& VertexLayout::GetOffset(const VertexAttribute& type)
+	{
+		return m_Elements[static_cast<uint32_t>(type)].m_Offset;
+	}
+
 	const uint32_t& VertexLayout::GetOffset(const uint32_t& index)
 	{
 		return m_Elements[index].m_Offset;

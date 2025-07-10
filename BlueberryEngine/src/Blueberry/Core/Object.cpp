@@ -2,7 +2,7 @@
 
 #include "Blueberry\Core\ObjectDB.h"
 #include "Blueberry\Core\ClassDB.h"
-#include "ObjectCloner.h"
+#include "Blueberry\Core\ObjectCloner.h"
 
 namespace Blueberry
 {

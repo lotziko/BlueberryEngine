@@ -1,6 +1,6 @@
-#include "Time.h"
+#include "Blueberry\Core\Time.h"
 
-#include "..\Graphics\GfxRenderTexturePool.h"
+#include "Blueberry\Graphics\GfxRenderTexturePool.h"
 
 namespace Blueberry
 {

@@ -3,8 +3,8 @@
 #include "AutoExposure.h"
 #include "..\Buffers\PostProcessingConstantBuffer.h"
 
-#include "..\..\Assets\AssetLoader.h"
-#include "..\GfxDevice.h"
+#include "Blueberry\Assets\AssetLoader.h"
+#include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\Texture2D.h"
 
 namespace Blueberry
