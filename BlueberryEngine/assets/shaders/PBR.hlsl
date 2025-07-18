@@ -116,7 +116,7 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 	float3 directDiffuseTerm = (float3)0;
 	float3 directSpecularTerm = (float3)0;
 
-	float3 indirectDiffuseTerm = CalculateIndirectDiffuse(_AmbientLightColor.rgb, surfaceData.occlusion);
+	float3 indirectDiffuseTerm = CalculateIndirectDiffuse(/*_AmbientLightColor.rgb*/inputData.bakedGI, surfaceData.occlusion);
 	float3 indirectSpecularTerm = CalculateIndirectSpecular(inputData.normalWS, inputData.positionWS, inputData.viewDirectionWS, geometricRoughness, surfaceData.occlusion, reflectance);
 
 #if (SHADOWS)

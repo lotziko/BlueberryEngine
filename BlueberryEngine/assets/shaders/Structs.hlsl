@@ -7,6 +7,7 @@ struct InputData
 	float3 normalWS;
 	float3 normalGS; //geometric roughness
 	float3 viewDirectionWS;
+	float3 bakedGI;
 };
 
 struct SurfaceData

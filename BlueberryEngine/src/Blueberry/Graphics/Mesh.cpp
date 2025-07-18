@@ -151,6 +151,28 @@ namespace Blueberry
 		return m_Indices;
 	}
 
+	const List<Vector2>& Mesh::GetUVs(const int& channel)
+	{
+		List<Vector2>& uvs = m_UVs[channel];
+		VertexAttribute attribute = static_cast<VertexAttribute>(4 + channel);
+		if (!m_Layout.Has(attribute))
+		{
+			return uvs;
+		}
+		if (uvs.size() == 0 && m_VertexData.size() > 0)
+		{
+			uvs.reserve(m_VertexCount);
+			float* begin = m_VertexData.data() + m_Layout.GetOffset(attribute) / sizeof(float);
+			float* end = begin + m_VertexData.size();
+			uint32_t vertexSize = static_cast<uint32_t>(m_VertexData.size() / m_VertexCount);
+			for (float* it = begin; it < end; it += vertexSize)
+			{
+				uvs.emplace_back(Vector2(*it, *(it + 1)));
+			}
+		}
+		return uvs;
+	}
+
 	void Mesh::SetVertices(const Vector3* vertices, const uint32_t& vertexCount)
 	{
 		m_VertexCount = vertexCount;
@@ -354,7 +376,8 @@ namespace Blueberry
 			Vector3* vertexPointer = m_Vertices.data();
 			Vector3* normalPointer = m_Normals.data();
 			Vector4* tangentPointer = m_Tangents.data();
-			Vector2* uvPointer = m_UVs[0].data();
+			Vector2* uv0Pointer = m_UVs[0].data();
+			Vector2* uv1Pointer = m_UVs[1].data();
 
 			for (uint32_t i = 0; i < m_VertexCount; ++i)
 			{
@@ -373,11 +396,17 @@ namespace Blueberry
 					bufferPointer += 4;
 					tangentPointer += 1;
 				}
-				if (uvPointer != nullptr)
+				if (uv0Pointer != nullptr)
 				{
-					memcpy(bufferPointer, uvPointer, sizeof(Vector2));
+					memcpy(bufferPointer, uv0Pointer, sizeof(Vector2));
 					bufferPointer += 2;
-					uvPointer += 1;
+					uv0Pointer += 1;
+				}
+				if (uv1Pointer != nullptr)
+				{
+					memcpy(bufferPointer, uv1Pointer, sizeof(Vector2));
+					bufferPointer += 2;
+					uv1Pointer += 1;
 				}
 			}
 

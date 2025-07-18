@@ -5,6 +5,9 @@
 #include "Blueberry\Graphics\GfxRenderTexturePool.h"
 
 #include "Editor\Preview\MeshPreview.h"
+#include "Editor\Misc\ImGuiHelper.h"
+
+#include "Editor\LightmapManager.h"
 
 #include <imgui\imgui.h>
 
@@ -20,13 +23,65 @@ namespace Blueberry
 		GfxRenderTexturePool::Release(m_RenderTexture);
 	}
 
+	void DrawUVChannel(Mesh* mesh, const uint32_t& channel, const ImVec2& pos, const ImVec2& size)
+	{
+		ImDrawList* list = ImGui::GetWindowDrawList();
+		ImColor backgroundColor = ImColor(0, 0, 0);
+		ImColor lineColor = ImColor(255, 255, 255);
+		const List<uint32_t>& indices = mesh->GetIndices();
+		const List<Vector2>& uvs = mesh->GetUVs(channel);
+
+		GfxTexture* texture = LightmapManager::GetTexture();
+		if (texture != nullptr)
+		{
+			list->AddImage(reinterpret_cast<ImTextureID>(texture->GetHandle()), pos, pos + size);
+		}
+		//list->AddRectFilled(pos, pos + size, backgroundColor);
+		list->PushClipRect(pos, pos + size, true);
+		if (uvs.size() > 0)
+		{
+			for (uint32_t i = 0; i < indices.size(); i += 3)
+			{
+				Vector2 p1 = uvs[indices[i]];
+				Vector2 p2 = uvs[indices[i + 1]];
+				Vector2 p3 = uvs[indices[i + 2]];
+				list->AddTriangle(pos + ImVec2(p1.x * size.x, p1.y * size.y), pos + ImVec2(p2.x * size.x, p2.y * size.y), pos + ImVec2(p3.x * size.x, p3.y * size.y), lineColor);
+			}
+		}
+		list->PopClipRect();
+		ImGui::Dummy(size);
+	}
+
 	void MeshInspector::Draw(Object* object)
 	{
-		static MeshPreview preview;
 		Mesh* mesh = static_cast<Mesh*>(object);
-		preview.Draw(mesh, m_RenderTexture);
 
+		static int previewType;
+		static List<String> previewTypes = { "Default", "UV 0", "UV 1" };
+		ImGui::EnumEdit("Preview", &previewType, &previewTypes);
+
+		ImVec2 pos = ImGui::GetCursorScreenPos();
 		ImVec2 size = ImGui::GetContentRegionAvail();
-		ImGui::Image(reinterpret_cast<ImTextureID>(m_RenderTexture->GetHandle()), ImVec2(size.x, (m_RenderTexture->GetHeight() * size.x) / static_cast<float>(m_RenderTexture->GetWidth())), ImVec2(0, 1), ImVec2(1, 0));
+		ImVec2 imageSize = ImVec2(size.x, (m_RenderTexture->GetHeight() * size.x) / static_cast<float>(m_RenderTexture->GetWidth()));
+
+		switch (previewType)
+		{
+		case 0:
+		{
+			static MeshPreview preview;
+			preview.Draw(mesh, m_RenderTexture);
+			ImGui::Image(reinterpret_cast<ImTextureID>(m_RenderTexture->GetHandle()), imageSize, ImVec2(0, 0), ImVec2(1, 1));
+		}
+		break;
+		case 1:
+		{
+			DrawUVChannel(mesh, 0, pos, imageSize);
+		}
+		break;
+		case 2:
+		{
+			DrawUVChannel(mesh, 1, pos, imageSize);
+		}
+		}
 	}
 }

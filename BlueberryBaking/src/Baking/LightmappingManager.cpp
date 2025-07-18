@@ -11,6 +11,7 @@
 
 #include "Log.h"
 #include "CudaBuffer.h"
+#include "CudaBVH.h"
 #include "Params.h"
 #include "VecMath.h"
 
@@ -79,6 +80,8 @@ namespace Blueberry
 		OptixProgramGroup missProgGroup = 0;
 		OptixProgramGroup hitgroupDefaultProgGroup = 0;
 		OptixProgramGroup hitgroupShadowProgGroup = 0;
+
+		CUDABVH bvh = {};
 
 		CUstream stream = 0;
 		CUDABuffer instanceMatrices = {};
@@ -516,12 +519,52 @@ namespace Blueberry
 		state.params.instanceMatrices = reinterpret_cast<Matrix3x4*>(state.instanceMatrices.data);
 	}
 
+	void InitializeBVH(LightmapperState& state)
+	{
+		// TODO charts
+		for (auto& pair : state.meshDatas)
+		{
+			for (Transform* transform : pair.second.transforms)
+			{
+				MeshData& meshData = pair.second;
+				CUDABVHInput bvhInput = { meshData.mesh->GetUVs(1), meshData.mesh->GetIndices(), meshData.vertexBuffer.data, meshData.normalBuffer.data, meshData.tangentBuffer.data, meshData.indexBuffer.data };
+				state.bvh.AddInstance(bvhInput);
+			}
+		}
+		state.bvh.Build();
+		state.params.bvh = state.bvh.bvh;
+	}
+
 	void InitializeFrameBufferAndCamera(LightmapperState& state, Camera* camera, const Vector2Int& viewport)
 	{
 		state.params.accumulationFrameIndex += 1;
 		state.params.imageWidth = viewport.x;
 		state.params.imageHeight = viewport.y;
 		GetCameraParams(camera, state.params.camEye, state.params.camU, state.params.camV, state.params.camW);
+
+		size_t accumulatedFrameBufferSize = state.params.imageWidth * state.params.imageHeight * sizeof(float4);
+		size_t frameBufferSize = state.params.imageWidth * state.params.imageHeight * sizeof(float4);
+		if (state.params.image == nullptr)
+		{
+			state.accumulatedFrameBuffer.alloc(accumulatedFrameBufferSize);
+			state.params.accumulatedImage = reinterpret_cast<float4*>(state.accumulatedFrameBuffer.data);
+			state.frameBuffer.alloc(frameBufferSize);
+			state.denoisedFrameBuffer.alloc(frameBufferSize);
+			state.params.image = reinterpret_cast<float4*>(state.frameBuffer.data);
+		}
+		else if (state.frameBuffer.sizeInBytes != frameBufferSize)
+		{
+			state.accumulatedFrameBuffer.resize(accumulatedFrameBufferSize);
+			state.frameBuffer.resize(frameBufferSize);
+			state.denoisedFrameBuffer.resize(frameBufferSize);
+		}
+	}
+
+	void InitializeFrameBuffer(LightmapperState& state, const Vector2Int& viewport)
+	{
+		state.params.accumulationFrameIndex += 1;
+		state.params.imageWidth = viewport.x;
+		state.params.imageHeight = viewport.y;
 
 		size_t accumulatedFrameBufferSize = state.params.imageWidth * state.params.imageHeight * sizeof(float4);
 		size_t frameBufferSize = state.params.imageWidth * state.params.imageHeight * sizeof(float4);
@@ -710,6 +753,32 @@ namespace Blueberry
 		{
 			s_State.denoisedFrameBuffer.download(output, s_State.denoisedFrameBuffer.sizeInBytes);
 		}
+	}
+
+	void LightmappingManager::Calculate(Scene* scene, const Vector2Int& viewport, uint8_t* output)
+	{
+		if (s_State.context == nullptr)
+		{
+			CreateContext(s_State);
+			CreateDenoiser(s_State);
+			InitializeAccels(s_State, scene);
+			CreatePTXModule(s_State);
+			CreateProgramGroups(s_State);
+			CreatePipeline(s_State);
+			CreateSBT(s_State);
+			InitializeParams(s_State);
+			InitializeBVH(s_State);
+		}
+
+		if (s_State.params.accumulationFrameIndex == 0)
+		{
+			InitializeFrameBuffer(s_State, viewport);
+			InitializeDenoiserFrameBuffer(s_State);
+			InitializeLights(s_State, scene);
+			Launch(s_State);
+			LaunchDenoiser(s_State);
+		}
+		s_State.denoisedFrameBuffer.download(output, s_State.denoisedFrameBuffer.sizeInBytes);
 	}
 
 	void LightmappingManager::Shutdown()

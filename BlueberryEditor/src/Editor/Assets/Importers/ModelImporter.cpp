@@ -10,6 +10,7 @@
 #include "Blueberry\Tools\FileHelper.h"
 
 #include <fbxsdk.h>
+#include <xatlas\xatlas.h>
 #include <fstream>
 
 namespace Blueberry
@@ -25,6 +26,7 @@ namespace Blueberry
 		DEFINE_BASE_FIELDS(ModelImporter, AssetImporter)
 		DEFINE_FIELD(ModelImporter, m_Materials, BindingType::DataList, FieldOptions().SetObjectType(ModelMaterialData::Type))
 		DEFINE_FIELD(ModelImporter, m_Scale, BindingType::Float, {})
+		DEFINE_FIELD(ModelImporter, m_GenerateLightmapUV, BindingType::Bool, {})
 		DEFINE_FIELD(ModelImporter, m_GeneratePhysicsShape, BindingType::Bool, {})
 	}
 
@@ -61,6 +63,16 @@ namespace Blueberry
 	void ModelImporter::SetScale(const float& scale)
 	{
 		m_Scale = scale;
+	}
+
+	const bool& ModelImporter::GetGenerateLightmapUV()
+	{
+		return m_GenerateLightmapUV;
+	}
+
+	void ModelImporter::SetGenerateLightmapUV(const bool& generate)
+	{
+		m_GenerateLightmapUV = generate;
 	}
 
 	const bool& ModelImporter::GetGeneratePhysicsShape()
@@ -403,6 +415,51 @@ namespace Blueberry
 			if (fbxUvs.Size() > 0 && fbxMesh->GetElementTangentCount() == 0)
 			{
 				mesh->GenerateTangents();
+			}
+			if (m_GenerateLightmapUV)
+			{
+				xatlas::Atlas* atlas = xatlas::Create();
+				xatlas::MeshDecl decl = {};
+				decl.vertexCount = verticesCount;
+				decl.vertexPositionData = mesh->GetVertices().data();
+				decl.vertexPositionStride = sizeof(Vector3);
+				if (fbxNormals.Size() > 0)
+				{
+					decl.vertexNormalData = mesh->GetNormals().data();
+					decl.vertexNormalStride = sizeof(Vector3);
+				}
+				if (fbxUvs.Size() > 0)
+				{
+					decl.vertexUvData = mesh->GetUVs(0).data();
+					decl.vertexUvStride = sizeof(Vector2);
+				}
+				decl.indexCount = indicesCount;
+				decl.indexData = mesh->GetIndices().data();
+				decl.indexFormat = xatlas::IndexFormat::UInt32;
+				xatlas::AddMeshError error = xatlas::AddMesh(atlas, decl, 1);
+				if (error != xatlas::AddMeshError::Success)
+				{
+					xatlas::Destroy(atlas);
+					BB_ERROR("Failed to generate lightmap uv.");
+				}
+				else
+				{
+					xatlas::ChartOptions chartOptions = {};
+					//chartOptions.fixWinding = true;
+					//chartOptions.maxCost = 30;
+					xatlas::PackOptions packOptions = {};
+					packOptions.resolution = 1024;
+					packOptions.rotateCharts = false;
+					xatlas::Generate(atlas, chartOptions, packOptions);
+					xatlas::Mesh& atlasMesh = atlas->meshes[0];
+					Vector2* uvs = reinterpret_cast<Vector2*>(verticesNormalsTangentsUvs.data());
+					for (uint32_t i = 0; i < atlasMesh.vertexCount; i++)
+					{
+						xatlas::Vertex &vertex = atlasMesh.vertexArray[i];
+						uvs[vertex.xref] = Vector2(vertex.uv[0] / atlas->width, vertex.uv[1] / atlas->height);
+					}
+					mesh->SetUVs(1, uvs, verticesCount);
+				}
 			}
 			if (m_GeneratePhysicsShape)
 			{

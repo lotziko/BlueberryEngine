@@ -12,6 +12,7 @@ namespace Blueberry
 	public:
 		static void Clear();
 		static void Calculate(Scene* scene, Camera* camera, const Vector2Int& viewport, uint8_t* output);
+		static void Calculate(Scene* scene, const Vector2Int& viewport, uint8_t* output);
 		static void Shutdown();
 	};
 }

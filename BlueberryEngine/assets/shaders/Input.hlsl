@@ -78,6 +78,9 @@ SAMPLER(_VolumetricFogTexture_Sampler);
 TEXTURECUBE(_ReflectionTexture);
 SAMPLER(_ReflectionTexture_Sampler);
 
+TEXTURE2D(_LightmapTexture);
+SAMPLER(_LightmapTexture_Sampler);
+
 TEXTURE2D(_BlueNoiseLUT);
 SAMPLER(_BlueNoiseLUT_Sampler);
 

@@ -29,6 +29,12 @@ namespace Blueberry
 			modelImporter->SetScale(scale);
 		}
 
+		bool generateLightmapUV = modelImporter->GetGenerateLightmapUV();
+		if (ImGui::BoolEdit("Generate Lightmap UV", &generateLightmapUV))
+		{
+			modelImporter->SetGenerateLightmapUV(generateLightmapUV);
+		}
+
 		bool generatePhysicsShape = modelImporter->GetGeneratePhysicsShape();
 		if (ImGui::BoolEdit("Generate Physics Shape", &generatePhysicsShape))
 		{

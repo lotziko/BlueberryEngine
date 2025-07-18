@@ -11,13 +11,13 @@ project "BlueberryEditor"
 	{
 		"src/**.h",
 		"src/**.cpp",
-		"vendor/stb/**.h",
-		"vendor/stb/**.cpp",
 		"vendor/rapidyaml/**.h",
 		"vendor/rapidyaml/**.cpp",
 		"vendor/fbxsdk/include/**.h",
 		"vendor/directxtex/**.h",
 		"vendor/directxtex/**.cpp",
+		"vendor/xatlas/**.h",
+		"vendor/xatlas/**.cpp",
 	}
 
 	includedirs
@@ -26,11 +26,11 @@ project "BlueberryEditor"
 		"%{wks.location}/BlueberryEngine/include",
 		"%{wks.location}/BlueberryBaking/include",
 		"%{IncludeDir.imgui}",
-		"%{IncludeDir.stb}",
 		"%{IncludeDir.rapidyaml}",
 		"%{IncludeDir.fbxsdk}",
 		"%{IncludeDir.directxtex}",
 		"%{IncludeDir.flathashmap}",
+		"%{IncludeDir.xatlas}",
 	}
 	
 	links

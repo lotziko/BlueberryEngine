@@ -3,6 +3,7 @@
 #include <optix.h>
 #include <cuda_runtime.h>
 #include "Matrix.h"
+#include "BVH.h"
 
 namespace Blueberry
 {
@@ -29,6 +30,7 @@ namespace Blueberry
 		float3 camW;
 
 		DirectionalLight directionalLight;
+		BVH bvh;
 
 		Matrix3x4* instanceMatrices;
 		OptixTraversableHandle handle;

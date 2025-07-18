@@ -16,6 +16,7 @@
 #include "Editor\Gizmos\GizmoRenderer.h"
 #include "Editor\Gizmos\IconRenderer.h"
 #include "Editor\Menu\EditorMenuManager.h"
+#include "Editor\LightmapManager.h"
 
 #include "Blueberry\Core\Screen.h"
 #include "Blueberry\Core\ClassDB.h"
@@ -31,8 +32,6 @@
 
 #include <imgui\imgui.h>
 #include <imgui\imguizmo.h>
-
-#include "Baking\LightmappingManager.h"
 
 namespace Blueberry
 {
@@ -60,18 +59,7 @@ namespace Blueberry
 		m_ColorRenderTarget = GfxRenderTexturePool::Get(Screen::GetWidth(), Screen::GetHeight(), 1, 1, TextureFormat::R8G8B8A8_UNorm);
 		m_DepthStencilRenderTarget = GfxRenderTexturePool::Get(Screen::GetWidth(), Screen::GetHeight(), 1, 1, TextureFormat::D24_UNorm);
 
-		TextureProperties properties = {};
-		properties.width = 640;
-		properties.height = 360;
-		properties.depth = 1;
-		properties.antiAliasing = 1;
-		properties.format = TextureFormat::R32G32B32A32_Float;
-		properties.dimension = TextureDimension::Texture2D;
-		properties.wrapMode = WrapMode::Clamp;
-		properties.filterMode = FilterMode::Bilinear;
-		properties.isWritable = true;
-
-		GfxDevice::CreateTexture(properties, m_LightmappingRenderTarget);
+		LightmapManager::Initialize();
 
 		Selection::GetSelectionChanged().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
 		EditorSceneManager::GetSceneLoaded().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
@@ -140,8 +128,6 @@ namespace Blueberry
 		window->SetTitle("Scene");
 		window->Show();
 	}
-
-	static bool s_RunBaking = false;
 
 	void SceneArea::OnDrawUI()
 	{
@@ -263,36 +249,13 @@ namespace Blueberry
 
 		if (s_SceneRedrawRequested)
 		{
-			if (s_RunBaking)
-			{
-				LightmappingManager::Clear();
-			}
 			DrawScene(size.x, size.y);
 
 			m_ObjectPicker->DrawOutline(EditorSceneManager::GetScene(), m_Camera, m_ColorRenderTarget);
 			s_SceneRedrawRequested = false;
 		}
 
-		if (s_RunBaking)
-		{
-			try
-			{
-				size_t frameBufferSize = 640 * 360 * sizeof(Vector4);
-				uint8_t* result = BB_MALLOC_ARRAY(uint8_t, frameBufferSize);
-				LightmappingManager::Calculate(EditorSceneManager::GetScene(), m_Camera, Vector2Int(640, 360), result);
-				m_LightmappingRenderTarget->SetData(result, frameBufferSize);
-				BB_FREE(result);
-			}
-			catch (...)
-			{
-			}
-		}
-
 		ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(m_ColorRenderTarget->GetHandle()), ImVec2(pos.x, pos.y), ImVec2(pos.x + size.x, pos.y + size.y), ImVec2(0, 0), ImVec2(size.x / Screen::GetWidth(), size.y / Screen::GetHeight()));
-		if (s_RunBaking)
-		{
-			ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(m_LightmappingRenderTarget->GetHandle()), ImVec2(pos.x, pos.y), ImVec2(pos.x + size.x, pos.y + size.y), ImVec2(1, 1), ImVec2(0, 0));
-		}
 		DrawControls();
 		DrawGizmos(Rectangle(pos.x, pos.y, size.x, size.y));
 	}
@@ -463,20 +426,9 @@ namespace Blueberry
 			}
 			ImGui::SameLine();
 
-			if (s_RunBaking)
+			if (ImGui::Button("Bake"))
 			{
-				if (ImGui::Button("Stop Baking"))
-				{
-					LightmappingManager::Shutdown();
-					s_RunBaking = false;
-				}
-			}
-			else
-			{
-				if (ImGui::Button("Run Baking"))
-				{
-					s_RunBaking = true;
-				}
+				LightmapManager::Bake();
 			}
 			ImGui::SameLine();
 		}

@@ -45,6 +45,9 @@ namespace Blueberry
 		const float& GetScale();
 		void SetScale(const float& scale);
 
+		const bool& GetGenerateLightmapUV();
+		void SetGenerateLightmapUV(const bool& generate);
+
 		const bool& GetGeneratePhysicsShape();
 		void SetGeneratePhysicsShape(const bool& generate);
 
@@ -58,6 +61,7 @@ namespace Blueberry
 	private:
 		DataList<ModelMaterialData> m_Materials;
 		float m_Scale = 1.0f;
+		bool m_GenerateLightmapUV = false;
 		bool m_GeneratePhysicsShape = true;
 	};
 }

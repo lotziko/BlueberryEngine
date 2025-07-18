@@ -43,6 +43,7 @@ namespace Blueberry
 		const List<Vector3>& GetNormals();
 		const List<Vector4>& GetTangents();
 		const List<uint32_t>& GetIndices();
+		const List<Vector2>& GetUVs(const int& channel);
 
 		void SetVertices(const Vector3* vertices, const uint32_t& vertexCount);
 		void SetNormals(const Vector3* normals, const uint32_t& vertexCount);
@@ -50,6 +51,7 @@ namespace Blueberry
 		void SetColors(const Color* colors, const uint32_t& vertexCount);
 		void SetIndices(const uint32_t* indices, const uint32_t& indexCount);
 		void SetUVs(const int& channel, const Vector2* uvs, const uint32_t& uvCount);
+		void SetUVs(const int& channel, const Vector3* uvs, const uint32_t& uvCount);
 		void SetSubMesh(const uint32_t& index, const SubMeshData& data);
 
 		void GenerateTangents();
