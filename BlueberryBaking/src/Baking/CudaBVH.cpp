@@ -1,10 +1,10 @@
-#include "BVH.h"
 #include "CudaBVH.h"
+#include "BVH.h"
 #include "VecMath.h"
 
 namespace Blueberry
 {
-	static const uint32_t s_MaxDepth = 8;
+	static const uint32_t s_MaxDepth = 32;
 	static List<BVHTriangle> s_Triangles = {};
 	static List<BVHNode> s_Nodes = {};
 	static List<BVHInstance> s_Instances = {};
@@ -18,20 +18,21 @@ namespace Blueberry
 
 	void CUDABVH::AddInstance(const CUDABVHInput& input)
 	{
-		const List<Vector2>& vertices = input.vertices;
-		const List<uint32_t>& indices = input.indices;
+		Vector3* vertices = input.vertices;
+		uint32_t* indices = input.indices;
+		uint32_t instanceIndex = s_Instances.size();
 
-		for (size_t i = 0; i < indices.size(); i += 3)
+		for (size_t i = 0; i < input.indexCount; i += 3)
 		{
-			Vector2 p1 = vertices[indices[i]];
-			Vector2 p2 = vertices[indices[i + 1]];
-			Vector2 p3 = vertices[indices[i + 2]];
+			Vector3 p1 = vertices[indices[i]];
+			Vector3 p2 = vertices[indices[i + 1]];
+			Vector3 p3 = vertices[indices[i + 2]];
 
-			BVHTriangle triangle = { make_float2(p1.x, p1.y), make_float2(p2.x, p2.y), make_float2(p3.x, p3.y), make_uint2(0, i) };
+			BVHTriangle triangle = { make_float2(p1.x, p1.y), make_float2(p2.x, p2.y), make_float2(p3.x, p3.y), make_uint2(instanceIndex, i) };
 			s_Triangles.emplace_back(std::move(triangle));
 		}
 
-		BVHInstance instance = { (float3*)input.vertexBuffer, (float3*)input.normalBuffer, (float4*)input.tangentBuffer, (uint3*)input.indexBuffer };
+		BVHInstance instance = { (float3*)input.vertexBuffer, (float3*)input.normalBuffer, (float4*)input.tangentBuffer, (uint3*)input.indexBuffer, input.vertexCount };
 		s_Instances.emplace_back(instance);
 	}
 
@@ -39,7 +40,13 @@ namespace Blueberry
 	{
 		uint32_t rootIndex = CreateNode();
 		BVHNode root = {};
-		root.bounds = make_float4(0, 0, 1, 1);
+
+		float4 rootBounds = make_float4(FLT_MAX, FLT_MAX, FLT_MIN, FLT_MIN);
+		for (size_t i = 0; i < s_Triangles.size(); ++i)
+		{
+			Grow(rootBounds, s_Triangles[i]);
+		}
+		root.bounds = rootBounds;
 		root.triangleStart = 0;
 		root.triangleCount = 0;
 		s_Nodes[rootIndex] = std::move(root);
@@ -59,12 +66,14 @@ namespace Blueberry
 		BVHNode node = s_Nodes[nodeIndex];
 		float4 nodeBounds = node.bounds;
 		float2 nodeSize = make_float2(nodeBounds.z - nodeBounds.x, nodeBounds.w - nodeBounds.y);
-		float2 nodeCenter = make_float2((nodeBounds.x + nodeBounds.z) / 2, (nodeBounds.y + nodeBounds.w) / 2);
-		uint32_t nodeSplitAxis = nodeSize.x > nodeSize.y ? 0 : 1;
-		float nodeSplitPos = getByIndex(nodeCenter, nodeSplitAxis);
 
-		// Use cost too here to avoid empty nodes
-		if (depth < s_MaxDepth && triangleCount > 1)
+		float nodeCost = CalculateNodeCost(nodeSize, triangleCount);
+		auto split = ChooseSplit(nodeIndex, triangleStart, triangleCount);
+		uint32_t nodeSplitAxis = std::get<0>(split);
+		float nodeSplitPos = std::get<1>(split);
+		float cost = std::get<2>(split);
+
+		if (cost < nodeCost && depth < s_MaxDepth && triangleCount > 1)
 		{
 			float4 boundsA = make_float4(FLT_MAX, FLT_MAX, FLT_MIN, FLT_MIN);
 			float4 boundsB = make_float4(FLT_MAX, FLT_MAX, FLT_MIN, FLT_MIN);
@@ -129,6 +138,77 @@ namespace Blueberry
 			Grow(bounds, triangle);
 		}
 		return bounds;
+	}
+
+	std::tuple<uint32_t, float, float> CUDABVH::ChooseSplit(const uint32_t& nodeIndex, const uint32_t& triangleStart, const uint32_t& triangleCount)
+	{
+		if (triangleCount <= 1)
+		{
+			return std::make_tuple(0, 0, FLT_MAX);
+		}
+		
+		float bestSplitPos = 0;
+		int bestSplitAxis = 0;
+		const uint32_t numSplitTests = 5;
+		float bestCost = FLT_MAX;
+		BVHNode node = s_Nodes[nodeIndex];
+		float2 boundsMin = make_float2(node.bounds.x, node.bounds.y);
+		float2 boundsMax = make_float2(node.bounds.z, node.bounds.w);
+
+		for (uint32_t axis = 0; axis < 2; ++axis)
+		{
+			for (uint32_t i = 0; i < numSplitTests; ++i)
+			{
+				float splitT = (i + 1) / (numSplitTests + 1.0f);
+				float splitPos = lerp(getByIndex(boundsMin, axis), getByIndex(boundsMax, axis), splitT);
+				float cost = EvaluateSplit(axis, splitPos, triangleStart, triangleCount);
+				if (cost < bestCost)
+				{
+					bestCost = cost;
+					bestSplitPos = splitPos;
+					bestSplitAxis = axis;
+				}
+			}
+		}
+
+		return std::make_tuple(bestSplitAxis, bestSplitPos, bestCost);
+	}
+
+	float CUDABVH::EvaluateSplit(const uint32_t& splitAxis, const float& splitPos, const uint32_t& triangleStart, const uint32_t& triangleCount)
+	{
+		float4 boundsA = make_float4(FLT_MAX, FLT_MAX, FLT_MIN, FLT_MIN);
+		float4 boundsB = make_float4(FLT_MAX, FLT_MAX, FLT_MIN, FLT_MIN);
+
+		uint32_t numOnA = 0;
+		uint32_t numOnB = 0;
+
+		for (uint32_t i = triangleStart; i < triangleStart + triangleCount; ++i)
+		{
+			BVHTriangle triangle = s_Triangles[i];
+			float2 triangleCenter = (triangle.p1 + triangle.p2 + triangle.p3) / 3;
+			if (getByIndex(triangleCenter, splitAxis) < splitPos)
+			{
+				Grow(boundsA, triangle);
+				++numOnA;
+			}
+			else
+			{
+				Grow(boundsB, triangle);
+				++numOnB;
+			}
+		}
+
+		float2 sizeA = make_float2(boundsA.z - boundsA.x, boundsA.w - boundsA.y);
+		float2 sizeB = make_float2(boundsB.z - boundsB.x, boundsB.w - boundsB.y);
+
+		float costA = CalculateNodeCost(sizeA, numOnA);
+		float costB = CalculateNodeCost(sizeB, numOnB);
+		return costA + costB;
+	}
+
+	float CUDABVH::CalculateNodeCost(const float2& size, const uint32_t& triangleCount)
+	{
+		return size.x * size.y * triangleCount;
 	}
 
 	uint32_t CUDABVH::CreateNode()

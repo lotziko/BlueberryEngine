@@ -1,4 +1,4 @@
-#include "PhysicsShapeCache.h"
+#include "Blueberry\Physics\PhysicsShapeCache.h"
 
 #include "Blueberry\Core\Base.h"
 #include "Blueberry\Core\Object.h"
@@ -72,16 +72,16 @@ namespace Blueberry
 	void PhysicsShapeCache::Bake(Mesh* mesh, std::ofstream& stream)
 	{
 		JPH::TriangleList triangles = {};
-		auto& vertices = mesh->GetVertices();
-		auto& indices = mesh->GetIndices();
-		triangles.resize(indices.size() / 3);
+		Vector3* vertices = mesh->GetVertices();
+		uint32_t* indices = mesh->GetIndices();
+		triangles.resize(mesh->GetIndexCount() / 3);
 		JPH::Triangle* trianglePtr = triangles.data();
 
-		for (uint32_t i = 0; i < indices.size(); i += 3)
+		for (uint32_t i = 0; i < mesh->GetIndexCount(); i += 3)
 		{
-			Vector3 vertex1 = vertices[i];
-			Vector3 vertex2 = vertices[i + 1];
-			Vector3 vertex3 = vertices[i + 2];
+			Vector3 vertex1 = vertices[indices[i]];
+			Vector3 vertex2 = vertices[indices[i + 1]];
+			Vector3 vertex3 = vertices[indices[i + 2]];
 			*trianglePtr = JPH::Triangle(JPH::Vec3(vertex1.x, vertex1.y, vertex1.z), JPH::Vec3(vertex2.x, vertex2.y, vertex2.z), JPH::Vec3(vertex3.x, vertex3.y, vertex3.z));
 			++trianglePtr;
 		}

@@ -125,8 +125,9 @@ namespace Blueberry
 			case BindingType::ByteData:
 			{
 				ByteData data = *value.Get<ByteData>();
-				output.write(reinterpret_cast<char*>(&data.size), sizeof(size_t));
-				output.write(reinterpret_cast<char*>(data.data), data.size);
+				size_t size = data.size();
+				output.write(reinterpret_cast<char*>(&size), sizeof(size_t));
+				output.write(reinterpret_cast<char*>(data.data()), data.size());
 			}
 			break;
 			case BindingType::IntList:
@@ -285,7 +286,7 @@ namespace Blueberry
 					input.read(reinterpret_cast<char*>(&stringSize), sizeof(size_t));
 					String data(stringSize, ' ');
 					input.read(data.data(), stringSize);
-					*value.Get<String>() = data;
+					*value.Get<String>() = std::move(data);
 				}
 				break;
 				case BindingType::ByteData:
@@ -293,9 +294,9 @@ namespace Blueberry
 					ByteData data;
 					size_t dataSize;
 					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
-					data.data = BB_MALLOC_ARRAY(uint8_t, dataSize);
-					input.read(reinterpret_cast<char*>(data.data), dataSize);
-					*value.Get<ByteData>() = data;
+					data.resize(dataSize);
+					input.read(reinterpret_cast<char*>(data.data()), dataSize);
+					*value.Get<ByteData>() = std::move(data);
 				}
 				break;
 				case BindingType::IntList:
@@ -304,7 +305,7 @@ namespace Blueberry
 					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 					List<int> data(dataSize);
 					input.read(reinterpret_cast<char*>(data.data()), dataSize * sizeof(int));
-					*value.Get<List<int>>() = data;
+					*value.Get<List<int>>() = std::move(data);
 				}
 				break;
 				case BindingType::FloatList:
@@ -313,7 +314,7 @@ namespace Blueberry
 					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 					List<float> data(dataSize);
 					input.read(reinterpret_cast<char*>(data.data()), dataSize * sizeof(float));
-					*value.Get<List<float>>() = data;
+					*value.Get<List<float>>() = std::move(data);
 				}
 				break;
 				case BindingType::StringList:
@@ -329,7 +330,7 @@ namespace Blueberry
 						input.read(string.data(), stringSize);
 						data[i] = string;
 					}
-					*value.Get<List<String>>() = data;
+					*value.Get<List<String>>() = std::move(data);
 				}
 				break;
 				case BindingType::Enum:

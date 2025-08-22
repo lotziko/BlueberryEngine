@@ -5,11 +5,7 @@
 
 namespace Blueberry
 {
-	struct ByteData
-	{
-		uint8_t* data = nullptr;
-		size_t size = 0;
-	};
+	using ByteData = Blueberry::List<uint8_t>;
 
 	struct ObjectPtrData
 	{

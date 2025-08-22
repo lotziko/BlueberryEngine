@@ -38,6 +38,7 @@ namespace Blueberry
 		ObjectId materialId;
 		uint8_t instanceCount;
 		float distance;
+		uint32_t lightmapChartOffset;
 	};
 	
 	static List<DrawingOperation> s_DrawingOperations = {};
@@ -45,7 +46,7 @@ namespace Blueberry
 	static std::tuple<Object*, uint8_t, SortingMode> s_LastCullerInfo = {};
 	static Object* s_CurrentCuller = nullptr;
 	static uint8_t s_CurrentCullerIndex = 0;
-	static List<Matrix> s_Matrices = {};
+	static List<std::pair<Matrix, Vector4>> s_PerDrawData = {};
 
 	bool CompareOperationsDefault(const DrawingOperation& o1, const DrawingOperation& o2)
 	{
@@ -71,13 +72,14 @@ namespace Blueberry
 
 	void BindOperationsRenderers()
 	{
-		s_Matrices.clear();
+		s_PerDrawData.clear();
 		uint32_t operationCount = static_cast<uint32_t>(s_DrawingOperations.size());
 		for (uint32_t i = 0; i < operationCount; ++i)
 		{
-			s_Matrices.emplace_back(std::move(GfxDevice::GetGPUMatrix(s_DrawingOperations[i].matrix)));
+			auto& operation = s_DrawingOperations[i];
+			s_PerDrawData.emplace_back(std::move(std::make_pair(GfxDevice::GetGPUMatrix(operation.matrix), Vector4(operation.lightmapChartOffset, 0, 0, 0))));
 		}
-		PerDrawDataConstantBuffer::BindDataInstanced(s_Matrices.data(), operationCount);
+		PerDrawDataConstantBuffer::BindDataInstanced(s_PerDrawData.data(), operationCount);
 	}
 
 	void GatherOperations(const CullingResults& results, Object* cullerObject, const uint8_t& index = 0, const SortingMode& sortingMode = SortingMode::Default)
@@ -123,6 +125,7 @@ namespace Blueberry
 				}
 				Matrix matrix = meshRenderer->GetTransform()->GetLocalToWorldMatrix();
 				float distance = Vector3::Transform(meshRenderer->GetBounds().Center, cullerViewMatrix).z;
+				uint32_t lightmapChartOffset = meshRenderer->GetLightmapChartOffset();
 				uint32_t subMeshCount = mesh->GetSubMeshCount();
 				if (subMeshCount > 1)
 				{
@@ -131,7 +134,7 @@ namespace Blueberry
 						Material* material = GfxDrawingOperation::GetValidMaterial(meshRenderer->GetMaterial(i));
 						if (material != nullptr)
 						{
-							s_DrawingOperations.emplace_back(std::move(DrawingOperation{ matrix, mesh, mesh->GetObjectId(), static_cast<uint8_t>(i), material, material->GetObjectId(), 1, distance }));
+							s_DrawingOperations.emplace_back(std::move(DrawingOperation{ matrix, mesh, mesh->GetObjectId(), static_cast<uint8_t>(i), material, material->GetObjectId(), 1, distance, lightmapChartOffset }));
 						}
 					}
 				}
@@ -140,7 +143,7 @@ namespace Blueberry
 					Material* material = GfxDrawingOperation::GetValidMaterial(meshRenderer->GetMaterial());
 					if (material != nullptr)
 					{
-						s_DrawingOperations.emplace_back(std::move(DrawingOperation{ matrix, mesh, mesh->GetObjectId(), 255, material, material->GetObjectId(), 1, distance }));
+						s_DrawingOperations.emplace_back(std::move(DrawingOperation{ matrix, mesh, mesh->GetObjectId(), 255, material, material->GetObjectId(), 1, distance, lightmapChartOffset }));
 					}
 				}
 			}

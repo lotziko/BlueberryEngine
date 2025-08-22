@@ -8,9 +8,11 @@
 struct PerDrawData
 {
 	float4x4 modelMatrix;
+	float4 lightmapChartOffset;
 };
 
 StructuredBuffer<PerDrawData> _PerDrawData;
+StructuredBuffer<float4> _PerLightmapInstanceData;
 
 cbuffer PerDrawData
 {

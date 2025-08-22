@@ -34,11 +34,23 @@ namespace DirectX
 
 namespace Blueberry
 {
+	template <typename T>
+	struct DataWrapper
+	{
+		T& reference;
+	};
+
 	size_t to_chars(ryml::substr buf, Blueberry::Guid val);
 	bool from_chars(ryml::csubstr buf, Blueberry::Guid* v);
 
-	size_t to_chars(ryml::substr buf, Blueberry::ByteData val);
-	bool from_chars(ryml::csubstr buf, Blueberry::ByteData* v);
+	size_t to_chars(ryml::substr buf, Blueberry::DataWrapper<ByteData> val);
+	bool from_chars(ryml::csubstr buf, Blueberry::DataWrapper<ByteData>* v);
+
+	size_t to_chars(ryml::substr buf, Blueberry::DataWrapper<Blueberry::List<int>> val);
+	bool from_chars(ryml::csubstr buf, Blueberry::DataWrapper<Blueberry::List<int>>* v);
+
+	size_t to_chars(ryml::substr buf, Blueberry::DataWrapper<Blueberry::List<float>> val);
+	bool from_chars(ryml::csubstr buf, Blueberry::DataWrapper<Blueberry::List<float>>* v);
 
 	void write(ryml::NodeRef* n, const ObjectPtrData& val);
 	bool read(const ryml::ConstNodeRef& n, ObjectPtrData* val);

@@ -76,6 +76,23 @@ namespace Blueberry
         }                                                                      \
     } while( 0 )
 
+#define CUDA_CHECK_RESULT( call )                                              \
+    do                                                                         \
+    {                                                                          \
+        CUresult error = call;								                   \
+		const char *err_string;												   \
+        if( error != CUDA_SUCCESS )                                            \
+        {                                                                      \
+            std::stringstream ss;                                              \
+			cuGetErrorString( error, &err_string );							\
+            ss << "CUDA call (" << #call << " ) failed with error: '"          \
+               << err_string													\
+               << "' (" __FILE__ << ":" << __LINE__ << ")\n";                  \
+			std::cout << ss.str().c_str() << std::endl;				           \
+			throw Exception( ss.str().c_str() );						       \
+        }                                                                      \
+    } while( 0 )
+
 #define CUDA_SYNC_CHECK()                                                      \
     do                                                                         \
     {                                                                          \

@@ -29,6 +29,7 @@ project "BlueberryBaking"
 		"%{wks.location}/BlueberryEngine/include",
 		"%{IncludeDir.cuda}",
 		"%{IncludeDir.optix}",
+		"%{IncludeDir.xatlas}",
 	}
 
 	libdirs

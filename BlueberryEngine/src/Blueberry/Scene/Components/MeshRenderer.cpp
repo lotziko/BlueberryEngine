@@ -100,6 +100,16 @@ namespace Blueberry
 		return m_Bounds;
 	}
 
+	const uint32_t& MeshRenderer::GetLightmapChartOffset()
+	{
+		return m_LightmapChartOffset;
+	}
+
+	void MeshRenderer::SetLightmapChartOffset(const uint32_t& offset)
+	{
+		m_LightmapChartOffset = offset;
+	}
+
 	void MeshRenderer::UpdateBounds()
 	{
 		Transform* transform = GetTransform();

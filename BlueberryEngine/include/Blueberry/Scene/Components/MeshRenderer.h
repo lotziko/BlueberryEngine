@@ -30,6 +30,9 @@ namespace Blueberry
 
 		virtual const AABB& GetBounds() final;
 
+		const uint32_t& GetLightmapChartOffset();
+		void SetLightmapChartOffset(const uint32_t& offset);
+
 	private:
 		void UpdateBounds();
 
@@ -40,5 +43,6 @@ namespace Blueberry
 		AABB m_Bounds;
 		size_t m_RecalculationFrame = 0;
 		bool m_CullingDirty = true;
+		uint32_t m_LightmapChartOffset = 0;
 	};
 }

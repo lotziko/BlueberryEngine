@@ -121,7 +121,10 @@ namespace Blueberry
 	{
 		DirectX::ScratchImage mipmappedScratchImage;
 		HRESULT hr = DirectX::GenerateMipMaps(*scratchImage.GetImages(), DirectX::TEX_FILTER_FANT, GetMipCount(static_cast<uint32_t>(scratchImage.GetMetadata().width), static_cast<uint32_t>(scratchImage.GetMetadata().height), true), mipmappedScratchImage);
-		scratchImage = std::move(mipmappedScratchImage);
+		if (mipmappedScratchImage.GetImageCount() > 0)
+		{
+			scratchImage = std::move(mipmappedScratchImage);
+		}
 	}
 
 	bool CanCompressOnGPU(DXGI_FORMAT format)
@@ -148,7 +151,9 @@ namespace Blueberry
 		const DirectX::Image* image = scratchImage.GetImage(0, 0, 0);
 		if (DirectX::IsCompressed(dxgiFormat) && (image->width % 4 > 0) && (image->height % 4 > 0))
 		{
-			return;
+			DirectX::ScratchImage resizedScratchImage;
+			DirectX::Resize(*image, image->width + (4 - image->width % 4), image->height + (4 - image->height % 4), DirectX::TEX_FILTER_FLAGS::TEX_FILTER_DEFAULT, resizedScratchImage);
+			scratchImage = std::move(resizedScratchImage);
 		}
 
 		if (s_Device == nullptr)
@@ -168,15 +173,20 @@ namespace Blueberry
 			{
 				hr = DirectX::Compress(scratchImage.GetImages(), scratchImage.GetImageCount(), scratchImage.GetMetadata(), dxgiFormat, srgb ? DirectX::TEX_COMPRESS_SRGB : DirectX::TEX_COMPRESS_DEFAULT, DirectX::TEX_THRESHOLD_DEFAULT, compressedScratchImage);
 			}
+			if (FAILED(hr))
+			{
+				BB_ERROR("Failed to compress texture.");
+				return;
+			}
 		}
 		else
 		{
-			DirectX::Convert(scratchImage.GetImages(), scratchImage.GetImageCount(), scratchImage.GetMetadata(), dxgiFormat, DirectX::TEX_FILTER_DEFAULT, DirectX::TEX_THRESHOLD_DEFAULT, compressedScratchImage);
-		}
-		if (FAILED(hr))
-		{
-			BB_ERROR("Failed to compress texture.");
-			return;
+			hr = DirectX::Convert(scratchImage.GetImages(), scratchImage.GetImageCount(), scratchImage.GetMetadata(), dxgiFormat, DirectX::TEX_FILTER_DEFAULT, DirectX::TEX_THRESHOLD_DEFAULT, compressedScratchImage);
+			if (FAILED(hr))
+			{
+				BB_ERROR("Failed to convert texture.");
+				return;
+			}
 		}
 		scratchImage = std::move(compressedScratchImage);
 	}

@@ -83,7 +83,7 @@ Shader
 			float4 color = SAMPLE_TEXTURE2D_X(_ScreenColorTexture, _ScreenColorTexture_Sampler, input.texcoord);
 
 			float3 mixedColor = color.rgb;
-			float3 tonemappedColor = TonemapFilmic(mixedColor * _ExposureTime.x);
+			float3 tonemappedColor = Uncharted2Tonemap(mixedColor * _ExposureTime.x);
 
 			// Gamma correction
 			tonemappedColor = LinearToSRGB(tonemappedColor);

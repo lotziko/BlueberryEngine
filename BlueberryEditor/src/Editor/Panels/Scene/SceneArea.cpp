@@ -16,7 +16,6 @@
 #include "Editor\Gizmos\GizmoRenderer.h"
 #include "Editor\Gizmos\IconRenderer.h"
 #include "Editor\Menu\EditorMenuManager.h"
-#include "Editor\LightmapManager.h"
 
 #include "Blueberry\Core\Screen.h"
 #include "Blueberry\Core\ClassDB.h"
@@ -58,8 +57,6 @@ namespace Blueberry
 
 		m_ColorRenderTarget = GfxRenderTexturePool::Get(Screen::GetWidth(), Screen::GetHeight(), 1, 1, TextureFormat::R8G8B8A8_UNorm);
 		m_DepthStencilRenderTarget = GfxRenderTexturePool::Get(Screen::GetWidth(), Screen::GetHeight(), 1, 1, TextureFormat::D24_UNorm);
-
-		LightmapManager::Initialize();
 
 		Selection::GetSelectionChanged().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
 		EditorSceneManager::GetSceneLoaded().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
@@ -423,12 +420,6 @@ namespace Blueberry
 			if (ImGui::Button("Save"))
 			{
 				EditorSceneManager::Save();
-			}
-			ImGui::SameLine();
-
-			if (ImGui::Button("Bake"))
-			{
-				LightmapManager::Bake();
 			}
 			ImGui::SameLine();
 		}

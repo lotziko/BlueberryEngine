@@ -21,6 +21,8 @@ project "BlueberryEngine"
 		"vendor/openxr/include/**.h",
 		"vendor/rpmalloc/**.h",
 		"vendor/rpmalloc/**.cpp",
+		"vendor/xatlas/**.h",
+		"vendor/xatlas/**.cpp",
 	}
 
 	includedirs

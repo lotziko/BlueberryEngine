@@ -165,6 +165,16 @@ namespace Blueberry
 		return 0;
 	}
 
+	FileId ObjectDB::GetFileIdFromObjectId(const ObjectId& id)
+	{
+		auto fileIdIt = s_ObjectIdToFileId.find(id);
+		if (fileIdIt != s_ObjectIdToFileId.end())
+		{
+			return fileIdIt->second;
+		}
+		return 0;
+	}
+
 	std::pair<Guid, FileId> ObjectDB::GetGuidAndFileIdFromObject(Object* object)
 	{
 		auto guidIt = s_ObjectIdToGuid.find(object->GetObjectId());

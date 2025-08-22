@@ -18,10 +18,6 @@ namespace Blueberry
 		{
 			delete m_Texture;
 		}
-		if (m_RawData.data != nullptr)
-		{
-			BB_FREE(m_RawData.data);
-		}
 	}
 
 	const uint32_t& Texture3D::GetDepth()
@@ -31,8 +27,8 @@ namespace Blueberry
 
 	void Texture3D::SetData(uint8_t* data, const size_t& dataSize)
 	{
-		m_RawData.data = data;
-		m_RawData.size = dataSize;
+		m_RawData.resize(dataSize);
+		memcpy(m_RawData.data(), data, dataSize);
 	}
 
 	void Texture3D::Apply()
@@ -42,8 +38,8 @@ namespace Blueberry
 		textureProperties.width = m_Width;
 		textureProperties.height = m_Height;
 		textureProperties.depth = m_Depth;
-		textureProperties.data = m_RawData.data;
-		textureProperties.dataSize = m_RawData.size;
+		textureProperties.data = m_RawData.data();
+		textureProperties.dataSize = m_RawData.size();
 		textureProperties.mipCount = m_MipCount;
 		textureProperties.format = m_Format;
 		textureProperties.dimension = TextureDimension::Texture3D;

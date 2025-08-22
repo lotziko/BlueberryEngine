@@ -28,6 +28,7 @@ static uint _RenderInstanceId;
 #endif
 
 #define OBJECT_TO_WORLD_MATRIX				_PerDrawData[_RenderInstanceId].modelMatrix
+#define LIGHTMAP_CHART_OFFSET				_PerDrawData[_RenderInstanceId].lightmapChartOffset
 #define VIEW_PROJECTION_MATRIX				_ViewProjectionMatrix[_ViewIndex]
 #define INVERSE_VIEW_PROJECTION_MATRIX		_InverseViewProjectionMatrix[_ViewIndex]
 #define CAMERA_POSITION_WS					_CameraPositionWS

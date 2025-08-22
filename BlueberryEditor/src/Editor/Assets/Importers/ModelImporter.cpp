@@ -145,7 +145,7 @@ namespace Blueberry
 			importer->Import(scene);
 
 			fbxsdk::FbxGeometryConverter converter(manager);
-			converter.Triangulate(scene, true);
+			//converter.Triangulate(scene, true); Creates vertexCount == indexCount
 			
 			int meshCount = 0;
 			for (int i = 0; i < scene->GetNodeCount(); ++i)
@@ -231,8 +231,8 @@ namespace Blueberry
 		{
 			SetMainObject(entityFileId);
 		}
-		transform->SetLocalPosition(Vector3(fbxTranslation[0] / fbxScale[0], fbxTranslation[1] / fbxScale[1], fbxTranslation[2] / fbxScale[2]));
-		transform->SetLocalEulerRotationHint(Vector3(fbxRotation[0], fbxRotation[1], fbxRotation[2]));
+		transform->SetLocalPosition(Vector3(static_cast<float>(fbxTranslation[0] / fbxScale[0]), static_cast<float>(fbxTranslation[1] / fbxScale[1]), static_cast<float>(fbxTranslation[2] / fbxScale[2])));
+		transform->SetLocalEulerRotationHint(Vector3(static_cast<float>(fbxRotation[0]), static_cast<float>(fbxRotation[1]), static_cast<float>(fbxRotation[2])));
 		
 		if (fbxsdk::FbxMesh* fbxMesh = node->GetMesh())
 		{
@@ -246,8 +246,8 @@ namespace Blueberry
 				return;
 			}
 			
-			int polygonCount = fbxMesh->GetPolygonCount();
-			if (polygonCount <= 0)
+			uint32_t polygonCount = static_cast<uint32_t>(fbxMesh->GetPolygonCount());
+			if (polygonCount == 0)
 			{
 				return;
 			}
@@ -286,17 +286,23 @@ namespace Blueberry
 
 			fbxsdk::FbxStringList fbxUvNames;
 			fbxMesh->GetUVSetNames(fbxUvNames);
-			fbxsdk::FbxArray<fbxsdk::FbxVector2> fbxUvs;
+			fbxsdk::FbxArray<fbxsdk::FbxVector2> fbxUvs0;
+			fbxsdk::FbxArray<fbxsdk::FbxVector2> fbxUvs1;
 			if (fbxUvNames.GetCount() > 0)
 			{
 				std::string str = fbxUvNames[0];
-				fbxMesh->GetPolygonVertexUVs(fbxUvNames[0], fbxUvs);
+				fbxMesh->GetPolygonVertexUVs(fbxUvNames[0], fbxUvs0);
+			}
+			if (fbxUvNames.GetCount() > 1)
+			{
+				std::string str = fbxUvNames[1];
+				fbxMesh->GetPolygonVertexUVs(fbxUvNames[1], fbxUvs1);
 			}
 
-			int verticesCount = fbxMesh->GetPolygonVertexCount();
+			uint32_t verticesCount = static_cast<uint32_t>(fbxMesh->GetPolygonVertexCount());
 
 			static List<Vector3> verticesNormalsTangentsUvs;
-			if (verticesCount > verticesNormalsTangentsUvs.size())
+			if (verticesCount > static_cast<uint32_t>(verticesNormalsTangentsUvs.size()))
 			{
 				verticesNormalsTangentsUvs.resize(verticesCount);
 			}
@@ -307,13 +313,13 @@ namespace Blueberry
 			{
 				fbxsdk::FbxVector4 vertex = fbxControlPoints[*verticesPtr];
 				// Vector4 point = Vector4::Transform(Vector4(vertex[0], vertex[1], vertex[2], 1.0f), rotationMatrix);
-				verticesNormalsTangentsUvs[i] = Vector3(vertex[0], vertex[1], vertex[2]) / m_Scale; //  Vector3(vertex[0], vertex[2], -vertex[1])
+				verticesNormalsTangentsUvs[i] = Vector3(static_cast<float>(vertex[0]), static_cast<float>(vertex[1]), static_cast<float>(vertex[2])) / m_Scale; //  Vector3(vertex[0], vertex[2], -vertex[1])
 			}
 			mesh->SetVertices(verticesNormalsTangentsUvs.data(), verticesCount);
 
 			// Indices
-			int indicesCount = 0;
-			for (int i = 0; i < polygonCount; ++i)
+			uint32_t indicesCount = 0;
+			for (uint32_t i = 0; i < polygonCount; ++i)
 			{
 				// This may break if accidently get 5 or more vertex polygon
 				indicesCount += (fbxMesh->mPolygons[i]).mSize == 3 ? 3 : 6;
@@ -395,70 +401,159 @@ namespace Blueberry
 				{
 					fbxsdk::FbxVector4 fbxNormal = fbxNormals[i];
 					//Vector4 direction = Vector4::Transform(Vector4(fbxNormal[0], fbxNormal[1], fbxNormal[2], 0.0f), rotationMatrix);
-					verticesNormalsTangentsUvs[i] = Vector3(fbxNormal[0], fbxNormal[1], fbxNormal[2]); // Vector3(fbxNormal[0], fbxNormal[2], -fbxNormal[1]);
+					verticesNormalsTangentsUvs[i] = Vector3(static_cast<float>(fbxNormal[0]), static_cast<float>(fbxNormal[1]), static_cast<float>(fbxNormal[2])); // Vector3(fbxNormal[0], fbxNormal[2], -fbxNormal[1]);
 				}
 				mesh->SetNormals(verticesNormalsTangentsUvs.data(), verticesCount);
 			}
 
 			// Uvs
 			Vector2* uvs = reinterpret_cast<Vector2*>(verticesNormalsTangentsUvs.data());
-			if (fbxUvs.Size() > 0)
+			if (fbxUvs0.Size() > 0)
 			{
 				for (uint32_t i = 0; i < verticesCount; ++i)
 				{
-					fbxsdk::FbxVector2 fbxUv = fbxUvs[i];
-					uvs[i] = Vector2(fbxUv[0], fbxUv[1]);
+					fbxsdk::FbxVector2 fbxUv = fbxUvs0[i];
+					uvs[i] = Vector2(static_cast<float>(fbxUv[0]), static_cast<float>(fbxUv[1]));
 				}
 				mesh->SetUVs(0, uvs, verticesCount);
 			}
 
-			if (fbxUvs.Size() > 0 && fbxMesh->GetElementTangentCount() == 0)
+			if (fbxUvs0.Size() > 0 && fbxMesh->GetElementTangentCount() == 0)
 			{
 				mesh->GenerateTangents();
 			}
 			if (m_GenerateLightmapUV)
 			{
-				xatlas::Atlas* atlas = xatlas::Create();
-				xatlas::MeshDecl decl = {};
-				decl.vertexCount = verticesCount;
-				decl.vertexPositionData = mesh->GetVertices().data();
-				decl.vertexPositionStride = sizeof(Vector3);
-				if (fbxNormals.Size() > 0)
+				if (fbxUvs1.Size() > 0)
 				{
-					decl.vertexNormalData = mesh->GetNormals().data();
-					decl.vertexNormalStride = sizeof(Vector3);
-				}
-				if (fbxUvs.Size() > 0)
-				{
-					decl.vertexUvData = mesh->GetUVs(0).data();
-					decl.vertexUvStride = sizeof(Vector2);
-				}
-				decl.indexCount = indicesCount;
-				decl.indexData = mesh->GetIndices().data();
-				decl.indexFormat = xatlas::IndexFormat::UInt32;
-				xatlas::AddMeshError error = xatlas::AddMesh(atlas, decl, 1);
-				if (error != xatlas::AddMeshError::Success)
-				{
-					xatlas::Destroy(atlas);
-					BB_ERROR("Failed to generate lightmap uv.");
+					Vector3* uvs = reinterpret_cast<Vector3*>(verticesNormalsTangentsUvs.data());
+					for (uint32_t i = 0; i < verticesCount; ++i)
+					{
+						fbxsdk::FbxVector2 fbxUv = fbxUvs1[i];
+						uvs[i] = Vector3(static_cast<float>(fbxUv[0]), static_cast<float>(fbxUv[1]), -1.0f);
+					}
+
+					uint32_t verticesLeft = verticesCount - 1;
+					uint32_t chartIndex = 0;
+					std::stack<uint32_t> indexes = {};
+					uvs[0].z = static_cast<float>(chartIndex);
+					indexes.push(0);
+
+					while (verticesLeft > 0)
+					{
+						if (indexes.size() == 0)
+						{
+							for (uint32_t i = 0; i < verticesCount; ++i)
+							{
+								if (uvs[i].z == -1)
+								{
+									++chartIndex;
+									uvs[i].z = static_cast<float>(chartIndex);
+									indexes.push(i);
+									--verticesLeft;
+									break;
+								}
+							}
+							if (indexes.size() == 0)
+							{
+								break;
+							}
+						}
+
+						uint32_t index = indexes.top();
+						indexes.pop();
+						
+						bool foundAdjacent = false;
+						for (uint32_t i = 0; i < indicesCount; i += 3)
+						{
+							uint32_t index1 = indices[i];
+							uint32_t index2 = indices[i + 1];
+							uint32_t index3 = indices[i + 2];
+
+							if (index == index1 || index == index2 || index == index3)
+							{
+								if (uvs[index1].z == -1)
+								{
+									uvs[index1].z = static_cast<float>(chartIndex);
+									indexes.push(index1);
+									--verticesLeft;
+									foundAdjacent = true;
+								}
+
+								if (uvs[index2].z == -1)
+								{
+									uvs[index2].z = static_cast<float>(chartIndex);
+									indexes.push(index2);
+									--verticesLeft;
+									foundAdjacent = true;
+								}
+
+								if (uvs[index3].z == -1)
+								{
+									uvs[index3].z = static_cast<float>(chartIndex);
+									indexes.push(index3);
+									--verticesLeft;
+									foundAdjacent = true;
+								}
+							}
+						}
+						if (!foundAdjacent)
+						{
+							Vector3 uv = uvs[index];
+							const float distance = 0.0001f * 0.0001f;
+							for (uint32_t i = 0; i < verticesCount; ++i)
+							{
+								Vector3 uv1 = uvs[i];
+								if (uv1.z == -1 && Vector2::DistanceSquared(static_cast<Vector2>(uv), static_cast<Vector2>(uv1)) < distance)
+								{
+									uvs[i].z = static_cast<float>(chartIndex);
+									indexes.push(i);
+									--verticesLeft;
+								}
+							}
+						}
+					}
+					mesh->SetUVs(1, uvs, verticesCount);
 				}
 				else
 				{
-					xatlas::ChartOptions chartOptions = {};
-					//chartOptions.fixWinding = true;
-					//chartOptions.maxCost = 30;
-					xatlas::PackOptions packOptions = {};
-					packOptions.resolution = 1024;
-					packOptions.rotateCharts = false;
-					xatlas::Generate(atlas, chartOptions, packOptions);
-					xatlas::Mesh& atlasMesh = atlas->meshes[0];
-					Vector2* uvs = reinterpret_cast<Vector2*>(verticesNormalsTangentsUvs.data());
-					for (uint32_t i = 0; i < atlasMesh.vertexCount; i++)
+					xatlas::Atlas* atlas = xatlas::Create();
+					xatlas::MeshDecl decl = {};
+					decl.vertexCount = verticesCount;
+					decl.vertexPositionData = mesh->GetVertices();
+					decl.vertexPositionStride = sizeof(Vector3);
+					if (fbxNormals.Size() > 0)
 					{
-						xatlas::Vertex &vertex = atlasMesh.vertexArray[i];
-						uvs[vertex.xref] = Vector2(vertex.uv[0] / atlas->width, vertex.uv[1] / atlas->height);
+						decl.vertexNormalData = mesh->GetNormals();
+						decl.vertexNormalStride = sizeof(Vector3);
 					}
-					mesh->SetUVs(1, uvs, verticesCount);
+					if (fbxUvs0.Size() > 0)
+					{
+						decl.vertexUvData = mesh->GetUVs(0);
+						decl.vertexUvStride = sizeof(Vector2);
+					}
+					decl.indexCount = indicesCount;
+					decl.indexData = mesh->GetIndices();
+					decl.indexFormat = xatlas::IndexFormat::UInt32;
+					xatlas::AddMeshError error = xatlas::AddMesh(atlas, decl, 1);
+					if (error != xatlas::AddMeshError::Success)
+					{
+						xatlas::Destroy(atlas);
+						BB_ERROR("Failed to generate lightmap uv.");
+					}
+					else
+					{
+						xatlas::Generate(atlas);
+						xatlas::Mesh& atlasMesh = atlas->meshes[0];
+						Vector3* uvs = verticesNormalsTangentsUvs.data();
+						for (uint32_t i = 0; i < atlasMesh.vertexCount; i++)
+						{
+							xatlas::Vertex &vertex = atlasMesh.vertexArray[i];
+							uvs[vertex.xref] = Vector3(vertex.uv[0] / atlas->width, vertex.uv[1] / atlas->height, static_cast<float>(vertex.chartIndex));
+						}
+						mesh->SetUVs(1, uvs, verticesCount);
+						xatlas::Destroy(atlas);
+					}
 				}
 			}
 			if (m_GeneratePhysicsShape)
@@ -500,7 +595,7 @@ namespace Blueberry
 			AddAssetObject(mesh, meshFileId);
 			objects.emplace_back(mesh);
 		}
-		for (uint32_t i = 0; i < node->GetChildCount(); ++i)
+		for (int i = 0; i < node->GetChildCount(); ++i)
 		{
 			fbxsdk::FbxNode* childNode = node->GetChild(i);
 			CreateMeshEntity(transform, childNode, objects);

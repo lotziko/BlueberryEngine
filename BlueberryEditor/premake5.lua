@@ -16,8 +16,6 @@ project "BlueberryEditor"
 		"vendor/fbxsdk/include/**.h",
 		"vendor/directxtex/**.h",
 		"vendor/directxtex/**.cpp",
-		"vendor/xatlas/**.h",
-		"vendor/xatlas/**.cpp",
 	}
 
 	includedirs

@@ -11,7 +11,7 @@ IncludeDir["fbxsdk"] = "%{wks.location}/BlueberryEditor/vendor/fbxsdk/include"
 IncludeDir["directxtex"] = "%{wks.location}/BlueberryEditor/vendor/directxtex"
 IncludeDir["cuda"] = "%{wks.location}/BlueberryBaking/vendor/cuda/include"
 IncludeDir["optix"] = "%{wks.location}/BlueberryBaking/vendor/optix/include"
-IncludeDir["xatlas"] = "%{wks.location}/BlueberryEditor/vendor/xatlas"
+IncludeDir["xatlas"] = "%{wks.location}/BlueberryEngine/vendor/xatlas"
 
 Library = {}
 Library["hbao"] = "%{wks.location}/BlueberryEngine/vendor/hbao/lib/GFSDK_SSAO_D3D11.win64.lib"

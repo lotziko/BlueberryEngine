@@ -93,28 +93,25 @@ namespace Blueberry
 			case BindingType::ByteData:
 			{
 				ByteData data = *value.Get<ByteData>();
-				if (data.size > 0)
+				if (data.size() > 0)
 				{
-					objectNode[key] << data;
+					DataWrapper<ByteData> wrapper = { data };
+					objectNode[key] << wrapper;
 				}
 			}
 			break;
 			case BindingType::IntList:
 			{
 				List<int> data = *value.Get<List<int>>();
-				ByteData byteData;
-				byteData.data = reinterpret_cast<uint8_t*>(data.data());
-				byteData.size = data.size() * sizeof(int);
-				objectNode[key] << byteData;
+				DataWrapper<List<int>> wrapper = { data };
+				objectNode[key] << wrapper;
 			}
 			break;
 			case BindingType::FloatList:
 			{
 				List<float> data = *value.Get<List<float>>();
-				ByteData byteData;
-				byteData.data = reinterpret_cast<uint8_t*>(data.data());
-				byteData.size = data.size() * sizeof(float);
-				objectNode[key] << byteData;
+				DataWrapper<List<float>> wrapper = { data };
+				objectNode[key] << wrapper;
 			}
 			break;
 			case BindingType::StringList:
@@ -152,9 +149,10 @@ namespace Blueberry
 			case BindingType::Raw:
 			{
 				ByteData byteData;
-				byteData.data = value.Get<uint8_t>();
-				byteData.size = field.options.size;
-				objectNode[key] << byteData;
+				byteData.resize(field.options.size);
+				memcpy(byteData.data(), value.Get<uint8_t>(), field.options.size);
+				DataWrapper<ByteData> wrapper = { byteData };
+				objectNode[key] << wrapper;
 			}
 			break;
 			case BindingType::ObjectPtr:
@@ -256,24 +254,27 @@ namespace Blueberry
 					objectNode[key] >> *value.Get<String>();
 					break;
 				case BindingType::ByteData:
-					objectNode[key] >> *value.Get<ByteData>();
-					break;
+				{
+					ByteData data;
+					DataWrapper<ByteData> wrapper = { data };
+					objectNode[key] >> wrapper;
+					*value.Get<ByteData>() = std::move(data);
+				}
+				break;
 				case BindingType::IntList:
 				{
-					ByteData byteData;
-					objectNode[key] >> byteData;
-					int* ptr = reinterpret_cast<int*>(byteData.data);
-					List<int> data(ptr, ptr + byteData.size / sizeof(int));
-					*value.Get<List<int>>() = data;
+					List<int> data;
+					DataWrapper<List<int>> wrapper = { data };
+					objectNode[key] >> wrapper;
+					*value.Get<List<int>>() = std::move(data);
 				}
 				break;
 				case BindingType::FloatList:
 				{
-					ByteData byteData;
-					objectNode[key] >> byteData;
-					float* ptr = reinterpret_cast<float*>(byteData.data);
-					List<float> data(ptr, ptr + byteData.size / sizeof(float));
-					*value.Get<List<float>>() = data;
+					List<float> data;
+					DataWrapper<List<float>> wrapper = { data };
+					objectNode[key] >> wrapper;
+					*value.Get<List<float>>() = std::move(data);
 				}
 				break;
 				case BindingType::StringList:
@@ -308,8 +309,9 @@ namespace Blueberry
 				case BindingType::Raw:
 				{
 					ByteData byteData;
-					objectNode[key] >> byteData;
-					memcpy(value.Get<uint8_t>(), byteData.data, byteData.size);
+					DataWrapper<ByteData> wrapper = { byteData };
+					objectNode[key] >> wrapper;
+					memcpy(value.Get<uint8_t>(), byteData.data(), byteData.size());
 				}
 				break;
 				case BindingType::ObjectPtr:

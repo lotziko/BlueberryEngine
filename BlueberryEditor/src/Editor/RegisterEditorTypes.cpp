@@ -11,6 +11,7 @@
 #include "Editor\Panels\Game\GameView.h"
 #include "Editor\Panels\Picking\SearchWindow.h"
 #include "Editor\Panels\Statistics\StatisticsWindow.h"
+#include "Editor\Panels\Lightmapping\LightmappingWindow.h"
 
 namespace Blueberry
 {
@@ -25,5 +26,6 @@ namespace Blueberry
 		REGISTER_CLASS(GameView);
 		REGISTER_CLASS(SearchWindow);
 		REGISTER_CLASS(StatisticsWindow);
+		REGISTER_CLASS(LightmappingWindow);
 	}
 }

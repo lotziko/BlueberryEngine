@@ -7,8 +7,6 @@
 #include "Editor\Preview\MeshPreview.h"
 #include "Editor\Misc\ImGuiHelper.h"
 
-#include "Editor\LightmapManager.h"
-
 #include <imgui\imgui.h>
 
 namespace Blueberry
@@ -27,25 +25,22 @@ namespace Blueberry
 	{
 		ImDrawList* list = ImGui::GetWindowDrawList();
 		ImColor backgroundColor = ImColor(0, 0, 0);
-		ImColor lineColor = ImColor(255, 255, 255);
-		const List<uint32_t>& indices = mesh->GetIndices();
-		const List<Vector2>& uvs = mesh->GetUVs(channel);
+		static ImColor lineColors[] = { ImColor(255, 255, 255), ImColor(0, 255, 255), ImColor(255, 0, 255), ImColor(255, 255, 0), ImColor(0, 0, 255), ImColor(255, 0, 0), ImColor(0, 255, 0) };
+		//ImColor lineColor = ImColor(255, 255, 255);
+		uint32_t* indices = mesh->GetIndices();
+		float* uvs = mesh->GetUVs(channel);
+		uint32_t uvSize = mesh->GetUVSize(channel);
 
-		GfxTexture* texture = LightmapManager::GetTexture();
-		if (texture != nullptr)
-		{
-			list->AddImage(reinterpret_cast<ImTextureID>(texture->GetHandle()), pos, pos + size);
-		}
-		//list->AddRectFilled(pos, pos + size, backgroundColor);
+		list->AddRectFilled(pos, pos + size, backgroundColor);
 		list->PushClipRect(pos, pos + size, true);
-		if (uvs.size() > 0)
+		if (uvs != nullptr)
 		{
-			for (uint32_t i = 0; i < indices.size(); i += 3)
+			for (uint32_t i = 0; i < mesh->GetIndexCount(); i += 3)
 			{
-				Vector2 p1 = uvs[indices[i]];
-				Vector2 p2 = uvs[indices[i + 1]];
-				Vector2 p3 = uvs[indices[i + 2]];
-				list->AddTriangle(pos + ImVec2(p1.x * size.x, p1.y * size.y), pos + ImVec2(p2.x * size.x, p2.y * size.y), pos + ImVec2(p3.x * size.x, p3.y * size.y), lineColor);
+				Vector3 p1 = *reinterpret_cast<Vector3*>(uvs + indices[i] * uvSize);
+				Vector3 p2 = *reinterpret_cast<Vector3*>(uvs + indices[i + 1] * uvSize);
+				Vector3 p3 = *reinterpret_cast<Vector3*>(uvs + indices[i + 2] * uvSize);
+				list->AddTriangle(pos + ImVec2(p1.x * size.x, p1.y * size.y), pos + ImVec2(p2.x * size.x, p2.y * size.y), pos + ImVec2(p3.x * size.x, p3.y * size.y), /*lineColor*/lineColors[static_cast<uint32_t>(p3.z) % ARRAYSIZE(lineColors)]);
 			}
 		}
 		list->PopClipRect();
@@ -58,6 +53,9 @@ namespace Blueberry
 
 		static int previewType;
 		static List<String> previewTypes = { "Default", "UV 0", "UV 1" };
+		ImGui::Text(mesh->GetName().c_str());
+		ImGui::Text(std::to_string(mesh->GetVertexCount()).c_str());
+		ImGui::Text(std::to_string(mesh->GetIndexCount()).c_str());
 		ImGui::EnumEdit("Preview", &previewType, &previewTypes);
 
 		ImVec2 pos = ImGui::GetCursorScreenPos();

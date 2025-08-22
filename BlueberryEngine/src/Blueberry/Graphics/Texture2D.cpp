@@ -17,16 +17,12 @@ namespace Blueberry
 		{
 			delete m_Texture;
 		}
-		if (m_RawData.data != nullptr)
-		{
-			BB_FREE(m_RawData.data);
-		}
 	}
 
 	void Texture2D::SetData(uint8_t* data, const size_t& dataSize)
 	{
-		m_RawData.data = data;
-		m_RawData.size = dataSize;
+		m_RawData.resize(dataSize);
+		memcpy(m_RawData.data(), data, dataSize);
 	}
 
 	void Texture2D::Apply()
@@ -35,8 +31,8 @@ namespace Blueberry
 
 		textureProperties.width = m_Width;
 		textureProperties.height = m_Height;
-		textureProperties.data = m_RawData.data;
-		textureProperties.dataSize = m_RawData.size;
+		textureProperties.data = m_RawData.data();
+		textureProperties.dataSize = m_RawData.size();
 		textureProperties.mipCount = m_MipCount;
 		textureProperties.format = m_Format;
 		textureProperties.dimension = TextureDimension::Texture2D;

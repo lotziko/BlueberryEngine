@@ -1,6 +1,6 @@
 #include "LayerStack.h"
 
-#include "Layer.h"
+#include "Blueberry\Core\Layer.h"
 
 namespace Blueberry
 {

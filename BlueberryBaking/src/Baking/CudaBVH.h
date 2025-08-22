@@ -48,8 +48,11 @@ namespace Blueberry
 
 	struct CUDABVHInput
 	{
-		const List<Vector2>& vertices;
-		const List<uint32_t>& indices;
+		Vector3* vertices;
+		uint32_t* indices;
+
+		uint32_t vertexCount;
+		uint32_t indexCount;
 
 		CUdeviceptr vertexBuffer;
 		CUdeviceptr normalBuffer;
@@ -68,6 +71,10 @@ namespace Blueberry
 		void Split(const uint32_t& nodeIndex, const uint32_t& triangleStart, const uint32_t& triangleCount, const uint32_t& depth);
 		void Grow(float4& bounds, const BVHTriangle& triangle);
 		float4 CalculateBounds(BVHNode* node);
+
+		std::tuple<uint32_t, float, float> ChooseSplit(const uint32_t& nodeIndex, const uint32_t& triangleStart, const uint32_t& triangleCount);
+		float EvaluateSplit(const uint32_t& splitAxis, const float& splitPos, const uint32_t& triangleStart, const uint32_t& triangleCount);
+		float CalculateNodeCost(const float2& size, const uint32_t& triangleCount);
 
 		uint32_t CreateNode();
 		uint32_t CreateNode(const float4& bounds, const uint32_t& triangleStart, const uint32_t& triangleCount);

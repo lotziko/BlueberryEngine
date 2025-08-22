@@ -3,7 +3,7 @@
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Components\Collider.h"
-#include "..\..\Physics\Physics.h"
+#include "Blueberry\Physics\Physics.h"
 #include "Blueberry\Core\ClassDB.h"
 
 #include <Jolt\Jolt.h>

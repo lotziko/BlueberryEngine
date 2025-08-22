@@ -107,7 +107,7 @@ namespace Blueberry
 	
 	List<std::pair<Object*, FileId>> AssetDB::LoadAssetObjects(const Guid& guid, const Dictionary<FileId, ObjectId>& existingObjects)
 	{
-		BinarySerializer/*YamlSerializer*/ serializer;
+		BinarySerializer serializer;
 		std::filesystem::path dataPath = Path::GetAssetCachePath();
 		for (auto& object : existingObjects)
 		{
@@ -177,8 +177,10 @@ namespace Blueberry
 
 	void AssetDB::CreateAsset(Object* object, const String& relativePath)
 	{
-		Guid guid = Guid::Create();
-		ObjectDB::AllocateIdToGuid(object, guid, 1);
+		auto relativeMetaPath = relativePath;
+		relativeMetaPath.append(".meta");
+		auto metaPath = Path::GetAssetsPath();
+		metaPath.append(relativeMetaPath);
 
 		YamlSerializer serializer;
 		auto dataPath = Path::GetAssetsPath();
@@ -186,12 +188,14 @@ namespace Blueberry
 		serializer.AddObject(object);
 		serializer.Serialize(String(dataPath.string()));
 		BB_INFO("Asset was saved to the path: " << relativePath);
-		Refresh();
+
+		AssetImporter* importer = CreateOrGetImporter(dataPath);
+		ObjectDB::AllocateIdToGuid(object, importer->GetGuid(), ObjectDB::GetFileIdFromObject(object));
 	}
 
 	void AssetDB::SaveAssetObjectsToCache(const List<Object*>& objects)
 	{
-		BinarySerializer/*YamlSerializer*/ serializer;
+		BinarySerializer serializer;
 		for (Object* object : objects)
 		{
 			serializer.AddObject(object);

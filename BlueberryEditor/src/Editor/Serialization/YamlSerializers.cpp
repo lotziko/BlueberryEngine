@@ -127,19 +127,60 @@ namespace Blueberry
 		return true;
 	}
 
-	size_t to_chars(ryml::substr buf, Blueberry::ByteData val)
+	size_t to_chars(ryml::substr buf, Blueberry::DataWrapper<ByteData> val)
 	{
-		char* dst = new char[val.size * 2];
-		ByteConverter::BytesToHexString(val.data, dst, val.size);
-		return ryml::format(buf, ryml::substr(dst, val.size * 2));
+		uint8_t* data = val.reference.data();
+		size_t size = val.reference.size();
+		char* dst = BB_MALLOC_ARRAY(char, size * 2);
+		ByteConverter::BytesToHexString(data, dst, size);
+		size_t result = ryml::format(buf, ryml::substr(dst, size * 2));
+		BB_FREE(dst);
+		return result;
 	}
 
-	bool from_chars(ryml::csubstr buf, Blueberry::ByteData* v)
+	bool from_chars(ryml::csubstr buf, Blueberry::DataWrapper<ByteData>* v)
 	{
 		size_t size = buf.size();
-		v->data = new uint8_t[size / 2];
-		v->size = size / (2 * sizeof(uint8_t));
-		ByteConverter::HexStringToBytes(buf.data(), v->data, size);
+		v->reference.resize(size / (2 * sizeof(uint8_t)));
+		ByteConverter::HexStringToBytes(buf.data(), v->reference.data(), size);
+		return true;
+	}
+
+	size_t to_chars(ryml::substr buf, Blueberry::DataWrapper<Blueberry::List<int>> val)
+	{
+		int* data = val.reference.data();
+		size_t size = val.reference.size() * sizeof(int);
+		char* dst = BB_MALLOC_ARRAY(char, size * 2);
+		ByteConverter::BytesToHexString(data, dst, size);
+		size_t result = ryml::format(buf, ryml::substr(dst, size * 2));
+		BB_FREE(dst);
+		return result;
+	}
+
+	bool from_chars(ryml::csubstr buf, Blueberry::DataWrapper<Blueberry::List<int>>* v)
+	{
+		size_t size = buf.size();
+		v->reference.resize(size / (2 * sizeof(int)));
+		ByteConverter::HexStringToBytes(buf.data(), v->reference.data(), size);
+		return true;
+	}
+
+	size_t to_chars(ryml::substr buf, Blueberry::DataWrapper<Blueberry::List<float>> val)
+	{
+		float* data = val.reference.data();
+		size_t size = val.reference.size() * sizeof(float);
+		char* dst = BB_MALLOC_ARRAY(char, size * 2);
+		ByteConverter::BytesToHexString(data, dst, size);
+		size_t result = ryml::format(buf, ryml::substr(dst, size * 2));
+		BB_FREE(dst);
+		return result;
+	}
+
+	bool from_chars(ryml::csubstr buf, Blueberry::DataWrapper<Blueberry::List<float>>* v)
+	{
+		size_t size = buf.size();
+		v->reference.resize(size / (2 * sizeof(float)));
+		ByteConverter::HexStringToBytes(buf.data(), v->reference.data(), size);
 		return true;
 	}
 

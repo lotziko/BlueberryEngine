@@ -2,12 +2,12 @@
 
 #include <optix.h>
 #include <cuda_runtime.h>
-#include "Matrix.h"
-#include "BVH.h"
+#include "..\Matrix.h"
+#include "..\BVH.h"
 
 namespace Blueberry
 {
-	#define ACCUMULATION_FRAMES_COUNT 512
+	#define ACCUMULATION_FRAMES_COUNT 128
 	#define BOUNCE_COUNT 4
 
 	struct __align__(16) DirectionalLight
@@ -16,14 +16,16 @@ namespace Blueberry
 		float3 color;
 	};
 
-	struct __align__(16) Params
+	struct __align__(16) LightmappingParams
 	{
 		unsigned int accumulationFrameIndex;
 		float4* accumulatedImage;
-		float4* image;
 
-		unsigned int imageWidth;
-		unsigned int imageHeight;
+		float4* color;
+		float4* normal;
+
+		uint2 offset;
+		uint2 imageSize;
 		float3 camEye;
 		float3 camU;
 		float3 camV;

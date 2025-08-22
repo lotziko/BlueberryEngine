@@ -165,13 +165,20 @@ namespace Blueberry
 			auto it = objects.find(id);
 			if (m_TextureShape == TextureShape::Texture2D)
 			{
-				if (m_GenerateMipmaps)
+				Blueberry::TextureFormat format;
+				if (extension != ".dds")
 				{
-					TextureHelper::GenerateMipMaps(image);
+					if (m_GenerateMipmaps)
+					{
+						TextureHelper::GenerateMipMaps(image);
+					}
+					format = GetFormat();
+					TextureHelper::Compress(image, format, m_IsSRGB);
 				}
-
-				Blueberry::TextureFormat format = GetFormat();
-				TextureHelper::Compress(image, format, m_IsSRGB);
+				else
+				{
+					format = static_cast<Blueberry::TextureFormat>(image.GetMetadata().format);
+				}
 				auto metadata = image.GetMetadata();
 
 				Texture2D* texture;

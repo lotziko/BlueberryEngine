@@ -46,6 +46,7 @@ namespace Blueberry
 		PostProcessing::Initialize();
 		s_ResolveMSAAMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/ResolveMSAA.shader")));
 		s_ShadowAtlas = new ShadowAtlas(4096, 4096, 128);
+		GfxDevice::SetGlobalTexture(TO_HASH("_LightmapTexture"), DefaultTextures::GetWhite2D()->Get());
 	}
 
 	void DefaultRenderer::Shutdown()

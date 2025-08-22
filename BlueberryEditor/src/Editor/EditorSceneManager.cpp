@@ -1,6 +1,7 @@
 #include "EditorSceneManager.h"
 
 #include "Blueberry\Scene\Scene.h"
+#include "Blueberry\Scene\LightingData.h"
 #include "Blueberry\Scene\Components\SpriteRenderer.h"
 
 #include "Editor\Path.h"
@@ -45,6 +46,7 @@ namespace Blueberry
 
 	void Serialize(Scene* scene, Serializer& serializer, const String& path)
 	{
+		serializer.AddObject(scene->GetSettings());
 		for (auto& rootEntity : scene->GetRootEntities())
 		{
 			// Components are being added automatically
@@ -81,6 +83,12 @@ namespace Blueberry
 				Entity* entity = prefabInstance->GetEntity();
 				scene->AddEntity(entity);
 				entity->OnCreate();
+			}
+			else if (object.first->IsClassType(SceneSettings::Type))
+			{
+				SceneSettings* settings = static_cast<SceneSettings*>(object.first);
+				scene->SetSettings(settings);
+				settings->GetLightingData()->Apply(scene);
 			}
 		}
 	}

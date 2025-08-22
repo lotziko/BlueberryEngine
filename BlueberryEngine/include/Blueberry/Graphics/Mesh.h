@@ -39,11 +39,13 @@ namespace Blueberry
 		const uint32_t GetSubMeshCount();
 		const SubMeshData& GetSubMesh(const uint32_t& index);
 		
-		const List<Vector3>& GetVertices();
-		const List<Vector3>& GetNormals();
-		const List<Vector4>& GetTangents();
-		const List<uint32_t>& GetIndices();
-		const List<Vector2>& GetUVs(const int& channel);
+		Vector3* GetVertices();
+		Vector3* GetNormals();
+		Vector4* GetTangents();
+		Color* GetColors();
+		uint32_t* GetIndices();
+		float* GetUVs(const int& channel);
+		uint32_t GetUVSize(const int& channel);
 
 		void SetVertices(const Vector3* vertices, const uint32_t& vertexCount);
 		void SetNormals(const Vector3* normals, const uint32_t& vertexCount);
@@ -52,6 +54,7 @@ namespace Blueberry
 		void SetIndices(const uint32_t* indices, const uint32_t& indexCount);
 		void SetUVs(const int& channel, const Vector2* uvs, const uint32_t& uvCount);
 		void SetUVs(const int& channel, const Vector3* uvs, const uint32_t& uvCount);
+		void SetUVs(const int& channel, const Vector4* uvs, const uint32_t& uvCount);
 		void SetSubMesh(const uint32_t& index, const SubMeshData& data);
 
 		void GenerateTangents();
@@ -75,8 +78,7 @@ namespace Blueberry
 		List<Vector3> m_Normals;
 		List<Vector4> m_Tangents;
 		List<Color> m_Colors;
-		List<uint32_t> m_Indices;
-		List<Vector2> m_UVs[4] = {};
+		List<float> m_UVs[4] = {};
 
 		List<float> m_VertexData;
 		List<uint32_t> m_IndexData;

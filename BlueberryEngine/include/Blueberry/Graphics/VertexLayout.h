@@ -45,6 +45,7 @@ namespace Blueberry
 		const bool Has(const VertexAttribute& type);
 		const uint32_t& GetOffset(const VertexAttribute& type);
 		const uint32_t& GetOffset(const uint32_t& index);
+		const uint32_t& GetSize(const VertexAttribute& type);
 		const uint32_t& GetSize();
 		const uint32_t& GetCrc();
 

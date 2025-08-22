@@ -84,93 +84,128 @@ namespace Blueberry
 		return m_SubMeshes[index];
 	}
 
-	const List<Vector3>& Mesh::GetVertices()
+	Vector3* Mesh::GetVertices()
 	{
 		if (m_Vertices.size() == 0 && m_VertexData.size() > 0)
 		{
-			m_Vertices.reserve(m_VertexCount);
-			float* begin = m_VertexData.data();
-			float* end = begin + m_VertexData.size();
-			uint32_t vertexSize = static_cast<uint32_t>(m_VertexData.size() / m_VertexCount);
-			for (float* it = begin; it < end; it += vertexSize)
+			m_Vertices.resize(m_VertexCount);
+			uint32_t vertexSize = m_Layout.GetSize() / sizeof(float);
+			float* bufferPtr = m_VertexData.data();
+			Vector3* verticesPtr = m_Vertices.data();
+			for (uint32_t i = 0; i < m_VertexCount; ++i)
 			{
-				m_Vertices.emplace_back(Vector3(*it, *(it + 1), *(it + 2)));
+				memcpy(verticesPtr, bufferPtr, sizeof(Vector3));
+				bufferPtr += vertexSize;
+				verticesPtr += 1;
 			}
 		}
-
-		return m_Vertices;
+		return m_Vertices.data();
 	}
 
-	const List<Vector3>& Mesh::GetNormals()
+	Vector3* Mesh::GetNormals()
 	{
 		if (!m_Layout.Has(VertexAttribute::Normal))
 		{
-			return m_Normals;
+			return nullptr;
 		}
 		if (m_Normals.size() == 0 && m_VertexData.size() > 0)
 		{
-			m_Normals.reserve(m_VertexCount);
-			float* begin = m_VertexData.data() + m_Layout.GetOffset(VertexAttribute::Normal) / sizeof(float);
-			float* end = begin + m_VertexData.size();
-			uint32_t vertexSize = static_cast<uint32_t>(m_VertexData.size() / m_VertexCount);
-			for (float* it = begin; it < end; it += vertexSize)
+			m_Normals.resize(m_VertexCount);
+			uint32_t vertexSize = m_Layout.GetSize() / sizeof(float);
+			float* bufferPtr = m_VertexData.data() + m_Layout.GetOffset(VertexAttribute::Normal) / sizeof(float);
+			Vector3* normalsPtr = m_Normals.data();
+			for (uint32_t i = 0; i < m_VertexCount; ++i)
 			{
-				m_Normals.emplace_back(Vector3(*it, *(it + 1), *(it + 2)));
+				memcpy(normalsPtr, bufferPtr, sizeof(Vector3));
+				bufferPtr += vertexSize;
+				normalsPtr += 1;
 			}
 		}
-		return m_Normals;
+		return m_Normals.data();
 	}
 
-	const List<Vector4>& Mesh::GetTangents()
+	Vector4* Mesh::GetTangents()
 	{
 		if (!m_Layout.Has(VertexAttribute::Tangent))
 		{
-			return m_Tangents;
+			return nullptr;
 		}
 		if (m_Tangents.size() == 0 && m_VertexData.size() > 0)
 		{
-			m_Tangents.reserve(m_VertexCount);
-			float* begin = m_VertexData.data() + m_Layout.GetOffset(VertexAttribute::Tangent) / sizeof(float);
-			float* end = begin + m_VertexData.size();
-			uint32_t vertexSize = static_cast<uint32_t>(m_VertexData.size() / m_VertexCount);
-			for (float* it = begin; it < end; it += vertexSize)
+			m_Tangents.resize(m_VertexCount);
+			uint32_t vertexSize = m_Layout.GetSize() / sizeof(float);
+			float* bufferPtr = m_VertexData.data() + m_Layout.GetOffset(VertexAttribute::Tangent) / sizeof(float);
+			Vector4* tangentsPtr = m_Tangents.data();
+			for (uint32_t i = 0; i < m_VertexCount; ++i)
 			{
-				m_Tangents.emplace_back(Vector4(*it, *(it + 1), *(it + 2), *(it + 3)));
+				memcpy(tangentsPtr, bufferPtr, sizeof(Vector4));
+				bufferPtr += vertexSize;
+				tangentsPtr += 1;
 			}
 		}
-		return m_Tangents;
+		return m_Tangents.data();
 	}
 
-	const List<uint32_t>& Mesh::GetIndices()
+	Color* Mesh::GetColors()
 	{
-		if (m_Indices.size() == 0)
+		if (!m_Layout.Has(VertexAttribute::Color))
 		{
-			return m_IndexData;
+			return nullptr;
 		}
-
-		return m_Indices;
+		if (m_Colors.size() == 0 && m_VertexData.size() > 0)
+		{
+			m_Colors.resize(m_VertexCount);
+			uint32_t vertexSize = m_Layout.GetSize() / sizeof(float);
+			float* bufferPtr = m_VertexData.data() + m_Layout.GetOffset(VertexAttribute::Color) / sizeof(float);
+			Color* colorsPtr = m_Colors.data();
+			for (uint32_t i = 0; i < m_VertexCount; ++i)
+			{
+				memcpy(colorsPtr, bufferPtr, sizeof(Color));
+				bufferPtr += vertexSize;
+				colorsPtr += 1;
+			}
+		}
+		return m_Colors.data();
 	}
 
-	const List<Vector2>& Mesh::GetUVs(const int& channel)
+	uint32_t* Mesh::GetIndices()
 	{
-		List<Vector2>& uvs = m_UVs[channel];
+		return m_IndexData.data();
+	}
+
+	float* Mesh::GetUVs(const int& channel)
+	{
 		VertexAttribute attribute = static_cast<VertexAttribute>(4 + channel);
 		if (!m_Layout.Has(attribute))
 		{
-			return uvs;
+			return nullptr;
 		}
+		List<float>& uvs = m_UVs[channel];
 		if (uvs.size() == 0 && m_VertexData.size() > 0)
 		{
-			uvs.reserve(m_VertexCount);
-			float* begin = m_VertexData.data() + m_Layout.GetOffset(attribute) / sizeof(float);
-			float* end = begin + m_VertexData.size();
-			uint32_t vertexSize = static_cast<uint32_t>(m_VertexData.size() / m_VertexCount);
-			for (float* it = begin; it < end; it += vertexSize)
+			uint32_t uvByteSize = m_Layout.GetSize(attribute);
+			uint32_t uvSize = uvByteSize / sizeof(float);
+			uint32_t vertexSize = m_Layout.GetSize() / sizeof(float);
+			uvs.resize(m_VertexCount * uvSize);
+			float* bufferPtr = m_VertexData.data() + m_Layout.GetOffset(attribute) / sizeof(float);
+			float* uvsPtr = uvs.data();
+			for (uint32_t i = 0; i < m_VertexCount; ++i)
 			{
-				uvs.emplace_back(Vector2(*it, *(it + 1)));
+				memcpy(uvsPtr, bufferPtr, uvByteSize);
+				bufferPtr += vertexSize;
+				uvsPtr += uvSize;
 			}
 		}
-		return uvs;
+		return uvs.data();
+	}
+
+	uint32_t Mesh::GetUVSize(const int& channel)
+	{
+		if (channel < 0 || channel >= 4)
+		{
+			return 0;
+		}
+		return m_UVs[channel].size() / m_VertexCount;
 	}
 
 	void Mesh::SetVertices(const Vector3* vertices, const uint32_t& vertexCount)
@@ -178,6 +213,7 @@ namespace Blueberry
 		m_VertexCount = vertexCount;
 		m_Vertices.resize(vertexCount);
 		memcpy(m_Vertices.data(), vertices, sizeof(Vector3) * vertexCount);
+		m_Layout.Append(VertexAttribute::Position, sizeof(Vector3));
 		m_BufferIsDirty = true;
 	}
 
@@ -185,6 +221,7 @@ namespace Blueberry
 	{
 		m_Normals.resize(vertexCount);
 		memcpy(m_Normals.data(), normals, sizeof(Vector3) * vertexCount);
+		m_Layout.Append(VertexAttribute::Normal, sizeof(Vector3));
 		m_BufferIsDirty = true;
 	}
 
@@ -192,6 +229,7 @@ namespace Blueberry
 	{
 		m_Tangents.resize(vertexCount);
 		memcpy(m_Tangents.data(), tangents, sizeof(Vector4) * vertexCount);
+		m_Layout.Append(VertexAttribute::Tangent, sizeof(Vector4));
 		m_BufferIsDirty = true;
 	}
 
@@ -199,29 +237,52 @@ namespace Blueberry
 	{
 		m_Colors.resize(vertexCount);
 		memcpy(m_Colors.data(), colors, sizeof(Color) * vertexCount);
+		m_Layout.Append(VertexAttribute::Color, sizeof(Color));
 		m_BufferIsDirty = true;
 	}
 
 	void Mesh::SetIndices(const uint32_t* indices, const uint32_t& indexCount)
 	{
 		m_IndexCount = indexCount;
-		m_Indices.resize(indexCount);
-		memcpy(m_Indices.data(), indices, sizeof(uint32_t) * indexCount);
+		m_IndexData.resize(indexCount);
+		memcpy(m_IndexData.data(), indices, sizeof(uint32_t) * indexCount);
 		m_BufferIsDirty = true;
 	}
 
 	void Mesh::SetUVs(const int& channel, const Vector2* uvs, const uint32_t& uvCount)
 	{
-		if (channel < 0 || channel >= 8)
+		if (channel < 0 || channel >= 4)
 		{
 			return;
 		}
-		if (uvCount == m_VertexCount)
+		m_UVs[channel].resize(uvCount * 2);
+		memcpy(m_UVs[channel].data(), uvs, sizeof(Vector2) * uvCount);
+		m_Layout.Append(static_cast<VertexAttribute>(4 + channel), sizeof(Vector2));
+		m_BufferIsDirty = true;
+	}
+
+	void Mesh::SetUVs(const int& channel, const Vector3* uvs, const uint32_t& uvCount)
+	{
+		if (channel < 0 || channel >= 4)
 		{
-			m_UVs[channel].resize(uvCount);
-			memcpy(m_UVs[channel].data(), uvs, sizeof(Vector2) * uvCount);
-			m_BufferIsDirty = true;
+			return;
 		}
+		m_UVs[channel].resize(uvCount * 3);
+		memcpy(m_UVs[channel].data(), uvs, sizeof(Vector3) * uvCount);
+		m_Layout.Append(static_cast<VertexAttribute>(4 + channel), sizeof(Vector3));
+		m_BufferIsDirty = true;
+	}
+
+	void Mesh::SetUVs(const int& channel, const Vector4* uvs, const uint32_t& uvCount)
+	{
+		if (channel < 0 || channel >= 4)
+		{
+			return;
+		}
+		m_UVs[channel].resize(uvCount * 4);
+		memcpy(m_UVs[channel].data(), uvs, sizeof(Vector4) * uvCount);
+		m_Layout.Append(static_cast<VertexAttribute>(4 + channel), sizeof(Vector4));
+		m_BufferIsDirty = true;
 	}
 
 	void Mesh::SetSubMesh(const uint32_t& index, const SubMeshData& data)
@@ -269,7 +330,7 @@ namespace Blueberry
 		static void GetPosition(const SMikkTSpaceContext* context, float outpos[], int iFace, int iVert)
 		{
 			Mesh* mesh = static_cast<Mesh*> (context->m_pUserData);
-			Vector3 position = mesh->m_Vertices[mesh->m_Indices[iFace * 3 + iVert]];
+			Vector3 position = mesh->m_Vertices[mesh->m_IndexData[iFace * 3 + iVert]];
 
 			outpos[0] = position.x;
 			outpos[1] = position.y;
@@ -279,7 +340,7 @@ namespace Blueberry
 		static void GetNormal(const SMikkTSpaceContext* context, float outnormal[], int iFace, int iVert)
 		{
 			Mesh* mesh = static_cast<Mesh*> (context->m_pUserData);
-			Vector3 normal = mesh->m_Normals[mesh->m_Indices[iFace * 3 + iVert]];
+			Vector3 normal = mesh->m_Normals[mesh->m_IndexData[iFace * 3 + iVert]];
 
 			outnormal[0] = normal.x;
 			outnormal[1] = normal.y;
@@ -289,10 +350,11 @@ namespace Blueberry
 		static void GetTexCoords(const SMikkTSpaceContext* context, float outuv[], int iFace, int iVert)
 		{
 			Mesh* mesh = static_cast<Mesh*> (context->m_pUserData);
-			Vector2 uv = mesh->m_UVs[0][mesh->m_Indices[iFace * 3 + iVert]];
-
-			outuv[0] = uv.x;
-			outuv[1] = uv.y;
+			uint32_t stride = mesh->m_Layout.GetSize(VertexAttribute::Texcoord0) / sizeof(float);
+			uint32_t offset = mesh->m_IndexData[iFace * 3 + iVert] * stride;
+			
+			outuv[0] = mesh->m_UVs[0][offset];
+			outuv[1] = mesh->m_UVs[0][offset + 1];
 		}
 
 		static void SetTspaceBasic(const SMikkTSpaceContext *context, const float tangentu[], float fSign, int iFace, int iVert)
@@ -304,7 +366,7 @@ namespace Blueberry
 			tangent.w = fSign;
 
 			Mesh* mesh = static_cast<Mesh*> (context->m_pUserData);
-			mesh->m_Tangents[mesh->m_Indices[iFace * 3 + iVert]] = tangent;
+			mesh->m_Tangents[mesh->m_IndexData[iFace * 3 + iVert]] = tangent;
 		}
 
 	private:
@@ -317,6 +379,7 @@ namespace Blueberry
 		m_Tangents.resize(m_VertexCount);
 		TangentGenerator generator;
 		generator.Generate(this);
+		m_Layout.Append(VertexAttribute::Tangent, sizeof(Vector4));
 		m_BufferIsDirty = true;
 	}
 
@@ -339,87 +402,90 @@ namespace Blueberry
 	{
 		if (m_BufferIsDirty)
 		{
-			m_Layout = {};
-			size_t vertexBufferSize = 0;
-			uint32_t offset = 0;
-			if (m_VertexCount > 0)
-			{
-				vertexBufferSize += m_VertexCount * sizeof(Vector3) / sizeof(float);
-				m_Layout.Append(VertexAttribute::Position, 12);
-			}
-			if (m_Normals.size() == m_VertexCount)
-			{
-				vertexBufferSize += m_VertexCount * sizeof(Vector3) / sizeof(float);
-				m_Layout.Append(VertexAttribute::Normal, 12);
-			}
-			if (m_Tangents.size() == m_VertexCount)
-			{
-				vertexBufferSize += m_VertexCount * sizeof(Vector4) / sizeof(float);
-				m_Layout.Append(VertexAttribute::Tangent, 16);
-			}
-			for (int i = 0; i < 4; ++i)
-			{
-				if (m_UVs[i].size() == m_VertexCount)
-				{
-					vertexBufferSize += m_VertexCount * sizeof(Vector2) / sizeof(float);
-					m_Layout.Append(static_cast<VertexAttribute>(static_cast<uint32_t>(VertexAttribute::Texcoord0) + i), 8);
-				}
-			}
 			m_Layout.Apply();
+			uint32_t vertexSize = m_Layout.GetSize() / sizeof(float);
+			uint32_t vertexBufferSize = vertexSize * m_VertexCount;
+			uint32_t vertexOffset = 0;
 
 			if (vertexBufferSize != m_VertexData.size())
 			{
 				m_VertexData.resize(vertexBufferSize);
 			}
 
-			float* bufferPointer = m_VertexData.data();
-			Vector3* vertexPointer = m_Vertices.data();
-			Vector3* normalPointer = m_Normals.data();
-			Vector4* tangentPointer = m_Tangents.data();
-			Vector2* uv0Pointer = m_UVs[0].data();
-			Vector2* uv1Pointer = m_UVs[1].data();
+			float* bufferPtr = m_VertexData.data();
 
-			for (uint32_t i = 0; i < m_VertexCount; ++i)
+			if (m_Layout.Has(VertexAttribute::Position))
 			{
-				memcpy(bufferPointer, vertexPointer, sizeof(Vector3));
-				bufferPointer += 3;
-				vertexPointer += 1;
-				if (normalPointer != nullptr)
+				AABB::CreateFromPoints(m_Bounds, m_VertexCount, m_Vertices.data(), sizeof(Vector3));
+				Vector3* verticesPtr = m_Vertices.data();
+				for (uint32_t i = 0; i < m_VertexCount; ++i)
 				{
-					memcpy(bufferPointer, normalPointer, sizeof(Vector3));
-					bufferPointer += 3;
-					normalPointer += 1;
+					memcpy(bufferPtr, verticesPtr, sizeof(Vector3));
+					bufferPtr += vertexSize;
+					verticesPtr += 1;
 				}
-				if (tangentPointer != nullptr)
-				{
-					memcpy(bufferPointer, tangentPointer, sizeof(Vector4));
-					bufferPointer += 4;
-					tangentPointer += 1;
-				}
-				if (uv0Pointer != nullptr)
-				{
-					memcpy(bufferPointer, uv0Pointer, sizeof(Vector2));
-					bufferPointer += 2;
-					uv0Pointer += 1;
-				}
-				if (uv1Pointer != nullptr)
-				{
-					memcpy(bufferPointer, uv1Pointer, sizeof(Vector2));
-					bufferPointer += 2;
-					uv1Pointer += 1;
-				}
+				vertexOffset += sizeof(Vector3) / sizeof(float);
 			}
 
-			if (m_IndexCount != m_IndexData.size())
+			if (m_Layout.Has(VertexAttribute::Normal))
 			{
-				m_IndexData.resize(m_IndexCount);
+				bufferPtr = m_VertexData.data() + vertexOffset;
+				Vector3* normalsPtr = m_Normals.data();
+				for (uint32_t i = 0; i < m_VertexCount; ++i)
+				{
+					memcpy(bufferPtr, normalsPtr, sizeof(Vector3));
+					bufferPtr += vertexSize;
+					normalsPtr += 1;
+				}
+				vertexOffset += sizeof(Vector3) / sizeof(float);
 			}
-			memcpy(m_IndexData.data(), m_Indices.data(), m_IndexCount * sizeof(uint32_t));
 
-			AABB::CreateFromPoints(m_Bounds, m_VertexCount, m_Vertices.data(), sizeof(Vector3));
+			if (m_Layout.Has(VertexAttribute::Tangent))
+			{
+				bufferPtr = m_VertexData.data() + vertexOffset;
+				Vector4* tangentsPtr = m_Tangents.data();
+				for (uint32_t i = 0; i < m_VertexCount; ++i)
+				{
+					memcpy(bufferPtr, tangentsPtr, sizeof(Vector4));
+					bufferPtr += vertexSize;
+					tangentsPtr += 1;
+				}
+				vertexOffset += sizeof(Vector4) / sizeof(float);
+			}
+
+			if (m_Layout.Has(VertexAttribute::Color))
+			{
+				bufferPtr = m_VertexData.data() + vertexOffset;
+				Color* colorsPtr = m_Colors.data();
+				for (uint32_t i = 0; i < m_VertexCount; ++i)
+				{
+					memcpy(bufferPtr, colorsPtr, sizeof(Color));
+					bufferPtr += vertexSize;
+					colorsPtr += 1;
+				}
+				vertexOffset += sizeof(Color) / sizeof(float);
+			}
+
+			for (uint32_t channel = 0; channel < 4; ++channel)
+			{
+				VertexAttribute attribute = static_cast<VertexAttribute>(4 + channel);
+				if (m_Layout.Has(attribute))
+				{
+					bufferPtr = m_VertexData.data() + vertexOffset;
+					uint32_t uvSize = m_Layout.GetSize(attribute);
+					uint32_t uvChannelCount = uvSize / sizeof(float);
+					float* uvsPtr = m_UVs[channel].data();
+					for (uint32_t i = 0; i < m_VertexCount; ++i)
+					{
+						memcpy(bufferPtr, uvsPtr, uvSize);
+						bufferPtr += vertexSize;
+						uvsPtr += uvChannelCount;
+					}
+					vertexOffset += uvChannelCount;
+				}
+			}
 		}
 
-		// TODO handle old buffers instead
 		if (m_VertexBuffer != nullptr)
 		{
 			delete m_VertexBuffer;
@@ -432,7 +498,7 @@ namespace Blueberry
 		BufferProperties vertexBufferProperties = {};
 		vertexBufferProperties.type = BufferType::Vertex;
 		vertexBufferProperties.elementCount = m_VertexCount;
-		vertexBufferProperties.elementSize = static_cast<uint32_t>((m_VertexData.size() * sizeof(float)) / m_VertexCount);
+		vertexBufferProperties.elementSize = m_Layout.GetSize();
 		vertexBufferProperties.data = m_VertexData.data();
 		vertexBufferProperties.dataSize = m_VertexCount * vertexBufferProperties.elementSize;
 		vertexBufferProperties.isWritable = false;

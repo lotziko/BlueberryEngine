@@ -33,7 +33,6 @@ namespace Blueberry
 						if (fragmentKeywords[i] == keyword)
 						{
 							fragmentFlags |= 1 << i;
-							break;
 						}
 					}
 				}
@@ -52,7 +51,6 @@ namespace Blueberry
 					if (Shader::s_ActiveKeywords.find(TO_HASH(fragmentKeywords[i])) != Shader::s_ActiveKeywords.end())
 					{
 						fragmentFlags |= 1 << i;
-						break;
 					}
 				}
 			}

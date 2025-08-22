@@ -8,6 +8,7 @@ namespace Blueberry
 	struct PerDrawData
 	{
 		Matrix modelMatrix;
+		Vector4 index;
 	};
 
 	void PerDrawDataConstantBuffer::BindData(const Matrix& localToWorldMatrix)
@@ -36,7 +37,7 @@ namespace Blueberry
 		GfxDevice::SetGlobalBuffer(perDrawDataId, s_ConstantBuffer);
 	}
 
-	void PerDrawDataConstantBuffer::BindDataInstanced(Matrix* localToWorldMatrices, const uint32_t& count)
+	void PerDrawDataConstantBuffer::BindDataInstanced(std::pair<Matrix, Vector4>* data, const uint32_t& count)
 	{
 		static size_t perDrawDataId = TO_HASH("_PerDrawData");
 
@@ -51,7 +52,7 @@ namespace Blueberry
 			GfxDevice::CreateBuffer(structuredBufferProperties, s_StructuredBuffer);
 		}
 
-		s_StructuredBuffer->SetData(localToWorldMatrices, count * sizeof(PerDrawData));
+		s_StructuredBuffer->SetData(data, count * sizeof(PerDrawData));
 		GfxDevice::SetGlobalBuffer(perDrawDataId, s_StructuredBuffer);
 	}
 }

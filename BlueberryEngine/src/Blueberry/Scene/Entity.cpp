@@ -41,6 +41,7 @@ namespace Blueberry
 		}
 	}
 
+	// TODO change into GetComponent(index) and GetComponentCount()
 	List<Component*> Entity::GetComponents()
 	{
 		List<Component*> components;
