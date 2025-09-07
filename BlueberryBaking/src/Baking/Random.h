@@ -40,6 +40,12 @@ __forceinline__ __device__ float rnd(unsigned int &prev)
 	return ((float)lcg(prev) / (float)0x01000000);
 }
 
+// Generate random unsigned int in [0, max)
+__forceinline__ __device__ unsigned int rnd_range(unsigned int &prev, unsigned int max)
+{
+	return lcg(prev) % max;
+}
+
 __forceinline__ __device__ unsigned int rot_seed(unsigned int seed, unsigned int frame)
 {
 	return seed ^ frame;

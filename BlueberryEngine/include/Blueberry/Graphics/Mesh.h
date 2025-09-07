@@ -2,7 +2,6 @@
 
 #include "Blueberry\Core\Base.h"
 #include "Blueberry\Core\Object.h"
-#include "Blueberry\Core\DataList.h"
 #include "Blueberry\Graphics\Enums.h"
 #include "Blueberry\Graphics\VertexLayout.h"
 
@@ -82,7 +81,7 @@ namespace Blueberry
 
 		List<float> m_VertexData;
 		List<uint32_t> m_IndexData;
-		DataList<SubMeshData> m_SubMeshes;
+		List<SubMeshData> m_SubMeshes;
 		VertexLayout m_Layout;
 
 		uint32_t m_VertexCount;

@@ -29,7 +29,9 @@ namespace Blueberry
 		template<class ComponentType>
 		ComponentType* GetComponent();
 
-		List<Component*> GetComponents();
+		Component* GetComponent(const uint32_t& index);
+
+		const uint32_t GetComponentCount();
 
 		template<class ComponentType>
 		bool HasComponent();
@@ -48,6 +50,7 @@ namespace Blueberry
 		void AddToCreatedComponents(Component* component);
 		void AddComponentToScene(Component* component, const size_t& type);
 		void RemoveComponentFromScene(Component* component, const size_t& type);
+		void UpdateHierarchy();
 		void UpdateHierarchy(const bool& active);
 		void UpdateComponents();
 

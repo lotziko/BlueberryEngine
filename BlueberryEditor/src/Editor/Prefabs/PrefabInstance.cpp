@@ -19,6 +19,16 @@ namespace Blueberry
 		return m_Entity.Get();
 	}
 
+	Entity* PrefabInstance::GetEntity(const FileId& fileId)
+	{
+		auto it = m_FileIdToObject.find(fileId);
+		if (it != m_FileIdToObject.end())
+		{
+			return static_cast<Entity*>(ObjectDB::GetObject(it->second));
+		}
+		return nullptr;
+	}
+
 	void PrefabInstance::OnCreate()
 	{
 		// TODO handle changes too
@@ -26,7 +36,7 @@ namespace Blueberry
 		{
 			m_Entity = static_cast<Entity*>(ObjectCloner::Clone(m_Prefab.Get()));
 			PrefabManager::s_EntityToPrefabInstance.insert_or_assign(m_Entity->GetObjectId(), GetObjectId());
-			AddPrefabEntities(m_Entity.Get());
+			AddPrefabEntities(m_Prefab.Get(), m_Entity.Get());
 		}
 	}
 
@@ -48,12 +58,17 @@ namespace Blueberry
 		return instance;
 	}
 
-	void PrefabInstance::AddPrefabEntities(Entity* entity)
+	void PrefabInstance::AddPrefabEntities(Entity* prefabEntity, Entity* entity)
 	{
-		PrefabManager::s_PrefabEntities.insert(entity->GetObjectId());
-		for (auto& child : entity->GetTransform()->GetChildren())
+		PrefabManager::s_PrefabEntities.insert_or_assign(entity->GetObjectId(), GetObjectId());
+		FileId fileId = ObjectDB::GetFileIdFromObjectId(prefabEntity->GetObjectId());
+		m_FileIdToObject.insert_or_assign(fileId, entity->GetObjectId());
+		ObjectDB::AllocateIdToFileId(entity, fileId);
+		auto& prefabEntityChildren = prefabEntity->GetTransform()->GetChildren();
+		auto& entityChildren = entity->GetTransform()->GetChildren();
+		for (size_t i = 0; i < entityChildren.size(); ++i)
 		{
-			AddPrefabEntities(child->GetEntity());
+			AddPrefabEntities(prefabEntityChildren[i]->GetEntity(), entityChildren[i]->GetEntity());
 		}
 	}
 

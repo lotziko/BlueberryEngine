@@ -1,10 +1,12 @@
 #pragma once
 
 #include "Blueberry\Events\Event.h"
+#include "Blueberry\Core\ObjectPtr.h"
 
 namespace Blueberry
 {
 	class Scene;
+	class SceneSettings;
 
 	using SceneLoadEvent = Event<>;
 
@@ -13,6 +15,7 @@ namespace Blueberry
 	public:
 		static Scene* GetScene();
 		static const String& GetPath();
+		static const Guid& GetGuid();
 		static void CreateEmpty(const String& path);
 		static void Load(const String& path);
 		static void Reload();
@@ -25,10 +28,19 @@ namespace Blueberry
 
 		static SceneLoadEvent& GetSceneLoaded();
 
+		static SceneSettings* GetSettings();
+		static void SetSettings(SceneSettings* settings);
+
+	private:
+		static void Serialize(const String& path);
+		static void Deserialize(const String& path);
+
 	private:
 		static Scene* s_Scene;
 		static String s_Path;
 		static SceneLoadEvent s_SceneLoaded;
 		static bool s_IsRunning;
+
+		static inline ObjectPtr<SceneSettings> s_SceneSettings = {};
 	};
 }

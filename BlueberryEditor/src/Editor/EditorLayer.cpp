@@ -10,7 +10,7 @@
 
 #include "Editor\EditorSceneManager.h"
 #include "Editor\Misc\ImGuiHelper.h"
-#include "Editor\Inspector\RegisterObjectInspectors.h"
+#include "Editor\Inspector\RegisterObjectEditors.h"
 #include "Editor\Panels\Scene\SceneArea.h"
 #include "Editor\Panels\Game\GameView.h"
 
@@ -38,7 +38,7 @@ namespace Blueberry
 		RegisterAssetImporters();
 		RegisterIcons();
 
-		RegisterObjectInspectors();
+		RegisterObjectEditors();
 		AssemblyManager::Build(false);
 		AssemblyManager::Load();
 

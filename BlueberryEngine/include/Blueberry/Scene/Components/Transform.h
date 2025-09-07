@@ -14,6 +14,7 @@ namespace Blueberry
 		Transform() = default;
 		~Transform() = default;
 
+		virtual void OnEnable() override;
 		virtual void OnDestroy() override;
 		
 		const Matrix& GetLocalToWorldMatrix();
@@ -33,7 +34,6 @@ namespace Blueberry
 
 		void SetLocalPosition(const Vector3& position);
 		void SetLocalRotation(const Quaternion& rotation);
-		void SetLocalRotationHint(const Quaternion& rotation, const float& snapping = 0.0f);
 		void SetLocalEulerRotation(const Vector3& euler);
 		void SetLocalEulerRotationHint(const Vector3& euler);
 		void SetLocalScale(const Vector3& scale);
@@ -47,7 +47,7 @@ namespace Blueberry
 		const size_t& GetRecalculationFrame() const;
 
 	private:
-		void SetHierarchyDirty();
+		void InvalidateHierarchy();
 		void RecalculateHierarchy();
 
 	private:

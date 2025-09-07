@@ -2,7 +2,6 @@
 #include "Editor\Assets\AssetImporter.h"
 
 #include "Blueberry\Core\ObjectPtr.h"
-#include "Blueberry\Core\DataList.h"
 
 namespace fbxsdk
 {
@@ -40,7 +39,7 @@ namespace Blueberry
 	public:
 		ModelImporter() = default;
 
-		DataList<ModelMaterialData>& GetMaterials();
+		List<ModelMaterialData>& GetMaterials();
 		
 		const float& GetScale();
 		void SetScale(const float& scale);
@@ -59,7 +58,7 @@ namespace Blueberry
 		std::string GetPhysicsShapePath(const size_t& fileId);
 
 	private:
-		DataList<ModelMaterialData> m_Materials;
+		List<ModelMaterialData> m_Materials;
 		float m_Scale = 1.0f;
 		bool m_GenerateLightmapUV = false;
 		bool m_GeneratePhysicsShape = true;

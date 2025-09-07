@@ -67,7 +67,7 @@ namespace Blueberry
 
 	void Object::DefineFields()
 	{
-		DEFINE_FIELD(Object, m_Name, BindingType::String, {})
+		DEFINE_FIELD(Object, m_Name, BindingType::String, FieldOptions().SetVisibility(VisibilityType::Hidden))
 	}
 
 	Object* Object::Clone(Object* object)

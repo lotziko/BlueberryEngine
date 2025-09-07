@@ -2,8 +2,8 @@
 
 #include "Editor\EditorSceneManager.h"
 #include "Editor\EditorObjectManager.h"
-#include "Editor\Inspector\ObjectInspector.h"
-#include "Editor\Inspector\ObjectInspectorDB.h"
+#include "Editor\Inspector\ObjectEditor.h"
+#include "Editor\Inspector\ObjectEditorDB.h"
 
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Graphics\Buffers\PerDrawDataConstantBuffer.h"
@@ -39,7 +39,7 @@ namespace Blueberry
 	void IconRenderer::Shutdown()
 	{
 		EditorSceneManager::GetSceneLoaded().RemoveCallback<&IconRenderer::ClearCache>();
-		EditorObjectManager::GetEntityCreated().RemoveCallback<&IconRenderer::ClearCache>();
+		EditorObjectManager::GetEntityCreated().RemoveCallback<&IconRenderer::ClearCache>(); // TODO component created/destroyed instead
 		EditorObjectManager::GetEntityDestroyed().RemoveCallback<&IconRenderer::ClearCache>();
 		delete s_IconMaterial;
 	}
@@ -71,7 +71,7 @@ namespace Blueberry
 				Vector3 position = info.transform->GetPosition();
 				Matrix modelMatrix = Matrix::CreateBillboard(position, position + cameraDirection, Vector3(0, -1, 0));
 
-				Texture* icon = info.inspector->GetIcon(info.component.Get());
+				Texture* icon = info.editor->GetIcon(info.component.Get());
 				if (icon != nullptr)
 				{
 					s_IconMaterial->SetTexture("_BaseMap", static_cast<Texture*>(icon));
@@ -93,17 +93,18 @@ namespace Blueberry
 		for (auto& pair : scene->GetEntities())
 		{
 			Entity* entity = pair.second.Get();
-			for (auto& component : entity->GetComponents())
+			for (uint32_t i = 0; i < entity->GetComponentCount(); ++i)
 			{
-				ObjectInspector* inspector = ObjectInspectorDB::GetInspector(component->GetType());
-				if (inspector != nullptr)
+				Component* component = entity->GetComponent(i);
+				ObjectEditor* editor = ObjectEditor::GetDefaultEditor(component);
+				if (editor != nullptr)
 				{
-					if (inspector->GetIcon(component) != nullptr)
+					if (editor->GetIcon(component) != nullptr)
 					{
 						IconInfo info;
 						info.transform = entity->GetTransform();
 						info.component = component;
-						info.inspector = inspector;
+						info.editor = editor;
 						s_IconsCache.emplace_back(std::move(info));
 					}
 				}

@@ -8,7 +8,7 @@ namespace Blueberry
 	OBJECT_DEFINITION(Component, Object)
 	{
 		DEFINE_BASE_FIELDS(Component, Object)
-		DEFINE_FIELD(Component, m_Entity, BindingType::ObjectPtr, FieldOptions().SetObjectType(Entity::Type).SetHidden())
+		DEFINE_FIELD(Component, m_Entity, BindingType::ObjectPtr, FieldOptions().SetObjectType(Entity::Type).SetVisibility(VisibilityType::Hidden))
 	}
 
 	Entity* Component::GetEntity()

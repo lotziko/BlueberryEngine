@@ -7,7 +7,7 @@
 namespace Blueberry
 {
 	Dictionary<ObjectId, ObjectId> PrefabManager::s_EntityToPrefabInstance = {};
-	HashSet<ObjectId> PrefabManager::s_PrefabEntities = {};
+	Dictionary<ObjectId, ObjectId> PrefabManager::s_PrefabEntities = {};
 
 	bool PrefabManager::IsPrefabInstanceRoot(Entity* entity)
 	{
@@ -21,8 +21,8 @@ namespace Blueberry
 
 	PrefabInstance* PrefabManager::GetInstance(Entity* entity)
 	{
-		auto it = s_EntityToPrefabInstance.find(entity->GetObjectId());
-		if (it != s_EntityToPrefabInstance.end())
+		auto it = s_PrefabEntities.find(entity->GetObjectId());
+		if (it != s_PrefabEntities.end())
 		{
 			Object* object = ObjectDB::GetObject(it->second);
 			if (object != nullptr)

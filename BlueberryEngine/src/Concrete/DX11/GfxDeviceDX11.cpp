@@ -286,18 +286,28 @@ namespace Blueberry
 	void GfxDeviceDX11::SetGlobalBufferImpl(const size_t& id, GfxBuffer* buffer)
 	{
 		auto dxBuffer = static_cast<GfxBufferDX11*>(buffer);
-		m_BindedBuffers.insert_or_assign(id, dxBuffer);
+		for (auto& pair : m_BindedBuffers)
+		{
+			if (pair.first == id)
+			{
+				pair.second = dxBuffer;
+				m_CurrentCrc = UINT32_MAX;
+				return;
+			}
+		}
+		m_BindedBuffers.emplace_back(std::make_pair(id, dxBuffer));
 		m_CurrentCrc = UINT32_MAX;
 	}
 
 	void GfxDeviceDX11::SetGlobalTextureImpl(const size_t& id, GfxTexture* texture)
 	{
 		auto dxTexture = static_cast<GfxTextureDX11*>(texture);
-		for (auto it = m_BindedTextures.begin(); it < m_BindedTextures.end(); ++it)
+		for (auto& pair : m_BindedTextures)
 		{
-			if (it->first == id)
+			if (pair.first == id)
 			{
-				it->second = dxTexture;
+				pair.second = dxTexture;
+				m_CurrentCrc = UINT32_MAX;
 				return;
 			}
 		}
@@ -356,34 +366,34 @@ namespace Blueberry
 			// Maybe bind all at once?
 			if (renderState.vertexShaderResourceViews[i] != m_RenderState.vertexShaderResourceViews[i])
 			{
-				m_DeviceContext->VSSetShaderResources(i, 1, &renderState.vertexShaderResourceViews[i]);
+				m_DeviceContext->VSSetShaderResources(i, 1, renderState.vertexShaderResourceViews + i);
 			}
 			if (renderState.vertexSamplerStates[i] != m_RenderState.vertexSamplerStates[i])
 			{
-				m_DeviceContext->VSSetSamplers(i, 1, &renderState.vertexSamplerStates[i]);
+				m_DeviceContext->VSSetSamplers(i, 1, renderState.vertexSamplerStates + i);
 			}
 			if (renderState.pixelShaderResourceViews[i] != m_RenderState.pixelShaderResourceViews[i])
 			{
-				m_DeviceContext->PSSetShaderResources(i, 1, &renderState.pixelShaderResourceViews[i]);
+				m_DeviceContext->PSSetShaderResources(i, 1, renderState.pixelShaderResourceViews + i);
 			}
 			if (renderState.pixelSamplerStates[i] != m_RenderState.pixelSamplerStates[i])
 			{
-				m_DeviceContext->PSSetSamplers(i, 1, &renderState.pixelSamplerStates[i]);
+				m_DeviceContext->PSSetSamplers(i, 1, renderState.pixelSamplerStates + i);
 			}
 		}
 		for (uint32_t i = 0; i < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT; ++i)
 		{
 			if (renderState.vertexConstantBuffers[i] != m_RenderState.vertexConstantBuffers[i])
 			{
-				m_DeviceContext->VSSetConstantBuffers(i, 1, &renderState.vertexConstantBuffers[i]);
+				m_DeviceContext->VSSetConstantBuffers(i, 1, renderState.vertexConstantBuffers + i);
 			}
 			if (renderState.geometryConstantBuffers[i] != m_RenderState.geometryConstantBuffers[i])
 			{
-				m_DeviceContext->GSSetConstantBuffers(i, 1, &renderState.geometryConstantBuffers[i]);
+				m_DeviceContext->GSSetConstantBuffers(i, 1, renderState.geometryConstantBuffers + i);
 			}
 			if (renderState.pixelConstantBuffers[i] != m_RenderState.pixelConstantBuffers[i])
 			{
-				m_DeviceContext->PSSetConstantBuffers(i, 1, &renderState.pixelConstantBuffers[i]);
+				m_DeviceContext->PSSetConstantBuffers(i, 1, renderState.pixelConstantBuffers + i);
 			}
 		}
 
@@ -794,11 +804,11 @@ namespace Blueberry
 			m_CurrentCrc = 0;
 			for (auto& pair : m_BindedTextures)
 			{
-				m_CurrentCrc = CRCHelper::Calculate(&pair, sizeof(size_t), m_CurrentCrc);
+				m_CurrentCrc = CRCHelper::Calculate(&pair.second->m_Index, sizeof(uint32_t), m_CurrentCrc);
 			}
 			for (auto& pair : m_BindedBuffers)
 			{
-				m_CurrentCrc = CRCHelper::Calculate(&pair, sizeof(size_t), m_CurrentCrc);
+				m_CurrentCrc = CRCHelper::Calculate(&pair.second->m_Index, sizeof(uint32_t), m_CurrentCrc);
 			}
 		}
 		return m_CurrentCrc;

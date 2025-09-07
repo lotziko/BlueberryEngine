@@ -30,17 +30,21 @@ namespace Blueberry
 
 		virtual const AABB& GetBounds() final;
 
+		const bool& IsBakeable();
+
 		const uint32_t& GetLightmapChartOffset();
 		void SetLightmapChartOffset(const uint32_t& offset);
 
 	private:
 		void UpdateBounds();
+		void InvalidateBounds();
 
 	private:
 		ObjectPtr<Mesh> m_Mesh;
 		List<ObjectPtr<Material>> m_Materials;
 		AABB m_PreviousBounds;
-		AABB m_Bounds;
+		AABB m_Bounds = AABB(Vector3::Zero, Vector3::Zero);
+		bool m_IsBakeable = true;
 		size_t m_RecalculationFrame = 0;
 		bool m_CullingDirty = true;
 		uint32_t m_LightmapChartOffset = 0;

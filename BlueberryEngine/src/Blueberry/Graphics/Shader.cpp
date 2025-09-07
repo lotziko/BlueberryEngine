@@ -236,17 +236,17 @@ namespace Blueberry
 		return m_Passes.size();
 	}
 
-	void ShaderData::SetPasses(const DataList<PassData>& passes)
+	void ShaderData::SetPasses(const List<PassData>& passes)
 	{
 		m_Passes = passes;
 	}
 
-	const DataList<PropertyData>& ShaderData::GetProperties() const
+	const List<PropertyData>& ShaderData::GetProperties() const
 	{
 		return m_Properties;
 	}
 
-	void ShaderData::SetProperties(const DataList<PropertyData>& properties)
+	void ShaderData::SetProperties(const List<PropertyData>& properties)
 	{
 		m_Properties = properties;
 	}

@@ -79,7 +79,7 @@ namespace Blueberry
 				// Do not create the imported object if it already exists
 				if (!ObjectDB::HasGuidAndFileId(guid, fileId))
 				{
-					ClassDB::ClassInfo classInfo = ClassDB::GetInfo(type);
+					ClassInfo classInfo = ClassDB::GetInfo(type);
 					Object* importedObject = static_cast<Object*>(classInfo.createInstance());
 					importedObject->SetName(name);
 					importedObject->SetState(ObjectState::AwaitingLoading);

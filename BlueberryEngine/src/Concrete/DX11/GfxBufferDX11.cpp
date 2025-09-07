@@ -10,6 +10,7 @@ namespace Blueberry
 
 	bool GfxBufferDX11::Initialize(const BufferProperties& properties)
 	{
+		m_Index = ++s_MaxIndex;
 		if (properties.dataSize > 0)
 		{
 			D3D11_SUBRESOURCE_DATA subresourceData;
@@ -82,7 +83,7 @@ namespace Blueberry
 		uint32_t byteCount = m_ElementCount * m_ElementSize;
 		
 		D3D11_BUFFER_DESC bufferDesc;
-		ZeroMemory(&bufferDesc, sizeof(D3D11_MAPPED_SUBRESOURCE));
+		ZeroMemory(&bufferDesc, sizeof(D3D11_BUFFER_DESC));
 
 		bufferDesc.Usage = properties.isWritable ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
 		bufferDesc.ByteWidth = properties.type == BufferType::Structured && byteCount % 16 > 0 ? ((byteCount / 16) + 1) * 16 : byteCount;
@@ -144,7 +145,7 @@ namespace Blueberry
 		if (properties.isReadable)
 		{
 			D3D11_BUFFER_DESC stagingBufferDesc;
-			ZeroMemory(&stagingBufferDesc, sizeof(D3D11_MAPPED_SUBRESOURCE));
+			ZeroMemory(&stagingBufferDesc, sizeof(D3D11_BUFFER_DESC));
 
 			stagingBufferDesc.Usage = D3D11_USAGE_STAGING;
 			stagingBufferDesc.ByteWidth = bufferDesc.ByteWidth;

@@ -97,8 +97,10 @@ namespace Blueberry
 		return item == nullptr ? nullptr : item->object;
 	}
 
-	void ObjectDB::GetObjects(const size_t& type, List<Object*>& result, bool hasGuid)
+	void ObjectDB::GetObjects(const size_t& type, List<Object*>& result, SearchObjectType searchType)
 	{
+		bool notAny = searchType != SearchObjectType::Any;
+		bool needGuid = searchType == SearchObjectType::WithGuid;
 		for (uint32_t i = 0, n = s_Array.GetElementsCount(); i < n; ++i)
 		{
 			ObjectItem* item = s_Array.GetObjectItem(i);
@@ -107,9 +109,12 @@ namespace Blueberry
 				Object* object = item->object;
 				if (object != nullptr && object->IsClassType(type))
 				{
-					if (hasGuid && !HasGuid(object))
+					if (notAny)
 					{
-						continue;
+						if (HasGuid(object) != needGuid)
+						{
+							continue;
+						}
 					}
 					result.emplace_back(std::move(object));
 				}

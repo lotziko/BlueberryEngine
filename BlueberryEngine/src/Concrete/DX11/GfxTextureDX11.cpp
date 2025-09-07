@@ -214,6 +214,7 @@ namespace Blueberry
 
 	bool GfxTextureDX11::Initialize(const TextureProperties& properties)
 	{
+		m_Index = ++s_MaxIndex;
 		m_Format = static_cast<DXGI_FORMAT>(properties.format);
 		m_Width = properties.width;
 		m_Height = properties.height;

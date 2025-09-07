@@ -55,6 +55,9 @@ namespace Blueberry
 		ID3D11Device* m_Device;
 		ID3D11DeviceContext* m_DeviceContext;
 
+		static inline uint32_t s_MaxIndex = 0;
+		uint32_t m_Index;
+
 		friend class GfxDeviceDX11;
 		friend class GfxRenderStateCacheDX11;
 	};

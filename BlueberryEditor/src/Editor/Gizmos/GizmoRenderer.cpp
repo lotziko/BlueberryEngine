@@ -6,8 +6,8 @@
 
 #include "Editor\Selection.h"
 #include "Editor\Gizmos\Gizmos.h"
-#include "Editor\Inspector\ObjectInspectorDB.h"
-#include "Editor\Inspector\ObjectInspector.h"
+#include "Editor\Inspector\ObjectEditorDB.h"
+#include "Editor\Inspector\ObjectEditor.h"
 
 #include "Blueberry\Graphics\RendererTree.h"
 
@@ -65,14 +65,14 @@ namespace Blueberry
 				Entity* entity = static_cast<Entity*>(activeObject);
 				if (entity->IsActiveInHierarchy())
 				{
-					for (auto& component : entity->GetComponents())
+					for (uint32_t i = 0; i < entity->GetComponentCount(); ++i)
 					{
-						ObjectInspector* inspector = ObjectInspectorDB::GetInspector(component->GetType());
-						if (inspector != nullptr)
+						ObjectEditor* editor = ObjectEditor::GetEditor(entity->GetComponent(i));
+						if (editor != nullptr)
 						{
 							Gizmos::SetColor(Color(1, 1, 1, 1));
 							Gizmos::Begin();
-							inspector->DrawScene(component);
+							editor->DrawSceneSelected();
 							Gizmos::End();
 						}
 					}

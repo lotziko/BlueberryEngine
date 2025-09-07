@@ -21,7 +21,7 @@ namespace Blueberry
 
 	private:
 		static Dictionary<ObjectId, ObjectId> s_EntityToPrefabInstance;
-		static HashSet<ObjectId> s_PrefabEntities;
+		static Dictionary<ObjectId, ObjectId> s_PrefabEntities;
 
 		friend class PrefabInstance;
 	};

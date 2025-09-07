@@ -5,7 +5,6 @@
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Core\ObjectPtr.h"
 #include "Blueberry\Core\Structs.h"
-#include "Blueberry\Core\DataList.h"
 
 #include <fstream>
 #include <sstream>
@@ -66,7 +65,7 @@ namespace Blueberry
 				auto it = m_FileIdToObject.find(fileId);
 				if (it == m_FileIdToObject.end())
 				{
-					ClassDB::ClassInfo info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
+					ClassInfo info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
 					Object* instance = info.createInstance();
 					AddDeserializedObject(instance, fileId);
 				}
@@ -196,7 +195,7 @@ namespace Blueberry
 				output.write(reinterpret_cast<char*>(&data), sizeof(ObjectPtrData));
 			}
 			break;
-			case BindingType::ObjectPtrArray:
+			case BindingType::ObjectPtrList:
 			{
 				List<ObjectPtr<Object>>* arrayPointer = value.Get<List<ObjectPtr<Object>>>();
 				size_t dataSize = arrayPointer->size();
@@ -228,14 +227,14 @@ namespace Blueberry
 			break;
 			case BindingType::DataList:
 			{
-				DataListBase* dataArrayPointer = value.Get<DataListBase>();
-				size_t dataSize = dataArrayPointer->Size();
+				ListBase* dataArrayPointer = value.Get<ListBase>();
+				size_t dataSize = dataArrayPointer->size_base();
 				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 				if (dataSize > 0)
 				{
 					for (uint32_t i = 0; i < dataSize; ++i)
 					{
-						void* data = dataArrayPointer->Get(i);
+						void* data = dataArrayPointer->get_base(i);
 						Context context = Context::CreateNoOffset(data, field.options.objectType);
 						SerializeNode(output, context);
 					}
@@ -364,7 +363,7 @@ namespace Blueberry
 					*value.Get<ObjectPtr<Object>>() = GetPtrObject(data);
 				}
 				break;
-				case BindingType::ObjectPtrArray:
+				case BindingType::ObjectPtrList:
 				{
 					size_t dataSize;
 					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
@@ -388,10 +387,10 @@ namespace Blueberry
 				{
 					size_t dataSize;
 					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
-					DataListBase* dataArrayPointer = value.Get<DataListBase>();
+					ListBase* dataArrayPointer = value.Get<ListBase>();
 					for (size_t i = 0; i < dataSize; ++i)
 					{
-						void* data = dataArrayPointer->EmplaceBack();
+						void* data = dataArrayPointer->emplace_back_base();
 						Context context = Context::CreateNoOffset(data, field.options.objectType);
 						DeserializeNode(input, context);
 					}

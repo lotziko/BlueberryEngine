@@ -12,6 +12,8 @@
 #include "Editor\Panels\Picking\SearchWindow.h"
 #include "Editor\Panels\Statistics\StatisticsWindow.h"
 #include "Editor\Panels\Lightmapping\LightmappingWindow.h"
+#include "Editor\Scene\SceneSettings.h"
+#include "Editor\Scene\LightingData.h"
 
 namespace Blueberry
 {
@@ -27,5 +29,7 @@ namespace Blueberry
 		REGISTER_CLASS(SearchWindow);
 		REGISTER_CLASS(StatisticsWindow);
 		REGISTER_CLASS(LightmappingWindow);
+		REGISTER_CLASS(SceneSettings);
+		REGISTER_CLASS(LightingData);
 	}
 }

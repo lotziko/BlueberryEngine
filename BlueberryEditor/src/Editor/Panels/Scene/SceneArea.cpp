@@ -225,7 +225,7 @@ namespace Blueberry
 			if (ImGui::IsMouseClicked(0) && mousePos.x >= pos.x && mousePos.y >= pos.y && mousePos.x <= pos.x + size.x && mousePos.y <= pos.y + size.y)
 			{
 				Object* pickedObject = m_ObjectPicker->Pick(EditorSceneManager::GetScene(), m_Camera, static_cast<int>(mousePos.x - pos.x), static_cast<int>(mousePos.y - pos.y));
-				if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
+				if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_LeftShift))
 				{
 					Selection::AddActiveObject(pickedObject);
 				}

@@ -19,10 +19,10 @@ namespace Blueberry
 		DEFINE_FIELD(TextureImporter, m_WrapMode, BindingType::Enum, FieldOptions().SetEnumHint("Repeat,Clamp"))
 		DEFINE_FIELD(TextureImporter, m_FilterMode, BindingType::Enum, FieldOptions().SetEnumHint("Point,Bilinear,Trilinear,Anisotropic"))
 		DEFINE_FIELD(TextureImporter, m_TextureShape, BindingType::Enum, FieldOptions().SetEnumHint("Texture2D,Texture2DArray,TextureCube,Texture3D"))
-		DEFINE_FIELD(TextureImporter, m_TextureType, BindingType::Enum, {})
+		DEFINE_FIELD(TextureImporter, m_TextureType, BindingType::Enum, FieldOptions().SetEnumHint("Default,BaseMap,NormalMap,Mask,Cookie"))
 		DEFINE_FIELD(TextureImporter, m_TextureFormat, BindingType::Enum, {})
-		DEFINE_FIELD(TextureImporter, m_TextureCubeType, BindingType::Enum, {})
-		DEFINE_FIELD(TextureImporter, m_TextureCubeIBLType, BindingType::Enum, {})
+		DEFINE_FIELD(TextureImporter, m_TextureCubeType, BindingType::Enum, FieldOptions().SetEnumHint("Equirectangular,Slices"))
+		DEFINE_FIELD(TextureImporter, m_TextureCubeIBLType, BindingType::Enum, FieldOptions().SetEnumHint("None,Specular"))
 	}
 
 	const TextureImporter::TextureShape& TextureImporter::GetTextureShape()

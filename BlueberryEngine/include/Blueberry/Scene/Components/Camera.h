@@ -51,6 +51,7 @@ namespace Blueberry
 
 	private:
 		bool IsViewDirty();
+		void InvalidateProjection();
 
 		void RecalculateView();
 		void RecalculateProjection();

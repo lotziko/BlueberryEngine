@@ -42,7 +42,7 @@ namespace Blueberry
 		ryml::ConstNodeRef node = root[1];
 		ryml::csubstr key = node.key();
 		String typeName(key.str, key.size());
-		ClassDB::ClassInfo info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
+		ClassInfo info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
 		// Importer is only created during first deserialization
 		if (m_FileIdToObject.size() == 0)
 		{

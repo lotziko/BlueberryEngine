@@ -13,6 +13,13 @@ namespace Blueberry
 		Object* object;
 	};
 
+	enum class SearchObjectType
+	{
+		Any,
+		WithGuid,
+		WithoutGuid
+	};
+
 	class ChunkedObjectArray
 	{
 	public:
@@ -28,6 +35,7 @@ namespace Blueberry
 		const uint32_t& GetElementsCount();
 
 		ObjectItem* GetObjectItem(const int32_t& index) const;
+
 	private:
 		void ExpandChunksToIndex(const int32_t& index);
 
@@ -46,7 +54,7 @@ namespace Blueberry
 		static bool IsValid(Object* object);
 		static ObjectItem* IdToObjectItem(const ObjectId& id);
 		static Object* GetObject(const ObjectId& id);
-		static void GetObjects(const size_t& type, List<Object*>& result, bool hasGuid = false);
+		static void GetObjects(const size_t& type, List<Object*>& result, SearchObjectType searchType = SearchObjectType::Any);
 
 		static void AllocateIdToFileId(Object* object, const FileId& fileId);
 		static void AllocateIdToGuid(const ObjectId& id, const Guid& guid, const FileId& fileId);
@@ -62,6 +70,7 @@ namespace Blueberry
 		static bool HasGuidAndFileId(const Guid& guid, const FileId& fileId);
 		static Object* GetObjectFromGuid(const Guid& guid, const FileId& fileId);
 		static const Dictionary<FileId, ObjectId>& GetObjectsFromGuid(const Guid& guid);
+
 	private:
 		static ChunkedObjectArray s_Array;
 		static Dictionary<ObjectId, std::pair<Guid, FileId>> s_ObjectIdToGuid;

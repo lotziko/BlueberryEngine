@@ -9,12 +9,20 @@ namespace Blueberry
 	OBJECT_DEFINITION(Transform, Component)
 	{
 		DEFINE_BASE_FIELDS(Transform, Component)
-		DEFINE_FIELD(Transform, m_LocalPosition, BindingType::Vector3, {})
-		DEFINE_FIELD(Transform, m_LocalRotation, BindingType::Quaternion, {})
-		DEFINE_FIELD(Transform, m_LocalScale, BindingType::Vector3, {})
-		DEFINE_FIELD(Transform, m_LocalRotationEulerHint, BindingType::Vector3, {})
-		DEFINE_FIELD(Transform, m_Parent, BindingType::ObjectPtr, FieldOptions().SetObjectType(Transform::Type))
-		DEFINE_FIELD(Transform, m_Children, BindingType::ObjectPtrArray, FieldOptions().SetObjectType(Transform::Type))
+		DEFINE_FIELD(Transform, m_LocalPosition, BindingType::Vector3, FieldOptions().SetUpdateCallback(MethodBind::Create(&Transform::InvalidateHierarchy)))
+		DEFINE_FIELD(Transform, m_LocalRotation, BindingType::Quaternion, FieldOptions().SetUpdateCallback(MethodBind::Create(&Transform::InvalidateHierarchy)))
+		DEFINE_FIELD(Transform, m_LocalScale, BindingType::Vector3, FieldOptions().SetUpdateCallback(MethodBind::Create(&Transform::InvalidateHierarchy)))
+		DEFINE_FIELD(Transform, m_LocalRotationEulerHint, BindingType::Vector3, FieldOptions().SetVisibility(VisibilityType::Hidden))
+		DEFINE_FIELD(Transform, m_Parent, BindingType::ObjectPtr, FieldOptions().SetObjectType(Transform::Type).SetVisibility(VisibilityType::Hidden))
+		DEFINE_FIELD(Transform, m_Children, BindingType::ObjectPtrList, FieldOptions().SetObjectType(Transform::Type).SetVisibility(VisibilityType::Hidden))
+	}
+
+	void Transform::OnEnable()
+	{
+		if (m_IsDirty)
+		{
+			RecalculateHierarchy();
+		}
 	}
 
 	void Transform::OnDestroy()
@@ -121,47 +129,33 @@ namespace Blueberry
 	void Transform::SetLocalPosition(const Vector3& position)
 	{
 		m_LocalPosition = position;
-		SetHierarchyDirty();
+		InvalidateHierarchy();
 	}
 
 	void Transform::SetLocalRotation(const Quaternion& rotation)
 	{
 		m_LocalRotation = rotation;
-		SetHierarchyDirty();
-	}
-
-	void Transform::SetLocalRotationHint(const Quaternion& rotation, const float& snapping)
-	{
-		m_LocalRotation = rotation;
-		Vector3 euler = ToDegrees(rotation.ToEuler());
-		if (snapping > 0)
-		{
-			euler /= snapping;
-			euler = Vector3(roundf(euler.x), roundf(euler.y), roundf(euler.z));
-			euler *= snapping;
-		}
-		m_LocalRotationEulerHint = euler;
-		SetHierarchyDirty();
+		InvalidateHierarchy();
 	}
 
 	void Transform::SetLocalEulerRotation(const Vector3& euler)
 	{
 		m_LocalRotation = Quaternion::CreateFromYawPitchRoll(euler.y, euler.x, euler.z);
-		SetHierarchyDirty();
+		InvalidateHierarchy();
 	}
 
 	void Transform::SetLocalEulerRotationHint(const Vector3& euler)
 	{
 		m_LocalRotationEulerHint = euler;
-		m_LocalRotation = Quaternion::CreateFromYawPitchRoll(ToRadians(euler.y), ToRadians(euler.x), ToRadians(euler.z));
+		m_LocalRotation = Quaternion::CreateFromYawPitchRoll(ToRadians(m_LocalRotationEulerHint.y), ToRadians(m_LocalRotationEulerHint.x), ToRadians(m_LocalRotationEulerHint.z));
 		m_LocalRotation.Normalize();
-		SetHierarchyDirty();
+		InvalidateHierarchy();
 	}
 
 	void Transform::SetLocalScale(const Vector3& scale)
 	{
 		m_LocalScale = scale;
-		SetHierarchyDirty();
+		InvalidateHierarchy();
 	}
 
 	void Transform::SetPosition(const Vector3& position)
@@ -174,7 +168,7 @@ namespace Blueberry
 		{
 			m_LocalPosition = Vector3::Transform(position, m_Parent->m_WorldToLocalMatrix);
 		}
-		SetHierarchyDirty();
+		InvalidateHierarchy();
 	}
 
 	void Transform::SetRotation(const Quaternion& rotation)
@@ -187,7 +181,7 @@ namespace Blueberry
 		{
 			m_LocalRotation = Quaternion::CreateFromRotationMatrix(Matrix::Transform(m_Parent->m_WorldToLocalMatrix, rotation));
 		}
-		SetHierarchyDirty();
+		InvalidateHierarchy();
 	}
 
 	void Transform::SetParent(Transform* parent)
@@ -217,12 +211,12 @@ namespace Blueberry
 		return m_RecalculationFrame;
 	}
 
-	void Transform::SetHierarchyDirty()
+	void Transform::InvalidateHierarchy()
 	{
 		m_IsDirty = true;
 		for (auto& child : m_Children)
 		{
-			child->SetHierarchyDirty();
+			child->InvalidateHierarchy();
 		}
 	}
 

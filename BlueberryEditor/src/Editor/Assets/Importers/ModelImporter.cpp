@@ -50,7 +50,7 @@ namespace Blueberry
 		m_Material = material;
 	}
 
-	DataList<ModelMaterialData>& ModelImporter::GetMaterials()
+	List<ModelMaterialData>& ModelImporter::GetMaterials()
 	{
 		return m_Materials;
 	}

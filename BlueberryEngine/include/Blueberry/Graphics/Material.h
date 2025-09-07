@@ -49,7 +49,7 @@ namespace Blueberry
 		void ApplyProperties();
 
 		const ShaderData* GetShaderData();
-		DataList<TextureData>& GetTextureDatas();
+		List<TextureData>& GetTextureDatas();
 		void AddTextureData(const TextureData& data);
 
 		void SetKeyword(const String& keyword, const bool& enabled);
@@ -64,7 +64,7 @@ namespace Blueberry
 		void FillTextureMap();
 
 	private:
-		DataList<TextureData> m_Textures;
+		List<TextureData> m_Textures;
 		List<String> m_ActiveKeywords;
 		ObjectPtr<Shader> m_Shader;
 

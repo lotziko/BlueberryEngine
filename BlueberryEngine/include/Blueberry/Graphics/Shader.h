@@ -2,7 +2,6 @@
 
 #include "Blueberry\Core\Base.h"
 #include "Blueberry\Core\Object.h"
-#include "Blueberry\Core\DataList.h"
 #include "Blueberry\Graphics\Enums.h"
 
 namespace Blueberry
@@ -132,14 +131,14 @@ namespace Blueberry
 
 		const PassData& GetPass(const uint32_t& index) const;
 		const size_t GetPassCount() const;
-		void SetPasses(const DataList<PassData>& passes);
+		void SetPasses(const List<PassData>& passes);
 
-		const DataList<PropertyData>& GetProperties() const;
-		void SetProperties(const DataList<PropertyData>& properties);
+		const List<PropertyData>& GetProperties() const;
+		void SetProperties(const List<PropertyData>& properties);
 
 	private:
-		DataList<PassData> m_Passes;
-		DataList<PropertyData> m_Properties;
+		List<PassData> m_Passes;
+		List<PropertyData> m_Properties;
 	};
 
 	struct VariantsData

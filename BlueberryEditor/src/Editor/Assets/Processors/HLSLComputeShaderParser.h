@@ -9,7 +9,7 @@ namespace Blueberry
 		String shaderCode;
 		List<String> computeEntryPoints;
 
-		DataList<KernelData> dataKernels;
+		List<KernelData> dataKernels;
 	};
 
 	class HLSLComputeShaderParser

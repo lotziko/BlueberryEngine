@@ -21,11 +21,16 @@ namespace Blueberry
 		unsigned int accumulationFrameIndex;
 		float4* accumulatedImage;
 
+		uint2* validTexels;
 		float4* color;
 		float4* normal;
+		unsigned int* chartIndex;
 
-		uint2 offset;
+		unsigned int offset;
 		uint2 imageSize;
+		int samplePerTexel;
+		float texelPerUnit;
+
 		float3 camEye;
 		float3 camU;
 		float3 camV;

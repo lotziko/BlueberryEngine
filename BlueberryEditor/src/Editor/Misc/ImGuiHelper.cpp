@@ -3,14 +3,19 @@
 #include "Blueberry\Core\Screen.h"
 #include "Blueberry\Core\ObjectPtr.h"
 #include "Blueberry\Assets\AssetLoader.h"
+#include "Blueberry\Core\ClassDB.h"
 
 #include "Editor\Panels\Picking\ObjectPicker.h"
+#include "Editor\Serialization\SerializedProperty.h"
 
 #include <imgui\imgui_internal.h>
 #include <imgui\misc\freetype\imgui_freetype.h>
 #include <imgui\misc\cpp\imgui_stdlib.h>
 
 ImGui::EditorContext* ImGui::GEditor = NULL;
+static Blueberry::List<bool> s_ChangeStack = {};
+static bool s_MixedValue = false;
+static const bool* s_MixedValueMask = {};
 
 void ImGui::CreateEditorContext()
 {
@@ -22,47 +27,288 @@ ImGui::EditorStyle& ImGui::GetEditorStyle()
 	return GEditor->Style;
 }
 
+bool ImGui::Property(Blueberry::SerializedProperty* property)
+{
+	Blueberry::String name = property->GetName();
+	if (name.rfind("m_", 0) == 0)
+	{
+		name.replace(0, 2, "");
+	}
+	return Property(property, name.c_str());
+}
+
+bool ImGui::Property(Blueberry::SerializedProperty* property, const char* label)
+{
+	s_MixedValue = property->IsMixedValue();
+	s_MixedValueMask = property->GetMixedMask();
+	bool result = false;
+	switch (property->GetType())
+	{
+	case Blueberry::BindingType::Bool:
+	{
+		bool value = property->GetBool();
+		if (ImGui::BoolEdit(label, &value))
+		{
+			property->SetBool(value);
+			result = true;
+		}
+	}
+	break;
+	case Blueberry::BindingType::Int:
+	{
+		int value = property->GetInt();
+		if (ImGui::IntEdit(label, &value))
+		{
+			property->SetInt(value);
+			result = true;
+		}
+	}
+	break;
+	case Blueberry::BindingType::Float:
+	{
+		float value = property->GetFloat();
+		if (ImGui::FloatEdit(label, &value))
+		{
+			property->SetFloat(value);
+			result = true;
+		}
+	}
+	break;
+	case Blueberry::BindingType::Enum:
+	{
+		int value = property->GetInt();
+		if (ImGui::EnumEdit(label, &value, static_cast<Blueberry::List<Blueberry::String>*>(property->GetHintData())))
+		{
+			property->SetInt(value);
+			result = true;
+		}
+	}
+	break;
+	case Blueberry::BindingType::String:
+	{
+		std::string value(property->GetString().data());
+		if (ImGui::InputText(label, &value)) // TODO mixed
+		{
+			property->SetString(Blueberry::String(value.data()));
+			result = true;
+		}
+	}
+	break;
+	case Blueberry::BindingType::Vector2:
+	{
+		Blueberry::Vector2 value = property->GetVector2();
+		if (ImGui::DragVector2(label, &value))
+		{
+			property->SetVector2(value);
+			result = true;
+		}
+	}
+	break;
+	case Blueberry::BindingType::Vector3:
+	{
+		Blueberry::Vector3 value = property->GetVector3();
+		if (ImGui::DragVector3(label, &value))
+		{
+			property->SetVector3(value);
+			result = true;
+		}
+	}
+	break;
+	case Blueberry::BindingType::Vector4:
+	{
+		Blueberry::Vector4 value = property->GetVector4();
+		if (ImGui::DragVector4(label, &value))
+		{
+			property->SetVector4(value);
+			result = true;
+		}
+	}
+	break;
+	case Blueberry::BindingType::Quaternion:
+	{
+		Blueberry::Quaternion value = property->GetQuaternion();
+		if (ImGui::DragVector4(label, &static_cast<Blueberry::Vector4>(value)))
+		{
+			property->SetQuaternion(value);
+			result = true;
+		}
+	}
+	break;
+	case Blueberry::BindingType::Color:
+	{
+		Blueberry::Color value = property->GetColor();
+		if (ImGui::ColorEdit(label, &value))
+		{
+			property->SetColor(value);
+			result = true;
+		}
+	}
+	break;
+	case Blueberry::BindingType::ObjectPtr:
+	{
+		Blueberry::ObjectPtr<Blueberry::Object> value = property->GetObjectPtr();
+		if (ImGui::ObjectEdit(label, &value, property->GetObjectPtrType()))
+		{
+			property->SetObjectPtr(value);
+			result = true;
+		}
+	}
+	break;
+	default:
+		ImGui::Text(label);
+		break;
+	}
+	s_MixedValue = false;
+	return result;
+}
+
+void ImGui::BeginChangeCheck()
+{
+	s_ChangeStack.push_back(false);
+}
+
+void ImGui::TriggerChange()
+{
+	for (uint32_t i = 0; i < s_ChangeStack.size(); ++i)
+	{
+		s_ChangeStack[i] = true;
+	}
+}
+
+bool ImGui::EndChangeCheck()
+{
+	if (s_ChangeStack.size() > 0)
+	{
+		bool value = s_ChangeStack[s_ChangeStack.size() - 1];
+		s_ChangeStack.pop_back();
+		return value;
+	}
+	return false;
+}
+
+void ImGui::SetMixedValue(const bool& mixed)
+{
+	s_MixedValue = mixed;
+}
+
+#define PROPERTY_LABEL( text )\
+ImGui::PushID(text);\
+float availableWidth = ImGui::GetContentRegionAvail().x;\
+float labelWidth = std::max(150.0f, availableWidth * 0.4f);\
+float valueWidth = std::max(0.0f, availableWidth - labelWidth);\
+ImGui::Text(text);\
+ImGui::SameLine(labelWidth);\
+
+#define PROPERTY_BEGIN_VALUE()\
+if (s_MixedValue)\
+{\
+	ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, true);\
+}\
+ImGui::SetNextItemWidth(valueWidth);\
+
+#define PROPERTY_END_VALUE()\
+if (s_MixedValue)\
+{\
+	ImGui::PopItemFlag();\
+}\
+ImGui::PopID();\
+
 bool ImGui::DragVector2(const char* label, Blueberry::Vector2* v)
 {
-	ImGui::PushID(label);
+	PROPERTY_LABEL(label)
+	PROPERTY_BEGIN_VALUE()
 
-	ImGui::Text(label);
-	ImGui::SameLine();
-	ImGui::SetCursorPosX(100);
-
+	bool result = false;
 	float vector2[2] = { v->x, v->y };
-	if (ImGui::DragFloat2("##vector2", vector2, 0.1f))
+	if (ImGui::DragVectorN("##vector2", ImGuiDataType_Float, 2, vector2))
 	{
 		v->x = vector2[0];
 		v->y = vector2[1];
-
-		ImGui::PopID();
-		return true;
+		result = true;
 	}
-	ImGui::PopID();
-	return false;
+
+	PROPERTY_END_VALUE()
+	if (result)
+	{
+		TriggerChange();
+	}
+	return result;
 }
 
 bool ImGui::DragVector3(const char* label, Blueberry::Vector3* v)
 {
-	ImGui::PushID(label);
+	PROPERTY_LABEL(label)
+	PROPERTY_BEGIN_VALUE()
 
-	ImGui::Text(label);
-	ImGui::SameLine();
-	ImGui::SetCursorPosX(100);
-
+	bool result = false;
 	float vector3[3] = { v->x, v->y, v->z };
-	if (ImGui::DragFloat3("##vector3", vector3, 0.1f))
+
+	if (ImGui::DragVectorN("##vector3", ImGuiDataType_Float, 3, vector3))
 	{
 		v->x = vector3[0];
 		v->y = vector3[1];
 		v->z = vector3[2];
-
-		ImGui::PopID();
-		return true;
+		result = true;
 	}
-	ImGui::PopID();
-	return false;
+
+	PROPERTY_END_VALUE()
+	if (result)
+	{
+		TriggerChange();
+	}
+	return result;
+}
+
+bool ImGui::DragVector4(const char* label, Blueberry::Vector4* v)
+{
+	PROPERTY_LABEL(label)
+	PROPERTY_BEGIN_VALUE()
+
+	bool result = false;
+	float vector4[4] = { v->x, v->y, v->z, v->w };
+
+	if (ImGui::DragVectorN("##vector3", ImGuiDataType_Float, 4, vector4))
+	{
+		v->x = vector4[0];
+		v->y = vector4[1];
+		v->z = vector4[2];
+		v->w = vector4[3];
+		result = true;
+	}
+
+	PROPERTY_END_VALUE()
+	if (result)
+	{
+		TriggerChange();
+	}
+	return result;
+}
+
+bool ImGui::DragVectorN(const char* label, ImGuiDataType dataType, int components, void* data)
+{
+	ImGuiWindow* window = ImGui::GetCurrentWindow();
+	if (window->SkipItems)
+		return false;
+
+	bool result = false;
+	ImGui::BeginGroup();
+	ImGui::PushMultiItemsWidths(components, ImGui::CalcItemWidth());
+	size_t typeSize = ImGui::DataTypeGetInfo(dataType)->Size;
+	for (int i = 0; i < components; i++)
+	{
+		if (i > 0) ImGui::SameLine();
+		ImGui::PushID(i);
+		ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, s_MixedValueMask[i]);
+		if (ImGui::DragScalar("", dataType, data, 0.1f, 0, 0, "%.3f"))
+		{
+			result = true;
+		}
+		data = (void*)((char*)data + typeSize);
+		ImGui::PopItemFlag();
+		ImGui::PopID();
+	}
+	ImGui::EndGroup();
+	return result;
 }
 
 bool ImGui::EnumEdit(const char* label, int* v, const Blueberry::List<Blueberry::String>* names)
@@ -72,12 +318,10 @@ bool ImGui::EnumEdit(const char* label, int* v, const Blueberry::List<Blueberry:
 		return false;
 	}
 
-	ImGui::PushID(label);
+	PROPERTY_LABEL(label)
+	PROPERTY_BEGIN_VALUE()
 
-	ImGui::Text(label);
-	ImGui::SameLine();
-	ImGui::SetCursorPosX(100);
-
+	bool result = false;
 	if (ImGui::BeginCombo("##enum", names->at(*v).c_str()))
 	{
 		for (int i = 0; i < names->size(); i++)
@@ -86,6 +330,7 @@ bool ImGui::EnumEdit(const char* label, int* v, const Blueberry::List<Blueberry:
 			if (ImGui::Selectable(names->at(i).c_str(), isSelected))
 			{
 				*v = i;
+				result = true;
 			}
 
 			if (isSelected)
@@ -94,11 +339,14 @@ bool ImGui::EnumEdit(const char* label, int* v, const Blueberry::List<Blueberry:
 			}
 		}
 		ImGui::EndCombo();
-		ImGui::PopID();
-		return true;
 	}
-	ImGui::PopID();
-	return false;
+
+	PROPERTY_END_VALUE()
+	if (result)
+	{
+		TriggerChange();
+	}
+	return result;
 }
 
 bool ImGui::EnumEdit(const char* label, int* v, const Blueberry::List<std::pair<Blueberry::String, int>>* nameValues)
@@ -108,11 +356,8 @@ bool ImGui::EnumEdit(const char* label, int* v, const Blueberry::List<std::pair<
 		return false;
 	}
 
-	ImGui::PushID(label);
-
-	ImGui::Text(label);
-	ImGui::SameLine();
-	ImGui::SetCursorPosX(100);
+	PROPERTY_LABEL(label)
+	PROPERTY_BEGIN_VALUE()
 
 	int value = *v;
 	int size = static_cast<int>(nameValues->size());
@@ -127,19 +372,17 @@ bool ImGui::EnumEdit(const char* label, int* v, const Blueberry::List<std::pair<
 		}
 	}
 
+	bool result = false;
 	if (ImGui::BeginCombo("##enum", preview))
 	{
 		for (int i = 0; i < size; i++)
 		{
-			if (i < 0)
-			{
-				BB_INFO("What");
-			}
 			auto& pair = nameValues->at(i);
 			bool isSelected = value == pair.second;
 			if (ImGui::Selectable(pair.first.c_str(), isSelected))
 			{
 				*v = pair.second;
+				result = true;
 			}
 
 			if (isSelected)
@@ -148,72 +391,79 @@ bool ImGui::EnumEdit(const char* label, int* v, const Blueberry::List<std::pair<
 			}
 		}
 		ImGui::EndCombo();
-		ImGui::PopID();
-		return true;
 	}
-	ImGui::PopID();
-	return false;
+
+	PROPERTY_END_VALUE()
+	if (result)
+	{
+		TriggerChange();
+	}
+	return result;
 }
 
 bool ImGui::BoolEdit(const char* label, bool* v)
 {
-	ImGui::PushID(label);
+	PROPERTY_LABEL(label)
+	PROPERTY_BEGIN_VALUE()
 
-	ImGui::Text(label);
-	ImGui::SameLine();
-	ImGui::SetCursorPosX(100);
-
+	bool result = false;
 	if (ImGui::Checkbox("##bool", v))
 	{
-		ImGui::PopID();
-		return true;
+		result = true;
 	}
-	ImGui::PopID();
-	return false;
+
+	PROPERTY_END_VALUE()
+	if (result)
+	{
+		TriggerChange();
+	}
+	return result;
 }
 
 bool ImGui::IntEdit(const char* label, int* v)
 {
-	ImGui::PushID(label);
+	PROPERTY_LABEL(label)
+	PROPERTY_BEGIN_VALUE()
 
-	ImGui::Text(label);
-	ImGui::SameLine();
-	ImGui::SetCursorPosX(100);
-
+	bool result = false;
 	if (ImGui::DragInt("##int", v))
 	{
-		ImGui::PopID();
-		return true;
+		result = true;
 	}
-	ImGui::PopID();
-	return false;
+
+	PROPERTY_END_VALUE()
+	if (result)
+	{
+		TriggerChange();
+	}
+	return result;
 }
 
 bool ImGui::FloatEdit(const char* label, float* v, float min, float max)
 {
-	ImGui::PushID(label);
-
-	ImGui::Text(label);
-	ImGui::SameLine();
-	ImGui::SetCursorPosX(100);
-
+	PROPERTY_LABEL(label)
+	PROPERTY_BEGIN_VALUE()
+	
+	bool result = false;
 	if (ImGui::DragFloat("##float", v, 1.0f, min, max))
 	{
-		ImGui::PopID();
-		return true;
+		result = true;
 	}
-	ImGui::PopID();
-	return false;
+
+	PROPERTY_END_VALUE()
+	if (result)
+	{
+		TriggerChange();
+	}
+	return result;
 }
 
 bool ImGui::ColorEdit(const char* label, Blueberry::Color* v)
 {
-	ImGui::PushID(label);
+	PROPERTY_LABEL(label)
+	PROPERTY_BEGIN_VALUE()
 
-	ImGui::Text(label);
-	ImGui::SameLine();
-	ImGui::SetCursorPosX(100);
-
+	bool result = false;
 	float color4[4] = { v->R(), v->G(), v->B(), v->A() };
 	if (ImGui::ColorEdit4("##color4", color4))
 	{
@@ -221,24 +471,23 @@ bool ImGui::ColorEdit(const char* label, Blueberry::Color* v)
 		v->G(color4[1]);
 		v->B(color4[2]);
 		v->A(color4[3]);
-
-		ImGui::PopID();
-		return true;
+		result = true;
 	}
-	ImGui::PopID();
-	return false;
+
+	PROPERTY_END_VALUE()
+	if (result)
+	{
+		TriggerChange();
+	}
+	return result;
 }
 
 bool ImGui::ObjectEdit(const char* label, Blueberry::Object** v, const size_t& type)
 {
+	PROPERTY_LABEL(label)
+	PROPERTY_BEGIN_VALUE()
+
 	bool result = false;
-
-	ImGui::PushID(label);
-
-	ImGui::Text(label);
-	ImGui::SameLine();
-	ImGui::SetCursorPosX(150);
-
 	Blueberry::Object* vObj = *v;
 	if (ImGui::Button((vObj != nullptr && Blueberry::ObjectDB::IsValid(vObj)) ? vObj->GetName().c_str() : "None"))
 	{
@@ -276,7 +525,11 @@ bool ImGui::ObjectEdit(const char* label, Blueberry::Object** v, const size_t& t
 		ImGui::EndDragDropTarget();
 	}
 
-	ImGui::PopID();
+	PROPERTY_END_VALUE()
+	if (result)
+	{
+		TriggerChange();
+	}
 	return result;
 }
 
@@ -331,6 +584,10 @@ bool ImGui::SearchInputText(const char* hint, std::string* text)
 	else if (!hovered)
 	{
 		ImGui::PopStyleColor();
+	}
+	if (result)
+	{
+		TriggerChange();
 	}
 	return result;
 }

@@ -4,10 +4,11 @@
 
 #include "Blueberry\Scene\Scene.h"
 
-#include "Editor\Inspector\ObjectInspector.h"
-#include "Editor\Inspector\ObjectInspectorDB.h"
+#include "Editor\Inspector\ObjectEditor.h"
+#include "Editor\Inspector\ObjectEditorDB.h"
 #include "Editor\Selection.h"
 #include "Editor\Menu\EditorMenuManager.h"
+#include "Editor\Serialization\SerializedObject.h"
 
 #include <imgui\imgui.h>
 
@@ -22,11 +23,13 @@ namespace Blueberry
 	SceneInspector::SceneInspector()
 	{
 		InspectorExpandedItemsCache::Load();
+		Selection::GetSelectionChanged().AddCallback<SceneInspector, &SceneInspector::SelectionChanged>(this);
 	}
 
 	SceneInspector::~SceneInspector()
 	{
 		InspectorExpandedItemsCache::Save();
+		Selection::GetSelectionChanged().RemoveCallback<SceneInspector, &SceneInspector::SelectionChanged>(this);
 	}
 
 	void SceneInspector::Open()
@@ -38,15 +41,44 @@ namespace Blueberry
 
 	void SceneInspector::OnDrawUI()
 	{
-		Object* selectedObject = Selection::GetActiveObject();
-		if (selectedObject != nullptr)
+		if (m_IsInvalidSelection)
 		{
-			size_t type = selectedObject->GetType();
-			ObjectInspector* inspector = ObjectInspectorDB::GetInspector(type);
-			if (inspector != nullptr)
+			ImGui::Text("Can't select different object types.");
+		}
+		else
+		{
+			if (m_Editor != nullptr)
 			{
-				inspector->Draw(selectedObject);
+				m_Editor->DrawInspector();
 			}
+		}
+	}
+
+	void SceneInspector::SelectionChanged()
+	{
+		if (m_Editor != nullptr)
+		{
+			ObjectEditor::ReleaseEditor(m_Editor);
+		}
+		List<Object*> selectedObjects = Selection::GetActiveObjects();
+		if (selectedObjects.size() > 0)
+		{
+			size_t type = selectedObjects[0]->GetType();
+			for (size_t i = 1; i < selectedObjects.size(); ++i)
+			{
+				if (selectedObjects[i]->GetType() != type)
+				{
+					m_Editor = nullptr;
+					m_IsInvalidSelection = true;
+					return;
+				}
+			}
+			m_Editor = ObjectEditor::GetEditor(selectedObjects);
+			m_IsInvalidSelection = false;
+		}
+		else
+		{
+			m_Editor = nullptr;
 		}
 	}
 }

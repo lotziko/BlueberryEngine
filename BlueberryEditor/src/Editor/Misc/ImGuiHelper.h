@@ -1,10 +1,15 @@
 #pragma once
+
 #include "Blueberry\Core\ObjectDB.h"
+
+#include <imgui\imgui.h>
 
 namespace Blueberry
 {
 	template<class ObjectType>
 	class ObjectPtr;
+
+	class SerializedProperty;
 }
 
 namespace ImGui
@@ -29,8 +34,17 @@ namespace ImGui
 	void CreateEditorContext();
 	EditorStyle& GetEditorStyle();
 
+	bool Property(Blueberry::SerializedProperty* property);
+	bool Property(Blueberry::SerializedProperty* property, const char* label);
+	void BeginChangeCheck();
+	void TriggerChange();
+	bool EndChangeCheck();
+	void SetMixedValue(const bool& mixed);
+
 	bool DragVector2(const char* label, Blueberry::Vector2* v);
 	bool DragVector3(const char* label, Blueberry::Vector3* v);
+	bool DragVector4(const char* label, Blueberry::Vector4* v);
+	bool DragVectorN(const char* label, ImGuiDataType dataType, int components, void* data);
 	bool EnumEdit(const char* label, int* v, const Blueberry::List<Blueberry::String>* names);
 	bool EnumEdit(const char* label, int* v, const Blueberry::List<std::pair<Blueberry::String, int>>* nameValues);
 	bool BoolEdit(const char* label, bool* v);

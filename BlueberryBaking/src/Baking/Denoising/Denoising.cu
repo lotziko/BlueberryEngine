@@ -53,7 +53,7 @@ namespace Blueberry
 		const float4 c1 = params.inputColor[index];
 		const float4 n1 = params.inputNormal[index];
 		const unsigned int chartIndex = params.chartIndex[index];
-		const int r = 5;
+		const int r = 8;
 		const float sigmaSpatial = r * 0.5f;
 		const float sigmaRange = 0.05;
 		const float sigmaNormal = 0.25;

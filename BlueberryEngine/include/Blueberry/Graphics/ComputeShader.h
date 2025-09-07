@@ -2,7 +2,6 @@
 
 #include "Blueberry\Core\Base.h"
 #include "Blueberry\Core\Object.h"
-#include "Blueberry\Core\DataList.h"
 
 namespace Blueberry
 {
@@ -32,10 +31,10 @@ namespace Blueberry
 
 		const KernelData& GetKernel(const uint32_t& index) const;
 		const size_t GetKernelCount() const;
-		void SetKernels(const DataList<KernelData>& kernels);
+		void SetKernels(const List<KernelData>& kernels);
 
 	private:
-		DataList<KernelData> m_Kernels;
+		List<KernelData> m_Kernels;
 	};
 
 	class ComputeShader : public Object

@@ -9,8 +9,8 @@ namespace Blueberry
 	OBJECT_DEFINITION(Entity, Object)
 	{
 		DEFINE_BASE_FIELDS(Entity, Object)
-		DEFINE_FIELD(Entity, m_Components, BindingType::ObjectPtrArray, FieldOptions().SetObjectType(Component::Type))
-		DEFINE_FIELD(Entity, m_IsActive, BindingType::Bool, {})
+		DEFINE_FIELD(Entity, m_Components, BindingType::ObjectPtrList, FieldOptions().SetObjectType(Component::Type).SetVisibility(VisibilityType::Hidden))
+		DEFINE_FIELD(Entity, m_IsActive, BindingType::Bool, FieldOptions().SetUpdateCallback(MethodBind::Create(&Entity::UpdateHierarchy)))
 	}
 
 	Entity::Entity(const String& name)
@@ -41,18 +41,18 @@ namespace Blueberry
 		}
 	}
 
-	// TODO change into GetComponent(index) and GetComponentCount()
-	List<Component*> Entity::GetComponents()
+	Component* Entity::GetComponent(const uint32_t& index)
 	{
-		List<Component*> components;
-		for (auto component : m_Components)
+		if (index >= 0 && index < static_cast<uint32_t>(m_Components.size()))
 		{
-			if (component.IsValid())
-			{
-				components.emplace_back(component.Get());
-			}
+			return m_Components[index].Get();
 		}
-		return components;
+		return nullptr;
+	}
+
+	const uint32_t Entity::GetComponentCount()
+	{
+		return static_cast<uint32_t>(m_Components.size());
 	}
 
 	Transform* Entity::GetTransform()
@@ -127,6 +127,11 @@ namespace Blueberry
 			return;
 		}
 		m_Scene->m_ComponentManager.RemoveComponent(component, type);
+	}
+
+	void Entity::UpdateHierarchy()
+	{
+		UpdateHierarchy(m_IsActive);
 	}
 
 	void Entity::UpdateHierarchy(const bool& active)

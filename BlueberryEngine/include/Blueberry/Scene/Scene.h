@@ -13,23 +13,7 @@ namespace Blueberry
 	class Serializer;
 	class Entity;
 	class Component;
-	class LightingData;
-
-	class SceneSettings : public Object
-	{
-		OBJECT_DECLARATION(SceneSettings)
-
-	public:
-		SceneSettings() = default;
-		virtual ~SceneSettings() = default;
-
-		LightingData* GetLightingData();
-		void SetLightingData(LightingData* data);
-
-	private:
-		ObjectPtr<LightingData> m_LightingData;
-	};
-
+	
 	class Scene
 	{
 	public:
@@ -58,9 +42,6 @@ namespace Blueberry
 
 		RendererTree& GetRendererTree();
 
-		SceneSettings* GetSettings();
-		void SetSettings(SceneSettings* settings);
-
 	private:
 		Dictionary<ObjectId, ObjectPtr<Entity>> m_Entities;
 		List<ObjectPtr<Entity>> m_RootEntities;
@@ -68,7 +49,6 @@ namespace Blueberry
 		// Stores only components added using AddToSceneComponents()
 		ComponentManager m_ComponentManager;
 		RendererTree m_RendererTree;
-		ObjectPtr<SceneSettings> m_SceneSettings;
 
 		friend class Entity;
 	};

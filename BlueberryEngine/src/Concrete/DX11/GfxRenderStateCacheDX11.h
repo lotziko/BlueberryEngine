@@ -11,6 +11,7 @@ namespace Blueberry
 		uint64_t keywordsMask; // global + material
 		ObjectId materialId;
 		uint8_t passIndex;
+		uint64_t crc;
 
 		bool operator==(const GfxRenderStateKeyDX11& other) const;
 		bool operator!=(const GfxRenderStateKeyDX11& other) const;
@@ -22,7 +23,7 @@ struct std::hash<Blueberry::GfxRenderStateKeyDX11>
 {
 	size_t operator()(const Blueberry::GfxRenderStateKeyDX11& key) const
 	{
-		return std::hash<uint64_t>()(key.keywordsMask) ^ (std::hash<uint32_t>()(key.materialId) << 1) ^ (std::hash<uint8_t>()(key.passIndex) << 2);
+		return std::hash<uint64_t>()(key.keywordsMask) ^ (std::hash<uint32_t>()(key.materialId) << 1) ^ (std::hash<uint8_t>()(key.passIndex) << 2) ^ (std::hash<uint64_t>()(key.crc) << 3);
 	}
 };
 
@@ -57,22 +58,6 @@ namespace Blueberry
 		ID3D11BlendState* blendState;
 
 		bool isValid;
-		uint32_t materialCrc;
-	};
-
-	struct GfxGlobalBindingsStateDX11
-	{
-		struct TextureData
-		{
-			GfxTextureDX11** texture;
-			uint8_t srvSlot;
-			uint8_t samplerSlot;
-		};
-
-		TextureData vertexTextures[16];
-		TextureData fragmentTextures[16];
-		uint8_t vertexTextureCount;
-		uint8_t fragmentTextureCount;
 	};
 
 	class GfxRenderStateCacheDX11 : public GfxRenderStateCache
@@ -85,6 +70,6 @@ namespace Blueberry
 
 	private:
 		GfxDeviceDX11* m_Device;
-		Dictionary<GfxRenderStateKeyDX11, std::pair<GfxRenderStateDX11, GfxGlobalBindingsStateDX11>> m_RenderStates;
+		Dictionary<GfxRenderStateKeyDX11, GfxRenderStateDX11> m_RenderStates;
 	};
 }

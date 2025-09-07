@@ -2,16 +2,16 @@
 
 namespace Blueberry
 {
-	Dictionary<size_t, ClassDB::ClassInfo> ClassDB::s_Classes = {};
+	Dictionary<size_t, ClassInfo> ClassDB::s_Classes = {};
 	List<FieldInfo> ClassDB::s_CurrentFieldInfos = {};
 	uint32_t ClassDB::s_CurrentOffset = 0;
 
-	const ClassDB::ClassInfo& ClassDB::GetInfo(const size_t& id)
+	const ClassInfo& ClassDB::GetInfo(const size_t& id)
 	{
 		return s_Classes.find(id)->second;
 	}
 
-	Dictionary<size_t, ClassDB::ClassInfo>& ClassDB::GetInfos()
+	Dictionary<size_t, ClassInfo>& ClassDB::GetInfos()
 	{
 		return s_Classes;
 	}
@@ -59,9 +59,15 @@ namespace Blueberry
 		return *this;
 	}
 
-	FieldOptions& FieldOptions::SetHidden()
+	FieldOptions& FieldOptions::SetVisibility(const VisibilityType& visibility)
 	{
-		isHidden = true;
+		this->visibility = visibility;
+		return *this;
+	}
+
+	FieldOptions& FieldOptions::SetUpdateCallback(MethodBind* updateCallback)
+	{
+		this->updateCallback = updateCallback;
 		return *this;
 	}
 }

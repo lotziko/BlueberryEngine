@@ -14,8 +14,9 @@ namespace Blueberry
 	OBJECT_DEFINITION(MeshRenderer, Renderer)
 	{
 		DEFINE_BASE_FIELDS(MeshRenderer, Renderer)
-		DEFINE_FIELD(MeshRenderer, m_Mesh, BindingType::ObjectPtr, FieldOptions().SetObjectType(Mesh::Type))
-		DEFINE_FIELD(MeshRenderer, m_Materials, BindingType::ObjectPtrArray, FieldOptions().SetObjectType(Material::Type))
+		DEFINE_FIELD(MeshRenderer, m_Mesh, BindingType::ObjectPtr, FieldOptions().SetObjectType(Mesh::Type).SetUpdateCallback(MethodBind::Create(&MeshRenderer::InvalidateBounds)))
+		DEFINE_FIELD(MeshRenderer, m_Materials, BindingType::ObjectPtrList, FieldOptions().SetObjectType(Material::Type))
+		DEFINE_FIELD(MeshRenderer, m_IsBakeable, BindingType::Bool, {});
 	}
 
 	void MeshRenderer::OnEnable()
@@ -59,7 +60,7 @@ namespace Blueberry
 	void MeshRenderer::SetMesh(Mesh* mesh)
 	{
 		m_Mesh = mesh;
-		m_RecalculationFrame = 0;
+		InvalidateBounds();
 	}
 
 	Material* MeshRenderer::GetMaterial(const uint32_t& index)
@@ -100,6 +101,11 @@ namespace Blueberry
 		return m_Bounds;
 	}
 
+	const bool& MeshRenderer::IsBakeable()
+	{
+		return m_IsBakeable;
+	}
+
 	const uint32_t& MeshRenderer::GetLightmapChartOffset()
 	{
 		return m_LightmapChartOffset;
@@ -137,5 +143,10 @@ namespace Blueberry
 			m_Bounds = bounds;
 			m_RecalculationFrame = transformRecalculationFrame;
 		}
+	}
+
+	void MeshRenderer::InvalidateBounds()
+	{
+		m_RecalculationFrame = 0;
 	}
 }

@@ -36,6 +36,9 @@ namespace Blueberry
 		uint32_t m_ElementCount;
 		BufferType m_Type;
 
+		static inline uint32_t s_MaxIndex = 0;
+		uint32_t m_Index;
+
 		friend class GfxDeviceDX11;
 		friend class GfxRenderStateCacheDX11;
 	};

@@ -84,7 +84,52 @@ namespace Blueberry
 	};
 
 	template <class T, size_t Size> using Array = std::array<T, Size>;
-	template <class T> using List = std::vector<T, STLAllocator<T>>;
+
+	class ListBase
+	{
+	public:
+		virtual size_t size_base() = 0;
+		virtual void* emplace_back_base() = 0;
+		virtual void* get_base(const uint32_t& index) = 0;
+	};
+
+	template <class T>
+	class List : public std::vector<T, STLAllocator<T>>, public ListBase
+	{
+	public:
+		using std::vector<T, STLAllocator<T>>::vector;
+		virtual size_t size_base() final;
+		virtual void* emplace_back_base() final;
+		virtual void* get_base(const uint32_t& index) final;
+	};
+
+	template<class T>
+	inline size_t List<T>::size_base()
+	{
+		return size();
+	}
+
+	template<class T>
+	inline void* List<T>::emplace_back_base()
+	{
+		emplace_back();
+		if constexpr (!std::is_same_v<T, bool>)
+		{
+			return this->data() + (size() - 1);
+		}
+		return nullptr;
+	}
+
+	template<class T>
+	inline void* List<T>::get_base(const uint32_t& index)
+	{
+		if constexpr (!std::is_same_v<T, bool>)
+		{
+			return this->data() + index;
+		}
+		return nullptr;
+	}
+
 	template <class T> using Stack = std::stack<T, STLAllocator<T>>;
 	template <class Key, class T, class Hash = std::hash<Key>, class KeyEqual = std::equal_to<Key>> using Dictionary = std::unordered_map<Key, T, Hash, KeyEqual, STLAllocator<std::pair<const Key, T>>>;
 	template <class T, class Hash = std::hash<T>, class KeyEqual = std::equal_to<T>> using HashSet = std::unordered_set<T, Hash, KeyEqual, STLAllocator<T>>;

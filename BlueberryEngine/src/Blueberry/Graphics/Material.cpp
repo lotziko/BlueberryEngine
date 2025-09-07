@@ -102,7 +102,7 @@ namespace Blueberry
 		return nullptr;
 	}
 
-	DataList<TextureData>& Material::GetTextureDatas()
+	List<TextureData>& Material::GetTextureDatas()
 	{
 		return m_Textures;
 	}

@@ -30,6 +30,7 @@
 
 namespace Blueberry
 {
+	// Maybe make a list of valid per chart texels instead of texture tiles?
 	struct ChartData
 	{
 		List<bool> mask;
@@ -71,17 +72,20 @@ namespace Blueberry
 		T data;
 	};
 
+	#define CLOSEST_HIT_COUNT 3
+
 	struct LightmapperState
 	{
 		OptixDeviceContext context = nullptr;
+		CalculationParams params = {};
 
-		/*OptixDenoiser denoiser = nullptr;
+		OptixDenoiser denoiser = nullptr;
 		OptixDenoiserParams denoiserParams = {};
 		OptixImage2D denoiserInputs[3] = {};
 		OptixImage2D denoiserOutput = {};
 		CUDABuffer denoiserIntensity = {};
 		CUDABuffer denoiserScratch = {};
-		CUDABuffer denoiserState = {};*/
+		CUDABuffer denoiserState = {};
 
 		List<MeshData> meshDatas = {};
 		OptixTraversableHandle iasHandle = 0;
@@ -91,14 +95,18 @@ namespace Blueberry
 		OptixModule ptxModule = {};
 
 		OptixProgramGroup raygenProgGroup = 0;
-		OptixProgramGroup missProgGroup = 0;
-		OptixProgramGroup hitgroupDefaultProgGroup = 0;
+		OptixProgramGroup missBackfaceProgGroup = 0;
+		OptixProgramGroup missRadianceProgGroup = 0;
+		OptixProgramGroup missShadowProgGroup = 0;
+		OptixProgramGroup hitgroupBackfaceProgGroup = 0;
+		OptixProgramGroup hitgroupRadianceProgGroup = 0;
 		OptixProgramGroup hitgroupShadowProgGroup = 0;
 
 		CUmodule denoiserPtxModule = {};
 		CUfunction denoiserKernel = {};
 
-		uint2 launchSize = {};
+		uint32_t launchSize;
+		List<uint2> validTexels = {};
 		List<uint32_t> atlasMask = {};
 		List<Vector4> chartOffsetScale = {};
 		Dictionary<ObjectId, uint32_t> chartInstanceOffset = {};
@@ -107,8 +115,8 @@ namespace Blueberry
 		CUstream stream = 0;
 		CUDABuffer instanceMatrices = {};
 		CUDABuffer accumulatedFrameBuffer = {};
+		CUDABuffer validTexelsBuffer = {};
 		CUDABuffer colorBuffer = {};
-		CUDABuffer albedoBuffer = {};
 		CUDABuffer normalBuffer = {};
 		CUDABuffer chartIndexBuffer = {};
 		CUDABuffer denoisedColorBuffer = {};
@@ -120,9 +128,7 @@ namespace Blueberry
 
 	static CUdeviceptr s_ParamsPtr = 0;
 	static CUdeviceptr s_DenoisingParamsPtr = 0;
-
-	static uint32_t s_TexelsPerMeter = 5;
-	static uint32_t s_Size = 2048;
+	static int s_Padding = 0;
 
 	typedef Record<RayGenData> RayGenSbtRecord;
 	typedef Record<MissData> MissSbtRecord;
@@ -171,21 +177,21 @@ namespace Blueberry
 		}
 	}
 
-	//void CreateDenoiser(LightmapperState& state)
-	//{
-	//	// Create denoiser
-	//	{
-	//		OptixDenoiserOptions options = {};
-	//		options.inputKind = OPTIX_DENOISER_INPUT_RGB_ALBEDO_NORMAL;
-	//		OPTIX_CHECK(optixDenoiserCreate(state.context, &options, &state.denoiser));
-	//		OPTIX_CHECK(optixDenoiserSetModel(
-	//			state.denoiser,
-	//			OPTIX_DENOISER_MODEL_KIND_HDR,
-	//			nullptr, // data
-	//			0        // size
-	//		));
-	//	}
-	//}
+	void CreateOptixDenoiser(LightmapperState& state)
+	{
+		// Create denoiser
+		{
+			OptixDenoiserOptions options = {};
+			options.inputKind = OPTIX_DENOISER_INPUT_RGB_ALBEDO_NORMAL;
+			OPTIX_CHECK(optixDenoiserCreate(state.context, &options, &state.denoiser));
+			OPTIX_CHECK(optixDenoiserSetModel(
+				state.denoiser,
+				OPTIX_DENOISER_MODEL_KIND_HDR,
+				nullptr, // data
+				0        // size
+			));
+		}
+	}
 
 	void InitializeAccels(LightmapperState& state, Scene* scene)
 	{
@@ -311,7 +317,7 @@ namespace Blueberry
 				{
 					Matrix transformMatrix = transform->GetLocalToWorldMatrix();
 					float tr[] = 
-					{ 
+					{
 						transformMatrix._11, transformMatrix._21, transformMatrix._31, transformMatrix._41,
 						transformMatrix._12, transformMatrix._22, transformMatrix._32, transformMatrix._42,
 						transformMatrix._13, transformMatrix._23, transformMatrix._33, transformMatrix._43,
@@ -321,7 +327,7 @@ namespace Blueberry
 					memcpy(optixInstance.transform, tr, sizeof(float) * 12);
 					optixInstance.flags = OPTIX_INSTANCE_FLAG_NONE;
 					optixInstance.instanceId = static_cast<unsigned int>(instanceOffset);
-					optixInstance.sbtOffset = static_cast<unsigned int>(instanceOffset * 2);
+					optixInstance.sbtOffset = static_cast<unsigned int>(instanceOffset * CLOSEST_HIT_COUNT);
 					optixInstance.visibilityMask = 1u;
 					optixInstance.traversableHandle = data.gasHandle;
 
@@ -407,7 +413,7 @@ namespace Blueberry
 			OptixProgramGroupDesc raygenProgGroupDesc = {};
 			raygenProgGroupDesc.kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN;
 			raygenProgGroupDesc.raygen.module = state.ptxModule;
-			raygenProgGroupDesc.raygen.entryFunctionName = "__raygen__default";
+			raygenProgGroupDesc.raygen.entryFunctionName = "__raygen__radiance";
 
 			char log[2048];
 			size_t sizeofLog = sizeof(log);
@@ -425,7 +431,7 @@ namespace Blueberry
 			OptixProgramGroupDesc missProgGroupDesc = {};
 			missProgGroupDesc.kind = OPTIX_PROGRAM_GROUP_KIND_MISS;
 			missProgGroupDesc.miss.module = state.ptxModule;
-			missProgGroupDesc.miss.entryFunctionName = "__miss__default";
+			missProgGroupDesc.miss.entryFunctionName = "__miss__backface";
 			sizeofLog = sizeof(log);
 			OPTIX_CHECK_LOG(optixProgramGroupCreate(
 				state.context,
@@ -434,14 +440,46 @@ namespace Blueberry
 				&programGroupOptions,
 				log,
 				&sizeofLog,
-				&state.missProgGroup
+				&state.missBackfaceProgGroup
+			)
+			);
+
+			memset(&missProgGroupDesc, 0, sizeof(OptixProgramGroupDesc));
+			missProgGroupDesc.kind = OPTIX_PROGRAM_GROUP_KIND_MISS;
+			missProgGroupDesc.miss.module = state.ptxModule;
+			missProgGroupDesc.miss.entryFunctionName = "__miss__radiance";
+			sizeofLog = sizeof(log);
+			OPTIX_CHECK_LOG(optixProgramGroupCreate(
+				state.context,
+				&missProgGroupDesc,
+				1,                             // num program groups
+				&programGroupOptions,
+				log,
+				&sizeofLog,
+				&state.missRadianceProgGroup
+			)
+			);
+
+			memset(&missProgGroupDesc, 0, sizeof(OptixProgramGroupDesc));
+			missProgGroupDesc.kind = OPTIX_PROGRAM_GROUP_KIND_MISS;
+			missProgGroupDesc.miss.module = state.ptxModule;
+			missProgGroupDesc.miss.entryFunctionName = "__miss__shadow";
+			sizeofLog = sizeof(log);
+			OPTIX_CHECK_LOG(optixProgramGroupCreate(
+				state.context,
+				&missProgGroupDesc,
+				1,                             // num program groups
+				&programGroupOptions,
+				log,
+				&sizeofLog,
+				&state.missShadowProgGroup
 			)
 			);
 
 			OptixProgramGroupDesc hitgroupProgGroupDesc = {};
 			hitgroupProgGroupDesc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
 			hitgroupProgGroupDesc.hitgroup.moduleCH = state.ptxModule;
-			hitgroupProgGroupDesc.hitgroup.entryFunctionNameCH = "__closesthit__default";
+			hitgroupProgGroupDesc.hitgroup.entryFunctionNameCH = "__closesthit__backface";
 			sizeofLog = sizeof(log);
 			OPTIX_CHECK_LOG(optixProgramGroupCreate(
 				state.context,
@@ -450,7 +488,23 @@ namespace Blueberry
 				&programGroupOptions,
 				log,
 				&sizeofLog,
-				&state.hitgroupDefaultProgGroup
+				&state.hitgroupBackfaceProgGroup
+			)
+			);
+
+			memset(&hitgroupProgGroupDesc, 0, sizeof(OptixProgramGroupDesc));
+			hitgroupProgGroupDesc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
+			hitgroupProgGroupDesc.hitgroup.moduleCH = state.ptxModule;
+			hitgroupProgGroupDesc.hitgroup.entryFunctionNameCH = "__closesthit__radiance";
+			sizeofLog = sizeof(log);
+			OPTIX_CHECK_LOG(optixProgramGroupCreate(
+				state.context,
+				&hitgroupProgGroupDesc,
+				1,                             // num program groups
+				&programGroupOptions,
+				log,
+				&sizeofLog,
+				&state.hitgroupRadianceProgGroup
 			)
 			);
 
@@ -479,9 +533,12 @@ namespace Blueberry
 			OptixProgramGroup programGroups[] =
 			{
 				state.raygenProgGroup,
-				state.missProgGroup,
-				state.hitgroupDefaultProgGroup,
-				state.hitgroupShadowProgGroup
+				state.missBackfaceProgGroup,
+				state.missRadianceProgGroup,
+				state.missShadowProgGroup,
+				state.hitgroupBackfaceProgGroup,
+				state.hitgroupRadianceProgGroup,
+				state.hitgroupShadowProgGroup,
 			};
 
 			OptixPipelineLinkOptions pipelineLinkOptions = {};
@@ -515,24 +572,39 @@ namespace Blueberry
 			OPTIX_CHECK(optixSbtRecordPackHeader(state.raygenProgGroup, &rRecord));
 			CUDA_CHECK(cudaMemcpy(reinterpret_cast<void*>(raygenRecord), &rRecord, raygenRecordSize, cudaMemcpyHostToDevice));
 
-			CUdeviceptr missRecord = 0;
-			const size_t missRecordSize = sizeof(MissSbtRecord);
-			CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&missRecord), missRecordSize));
+			List<MissSbtRecord> missRecordsList = {};
+			{
+				MissSbtRecord backfaceRecord = {};
+				OPTIX_CHECK(optixSbtRecordPackHeader(state.missBackfaceProgGroup, &backfaceRecord));
+				missRecordsList.emplace_back(backfaceRecord);
 
-			MissSbtRecord mRecord;
-			OPTIX_CHECK(optixSbtRecordPackHeader(state.missProgGroup, &mRecord));
-			CUDA_CHECK(cudaMemcpy(reinterpret_cast<void*>(missRecord), &mRecord, missRecordSize, cudaMemcpyHostToDevice));
+				MissSbtRecord radianceRecord = {};
+				OPTIX_CHECK(optixSbtRecordPackHeader(state.missRadianceProgGroup, &radianceRecord));
+				missRecordsList.emplace_back(radianceRecord);
+
+				MissSbtRecord shadowRecord = {};
+				OPTIX_CHECK(optixSbtRecordPackHeader(state.missShadowProgGroup, &shadowRecord));
+				missRecordsList.emplace_back(shadowRecord);
+			}
 
 			List<HitGroupSbtRecord> hitgroupRecordsList = {};
 			for (auto& data : state.meshDatas)
 			{
-				HitGroupSbtRecord defaultRecord = {};
-				defaultRecord.data.vertices = (float3*)data.vertexBuffer.data;
-				defaultRecord.data.normals = (float3*)data.normalBuffer.data;
-				defaultRecord.data.tangents = (float4*)data.tangentBuffer.data;
-				defaultRecord.data.indices = (uint3*)data.indexBuffer.data;
-				OPTIX_CHECK(optixSbtRecordPackHeader(state.hitgroupDefaultProgGroup, &defaultRecord));
-				hitgroupRecordsList.push_back(defaultRecord);
+				HitGroupSbtRecord backfaceRecord = {};
+				backfaceRecord.data.vertices = (float3*)data.vertexBuffer.data;
+				backfaceRecord.data.normals = (float3*)data.normalBuffer.data;
+				backfaceRecord.data.tangents = (float4*)data.tangentBuffer.data;
+				backfaceRecord.data.indices = (uint3*)data.indexBuffer.data;
+				OPTIX_CHECK(optixSbtRecordPackHeader(state.hitgroupBackfaceProgGroup, &backfaceRecord));
+				hitgroupRecordsList.push_back(backfaceRecord);
+
+				HitGroupSbtRecord radianceRecord = {};
+				radianceRecord.data.vertices = (float3*)data.vertexBuffer.data;
+				radianceRecord.data.normals = (float3*)data.normalBuffer.data;
+				radianceRecord.data.tangents = (float4*)data.tangentBuffer.data;
+				radianceRecord.data.indices = (uint3*)data.indexBuffer.data;
+				OPTIX_CHECK(optixSbtRecordPackHeader(state.hitgroupRadianceProgGroup, &radianceRecord));
+				hitgroupRecordsList.push_back(radianceRecord);
 
 				HitGroupSbtRecord shadowRecord = {};
 				shadowRecord.data.vertices = (float3*)data.vertexBuffer.data;
@@ -543,15 +615,20 @@ namespace Blueberry
 				hitgroupRecordsList.push_back(shadowRecord);
 			}
 
+			CUdeviceptr missRecords = 0;
+			const size_t missRecordSize = sizeof(MissSbtRecord);
+			CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&missRecords), missRecordSize * missRecordsList.size()));
+			CUDA_CHECK(cudaMemcpy(reinterpret_cast<void*>(missRecords), missRecordsList.data(), missRecordSize * missRecordsList.size(), cudaMemcpyHostToDevice));
+
 			CUdeviceptr hitgroupRecords = 0;
 			const size_t hitgroupRecordSize = sizeof(HitGroupSbtRecord);
 			CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&hitgroupRecords), hitgroupRecordSize * hitgroupRecordsList.size()));
 			CUDA_CHECK(cudaMemcpy(reinterpret_cast<void*>(hitgroupRecords), hitgroupRecordsList.data(), hitgroupRecordSize * hitgroupRecordsList.size(), cudaMemcpyHostToDevice));
 
 			state.sbt.raygenRecord = raygenRecord;
-			state.sbt.missRecordBase = missRecord;
+			state.sbt.missRecordBase = missRecords;
+			state.sbt.missRecordCount = missRecordsList.size();
 			state.sbt.missRecordStrideInBytes = static_cast<uint32_t>(missRecordSize);
-			state.sbt.missRecordCount = 1;
 			state.sbt.hitgroupRecordBase = hitgroupRecords;
 			state.sbt.hitgroupRecordCount = hitgroupRecordsList.size();
 			state.sbt.hitgroupRecordStrideInBytes = static_cast<uint32_t>(hitgroupRecordSize);
@@ -608,8 +685,14 @@ namespace Blueberry
 				charts.emplace_back(chartBounds);
 			}
 			
+			float texelPerUnit = state.params.texelPerUnit;
 			for (auto& transform : data.transforms)
 			{
+				if (!transform->GetEntity()->GetComponent<MeshRenderer>()->IsBakeable())
+				{
+					continue;
+				}
+
 				state.chartInstanceOffset.insert_or_assign(transform->GetEntity()->GetComponent<MeshRenderer>()->GetObjectId(), atlasCharts.size() + 1);
 				Matrix localToWorld = transform->GetLocalToWorldMatrix();
 				
@@ -617,7 +700,7 @@ namespace Blueberry
 				{
 					ChartData chartData = {};
 					float chartIndex = static_cast<float>(i);
-					float chartScale = s_TexelsPerMeter;
+					float chartScale = texelPerUnit;
 					for (uint32_t j = 0; j < indexCount; j += 3)
 					{
 						if (uvs[indices[j]].z == chartIndex)
@@ -630,9 +713,9 @@ namespace Blueberry
 							Vector3 p2 = uvs[indices[j + 1]];
 							Vector3 p3 = uvs[indices[j + 2]];
 
-							float s1 = Vector3::Distance(v1, v2) * s_TexelsPerMeter / Vector3::Distance(p1, p2);
-							float s2 = Vector3::Distance(v2, v3) * s_TexelsPerMeter / Vector3::Distance(p2, p3);
-							float s3 = Vector3::Distance(v3, v1) * s_TexelsPerMeter / Vector3::Distance(p3, p1);
+							float s1 = Vector3::Distance(v1, v2) * texelPerUnit / Vector3::Distance(p1, p2);
+							float s2 = Vector3::Distance(v2, v3) * texelPerUnit / Vector3::Distance(p2, p3);
+							float s3 = Vector3::Distance(v3, v1) * texelPerUnit / Vector3::Distance(p3, p1);
 
 							chartScale = (s1 + s2 + s3) / 3;
 							if (std::isinf(chartScale))
@@ -662,7 +745,7 @@ namespace Blueberry
 						}
 					}
 
-					const float epsilon = 0.5;
+					const float epsilon = 0.5 + s_Padding;
 					Vector4Int roundedAtlasChartBounds = Vector4Int(static_cast<int>(std::floorf(atlasChartBounds.x - epsilon)), static_cast<int>(std::floorf(atlasChartBounds.y - epsilon)), static_cast<int>(std::ceilf(atlasChartBounds.z + epsilon)), static_cast<int>(std::ceilf(atlasChartBounds.w + epsilon)));
 					chartData.meshBounds = meshChartBounds;
 					chartData.maskBounds = atlasChartBounds;
@@ -676,7 +759,7 @@ namespace Blueberry
 					{
 						for (int y = 0; y < chartData.size.y; ++y)
 						{
-							Vector4 texelBounds = Vector4(x - halfSize.x - 0.5f, y - halfSize.y - 0.5f, x - halfSize.x + 1.5f, y - halfSize.y + 1.5f);
+							Vector4 texelBounds = Vector4(x - halfSize.x - 0.5f - s_Padding, y - halfSize.y - 0.5f - s_Padding, x - halfSize.x + 1.5f + s_Padding, y - halfSize.y + 1.5f + s_Padding);
 							bool intersects = false;
 							for (uint32_t j = 0; j < chartVertexCount; j += 3)
 							{
@@ -698,8 +781,9 @@ namespace Blueberry
 		uint32_t chartOffset = 0;
 		List<Vector3> uvs = {};
 
+		int size = state.params.maxSize;
 		std::sort(atlasCharts.begin(), atlasCharts.end(), CompareCharts);
-		state.atlasMask.resize(s_Size * s_Size);
+		state.atlasMask.resize(size * size);
 
 		uint32_t maskChartOffset = 1;
 		uint32_t row = 0;
@@ -714,13 +798,13 @@ namespace Blueberry
 				row = 0;
 			}
 			bool placeFound = false;
-			uint32_t rows = s_Size - chart.size.y;
+			uint32_t rows = size - chart.size.y;
 			for (uint32_t j = row; j < rows; ++j)
 			{
-				uint32_t columns = s_Size - chart.size.x;
+				uint32_t columns = size - chart.size.x;
 				for (uint32_t i = 0; i < columns; ++i)
 				{
-					if (state.atlasMask[j * s_Size + i] == 0)
+					if (state.atlasMask[j * size + i] == 0)
 					{
 						// Check chart
 						bool canFit = true;
@@ -728,7 +812,7 @@ namespace Blueberry
 						{
 							for (uint32_t x = 0; x < chart.size.x; ++x)
 							{
-								if (chart.mask[y * chart.size.x + x] && state.atlasMask[(j + y) * s_Size + (i + x)] > 0)
+								if (chart.mask[y * chart.size.x + x] && state.atlasMask[(j + y) * size + (i + x)] > 0)
 								{
 									canFit = false;
 									break;
@@ -752,10 +836,10 @@ namespace Blueberry
 							maskChartBounds.z += (chart.position.x + chart.size.x / 2);
 							maskChartBounds.w += (chart.position.y + chart.size.y / 2);
 
-							maskChartBounds.x /= s_Size;
-							maskChartBounds.y /= s_Size;
-							maskChartBounds.z /= s_Size;
-							maskChartBounds.w /= s_Size;
+							maskChartBounds.x /= size;
+							maskChartBounds.y /= size;
+							maskChartBounds.z /= size;
+							maskChartBounds.w /= size;
 
 							Vector2 scale = Vector2((maskChartBounds.z - maskChartBounds.x) / (meshChartBounds.z - meshChartBounds.x), (maskChartBounds.w - maskChartBounds.y) / (meshChartBounds.w - meshChartBounds.y));
 							Vector2 offset = Vector2(maskChartBounds.x - meshChartBounds.x * scale.x, maskChartBounds.y - meshChartBounds.y * scale.y);
@@ -769,10 +853,11 @@ namespace Blueberry
 							{
 								for (uint32_t x = 0; x < chart.size.x; ++x)
 								{
-									uint32_t index = (j + y) * s_Size + (i + x);
+									uint32_t index = (j + y) * size + (i + x);
 									if (state.atlasMask[index] == 0 && chart.mask[y * chart.size.x + x])
 									{
 										state.atlasMask[index] = maskChartOffset;
+										state.validTexels.emplace_back(make_uint2(i + x, j + y));
 									}
 								}
 							}
@@ -798,6 +883,11 @@ namespace Blueberry
 
 			for (Transform* transform : data.transforms)
 			{
+				if (!transform->GetEntity()->GetComponent<MeshRenderer>()->IsBakeable())
+				{
+					continue;
+				}
+
 				for (uint32_t i = 0; i < vertexCount; ++i)
 				{
 					Vector3 uv = ligthmapUvs[i];
@@ -815,6 +905,9 @@ namespace Blueberry
 		}
 		state.bvh.Build();
 		state.lightmappingParams.bvh = state.bvh.bvh;
+		state.validTexelsBuffer.resize(state.validTexels.size() * sizeof(uint2));
+		state.validTexelsBuffer.upload(state.validTexels.data(), state.validTexels.size());
+		state.lightmappingParams.validTexels = reinterpret_cast<uint2*>(state.validTexelsBuffer.data);
 		state.chartIndexBuffer.upload(state.atlasMask.data(), state.atlasMask.size());
 
 		//Vector4* chartMask = BB_MALLOC_ARRAY(Vector4, s_Size * s_Size);
@@ -854,7 +947,7 @@ namespace Blueberry
 			state.accumulatedFrameBuffer.alloc(accumulatedFrameBufferSize);
 			state.lightmappingParams.accumulatedImage = reinterpret_cast<float4*>(state.accumulatedFrameBuffer.data);
 			state.colorBuffer.alloc(frameBufferSize);
-			state.albedoBuffer.alloc(frameBufferSize);
+			//state.albedoBuffer.alloc(frameBufferSize);
 			state.normalBuffer.alloc(frameBufferSize);
 			state.denoisedColorBuffer.alloc(frameBufferSize);
 			state.lightmappingParams.color = reinterpret_cast<float4*>(state.colorBuffer.data);
@@ -864,7 +957,7 @@ namespace Blueberry
 		{
 			state.accumulatedFrameBuffer.resize(accumulatedFrameBufferSize);
 			state.colorBuffer.resize(frameBufferSize);
-			state.albedoBuffer.resize(frameBufferSize);
+			//state.albedoBuffer.resize(frameBufferSize);
 			state.normalBuffer.resize(frameBufferSize);
 			state.denoisedColorBuffer.resize(frameBufferSize);
 		}
@@ -872,25 +965,23 @@ namespace Blueberry
 
 	void InitializeFrameBuffer(LightmapperState& state, const Vector2Int& viewport)
 	{
-		//state.lightmappingParams.accumulationFrameIndex += 1;
 		state.lightmappingParams.imageSize.x = viewport.x;
 		state.lightmappingParams.imageSize.y = viewport.y;
+		state.lightmappingParams.samplePerTexel = state.params.samplePerTexel;
+		state.lightmappingParams.texelPerUnit = state.params.texelPerUnit;
 		state.denoisingParams.imageSize.x = viewport.x;
 		state.denoisingParams.imageSize.y = viewport.y;
 
-		//size_t accumulatedFrameBufferSize = state.lightmappingParams.imageSize.x * state.lightmappingParams.imageSize.y * sizeof(float4);
 		size_t frameBufferSize = state.lightmappingParams.imageSize.x * state.lightmappingParams.imageSize.y * sizeof(float4);
 		if (state.lightmappingParams.color == nullptr)
 		{
-			//state.accumulatedFrameBuffer.alloc(accumulatedFrameBufferSize);
-			//state.lightmappingParams.accumulatedImage = reinterpret_cast<float4*>(state.accumulatedFrameBuffer.data);
 			state.colorBuffer.alloc(frameBufferSize);
-			//state.albedoBuffer.alloc(frameBufferSize);
 			state.normalBuffer.alloc(frameBufferSize);
 			state.denoisedColorBuffer.alloc(frameBufferSize);
 			state.chartIndexBuffer.alloc(frameBufferSize / 4);
 			state.lightmappingParams.color = reinterpret_cast<float4*>(state.colorBuffer.data);
 			state.lightmappingParams.normal = reinterpret_cast<float4*>(state.normalBuffer.data);
+			state.lightmappingParams.chartIndex = reinterpret_cast<unsigned int*>(state.chartIndexBuffer.data);
 			state.denoisingParams.inputColor = reinterpret_cast<float4*>(state.colorBuffer.data);
 			state.denoisingParams.inputNormal = reinterpret_cast<float4*>(state.normalBuffer.data);
 			state.denoisingParams.outputColor = reinterpret_cast<float4*>(state.denoisedColorBuffer.data);
@@ -898,88 +989,86 @@ namespace Blueberry
 		}
 		else if (state.colorBuffer.sizeInBytes != frameBufferSize)
 		{
-			//state.accumulatedFrameBuffer.resize(accumulatedFrameBufferSize);
 			state.colorBuffer.resize(frameBufferSize);
 			state.chartIndexBuffer.resize(frameBufferSize / 4);
-			//state.albedoBuffer.resize(frameBufferSize);
 			state.normalBuffer.resize(frameBufferSize);
 			state.denoisedColorBuffer.resize(frameBufferSize);
 		}
 	}
 
-	//void InitializeDenoiserFrameBuffer(LightmapperState& state)
-	//{
-	//	// Allocate memory
-	//	bool setup = false;
-	//	{
-	//		OptixDenoiserSizes denoiserSizes;
-	//		OPTIX_CHECK(optixDenoiserComputeMemoryResources(
-	//			state.denoiser,
-	//			state.lightmappingParams.imageSize.x,
-	//			state.lightmappingParams.imageSize.y,
-	//			&denoiserSizes
-	//		));
+	void InitializeOptixDenoiserFrameBuffer(LightmapperState& state)
+	{
+		// Allocate memory
+		bool setup = false;
+		{
+			OptixDenoiserSizes denoiserSizes;
+			OPTIX_CHECK(optixDenoiserComputeMemoryResources(
+				state.denoiser,
+				state.lightmappingParams.imageSize.x,
+				state.lightmappingParams.imageSize.y,
+				&denoiserSizes
+			));
 
-	//		if (state.denoiserScratch.sizeInBytes == 0)
-	//		{
-	//			setup = true;
-	//			state.denoiserIntensity.alloc(sizeof(float));
-	//			state.denoiserScratch.alloc(denoiserSizes.withoutOverlapScratchSizeInBytes);
-	//			state.denoiserState.alloc(denoiserSizes.stateSizeInBytes);
-	//		}
-	//		else if (state.denoiserScratch.sizeInBytes != denoiserSizes.withoutOverlapScratchSizeInBytes)
-	//		{
-	//			state.denoiserScratch.resize(denoiserSizes.withoutOverlapScratchSizeInBytes);
-	//			state.denoiserState.resize(denoiserSizes.stateSizeInBytes);
-	//		}
-	//	}
+			if (state.denoiserScratch.sizeInBytes == 0)
+			{
+				setup = true;
+				state.denoiserIntensity.alloc(sizeof(float));
+				state.denoiserScratch.alloc(denoiserSizes.withoutOverlapScratchSizeInBytes);
+				state.denoiserState.alloc(denoiserSizes.stateSizeInBytes);
+			}
+			else if (state.denoiserScratch.sizeInBytes != denoiserSizes.withoutOverlapScratchSizeInBytes)
+			{
+				state.denoiserScratch.resize(denoiserSizes.withoutOverlapScratchSizeInBytes);
+				state.denoiserState.resize(denoiserSizes.stateSizeInBytes);
+			}
+		}
 
-	//	// Setup images
-	//	{
-	//		state.denoiserInputs[0].data = state.colorBuffer.data;
-	//		state.denoiserInputs[0].format = OptixPixelFormat::OPTIX_PIXEL_FORMAT_FLOAT4;
-	//		state.denoiserInputs[0].width = state.lightmappingParams.imageSize.x;
-	//		state.denoiserInputs[0].height = state.lightmappingParams.imageSize.y;
-	//		state.denoiserInputs[0].pixelStrideInBytes = sizeof(float4);
-	//		state.denoiserInputs[0].rowStrideInBytes = state.lightmappingParams.imageSize.x * sizeof(float4);
+		// Setup images
+		{
+			state.denoiserInputs[0].data = state.colorBuffer.data;
+			state.denoiserInputs[0].format = OptixPixelFormat::OPTIX_PIXEL_FORMAT_FLOAT4;
+			state.denoiserInputs[0].width = state.lightmappingParams.imageSize.x;
+			state.denoiserInputs[0].height = state.lightmappingParams.imageSize.y;
+			state.denoiserInputs[0].pixelStrideInBytes = sizeof(float4);
+			state.denoiserInputs[0].rowStrideInBytes = state.lightmappingParams.imageSize.x * sizeof(float4);
 
-	//		state.denoiserInputs[1].data = state.albedoBuffer.data;
-	//		state.denoiserInputs[1].format = OptixPixelFormat::OPTIX_PIXEL_FORMAT_FLOAT4;
-	//		state.denoiserInputs[1].width = state.lightmappingParams.imageSize.x;
-	//		state.denoiserInputs[1].height = state.lightmappingParams.imageSize.y;
-	//		state.denoiserInputs[1].pixelStrideInBytes = sizeof(float4);
-	//		state.denoiserInputs[1].rowStrideInBytes = state.lightmappingParams.imageSize.x * sizeof(float4);
+			state.denoiserInputs[1].data = state.normalBuffer.data;
+			state.denoiserInputs[1].format = OptixPixelFormat::OPTIX_PIXEL_FORMAT_FLOAT4;
+			state.denoiserInputs[1].width = state.lightmappingParams.imageSize.x;
+			state.denoiserInputs[1].height = state.lightmappingParams.imageSize.y;
+			state.denoiserInputs[1].pixelStrideInBytes = sizeof(float4);
+			state.denoiserInputs[1].rowStrideInBytes = state.lightmappingParams.imageSize.x * sizeof(float4);
 
-	//		state.denoiserInputs[2].data = state.normalBuffer.data;
-	//		state.denoiserInputs[2].format = OptixPixelFormat::OPTIX_PIXEL_FORMAT_FLOAT4;
-	//		state.denoiserInputs[2].width = state.lightmappingParams.imageSize.x;
-	//		state.denoiserInputs[2].height = state.lightmappingParams.imageSize.y;
-	//		state.denoiserInputs[2].pixelStrideInBytes = sizeof(float4);
-	//		state.denoiserInputs[2].rowStrideInBytes = state.lightmappingParams.imageSize.x * sizeof(float4);
+			state.denoiserInputs[2].data = state.normalBuffer.data;
+			state.denoiserInputs[2].format = OptixPixelFormat::OPTIX_PIXEL_FORMAT_FLOAT4;
+			state.denoiserInputs[2].width = state.lightmappingParams.imageSize.x;
+			state.denoiserInputs[2].height = state.lightmappingParams.imageSize.y;
+			state.denoiserInputs[2].pixelStrideInBytes = sizeof(float4);
+			state.denoiserInputs[2].rowStrideInBytes = state.lightmappingParams.imageSize.x * sizeof(float4);
 
-	//		state.denoiserOutput = state.denoiserInputs[0];
-	//		state.denoiserOutput.data = state.denoisedColorBuffer.data;
-	//	}
+			state.denoiserOutput = state.denoiserInputs[0];
+			state.denoiserOutput.data = state.denoisedColorBuffer.data;
+		}
 
-	//	// Setup denoiser
-	//	if (setup)
-	//	{
-	//		OPTIX_CHECK(optixDenoiserSetup(
-	//			state.denoiser,
-	//			0,  // CUDA stream
-	//			state.lightmappingParams.imageSize.x,
-	//			state.lightmappingParams.imageSize.y,
-	//			state.denoiserState.data,
-	//			state.denoiserState.sizeInBytes,
-	//			state.denoiserScratch.data,
-	//			state.denoiserScratch.sizeInBytes
-	//		));
+		// Setup denoiser
+		if (setup)
+		{
+			OPTIX_CHECK(optixDenoiserSetup(
+				state.denoiser,
+				0,  // CUDA stream
+				state.lightmappingParams.imageSize.x,
+				state.lightmappingParams.imageSize.y,
+				state.denoiserState.data,
+				state.denoiserState.sizeInBytes,
+				state.denoiserScratch.data,
+				state.denoiserScratch.sizeInBytes
+			));
 
-	//		state.denoiserParams.denoiseAlpha = 0;
-	//		state.denoiserParams.hdrIntensity = state.denoiserIntensity.data;
-	//		state.denoiserParams.blendFactor = 0.0f;
-	//	}
-	//}
+			state.denoiserParams.denoiseAlpha = 0;
+			state.denoiserParams.hdrIntensity = state.denoiserIntensity.data;
+			state.denoiserParams.blendFactor = 0.0f;
+		}
+	}
 
 	void InitializeLights(LightmapperState& state, Scene* scene)
 	{
@@ -1014,43 +1103,43 @@ namespace Blueberry
 				cudaMemcpyHostToDevice
 			));
 
-			OPTIX_CHECK(optixLaunch(state.pipeline, state.stream, s_ParamsPtr, sizeof(LightmappingParams), &state.sbt, state.launchSize.x, state.launchSize.y, 1));
+			OPTIX_CHECK(optixLaunch(state.pipeline, state.stream, s_ParamsPtr, sizeof(LightmappingParams), &state.sbt, state.launchSize, 1, 1));
 			cudaError_t err = cudaGetLastError();
 			CUDA_SYNC_CHECK();
 		}
 	}
 
-	//void LaunchDenoiser(LightmapperState& state)
-	//{
-	//	// Launch denoiser
-	//	{
-	//		OPTIX_CHECK(optixDenoiserComputeIntensity(
-	//			state.denoiser,
-	//			0, // CUDA stream
-	//			&state.denoiserInputs[0],
-	//			state.denoiserIntensity.data,
-	//			state.denoiserScratch.data,
-	//			state.denoiserScratch.sizeInBytes
-	//		));
+	void LaunchOptixDenoiser(LightmapperState& state)
+	{
+		// Launch denoiser
+		{
+			OPTIX_CHECK(optixDenoiserComputeIntensity(
+				state.denoiser,
+				0, // CUDA stream
+				&state.denoiserInputs[0],
+				state.denoiserIntensity.data,
+				state.denoiserScratch.data,
+				state.denoiserScratch.sizeInBytes
+			));
 
-	//		OPTIX_CHECK(optixDenoiserInvoke(
-	//			state.denoiser,
-	//			0, // CUDA stream
-	//			&state.denoiserParams,
-	//			state.denoiserState.data,
-	//			state.denoiserState.sizeInBytes,
-	//			state.denoiserInputs,
-	//			3, // num input channels
-	//			0, // input offset X
-	//			0, // input offset y
-	//			&state.denoiserOutput,
-	//			state.denoiserScratch.data,
-	//			state.denoiserScratch.sizeInBytes
-	//		));
+			OPTIX_CHECK(optixDenoiserInvoke(
+				state.denoiser,
+				0, // CUDA stream
+				&state.denoiserParams,
+				state.denoiserState.data,
+				state.denoiserState.sizeInBytes,
+				state.denoiserInputs,
+				3, // num input channels
+				0, // input offset X
+				0, // input offset y
+				&state.denoiserOutput,
+				state.denoiserScratch.data,
+				state.denoiserScratch.sizeInBytes
+			));
 
-	//		CUDA_SYNC_CHECK();
-	//	}
-	//}
+			CUDA_SYNC_CHECK();
+		}
+	}
 
 	void LaunchDenoiser(LightmapperState& state)
 	{
@@ -1119,11 +1208,12 @@ namespace Blueberry
 		}
 	}
 
-	void LightmappingManager::Calculate(Scene* scene, const Vector2Int& tileSize, uint8_t*& output, Vector2Int& outputSize, List<Vector4>& chartScaleOffset, Dictionary<ObjectId, uint32_t>& chartInstanceOffset)
+	void LightmappingManager::Calculate(Scene* scene, const CalculationParams& params, uint8_t*& output, Vector2Int& outputSize, List<Vector4>& chartScaleOffset, Dictionary<ObjectId, uint32_t>& chartInstanceOffset)
 	{
 		s_State = {};
+		s_State.params = params;
 		CreateContext(s_State);
-		//CreateDenoiser(s_State);
+		//CreateOptixDenoiser(s_State);
 		CreateDenoiserPTXModule(s_State);
 		InitializeAccels(s_State, scene);
 		CreatePTXModule(s_State);
@@ -1132,55 +1222,37 @@ namespace Blueberry
 		CreateSBT(s_State);
 		InitializeParams(s_State);
 
-		outputSize = Vector2Int(s_Size, s_Size);
-		Vector4* temp = BB_MALLOC_ARRAY(Vector4, s_Size * s_Size);
-		Vector4* result = BB_MALLOC_ARRAY(Vector4, s_Size * s_Size);
+		int size = params.maxSize;
+		outputSize = Vector2Int(size, size);
+		Vector4* temp = BB_MALLOC_ARRAY(Vector4, size * size);
+		Vector4* result = BB_MALLOC_ARRAY(Vector4, size * size);
 		output = reinterpret_cast<uint8_t*>(result);
 		InitializeFrameBuffer(s_State, outputSize);
-		//InitializeDenoiserFrameBuffer(s_State);
+		//InitializeOptixDenoiserFrameBuffer(s_State);
 		InitializeLights(s_State, scene);
 
 		InitializeChartsAndBVH(s_State);
 
-		//uint32_t size = 1024;
-		//outputSize = Vector2Int(size, size);
-		//output = BB_MALLOC_ARRAY(uint8_t, size * size * 4);
-
-		/*static Vector3Int chartColors[] = { Vector3Int(255, 255, 255), Vector3Int(0, 255, 255), Vector3Int(255, 0, 255), Vector3Int(255, 255, 0), Vector3Int(0, 0, 255), Vector3Int(255, 0, 0), Vector3Int(0, 255, 0) };
-		for (uint32_t i = 0; i < size; ++i)
+		uint32_t texelsSize = static_cast<uint32_t>(s_State.validTexels.size());
+		uint32_t tileSize = static_cast<uint32_t>(params.tileSize * params.tileSize);
+		for (uint32_t i = 0; i < texelsSize; i += tileSize)
 		{
-			for (uint32_t j = 0; j < size; ++j)
-			{
-				uint32_t index = j * size + i;
-				uint32_t chartIndex = s_State.atlasMask[index];
-				if (chartIndex != 0)
-				{
-					uint8_t* ptr = output + index * 4;
-					Vector3Int color = chartColors[chartIndex % ARRAYSIZE(chartColors)];
-					*ptr = color.x;
-					*(ptr + 1) = color.y;
-					*(ptr + 2) = color.z;
-					*(ptr + 3) = 255;
-				}
-			}
-		}*/
-		Vector2Int launchTileSize = Vector2Int(std::min(static_cast<int>(s_Size), tileSize.x), std::min(static_cast<int>(s_Size), tileSize.y));
-
-		s_State.launchSize = make_uint2(launchTileSize.x, launchTileSize.y);
-		uint32_t tilesX = outputSize.x / launchTileSize.x;
-		uint32_t tilesY = outputSize.y / launchTileSize.y;
-		for (uint32_t i = 0; i < tilesX; ++i)
-		{
-			for (uint32_t j = 0; j < tilesY; ++j)
-			{
-				s_State.lightmappingParams.offset = make_uint2(i * launchTileSize.x, j * launchTileSize.y);
-				Launch(s_State);
-				BB_INFO(i << " " << j);
-			}
+			s_State.lightmappingParams.offset = i;
+			s_State.launchSize = std::min(texelsSize - i, tileSize);
+			Launch(s_State);
+			BB_INFO(i);
 		}
-		LaunchDenoiser(s_State);
-
-		s_State.denoisedColorBuffer.download(temp, s_State.denoisedColorBuffer.sizeInBytes / sizeof(Vector4));
+		
+		if (params.denoise)
+		{
+			LaunchDenoiser(s_State);
+			//LaunchOptixDenoiser(s_State);
+			s_State.denoisedColorBuffer.download(temp, s_State.denoisedColorBuffer.sizeInBytes / sizeof(Vector4));
+		}
+		else
+		{
+			s_State.colorBuffer.download(temp, s_State.colorBuffer.sizeInBytes / sizeof(Vector4));
+		}
 
 		int atlasSize = static_cast<int>(s_State.atlasMask.size());
 		for (int j = 0; j < outputSize.y; ++j)
@@ -1217,6 +1289,49 @@ namespace Blueberry
 			}
 		}
 
+		for (int j = 0; j < outputSize.y; j += 4)
+		{
+			for (int i = 0; i < outputSize.x; i += 4)
+			{
+				bool anyValid = false, anyInvalid = false;
+				Vector4 mean = Vector4::Zero;
+				int validCount = 0;
+				for (int x = 0; x < 4; ++x)
+				{
+					for (int y = 0; y < 4; ++y)
+					{
+						int index = (j + y) * outputSize.x + (i + x);
+						Vector4 color = temp[index];
+						if (color.w > 0.5)
+						{
+							anyValid = true;
+							mean += color;
+							++validCount;
+						}
+						else
+						{
+							anyInvalid = true;
+						}
+					}
+				}
+				if (anyValid && anyInvalid)
+				{
+					mean /= validCount;
+					for (int x = 0; x < 4; ++x)
+					{
+						for (int y = 0; y < 4; ++y)
+						{
+							int index = (j + y) * outputSize.x + (i + x);
+							if (temp[index].w < 0.5)
+							{
+								temp[index] = mean;
+							}
+						}
+					}
+				}
+			}
+		}
+
 		BB_FREE(temp);
 		chartScaleOffset = s_State.chartOffsetScale;
 		chartInstanceOffset = s_State.chartInstanceOffset;
@@ -1238,9 +1353,9 @@ namespace Blueberry
 			s_State.instanceMatrices.free();
 			s_State.accumulatedFrameBuffer.free();
 			s_State.colorBuffer.free();
-			s_State.albedoBuffer.free();
-			s_State.normalBuffer.free();
-			s_State.denoisedColorBuffer.free();
+			//s_State.albedoBuffer.free();
+			//s_State.normalBuffer.free();
+			//s_State.denoisedColorBuffer.free();
 			//s_State.denoiserIntensity.free();
 			//s_State.denoiserScratch.free();
 			//s_State.denoiserState.free();

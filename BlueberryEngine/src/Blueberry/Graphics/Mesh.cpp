@@ -18,13 +18,13 @@ namespace Blueberry
 	OBJECT_DEFINITION(Mesh, Object)
 	{
 		DEFINE_BASE_FIELDS(Mesh, Object)
-		DEFINE_FIELD(Mesh, m_VertexData, BindingType::FloatList, {})
-		DEFINE_FIELD(Mesh, m_IndexData, BindingType::IntList, {})
+		DEFINE_FIELD(Mesh, m_VertexData, BindingType::FloatList, FieldOptions().SetVisibility(VisibilityType::NonExposed))
+		DEFINE_FIELD(Mesh, m_IndexData, BindingType::IntList, FieldOptions().SetVisibility(VisibilityType::NonExposed))
 		DEFINE_FIELD(Mesh, m_VertexCount, BindingType::Int, {})
 		DEFINE_FIELD(Mesh, m_IndexCount, BindingType::Int, {})
-		DEFINE_FIELD(Mesh, m_SubMeshes, BindingType::DataList, FieldOptions().SetObjectType(SubMeshData::Type))
-		DEFINE_FIELD(Mesh, m_Layout, BindingType::Raw, FieldOptions().SetSize(sizeof(VertexLayout)))
-		DEFINE_FIELD(Mesh, m_Bounds, BindingType::AABB, {})
+		DEFINE_FIELD(Mesh, m_SubMeshes, BindingType::DataList, FieldOptions().SetObjectType(SubMeshData::Type).SetVisibility(VisibilityType::NonExposed))
+		DEFINE_FIELD(Mesh, m_Layout, BindingType::Raw, FieldOptions().SetSize(sizeof(VertexLayout)).SetVisibility(VisibilityType::NonExposed))
+		DEFINE_FIELD(Mesh, m_Bounds, BindingType::AABB, FieldOptions().SetVisibility(VisibilityType::NonExposed))
 	}
 
 	const uint32_t& SubMeshData::GetIndexStart() const

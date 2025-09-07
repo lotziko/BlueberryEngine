@@ -15,6 +15,7 @@ namespace Blueberry
 		virtual ~PrefabInstance() = default;
 
 		Entity* GetEntity();
+		Entity* GetEntity(const FileId& fileId);
 
 		virtual void OnCreate() final;
 		virtual void OnDestroy() final;
@@ -22,12 +23,13 @@ namespace Blueberry
 		static PrefabInstance* Create(Entity* prefab);
 
 	private:
-		void AddPrefabEntities(Entity* entity);
+		void AddPrefabEntities(Entity* prefabEntity, Entity* entity);
 		void RemovePrefabEntities(Entity* entity);
 
 	private:
 		ObjectPtr<Entity> m_Prefab;
 		ObjectPtr<Entity> m_Entity;
+		Dictionary<FileId, ObjectId> m_FileIdToObject;
 
 		friend class PrefabManager;
 	};

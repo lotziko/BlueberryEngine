@@ -180,7 +180,7 @@ namespace Blueberry
 		auto propertiesStart = std::sregex_iterator(propertiesBlock.begin(), propertiesBlock.end(), propertyRegex);
 		auto propertiesEnd = std::sregex_iterator();
 
-		DataList<PropertyData> properties;
+		List<PropertyData> properties;
 		for (std::regex_iterator i = propertiesStart; i != propertiesEnd; ++i)
 		{
 			std::smatch match = *i;

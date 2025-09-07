@@ -12,6 +12,7 @@ namespace Blueberry
 	{
 	public:
 		static Object* GetActiveObject();
+		static List<Object*> GetActiveObjects();
 		static bool IsActiveObject(Object* object);
 		static void AddActiveObject(Object* object);
 		static void SetActiveObject(Object* object);

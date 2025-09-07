@@ -2,6 +2,7 @@
 
 #include "Blueberry\Core\Base.h"
 #include "Blueberry\Core\Object.h"
+#include "Blueberry\Core\MethodBind.h"
 #include "Blueberry\Tools\StringHelper.h"
 
 namespace Blueberry
@@ -35,11 +36,23 @@ namespace Blueberry
 
 		// Derived from Object
 		ObjectPtr,
-		ObjectPtrArray,
+		ObjectPtrList,
 
 		// Not derived from Object
 		Data,
 		DataList
+	};
+
+	inline bool IsList(const BindingType& type)
+	{
+		return (type == BindingType::ObjectPtrList || type == BindingType::DataList || type == BindingType::StringList || type == BindingType::IntList || type == BindingType::FloatList);
+	}
+
+	enum class VisibilityType
+	{
+		Visible,
+		Hidden,
+		NonExposed
 	};
 
 	struct FieldOptions
@@ -47,12 +60,14 @@ namespace Blueberry
 		FieldOptions& SetEnumHint(char* hintData);
 		FieldOptions& SetObjectType(const size_t& type);
 		FieldOptions& SetSize(const uint32_t& size);
-		FieldOptions& SetHidden();
+		FieldOptions& SetVisibility(const VisibilityType& visibility);
+		FieldOptions& SetUpdateCallback(MethodBind* updateCallback);
 
 		size_t objectType;
 		uint32_t size;
 		void* hintData;
-		bool isHidden;
+		VisibilityType visibility;
+		MethodBind* updateCallback;
 	};
 
 	struct FieldInfo
@@ -61,22 +76,23 @@ namespace Blueberry
 		uint32_t offset;
 		BindingType type;
 		FieldOptions options;
+		bool isList;
+	};
+
+	struct ClassInfo
+	{
+		String name;
+		size_t parentId;
+		Object*(*createInstance)() = nullptr;
+		bool isObject;
+		size_t offset;
+		List<FieldInfo> fields;
+		Dictionary<String, FieldInfo> fieldsMap;
 	};
 
 	class BB_API ClassDB
 	{
 	public:
-		struct ClassInfo
-		{
-			String name;
-			size_t parentId;
-			Object*(*createInstance)() = nullptr;
-			bool isObject;
-			size_t offset;
-			List<FieldInfo> fields;
-			Dictionary<String, FieldInfo> fieldsMap;
-		};
-
 		static const ClassInfo& GetInfo(const size_t&);
 		static Dictionary<size_t, ClassInfo>& GetInfos();
 		static bool IsParent(const size_t& id, const size_t& parentId);
@@ -124,7 +140,7 @@ namespace Blueberry
 	#define REGISTER_DATA_CLASS( classname ) ClassDB::RegisterData<classname>();
 
 	#define DEFINE_BASE_FIELDS( className, baseClassName ) ClassDB::DefineBaseFields<className, baseClassName>();
-	#define DEFINE_FIELD( className, fieldName, fieldType, fieldOptions ) ClassDB::DefineField({ TO_STRING(fieldName), offsetof(className, className::fieldName), fieldType, fieldOptions });
+	#define DEFINE_FIELD( className, fieldName, fieldType, fieldOptions ) ClassDB::DefineField({ TO_STRING(fieldName), offsetof(className, className::fieldName), fieldType, fieldOptions, IsList(fieldType) });
 
 	template<class ObjectType>
 	inline void ClassDB::Register()

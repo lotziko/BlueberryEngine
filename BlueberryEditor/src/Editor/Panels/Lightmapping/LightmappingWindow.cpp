@@ -8,13 +8,15 @@
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Scene\Components\MeshRenderer.h"
 #include "Blueberry\Scene\Scene.h"
-#include "Blueberry\Scene\LightingData.h"
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Assets\Importers\TextureImporter.h"
 #include "Editor\Menu\EditorMenuManager.h"
 #include "Editor\EditorSceneManager.h"
 #include "Editor\Selection.h"
 #include "Editor\Misc\TextureHelper.h"
+#include "Editor\Scene\SceneSettings.h"
+#include "Editor\Scene\LightingData.h"
+#include "Editor\Misc\ImGuiHelper.h"
 
 #include "Baking\LightmappingManager.h"
 
@@ -27,6 +29,11 @@ namespace Blueberry
 	OBJECT_DEFINITION(LightmappingWindow, EditorWindow)
 	{
 		DEFINE_BASE_FIELDS(LightmappingWindow, EditorWindow)
+		DEFINE_FIELD(LightmappingWindow, m_TileSize, BindingType::Int, {})
+		DEFINE_FIELD(LightmappingWindow, m_TexelPerUnit, BindingType::Float, {})
+		DEFINE_FIELD(LightmappingWindow, m_SamplePerTexel, BindingType::Int, {})
+		DEFINE_FIELD(LightmappingWindow, m_PreferredSize, BindingType::Int, {})
+		DEFINE_FIELD(LightmappingWindow, m_Denoise, BindingType::Bool, {})
 		EditorMenuManager::AddItem("Window/Lightmapping", &LightmappingWindow::Open);
 	}
 
@@ -39,11 +46,18 @@ namespace Blueberry
 
 	void LightmappingWindow::OnDrawUI()
 	{
-		const uint32_t tileSize = 128;
-		const uint32_t texelPerUnit = 4;
 		Scene* scene = EditorSceneManager::GetScene();
+		SceneSettings* settings = EditorSceneManager::GetSettings();
+		LightingData* lightingData = settings->GetLightingData();
+
 		if (scene != nullptr)
 		{
+			ImGui::IntEdit("Tile size", &m_TileSize);
+			ImGui::FloatEdit("Texel per unit", &m_TexelPerUnit);
+			ImGui::IntEdit("Sample per texel", &m_SamplePerTexel);
+			ImGui::IntEdit("Preferred size", &m_PreferredSize);
+			ImGui::BoolEdit("Denoise", &m_Denoise);
+
 			if (ImGui::Button("Bake"))
 			{
 				try
@@ -52,7 +66,15 @@ namespace Blueberry
 					Vector2Int size;
 					List<Vector4> scaleOffset;
 					Dictionary<ObjectId, uint32_t> instanceOffset;
-					LightmappingManager::Calculate(EditorSceneManager::GetScene(), Vector2Int(tileSize, tileSize), result, size, scaleOffset, instanceOffset);
+
+					CalculationParams params = {};
+					params.tileSize = m_TileSize;
+					params.texelPerUnit = m_TexelPerUnit;
+					params.samplePerTexel = m_SamplePerTexel;
+					params.maxSize = m_PreferredSize;
+					params.denoise = m_Denoise;
+
+					LightmappingManager::Calculate(EditorSceneManager::GetScene(), params, result, size, scaleOffset, instanceOffset);
 					
 					DirectX::ScratchImage image = {};
 					image.Initialize2D(DXGI_FORMAT_R32G32B32A32_FLOAT, size.x, size.y, 1, 1);
@@ -69,20 +91,19 @@ namespace Blueberry
 						BB_ERROR("Failed to save texture.");
 					}
 
-					AssetDB::Refresh();
 					auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
 					TextureImporter* importer = static_cast<TextureImporter*>(AssetDB::GetImporter(relativePath.string().data()));
 					importer->SetTextureShape(TextureImporter::TextureShape::Texture2D);
-					importer->SetTextureFormat(TextureImporter::TextureFormat::BC6H);
+					importer->SetTextureFormat(TextureImporter::TextureFormat::RGBA32);
 					importer->SetFilterMode(FilterMode::Trilinear);
 					importer->SaveAndReimport();
+					AssetDB::Refresh();
 					Texture2D* lightmap = static_cast<Texture2D*>(ObjectDB::GetObjectFromGuid(importer->GetGuid(), importer->GetMainObject()));
 
-					LightingData* lightingData = scene->GetSettings()->GetLightingData();
 					if (lightingData == nullptr || lightingData->GetState() != ObjectState::Default)
 					{
 						lightingData = Object::Create<LightingData>();
-						scene->GetSettings()->SetLightingData(lightingData);
+						settings->SetLightingData(lightingData);
 					}
 					lightingData->SetLightmap(lightmap);
 					lightingData->SetChartScaleOffset(scaleOffset);
@@ -102,8 +123,10 @@ namespace Blueberry
 			}
 
 			static float zoom = 1.0f;
+			static bool drawAll = false;
 			float newZoom = zoom;
 			ImGui::SliderFloat("Zoom", &newZoom, 1, 300);
+			ImGui::Checkbox("Draw all", &drawAll);
 
 			ImGui::BeginChild("Zoom");
 
@@ -117,7 +140,6 @@ namespace Blueberry
 			size.y *= zoom;
 			ImDrawList* list = ImGui::GetWindowDrawList();
 
-			LightingData* lightingData = scene->GetSettings()->GetLightingData();
 			if (lightingData != nullptr && lightingData->GetState() == ObjectState::Default)
 			{
 				Texture2D* lightmap = lightingData->GetLightmap();
@@ -133,11 +155,12 @@ namespace Blueberry
 					MeshRenderer* meshRenderer = static_cast<MeshRenderer*>(component.second);
 					if (meshRenderer->GetLightmapChartOffset() != 0)
 					{
-						if (!Selection::IsActiveObject(meshRenderer->GetEntity()))
+						bool active = Selection::IsActiveObject(meshRenderer->GetEntity());
+						if (!active && !drawAll)
 						{
 							continue;
 						}
-						//ImColor color = Selection::IsActiveObject(meshRenderer->GetEntity()) ? ImColor(255, 0, 0) : ImColor(0, 255, 0);
+						ImColor color = active ? ImColor(255, 0, 0) : ImColor(0, 0, 255);//ImColor color = Selection::IsActiveObject(meshRenderer->GetEntity()) ? ImColor(255, 0, 0) : ImColor(0, 255, 0);
 						Mesh* mesh = meshRenderer->GetMesh();
 						uint32_t* indices = mesh->GetIndices();
 						Vector3* uvs = reinterpret_cast<Vector3*>(mesh->GetUVs(1));
@@ -159,7 +182,7 @@ namespace Blueberry
 							p2.y = p2.y * scaleOffset.w + scaleOffset.y;
 							p3.y = p3.y * scaleOffset.w + scaleOffset.y;
 
-							list->AddTriangle(pos + ImVec2(p1.x * size.x, p1.y * size.y), pos + ImVec2(p2.x * size.x, p2.y * size.y), pos + ImVec2(p3.x * size.x, p3.y * size.y), ImColor(255, 0, 0));
+							list->AddTriangle(pos + ImVec2(p1.x * size.x, p1.y * size.y), pos + ImVec2(p2.x * size.x, p2.y * size.y), pos + ImVec2(p3.x * size.x, p3.y * size.y), color);
 						}
 					}
 				}

@@ -10,7 +10,7 @@ namespace Blueberry
 	class Material;
 	class Transform;
 	class Component;
-	class ObjectInspector;
+	class ObjectEditor;
 
 	class IconRenderer
 	{
@@ -19,7 +19,7 @@ namespace Blueberry
 		{
 			ObjectPtr<Transform> transform;
 			ObjectPtr<Component> component;
-			ObjectInspector* inspector;
+			ObjectEditor* editor;
 			float distanceToCamera;
 		};
 

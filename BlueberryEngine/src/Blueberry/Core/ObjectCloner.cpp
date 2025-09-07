@@ -19,7 +19,7 @@ namespace Blueberry
 	{
 		// TODO iterate object fields and clone them too if they have references to objects inside
 
-		ClassDB::ClassInfo info = ClassDB::GetInfo(object->GetType());
+		ClassInfo info = ClassDB::GetInfo(object->GetType());
 		Object* clone = info.createInstance();
 		mapping.insert_or_assign(object->GetObjectId(), clone->GetObjectId());
 
@@ -67,7 +67,7 @@ namespace Blueberry
 				}
 			}
 			break;
-			case BindingType::ObjectPtrArray:
+			case BindingType::ObjectPtrList:
 			{
 				List<ObjectPtr<Object>> objectRefArrayValue = *originalValue.Get<List<ObjectPtr<Object>>>();
 				List<ObjectPtr<Object>>* cloneObjectRefArrayPointer = cloneValue.Get<List<ObjectPtr<Object>>>();

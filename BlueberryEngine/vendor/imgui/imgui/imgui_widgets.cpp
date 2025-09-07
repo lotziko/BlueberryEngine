@@ -1918,6 +1918,12 @@ bool ImGui::BeginCombo(const char* label, const char* preview_value, ImGuiComboF
     {
         if (g.LogEnabled)
             LogSetNextTextDecoration("{", "}");
+
+        const bool mixed_value = (g.LastItemData.ItemFlags & ImGuiItemFlags_MixedValue) != 0;
+        if (mixed_value)
+        {
+            preview_value = "-";
+        }
         RenderTextClipped(bb.Min + style.FramePadding, ImVec2(value_x2, bb.Max.y), preview_value, NULL, NULL);
     }
     if (label_size.x > 0)
@@ -2642,8 +2648,10 @@ bool ImGui::DragScalar(const char* label, ImGuiDataType data_type, void* p_data,
     if (!ItemAdd(total_bb, id, &frame_bb, temp_input_allowed ? ImGuiItemFlags_Inputable : 0))
         return false;
 
-    // Default format string when passing NULL
-    if (format == NULL)
+    bool mixed_value = (g.LastItemData.ItemFlags & ImGuiItemFlags_MixedValue) != 0;
+    if (mixed_value) // Dash when value is mixed
+        format = "-";
+    else if (format == NULL) // Default format string when passing NULL
         format = DataTypeGetInfo(data_type)->PrintFmt;
 
     const bool hovered = ItemHoverable(frame_bb, id, g.LastItemData.ItemFlags);
@@ -3678,7 +3686,10 @@ bool ImGui::TempInputScalar(const ImRect& bb, ImGuiID id, const char* label, ImG
 
         // Only mark as edited if new value is different
         g.LastItemData.ItemFlags &= ~ImGuiItemFlags_NoMarkEdited;
-        value_changed = memcmp(&data_backup, p_data, data_type_size) != 0;
+        // Mark as edited if value is mixed or new value is different
+        ImGuiContext& g = *GImGui;
+        bool mixed_value = (g.LastItemData.ItemFlags & ImGuiItemFlags_MixedValue) != 0;
+        value_changed = mixed_value || memcmp(&data_backup, p_data, data_type_size) != 0;
         if (value_changed)
             MarkItemEdited(id);
     }

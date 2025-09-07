@@ -4,7 +4,6 @@
 #include "Blueberry\Core\Variant.h"
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Core\ObjectPtr.h"
-#include "Blueberry\Core\DataList.h"
 #include "Editor\Serialization\YamlHelper.h"
 #include "Editor\Serialization\YamlSerializers.h"
 
@@ -46,7 +45,7 @@ namespace Blueberry
 				{
 					ryml::csubstr key = node.key();
 					String typeName(key.str, key.size());
-					ClassDB::ClassInfo info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
+					ClassInfo info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
 					Object* instance = info.createInstance();
 					AddDeserializedObject(instance, fileId);
 					deserializedNodes.emplace_back(i, instance);
@@ -170,7 +169,7 @@ namespace Blueberry
 				objectNode[key] << data;
 			}
 			break;
-			case BindingType::ObjectPtrArray:
+			case BindingType::ObjectPtrList:
 			{
 				List<ObjectPtr<Object>> arrayValue = *value.Get<List<ObjectPtr<Object>>>();
 				if (arrayValue.size() > 0)
@@ -202,15 +201,15 @@ namespace Blueberry
 			break;
 			case BindingType::DataList:
 			{
-				DataListBase* dataArrayPointer = value.Get<DataListBase>();
-				uint32_t dataSize = static_cast<uint32_t>(dataArrayPointer->Size());
+				ListBase* dataArrayPointer = value.Get<ListBase>();
+				uint32_t dataSize = static_cast<uint32_t>(dataArrayPointer->size_base());
 				if (dataSize > 0)
 				{
 					ryml::NodeRef sequence = objectNode[key];
 					sequence |= ryml::SEQ;
 					for (uint32_t i = 0; i < dataSize; ++i)
 					{
-						void* data = dataArrayPointer->Get(i);
+						void* data = dataArrayPointer->get_base(i);
 						Context context = Context::CreateNoOffset(data, field.options.objectType);
 						ryml::NodeRef node = sequence.append_child();
 						node |= ryml::MAP;
@@ -322,7 +321,7 @@ namespace Blueberry
 					*value.Get<ObjectPtr<Object>>() = obj;
 				}
 				break;
-				case BindingType::ObjectPtrArray:
+				case BindingType::ObjectPtrList:
 				{
 					List<ObjectPtr<Object>>* refArrayPointer = value.Get<List<ObjectPtr<Object>>>();
 					for (auto& child : objectNode[key].cchildren())
@@ -342,10 +341,10 @@ namespace Blueberry
 				break;
 				case BindingType::DataList:
 				{
-					DataListBase* dataArrayPointer = value.Get<DataListBase>();
+					ListBase* dataArrayPointer = value.Get<ListBase>();
 					for (auto& child : objectNode[key].children())
 					{
-						void* data = dataArrayPointer->EmplaceBack();
+						void* data = dataArrayPointer->emplace_back_base();
 						Context context = Context::CreateNoOffset(data, field.options.objectType);
 						DeserializeNode(child, context);
 					}

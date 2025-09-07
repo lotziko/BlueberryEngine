@@ -86,7 +86,7 @@ namespace Blueberry
 
 		GfxTextureDX11* m_BindedRenderTarget;
 		GfxTextureDX11* m_BindedDepthStencil;
-		Dictionary<size_t, GfxBufferDX11*> m_BindedBuffers;
+		List<std::pair<size_t, GfxBufferDX11*>> m_BindedBuffers;
 		List<std::pair<size_t, GfxTextureDX11*>> m_BindedTextures;
 		ID3D11ShaderResourceView* m_EmptyShaderResourceViews[16];
 		ID3D11SamplerState* m_EmptySamplers[16];

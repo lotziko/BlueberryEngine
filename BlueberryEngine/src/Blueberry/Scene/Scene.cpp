@@ -1,7 +1,6 @@
 #include "Blueberry\Scene\Scene.h"
 
 #include "Blueberry\Scene\Entity.h"
-#include "Blueberry\Scene\LightingData.h"
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Components\Component.h"
 #include "Blueberry\Serialization\Serializer.h"
@@ -9,21 +8,6 @@
 
 namespace Blueberry
 {
-	OBJECT_DEFINITION(SceneSettings, Object)
-	{
-		DEFINE_FIELD(SceneSettings, m_LightingData, BindingType::ObjectPtr, FieldOptions().SetObjectType(LightingData::Type))
-	}
-
-	LightingData* SceneSettings::GetLightingData()
-	{
-		return m_LightingData.Get();
-	}
-
-	void SceneSettings::SetLightingData(LightingData* data)
-	{
-		m_LightingData = data;
-	}
-
 	bool Scene::Initialize()
 	{
 		return true;
@@ -89,9 +73,9 @@ namespace Blueberry
 		{
 			entity->UpdateComponents();
 		}
-		for (auto& component : entity->GetComponents())
+		for (uint32_t i = 0; i < entity->GetComponentCount(); ++i)
 		{
-			entity->AddToCreatedComponents(component);
+			entity->AddToCreatedComponents(entity->GetComponent(i));
 		}
 		for (auto& child : entity->GetTransform()->GetChildren())
 		{
@@ -135,19 +119,5 @@ namespace Blueberry
 	RendererTree& Scene::GetRendererTree()
 	{
 		return m_RendererTree;
-	}
-
-	SceneSettings* Scene::GetSettings()
-	{
-		if (!m_SceneSettings.IsValid())
-		{
-			m_SceneSettings = Object::Create<SceneSettings>();
-		}
-		return m_SceneSettings.Get();
-	}
-
-	void Scene::SetSettings(SceneSettings* settings)
-	{
-		m_SceneSettings = settings;
 	}
 }

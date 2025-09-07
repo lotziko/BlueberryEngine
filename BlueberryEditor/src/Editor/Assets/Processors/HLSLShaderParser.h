@@ -22,7 +22,7 @@ namespace Blueberry
 		};
 
 		List<Pass> passes;
-		DataList<PassData> dataPasses;
+		List<PassData> dataPasses;
 	};
 
 	class HLSLShaderParser

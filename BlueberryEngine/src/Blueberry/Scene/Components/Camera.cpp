@@ -8,13 +8,13 @@ namespace Blueberry
 	OBJECT_DEFINITION(Camera, Component)
 	{
 		DEFINE_BASE_FIELDS(Camera, Component)
-		DEFINE_FIELD(Camera, m_IsOrthographic, BindingType::Bool, {})
-		DEFINE_FIELD(Camera, m_OrthographicSize, BindingType::Float, {})
-		DEFINE_FIELD(Camera, m_PixelSize, BindingType::Vector2, {})
-		DEFINE_FIELD(Camera, m_FieldOfView, BindingType::Float, {})
-		DEFINE_FIELD(Camera, m_AspectRatio, BindingType::Float, {})
-		DEFINE_FIELD(Camera, m_ZNearPlane, BindingType::Float, {})
-		DEFINE_FIELD(Camera, m_ZFarPlane, BindingType::Float, {})
+		DEFINE_FIELD(Camera, m_IsOrthographic, BindingType::Bool, FieldOptions().SetUpdateCallback(MethodBind::Create(&Camera::InvalidateProjection)))
+		DEFINE_FIELD(Camera, m_OrthographicSize, BindingType::Float, FieldOptions().SetUpdateCallback(MethodBind::Create(&Camera::InvalidateProjection)))
+		DEFINE_FIELD(Camera, m_PixelSize, BindingType::Vector2, FieldOptions().SetUpdateCallback(MethodBind::Create(&Camera::InvalidateProjection)))
+		DEFINE_FIELD(Camera, m_FieldOfView, BindingType::Float, FieldOptions().SetUpdateCallback(MethodBind::Create(&Camera::InvalidateProjection)))
+		DEFINE_FIELD(Camera, m_AspectRatio, BindingType::Float, FieldOptions().SetUpdateCallback(MethodBind::Create(&Camera::InvalidateProjection)))
+		DEFINE_FIELD(Camera, m_ZNearPlane, BindingType::Float, FieldOptions().SetUpdateCallback(MethodBind::Create(&Camera::InvalidateProjection)))
+		DEFINE_FIELD(Camera, m_ZFarPlane, BindingType::Float, FieldOptions().SetUpdateCallback(MethodBind::Create(&Camera::InvalidateProjection)))
 	}
 
 	void Camera::OnEnable()
@@ -32,7 +32,6 @@ namespace Blueberry
 		if (m_IsProjectionDirty)
 		{
 			RecalculateProjection();
-			m_IsProjectionDirty = false;
 		}
 		return m_ProjectionMatrix;
 	}
@@ -55,7 +54,6 @@ namespace Blueberry
 		if (m_IsProjectionDirty)
 		{
 			RecalculateProjection();
-			m_IsProjectionDirty = false;
 		}
 		return m_ViewProjectionMatrix;
 	}
@@ -65,7 +63,6 @@ namespace Blueberry
 		if (m_IsProjectionDirty)
 		{
 			RecalculateProjection();
-			m_IsProjectionDirty = false;
 		}
 		return m_InverseProjectionMatrix;
 	}
@@ -88,7 +85,6 @@ namespace Blueberry
 		if (m_IsProjectionDirty)
 		{
 			RecalculateProjection();
-			m_IsProjectionDirty = false;
 		}
 		return m_InverseViewProjectionMatrix;
 	}
@@ -103,7 +99,7 @@ namespace Blueberry
 		if (m_IsOrthographic != isOrthographic)
 		{
 			m_IsOrthographic = isOrthographic;
-			m_IsProjectionDirty = true;
+			InvalidateProjection();
 		}
 	}
 
@@ -115,7 +111,7 @@ namespace Blueberry
 	const void Camera::SetOrthographicSize(const float& size)
 	{
 		m_OrthographicSize = size;
-		m_IsProjectionDirty = true;
+		InvalidateProjection();
 	}
 
 	const Vector2& Camera::GetPixelSize()
@@ -129,7 +125,7 @@ namespace Blueberry
 		{
 			m_PixelSize = pixelSize;
 			m_AspectRatio = pixelSize.x / pixelSize.y;
-			m_IsProjectionDirty = true;
+			InvalidateProjection();
 		}
 	}
 
@@ -143,7 +139,7 @@ namespace Blueberry
 		if (m_AspectRatio != aspectRatio)
 		{
 			m_AspectRatio = aspectRatio;
-			m_IsProjectionDirty = true;
+			InvalidateProjection();
 		}
 	}
 
@@ -157,7 +153,7 @@ namespace Blueberry
 		if (m_FieldOfView != fieldOfView)
 		{
 			m_FieldOfView = fieldOfView;
-			m_IsProjectionDirty = true;
+			InvalidateProjection();
 		}
 	}
 
@@ -171,7 +167,7 @@ namespace Blueberry
 		if (m_ZNearPlane != nearClip)
 		{
 			m_ZNearPlane = nearClip;
-			m_IsProjectionDirty = true;
+			InvalidateProjection();
 		}
 	}
 
@@ -185,7 +181,7 @@ namespace Blueberry
 		if (m_ZNearPlane != farClip)
 		{
 			m_ZFarPlane = farClip;
-			m_IsProjectionDirty = true;
+			InvalidateProjection();
 		}
 	}
 
@@ -208,7 +204,6 @@ namespace Blueberry
 		if (m_IsProjectionDirty)
 		{
 			RecalculateProjection();
-			m_IsProjectionDirty = false;
 		}
 
 		Vector4 screenPosition = Vector4::Transform(Vector4(position.x, position.y, position.z, 1), m_ViewProjectionMatrix);
@@ -241,7 +236,6 @@ namespace Blueberry
 		if (m_IsProjectionDirty)
 		{
 			RecalculateProjection();
-			m_IsProjectionDirty = false;
 		}
 
 		Vector4 screenPosition = Vector4(2 * (position.x / m_PixelSize.x) - 1, 2 * (position.y / m_PixelSize.y) - 1, 0.95f, 1.0f);
@@ -280,6 +274,11 @@ namespace Blueberry
 		return false;
 	}
 
+	void Camera::InvalidateProjection()
+	{
+		m_IsProjectionDirty = true;
+	}
+
 	void Camera::RecalculateView()
 	{
 		Transform* transform = GetTransform();
@@ -310,5 +309,6 @@ namespace Blueberry
 		m_InverseProjectionMatrix = m_ProjectionMatrix.Invert();
 		m_ViewProjectionMatrix = m_ViewMatrix * m_ProjectionMatrix;
 		m_InverseViewProjectionMatrix = m_ViewProjectionMatrix.Invert();
+		m_IsProjectionDirty = false;
 	}
 }

@@ -1,8 +1,8 @@
 #include "SceneObjectPicker.h"
 
 #include "Editor\Selection.h"
-#include "Editor\Inspector\ObjectInspector.h"
-#include "Editor\Inspector\ObjectInspectorDB.h"
+#include "Editor\Inspector\ObjectEditor.h"
+#include "Editor\Inspector\ObjectEditorDB.h"
 #include "Blueberry\Core\Screen.h"
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Scene\Components\Transform.h"
@@ -146,10 +146,11 @@ namespace Blueberry
 			Entity* entity = pair.second.Get();
 			if (entity->IsActiveInHierarchy())
 			{
-				for (auto& component : entity->GetComponents())
+				for (uint32_t i = 0; i < entity->GetComponentCount(); ++i)
 				{
-					ObjectInspector* inspector = ObjectInspectorDB::GetInspector(component->GetType());
-					if (inspector->GetIcon(component) != nullptr)
+					Component* component = entity->GetComponent(i);
+					ObjectEditor* editor = ObjectEditor::GetDefaultEditor(component);
+					if (editor->GetIcon(component) != nullptr)
 					{
 						Vector3 position = entity->GetTransform()->GetPosition();
 						Matrix modelMatrix = Matrix::CreateScale(0.75f) * Matrix::CreateBillboard(position, position + cameraDirection, Vector3(0, -1, 0));

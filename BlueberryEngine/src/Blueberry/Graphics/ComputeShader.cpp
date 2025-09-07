@@ -38,7 +38,7 @@ namespace Blueberry
 		return m_Kernels.size();
 	}
 
-	void ComputeShaderData::SetKernels(const DataList<KernelData>& kernels)
+	void ComputeShaderData::SetKernels(const List<KernelData>& kernels)
 	{
 		m_Kernels = kernels;
 	}

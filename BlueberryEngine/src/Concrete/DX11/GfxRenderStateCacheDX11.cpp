@@ -14,46 +14,47 @@ namespace Blueberry
 {
 	bool GfxRenderStateKeyDX11::operator==(const GfxRenderStateKeyDX11& other) const
 	{
-		return std::memcmp(this, &other, sizeof(GfxRenderStateKeyDX11)) == 0;
+		return keywordsMask == other.keywordsMask && materialId == other.materialId && passIndex == other.passIndex && crc == other.crc;
 	}
 
 	bool GfxRenderStateKeyDX11::operator!=(const GfxRenderStateKeyDX11& other) const
 	{
-		return std::memcmp(this, &other, sizeof(GfxRenderStateKeyDX11)) != 0;
+		return !(*this == other);
 	}
 
 	GfxRenderStateCacheDX11::GfxRenderStateCacheDX11(GfxDeviceDX11* device) : m_Device(device)
 	{
+		m_RenderStates.reserve(4096);
 	}
 
 	const GfxRenderStateDX11 GfxRenderStateCacheDX11::GetState(Material* material, const uint8_t& passIndex)
 	{
 		uint64_t keywordMask = static_cast<uint64_t>(Shader::GetActiveKeywordsMask()) | (static_cast<uint64_t>(material->GetActiveKeywordsMask()) << 32);
-		uint32_t crc = m_Device->GetCRC() ^ material->GetCRC();
 		ObjectId objectId = material->GetObjectId();
 		
 		GfxRenderStateDX11 renderState;
-		GfxGlobalBindingsStateDX11 globalBindingsState;
-		GfxRenderStateKeyDX11 key = { keywordMask, objectId, passIndex };
+		GfxRenderStateKeyDX11 key = { keywordMask, objectId, passIndex, static_cast<uint64_t>(m_Device->GetCRC()) | (static_cast<uint64_t>(material->GetCRC()) << 32) };
 		auto it = m_RenderStates.find(key);
-		if (it != m_RenderStates.end() && it->second.first.materialCrc == crc)
+		if (it != m_RenderStates.end())
 		{
-			renderState = it->second.first;
-			globalBindingsState = it->second.second;
+			renderState = it->second;
 		}
 		else
 		{
 			uint32_t size = static_cast<uint32_t>(m_RenderStates.size());
+			if (size > 4096)
+			{
+				m_RenderStates.clear();
+			}
 			renderState = {};
-			globalBindingsState = {};
 			GfxPassData passData = GetPassData(material, passIndex);
 			renderState.isValid = passData.isValid;
-			renderState.materialCrc = crc;
 
 			if (!renderState.isValid)
 			{
 				return renderState;
 			}
+			BB_INFO(size);
 
 			auto dxVertexShader = static_cast<GfxVertexShaderDX11*>(passData.vertexShader);
 			auto dxGeometryShader = static_cast<GfxGeometryShaderDX11*>(passData.geometryShader);
@@ -65,23 +66,27 @@ namespace Blueberry
 			// Vertex global constant buffers
 			for (auto it = dxVertexShader->m_ConstantBufferSlots.begin(); it != dxVertexShader->m_ConstantBufferSlots.end(); it++)
 			{
-				auto pair = m_Device->m_BindedBuffers.find(it->first);
-				if (pair != m_Device->m_BindedBuffers.end())
+				for (auto it1 = m_Device->m_BindedBuffers.begin(); it1 < m_Device->m_BindedBuffers.end(); ++it1)
 				{
-					renderState.vertexConstantBuffers[it->second] = pair->second->m_Buffer.Get();
+					if (it1->first == it->first)
+					{
+						renderState.vertexConstantBuffers[it->second] = it1->second->m_Buffer.Get();
+					}
 				}
 			}
 
 			// Vertex global structured buffers
 			for (auto it = dxVertexShader->m_StructuredBufferSlots.begin(); it != dxVertexShader->m_StructuredBufferSlots.end(); it++)
 			{
-				auto pair = m_Device->m_BindedBuffers.find(it->first);
-				if (pair != m_Device->m_BindedBuffers.end())
+				for (auto it1 = m_Device->m_BindedBuffers.begin(); it1 < m_Device->m_BindedBuffers.end(); ++it1)
 				{
-					uint32_t bufferSlotIndex = it->second.first;
-					uint32_t shaderResourceViewSlotIndex = it->second.second;
-					auto dxBuffer = pair->second;
-					renderState.vertexShaderResourceViews[shaderResourceViewSlotIndex] = dxBuffer->m_ShaderResourceView.Get();
+					if (it1->first == it->first)
+					{
+						uint32_t bufferSlotIndex = it->second.first;
+						uint32_t shaderResourceViewSlotIndex = it->second.second;
+						auto dxBuffer = it1->second;
+						renderState.vertexShaderResourceViews[shaderResourceViewSlotIndex] = dxBuffer->m_ShaderResourceView.Get();
+					}
 				}
 			}
 
@@ -92,10 +97,12 @@ namespace Blueberry
 				// Geometry global constant buffers
 				for (auto it = dxGeometryShader->m_ConstantBufferSlots.begin(); it != dxGeometryShader->m_ConstantBufferSlots.end(); it++)
 				{
-					auto pair = m_Device->m_BindedBuffers.find(it->first);
-					if (pair != m_Device->m_BindedBuffers.end())
+					for (auto it1 = m_Device->m_BindedBuffers.begin(); it1 < m_Device->m_BindedBuffers.end(); ++it1)
 					{
-						renderState.geometryConstantBuffers[it->second] = pair->second->m_Buffer.Get();
+						if (it1->first == it->first)
+						{
+							renderState.geometryConstantBuffers[it->second] = it1->second->m_Buffer.Get();
+						}
 					}
 				}
 			}
@@ -104,10 +111,12 @@ namespace Blueberry
 			// Fragment global constant buffers
 			for (auto it = dxFragmentShader->m_ConstantBufferSlots.begin(); it != dxFragmentShader->m_ConstantBufferSlots.end(); it++)
 			{
-				auto pair = m_Device->m_BindedBuffers.find(it->first);
-				if (pair != m_Device->m_BindedBuffers.end())
+				for (auto it1 = m_Device->m_BindedBuffers.begin(); it1 < m_Device->m_BindedBuffers.end(); ++it1)
 				{
-					renderState.pixelConstantBuffers[it->second] = pair->second->m_Buffer.Get();
+					if (it1->first == it->first)
+					{
+						renderState.pixelConstantBuffers[it->second] = it1->second->m_Buffer.Get();
+					}
 				}
 			}
 
@@ -126,7 +135,6 @@ namespace Blueberry
 				}
 			}
 
-			// Can replace this with an index to binded global textures
 			// Fragment global textures
 			// Has a possiblity to collide with material textures if has same name
 			for (auto it = dxFragmentShader->m_TextureSlots.begin(); it != dxFragmentShader->m_TextureSlots.end(); it++)
@@ -135,10 +143,11 @@ namespace Blueberry
 				{
 					if (it1->first == it->first)
 					{
-						uint8_t textureSlotIndex = it->second.first;
-						uint8_t samplerSlotIndex = it->second.second;
-						globalBindingsState.fragmentTextures[globalBindingsState.fragmentTextureCount] = { &(it1->second), textureSlotIndex, samplerSlotIndex };
-						++globalBindingsState.fragmentTextureCount;
+						renderState.pixelShaderResourceViews[it->second.first] = it1->second->m_ResourceView.Get();
+						if (it->second.second != 255)
+						{
+							renderState.pixelSamplerStates[it->second.second] = it1->second->m_SamplerState.Get();
+						}
 						break;
 					}
 				}
@@ -148,24 +157,8 @@ namespace Blueberry
 			renderState.depthStencilState = m_Device->GetDepthStencilState(passData.zTest, passData.zWrite);
 			renderState.blendState = m_Device->GetBlendState(passData.blendSrcColor, passData.blendSrcAlpha, passData.blendDstColor, passData.blendDstAlpha);
 
-			m_RenderStates.insert_or_assign(key, std::make_pair(renderState, globalBindingsState));
+			m_RenderStates.insert_or_assign(key, renderState);
 		}
-
-		// Fragment global textures
-		for (uint8_t i = 0; i < globalBindingsState.fragmentTextureCount; ++i)
-		{
-			GfxGlobalBindingsStateDX11::TextureData data = globalBindingsState.fragmentTextures[i];
-			auto dxTexture = (*data.texture);
-			if (dxTexture != nullptr)
-			{
-				renderState.pixelShaderResourceViews[data.srvSlot] = dxTexture->m_ResourceView.Get();
-				if (data.samplerSlot != 255)
-				{
-					renderState.pixelSamplerStates[data.samplerSlot] = dxTexture->m_SamplerState.Get();
-				}
-			}
-		}
-
 		return renderState;
 	}
 }
