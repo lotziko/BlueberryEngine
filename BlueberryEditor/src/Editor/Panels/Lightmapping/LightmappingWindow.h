@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Editor\Panels\EditorWindow.h"
+#include "Baking\LightmappingManager.h"
 
 namespace Blueberry
 {

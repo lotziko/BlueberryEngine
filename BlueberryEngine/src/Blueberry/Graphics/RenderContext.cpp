@@ -20,7 +20,7 @@
 #include "Blueberry\Graphics\GfxBuffer.h"
 #include "Blueberry\Graphics\Buffers\PerCameraDataConstantBuffer.h"
 #include "Blueberry\Graphics\Buffers\PerDrawDataConstantBuffer.h"
-#include "..\Threading\JobSystem.h"
+#include "Blueberry\Threading\JobSystem.h"
 
 #include "Blueberry\Graphics\TextureCube.h"
 

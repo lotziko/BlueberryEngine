@@ -54,7 +54,6 @@ namespace Blueberry
 			{
 				return renderState;
 			}
-			BB_INFO(size);
 
 			auto dxVertexShader = static_cast<GfxVertexShaderDX11*>(passData.vertexShader);
 			auto dxGeometryShader = static_cast<GfxGeometryShaderDX11*>(passData.geometryShader);

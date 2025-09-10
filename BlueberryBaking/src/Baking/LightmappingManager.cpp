@@ -20,6 +20,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <thread>
 
 #include <optix.h>
 #include <optix_function_table_definition.h>
@@ -30,6 +31,8 @@
 
 namespace Blueberry
 {
+	LightmappingState LightmappingManager::s_LightmappingState = {};
+
 	// Maybe make a list of valid per chart texels instead of texture tiles?
 	struct ChartData
 	{
@@ -108,9 +111,9 @@ namespace Blueberry
 		uint32_t launchSize;
 		List<uint2> validTexels = {};
 		List<uint32_t> atlasMask = {};
-		List<Vector4> chartOffsetScale = {};
-		Dictionary<ObjectId, uint32_t> chartInstanceOffset = {};
+		CalculationResult result = {};
 		CUDABVH bvh = {};
+		unsigned int* completeCounter;
 
 		CUstream stream = 0;
 		CUDABuffer instanceMatrices = {};
@@ -119,6 +122,7 @@ namespace Blueberry
 		CUDABuffer colorBuffer = {};
 		CUDABuffer normalBuffer = {};
 		CUDABuffer chartIndexBuffer = {};
+		CUDABuffer completeBuffer = {};
 		CUDABuffer denoisedColorBuffer = {};
 		LightmappingParams lightmappingParams = {};
 		DenoisingParams denoisingParams = {};
@@ -693,7 +697,7 @@ namespace Blueberry
 					continue;
 				}
 
-				state.chartInstanceOffset.insert_or_assign(transform->GetEntity()->GetComponent<MeshRenderer>()->GetObjectId(), atlasCharts.size() + 1);
+				state.result.chartInstanceOffset.insert_or_assign(transform->GetEntity()->GetComponent<MeshRenderer>()->GetObjectId(), atlasCharts.size() + 1);
 				Matrix localToWorld = transform->GetLocalToWorldMatrix();
 				
 				for (uint32_t i = 0; i < data.chartCount; ++i)
@@ -789,7 +793,7 @@ namespace Blueberry
 		uint32_t row = 0;
 		uint32_t lastChartSize = 0;
 
-		state.chartOffsetScale.resize(atlasCharts.size() + 1);
+		state.result.chartOffsetScale.resize(atlasCharts.size() + 1);
 		for (auto& chart : atlasCharts)
 		{
 			// Reset to top if chart is smaller
@@ -843,7 +847,7 @@ namespace Blueberry
 
 							Vector2 scale = Vector2((maskChartBounds.z - maskChartBounds.x) / (meshChartBounds.z - meshChartBounds.x), (maskChartBounds.w - maskChartBounds.y) / (meshChartBounds.w - meshChartBounds.y));
 							Vector2 offset = Vector2(maskChartBounds.x - meshChartBounds.x * scale.x, maskChartBounds.y - meshChartBounds.y * scale.y);
-							state.chartOffsetScale[chart.index] = Vector4(
+							state.result.chartOffsetScale[chart.index] = Vector4(
 								offset.x,
 								offset.y,
 								scale.x,
@@ -891,7 +895,7 @@ namespace Blueberry
 				for (uint32_t i = 0; i < vertexCount; ++i)
 				{
 					Vector3 uv = ligthmapUvs[i];
-					Vector4 scaleOffset = state.chartOffsetScale[maskChartOffset + static_cast<uint32_t>(uv.z)];
+					Vector4 scaleOffset = state.result.chartOffsetScale[maskChartOffset + static_cast<uint32_t>(uv.z)];
 					uv.x = uv.x * scaleOffset.z + scaleOffset.x;
 					uv.y = uv.y * scaleOffset.w + scaleOffset.y;
 					uvs.emplace_back(uv);
@@ -908,29 +912,10 @@ namespace Blueberry
 		state.validTexelsBuffer.resize(state.validTexels.size() * sizeof(uint2));
 		state.validTexelsBuffer.upload(state.validTexels.data(), state.validTexels.size());
 		state.lightmappingParams.validTexels = reinterpret_cast<uint2*>(state.validTexelsBuffer.data);
+		state.lightmappingParams.validTexelsCount = static_cast<uint32_t>(state.validTexels.size());
 		state.chartIndexBuffer.upload(state.atlasMask.data(), state.atlasMask.size());
-
-		//Vector4* chartMask = BB_MALLOC_ARRAY(Vector4, s_Size * s_Size);
-		//Vector4* normalMask = BB_MALLOC_ARRAY(Vector4, s_Size * s_Size);
-		//for (uint32_t i = 0; i < s_Size; ++i)
-		//{
-		//	for (uint32_t j = 0; j < s_Size; ++j)
-		//	{
-		//		uint32_t index = j * s_Size + i;
-		//		uint32_t chartIndex = state.atlasMask[index];
-		//		if (chartIndex > 0)
-		//		{
-		//			uint32_t seed = chartIndex;
-		//			//uint32_t color = /*((float)state.atlasMask[index] / maskChartOffset)*/rnd(chartIndex) * UINT32_MAX;
-		//			chartMask[index] = Vector4(rnd(seed), rnd(seed), rnd(seed), 1);//Vector4((color & 0xFF) / 255.0f, ((color >> 8) & 0xFF) / 255.0f, ((color >> 16) & 0xFF) / 255.0f, 1.0f);
-		//			normalMask[index] = Vector4(rnd(seed) * 2 - 1, rnd(seed) * 2 - 1, rnd(seed) * 2 - 1, 1);
-		//		}
-		//	}
-		//}
-		//state.albedoBuffer.upload(chartMask, s_Size * s_Size);
-		//state.normalBuffer.upload(normalMask, s_Size * s_Size);
-		//BB_FREE(chartMask);
-		//BB_FREE(normalMask);
+		state.completeBuffer.resize(state.validTexels.size() * sizeof(unsigned int));
+		state.lightmappingParams.complete = reinterpret_cast<unsigned int*>(state.completeBuffer.data);
 	}
 
 	void InitializeFrameBufferAndCamera(LightmapperState& state, Camera* camera, const Vector2Int& viewport)
@@ -947,7 +932,6 @@ namespace Blueberry
 			state.accumulatedFrameBuffer.alloc(accumulatedFrameBufferSize);
 			state.lightmappingParams.accumulatedImage = reinterpret_cast<float4*>(state.accumulatedFrameBuffer.data);
 			state.colorBuffer.alloc(frameBufferSize);
-			//state.albedoBuffer.alloc(frameBufferSize);
 			state.normalBuffer.alloc(frameBufferSize);
 			state.denoisedColorBuffer.alloc(frameBufferSize);
 			state.lightmappingParams.color = reinterpret_cast<float4*>(state.colorBuffer.data);
@@ -957,7 +941,6 @@ namespace Blueberry
 		{
 			state.accumulatedFrameBuffer.resize(accumulatedFrameBufferSize);
 			state.colorBuffer.resize(frameBufferSize);
-			//state.albedoBuffer.resize(frameBufferSize);
 			state.normalBuffer.resize(frameBufferSize);
 			state.denoisedColorBuffer.resize(frameBufferSize);
 		}
@@ -981,7 +964,6 @@ namespace Blueberry
 			state.chartIndexBuffer.alloc(frameBufferSize / 4);
 			state.lightmappingParams.color = reinterpret_cast<float4*>(state.colorBuffer.data);
 			state.lightmappingParams.normal = reinterpret_cast<float4*>(state.normalBuffer.data);
-			state.lightmappingParams.chartIndex = reinterpret_cast<unsigned int*>(state.chartIndexBuffer.data);
 			state.denoisingParams.inputColor = reinterpret_cast<float4*>(state.colorBuffer.data);
 			state.denoisingParams.inputNormal = reinterpret_cast<float4*>(state.normalBuffer.data);
 			state.denoisingParams.outputColor = reinterpret_cast<float4*>(state.denoisedColorBuffer.data);
@@ -1092,6 +1074,9 @@ namespace Blueberry
 	{
 		// Launch
 		{
+			cudaHostAlloc(&s_State.completeCounter, sizeof(unsigned int), cudaHostAllocMapped | cudaHostAllocPortable);
+			cudaHostGetDevicePointer(&s_State.lightmappingParams.completeCounter, s_State.completeCounter, 0);
+
 			if (s_ParamsPtr == 0)
 			{
 				CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&s_ParamsPtr), sizeof(LightmappingParams)));
@@ -1105,7 +1090,11 @@ namespace Blueberry
 
 			OPTIX_CHECK(optixLaunch(state.pipeline, state.stream, s_ParamsPtr, sizeof(LightmappingParams), &state.sbt, state.launchSize, 1, 1));
 			cudaError_t err = cudaGetLastError();
-			CUDA_SYNC_CHECK();
+			CUDA_SYNC_CHECK(); 
+			
+			cudaFreeHost(s_State.completeCounter);
+			s_State.completeCounter = nullptr;
+			s_State.lightmappingParams.completeCounter = nullptr;
 		}
 	}
 
@@ -1208,58 +1197,14 @@ namespace Blueberry
 		}
 	}
 
-	void LightmappingManager::Calculate(Scene* scene, const CalculationParams& params, uint8_t*& output, Vector2Int& outputSize, List<Vector4>& chartScaleOffset, Dictionary<ObjectId, uint32_t>& chartInstanceOffset)
+	void FixCharts(Vector4* temp, Vector4* result, const Vector2Int& resultSize)
 	{
-		s_State = {};
-		s_State.params = params;
-		CreateContext(s_State);
-		//CreateOptixDenoiser(s_State);
-		CreateDenoiserPTXModule(s_State);
-		InitializeAccels(s_State, scene);
-		CreatePTXModule(s_State);
-		CreateProgramGroups(s_State);
-		CreatePipeline(s_State);
-		CreateSBT(s_State);
-		InitializeParams(s_State);
-
-		int size = params.maxSize;
-		outputSize = Vector2Int(size, size);
-		Vector4* temp = BB_MALLOC_ARRAY(Vector4, size * size);
-		Vector4* result = BB_MALLOC_ARRAY(Vector4, size * size);
-		output = reinterpret_cast<uint8_t*>(result);
-		InitializeFrameBuffer(s_State, outputSize);
-		//InitializeOptixDenoiserFrameBuffer(s_State);
-		InitializeLights(s_State, scene);
-
-		InitializeChartsAndBVH(s_State);
-
-		uint32_t texelsSize = static_cast<uint32_t>(s_State.validTexels.size());
-		uint32_t tileSize = static_cast<uint32_t>(params.tileSize * params.tileSize);
-		for (uint32_t i = 0; i < texelsSize; i += tileSize)
-		{
-			s_State.lightmappingParams.offset = i;
-			s_State.launchSize = std::min(texelsSize - i, tileSize);
-			Launch(s_State);
-			BB_INFO(i);
-		}
-		
-		if (params.denoise)
-		{
-			LaunchDenoiser(s_State);
-			//LaunchOptixDenoiser(s_State);
-			s_State.denoisedColorBuffer.download(temp, s_State.denoisedColorBuffer.sizeInBytes / sizeof(Vector4));
-		}
-		else
-		{
-			s_State.colorBuffer.download(temp, s_State.colorBuffer.sizeInBytes / sizeof(Vector4));
-		}
-
 		int atlasSize = static_cast<int>(s_State.atlasMask.size());
-		for (int j = 0; j < outputSize.y; ++j)
+		for (int j = 0; j < resultSize.y; ++j)
 		{
-			for (int i = 0; i < outputSize.x; ++i)
+			for (int i = 0; i < resultSize.x; ++i)
 			{
-				int index = j * outputSize.x + i;
+				int index = j * resultSize.x + i;
 				Vector4 center = *(temp + index);
 				uint32_t centerChartIndex = s_State.atlasMask[index];
 
@@ -1273,7 +1218,7 @@ namespace Blueberry
 					for (uint32_t k = 0; k < 8; ++k)
 					{
 						Vector2Int offset = offsets[k];
-						int nearbyIndex = (j + offset.y) * outputSize.x + (i + offset.x);
+						int nearbyIndex = (j + offset.y) * resultSize.x + (i + offset.x);
 						if (nearbyIndex > 0 && nearbyIndex < atlasSize)
 						{
 							Vector4 nearby = *(temp + nearbyIndex);
@@ -1289,9 +1234,9 @@ namespace Blueberry
 			}
 		}
 
-		for (int j = 0; j < outputSize.y; j += 4)
+		for (int j = 0; j < resultSize.y; j += 4)
 		{
-			for (int i = 0; i < outputSize.x; i += 4)
+			for (int i = 0; i < resultSize.x; i += 4)
 			{
 				bool anyValid = false, anyInvalid = false;
 				Vector4 mean = Vector4::Zero;
@@ -1300,7 +1245,7 @@ namespace Blueberry
 				{
 					for (int y = 0; y < 4; ++y)
 					{
-						int index = (j + y) * outputSize.x + (i + x);
+						int index = (j + y) * resultSize.x + (i + x);
 						Vector4 color = temp[index];
 						if (color.w > 0.5)
 						{
@@ -1321,7 +1266,7 @@ namespace Blueberry
 					{
 						for (int y = 0; y < 4; ++y)
 						{
-							int index = (j + y) * outputSize.x + (i + x);
+							int index = (j + y) * resultSize.x + (i + x);
 							if (temp[index].w < 0.5)
 							{
 								temp[index] = mean;
@@ -1331,10 +1276,66 @@ namespace Blueberry
 				}
 			}
 		}
+	}
 
-		BB_FREE(temp);
-		chartScaleOffset = s_State.chartOffsetScale;
-		chartInstanceOffset = s_State.chartInstanceOffset;
+	void LightmappingManager::Calculate(Scene* scene, const CalculationParams& params)
+	{
+		if (s_LightmappingState != LightmappingState::None)
+		{
+			return;
+		}
+
+		s_LightmappingState = LightmappingState::Calculating;
+		std::thread worker([scene, params]()
+		{
+			BB_INITIALIZE_ALLOCATOR_THREAD();
+			s_State = {};
+			s_State.params = params;
+
+			CreateContext(s_State);
+			//CreateOptixDenoiser(s_State);
+			CreateDenoiserPTXModule(s_State);
+			InitializeAccels(s_State, scene);
+			CreatePTXModule(s_State);
+			CreateProgramGroups(s_State);
+			CreatePipeline(s_State);
+			CreateSBT(s_State);
+			InitializeParams(s_State);
+
+			int size = params.maxSize;
+			s_State.result.output.resize(size * size * (sizeof(Vector4) / sizeof(uint8_t)));
+			s_State.result.outputSize = Vector2Int(size, size);
+			Vector4* temp = BB_MALLOC_ARRAY(Vector4, size * size);
+
+			InitializeFrameBuffer(s_State, s_State.result.outputSize);
+			//InitializeOptixDenoiserFrameBuffer(s_State);
+			InitializeLights(s_State, scene);
+			InitializeChartsAndBVH(s_State);
+
+			uint32_t tileSize = static_cast<uint32_t>(params.tileSize * params.tileSize);
+			s_State.launchSize = tileSize;
+			BB_INFO("Started baking");
+			Launch(s_State);
+			BB_INFO("Ended baking");
+
+			if (params.denoise)
+			{
+				LaunchDenoiser(s_State);
+				//LaunchOptixDenoiser(s_State);
+				s_State.denoisedColorBuffer.download(temp, s_State.denoisedColorBuffer.sizeInBytes / sizeof(Vector4));
+			}
+			else
+			{
+				s_State.colorBuffer.download(temp, s_State.colorBuffer.sizeInBytes / sizeof(Vector4));
+			}
+
+			FixCharts(temp, reinterpret_cast<Vector4*>(s_State.result.output.data()), s_State.result.outputSize);
+
+			BB_FREE(temp);
+			BB_SHUTDOWN_ALLOCATOR_THREAD();
+			s_LightmappingState = LightmappingState::Waiting;
+		});
+		worker.detach();
 	}
 
 	void LightmappingManager::Shutdown()
@@ -1364,5 +1365,29 @@ namespace Blueberry
 			cuModuleUnload(s_State.denoiserPtxModule);
 			s_State = {};
 		}
+		s_LightmappingState = LightmappingState::None;
+	}
+
+	float LightmappingManager::GetProgress()
+	{
+		if (s_LightmappingState != LightmappingState::Calculating)
+		{
+			return 0;
+		}
+		if (s_State.completeCounter == nullptr)
+		{
+			return 0;
+		}
+		return static_cast<float>(*s_State.completeCounter) / s_State.validTexels.size();
+	}
+
+	const LightmappingState& LightmappingManager::GetLightmappingState()
+	{
+		return s_LightmappingState;
+	}
+
+	CalculationResult& LightmappingManager::GetCalculationResult()
+	{
+		return s_State.result;
 	}
 }

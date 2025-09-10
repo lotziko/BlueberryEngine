@@ -22,11 +22,12 @@ namespace Blueberry
 		float4* accumulatedImage;
 
 		uint2* validTexels;
+		unsigned int validTexelsCount;
+		unsigned int* complete;
+		unsigned int* completeCounter;
 		float4* color;
 		float4* normal;
-		unsigned int* chartIndex;
 
-		unsigned int offset;
 		uint2 imageSize;
 		int samplePerTexel;
 		float texelPerUnit;

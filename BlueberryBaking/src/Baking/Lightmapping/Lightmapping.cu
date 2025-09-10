@@ -175,84 +175,136 @@ namespace Blueberry
 		float3 bitangentWS;
 	};
 
+	#define BATCH_SIZE 64
+	#define RGB_TO_LUMINANCE make_float3(0.2125f, 0.7154f, 0.0721f)
+
 	extern "C" __global__ void __raygen__radiance()
 	{
-		const uint3 idx = optixGetLaunchIndex();
-		const uint2 pos = params.validTexels[params.offset + idx.x];
-
-		unsigned int imageIndex = pos.y * params.imageSize.x + pos.x;
-		unsigned int seed = tea<4>(imageIndex, params.accumulationFrameIndex);
-
-		float2 texelSize = make_float2(1.0f / params.imageSize.x, 1.0f / params.imageSize.y);
-
-		SamplePositionData samplePositions[64];
-		unsigned int validPositionCount = 0;
-		for (int i = 0; i < 64; ++i)
+		while (true)
 		{
-			float2 jitter = make_float2(rnd(seed) - 0.5f, rnd(seed) - 0.5f);
-			float2 samplePosition = make_float2((pos.x + 0.5f + jitter.x) * texelSize.x, (pos.y + 0.5f + jitter.y) * texelSize.y);
-			BVHTriangle triangle = params.bvh.GetTriangle(samplePosition);
-			if (triangle.index.y != UINT_MAX)
+			unsigned int texelIndex = UINT_MAX;
+			for (unsigned int i = 0; i < params.validTexelsCount; ++i)
 			{
-				BVHInstance instance = params.bvh.instances[triangle.index.x];
-				Matrix3x4 localToWorld = params.instanceMatrices[triangle.index.x];
-
-				uint3 index = instance.indices[triangle.index.y / 3];
-				float3 uvw = GetBarycentrics(samplePosition, triangle.p1, triangle.p2, triangle.p3);
-
-				float3 v0 = instance.vertices[index.x];
-				float3 v1 = instance.vertices[index.y];
-				float3 v2 = instance.vertices[index.z];
-
-				float3 n0 = instance.normals[index.x];
-				float3 n1 = instance.normals[index.y];
-				float3 n2 = instance.normals[index.z];
-
-				float4 t0 = instance.tangents[index.x];
-				float4 t1 = instance.tangents[index.y];
-				float4 t2 = instance.tangents[index.z];
-
-				float3 positionOS = v0 * uvw.z + v1 * uvw.x + v2 * uvw.y;
-				float3 normalOS = n0 * uvw.z + n1 * uvw.x + n2 * uvw.y;
-				float4 tangentOS = t0 * uvw.z + t1 * uvw.x + t2 * uvw.y;
-
-				float3 positionWS = localToWorld * make_float4(positionOS.x, positionOS.y, positionOS.z, 1);
-				float3 normalWS, tangentWS, bitangentWS;
-				transformOSToWS(localToWorld, normalOS, tangentOS, normalWS, tangentWS, bitangentWS);
-				traceBackface(positionWS, normalWS, tangentWS, bitangentWS);
-				
-				SamplePositionData positionData = {};
-				positionData.positionWS = positionWS;
-				positionData.normalWS = normalWS;
-				positionData.tangentWS = tangentWS;
-				positionData.bitangentWS = bitangentWS;
-				samplePositions[validPositionCount] = positionData;
-				validPositionCount += 1;
+				if (atomicCAS(&params.complete[i], 0, 1) == 0)
+				{
+					texelIndex = i;
+					break;
+				}
 			}
-		}
 
-		const int sampleCount = params.samplePerTexel;
-		int validSamples = 0;
-
-		float4 imageResult = make_float4(0, 0, 0, 0);
-		float4 normalResult = make_float4(0, 0, 0, 0);
-
-		for (int i = 0; i < sampleCount; ++i)
-		{
-			SamplePositionData positionData = samplePositions[rnd_range(seed, validPositionCount)];
-			float3 radiance = {};
-			if (traceRadiance(radiance, positionData.positionWS + positionData.normalWS * 0.001f, positionData.normalWS, positionData.tangentWS, positionData.bitangentWS, 0, seed))
+			if (texelIndex == UINT_MAX)
 			{
-				imageResult += make_float4(radiance.x, radiance.y, radiance.z, 1);
-				normalResult += make_float4(positionData.normalWS, 1);
-				validSamples += 1;
+				break;
 			}
-		}
 
-		if (validSamples > sampleCount / 100) // Skip texels with low valid sample count and interpolate from nearby ones
-		{
-			params.color[imageIndex] = imageResult / max(validSamples, 1);
-			params.normal[imageIndex] = normalResult / max(validSamples, 1);
+			const uint2 pos = params.validTexels[texelIndex];
+
+			unsigned int imageIndex = pos.y * params.imageSize.x + pos.x;
+			unsigned int seed = tea<4>(imageIndex, params.accumulationFrameIndex);
+
+			float2 texelSize = make_float2(1.0f / params.imageSize.x, 1.0f / params.imageSize.y);
+
+			SamplePositionData samplePositions[64];
+			unsigned int validPositionCount = 0;
+			for (int i = 0; i < 64; ++i)
+			{
+				float2 jitter = make_float2(rnd(seed) - 0.5f, rnd(seed) - 0.5f);
+				float2 samplePosition = make_float2((pos.x + 0.5f + jitter.x) * texelSize.x, (pos.y + 0.5f + jitter.y) * texelSize.y);
+				BVHTriangle triangle = params.bvh.GetTriangle(samplePosition);
+				if (triangle.index.y != UINT_MAX)
+				{
+					BVHInstance instance = params.bvh.instances[triangle.index.x];
+					Matrix3x4 localToWorld = params.instanceMatrices[triangle.index.x];
+
+					uint3 index = instance.indices[triangle.index.y / 3];
+					float3 uvw = GetBarycentrics(samplePosition, triangle.p1, triangle.p2, triangle.p3);
+
+					float3 v0 = instance.vertices[index.x];
+					float3 v1 = instance.vertices[index.y];
+					float3 v2 = instance.vertices[index.z];
+
+					float3 n0 = instance.normals[index.x];
+					float3 n1 = instance.normals[index.y];
+					float3 n2 = instance.normals[index.z];
+
+					float4 t0 = instance.tangents[index.x];
+					float4 t1 = instance.tangents[index.y];
+					float4 t2 = instance.tangents[index.z];
+
+					float3 positionOS = v0 * uvw.z + v1 * uvw.x + v2 * uvw.y;
+					float3 normalOS = n0 * uvw.z + n1 * uvw.x + n2 * uvw.y;
+					float4 tangentOS = t0 * uvw.z + t1 * uvw.x + t2 * uvw.y;
+
+					float3 positionWS = localToWorld * make_float4(positionOS.x, positionOS.y, positionOS.z, 1);
+					float3 normalWS, tangentWS, bitangentWS;
+					transformOSToWS(localToWorld, normalOS, tangentOS, normalWS, tangentWS, bitangentWS);
+					//traceBackface(positionWS, normalWS, tangentWS, bitangentWS);
+
+					SamplePositionData positionData = {};
+					positionData.positionWS = positionWS;
+					positionData.normalWS = normalWS;
+					positionData.tangentWS = tangentWS;
+					positionData.bitangentWS = bitangentWS;
+					samplePositions[validPositionCount] = positionData;
+					validPositionCount += 1;
+				}
+			}
+
+			const int maxSampleCount = params.samplePerTexel;
+			const int minSampleCount = maxSampleCount / 20;
+
+			float3 imageResult = {};
+			float3 normalResult = {};
+
+			float mean = {};
+			float meanDistSquared = {};
+			int sampleCount = 0;
+			int validSampleCount = 0;
+
+			while (true)
+			{
+				SamplePositionData positionData = samplePositions[rnd_range(seed, validPositionCount)];
+				float3 radiance = {};
+				if (traceRadiance(radiance, positionData.positionWS + positionData.normalWS * 0.001f, positionData.normalWS, positionData.tangentWS, positionData.bitangentWS, 0, seed))
+				{
+					validSampleCount += 1;
+				}
+				sampleCount += 1;
+				imageResult += radiance;
+				if (validSampleCount < sampleCount / 10)
+				{
+					break;
+				}
+
+				float sample = dot(radiance, RGB_TO_LUMINANCE);
+				float delta = sample - mean;
+				mean += delta / sampleCount;
+				meanDistSquared += delta * (sample - mean);
+
+				if (validSampleCount > minSampleCount)
+				{
+					float variance = meanDistSquared / (sampleCount - 1);
+					float threshold = 0.05f / 1.96f;
+					float standardError = sqrtf(variance / sampleCount);
+
+					if (standardError < mean * threshold)
+					{
+						break;
+					}
+				}
+
+				if (sampleCount >= maxSampleCount)
+				{
+					break;
+				}
+			}
+
+			if (validSampleCount > maxSampleCount / 100) // Skip texels with low valid sample count and interpolate from nearby ones
+			{
+				params.color[imageIndex] = make_float4(imageResult / max(validSampleCount, 1), 1);
+				params.normal[imageIndex] = make_float4(normalResult / max(validSampleCount, 1), 1);
+			}
+			atomicAdd(params.completeCounter, 1);
 		}
 	}
 

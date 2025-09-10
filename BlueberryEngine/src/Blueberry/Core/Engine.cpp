@@ -9,7 +9,7 @@
 #include "Blueberry\Graphics\Renderer2D.h"
 #include "Blueberry\Graphics\Concrete\DefaultRenderer.h"
 #include "Blueberry\Input\Input.h"
-#include "..\Threading\JobSystem.h"
+#include "Blueberry\Threading\JobSystem.h"
 #include "..\Graphics\RegisterGraphicsTypes.h"
 #include "Blueberry\Graphics\DefaultShaders.h"
 
