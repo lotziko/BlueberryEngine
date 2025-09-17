@@ -9,7 +9,8 @@ namespace Blueberry
 		uint2 imageSize;
 
 		float4* inputColor;
-		float4* inputNormal;
+		float3* inputNormal;
+		float4* inputPosition;
 		float4* outputColor;
 		unsigned int* chartIndex;
 	};

@@ -36,7 +36,7 @@ namespace Blueberry
 		return safeExpNeg(d2 / denom);
 	}
 
-	static __forceinline__ __device__ float gaussianNormal(const float4 n0, const float4 n1, float sigmaNormal)
+	static __forceinline__ __device__ float gaussianNormal(const float3 n0, const float3 n1, float sigmaNormal)
 	{
 		float3 d = make_float3(n0.x - n1.x, n0.y - n1.y, n0.z - n1.z);
 		const float d2 = d.x*d.x + d.y*d.y + d.z*d.z;
@@ -44,14 +44,51 @@ namespace Blueberry
 		return safeExpNeg(d2 / denom);
 	}
 
-	extern "C" __global__ void __denoise()
+	extern "C" __global__ void __denoise__firstpass()
 	{
 		unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
 		unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+		unsigned int index = y * params.imageSize.x + x;
+		unsigned int size = params.imageSize.x * params.imageSize.y;
+		float4 color = params.inputColor[index];
 		
+		if (color.w > 0.5f)
+		{
+			float3 normal = params.inputNormal[index];
+			float4 position = params.inputPosition[index];
+			float4 colorSum = {};
+			int validSamples = 0;
+
+			for (unsigned int i = 0; i < size; ++i)
+			{
+				float4 nearbyColor = params.inputColor[i];
+				if (nearbyColor.w > 0.5f)
+				{
+					float4 nearbyPosition = params.inputPosition[i];
+					float3 nearbyNormal = params.inputNormal[i];
+					float3 vector = make_float3(position) - make_float3(nearbyPosition);
+
+					if (index == i || length(vector) <= position.w && dot(normal, nearbyNormal) > 0.9f && dot(normal, normalize(vector)) < 0.1f) // is inside biased hemisphere
+					{
+						colorSum += params.inputColor[i];
+						validSamples += 1;
+					}
+				}
+			}
+
+			params.outputColor[index] = make_float4(colorSum.x / validSamples, colorSum.y / validSamples, colorSum.z / validSamples, 1);
+		}
+	}
+
+	extern "C" __global__ void __denoise__secondpass()
+	{
+		unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
+		unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
+
 		unsigned int index = y * params.imageSize.x + x;
 		const float4 c1 = params.inputColor[index];
-		const float4 n1 = params.inputNormal[index];
+		const float3 n1 = params.inputNormal[index];
 		const unsigned int chartIndex = params.chartIndex[index];
 		const int r = 8;
 		const float sigmaSpatial = r * 0.5f;
@@ -76,7 +113,7 @@ namespace Blueberry
 				float w = gaussianSpatial(dx, dy, sigmaSpatial);
 				w *= gaussianRange(c1, c2, sigmaRange);
 
-				const float4 n2 = params.inputNormal[nearbyIndex];
+				const float3 n2 = params.inputNormal[nearbyIndex];
 				w *= gaussianNormal(n1, n2, sigmaNormal);
 
 				sumCol.x += w * c2.x;

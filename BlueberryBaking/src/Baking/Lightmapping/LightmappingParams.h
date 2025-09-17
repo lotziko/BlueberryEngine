@@ -23,19 +23,15 @@ namespace Blueberry
 
 		uint2* validTexels;
 		unsigned int validTexelsCount;
-		unsigned int* complete;
 		unsigned int* completeCounter;
+
 		float4* color;
-		float4* normal;
+		float3* normal;
+		float4* position;
 
 		uint2 imageSize;
 		int samplePerTexel;
 		float texelPerUnit;
-
-		float3 camEye;
-		float3 camU;
-		float3 camV;
-		float3 camW;
 
 		DirectionalLight directionalLight;
 		BVH bvh;

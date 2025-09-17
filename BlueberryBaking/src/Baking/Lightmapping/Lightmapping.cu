@@ -4,6 +4,7 @@
 #include "..\VecMath.h"
 #include "..\Random.h"
 #include "..\Matrix.h"
+#include "Misc.h"
 
 namespace Blueberry
 {
@@ -12,87 +13,109 @@ namespace Blueberry
 		__constant__ LightmappingParams params;
 	}
 
-	static __forceinline__ __device__ bool isValid(float3& vector)
+	#define MAX_OCCLUSION_RADIUS 1.0f
+
+	struct SamplePositionData
 	{
-		return isfinite(vector.x) && isfinite(vector.y) && isfinite(vector.z);
-	}
+		float3 positionWS;
+		float3 normalWS;
+		float3 tangentWS;
+		float3 bitangentWS;
+	};
 
-	static __forceinline__ __device__ void computeRay(uint3 idx, uint3 dim, float3& origin, float3& direction, float2& jitter)
+	struct __align__(16) SampleData
 	{
-		const float3 U = params.camU;
-		const float3 V = params.camV;
-		const float3 W = params.camW;
-		const float2 d = 2.0f * make_float2(
-			(static_cast<float>(idx.x) + jitter.x) / static_cast<float>(dim.x),
-			(static_cast<float>(idx.y) + jitter.y) / static_cast<float>(dim.y)
-		) - 1.0f;
+		SamplePositionData samplePositions[64];
+		unsigned int validPositionCount;
+		float radius;
+	};
 
-		origin = params.camEye;
-		direction = normalize(d.x * U + d.y * V + W);
-	}
+	//// Based on https://ndotl.wordpress.com/2018/08/29/baking-artifact-free-lightmaps/
+	//static __forceinline__ __device__ bool traceBackface(float3& positionWS, float3 normalWS, float3 tangentWS, float3 bitangentWS)
+	//{
+	//	float maxDistance = (1.0f / params.texelPerUnit) * 0.5f;
+	//	float3 rayOrigin = positionWS + normalWS * 0.001f;
+	//	float3 rayDirections[4] = { tangentWS, -tangentWS, bitangentWS, -bitangentWS };
+	//	for (int i = 0; i < 4; ++i)
+	//	{
+	//		unsigned int valid = 0;
+	//		unsigned int c0 = 0;
+	//		unsigned int c1 = 0;
+	//		unsigned int c2 = 0;
+	//		if (!isValid(rayOrigin))
+	//		{
+	//			continue;
+	//		}
+	//		optixTrace(
+	//			params.handle,
+	//			rayOrigin,
+	//			rayDirections[i],
+	//			0,											// Min intersection distance
+	//			maxDistance,								// Max intersection distance
+	//			0.0f,
+	//			OptixVisibilityMask(255),
+	//			OPTIX_RAY_FLAG_NONE,
+	//			0,											// SBT offset
+	//			2,											// SBT stride 
+	//			0,											// missSBTIndex
+	//			valid, c0, c1, c2);
+	//		if (valid == 1)
+	//		{
+	//			float3 newPositionWS = make_float3(__uint_as_float(c0), __uint_as_float(c1), __uint_as_float(c2));
+	//			if (isValid(newPositionWS))
+	//			{
+	//				positionWS = newPositionWS;
+	//				return true;
+	//			}
+	//		}
+	//	}
+	//	return false;
+	//}
 
-	static __forceinline__ __device__ void cosineSampleHemisphere(const float u1, const float u2, float3& p)
+	static __forceinline__ __device__ bool traceOcclusion(SampleData& data, unsigned int& seed)
 	{
-		// Uniformly sample disk.
-		const float r = sqrtf(u1);
-		const float phi = 2.0f*M_PIf * u2;
-		p.x = r * cosf(phi);
-		p.y = r * sinf(phi);
+		data.radius = MAX_OCCLUSION_RADIUS;
 
-		// Project up to hemisphere.
-		p.z = sqrtf(fmaxf(0.0f, 1.0f - p.x*p.x - p.y*p.y));
-	}
-
-	static __forceinline__ __device__ void transformOSToWS(Matrix3x4 localToWorld, float3 normalOS, float4 tangentOS, float3 &normalWS, float3 &tangentWS, float3 &bitangentWS)
-	{
-		normalWS = normalize(localToWorld * make_float4(normalOS.x, normalOS.y, normalOS.z, 0));
-		tangentWS = normalize(localToWorld * make_float4(tangentOS.x, tangentOS.y, tangentOS.z, 0));
-		bitangentWS = cross(normalWS, tangentWS) * tangentOS.w;
-	}
-
-	// Based on https://ndotl.wordpress.com/2018/08/29/baking-artifact-free-lightmaps/
-	static __forceinline__ __device__ bool traceBackface(float3& positionWS, float3 normalWS, float3 tangentWS, float3 bitangentWS)
-	{
-		float maxDistance = (1.0f / params.texelPerUnit) * 0.5f;
-		float3 rayOrigin = positionWS + normalWS * 0.001f;
-		float3 rayDirections[4] = { tangentWS, -tangentWS, bitangentWS, -bitangentWS };
-		for (int i = 0; i < 4; ++i)
+		for (int i = 0; i < 128; ++i)
 		{
-			unsigned int valid = 0;
-			unsigned int c0 = 0;
-			unsigned int c1 = 0;
-			unsigned int c2 = 0;
+			const float z1 = rnd(seed);
+			const float z2 = rnd(seed);
+			SamplePositionData positionData = data.samplePositions[rnd_range(seed, data.validPositionCount)];
+
+			float3 randomDirection;
+			cosineSampleHemisphere(z1, z2, randomDirection);
+
+			float3 rayOrigin = positionData.positionWS + positionData.normalWS * 0.001f;
+
 			if (!isValid(rayOrigin))
 			{
-				continue;
+				return false;
 			}
+			float3 rayDirection = randomDirection.x * positionData.tangentWS + randomDirection.y * positionData.bitangentWS + randomDirection.z * positionData.normalWS;
+
+			unsigned int c0 = 0;
 			optixTrace(
 				params.handle,
 				rayOrigin,
-				rayDirections[i],
+				rayDirection,
 				0,											// Min intersection distance
-				maxDistance,								// Max intersection distance
+				MAX_OCCLUSION_RADIUS,								// Max intersection distance
 				0.0f,
 				OptixVisibilityMask(255),
 				OPTIX_RAY_FLAG_NONE,
 				0,											// SBT offset
 				3,											// SBT stride 
 				0,											// missSBTIndex
-				valid, c0, c1, c2);
-			if (valid == 1)
+				c0);
+			float newRadius = __uint_as_float(c0);
+			if (newRadius > 0.0f)
 			{
-				float3 newPositionWS = make_float3(__uint_as_float(c0), __uint_as_float(c1), __uint_as_float(c2));
-				if (isValid(newPositionWS))
-				{
-					positionWS = newPositionWS;
-					return true;
-				}
+				data.radius = fmin(newRadius, data.radius);
 			}
 		}
-		return false;
 	}
 
-	static __forceinline__ __device__ bool traceRadiance(float3 &radiance, float3 positionWS, float3 normalWS, float3 tangentWS, float3 bitangentWS, unsigned int depth, unsigned int seed)
+	static __forceinline__ __device__ bool traceRadiance(float3 &radiance, float3 positionWS, float3 normalWS, float3 tangentWS, float3 bitangentWS, unsigned int depth, unsigned int& seed)
 	{
 		// Next ray
 		if (depth < BOUNCE_COUNT)
@@ -167,32 +190,16 @@ namespace Blueberry
 		return true;
 	}
 
-	struct  __align__(16) SamplePositionData
-	{
-		float3 positionWS;
-		float3 normalWS;
-		float3 tangentWS;
-		float3 bitangentWS;
-	};
-
 	#define BATCH_SIZE 64
 	#define RGB_TO_LUMINANCE make_float3(0.2125f, 0.7154f, 0.0721f)
 
-	extern "C" __global__ void __raygen__radiance()
+	extern "C" __global__ void __raygen__secondpass()
 	{
 		while (true)
 		{
-			unsigned int texelIndex = UINT_MAX;
-			for (unsigned int i = 0; i < params.validTexelsCount; ++i)
-			{
-				if (atomicCAS(&params.complete[i], 0, 1) == 0)
-				{
-					texelIndex = i;
-					break;
-				}
-			}
-
-			if (texelIndex == UINT_MAX)
+			unsigned int texelIndex = atomicAdd(params.completeCounter, 1);
+			
+			if (texelIndex >= params.validTexelsCount)
 			{
 				break;
 			}
@@ -204,8 +211,10 @@ namespace Blueberry
 
 			float2 texelSize = make_float2(1.0f / params.imageSize.x, 1.0f / params.imageSize.y);
 
-			SamplePositionData samplePositions[64];
-			unsigned int validPositionCount = 0;
+			float3 normalResult = {};
+			float3 positionResult = {};
+
+			SampleData sampleData = {};
 			for (int i = 0; i < 64; ++i)
 			{
 				float2 jitter = make_float2(rnd(seed) - 0.5f, rnd(seed) - 0.5f);
@@ -245,17 +254,23 @@ namespace Blueberry
 					positionData.normalWS = normalWS;
 					positionData.tangentWS = tangentWS;
 					positionData.bitangentWS = bitangentWS;
-					samplePositions[validPositionCount] = positionData;
-					validPositionCount += 1;
+					sampleData.samplePositions[sampleData.validPositionCount] = positionData;
+					sampleData.validPositionCount += 1;
+					normalResult += normalWS;
+					positionResult += positionWS;
 				}
 			}
 
-			const int maxSampleCount = params.samplePerTexel;
+			traceOcclusion(sampleData, seed);
+
+			float a = 1.0f;
+			float b = 0.2f;
+			float t = sampleData.radius / MAX_OCCLUSION_RADIUS;
+			const int maxSampleCount = static_cast<int>(params.samplePerTexel * (a + t * (b - a)));
 			const int minSampleCount = maxSampleCount / 20;
 
 			float3 imageResult = {};
-			float3 normalResult = {};
-
+			
 			float mean = {};
 			float meanDistSquared = {};
 			int sampleCount = 0;
@@ -263,7 +278,7 @@ namespace Blueberry
 
 			while (true)
 			{
-				SamplePositionData positionData = samplePositions[rnd_range(seed, validPositionCount)];
+				SamplePositionData positionData = sampleData.samplePositions[rnd_range(seed, sampleData.validPositionCount)];
 				float3 radiance = {};
 				if (traceRadiance(radiance, positionData.positionWS + positionData.normalWS * 0.001f, positionData.normalWS, positionData.tangentWS, positionData.bitangentWS, 0, seed))
 				{
@@ -302,14 +317,19 @@ namespace Blueberry
 			if (validSampleCount > maxSampleCount / 100) // Skip texels with low valid sample count and interpolate from nearby ones
 			{
 				params.color[imageIndex] = make_float4(imageResult / max(validSampleCount, 1), 1);
-				params.normal[imageIndex] = make_float4(normalResult / max(validSampleCount, 1), 1);
 			}
-			atomicAdd(params.completeCounter, 1);
+			params.normal[imageIndex] = normalResult / max(sampleData.validPositionCount, 1u);
+			params.position[imageIndex] = make_float4(positionResult / max(sampleData.validPositionCount, 1u), sampleData.radius);
 		}
 	}
 
-	extern "C" __global__ void __miss__backface()
+	//extern "C" __global__ void __miss__backface()
+	//{
+	//}
+
+	extern "C" __global__ void __miss__occlusion()
 	{
+		optixSetPayload_0(0);
 	}
 
 	extern "C" __global__ void __miss__radiance()
@@ -330,16 +350,21 @@ namespace Blueberry
 	{
 	}
 
-	extern "C" __global__ void __closesthit__backface()
+	//extern "C" __global__ void __closesthit__backface()
+	//{
+	//	if (optixIsBackFaceHit())
+	//	{
+	//		const float3 hitPos = optixGetWorldRayOrigin() + (optixGetRayTmax() + 0.001f) * optixGetWorldRayDirection();
+	//		optixSetPayload_0(1);
+	//		optixSetPayload_1(__float_as_uint(hitPos.x));
+	//		optixSetPayload_2(__float_as_uint(hitPos.y));
+	//		optixSetPayload_3(__float_as_uint(hitPos.z));
+	//	}
+	//}
+
+	extern "C" __global__ void __closesthit__occlusion()
 	{
-		if (optixIsBackFaceHit())
-		{
-			const float3 hitPos = optixGetWorldRayOrigin() + (optixGetRayTmax() + 0.001f) * optixGetWorldRayDirection();
-			optixSetPayload_0(1);
-			optixSetPayload_1(__float_as_uint(hitPos.x));
-			optixSetPayload_2(__float_as_uint(hitPos.y));
-			optixSetPayload_3(__float_as_uint(hitPos.z));
-		}
+		optixSetPayload_0(__float_as_uint(optixGetRayTmax()));
 	}
 
 	extern "C" __global__ void __closesthit__radiance()
@@ -375,11 +400,13 @@ namespace Blueberry
 		}
 
 		float3 radiance = make_float3(__uint_as_float(optixGetPayload_2()), __uint_as_float(optixGetPayload_3()), __uint_as_float(optixGetPayload_4()));
-		if (traceRadiance(radiance, hitPos + normalWS * 0.001f, normalWS, tangentWS, bitangentWS, optixGetPayload_1(), optixGetPayload_5()))
+		unsigned int seed = optixGetPayload_5();
+		if (traceRadiance(radiance, hitPos + normalWS * 0.001f, normalWS, tangentWS, bitangentWS, optixGetPayload_1(), seed))
 		{
 			optixSetPayload_2(__float_as_uint(radiance.x));
 			optixSetPayload_3(__float_as_uint(radiance.y));
 			optixSetPayload_4(__float_as_uint(radiance.z));
+			optixSetPayload_5(seed);
 		}
 		else
 		{

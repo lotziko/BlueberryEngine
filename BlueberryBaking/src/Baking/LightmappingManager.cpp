@@ -5,7 +5,6 @@
 #include "Blueberry\Scene\Components\MeshRenderer.h"
 #include "Blueberry\Scene\Components\Light.h"
 #include "Blueberry\Scene\Components\Transform.h"
-#include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Graphics\Mesh.h"
 #include "Blueberry\Tools\FileHelper.h"
 
@@ -77,36 +76,36 @@ namespace Blueberry
 
 	#define CLOSEST_HIT_COUNT 3
 
-	struct LightmapperState
+	struct PassState
 	{
-		OptixDeviceContext context = nullptr;
-		CalculationParams params = {};
-
-		OptixDenoiser denoiser = nullptr;
-		OptixDenoiserParams denoiserParams = {};
-		OptixImage2D denoiserInputs[3] = {};
-		OptixImage2D denoiserOutput = {};
-		CUDABuffer denoiserIntensity = {};
-		CUDABuffer denoiserScratch = {};
-		CUDABuffer denoiserState = {};
-
-		List<MeshData> meshDatas = {};
-		OptixTraversableHandle iasHandle = 0;
-
 		OptixPipelineCompileOptions pipelineCompileOptions = {};
 		OptixPipeline pipeline = nullptr;
 		OptixModule ptxModule = {};
 
 		OptixProgramGroup raygenProgGroup = 0;
-		OptixProgramGroup missBackfaceProgGroup = 0;
+		OptixProgramGroup missOcclusionProgGroup = 0;
 		OptixProgramGroup missRadianceProgGroup = 0;
 		OptixProgramGroup missShadowProgGroup = 0;
-		OptixProgramGroup hitgroupBackfaceProgGroup = 0;
+		OptixProgramGroup hitgroupOcclusionProgGroup = 0;
 		OptixProgramGroup hitgroupRadianceProgGroup = 0;
 		OptixProgramGroup hitgroupShadowProgGroup = 0;
 
+		OptixShaderBindingTable sbt = {};
+	};
+
+	struct LightmapperState
+	{
+		OptixDeviceContext context = nullptr;
+		CalculationParams params = {};
+
+		List<MeshData> meshDatas = {};
+		OptixTraversableHandle iasHandle = 0;
+
+		PassState pass = {};
+
 		CUmodule denoiserPtxModule = {};
-		CUfunction denoiserKernel = {};
+		CUfunction denoiserKernelFirstPass = {};
+		CUfunction denoiserKernelpass = {};
 
 		uint32_t launchSize;
 		List<uint2> validTexels = {};
@@ -117,17 +116,14 @@ namespace Blueberry
 
 		CUstream stream = 0;
 		CUDABuffer instanceMatrices = {};
-		CUDABuffer accumulatedFrameBuffer = {};
 		CUDABuffer validTexelsBuffer = {};
 		CUDABuffer colorBuffer = {};
 		CUDABuffer normalBuffer = {};
+		CUDABuffer positionBuffer = {};
 		CUDABuffer chartIndexBuffer = {};
-		CUDABuffer completeBuffer = {};
 		CUDABuffer denoisedColorBuffer = {};
 		LightmappingParams lightmappingParams = {};
 		DenoisingParams denoisingParams = {};
-		
-		OptixShaderBindingTable sbt = {};
 	} s_State = {};
 
 	static CUdeviceptr s_ParamsPtr = 0;
@@ -143,25 +139,6 @@ namespace Blueberry
 		std::cout << message << std::endl;
 		//std::cerr << "[" << std::setw(2) << level << "][" << std::setw(12) << tag << "]: "
 		//	<< message << "\n";
-	}
-
-	void GetCameraParams(Camera* camera, float3& camEye, float3& U, float3& V, float3& W)
-	{
-		Transform* transform = camera->GetTransform();
-		Vector3 cameraPosition = transform->GetPosition();
-		Vector3 cameraDirection = Vector3::Transform(Vector3::Forward, transform->GetRotation());
-		Vector3 cameraUp = Vector3::Transform(Vector3::Up, transform->GetRotation());
-
-		camEye = { cameraPosition.x, cameraPosition.y, cameraPosition.z };
-		W = { cameraDirection.x, cameraDirection.y, cameraDirection.z }; // Do not normalize W -- it implies focal length
-		float wlen = length(W);
-		U = normalize(cross(W, { cameraUp.x, cameraUp.y, cameraUp.z }));
-		V = normalize(cross(U, W));
-
-		float vlen = wlen * tanf(0.5f * camera->GetFieldOfView() * M_PIf / 180.0f);
-		V = V * vlen;
-		float ulen = vlen * camera->GetAspectRatio();
-		U = U * ulen;
 	}
 
 	void CreateContext(LightmapperState& state)
@@ -180,23 +157,7 @@ namespace Blueberry
 			OPTIX_CHECK(optixDeviceContextCreate(cuCtx, &options, &state.context));
 		}
 	}
-
-	void CreateOptixDenoiser(LightmapperState& state)
-	{
-		// Create denoiser
-		{
-			OptixDenoiserOptions options = {};
-			options.inputKind = OPTIX_DENOISER_INPUT_RGB_ALBEDO_NORMAL;
-			OPTIX_CHECK(optixDenoiserCreate(state.context, &options, &state.denoiser));
-			OPTIX_CHECK(optixDenoiserSetModel(
-				state.denoiser,
-				OPTIX_DENOISER_MODEL_KIND_HDR,
-				nullptr, // data
-				0        // size
-			));
-		}
-	}
-
+	
 	void InitializeAccels(LightmapperState& state, Scene* scene)
 	{
 		// Initialize meshes
@@ -374,28 +335,31 @@ namespace Blueberry
 			moduleCompileOptions.optLevel = OPTIX_COMPILE_OPTIMIZATION_DEFAULT;
 			moduleCompileOptions.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_LINEINFO;
 
-			state.pipelineCompileOptions.usesMotionBlur = false;
-			state.pipelineCompileOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_ANY;
-			state.pipelineCompileOptions.numPayloadValues = 6;
-			state.pipelineCompileOptions.numAttributeValues = 2;
-			state.pipelineCompileOptions.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE; // should be OPTIX_EXCEPTION_FLAG_STACK_OVERFLOW;
-			state.pipelineCompileOptions.pipelineLaunchParamsVariableName = "params";
+			// Pass
+			{
+				state.pass.pipelineCompileOptions.usesMotionBlur = false;
+				state.pass.pipelineCompileOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_ANY;
+				state.pass.pipelineCompileOptions.numPayloadValues = 6;
+				state.pass.pipelineCompileOptions.numAttributeValues = 2;
+				state.pass.pipelineCompileOptions.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE; // should be OPTIX_EXCEPTION_FLAG_STACK_OVERFLOW;
+				state.pass.pipelineCompileOptions.pipelineLaunchParamsVariableName = "params";
 
-			String ptx;
-			FileHelper::Load(ptx, "assets\\ptx\\Lightmapping.ptx");
+				String ptx;
+				FileHelper::Load(ptx, "assets\\ptx\\Lightmapping.ptx");
 
-			char log[2048];
-			size_t sizeofLog = sizeof(log);
-			OPTIX_CHECK_LOG(optixModuleCreateFromPTX(
-				state.context,
-				&moduleCompileOptions,
-				&state.pipelineCompileOptions,
-				ptx.c_str(),
-				ptx.size(),
-				log,
-				&sizeofLog,
-				&state.ptxModule
-			));
+				char log[2048];
+				size_t sizeofLog = sizeof(log);
+				OPTIX_CHECK_LOG(optixModuleCreateFromPTX(
+					state.context,
+					&moduleCompileOptions,
+					&state.pass.pipelineCompileOptions,
+					ptx.c_str(),
+					ptx.size(),
+					log,
+					&sizeofLog,
+					&state.pass.ptxModule
+				));
+			}
 		}
 	}
 
@@ -404,7 +368,8 @@ namespace Blueberry
 		// Create PTX module
 		{
 			CUDA_CHECK_RESULT(cuModuleLoad(&state.denoiserPtxModule, "assets\\ptx\\Denoising.ptx"));
-			CUDA_CHECK_RESULT(cuModuleGetFunction(&state.denoiserKernel, state.denoiserPtxModule, "__denoise"));
+			CUDA_CHECK_RESULT(cuModuleGetFunction(&state.denoiserKernelFirstPass, state.denoiserPtxModule, "__denoise__firstpass"));
+			CUDA_CHECK_RESULT(cuModuleGetFunction(&state.denoiserKernelpass, state.denoiserPtxModule, "__denoise__pass"));
 		}
 	}
 
@@ -412,121 +377,124 @@ namespace Blueberry
 	{
 		// Create program groups
 		{
-			OptixProgramGroupOptions programGroupOptions = {};
+			// Pass
+			{
+				OptixProgramGroupOptions programGroupOptions = {};
 
-			OptixProgramGroupDesc raygenProgGroupDesc = {};
-			raygenProgGroupDesc.kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN;
-			raygenProgGroupDesc.raygen.module = state.ptxModule;
-			raygenProgGroupDesc.raygen.entryFunctionName = "__raygen__radiance";
+				OptixProgramGroupDesc raygenProgGroupDesc = {};
+				raygenProgGroupDesc.kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN;
+				raygenProgGroupDesc.raygen.module = state.pass.ptxModule;
+				raygenProgGroupDesc.raygen.entryFunctionName = "__raygen__pass";
 
-			char log[2048];
-			size_t sizeofLog = sizeof(log);
-			OPTIX_CHECK_LOG(optixProgramGroupCreate(
-				state.context,
-				&raygenProgGroupDesc,
-				1,                             // num program groups
-				&programGroupOptions,
-				log,
-				&sizeofLog,
-				&state.raygenProgGroup
-			)
-			);
+				char log[2048];
+				size_t sizeofLog = sizeof(log);
+				OPTIX_CHECK_LOG(optixProgramGroupCreate(
+					state.context,
+					&raygenProgGroupDesc,
+					1,                             // num program groups
+					&programGroupOptions,
+					log,
+					&sizeofLog,
+					&state.pass.raygenProgGroup
+				)
+				);
 
-			OptixProgramGroupDesc missProgGroupDesc = {};
-			missProgGroupDesc.kind = OPTIX_PROGRAM_GROUP_KIND_MISS;
-			missProgGroupDesc.miss.module = state.ptxModule;
-			missProgGroupDesc.miss.entryFunctionName = "__miss__backface";
-			sizeofLog = sizeof(log);
-			OPTIX_CHECK_LOG(optixProgramGroupCreate(
-				state.context,
-				&missProgGroupDesc,
-				1,                             // num program groups
-				&programGroupOptions,
-				log,
-				&sizeofLog,
-				&state.missBackfaceProgGroup
-			)
-			);
+				OptixProgramGroupDesc missProgGroupDesc = {};
+				missProgGroupDesc.kind = OPTIX_PROGRAM_GROUP_KIND_MISS;
+				missProgGroupDesc.miss.module = state.pass.ptxModule;
+				missProgGroupDesc.miss.entryFunctionName = "__miss__occlusion";
+				sizeofLog = sizeof(log);
+				OPTIX_CHECK_LOG(optixProgramGroupCreate(
+					state.context,
+					&missProgGroupDesc,
+					1,                             // num program groups
+					&programGroupOptions,
+					log,
+					&sizeofLog,
+					&state.pass.missOcclusionProgGroup
+				)
+				);
 
-			memset(&missProgGroupDesc, 0, sizeof(OptixProgramGroupDesc));
-			missProgGroupDesc.kind = OPTIX_PROGRAM_GROUP_KIND_MISS;
-			missProgGroupDesc.miss.module = state.ptxModule;
-			missProgGroupDesc.miss.entryFunctionName = "__miss__radiance";
-			sizeofLog = sizeof(log);
-			OPTIX_CHECK_LOG(optixProgramGroupCreate(
-				state.context,
-				&missProgGroupDesc,
-				1,                             // num program groups
-				&programGroupOptions,
-				log,
-				&sizeofLog,
-				&state.missRadianceProgGroup
-			)
-			);
+				memset(&missProgGroupDesc, 0, sizeof(OptixProgramGroupDesc));
+				missProgGroupDesc.kind = OPTIX_PROGRAM_GROUP_KIND_MISS;
+				missProgGroupDesc.miss.module = state.pass.ptxModule;
+				missProgGroupDesc.miss.entryFunctionName = "__miss__radiance";
+				sizeofLog = sizeof(log);
+				OPTIX_CHECK_LOG(optixProgramGroupCreate(
+					state.context,
+					&missProgGroupDesc,
+					1,                             // num program groups
+					&programGroupOptions,
+					log,
+					&sizeofLog,
+					&state.pass.missRadianceProgGroup
+				)
+				);
 
-			memset(&missProgGroupDesc, 0, sizeof(OptixProgramGroupDesc));
-			missProgGroupDesc.kind = OPTIX_PROGRAM_GROUP_KIND_MISS;
-			missProgGroupDesc.miss.module = state.ptxModule;
-			missProgGroupDesc.miss.entryFunctionName = "__miss__shadow";
-			sizeofLog = sizeof(log);
-			OPTIX_CHECK_LOG(optixProgramGroupCreate(
-				state.context,
-				&missProgGroupDesc,
-				1,                             // num program groups
-				&programGroupOptions,
-				log,
-				&sizeofLog,
-				&state.missShadowProgGroup
-			)
-			);
+				memset(&missProgGroupDesc, 0, sizeof(OptixProgramGroupDesc));
+				missProgGroupDesc.kind = OPTIX_PROGRAM_GROUP_KIND_MISS;
+				missProgGroupDesc.miss.module = state.pass.ptxModule;
+				missProgGroupDesc.miss.entryFunctionName = "__miss__shadow";
+				sizeofLog = sizeof(log);
+				OPTIX_CHECK_LOG(optixProgramGroupCreate(
+					state.context,
+					&missProgGroupDesc,
+					1,                             // num program groups
+					&programGroupOptions,
+					log,
+					&sizeofLog,
+					&state.pass.missShadowProgGroup
+				)
+				);
 
-			OptixProgramGroupDesc hitgroupProgGroupDesc = {};
-			hitgroupProgGroupDesc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
-			hitgroupProgGroupDesc.hitgroup.moduleCH = state.ptxModule;
-			hitgroupProgGroupDesc.hitgroup.entryFunctionNameCH = "__closesthit__backface";
-			sizeofLog = sizeof(log);
-			OPTIX_CHECK_LOG(optixProgramGroupCreate(
-				state.context,
-				&hitgroupProgGroupDesc,
-				1,                             // num program groups
-				&programGroupOptions,
-				log,
-				&sizeofLog,
-				&state.hitgroupBackfaceProgGroup
-			)
-			);
+				OptixProgramGroupDesc hitgroupProgGroupDesc = {};
+				hitgroupProgGroupDesc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
+				hitgroupProgGroupDesc.hitgroup.moduleCH = state.pass.ptxModule;
+				hitgroupProgGroupDesc.hitgroup.entryFunctionNameCH = "__closesthit__occlusion";
+				sizeofLog = sizeof(log);
+				OPTIX_CHECK_LOG(optixProgramGroupCreate(
+					state.context,
+					&hitgroupProgGroupDesc,
+					1,                             // num program groups
+					&programGroupOptions,
+					log,
+					&sizeofLog,
+					&state.pass.hitgroupOcclusionProgGroup
+				)
+				);
 
-			memset(&hitgroupProgGroupDesc, 0, sizeof(OptixProgramGroupDesc));
-			hitgroupProgGroupDesc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
-			hitgroupProgGroupDesc.hitgroup.moduleCH = state.ptxModule;
-			hitgroupProgGroupDesc.hitgroup.entryFunctionNameCH = "__closesthit__radiance";
-			sizeofLog = sizeof(log);
-			OPTIX_CHECK_LOG(optixProgramGroupCreate(
-				state.context,
-				&hitgroupProgGroupDesc,
-				1,                             // num program groups
-				&programGroupOptions,
-				log,
-				&sizeofLog,
-				&state.hitgroupRadianceProgGroup
-			)
-			);
+				memset(&hitgroupProgGroupDesc, 0, sizeof(OptixProgramGroupDesc));
+				hitgroupProgGroupDesc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
+				hitgroupProgGroupDesc.hitgroup.moduleCH = state.pass.ptxModule;
+				hitgroupProgGroupDesc.hitgroup.entryFunctionNameCH = "__closesthit__radiance";
+				sizeofLog = sizeof(log);
+				OPTIX_CHECK_LOG(optixProgramGroupCreate(
+					state.context,
+					&hitgroupProgGroupDesc,
+					1,                             // num program groups
+					&programGroupOptions,
+					log,
+					&sizeofLog,
+					&state.pass.hitgroupRadianceProgGroup
+				)
+				);
 
-			memset(&hitgroupProgGroupDesc, 0, sizeof(OptixProgramGroupDesc));
-			hitgroupProgGroupDesc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
-			hitgroupProgGroupDesc.hitgroup.moduleCH = state.ptxModule;
-			hitgroupProgGroupDesc.hitgroup.entryFunctionNameCH = "__closesthit__shadow";
-			sizeofLog = sizeof(log);
-			OPTIX_CHECK_LOG(optixProgramGroupCreate(
-				state.context,
-				&hitgroupProgGroupDesc,
-				1,                             // num program groups
-				&programGroupOptions,
-				log,
-				&sizeofLog,
-				&state.hitgroupShadowProgGroup
-			)
-			);
+				memset(&hitgroupProgGroupDesc, 0, sizeof(OptixProgramGroupDesc));
+				hitgroupProgGroupDesc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
+				hitgroupProgGroupDesc.hitgroup.moduleCH = state.pass.ptxModule;
+				hitgroupProgGroupDesc.hitgroup.entryFunctionNameCH = "__closesthit__shadow";
+				sizeofLog = sizeof(log);
+				OPTIX_CHECK_LOG(optixProgramGroupCreate(
+					state.context,
+					&hitgroupProgGroupDesc,
+					1,                             // num program groups
+					&programGroupOptions,
+					log,
+					&sizeofLog,
+					&state.pass.hitgroupShadowProgGroup
+				)
+				);
+			}
 		}
 	}
 
@@ -534,33 +502,36 @@ namespace Blueberry
 	{
 		// Link Pipeline
 		{
-			OptixProgramGroup programGroups[] =
+			// Pass
 			{
-				state.raygenProgGroup,
-				state.missBackfaceProgGroup,
-				state.missRadianceProgGroup,
-				state.missShadowProgGroup,
-				state.hitgroupBackfaceProgGroup,
-				state.hitgroupRadianceProgGroup,
-				state.hitgroupShadowProgGroup,
-			};
+				OptixProgramGroup programGroups[] =
+				{
+					state.pass.raygenProgGroup,
+					state.pass.missOcclusionProgGroup,
+					state.pass.missRadianceProgGroup,
+					state.pass.missShadowProgGroup,
+					state.pass.hitgroupOcclusionProgGroup,
+					state.pass.hitgroupRadianceProgGroup,
+					state.pass.hitgroupShadowProgGroup,
+				};
 
-			OptixPipelineLinkOptions pipelineLinkOptions = {};
-			pipelineLinkOptions.maxTraceDepth = 8;
-			pipelineLinkOptions.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_FULL;
+				OptixPipelineLinkOptions pipelineLinkOptions = {};
+				pipelineLinkOptions.maxTraceDepth = 8;
+				pipelineLinkOptions.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_FULL;
 
-			char log[2048];
-			size_t sizeofLog = sizeof(log);
-			OPTIX_CHECK_LOG(optixPipelineCreate(
-				state.context,
-				&state.pipelineCompileOptions,
-				&pipelineLinkOptions,
-				programGroups,
-				sizeof(programGroups) / sizeof(programGroups[0]),
-				log,
-				&sizeofLog,
-				&state.pipeline
-			));
+				char log[2048];
+				size_t sizeofLog = sizeof(log);
+				OPTIX_CHECK_LOG(optixPipelineCreate(
+					state.context,
+					&state.pass.pipelineCompileOptions,
+					&pipelineLinkOptions,
+					programGroups,
+					sizeof(programGroups) / sizeof(programGroups[0]),
+					log,
+					&sizeofLog,
+					&state.pass.pipeline
+				));
+			}
 		}
 	}
 
@@ -568,74 +539,77 @@ namespace Blueberry
 	{
 		// Set up shader binding table
 		{
-			CUdeviceptr raygenRecord = 0;
-			const size_t raygenRecordSize = sizeof(RayGenSbtRecord);
-			CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&raygenRecord), raygenRecordSize));
-
-			RayGenSbtRecord rRecord;
-			OPTIX_CHECK(optixSbtRecordPackHeader(state.raygenProgGroup, &rRecord));
-			CUDA_CHECK(cudaMemcpy(reinterpret_cast<void*>(raygenRecord), &rRecord, raygenRecordSize, cudaMemcpyHostToDevice));
-
-			List<MissSbtRecord> missRecordsList = {};
+			// Pass
 			{
-				MissSbtRecord backfaceRecord = {};
-				OPTIX_CHECK(optixSbtRecordPackHeader(state.missBackfaceProgGroup, &backfaceRecord));
-				missRecordsList.emplace_back(backfaceRecord);
+				CUdeviceptr raygenRecord = 0;
+				const size_t raygenRecordSize = sizeof(RayGenSbtRecord);
+				CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&raygenRecord), raygenRecordSize));
 
-				MissSbtRecord radianceRecord = {};
-				OPTIX_CHECK(optixSbtRecordPackHeader(state.missRadianceProgGroup, &radianceRecord));
-				missRecordsList.emplace_back(radianceRecord);
+				RayGenSbtRecord rRecord;
+				OPTIX_CHECK(optixSbtRecordPackHeader(state.pass.raygenProgGroup, &rRecord));
+				CUDA_CHECK(cudaMemcpy(reinterpret_cast<void*>(raygenRecord), &rRecord, raygenRecordSize, cudaMemcpyHostToDevice));
 
-				MissSbtRecord shadowRecord = {};
-				OPTIX_CHECK(optixSbtRecordPackHeader(state.missShadowProgGroup, &shadowRecord));
-				missRecordsList.emplace_back(shadowRecord);
+				List<MissSbtRecord> missRecordsList = {};
+				{
+					MissSbtRecord occlusionRecord = {};
+					OPTIX_CHECK(optixSbtRecordPackHeader(state.pass.missOcclusionProgGroup, &occlusionRecord));
+					missRecordsList.emplace_back(occlusionRecord);
+
+					MissSbtRecord radianceRecord = {};
+					OPTIX_CHECK(optixSbtRecordPackHeader(state.pass.missRadianceProgGroup, &radianceRecord));
+					missRecordsList.emplace_back(radianceRecord);
+
+					MissSbtRecord shadowRecord = {};
+					OPTIX_CHECK(optixSbtRecordPackHeader(state.pass.missShadowProgGroup, &shadowRecord));
+					missRecordsList.emplace_back(shadowRecord);
+				}
+
+				List<HitGroupSbtRecord> hitgroupRecordsList = {};
+				for (auto& data : state.meshDatas)
+				{
+					HitGroupSbtRecord occlusionRecord = {};
+					occlusionRecord.data.vertices = (float3*)data.vertexBuffer.data;
+					occlusionRecord.data.normals = (float3*)data.normalBuffer.data;
+					occlusionRecord.data.tangents = (float4*)data.tangentBuffer.data;
+					occlusionRecord.data.indices = (uint3*)data.indexBuffer.data;
+					OPTIX_CHECK(optixSbtRecordPackHeader(state.pass.hitgroupOcclusionProgGroup, &occlusionRecord));
+					hitgroupRecordsList.push_back(occlusionRecord);
+
+					HitGroupSbtRecord radianceRecord = {};
+					radianceRecord.data.vertices = (float3*)data.vertexBuffer.data;
+					radianceRecord.data.normals = (float3*)data.normalBuffer.data;
+					radianceRecord.data.tangents = (float4*)data.tangentBuffer.data;
+					radianceRecord.data.indices = (uint3*)data.indexBuffer.data;
+					OPTIX_CHECK(optixSbtRecordPackHeader(state.pass.hitgroupRadianceProgGroup, &radianceRecord));
+					hitgroupRecordsList.push_back(radianceRecord);
+
+					HitGroupSbtRecord shadowRecord = {};
+					shadowRecord.data.vertices = (float3*)data.vertexBuffer.data;
+					shadowRecord.data.normals = (float3*)data.normalBuffer.data;
+					shadowRecord.data.tangents = (float4*)data.tangentBuffer.data;
+					shadowRecord.data.indices = (uint3*)data.indexBuffer.data;
+					OPTIX_CHECK(optixSbtRecordPackHeader(state.pass.hitgroupShadowProgGroup, &shadowRecord));
+					hitgroupRecordsList.push_back(shadowRecord);
+				}
+
+				CUdeviceptr missRecords = 0;
+				const size_t missRecordSize = sizeof(MissSbtRecord);
+				CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&missRecords), missRecordSize * missRecordsList.size()));
+				CUDA_CHECK(cudaMemcpy(reinterpret_cast<void*>(missRecords), missRecordsList.data(), missRecordSize * missRecordsList.size(), cudaMemcpyHostToDevice));
+
+				CUdeviceptr hitgroupRecords = 0;
+				const size_t hitgroupRecordSize = sizeof(HitGroupSbtRecord);
+				CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&hitgroupRecords), hitgroupRecordSize * hitgroupRecordsList.size()));
+				CUDA_CHECK(cudaMemcpy(reinterpret_cast<void*>(hitgroupRecords), hitgroupRecordsList.data(), hitgroupRecordSize * hitgroupRecordsList.size(), cudaMemcpyHostToDevice));
+
+				state.pass.sbt.raygenRecord = raygenRecord;
+				state.pass.sbt.missRecordBase = missRecords;
+				state.pass.sbt.missRecordCount = missRecordsList.size();
+				state.pass.sbt.missRecordStrideInBytes = static_cast<uint32_t>(missRecordSize);
+				state.pass.sbt.hitgroupRecordBase = hitgroupRecords;
+				state.pass.sbt.hitgroupRecordCount = hitgroupRecordsList.size();
+				state.pass.sbt.hitgroupRecordStrideInBytes = static_cast<uint32_t>(hitgroupRecordSize);
 			}
-
-			List<HitGroupSbtRecord> hitgroupRecordsList = {};
-			for (auto& data : state.meshDatas)
-			{
-				HitGroupSbtRecord backfaceRecord = {};
-				backfaceRecord.data.vertices = (float3*)data.vertexBuffer.data;
-				backfaceRecord.data.normals = (float3*)data.normalBuffer.data;
-				backfaceRecord.data.tangents = (float4*)data.tangentBuffer.data;
-				backfaceRecord.data.indices = (uint3*)data.indexBuffer.data;
-				OPTIX_CHECK(optixSbtRecordPackHeader(state.hitgroupBackfaceProgGroup, &backfaceRecord));
-				hitgroupRecordsList.push_back(backfaceRecord);
-
-				HitGroupSbtRecord radianceRecord = {};
-				radianceRecord.data.vertices = (float3*)data.vertexBuffer.data;
-				radianceRecord.data.normals = (float3*)data.normalBuffer.data;
-				radianceRecord.data.tangents = (float4*)data.tangentBuffer.data;
-				radianceRecord.data.indices = (uint3*)data.indexBuffer.data;
-				OPTIX_CHECK(optixSbtRecordPackHeader(state.hitgroupRadianceProgGroup, &radianceRecord));
-				hitgroupRecordsList.push_back(radianceRecord);
-
-				HitGroupSbtRecord shadowRecord = {};
-				shadowRecord.data.vertices = (float3*)data.vertexBuffer.data;
-				shadowRecord.data.normals = (float3*)data.normalBuffer.data;
-				shadowRecord.data.tangents = (float4*)data.tangentBuffer.data;
-				shadowRecord.data.indices = (uint3*)data.indexBuffer.data;
-				OPTIX_CHECK(optixSbtRecordPackHeader(state.hitgroupShadowProgGroup, &shadowRecord));
-				hitgroupRecordsList.push_back(shadowRecord);
-			}
-
-			CUdeviceptr missRecords = 0;
-			const size_t missRecordSize = sizeof(MissSbtRecord);
-			CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&missRecords), missRecordSize * missRecordsList.size()));
-			CUDA_CHECK(cudaMemcpy(reinterpret_cast<void*>(missRecords), missRecordsList.data(), missRecordSize * missRecordsList.size(), cudaMemcpyHostToDevice));
-
-			CUdeviceptr hitgroupRecords = 0;
-			const size_t hitgroupRecordSize = sizeof(HitGroupSbtRecord);
-			CUDA_CHECK(cudaMalloc(reinterpret_cast<void**>(&hitgroupRecords), hitgroupRecordSize * hitgroupRecordsList.size()));
-			CUDA_CHECK(cudaMemcpy(reinterpret_cast<void*>(hitgroupRecords), hitgroupRecordsList.data(), hitgroupRecordSize * hitgroupRecordsList.size(), cudaMemcpyHostToDevice));
-
-			state.sbt.raygenRecord = raygenRecord;
-			state.sbt.missRecordBase = missRecords;
-			state.sbt.missRecordCount = missRecordsList.size();
-			state.sbt.missRecordStrideInBytes = static_cast<uint32_t>(missRecordSize);
-			state.sbt.hitgroupRecordBase = hitgroupRecords;
-			state.sbt.hitgroupRecordCount = hitgroupRecordsList.size();
-			state.sbt.hitgroupRecordStrideInBytes = static_cast<uint32_t>(hitgroupRecordSize);
 		}
 	}
 
@@ -914,36 +888,6 @@ namespace Blueberry
 		state.lightmappingParams.validTexels = reinterpret_cast<uint2*>(state.validTexelsBuffer.data);
 		state.lightmappingParams.validTexelsCount = static_cast<uint32_t>(state.validTexels.size());
 		state.chartIndexBuffer.upload(state.atlasMask.data(), state.atlasMask.size());
-		state.completeBuffer.resize(state.validTexels.size() * sizeof(unsigned int));
-		state.lightmappingParams.complete = reinterpret_cast<unsigned int*>(state.completeBuffer.data);
-	}
-
-	void InitializeFrameBufferAndCamera(LightmapperState& state, Camera* camera, const Vector2Int& viewport)
-	{
-		state.lightmappingParams.accumulationFrameIndex += 1;
-		state.lightmappingParams.imageSize.x = viewport.x;
-		state.lightmappingParams.imageSize.y = viewport.y;
-		GetCameraParams(camera, state.lightmappingParams.camEye, state.lightmappingParams.camU, state.lightmappingParams.camV, state.lightmappingParams.camW);
-
-		size_t accumulatedFrameBufferSize = state.lightmappingParams.imageSize.x * state.lightmappingParams.imageSize.y * sizeof(float4);
-		size_t frameBufferSize = state.lightmappingParams.imageSize.x * state.lightmappingParams.imageSize.y * sizeof(float4);
-		if (state.lightmappingParams.color == nullptr)
-		{
-			state.accumulatedFrameBuffer.alloc(accumulatedFrameBufferSize);
-			state.lightmappingParams.accumulatedImage = reinterpret_cast<float4*>(state.accumulatedFrameBuffer.data);
-			state.colorBuffer.alloc(frameBufferSize);
-			state.normalBuffer.alloc(frameBufferSize);
-			state.denoisedColorBuffer.alloc(frameBufferSize);
-			state.lightmappingParams.color = reinterpret_cast<float4*>(state.colorBuffer.data);
-			state.lightmappingParams.normal = reinterpret_cast<float4*>(state.normalBuffer.data);
-		}
-		else if (state.colorBuffer.sizeInBytes != frameBufferSize)
-		{
-			state.accumulatedFrameBuffer.resize(accumulatedFrameBufferSize);
-			state.colorBuffer.resize(frameBufferSize);
-			state.normalBuffer.resize(frameBufferSize);
-			state.denoisedColorBuffer.resize(frameBufferSize);
-		}
 	}
 
 	void InitializeFrameBuffer(LightmapperState& state, const Vector2Int& viewport)
@@ -956,16 +900,20 @@ namespace Blueberry
 		state.denoisingParams.imageSize.y = viewport.y;
 
 		size_t frameBufferSize = state.lightmappingParams.imageSize.x * state.lightmappingParams.imageSize.y * sizeof(float4);
+		size_t normalBufferSize = state.lightmappingParams.imageSize.x * state.lightmappingParams.imageSize.y * sizeof(float3);
 		if (state.lightmappingParams.color == nullptr)
 		{
 			state.colorBuffer.alloc(frameBufferSize);
-			state.normalBuffer.alloc(frameBufferSize);
+			state.normalBuffer.alloc(normalBufferSize);
+			state.positionBuffer.alloc(frameBufferSize);
 			state.denoisedColorBuffer.alloc(frameBufferSize);
 			state.chartIndexBuffer.alloc(frameBufferSize / 4);
 			state.lightmappingParams.color = reinterpret_cast<float4*>(state.colorBuffer.data);
-			state.lightmappingParams.normal = reinterpret_cast<float4*>(state.normalBuffer.data);
+			state.lightmappingParams.normal = reinterpret_cast<float3*>(state.normalBuffer.data);
+			state.lightmappingParams.position = reinterpret_cast<float4*>(state.positionBuffer.data);
 			state.denoisingParams.inputColor = reinterpret_cast<float4*>(state.colorBuffer.data);
-			state.denoisingParams.inputNormal = reinterpret_cast<float4*>(state.normalBuffer.data);
+			state.denoisingParams.inputNormal = reinterpret_cast<float3*>(state.normalBuffer.data);
+			state.denoisingParams.inputPosition = reinterpret_cast<float4*>(state.positionBuffer.data);
 			state.denoisingParams.outputColor = reinterpret_cast<float4*>(state.denoisedColorBuffer.data);
 			state.denoisingParams.chartIndex = reinterpret_cast<unsigned int*>(state.chartIndexBuffer.data);
 		}
@@ -973,82 +921,9 @@ namespace Blueberry
 		{
 			state.colorBuffer.resize(frameBufferSize);
 			state.chartIndexBuffer.resize(frameBufferSize / 4);
-			state.normalBuffer.resize(frameBufferSize);
+			state.normalBuffer.resize(normalBufferSize);
+			state.positionBuffer.resize(frameBufferSize);
 			state.denoisedColorBuffer.resize(frameBufferSize);
-		}
-	}
-
-	void InitializeOptixDenoiserFrameBuffer(LightmapperState& state)
-	{
-		// Allocate memory
-		bool setup = false;
-		{
-			OptixDenoiserSizes denoiserSizes;
-			OPTIX_CHECK(optixDenoiserComputeMemoryResources(
-				state.denoiser,
-				state.lightmappingParams.imageSize.x,
-				state.lightmappingParams.imageSize.y,
-				&denoiserSizes
-			));
-
-			if (state.denoiserScratch.sizeInBytes == 0)
-			{
-				setup = true;
-				state.denoiserIntensity.alloc(sizeof(float));
-				state.denoiserScratch.alloc(denoiserSizes.withoutOverlapScratchSizeInBytes);
-				state.denoiserState.alloc(denoiserSizes.stateSizeInBytes);
-			}
-			else if (state.denoiserScratch.sizeInBytes != denoiserSizes.withoutOverlapScratchSizeInBytes)
-			{
-				state.denoiserScratch.resize(denoiserSizes.withoutOverlapScratchSizeInBytes);
-				state.denoiserState.resize(denoiserSizes.stateSizeInBytes);
-			}
-		}
-
-		// Setup images
-		{
-			state.denoiserInputs[0].data = state.colorBuffer.data;
-			state.denoiserInputs[0].format = OptixPixelFormat::OPTIX_PIXEL_FORMAT_FLOAT4;
-			state.denoiserInputs[0].width = state.lightmappingParams.imageSize.x;
-			state.denoiserInputs[0].height = state.lightmappingParams.imageSize.y;
-			state.denoiserInputs[0].pixelStrideInBytes = sizeof(float4);
-			state.denoiserInputs[0].rowStrideInBytes = state.lightmappingParams.imageSize.x * sizeof(float4);
-
-			state.denoiserInputs[1].data = state.normalBuffer.data;
-			state.denoiserInputs[1].format = OptixPixelFormat::OPTIX_PIXEL_FORMAT_FLOAT4;
-			state.denoiserInputs[1].width = state.lightmappingParams.imageSize.x;
-			state.denoiserInputs[1].height = state.lightmappingParams.imageSize.y;
-			state.denoiserInputs[1].pixelStrideInBytes = sizeof(float4);
-			state.denoiserInputs[1].rowStrideInBytes = state.lightmappingParams.imageSize.x * sizeof(float4);
-
-			state.denoiserInputs[2].data = state.normalBuffer.data;
-			state.denoiserInputs[2].format = OptixPixelFormat::OPTIX_PIXEL_FORMAT_FLOAT4;
-			state.denoiserInputs[2].width = state.lightmappingParams.imageSize.x;
-			state.denoiserInputs[2].height = state.lightmappingParams.imageSize.y;
-			state.denoiserInputs[2].pixelStrideInBytes = sizeof(float4);
-			state.denoiserInputs[2].rowStrideInBytes = state.lightmappingParams.imageSize.x * sizeof(float4);
-
-			state.denoiserOutput = state.denoiserInputs[0];
-			state.denoiserOutput.data = state.denoisedColorBuffer.data;
-		}
-
-		// Setup denoiser
-		if (setup)
-		{
-			OPTIX_CHECK(optixDenoiserSetup(
-				state.denoiser,
-				0,  // CUDA stream
-				state.lightmappingParams.imageSize.x,
-				state.lightmappingParams.imageSize.y,
-				state.denoiserState.data,
-				state.denoiserState.sizeInBytes,
-				state.denoiserScratch.data,
-				state.denoiserScratch.sizeInBytes
-			));
-
-			state.denoiserParams.denoiseAlpha = 0;
-			state.denoiserParams.hdrIntensity = state.denoiserIntensity.data;
-			state.denoiserParams.blendFactor = 0.0f;
 		}
 	}
 
@@ -1088,45 +963,13 @@ namespace Blueberry
 				cudaMemcpyHostToDevice
 			));
 
-			OPTIX_CHECK(optixLaunch(state.pipeline, state.stream, s_ParamsPtr, sizeof(LightmappingParams), &state.sbt, state.launchSize, 1, 1));
+			OPTIX_CHECK(optixLaunch(state.pass.pipeline, state.stream, s_ParamsPtr, sizeof(LightmappingParams), &state.pass.sbt, state.launchSize, 1, 1));
 			cudaError_t err = cudaGetLastError();
-			CUDA_SYNC_CHECK(); 
+			CUDA_SYNC_CHECK();
 			
 			cudaFreeHost(s_State.completeCounter);
 			s_State.completeCounter = nullptr;
 			s_State.lightmappingParams.completeCounter = nullptr;
-		}
-	}
-
-	void LaunchOptixDenoiser(LightmapperState& state)
-	{
-		// Launch denoiser
-		{
-			OPTIX_CHECK(optixDenoiserComputeIntensity(
-				state.denoiser,
-				0, // CUDA stream
-				&state.denoiserInputs[0],
-				state.denoiserIntensity.data,
-				state.denoiserScratch.data,
-				state.denoiserScratch.sizeInBytes
-			));
-
-			OPTIX_CHECK(optixDenoiserInvoke(
-				state.denoiser,
-				0, // CUDA stream
-				&state.denoiserParams,
-				state.denoiserState.data,
-				state.denoiserState.sizeInBytes,
-				state.denoiserInputs,
-				3, // num input channels
-				0, // input offset X
-				0, // input offset y
-				&state.denoiserOutput,
-				state.denoiserScratch.data,
-				state.denoiserScratch.sizeInBytes
-			));
-
-			CUDA_SYNC_CHECK();
 		}
 	}
 
@@ -1142,16 +985,17 @@ namespace Blueberry
 			size_t size;
 			CUDA_CHECK_RESULT(cuModuleGetGlobal(&s_DenoisingParamsPtr, &size, state.denoiserPtxModule, "params"));
 
-			for (uint32_t i = 0; i < 4; ++i)
-			{
-				CUDA_CHECK_RESULT(cuMemcpyHtoD(s_DenoisingParamsPtr, &state.denoisingParams, sizeof(DenoisingParams)));
-				CUDA_CHECK_RESULT(cuLaunchKernel(state.denoiserKernel, state.lightmappingParams.imageSize.x / 8, state.lightmappingParams.imageSize.y / 8, 1, 8, 8, 1, 0, 0, 0, 0));
-				CUDA_CHECK_RESULT(cuCtxSynchronize());
-				
-				float4* input = state.denoisingParams.inputColor;
-				state.denoisingParams.inputColor = state.denoisingParams.outputColor;
-				state.denoisingParams.outputColor = input;
-			}
+			CUDA_CHECK_RESULT(cuMemcpyHtoD(s_DenoisingParamsPtr, &state.denoisingParams, sizeof(DenoisingParams)));
+			CUDA_CHECK_RESULT(cuLaunchKernel(state.denoiserKernelFirstPass, state.lightmappingParams.imageSize.x / 8, state.lightmappingParams.imageSize.y / 8, 1, 8, 8, 1, 0, 0, 0, 0));
+			CUDA_CHECK_RESULT(cuCtxSynchronize());
+
+			float4* input = state.denoisingParams.inputColor;
+			state.denoisingParams.inputColor = state.denoisingParams.outputColor;
+			state.denoisingParams.outputColor = input;
+
+			CUDA_CHECK_RESULT(cuMemcpyHtoD(s_DenoisingParamsPtr, &state.denoisingParams, sizeof(DenoisingParams)));
+			CUDA_CHECK_RESULT(cuLaunchKernel(state.denoiserKernelpass, state.lightmappingParams.imageSize.x / 8, state.lightmappingParams.imageSize.y / 8, 1, 8, 8, 1, 0, 0, 0, 0));
+			CUDA_CHECK_RESULT(cuCtxSynchronize());
 		}
 	}
 
@@ -1162,39 +1006,7 @@ namespace Blueberry
 			return;
 		}
 		s_State.lightmappingParams.accumulationFrameIndex = 0;
-		s_State.accumulatedFrameBuffer.clear();
-	}
-
-	void LightmappingManager::Calculate(Scene* scene, Camera* camera, const Vector2Int& viewport, uint8_t* output)
-	{
-		if (s_State.context == nullptr)
-		{
-			CreateContext(s_State);
-			//CreateDenoiser(s_State);
-			InitializeAccels(s_State, scene);
-			CreatePTXModule(s_State);
-			CreateProgramGroups(s_State);
-			CreatePipeline(s_State);
-			CreateSBT(s_State);
-			InitializeParams(s_State);
-		}
-
-		if (s_State.lightmappingParams.accumulationFrameIndex < ACCUMULATION_FRAMES_COUNT - 1)
-		{
-			InitializeFrameBufferAndCamera(s_State, camera, viewport);
-			//InitializeDenoiserFrameBuffer(s_State);
-			InitializeLights(s_State, scene);
-			Launch(s_State);
-			if (s_State.lightmappingParams.accumulationFrameIndex == ACCUMULATION_FRAMES_COUNT - 1)
-			{
-				//LaunchDenoiser(s_State);
-			}
-			s_State.colorBuffer.download(output, s_State.colorBuffer.sizeInBytes);
-		}
-		else
-		{
-			s_State.denoisedColorBuffer.download(output, s_State.denoisedColorBuffer.sizeInBytes);
-		}
+		//s_State.accumulatedFrameBuffer.clear();
 	}
 
 	void FixCharts(Vector4* temp, Vector4* result, const Vector2Int& resultSize)
@@ -1322,7 +1134,7 @@ namespace Blueberry
 			{
 				LaunchDenoiser(s_State);
 				//LaunchOptixDenoiser(s_State);
-				s_State.denoisedColorBuffer.download(temp, s_State.denoisedColorBuffer.sizeInBytes / sizeof(Vector4));
+				s_State.colorBuffer.download(temp, s_State.colorBuffer.sizeInBytes / sizeof(Vector4));
 			}
 			else
 			{
@@ -1352,7 +1164,7 @@ namespace Blueberry
 				data.Release();
 			}
 			s_State.instanceMatrices.free();
-			s_State.accumulatedFrameBuffer.free();
+			//s_State.accumulatedFrameBuffer.free();
 			s_State.colorBuffer.free();
 			//s_State.albedoBuffer.free();
 			//s_State.normalBuffer.free();
