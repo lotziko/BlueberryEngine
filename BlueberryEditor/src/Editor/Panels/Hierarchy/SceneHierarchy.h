@@ -1,9 +1,11 @@
 #pragma once
 
 #include "Editor\Panels\EditorWindow.h"
+#include "TransformTree.h"
 
 namespace Blueberry
 {
+	class Scene;
 	class Entity;
 
 	class SceneHierarchy : public EditorWindow
@@ -19,11 +21,17 @@ namespace Blueberry
 		virtual void OnDrawUI() final;
 
 	private:
-		void DrawEntity(Entity* entity);
-		void DrawCreateEntity();
-		void DrawDestroyEntity(Entity*& entity);
-		void DrawUnpackPrefabEntity(Entity* entity);
+		void DrawNode(List<TransformTreeNode>& nodes, const size_t& index, bool& isValid);
+		void DrawCreateEntity(TransformTreeNode& node, bool& isValid);
+		void DrawDestroyEntity(bool& isValid);
+		void DrawUnpackPrefabEntity(bool& isValid);
 
-		Entity* m_ActiveEntity;
+		void UpdateTree();
+
+		Scene* m_CurrentScene;
+		Entity* m_RenamingEntity;
+		TransformTree m_TransformTree;
+		size_t m_LastClickedItem = UINT64_MAX;
+		HashSet<ObjectId> m_ExpandedNodes;
 	};
 }

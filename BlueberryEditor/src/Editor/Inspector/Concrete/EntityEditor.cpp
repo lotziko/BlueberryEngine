@@ -10,6 +10,8 @@
 #include "Editor\Panels\Inspector\InspectorExpandedItemsCache.h"
 #include "Editor\Panels\Scene\SceneArea.h"
 #include "Editor\Misc\ImGuiHelper.h"
+#include "Editor\EditorObjectManager.h"
+#include "Editor\Selection.h"
 
 namespace Blueberry
 {
@@ -59,6 +61,8 @@ namespace Blueberry
 				}
 			}
 		}
+
+		EditorObjectManager::GetEntityDestroyed().AddCallback<EntityEditor, &EntityEditor::OnEntityDestroy>(this);
 	}
 
 	void EntityEditor::OnDisable()
@@ -71,6 +75,8 @@ namespace Blueberry
 			}
 			m_ComponentsEditors.clear();
 		}
+
+		EditorObjectManager::GetEntityDestroyed().RemoveCallback<EntityEditor, &EntityEditor::OnEntityDestroy>(this);
 	}
 
 	void EntityEditor::OnDrawInspector()
@@ -145,5 +151,10 @@ namespace Blueberry
 
 			ImGui::EndPopup();
 		}
+	}
+
+	void EntityEditor::OnEntityDestroy()
+	{
+		Selection::SetActiveObject(nullptr);
 	}
 }

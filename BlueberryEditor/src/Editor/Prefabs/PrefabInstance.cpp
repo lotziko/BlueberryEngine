@@ -68,7 +68,7 @@ namespace Blueberry
 		auto& entityChildren = entity->GetTransform()->GetChildren();
 		for (size_t i = 0; i < entityChildren.size(); ++i)
 		{
-			AddPrefabEntities(prefabEntityChildren[i]->GetEntity(), entityChildren[i]->GetEntity());
+			AddPrefabEntities(prefabEntityChildren[i].Get()->GetEntity(), entityChildren[i].Get()->GetEntity());
 		}
 	}
 
@@ -77,7 +77,7 @@ namespace Blueberry
 		PrefabManager::s_PrefabEntities.erase(entity->GetObjectId());
 		for (auto& child : entity->GetTransform()->GetChildren())
 		{
-			RemovePrefabEntities(child->GetEntity());
+			RemovePrefabEntities(child.Get()->GetEntity());
 		}
 	}
 }

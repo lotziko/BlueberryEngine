@@ -40,6 +40,8 @@ namespace ImGui
 	void TriggerChange();
 	bool EndChangeCheck();
 	void SetMixedValue(const bool& mixed);
+	
+	bool BeginPopup(ImGuiID id, ImGuiWindowFlags flags = 0);
 
 	bool DragVector2(const char* label, Blueberry::Vector2* v);
 	bool DragVector3(const char* label, Blueberry::Vector3* v);

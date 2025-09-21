@@ -14,6 +14,9 @@ namespace Blueberry
 		virtual void OnDrawInspector() override;
 
 	private:
+		void OnEntityDestroy();
+
+	private:
 		SerializedProperty m_IsActiveProperty;
 		SerializedProperty m_ComponentsProperty;
 		List<std::pair<Object*, ObjectEditor*>> m_ComponentsEditors;

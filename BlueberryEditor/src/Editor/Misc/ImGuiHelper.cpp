@@ -191,6 +191,19 @@ void ImGui::SetMixedValue(const bool& mixed)
 	s_MixedValue = mixed;
 }
 
+bool ImGui::BeginPopup(ImGuiID id, ImGuiWindowFlags flags)
+{
+	// Copy from imgui.cpp
+	ImGuiContext& g = *GImGui;
+	if (g.OpenPopupStack.Size <= g.BeginPopupStack.Size) // Early out for performance
+	{
+		g.NextWindowData.ClearFlags(); // We behave like Begin() and need to consume those values
+		return false;
+	}
+	flags |= ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings;
+	return BeginPopupEx(id, flags);
+}
+
 #define PROPERTY_LABEL( text )\
 ImGui::PushID(text);\
 float availableWidth = ImGui::GetContentRegionAvail().x;\

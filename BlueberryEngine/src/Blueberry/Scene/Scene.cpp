@@ -53,7 +53,7 @@ namespace Blueberry
 		entity->m_Scene = this;
 		entity->m_Name = name;
 		m_Entities[entity->GetObjectId()] = entity;
-		m_RootEntities.emplace_back(entity);
+		AddToRoot(entity);
 
 		entity->AddComponent<Transform>();
 		entity->OnCreate();
@@ -79,28 +79,22 @@ namespace Blueberry
 		}
 		for (auto& child : entity->GetTransform()->GetChildren())
 		{
-			AddEntity(child->GetEntity());
+			AddEntity(child.Get()->GetEntity());
 		}
 	}
 
 	void Scene::DestroyEntity(Entity* entity)
 	{
-		for (auto& child : entity->GetTransform()->GetChildren())
+		auto snapshot = entity->GetTransform()->GetChildren();
+		for (auto& child : snapshot)
 		{
-			DestroyEntity(child->GetEntity());
+			DestroyEntity(child.Get()->GetEntity());
 		}
 		//BB_INFO("Entity is destroyed.");
 		entity->OnDestroy();
 		if (entity->GetTransform()->GetParent() == nullptr)
 		{
-			for (auto it = m_RootEntities.begin(); it < m_RootEntities.end(); ++it)
-			{
-				if (it->Get() == entity)
-				{
-					m_RootEntities.erase(it);
-					break;
-				}
-			}
+			RemoveFromRoot(entity);
 		}
 		m_Entities.erase(entity->GetObjectId());
 		Object::Destroy(entity);
@@ -119,5 +113,22 @@ namespace Blueberry
 	RendererTree& Scene::GetRendererTree()
 	{
 		return m_RendererTree;
+	}
+
+	void Scene::AddToRoot(Entity* entity)
+	{
+		m_RootEntities.emplace_back(entity);
+	}
+
+	void Scene::RemoveFromRoot(Entity* entity)
+	{
+		for (auto it = m_RootEntities.begin(); it < m_RootEntities.end(); ++it)
+		{
+			if (it->Get() == entity)
+			{
+				m_RootEntities.erase(it);
+				break;
+			}
+		}
 	}
 }

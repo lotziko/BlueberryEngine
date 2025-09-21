@@ -157,7 +157,7 @@ namespace Blueberry
 		bool isSelected = false;
 		ImVec2 screenPos = ImGui::GetCursorScreenPos();
 
-		ImGui::PushID(ImGuiID("None"));
+		ImGui::PushID("None");
 		ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 1.0f));
 
 		if (ImGui::Selectable("None", selected, ImGuiSelectableFlags_DontClosePopups, ImVec2(style.ProjectCellSize, style.ProjectCellSize)))

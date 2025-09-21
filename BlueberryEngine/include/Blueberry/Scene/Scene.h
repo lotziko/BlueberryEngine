@@ -43,6 +43,10 @@ namespace Blueberry
 		RendererTree& GetRendererTree();
 
 	private:
+		void AddToRoot(Entity* entity);
+		void RemoveFromRoot(Entity* entity);
+
+	private:
 		Dictionary<ObjectId, ObjectPtr<Entity>> m_Entities;
 		List<ObjectPtr<Entity>> m_RootEntities;
 		List<Component*> m_CreatedComponents;
@@ -51,6 +55,7 @@ namespace Blueberry
 		RendererTree m_RendererTree;
 
 		friend class Entity;
+		friend class Transform;
 	};
 
 	template<class ComponentType>

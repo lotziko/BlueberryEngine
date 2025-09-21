@@ -139,9 +139,9 @@ namespace Blueberry
 		m_IsActiveInHierarchy = active;
 		if (GetTransform()->GetChildrenCount() > 0)
 		{
-			for (auto child : GetTransform()->GetChildren())
+			for (auto& child : GetTransform()->GetChildren())
 			{
-				child->GetEntity()->UpdateHierarchy(active);
+				child.Get()->GetEntity()->UpdateHierarchy(active);
 			}
 		}
 		UpdateComponents();

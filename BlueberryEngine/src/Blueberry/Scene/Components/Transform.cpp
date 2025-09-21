@@ -108,22 +108,30 @@ namespace Blueberry
 		return m_Parent.Get();
 	}
 
-	const List<Transform*> Transform::GetChildren() const
+	const List<ObjectPtr<Transform>>& Transform::GetChildren() const
 	{
-		List<Transform*> children;
-		for (auto child : m_Children)
-		{
-			if (child.IsValid())
-			{
-				children.emplace_back(child.Get());
-			}
-		}
-		return children;
+		return m_Children;
 	}
 
 	const size_t Transform::GetChildrenCount() const
 	{
 		return m_Children.size();
+	}
+
+	const uint32_t Transform::GetSiblingIndex()
+	{
+		if (m_Parent.IsValid())
+		{
+			auto& children = m_Parent->m_Children;
+			for (size_t i = 0; i < children.size(); ++i)
+			{
+				if (children[i]->GetObjectId() == m_ObjectId)
+				{
+					return i;
+				}
+			}
+		}
+		return 0;
 	}
 
 	void Transform::SetLocalPosition(const Vector3& position)
@@ -186,19 +194,42 @@ namespace Blueberry
 
 	void Transform::SetParent(Transform* parent)
 	{
+		if ((parent != nullptr) != m_Parent.IsValid())
+		{
+			if (parent == nullptr)
+			{
+				GetScene()->AddToRoot(GetEntity());
+			}
+			else
+			{
+				GetScene()->RemoveFromRoot(GetEntity());
+			}
+		}
+
 		// TODO worldTransformStays
 		if (m_Parent.IsValid())
 		{
 			if (m_Parent->m_Children.size() > 0)
 			{
-				auto index = std::find_if(m_Parent->m_Children.begin(), m_Parent->m_Children.end(), [this](ObjectPtr<Transform> const& i) { return i.Get() == this; });
-				m_Parent->m_Children.erase(index);
+				m_Parent->m_Children.erase(std::find_if(m_Parent->m_Children.begin(), m_Parent->m_Children.end(), [this](ObjectPtr<Transform> const& i) { return i.Get() == this; }));
 			}
 		}
 		m_Parent = parent;
-		m_Parent->m_Children.emplace_back(this);
+		if (parent != nullptr)
+		{
+			m_Parent->m_Children.emplace_back(this);
+		}
 		// Reset activity
 		m_Entity->UpdateHierarchy(true);
+	}
+
+	void Transform::SetSiblingIndex(const uint32_t& index)
+	{
+		if (m_Parent.IsValid())
+		{
+			m_Parent->m_Children.erase(std::find_if(m_Parent->m_Children.begin(), m_Parent->m_Children.end(), [this](ObjectPtr<Transform> const& i) { return i.Get() == this; }));
+			m_Parent->m_Children.insert(m_Parent->m_Children.begin() + index, this);
+		}
 	}
 
 	const bool& Transform::IsDirty() const

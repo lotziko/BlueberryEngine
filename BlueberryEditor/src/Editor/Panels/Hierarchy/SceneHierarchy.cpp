@@ -12,8 +12,9 @@
 #include "Editor\EditorObjectManager.h"
 #include "Editor\Prefabs\PrefabManager.h"
 #include "Editor\Menu\EditorMenuManager.h"
+#include "Editor\Misc\ImGuiHelper.h"
 
-#include "imgui\imgui.h"
+#include <imgui\imgui_internal.h>
 
 namespace Blueberry
 {
@@ -34,56 +35,172 @@ namespace Blueberry
 	{
 		Scene* scene = EditorSceneManager::GetScene();
 
-		if (scene != nullptr)
+		if (scene != m_CurrentScene)
 		{
-			for (auto& rootEntity : scene->GetRootEntities())
+			m_CurrentScene = scene;
+			UpdateTree();
+		}
+
+		List<TransformTreeNode>& nodes = m_TransformTree.GetNodes();
+		size_t size = nodes.size();
+		bool isValid = true;
+		bool isHoveringAny = false;
+		int currentDepth = 0;
+
+		ImVec2 spacing = ImGui::GetStyle().ItemSpacing;
+		ImVec2 padding = ImGui::GetStyle().FramePadding;
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(spacing.x, 0));
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(padding.x, spacing.y / 2));
+		for (size_t i = 0; i < size; ++i)
+		{
+			TransformTreeNode& node = nodes[i];
+			if (node.depth > currentDepth || !node.entity.IsValid())
 			{
-				if (rootEntity.IsValid() && rootEntity.Get()->GetTransform() != nullptr && rootEntity.Get()->GetTransform()->GetParent() == nullptr)
+				continue;
+			}
+			while (currentDepth >= node.depth + 1)
+			{
+				ImGui::TreePop();
+				--currentDepth;
+			}
+
+			Entity* entity = node.entity.Get();
+			ObjectId id = entity->GetObjectId();
+			bool hasChildren = (i < size - 1 && nodes[i + 1].depth > node.depth);
+			ImGuiTreeNodeFlags flags = (Selection::IsActiveObject(entity) ? ImGuiTreeNodeFlags_Selected : 0) | (hasChildren ? ImGuiTreeNodeFlags_OpenOnArrow : (ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen));
+			flags |= ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
+			
+			ImGui::SetNextItemOpen(m_ExpandedNodes.count(id));//m_ExpandedNodes
+			bool opened = ImGui::TreeNodeEx(entity, flags, "");
+			if (ImGui::IsItemToggledOpen())
+			{
+				if (opened)
 				{
-					DrawEntity(rootEntity.Get());
+					m_ExpandedNodes.insert(id);
+				}
+				else
+				{
+					m_ExpandedNodes.erase(id);
 				}
 			}
 
-			if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
+			if (ImGui::IsItemHovered())
 			{
-				Selection::SetActiveObject(nullptr);
+				isHoveringAny = true;
 			}
 
-			if (scene->GetRootEntities().size() == 0 && ImGui::BeginPopupContextWindow())
+			DrawNode(nodes, i, isValid);
+
+			ImVec2 pos = ImGui::GetCursorScreenPos();
+			if (ImGui::IsDragDropActive())
 			{
-				DrawCreateEntity();
-				ImGui::EndPopup();
+				ImGui::Dummy(ImVec2(ImGui::GetContentRegionAvail().x, spacing.y));
+
+				if (ImGui::BeginDragDropTarget())
+				{
+					const ImGuiPayload* payload = ImGui::GetDragDropPayload();
+					if (payload != nullptr && payload->IsDataType("OBJECT_ID"))
+					{
+						ObjectId* id = static_cast<ObjectId*>(payload->Data);
+						Object* object = ObjectDB::GetObject(*id);
+
+						if (ImGui::AcceptDragDropPayload("OBJECT_ID"))
+						{
+							Transform* transform = (static_cast<Entity*>(object))->GetTransform();
+							transform->SetParent(entity->GetTransform()->GetParent());
+							transform->SetSiblingIndex(entity->GetTransform()->GetSiblingIndex() + 1);
+							isValid = false;
+						}
+					}
+					ImGui::EndDragDropTarget();
+				}
 			}
+			ImGui::SetCursorScreenPos(pos);
+
+			if (hasChildren && opened) 
+			{
+				++currentDepth;
+			}
+		}
+		ImGui::PopStyleVar(2);
+
+		while (currentDepth > 0)
+		{
+			ImGui::TreePop();
+			--currentDepth;
+		}
+
+		if (!isHoveringAny && ImGui::IsMouseClicked(0) && ImGui::IsWindowHovered() && !ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
+		{
+			Selection::SetActiveObject(nullptr);
+		}
+
+		if (!isValid)
+		{
+			UpdateTree();
 		}
 	}
 
-	void SceneHierarchy::DrawEntity(Entity* entity)
+	void SceneHierarchy::DrawNode(List<TransformTreeNode>& nodes, const size_t& index, bool& isValid)
 	{
-		if (entity == nullptr)
-		{
-			return;
-		}
-
-		bool isEntityStartedRenaming = false;
-
-		ImGuiTreeNodeFlags flags = ((Selection::IsActiveObject(entity)) ? ImGuiTreeNodeFlags_Selected : 0) | (entity->GetTransform()->GetChildrenCount() > 0 ? ImGuiTreeNodeFlags_OpenOnArrow : ImGuiTreeNodeFlags_Leaf);
-		if (m_ActiveEntity != entity)
-		{
-			flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
-		}
-
-		bool opened = ImGui::TreeNodeEx(static_cast<void*>(entity), flags, "");
+		ImGui::PushID(index);
+		TransformTreeNode& node = nodes[index];
+		Entity* entity = node.entity.Get();
 		if (!ImGui::IsItemToggledOpen())
 		{
-			if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(0))
+			if (ImGui::IsItemClicked(0))
 			{
-				Selection::SetActiveObject(entity);
+				if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
+				{
+					Selection::AddActiveObject(entity);
+				}
+				else if (ImGui::IsKeyDown(ImGuiKey_LeftShift))
+				{
+					if (m_LastClickedItem != UINT64_MAX && index != m_LastClickedItem)
+					{
+						size_t from = std::min(index, m_LastClickedItem);
+						size_t to = std::max(index, m_LastClickedItem);
+						for (size_t j = from; j <= to; ++j)
+						{
+							TransformTreeNode& nodeToSelect = nodes[j];
+							Entity* entityToSelect = nodeToSelect.entity.Get();
+							Selection::AddActiveObject(entityToSelect);
+							if (m_ExpandedNodes.count(entityToSelect->GetObjectId()) == 0)
+							{
+								for (j += 1; j < to - 1; ++j)
+								{
+									if (nodes[j + 1].depth == nodeToSelect.depth)
+									{
+										break;
+									}
+								}
+							}
+						}
+					}
+				}
+				else
+				{
+					if (index == m_LastClickedItem)
+					{
+						if (ImGui::IsMouseDoubleClicked(0))
+						{
+							m_RenamingEntity = entity;
+						}
+					}
+					else
+					{
+						Selection::SetActiveObject(entity);
+					}
+				}
+				m_LastClickedItem = index;
 			}
-
-			if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0) && Selection::IsActiveObject(entity))
+			else if (ImGui::IsItemClicked(1))
 			{
-				m_ActiveEntity = entity;
-				isEntityStartedRenaming = true;
+				if (!Selection::IsActiveObject(entity))
+				{
+					Selection::SetActiveObject(entity);
+				}
+				ImGui::OpenPopup(ImGui::GetID("Popup"));
 			}
 		}
 
@@ -105,35 +222,36 @@ namespace Blueberry
 
 				if (object != nullptr && object != entity && ImGui::AcceptDragDropPayload("OBJECT_ID"))
 				{
+					m_ExpandedNodes.insert(entity->GetObjectId());
 					(static_cast<Entity*>(object))->GetTransform()->SetParent(entity->GetTransform());
+					isValid = false;
 				}
 			}
 			ImGui::EndDragDropTarget();
 		}
-
-		if (ImGui::BeginPopupContextItem())
+		
+		if (ImGui::BeginPopup(ImGui::GetID("Popup")))
 		{
-			DrawCreateEntity();
-			if (PrefabManager::IsPrefabInstanceRoot(entity))
-			{
-				DrawUnpackPrefabEntity(entity);
-			}
-			DrawDestroyEntity(entity);
+			DrawCreateEntity(node, isValid);
+			DrawUnpackPrefabEntity(isValid);
+			DrawDestroyEntity(isValid);
 			ImGui::EndPopup();
 		}
 
 		if (entity != nullptr)
 		{
-			ImGui::SameLine();
-			if (m_ActiveEntity == entity)
-			{
-				static char buf[256];
+			static bool isRenaming = false;
+			static char buf[256];
 
-				if (isEntityStartedRenaming)
+			ImGui::SameLine();
+			if (entity == m_RenamingEntity)
+			{
+				if (!isRenaming)
 				{
 					String name = entity->GetName();
 					strncpy(buf, name.c_str(), sizeof(buf) - 1);
 					ImGui::SetKeyboardFocusHere();
+					isRenaming = true;
 				}
 
 				String name = entity->GetName();
@@ -142,7 +260,8 @@ namespace Blueberry
 
 				if (ImGui::IsItemDeactivated())
 				{
-					m_ActiveEntity = nullptr;
+					m_RenamingEntity = nullptr;
+					isRenaming = false;
 					entity->SetName(buf);
 				}
 
@@ -162,21 +281,10 @@ namespace Blueberry
 				ImGui::PopStyleColor();
 			}
 		}
-
-		if (opened)
-		{
-			if (entity != nullptr)
-			{
-				for (auto child : entity->GetTransform()->GetChildren())
-				{
-					DrawEntity(child->GetEntity());
-				}
-			}
-			ImGui::TreePop();
-		}
+		ImGui::PopID();
 	}
 
-	void SceneHierarchy::DrawCreateEntity()
+	void SceneHierarchy::DrawCreateEntity(TransformTreeNode& node, bool& isValid)
 	{
 		if (ImGui::MenuItem("Create Empty Entity"))
 		{
@@ -185,29 +293,51 @@ namespace Blueberry
 			Object* selectedObject = Selection::GetActiveObject();
 			if (selectedObject != nullptr && selectedObject->IsClassType(Entity::Type))
 			{
-				entity->GetTransform()->SetParent(static_cast<Entity*>(selectedObject)->GetTransform());
+				Entity* selectedEntity = static_cast<Entity*>(selectedObject);
+				entity->GetTransform()->SetParent(selectedEntity->GetTransform());
+				m_ExpandedNodes.insert(selectedEntity->GetObjectId());
+				m_RenamingEntity = entity;
+				isValid = false;
 			}
 		}
 	}
 
-	void SceneHierarchy::DrawDestroyEntity(Entity*& entity)
+	void SceneHierarchy::DrawDestroyEntity(bool& isValid)
 	{
 		if (ImGui::MenuItem("Delete Entity"))
 		{
-			EditorObjectManager::DestroyEntity(entity);
-			if (Selection::GetActiveObject() == entity)
+			for (Object* object : Selection::GetActiveObjects())
 			{
-				Selection::SetActiveObject(nullptr);
+				if (object->GetType() == Entity::Type)
+				{
+					Entity* entity = static_cast<Entity*>(object);
+					EditorObjectManager::DestroyEntity(entity);
+				}
 			}
-			entity = nullptr;
+			Selection::SetActiveObject(nullptr);
+			isValid = false;
 		}
 	}
 
-	void SceneHierarchy::DrawUnpackPrefabEntity(Entity* entity)
+	void SceneHierarchy::DrawUnpackPrefabEntity(bool& isValid)
 	{
-		if (ImGui::MenuItem("Unpack prefab"))
+		Object* selectedObject = Selection::GetActiveObject();
+		if (selectedObject != nullptr && selectedObject->IsClassType(Entity::Type))
 		{
-			PrefabManager::UnpackPrefabInstance(entity);
+			Entity* selectedEntity = static_cast<Entity*>(selectedObject);
+			if (PrefabManager::IsPrefabInstanceRoot(selectedEntity))
+			{
+				if (ImGui::MenuItem("Unpack prefab"))
+				{
+					PrefabManager::UnpackPrefabInstance(selectedEntity);
+					isValid = false;
+				}
+			}
 		}
+	}
+
+	void SceneHierarchy::UpdateTree()
+	{
+		m_TransformTree.Update(m_CurrentScene->GetRootEntities());
 	}
 }
