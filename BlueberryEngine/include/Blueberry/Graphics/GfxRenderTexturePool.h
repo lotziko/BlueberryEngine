@@ -31,6 +31,7 @@ namespace Blueberry
 	class GfxRenderTexturePool
 	{
 	public:
+		static void Shutdown();
 		static void Update();
 		static GfxTexture* Get(const uint32_t& width, const uint32_t& height, const uint32_t& depth, const uint32_t& antiAliasing = 1, const TextureFormat& textureFormat = TextureFormat::R8G8B8A8_UNorm, const TextureDimension& textureDimension = TextureDimension::Texture2D, const WrapMode& wrapMode = WrapMode::Clamp, const FilterMode& filterMode = FilterMode::Bilinear, const bool& isReadable = false, const bool& isUnorderedAccess = false);
 		static void Release(GfxTexture* texture);

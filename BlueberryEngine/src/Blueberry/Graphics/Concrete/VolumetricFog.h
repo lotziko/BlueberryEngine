@@ -11,6 +11,8 @@ namespace Blueberry
 	class VolumetricFog
 	{
 	public:
+		static void Initialize();
+		static void Shutdown();
 		static void CalculateFrustum(const CullingResults& results, const CameraData& data, ShadowAtlas* atlas);
 		static GfxTexture* GetFrustumTexture();
 

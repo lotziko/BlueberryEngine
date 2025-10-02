@@ -20,7 +20,7 @@ namespace Blueberry
 	{
 	public:
 		GfxDeviceDX11() = default;
-		~GfxDeviceDX11() = default;
+		virtual ~GfxDeviceDX11();
 
 	protected:
 		virtual bool InitializeImpl(int width, int height, void* data) final;
@@ -86,8 +86,8 @@ namespace Blueberry
 
 		GfxTextureDX11* m_BindedRenderTarget;
 		GfxTextureDX11* m_BindedDepthStencil;
-		List<std::pair<size_t, GfxBufferDX11*>> m_BindedBuffers;
-		List<std::pair<size_t, GfxTextureDX11*>> m_BindedTextures;
+		List<std::pair<size_t, uint32_t>> m_BindedBuffers;
+		List<std::pair<size_t, uint32_t>> m_BindedTextures;
 		ID3D11ShaderResourceView* m_EmptyShaderResourceViews[16];
 		ID3D11SamplerState* m_EmptySamplers[16];
 		ID3D11UnorderedAccessView* m_EmptyUnorderedAccessViews[8];

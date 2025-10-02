@@ -43,6 +43,7 @@ namespace Blueberry
 
 	public:
 		ComputeShader() = default;
+		virtual ~ComputeShader();
 
 		void Initialize(const List<void*>& shaders);
 		void Initialize(const List<void*>& shaders, const ComputeShaderData& data);

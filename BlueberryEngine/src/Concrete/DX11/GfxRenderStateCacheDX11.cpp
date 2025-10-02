@@ -14,7 +14,7 @@ namespace Blueberry
 {
 	bool GfxRenderStateKeyDX11::operator==(const GfxRenderStateKeyDX11& other) const
 	{
-		return keywordsMask == other.keywordsMask && materialId == other.materialId && passIndex == other.passIndex && crc == other.crc;
+		return keywordsMask == other.keywordsMask && materialId == other.materialId && passIndex == other.passIndex;
 	}
 
 	bool GfxRenderStateKeyDX11::operator!=(const GfxRenderStateKeyDX11& other) const
@@ -30,14 +30,15 @@ namespace Blueberry
 	const GfxRenderStateDX11 GfxRenderStateCacheDX11::GetState(Material* material, const uint8_t& passIndex)
 	{
 		uint64_t keywordMask = static_cast<uint64_t>(Shader::GetActiveKeywordsMask()) | (static_cast<uint64_t>(material->GetActiveKeywordsMask()) << 32);
-		ObjectId objectId = material->GetObjectId();
+		ObjectId objectId = material->GetObjectId(); // Maybe also use shader id to be able to switch it
 		
 		GfxRenderStateDX11 renderState;
-		GfxRenderStateKeyDX11 key = { keywordMask, objectId, passIndex, static_cast<uint64_t>(m_Device->GetCRC()) | (static_cast<uint64_t>(material->GetCRC()) << 32) };
+		GfxRenderStateKeyDX11 key = { keywordMask, objectId, passIndex };
 		auto it = m_RenderStates.find(key);
 		if (it != m_RenderStates.end())
 		{
-			renderState = it->second;
+			renderState = it->second.first;
+			FillRenderState(material, renderState, it->second.second);
 		}
 		else
 		{
@@ -62,14 +63,19 @@ namespace Blueberry
 			renderState.dxVertexShader = dxVertexShader;
 			renderState.vertexShader = dxVertexShader->m_Shader.Get();
 
+			GfxBindingStateDX11 bindingState = {};
+			List<size_t> usedTextures = {};
+
 			// Vertex global constant buffers
 			for (auto it = dxVertexShader->m_ConstantBufferSlots.begin(); it != dxVertexShader->m_ConstantBufferSlots.end(); it++)
 			{
-				for (auto it1 = m_Device->m_BindedBuffers.begin(); it1 < m_Device->m_BindedBuffers.end(); ++it1)
+				uint32_t offset = 0;
+				for (auto it1 = m_Device->m_BindedBuffers.begin(); it1 < m_Device->m_BindedBuffers.end(); ++it1, ++offset)
 				{
 					if (it1->first == it->first)
 					{
-						renderState.vertexConstantBuffers[it->second] = it1->second->m_Buffer.Get();
+						bindingState.vertexBuffers.push_back({ offset, true, it->second, UINT8_MAX });
+						break;
 					}
 				}
 			}
@@ -77,17 +83,45 @@ namespace Blueberry
 			// Vertex global structured buffers
 			for (auto it = dxVertexShader->m_StructuredBufferSlots.begin(); it != dxVertexShader->m_StructuredBufferSlots.end(); it++)
 			{
-				for (auto it1 = m_Device->m_BindedBuffers.begin(); it1 < m_Device->m_BindedBuffers.end(); ++it1)
+				uint32_t offset = 0;
+				for (auto it1 = m_Device->m_BindedBuffers.begin(); it1 < m_Device->m_BindedBuffers.end(); ++it1, ++offset)
 				{
 					if (it1->first == it->first)
 					{
-						uint32_t bufferSlotIndex = it->second.first;
-						uint32_t shaderResourceViewSlotIndex = it->second.second;
-						auto dxBuffer = it1->second;
-						renderState.vertexShaderResourceViews[shaderResourceViewSlotIndex] = dxBuffer->m_ShaderResourceView.Get();
+						bindingState.vertexBuffers.push_back({ offset, true, UINT8_MAX, it->second.second });
+						break;
 					}
 				}
 			}
+
+			// Vertex material textures
+			for (auto it = dxVertexShader->m_TextureSlots.begin(); it != dxVertexShader->m_TextureSlots.end(); it++)
+			{
+				uint32_t offset = GetTextureIndex(material, it->first);
+				if (offset != UINT32_MAX)
+				{
+					usedTextures.push_back(it->first);
+					bindingState.vertexTextures.push_back({ offset, false, it->second.first, it->second.second != 255 ? it->second.second : UINT8_MAX });
+				}
+			}
+
+			// Vertex global textures
+			for (auto it = dxVertexShader->m_TextureSlots.begin(); it != dxVertexShader->m_TextureSlots.end(); it++)
+			{
+				uint32_t offset = 0;
+				for (auto it1 = m_Device->m_BindedTextures.begin(); it1 < m_Device->m_BindedTextures.end(); ++it1, ++offset)
+				{
+					if (it1->first == it->first)
+					{
+						if (std::find(usedTextures.begin(), usedTextures.end(), it1->first) == usedTextures.end())
+						{
+							bindingState.vertexTextures.push_back({ offset, true, it->second.first, it->second.second != 255 ? it->second.second : UINT8_MAX });
+						}
+						break;
+					}
+				}
+			}
+			usedTextures.clear();
 
 			if (dxGeometryShader != nullptr)
 			{
@@ -96,11 +130,13 @@ namespace Blueberry
 				// Geometry global constant buffers
 				for (auto it = dxGeometryShader->m_ConstantBufferSlots.begin(); it != dxGeometryShader->m_ConstantBufferSlots.end(); it++)
 				{
-					for (auto it1 = m_Device->m_BindedBuffers.begin(); it1 < m_Device->m_BindedBuffers.end(); ++it1)
+					uint32_t offset = 0;
+					for (auto it1 = m_Device->m_BindedBuffers.begin(); it1 < m_Device->m_BindedBuffers.end(); ++it1, ++offset)
 					{
 						if (it1->first == it->first)
 						{
-							renderState.geometryConstantBuffers[it->second] = it1->second->m_Buffer.Get();
+							bindingState.geometryBuffers.push_back({ offset, true, it->second, UINT8_MAX });
+							break;
 						}
 					}
 				}
@@ -110,11 +146,13 @@ namespace Blueberry
 			// Fragment global constant buffers
 			for (auto it = dxFragmentShader->m_ConstantBufferSlots.begin(); it != dxFragmentShader->m_ConstantBufferSlots.end(); it++)
 			{
-				for (auto it1 = m_Device->m_BindedBuffers.begin(); it1 < m_Device->m_BindedBuffers.end(); ++it1)
+				uint32_t offset = 0;
+				for (auto it1 = m_Device->m_BindedBuffers.begin(); it1 < m_Device->m_BindedBuffers.end(); ++it1, ++offset)
 				{
 					if (it1->first == it->first)
 					{
-						renderState.pixelConstantBuffers[it->second] = it1->second->m_Buffer.Get();
+						bindingState.pixelBuffers.push_back({ offset, true, it->second, UINT8_MAX });
+						break;
 					}
 				}
 			}
@@ -122,30 +160,25 @@ namespace Blueberry
 			// Fragment material textures
 			for (auto it = dxFragmentShader->m_TextureSlots.begin(); it != dxFragmentShader->m_TextureSlots.end(); it++)
 			{
-				Texture* texture = material->GetTexture(it->first);
-				if (texture != nullptr && texture->GetState() == ObjectState::Default)
+				uint32_t offset = GetTextureIndex(material, it->first);
+				if (offset != UINT32_MAX)
 				{
-					auto dxTexture = static_cast<GfxTextureDX11*>(texture->Get());
-					renderState.pixelShaderResourceViews[it->second.first] = dxTexture->m_ResourceView.Get();
-					if (it->second.second != 255)
-					{
-						renderState.pixelSamplerStates[it->second.second] = dxTexture->m_SamplerState.Get();
-					}
+					usedTextures.push_back(it->first);
+					bindingState.pixelTextures.push_back({ offset, false, it->second.first, it->second.second != 255 ? it->second.second : UINT8_MAX });
 				}
 			}
 
 			// Fragment global textures
-			// Has a possiblity to collide with material textures if has same name
 			for (auto it = dxFragmentShader->m_TextureSlots.begin(); it != dxFragmentShader->m_TextureSlots.end(); it++)
 			{
-				for (auto it1 = m_Device->m_BindedTextures.begin(); it1 < m_Device->m_BindedTextures.end(); ++it1)
+				uint32_t offset = 0;
+				for (auto it1 = m_Device->m_BindedTextures.begin(); it1 < m_Device->m_BindedTextures.end(); ++it1, ++offset)
 				{
 					if (it1->first == it->first)
 					{
-						renderState.pixelShaderResourceViews[it->second.first] = it1->second->m_ResourceView.Get();
-						if (it->second.second != 255)
+						if (std::find(usedTextures.begin(), usedTextures.end(), it1->first) == usedTextures.end())
 						{
-							renderState.pixelSamplerStates[it->second.second] = it1->second->m_SamplerState.Get();
+							bindingState.pixelTextures.push_back({ offset, true, it->second.first, it->second.second != 255 ? it->second.second : UINT8_MAX });
 						}
 						break;
 					}
@@ -155,9 +188,75 @@ namespace Blueberry
 			renderState.rasterizerState = m_Device->GetRasterizerState(passData.cullMode);
 			renderState.depthStencilState = m_Device->GetDepthStencilState(passData.zTest, passData.zWrite);
 			renderState.blendState = m_Device->GetBlendState(passData.blendSrcColor, passData.blendSrcAlpha, passData.blendDstColor, passData.blendDstAlpha);
-
-			m_RenderStates.insert_or_assign(key, renderState);
+			
+			m_RenderStates.insert_or_assign(key, std::make_pair(renderState, bindingState));
+			FillRenderState(material, renderState, bindingState);
 		}
 		return renderState;
+	}
+
+	void GfxRenderStateCacheDX11::FillRenderState(Material* material, GfxRenderStateDX11& renderState, const GfxBindingStateDX11& bindingState)
+	{
+		for (auto& buffer : bindingState.vertexBuffers)
+		{
+			GfxBufferDX11* dxBuffer = GfxBufferDX11::s_PointerCache.Get(m_Device->m_BindedBuffers[buffer.bindingIndex].second);
+			if (buffer.bufferSlot != UINT8_MAX)
+			{
+				renderState.vertexConstantBuffers[buffer.bufferSlot] = dxBuffer->m_Buffer.Get();
+			}
+			if (buffer.srvSlot != UINT8_MAX)
+			{
+				renderState.vertexShaderResourceViews[buffer.srvSlot] = dxBuffer->m_ShaderResourceView.Get();
+			}
+		}
+
+		if (renderState.geometryShader != nullptr)
+		{
+			for (auto& buffer : bindingState.geometryBuffers)
+			{
+				GfxBufferDX11* dxBuffer = GfxBufferDX11::s_PointerCache.Get(m_Device->m_BindedBuffers[buffer.bindingIndex].second);
+				if (buffer.bufferSlot != UINT8_MAX)
+				{
+					renderState.geometryConstantBuffers[buffer.bufferSlot] = dxBuffer->m_Buffer.Get();
+				}
+				if (buffer.srvSlot != UINT8_MAX)
+				{
+					//renderState.geometryShaderResourceViews[buffer.srvSlot] = dxBuffer->m_ShaderResourceView.Get();
+				}
+			}
+		}
+
+		for (auto& buffer : bindingState.pixelBuffers)
+		{
+			GfxBufferDX11* dxBuffer = GfxBufferDX11::s_PointerCache.Get(m_Device->m_BindedBuffers[buffer.bindingIndex].second);
+			if (buffer.bufferSlot != UINT8_MAX)
+			{
+				renderState.pixelConstantBuffers[buffer.bufferSlot] = dxBuffer->m_Buffer.Get();
+			}
+			if (buffer.srvSlot != UINT8_MAX)
+			{
+				renderState.pixelShaderResourceViews[buffer.srvSlot] = dxBuffer->m_ShaderResourceView.Get();
+			}
+		}
+
+		for (auto& texture : bindingState.vertexTextures)
+		{
+			GfxTextureDX11* dxTexture = GfxTextureDX11::s_PointerCache.Get(texture.isGlobal ? m_Device->m_BindedTextures[texture.bindingIndex].second : GetTextureIndex(material, texture.bindingIndex));
+			renderState.vertexShaderResourceViews[texture.srvSlot] = dxTexture->m_ShaderResourceView.Get();
+			if (texture.samplerSlot != UINT8_MAX)
+			{
+				renderState.vertexSamplerStates[texture.samplerSlot] = dxTexture->m_SamplerState.Get();
+			}
+		}
+
+		for (auto& texture : bindingState.pixelTextures)
+		{
+			GfxTextureDX11* dxTexture = GfxTextureDX11::s_PointerCache.Get(texture.isGlobal ? m_Device->m_BindedTextures[texture.bindingIndex].second : GetTextureIndex(material, texture.bindingIndex));
+			renderState.pixelShaderResourceViews[texture.srvSlot] = dxTexture->m_ShaderResourceView.Get();
+			if (texture.samplerSlot != UINT8_MAX)
+			{
+				renderState.pixelSamplerStates[texture.samplerSlot] = dxTexture->m_SamplerState.Get();
+			}
+		}
 	}
 }

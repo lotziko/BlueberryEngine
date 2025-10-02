@@ -43,6 +43,15 @@ namespace Blueberry
 		m_Kernels = kernels;
 	}
 
+	ComputeShader::~ComputeShader()
+	{
+		for (auto& shader : m_ComputeShaders)
+		{
+			delete shader;
+		}
+		m_ComputeShaders.clear();
+	}
+
 	void ComputeShader::Initialize(const List<void*>& shaders)
 	{
 		if (m_ComputeShaders.size() > 0)

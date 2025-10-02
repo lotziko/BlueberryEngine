@@ -14,6 +14,8 @@ namespace Blueberry
 	public:
 		GfxInputLayoutCacheDX11() = default;
 
+		void Shutdown();
+
 		ID3D11InputLayout* GetLayout(GfxVertexShaderDX11* shader, VertexLayout* meshLayout);
 
 	private:

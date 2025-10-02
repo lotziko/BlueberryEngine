@@ -39,7 +39,7 @@ namespace Blueberry
 		void PackRequests();
 
 	private:
-		GfxTexture* m_AtlasTexture;
+		GfxTexture* m_AtlasTexture = nullptr;
 		ShadowRequest* m_Requests;
 		Vector2Int m_Size;
 		uint32_t m_MaxLightCount;

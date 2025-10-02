@@ -19,6 +19,7 @@ namespace Blueberry
 
 	ShadowAtlas::~ShadowAtlas()
 	{
+		GfxRenderTexturePool::Release(m_AtlasTexture);
 		BB_FREE(m_Requests);
 	}
 

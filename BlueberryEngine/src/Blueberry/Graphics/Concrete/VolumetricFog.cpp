@@ -3,6 +3,7 @@
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Core\Time.h"
 #include "Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\GfxTexture.h"
 #include "..\RenderContext.h"
 #include "..\Buffers\FogLightDataConstantBuffer.h"
 #include "..\Buffers\FogViewDataConstantBuffer.h"
@@ -38,32 +39,38 @@ namespace Blueberry
 	static size_t s_ScatterBlurFogVolumeId = TO_HASH("_ScatterBlurFogVolume");
 	static size_t s_ScatterFogVolumeId = TO_HASH("_ScatterFogVolume");
 
+	void VolumetricFog::Initialize()
+	{
+		s_VolumetricFogShader = static_cast<ComputeShader*>(AssetLoader::Load("assets/shaders/VolumetricFog.compute"));
+
+		TextureProperties textureProperties = {};
+
+		textureProperties.width = s_FrustumVolumeSize.x;
+		textureProperties.height = s_FrustumVolumeSize.y;
+		textureProperties.depth = s_FrustumVolumeSize.z;
+		textureProperties.antiAliasing = 1;
+		textureProperties.mipCount = 1;
+		textureProperties.format = TextureFormat::R16G16B16A16_UNorm;
+		textureProperties.dimension = TextureDimension::Texture3D;
+		textureProperties.wrapMode = WrapMode::Clamp;
+		textureProperties.filterMode = FilterMode::Bilinear;
+		textureProperties.isRenderTarget = false;
+		textureProperties.isReadable = false;
+		textureProperties.isWritable = false;
+		textureProperties.isUnorderedAccess = true;
+
+		GfxDevice::CreateTexture(textureProperties, s_FrustumVolume0);
+		GfxDevice::CreateTexture(textureProperties, s_FrustumVolume1);
+	}
+
+	void VolumetricFog::Shutdown()
+	{
+		delete s_FrustumVolume0;
+		delete s_FrustumVolume1;
+	}
+
 	void VolumetricFog::CalculateFrustum(const CullingResults& results, const CameraData& data, ShadowAtlas* atlas)
 	{
-		if (s_VolumetricFogShader == nullptr)
-		{
-			s_VolumetricFogShader = static_cast<ComputeShader*>(AssetLoader::Load("assets/shaders/VolumetricFog.compute"));
-			
-			TextureProperties textureProperties = {};
-
-			textureProperties.width = s_FrustumVolumeSize.x;
-			textureProperties.height = s_FrustumVolumeSize.y;
-			textureProperties.depth = s_FrustumVolumeSize.z;
-			textureProperties.antiAliasing = 1;
-			textureProperties.mipCount = 1;
-			textureProperties.format = TextureFormat::R16G16B16A16_UNorm;
-			textureProperties.dimension = TextureDimension::Texture3D;
-			textureProperties.wrapMode = WrapMode::Clamp;
-			textureProperties.filterMode = FilterMode::Bilinear;
-			textureProperties.isRenderTarget = false;
-			textureProperties.isReadable = false;
-			textureProperties.isWritable = false;
-			textureProperties.isUnorderedAccess = true;
-			
-			GfxDevice::CreateTexture(textureProperties, s_FrustumVolume0);
-			GfxDevice::CreateTexture(textureProperties, s_FrustumVolume1);
-		}
-
 		Light* mainLight = nullptr;
 		List<Light*> lights = {};
 		for (Light* light : results.lights)

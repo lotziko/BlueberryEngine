@@ -54,7 +54,7 @@ namespace Blueberry
 
 	void Material::SetTexture(size_t id, Texture* texture)
 	{
-		m_BindedTextures[id] = texture->GetObjectId();
+		ApplyTextureBinding(id, texture);
 		m_Crc = UINT32_MAX;
 	}
 
@@ -144,10 +144,10 @@ namespace Blueberry
 			m_Crc = 0;
 			m_Crc = CRCHelper::Calculate(m_Shader->m_ObjectId, m_Crc);
 			m_Crc = CRCHelper::Calculate(m_Shader->m_UpdateCount, m_Crc);
-			for (auto& pair : m_BindedTextures)
+			for (auto& binding : m_BindedTextures)
 			{
-				Texture* texture = static_cast<Texture*>(ObjectDB::GetObject(pair.second));
-				m_Crc = CRCHelper::Calculate(&pair, sizeof(std::pair<size_t, ObjectId>), m_Crc);
+				Texture* texture = static_cast<Texture*>(ObjectDB::GetObject(binding.objectId));
+				m_Crc = CRCHelper::Calculate(&binding, sizeof(TextureBinding), m_Crc);
 				m_Crc = CRCHelper::Calculate(texture->m_UpdateCount, m_Crc);
 			}
 			for (auto& keyword : m_ActiveKeywords)
@@ -165,10 +165,12 @@ namespace Blueberry
 			ApplyProperties();
 		}
 
-		auto it = m_BindedTextures.find(id);
-		if (it != m_BindedTextures.end())
+		for (auto& binding : m_BindedTextures)
 		{
-			return static_cast<Texture*>(ObjectDB::GetObject(it->second));
+			if (binding.id == id)
+			{
+				return static_cast<Texture*>(ObjectDB::GetObject(binding.objectId));
+			}
 		}
 		return nullptr;
 	}
@@ -190,11 +192,7 @@ namespace Blueberry
 					Texture* texture = DefaultTextures::GetTexture(property.GetDefaultTextureName(), property.GetTextureDimension());
 					if (texture != nullptr)
 					{
-						m_BindedTextures.insert_or_assign(key, texture->GetObjectId());
-					}
-					else
-					{
-
+						ApplyTextureBinding(key, texture);
 					}
 				}
 			}
@@ -204,13 +202,28 @@ namespace Blueberry
 			if (texture.m_Texture.IsValid())
 			{
 				size_t key = TO_HASH(texture.m_Name);
-				m_BindedTextures.insert_or_assign(key, texture.m_Texture.Get()->GetObjectId());
 				Texture* tex = texture.m_Texture.Get();
+				ApplyTextureBinding(key, tex);
 				if (tex->GetState() == ObjectState::Default)
 				{
 					tex->m_Dependencies.emplace(m_ObjectId);
 				}
 			}
 		}
+	}
+
+	void Material::ApplyTextureBinding(const size_t& id, Texture* texture)
+	{
+		for (size_t i = 0; i < m_BindedTextures.size(); ++i)
+		{
+			auto& binding = m_BindedTextures[i];
+			if (binding.id == id)
+			{
+				binding.objectId = texture->GetObjectId();
+				binding.index = texture->Get()->m_Index;
+				return;
+			}
+		}
+		m_BindedTextures.push_back({ id, texture->GetObjectId(), texture->Get()->m_Index });
 	}
 }

@@ -38,12 +38,7 @@ namespace Blueberry
 		textureProperties.dimension = TextureDimension::TextureCube;
 		textureProperties.wrapMode = m_WrapMode;
 		textureProperties.filterMode = m_FilterMode;
-	
-		if (m_Texture != nullptr)
-		{
-			delete m_Texture;
-		}
-
+		
 		GfxDevice::CreateTexture(textureProperties, m_Texture);
 	}
 

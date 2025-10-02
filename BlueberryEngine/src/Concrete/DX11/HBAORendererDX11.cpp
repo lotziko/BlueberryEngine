@@ -27,6 +27,11 @@ namespace Blueberry
 		return true;
 	}
 
+	void HBAORendererDX11::ShutdownImpl()
+	{
+		m_AOContext->Release();
+	}
+
 	void HBAORendererDX11::DrawImpl(GfxTexture* depthStencil, GfxTexture* normals, const Matrix& view, const Matrix& projection, const Rectangle& viewport, GfxTexture* output)
 	{
 		GFSDK_SSAO_InputData_D3D11 Input;

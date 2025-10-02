@@ -11,7 +11,6 @@ namespace Blueberry
 		uint64_t keywordsMask; // global + material
 		ObjectId materialId;
 		uint8_t passIndex;
-		uint64_t crc;
 
 		bool operator==(const GfxRenderStateKeyDX11& other) const;
 		bool operator!=(const GfxRenderStateKeyDX11& other) const;
@@ -23,7 +22,7 @@ struct std::hash<Blueberry::GfxRenderStateKeyDX11>
 {
 	size_t operator()(const Blueberry::GfxRenderStateKeyDX11& key) const
 	{
-		return std::hash<uint64_t>()(key.keywordsMask) ^ (std::hash<uint32_t>()(key.materialId) << 1) ^ (std::hash<uint8_t>()(key.passIndex) << 2) ^ (std::hash<uint64_t>()(key.crc) << 3);
+		return std::hash<uint64_t>()(key.keywordsMask) ^ (std::hash<uint32_t>()(key.materialId) << 1) ^ (std::hash<uint8_t>()(key.passIndex) << 2);
 	}
 };
 
@@ -60,6 +59,32 @@ namespace Blueberry
 		bool isValid;
 	};
 
+	struct GfxTextureBinding
+	{
+		uint32_t bindingIndex;
+		bool isGlobal;
+		uint8_t srvSlot;
+		uint8_t samplerSlot;
+	};
+
+	struct GfxBufferBinding
+	{
+		uint32_t bindingIndex;
+		bool isGlobal;
+		uint8_t bufferSlot;
+		uint8_t srvSlot;
+	};
+
+	struct GfxBindingStateDX11
+	{
+		List<GfxTextureBinding> vertexTextures;
+		List<GfxTextureBinding> pixelTextures;
+
+		List<GfxBufferBinding> vertexBuffers;
+		List<GfxBufferBinding> geometryBuffers;
+		List<GfxBufferBinding> pixelBuffers;
+	};
+
 	class GfxRenderStateCacheDX11 : public GfxRenderStateCache
 	{
 	public:
@@ -67,9 +92,12 @@ namespace Blueberry
 		GfxRenderStateCacheDX11(GfxDeviceDX11* device);
 
 		const GfxRenderStateDX11 GetState(Material* material, const uint8_t& passIndex);
+		
+	private:
+		void FillRenderState(Material* material, GfxRenderStateDX11& renderState, const GfxBindingStateDX11& bindingState);
 
 	private:
 		GfxDeviceDX11* m_Device;
-		Dictionary<GfxRenderStateKeyDX11, GfxRenderStateDX11> m_RenderStates;
+		Dictionary<GfxRenderStateKeyDX11, std::pair<GfxRenderStateDX11, GfxBindingStateDX11>> m_RenderStates;
 	};
 }

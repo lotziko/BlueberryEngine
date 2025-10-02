@@ -18,5 +18,10 @@ namespace Blueberry
 		virtual void SetData(void* data, const size_t& size) = 0;
 
 		virtual void GenerateMipMaps() = 0;
+
+	protected:
+		uint32_t m_Index;
+
+		friend class Material;
 	};
 }

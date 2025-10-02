@@ -13,6 +13,6 @@ namespace Blueberry
 		virtual ~MaterialEditor();
 
 	private:
-		GfxTexture* m_RenderTexture;
+		GfxTexture* m_RenderTexture = nullptr;
 	};
 }

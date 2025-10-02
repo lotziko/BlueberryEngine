@@ -23,8 +23,8 @@ namespace Blueberry
 	class ChunkedObjectArray
 	{
 	public:
-		ChunkedObjectArray();
-		~ChunkedObjectArray();
+		void Initialize();
+		void Shutdown();
 
 		const uint32_t MAX_OBJECTS = 2 * 1024 * 1024;
 		const uint32_t ELEMENTS_PER_CHUNK = 64 * 1024;
@@ -49,6 +49,9 @@ namespace Blueberry
 	class ObjectDB
 	{
 	public:
+		static void Initialize();
+		static void Shutdown();
+
 		static void AllocateId(Object* object);
 		static void FreeId(Object* object);
 		static bool IsValid(Object* object);

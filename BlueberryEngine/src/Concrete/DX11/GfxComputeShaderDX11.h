@@ -17,7 +17,6 @@ namespace Blueberry
 
 	private:
 		ComPtr<ID3D11ComputeShader> m_ComputeShader = nullptr;
-		ComPtr<ID3DBlob> m_ComputeShaderBuffer = nullptr;
 
 		ID3D11Device* m_Device;
 		ID3D11DeviceContext* m_DeviceContext;

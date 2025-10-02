@@ -62,13 +62,21 @@ namespace Blueberry
 
 	private:
 		void FillTextureMap();
+		void ApplyTextureBinding(const size_t& id, Texture* texture);
 
 	private:
 		List<TextureData> m_Textures;
 		List<String> m_ActiveKeywords;
 		ObjectPtr<Shader> m_Shader;
 
-		Dictionary<size_t, ObjectId> m_BindedTextures;
+		struct TextureBinding
+		{
+			size_t id;
+			ObjectId objectId;
+			uint32_t index;
+		};
+
+		List<TextureBinding> m_BindedTextures;
 
 		uint32_t m_Crc = UINT32_MAX;
 		uint32_t m_ActiveKeywordsMask = 0;

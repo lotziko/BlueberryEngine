@@ -11,6 +11,8 @@ namespace Blueberry
 	class AutoExposure
 	{
 	public:
+		static void Initialize();
+		static void Shutdown();
 		static float Calculate(GfxTexture* color, const Rectangle& viewport);
 
 	private:

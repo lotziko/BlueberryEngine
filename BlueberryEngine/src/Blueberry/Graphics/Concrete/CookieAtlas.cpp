@@ -23,6 +23,11 @@ namespace Blueberry
 		s_Cookies.emplace_back(0);
 	}
 
+	void CookieAtlas::Shutdown()
+	{
+		GfxRenderTexturePool::Release(s_AtlasTexture);
+	}
+
 	void CookieAtlas::PrepareCookies(CullingResults& results)
 	{
 		for (Light* light : results.lights)

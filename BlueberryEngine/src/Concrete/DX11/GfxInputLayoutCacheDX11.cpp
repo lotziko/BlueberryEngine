@@ -7,6 +7,15 @@
 
 namespace Blueberry
 {
+	void GfxInputLayoutCacheDX11::Shutdown()
+	{
+		for (auto& pair : m_InputLayouts)
+		{
+			pair.second->Release();
+		}
+		m_InputLayouts.clear();
+	}
+
 	ID3D11InputLayout* GfxInputLayoutCacheDX11::GetLayout(GfxVertexShaderDX11* shader, VertexLayout* meshLayout)
 	{
 		size_t key = static_cast<uint64_t>(shader->m_Crc) | (static_cast<uint64_t>(meshLayout->GetCrc()) << 32);

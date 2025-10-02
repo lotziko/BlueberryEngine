@@ -11,17 +11,26 @@ namespace Blueberry
 	Dictionary<Guid, Dictionary<FileId, ObjectId>> ObjectDB::s_GuidToObjectId = {};
 	Dictionary<ObjectId, FileId> ObjectDB::s_ObjectIdToFileId = {};
 
-	ChunkedObjectArray::ChunkedObjectArray()
+	void ChunkedObjectArray::Initialize()
 	{
 		m_MaxChunksCount = MAX_OBJECTS / ELEMENTS_PER_CHUNK + 1;
 		m_Objects = BB_MALLOC_ARRAY(ObjectItem*, m_MaxChunksCount);
 	}
 
-	ChunkedObjectArray::~ChunkedObjectArray()
+	void ChunkedObjectArray::Shutdown()
 	{
-		for (uint32_t i = 0; i < m_ChunksCount; i++)
+		for (uint32_t i = 0; i < m_ChunksCount; ++i)
 		{
-			BB_FREE(m_Objects[i]);
+			ObjectItem* chunk = m_Objects[i];
+			for (uint32_t j = 0; j < ELEMENTS_PER_CHUNK; ++j)
+			{
+				ObjectItem* item = chunk + j;
+				if (item != nullptr)
+				{
+					delete item->object;
+				}
+			}
+			BB_FREE(chunk);
 		}
 		BB_FREE(m_Objects);
 	}
@@ -62,6 +71,16 @@ namespace Blueberry
 			*chunk = newChunk;
 			++m_ChunksCount;
 		}
+	}
+
+	void ObjectDB::Initialize()
+	{
+		s_Array.Initialize();
+	}
+
+	void ObjectDB::Shutdown()
+	{
+		s_Array.Shutdown();
 	}
 
 	void ObjectDB::AllocateId(Object* object)

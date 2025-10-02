@@ -15,5 +15,8 @@ namespace Blueberry
 		virtual void SetData(const void* data, const uint32_t& size) = 0;
 
 		virtual const uint32_t& GetElementSize() = 0;
+
+	protected:
+		uint32_t m_Index;
 	};
 }

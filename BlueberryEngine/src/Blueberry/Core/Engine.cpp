@@ -24,6 +24,8 @@ namespace Blueberry
 		m_LayerStack = new LayerStack();
 		s_Instance = this;
 
+		ObjectDB::Initialize();
+
 		if (!GfxDevice::Initialize(properties.Width, properties.Height, m_Window->GetHandle()))
 		{
 			return false;
@@ -48,11 +50,13 @@ namespace Blueberry
 	void Engine::Shutdown()
 	{
 		Renderer2D::Shutdown();
-		GfxDevice::Shutdown();
 		DefaultRenderer::Shutdown();
 		Input::Shutdown();
 		delete m_LayerStack;
 		delete m_Window;
+
+		ObjectDB::Shutdown();
+		GfxDevice::Shutdown();
 	}
 
 	void Engine::Run()

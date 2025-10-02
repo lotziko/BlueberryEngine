@@ -20,7 +20,7 @@ namespace Blueberry
 
 	void HBAORenderer::Shutdown()
 	{
-
+		s_Instance->ShutdownImpl();
 	}
 
 	void HBAORenderer::Draw(GfxTexture* depthStencil, GfxTexture* normals, const Matrix& view, const Matrix& projection, const Rectangle& viewport, GfxTexture* output)

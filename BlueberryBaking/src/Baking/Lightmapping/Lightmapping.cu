@@ -193,7 +193,7 @@ namespace Blueberry
 	#define BATCH_SIZE 64
 	#define RGB_TO_LUMINANCE make_float3(0.2125f, 0.7154f, 0.0721f)
 
-	extern "C" __global__ void __raygen__secondpass()
+	extern "C" __global__ void __raygen__pass()
 	{
 		while (true)
 		{

@@ -18,6 +18,7 @@ namespace Blueberry
 
 	protected:
 		virtual bool InitializeImpl() = 0;
+		virtual void ShutdownImpl() = 0;
 		virtual void DrawImpl(GfxTexture* depthStencil, GfxTexture* normals, const Matrix& view, const Matrix& projection, const Rectangle& viewport, GfxTexture* output) = 0;
 	
 	private:

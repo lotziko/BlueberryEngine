@@ -47,6 +47,7 @@ namespace Blueberry
 
 	class GfxFragmentShaderDX11 : GfxShaderDX11<GfxFragmentShader, ID3D11PixelShader>
 	{
+	public:
 		bool Initialize(ID3D11Device* device, void* fragmentData);
 
 		friend class GfxDeviceDX11;

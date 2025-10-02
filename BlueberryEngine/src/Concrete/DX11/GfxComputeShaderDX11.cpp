@@ -16,8 +16,8 @@ namespace Blueberry
 			return false;
 		}
 
-		m_ComputeShaderBuffer.Attach(static_cast<ID3DBlob*>(computeData));
-		HRESULT hr = m_Device->CreateComputeShader(m_ComputeShaderBuffer->GetBufferPointer(), m_ComputeShaderBuffer->GetBufferSize(), NULL, m_ComputeShader.GetAddressOf());
+		ID3DBlob* blob = static_cast<ID3DBlob*>(computeData);
+		HRESULT hr = m_Device->CreateComputeShader(blob->GetBufferPointer(), blob->GetBufferSize(), NULL, m_ComputeShader.GetAddressOf());
 		if (FAILED(hr))
 		{
 			BB_ERROR("Failed to create compute shader from data.");
@@ -25,7 +25,7 @@ namespace Blueberry
 		}
 
 		ID3D11ShaderReflection* computeShaderReflection;
-		hr = D3DReflect(m_ComputeShaderBuffer->GetBufferPointer(), m_ComputeShaderBuffer->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&computeShaderReflection);
+		hr = D3DReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&computeShaderReflection);
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to get compute shader reflection."));

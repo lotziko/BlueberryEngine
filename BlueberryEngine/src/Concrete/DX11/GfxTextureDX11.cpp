@@ -4,8 +4,17 @@
 
 namespace Blueberry
 {
+	GfxPointerCacheDX11<GfxTextureDX11> GfxTextureDX11::s_PointerCache = {};
+
 	GfxTextureDX11::GfxTextureDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext) : m_Device(device), m_DeviceContext(deviceContext)
 	{
+		m_Index = s_PointerCache.Allocate(this);
+	}
+
+	GfxTextureDX11::~GfxTextureDX11()
+	{
+		s_PointerCache.Deallocate(m_Index);
+		m_SlicesRenderTargetViews.clear();
 	}
 
 	uint32_t GetBitsPerPixel(DXGI_FORMAT format) noexcept
@@ -214,7 +223,23 @@ namespace Blueberry
 
 	bool GfxTextureDX11::Initialize(const TextureProperties& properties)
 	{
-		m_Index = ++s_MaxIndex;
+		if (m_Texture.Get() != nullptr)
+		{
+			m_Texture = nullptr;
+			m_ShaderResourceView = nullptr;
+			m_DepthStencilView = nullptr;
+			m_RenderTargetView = nullptr;
+			m_SamplerState = nullptr;
+			m_UnorderedAccessView = nullptr;
+			m_StagingTexture = nullptr;
+
+			for (auto& rtv : m_SlicesRenderTargetViews)
+			{
+				rtv = nullptr;
+			}
+			m_SlicesRenderTargetViews.clear();
+		}
+
 		m_Format = static_cast<DXGI_FORMAT>(properties.format);
 		m_Width = properties.width;
 		m_Height = properties.height;
@@ -285,7 +310,7 @@ namespace Blueberry
 
 	ID3D11ShaderResourceView* GfxTextureDX11::GetSRV() const
 	{
-		return m_ResourceView.Get();
+		return m_ShaderResourceView.Get();
 	}
 
 	ID3D11RenderTargetView* GfxTextureDX11::GetRTV() const
@@ -310,7 +335,7 @@ namespace Blueberry
 
 	void* GfxTextureDX11::GetHandle()
 	{
-		return m_ResourceView.Get();
+		return m_ShaderResourceView.Get();
 	}
 
 	void GfxTextureDX11::GetData(void* target, const Rectangle& area)
@@ -402,7 +427,7 @@ namespace Blueberry
 
 	void GfxTextureDX11::GenerateMipMaps()
 	{
-		m_DeviceContext->GenerateMips(m_ResourceView.Get());
+		m_DeviceContext->GenerateMips(m_ShaderResourceView.Get());
 	}
 
 	D3D11_TEXTURE_ADDRESS_MODE GetAdressMode(const WrapMode& wrapMode)
@@ -630,7 +655,7 @@ namespace Blueberry
 			}
 		}
 
-		HRESULT hr = m_Device->CreateShaderResourceView(m_Texture.Get(), &resourceViewDesc, m_ResourceView.GetAddressOf());
+		HRESULT hr = m_Device->CreateShaderResourceView(m_Texture.Get(), &resourceViewDesc, m_ShaderResourceView.GetAddressOf());
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create shader resource view."));

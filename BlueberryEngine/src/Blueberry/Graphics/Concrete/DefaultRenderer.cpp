@@ -44,6 +44,7 @@ namespace Blueberry
 		HBAORenderer::Initialize();
 		CookieAtlas::Initialize();
 		PostProcessing::Initialize();
+		VolumetricFog::Initialize();
 		s_ResolveMSAAMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/ResolveMSAA.shader")));
 		s_ShadowAtlas = new ShadowAtlas(4096, 4096, 128);
 		GfxDevice::SetGlobalTexture(TO_HASH("_LightmapTexture"), DefaultTextures::GetWhite2D()->Get());
@@ -51,7 +52,12 @@ namespace Blueberry
 
 	void DefaultRenderer::Shutdown()
 	{
+		HBAORenderer::Shutdown();
 		Object::Destroy(s_ResolveMSAAMaterial);
+		delete s_ShadowAtlas;
+		CookieAtlas::Shutdown();
+		PostProcessing::Shutdown();
+		VolumetricFog::Shutdown();
 	}
 	
 	void DefaultRenderer::Draw(Scene* scene, Camera* camera, Rectangle viewport, Color background, GfxTexture* colorOutput, GfxTexture* depthOutput, const bool& simplified)
@@ -60,7 +66,7 @@ namespace Blueberry
 		cameraData.camera = camera;
 
 		GfxTexture* colorMSAARenderTarget = nullptr;
-		GfxTexture* normalMSAARenderTarget = nullptr;
+		//GfxTexture* normalMSAARenderTarget = nullptr;
 		GfxTexture* depthStencilMSAARenderTarget = nullptr;
 
 		GfxTexture* colorNormalRenderTarget = nullptr;
@@ -87,7 +93,7 @@ namespace Blueberry
 		}
 
 		colorMSAARenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 4, TextureFormat::R16G16B16A16_Float, textureDimension);
-		normalMSAARenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 4, TextureFormat::R8G8B8A8_UNorm, textureDimension);
+		//normalMSAARenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 4, TextureFormat::R8G8B8A8_UNorm, textureDimension);
 		depthStencilMSAARenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 4, TextureFormat::D24_UNorm, textureDimension);
 
 		colorNormalRenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 1, TextureFormat::R16G16B16A16_Float, textureDimension);
@@ -146,7 +152,7 @@ namespace Blueberry
 		GfxDevice::SetRenderTarget(colorNormalRenderTarget, depthStencilRenderTarget);
 		GfxDevice::ClearColor({ 0.0f, 0.0f, 0.0f, 0.0f });
 		GfxDevice::ClearDepth(1.0f);
-		GfxDevice::SetGlobalTexture(s_ScreenColorTextureId, normalMSAARenderTarget);
+		//GfxDevice::SetGlobalTexture(s_ScreenColorTextureId, normalMSAARenderTarget);
 		GfxDevice::SetGlobalTexture(s_ScreenDepthStencilTextureId, depthStencilMSAARenderTarget);
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_ResolveMSAAMaterial, 0));
 
@@ -218,7 +224,7 @@ namespace Blueberry
 		}
 
 		GfxRenderTexturePool::Release(colorMSAARenderTarget);
-		GfxRenderTexturePool::Release(normalMSAARenderTarget);
+		//GfxRenderTexturePool::Release(normalMSAARenderTarget);
 		GfxRenderTexturePool::Release(depthStencilMSAARenderTarget);
 
 		GfxRenderTexturePool::Release(colorNormalRenderTarget);

@@ -152,8 +152,12 @@ namespace Blueberry
 				Entity* entity = nullptr;
 				if (objectId.prefabInstanceFileId != 0)
 				{
-					PrefabInstance* instance = prefabs.find(objectId.prefabInstanceFileId)->second;
-					entity = instance->GetEntity(objectId.objectFileId);
+					auto it = prefabs.find(objectId.prefabInstanceFileId);
+					if (it != prefabs.end())
+					{
+						PrefabInstance* instance = it->second;
+						entity = instance->GetEntity(objectId.objectFileId);
+					}
 				}
 				else
 				{

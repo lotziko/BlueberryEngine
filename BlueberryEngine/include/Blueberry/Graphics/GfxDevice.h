@@ -19,6 +19,8 @@ namespace Blueberry
 	public:
 		BB_OVERRIDE_NEW_DELETE
 
+		virtual ~GfxDevice() = default;
+
 		static bool Initialize(int width, int height, void* data);
 		static void Shutdown();
 

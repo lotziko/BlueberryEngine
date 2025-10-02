@@ -11,6 +11,7 @@ namespace Blueberry
 	{
 	public:
 		static void Initialize();
+		static void Shutdown();
 		static void Draw(GfxTexture* color, const Rectangle& viewport);
 
 	private:

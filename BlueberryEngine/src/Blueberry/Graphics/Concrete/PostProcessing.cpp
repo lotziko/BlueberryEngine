@@ -21,6 +21,12 @@ namespace Blueberry
 			GfxDevice::SetGlobalTexture(s_BlueNoiseLUTId, s_BlueNoiseLUT->Get());
 			GfxDevice::SetGlobalTexture(s_BRDFIntegrationLUTId, s_BRDFIntegrationLUT->Get());
 		}
+		AutoExposure::Initialize();
+	}
+
+	void PostProcessing::Shutdown()
+	{
+		AutoExposure::Shutdown();
 	}
 
 	void PostProcessing::Draw(GfxTexture* color, const Rectangle& viewport)

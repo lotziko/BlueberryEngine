@@ -164,7 +164,7 @@ namespace Blueberry
 	public:
 
 		Shader() = default;
-		virtual ~Shader() = default;
+		virtual ~Shader();
 
 		const ShaderData& GetData() const;
 

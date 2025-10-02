@@ -1,7 +1,5 @@
 #include "Blueberry\Core\Time.h"
 
-#include "Blueberry\Graphics\GfxRenderTexturePool.h"
-
 namespace Blueberry
 {
 	size_t Time::m_FrameCount = 0;
@@ -14,6 +12,5 @@ namespace Blueberry
 	void Time::IncrementFrameCount()
 	{
 		++m_FrameCount;
-		GfxRenderTexturePool::Update();// TODO callback
 	}
 }

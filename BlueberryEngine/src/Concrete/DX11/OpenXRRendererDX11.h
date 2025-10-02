@@ -23,6 +23,6 @@ namespace Blueberry
 		Matrix m_MultiviewViewMatrix[2];
 		Matrix m_MultiviewProjectionMatrix[2];
 		Rectangle m_MultiviewViewport;
-		GfxTexture* m_SubmittedColorRenderTarget;
+		GfxTexture* m_SubmittedColorRenderTarget = nullptr;
 	};
 }

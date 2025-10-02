@@ -4,6 +4,7 @@
 #include "Blueberry\Graphics\GfxTexture.h"
 #include "Concrete\Windows\ComPtr.h"
 #include "Concrete\DX11\DX11.h"
+#include "GfxPointerCacheDX11.h"
 
 namespace Blueberry
 {
@@ -11,7 +12,7 @@ namespace Blueberry
 	{
 	public:
 		GfxTextureDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
-		virtual ~GfxTextureDX11() = default;
+		virtual ~GfxTextureDX11();
 		
 		bool Initialize(const TextureProperties& properties);
 
@@ -36,7 +37,7 @@ namespace Blueberry
 
 	private:
 		ComPtr<ID3D11Resource> m_Texture;
-		ComPtr<ID3D11ShaderResourceView> m_ResourceView;
+		ComPtr<ID3D11ShaderResourceView> m_ShaderResourceView;
 		ComPtr<ID3D11SamplerState> m_SamplerState;
 		ComPtr<ID3D11RenderTargetView> m_RenderTargetView;
 		ComPtr<ID3D11DepthStencilView> m_DepthStencilView;
@@ -55,10 +56,9 @@ namespace Blueberry
 		ID3D11Device* m_Device;
 		ID3D11DeviceContext* m_DeviceContext;
 
-		static inline uint32_t s_MaxIndex = 0;
-		uint32_t m_Index;
-
 		friend class GfxDeviceDX11;
 		friend class GfxRenderStateCacheDX11;
+
+		static GfxPointerCacheDX11<GfxTextureDX11> s_PointerCache;
 	};
 }

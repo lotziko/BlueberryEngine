@@ -13,6 +13,7 @@ namespace Blueberry
 	{
 	public:
 		static void Initialize();
+		static void Shutdown();
 		static void PrepareCookies(CullingResults& results);
 		static GfxTexture* GetAtlasTexture();
 

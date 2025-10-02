@@ -84,6 +84,9 @@ namespace Blueberry
 
 	void Renderer2D::Shutdown()
 	{
+		delete s_VertexBuffer;
+		delete s_IndexBuffer;
+
 		BB_FREE(s_VertexData);
 		BB_FREE(s_DrawingDatas);
 	}

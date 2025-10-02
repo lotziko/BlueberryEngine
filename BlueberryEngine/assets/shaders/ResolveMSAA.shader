@@ -31,7 +31,7 @@ Shader
 
 		struct Output
 		{
-			float4 color : SV_TARGET;
+			//float4 color : SV_TARGET;
 			float depth : SV_DEPTH;
 		};
 
@@ -46,7 +46,7 @@ Shader
 			return output;
 		}
 
-		TEXTURE2D_X_MSAA(_ScreenNormalTexture, 4);
+		//TEXTURE2D_X_MSAA(_ScreenNormalTexture, 4);
 		TEXTURE2D_X_MSAA_FLOAT(_ScreenDepthStencilTexture, 4);
 		
 		Output ResolveMSAAFragment(Varyings input)
@@ -57,10 +57,10 @@ Shader
 			for (int i = 0; i < 4; ++i)
 			{
 				uint2 uv = uint2(input.texcoord.x * CAMERA_SIZE_INV_SIZE.x, input.texcoord.y * CAMERA_SIZE_INV_SIZE.y);
-				output.color += LOAD_TEXTURE2D_X_MSAA(_ScreenNormalTexture, uv, i);
+				//output.color += LOAD_TEXTURE2D_X_MSAA(_ScreenNormalTexture, uv, i);
 				output.depth += LOAD_TEXTURE2D_X_MSAA(_ScreenDepthStencilTexture, uv, i);
 			}
-			output.color /= 4;
+			//output.color /= 4;
 			output.depth /= 4;
 			return output;
 		}

@@ -12,6 +12,19 @@
 
 namespace Blueberry
 {
+	GfxDeviceDX11::~GfxDeviceDX11()
+	{
+		//ID3D11Debug* debug;
+		//m_Device->QueryInterface(__uuidof(ID3D11Debug), reinterpret_cast<void**>(&debug));
+		
+		m_LayoutCache.Shutdown();
+		m_SwapChain = nullptr;
+		m_RenderTargetView = nullptr;
+		m_DeviceContext = nullptr;
+
+		//debug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+	}
+
 	bool GfxDeviceDX11::InitializeImpl(int width, int height, void* data)
 	{
 		if (!InitializeDirectX(*(static_cast<HWND*>(data)), width, height))
@@ -46,18 +59,18 @@ namespace Blueberry
 
 	void GfxDeviceDX11::SwapBuffersImpl()
 	{
-		static ID3DUserDefinedAnnotation* annotation = nullptr;
+		/*static ID3DUserDefinedAnnotation* annotation = nullptr;
 		if (annotation != nullptr)
 		{
 			annotation->EndEvent();
 			annotation->Release();
-		}
+		}*/
 
 		m_SwapChain->Present(1, NULL);
 		Clear();
 
-		m_DeviceContext->QueryInterface(__uuidof(ID3DUserDefinedAnnotation), (void**)&annotation);
-		annotation->BeginEvent(L"Frame");
+		//m_DeviceContext->QueryInterface(__uuidof(ID3DUserDefinedAnnotation), (void**)&annotation);
+		//annotation->BeginEvent(L"Frame");
 	}
 
 	void GfxDeviceDX11::SetViewportImpl(int x, int y, int width, int height)
@@ -213,13 +226,13 @@ namespace Blueberry
 
 	bool GfxDeviceDX11::CreateTextureImpl(const TextureProperties& properties, GfxTexture*& texture) const
 	{
-		auto dxTexture = new GfxTextureDX11(m_Device.Get(), m_DeviceContext.Get());
-		if (!dxTexture->Initialize(properties))
+		GfxTextureDX11* dxTexture = static_cast<GfxTextureDX11*>(texture);
+		if (texture == nullptr)
 		{
-			return false;
+			dxTexture = new GfxTextureDX11(m_Device.Get(), m_DeviceContext.Get());
+			texture = dxTexture;
 		}
-		texture = dxTexture;
-		return true;
+		return dxTexture->Initialize(properties);
 	}
 
 	void GfxDeviceDX11::CopyImpl(GfxTexture* source, GfxTexture* target) const
@@ -290,12 +303,12 @@ namespace Blueberry
 		{
 			if (pair.first == id)
 			{
-				pair.second = dxBuffer;
+				pair.second = dxBuffer->m_Index;
 				m_CurrentCrc = UINT32_MAX;
 				return;
 			}
 		}
-		m_BindedBuffers.emplace_back(std::make_pair(id, dxBuffer));
+		m_BindedBuffers.push_back(std::make_pair(id, dxBuffer->m_Index));
 		m_CurrentCrc = UINT32_MAX;
 	}
 
@@ -306,12 +319,12 @@ namespace Blueberry
 		{
 			if (pair.first == id)
 			{
-				pair.second = dxTexture;
+				pair.second = dxTexture->m_Index;
 				m_CurrentCrc = UINT32_MAX;
 				return;
 			}
 		}
-		m_BindedTextures.emplace_back(std::make_pair(id, dxTexture));
+		m_BindedTextures.push_back(std::make_pair(id, dxTexture->m_Index));
 		m_CurrentCrc = UINT32_MAX;
 	}
 
@@ -478,7 +491,8 @@ namespace Blueberry
 		for (auto& pair : m_BindedBuffers)
 		{
 			size_t id = pair.first;
-			BufferType type = pair.second->m_Type;
+			auto dxBuffer = GfxBufferDX11::s_PointerCache.Get(pair.second);
+			BufferType type = dxBuffer->m_Type;
 			if (type == BufferType::Raw)
 			{
 				for (uint32_t i = 0; i < dxShader->m_UAVSlots.size(); ++i)
@@ -486,7 +500,7 @@ namespace Blueberry
 					size_t slotId = dxShader->m_UAVSlots[i];
 					if (id == slotId)
 					{
-						m_DeviceContext->CSSetUnorderedAccessViews(i, 1, pair.second->m_UnorderedAccessView.GetAddressOf(), NULL);
+						m_DeviceContext->CSSetUnorderedAccessViews(i, 1, dxBuffer->m_UnorderedAccessView.GetAddressOf(), NULL);
 						break;
 					}
 				}
@@ -498,7 +512,7 @@ namespace Blueberry
 					size_t slotId = dxShader->m_ConstantBufferSlots[i];
 					if (id == slotId)
 					{
-						m_DeviceContext->CSSetConstantBuffers(i, 1, pair.second->m_Buffer.GetAddressOf());
+						m_DeviceContext->CSSetConstantBuffers(i, 1, dxBuffer->m_Buffer.GetAddressOf());
 						break;
 					}
 				}
@@ -510,7 +524,7 @@ namespace Blueberry
 					size_t slotId = dxShader->m_SRVSlots[i];
 					if (id == slotId)
 					{
-						m_DeviceContext->CSSetShaderResources(i, 1, pair.second->m_ShaderResourceView.GetAddressOf());
+						m_DeviceContext->CSSetShaderResources(i, 1, dxBuffer->m_ShaderResourceView.GetAddressOf());
 					}
 				}
 				for (uint32_t i = 0; i < dxShader->m_UAVSlots.size(); ++i)
@@ -518,7 +532,7 @@ namespace Blueberry
 					size_t slotId = dxShader->m_UAVSlots[i];
 					if (id == slotId)
 					{
-						m_DeviceContext->CSSetUnorderedAccessViews(i, 1, pair.second->m_UnorderedAccessView.GetAddressOf(), NULL);
+						m_DeviceContext->CSSetUnorderedAccessViews(i, 1, dxBuffer->m_UnorderedAccessView.GetAddressOf(), NULL);
 					}
 				}
 			}
@@ -527,12 +541,13 @@ namespace Blueberry
 		for (auto& pair : m_BindedTextures)
 		{
 			size_t id = pair.first;
+			auto dxTexture = GfxTextureDX11::s_PointerCache.Get(pair.second);
 			for (uint32_t i = 0; i < dxShader->m_SRVSlots.size(); ++i)
 			{
 				size_t slotId = dxShader->m_SRVSlots[i];
 				if (id == slotId)
 				{
-					m_DeviceContext->CSSetShaderResources(i, 1, pair.second->m_ResourceView.GetAddressOf());
+					m_DeviceContext->CSSetShaderResources(i, 1, dxTexture->m_ShaderResourceView.GetAddressOf());
 				}
 			}
 			for (uint32_t i = 0; i < dxShader->m_UAVSlots.size(); ++i)
@@ -540,7 +555,7 @@ namespace Blueberry
 				size_t slotId = dxShader->m_UAVSlots[i];
 				if (id == slotId)
 				{
-					m_DeviceContext->CSSetUnorderedAccessViews(i, 1, pair.second->m_UnorderedAccessView.GetAddressOf(), NULL);
+					m_DeviceContext->CSSetUnorderedAccessViews(i, 1, dxTexture->m_UnorderedAccessView.GetAddressOf(), NULL);
 				}
 			}
 			for (uint32_t i = 0; i < dxShader->m_SamplerSlots.size(); ++i)
@@ -548,7 +563,7 @@ namespace Blueberry
 				size_t slotId = dxShader->m_SamplerSlots[i];
 				if (id == slotId)
 				{
-					m_DeviceContext->CSSetSamplers(i, 1, pair.second->m_SamplerState.GetAddressOf());
+					m_DeviceContext->CSSetSamplers(i, 1, dxTexture->m_SamplerState.GetAddressOf());
 				}
 			}
 		}
@@ -673,10 +688,10 @@ namespace Blueberry
 		// Clear SRVs to avoid binding them both into targets and inputs
 		for (uint32_t i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT / 8; ++i)
 		{
-			m_RenderState.vertexShaderResourceViews[i] = nullptr;
-			m_RenderState.vertexSamplerStates[i] = nullptr;
-			m_RenderState.pixelShaderResourceViews[i] = nullptr;
-			m_RenderState.pixelSamplerStates[i] = nullptr;
+			m_RenderState.vertexShaderResourceViews[i] = {};
+			m_RenderState.vertexSamplerStates[i] = {};
+			m_RenderState.pixelShaderResourceViews[i] = {};
+			m_RenderState.pixelSamplerStates[i] = {};
 		}
 		m_DeviceContext->VSSetShaderResources(0, 16, m_EmptyShaderResourceViews);
 		m_DeviceContext->VSSetSamplers(0, 16, m_EmptySamplers);
@@ -804,11 +819,11 @@ namespace Blueberry
 			m_CurrentCrc = 0;
 			for (auto& pair : m_BindedTextures)
 			{
-				m_CurrentCrc = CRCHelper::Calculate(&pair.second->m_Index, sizeof(uint32_t), m_CurrentCrc);
+				m_CurrentCrc = CRCHelper::Calculate(&pair.second, sizeof(uint32_t), m_CurrentCrc);
 			}
 			for (auto& pair : m_BindedBuffers)
 			{
-				m_CurrentCrc = CRCHelper::Calculate(&pair.second->m_Index, sizeof(uint32_t), m_CurrentCrc);
+				m_CurrentCrc = CRCHelper::Calculate(&pair.second, sizeof(uint32_t), m_CurrentCrc);
 			}
 		}
 		return m_CurrentCrc;

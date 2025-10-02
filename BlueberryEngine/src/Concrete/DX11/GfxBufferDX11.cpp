@@ -4,13 +4,20 @@
 
 namespace Blueberry
 {
+	GfxPointerCacheDX11<GfxBufferDX11> GfxBufferDX11::s_PointerCache = {};
+
 	GfxBufferDX11::GfxBufferDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext) : m_Device(device), m_DeviceContext(deviceContext)
 	{
+		m_Index = s_PointerCache.Allocate(this);
+	}
+
+	GfxBufferDX11::~GfxBufferDX11()
+	{
+		s_PointerCache.Deallocate(m_Index);
 	}
 
 	bool GfxBufferDX11::Initialize(const BufferProperties& properties)
 	{
-		m_Index = ++s_MaxIndex;
 		if (properties.dataSize > 0)
 		{
 			D3D11_SUBRESOURCE_DATA subresourceData;

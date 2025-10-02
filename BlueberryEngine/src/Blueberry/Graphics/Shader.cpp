@@ -251,6 +251,25 @@ namespace Blueberry
 		m_Properties = properties;
 	}
 
+	Shader::~Shader()
+	{
+		for (auto& shader : m_VertexShaders)
+		{
+			delete shader;
+		}
+		m_VertexShaders.clear();
+		for (auto& shader : m_GeometryShaders)
+		{
+			delete shader;
+		}
+		m_GeometryShaders.clear();
+		for (auto& shader : m_FragmentShaders)
+		{
+			delete shader;
+		}
+		m_FragmentShaders.clear();
+	}
+
 	const ShaderData& Shader::GetData() const
 	{
 		return m_Data;

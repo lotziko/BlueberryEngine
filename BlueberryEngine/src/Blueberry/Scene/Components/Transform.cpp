@@ -194,15 +194,16 @@ namespace Blueberry
 
 	void Transform::SetParent(Transform* parent)
 	{
-		if ((parent != nullptr) != m_Parent.IsValid())
+		Scene* scene = GetScene();
+		if (scene != nullptr && (parent != nullptr) != m_Parent.IsValid())
 		{
 			if (parent == nullptr)
 			{
-				GetScene()->AddToRoot(GetEntity());
+				scene->AddToRoot(GetEntity());
 			}
 			else
 			{
-				GetScene()->RemoveFromRoot(GetEntity());
+				scene->RemoveFromRoot(GetEntity());
 			}
 		}
 

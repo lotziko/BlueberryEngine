@@ -19,6 +19,19 @@ namespace Blueberry
 		return first != other.first || second != other.second;
 	}
 
+	void GfxRenderTexturePool::Shutdown()
+	{
+		for (auto it = s_TemporaryPool.begin(); it != s_TemporaryPool.end(); ++it)
+		{
+			for (auto& pair : it->second)
+			{
+				delete pair.first;
+			}
+			it->second.clear();
+		}
+		s_TemporaryPool.clear();
+	}
+
 	void GfxRenderTexturePool::Update()
 	{
 		size_t currentFrame = Time::GetFrameCount();
@@ -77,7 +90,7 @@ namespace Blueberry
 		textureProperties.isUnorderedAccess = isUnorderedAccess;
 		
 		// Allocate new texture
-		GfxTexture* texture;
+		GfxTexture* texture = nullptr;
 		GfxDevice::CreateTexture(textureProperties, texture);
 		s_TemporaryKeys.insert_or_assign(texture, key);
 		return texture;

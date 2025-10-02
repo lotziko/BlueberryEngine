@@ -18,37 +18,44 @@ namespace Blueberry
 		return a + (b - a) * t;
 	}
 
+	void AutoExposure::Initialize()
+	{
+		s_ExposureShader = static_cast<ComputeShader*>(AssetLoader::Load("assets/shaders/Exposure.compute"));
+
+		BufferProperties constantBufferProperties = {};
+		constantBufferProperties.type = BufferType::Constant;
+		constantBufferProperties.elementCount = 1;
+		constantBufferProperties.elementSize = sizeof(float) * 8;
+		constantBufferProperties.isWritable = true;
+		GfxDevice::CreateBuffer(constantBufferProperties, s_ExposureData);
+
+		BufferProperties histogramBufferProperties = {};
+		histogramBufferProperties.type = BufferType::Raw;
+		histogramBufferProperties.elementCount = 256;
+		histogramBufferProperties.elementSize = sizeof(uint32_t);
+		histogramBufferProperties.isUnorderedAccess = true;
+		histogramBufferProperties.format = BufferFormat::R32_UInt;
+		GfxDevice::CreateBuffer(histogramBufferProperties, s_Histogram);
+
+		BufferProperties resultBufferProperties = {};
+		resultBufferProperties.type = BufferType::Raw;
+		resultBufferProperties.elementCount = 1;
+		resultBufferProperties.elementSize = sizeof(float);
+		resultBufferProperties.isReadable = true;
+		resultBufferProperties.isUnorderedAccess = true;
+		resultBufferProperties.format = BufferFormat::R32_Float;
+		GfxDevice::CreateBuffer(resultBufferProperties, s_Result);
+	}
+
+	void AutoExposure::Shutdown()
+	{
+		delete s_ExposureData;
+		delete s_Histogram;
+		delete s_Result;
+	}
+
 	float AutoExposure::Calculate(GfxTexture* color, const Rectangle& viewport)
 	{
-		if (s_ExposureShader == nullptr)
-		{
-			s_ExposureShader = static_cast<ComputeShader*>(AssetLoader::Load("assets/shaders/Exposure.compute"));
-
-			BufferProperties constantBufferProperties = {};
-			constantBufferProperties.type = BufferType::Constant;
-			constantBufferProperties.elementCount = 1;
-			constantBufferProperties.elementSize = sizeof(float) * 8;
-			constantBufferProperties.isWritable = true;
-			GfxDevice::CreateBuffer(constantBufferProperties, s_ExposureData);
-
-			BufferProperties histogramBufferProperties = {};
-			histogramBufferProperties.type = BufferType::Raw;
-			histogramBufferProperties.elementCount = 256;
-			histogramBufferProperties.elementSize = sizeof(uint32_t);
-			histogramBufferProperties.isUnorderedAccess = true;
-			histogramBufferProperties.format = BufferFormat::R32_UInt;
-			GfxDevice::CreateBuffer(histogramBufferProperties, s_Histogram);
-
-			BufferProperties resultBufferProperties = {};
-			resultBufferProperties.type = BufferType::Raw;
-			resultBufferProperties.elementCount = 1;
-			resultBufferProperties.elementSize = sizeof(float);
-			resultBufferProperties.isReadable = true;
-			resultBufferProperties.isUnorderedAccess = true;
-			resultBufferProperties.format = BufferFormat::R32_Float;
-			GfxDevice::CreateBuffer(resultBufferProperties, s_Result);
-		}
-
 		if (s_RecalculateTimer == 0)
 		{
 			s_RecalculateTimer = 60;
