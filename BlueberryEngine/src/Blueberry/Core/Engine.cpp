@@ -36,13 +36,13 @@ namespace Blueberry
 			return false;
 		}
 
+		RegisterSceneTypes();
+		RegisterGraphicsTypes();
+
 		DefaultRenderer::Initialize();
 		Input::Initialize();
 		JobSystem::Initialize();
 		DefaultShaders::Initialize();
-
-		RegisterSceneTypes();
-		RegisterGraphicsTypes();
 
 		return true;
 	}

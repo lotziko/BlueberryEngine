@@ -10,10 +10,9 @@ namespace Blueberry
 	public:
 		ShaderImporter() = default;
 
+		static String GetShaderFolder(const Guid& guid);
+
 	protected:
 		virtual void ImportData() override;
-
-	private:
-		String GetShaderFolder();
 	};
 }

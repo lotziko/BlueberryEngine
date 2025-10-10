@@ -21,7 +21,6 @@ namespace Blueberry
 				BB_ERROR("Failed to load skybox shader.")
 					return false;
 			}
-			ObjectDB::AllocateIdToGuid(shader, Guid(1, 0), 10000);
 			shader->SetName("Skybox");
 			s_SkyboxShader = shader;
 		}

@@ -75,7 +75,7 @@ namespace Blueberry
 
 	void Material::SetShader(Shader* shader)
 	{
-		if (m_Shader.Get() != nullptr)
+		if (m_Shader.IsValid() && m_Shader->GetState() == ObjectState::Default)
 		{
 			m_Shader->m_Dependencies.erase(m_ObjectId);
 		}
@@ -85,7 +85,7 @@ namespace Blueberry
 
 	void Material::ApplyProperties()
 	{
-		if (m_Shader.Get() != nullptr)
+		if (m_Shader.IsValid() && m_Shader->GetState() == ObjectState::Default)
 		{
 			m_Shader->m_Dependencies.emplace(m_ObjectId);
 		}
@@ -95,7 +95,7 @@ namespace Blueberry
 
 	const ShaderData* Material::GetShaderData()
 	{
-		if (m_Shader.IsValid())
+		if (m_Shader.IsValid() && m_Shader->GetState() == ObjectState::Default)
 		{
 			return &m_Shader.Get()->GetData();
 		}

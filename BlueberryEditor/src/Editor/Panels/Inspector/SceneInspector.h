@@ -24,7 +24,7 @@ namespace Blueberry
 		void SelectionChanged();
 
 	private:
-		ObjectEditor* m_Editor;
-		bool m_IsInvalidSelection;
+		ObjectEditor* m_Editor = nullptr;
+		bool m_IsInvalidSelection = false;
 	};
 }

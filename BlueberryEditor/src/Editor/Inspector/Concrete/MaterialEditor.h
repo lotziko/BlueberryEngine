@@ -9,10 +9,15 @@ namespace Blueberry
 	class MaterialEditor : public ObjectEditor
 	{
 	public:
-		MaterialEditor();
-		virtual ~MaterialEditor();
+		virtual ~MaterialEditor() = default;
+
+		virtual void OnEnable() override;
+		virtual void OnDrawInspector() override;
 
 	private:
-		GfxTexture* m_RenderTexture = nullptr;
+		static inline GfxTexture* s_RenderTexture = nullptr;
+
+		SerializedProperty m_ShaderProperty;
+		SerializedProperty m_TexturesProperty;
 	};
 }

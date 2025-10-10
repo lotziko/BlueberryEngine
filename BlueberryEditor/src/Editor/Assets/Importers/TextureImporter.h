@@ -83,11 +83,12 @@ namespace Blueberry
 		const FilterMode& GetFilterMode();
 		void SetFilterMode(const FilterMode& filterMode);
 
+		static String GetTexturePath(const Guid& guid);
+
 	protected:
 		virtual void ImportData() override;
 
 	private:
-		String GetTexturePath();
 		Blueberry::TextureFormat GetFormat();
 
 	private:

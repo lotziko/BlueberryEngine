@@ -12,15 +12,27 @@ namespace Blueberry
 		DEFINE_BASE_FIELDS(ShaderImporter, AssetImporter)
 	}
 
+	String ShaderImporter::GetShaderFolder(const Guid& guid)
+	{
+		std::filesystem::path dataPath = Path::GetShaderCachePath();
+		dataPath.append(guid.ToString());
+		if (!std::filesystem::exists(dataPath))
+		{
+			std::filesystem::create_directories(dataPath);
+		}
+		return dataPath.string().data();
+	}
+
 	void ShaderImporter::ImportData()
 	{
 		Guid guid = GetGuid();
 
 		Shader* object;
+		String folderPath = GetShaderFolder(guid);
 		if (AssetDB::HasAssetWithGuidInData(guid))
 		{
 			HLSLShaderProcessor processor;
-			if (processor.LoadVariants(GetShaderFolder()))
+			if (processor.LoadVariants(folderPath))
 			{
 				auto objects = AssetDB::LoadAssetObjects(guid, ObjectDB::GetObjectsFromGuid(guid));
 				if (objects.size() == 1 && objects[0].first->IsClassType(Shader::Type))
@@ -40,7 +52,7 @@ namespace Blueberry
 			
 			if (processor.Compile(path))
 			{
-				processor.SaveVariants(GetShaderFolder());
+				processor.SaveVariants(folderPath);
 
 				object = Shader::Create(processor.GetVariantsData(), processor.GetShaderData(), static_cast<Shader*>(ObjectDB::GetObjectFromGuid(guid, 1)));
 				object->SetState(ObjectState::Default);
@@ -55,16 +67,5 @@ namespace Blueberry
 		}
 		object->SetName(GetName());
 		SetMainObject(1);
-	}
-
-	String ShaderImporter::GetShaderFolder()
-	{
-		std::filesystem::path dataPath = Path::GetShaderCachePath();
-		dataPath.append(GetGuid().ToString());
-		if (!std::filesystem::exists(dataPath))
-		{
-			std::filesystem::create_directories(dataPath);
-		}
-		return dataPath.string().data();
 	}
 }

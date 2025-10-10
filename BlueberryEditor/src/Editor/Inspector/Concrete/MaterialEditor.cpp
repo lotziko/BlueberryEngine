@@ -16,82 +16,86 @@
 
 namespace Blueberry
 {
-	MaterialEditor::MaterialEditor()
+	void MaterialEditor::OnEnable()
 	{
-		m_RenderTexture = GfxRenderTexturePool::Get(512, 512, 1);
-	}
-
-	MaterialEditor::~MaterialEditor()
-	{
-		GfxRenderTexturePool::Release(m_RenderTexture);
-	}
-
-	/*void MaterialEditor::Draw(Object* object)
-	{
-		Material* material = static_cast<Material*>(object);
-		Shader* shader = material->GetShader();
-		if (ImGui::ObjectEdit("Shader", (Object**)&shader, Shader::Type))
+		if (s_RenderTexture == nullptr)
 		{
-			material->SetShader(shader);
+			s_RenderTexture = GfxRenderTexturePool::Get(512, 512, 1);
 		}
 
-		if (shader != nullptr && (shader->GetState() == ObjectState::Default))
+		for (Object* object : m_SerializedObject->GetTargets())
 		{
-			auto& data = shader->GetData();
-			auto& textureDatas = material->GetTextureDatas();
-			bool hasPropertyChanges = false;
-
-			for (auto const& propertyData : data.GetProperties())
+			Material* material = static_cast<Material*>(object);
+			Shader* shader = material->GetShader();
+			if (shader != nullptr && shader->GetState() == ObjectState::Default)
 			{
-				if (propertyData.GetType() == PropertyData::PropertyType::Texture)
-				{
-					TextureData* textureProperty = nullptr;
-					auto& textureParameterName = propertyData.GetName();
-					Texture* texture = nullptr;
-					for (auto& textureData : textureDatas)
-					{
-						if (textureData.GetName() == textureParameterName)
-						{
-							texture = textureData.GetTexture();
-							textureProperty = &textureData;
-						}
-					}
+				auto& data = shader->GetData();
+				auto& textureDatas = material->GetTextureDatas();
 
-					if (textureProperty != nullptr)
+				for (auto const& propertyData : data.GetProperties())
+				{
+					if (propertyData.GetType() == PropertyData::PropertyType::Texture)
 					{
-						if (ImGui::ObjectEdit(propertyData.GetName().c_str(), (Object**)&texture, propertyData.GetTextureDimension() == TextureDimension::TextureCube ? TextureCube::Type : Texture2D::Type))
+						TextureData* textureProperty = nullptr;
+						auto& textureParameterName = propertyData.GetName();
+						for (auto& textureData : textureDatas)
 						{
-							textureProperty->SetTexture(texture);
-							hasPropertyChanges = true;
+							if (textureData.GetName() == textureParameterName)
+							{
+								textureProperty = &textureData;
+								break;
+							}
 						}
-					}
-					else
-					{
-						TextureData newTextureProperty = {};
-						newTextureProperty.SetName(propertyData.GetName());
-						material->AddTextureData(newTextureProperty);
+						if (textureProperty == nullptr)
+						{
+							TextureData newTextureProperty = {};
+							newTextureProperty.SetName(propertyData.GetName());
+							material->AddTextureData(newTextureProperty);
+						}
 					}
 				}
 			}
+		}
 
-			if (hasPropertyChanges)
+		m_ShaderProperty = m_SerializedObject->FindProperty("m_Shader");
+		m_TexturesProperty = m_SerializedObject->FindProperty("m_Textures");
+	}
+
+	void MaterialEditor::OnDrawInspector()
+	{
+		ImGui::Property(&m_ShaderProperty, "Shader");
+
+		for (uint32_t i = 0; i < m_TexturesProperty.GetArraySize(); ++i)
+		{
+			SerializedProperty textureDataProperty = m_TexturesProperty.GetArrayElement(i);
+			SerializedProperty nameProperty = textureDataProperty.FindProperty("m_Name");
+			SerializedProperty textureProperty = textureDataProperty.FindProperty("m_Texture");
+			ImGui::Property(&textureProperty, nameProperty.GetString().c_str());
+		}
+
+		if (m_SerializedObject->ApplyModifiedProperties())
+		{
+			for (Object* object : m_SerializedObject->GetTargets())
 			{
+				Material* material = static_cast<Material*>(object);
 				material->ApplyProperties();
-				ThumbnailCache::Refresh(material);
-				SceneArea::RequestRedrawAll();
 			}
 		}
 
 		if (ImGui::Button("Save"))
 		{
-			AssetDB::SetDirty(material);
+			for (Object* object : m_SerializedObject->GetTargets())
+			{
+				AssetDB::SetDirty(object);
+				ThumbnailCache::Refresh(object);
+			}
 			AssetDB::SaveAssets();
 		}
 
 		static MaterialPreview preview;
-		preview.Draw(material, m_RenderTexture);
+		preview.Draw(static_cast<Material*>(m_SerializedObject->GetTarget()), s_RenderTexture);
 
 		ImVec2 size = ImGui::GetContentRegionAvail();
-		ImGui::Image(reinterpret_cast<ImTextureID>(m_RenderTexture->GetHandle()), ImVec2(size.x, (m_RenderTexture->GetHeight() * size.x) / static_cast<float>(m_RenderTexture->GetWidth())), ImVec2(0, 1), ImVec2(1, 0));
-	}*/
+		ImGui::Image(reinterpret_cast<ImTextureID>(s_RenderTexture->GetHandle()), ImVec2(size.x, (s_RenderTexture->GetHeight() * size.x) / static_cast<float>(s_RenderTexture->GetWidth())), ImVec2(0, 1), ImVec2(1, 0));
+	}
 }

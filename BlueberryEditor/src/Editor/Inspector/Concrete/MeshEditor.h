@@ -9,12 +9,12 @@ namespace Blueberry
 	class MeshEditor : public ObjectEditor
 	{
 	public:
-		MeshEditor();
-		virtual ~MeshEditor();
+		virtual ~MeshEditor() = default;
 
+		virtual void OnEnable() override;
 		virtual void OnDrawInspector() override;
 
 	private:
-		GfxTexture* m_RenderTexture = nullptr;
+		static inline GfxTexture* s_RenderTexture = nullptr;
 	};
 }

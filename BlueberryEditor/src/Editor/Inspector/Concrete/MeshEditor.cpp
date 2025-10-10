@@ -11,16 +11,6 @@
 
 namespace Blueberry
 {
-	MeshEditor::MeshEditor()
-	{
-		m_RenderTexture = GfxRenderTexturePool::Get(512, 512, 1);
-	}
-
-	MeshEditor::~MeshEditor()
-	{
-		GfxRenderTexturePool::Release(m_RenderTexture);
-	}
-
 	void DrawUVChannel(Mesh* mesh, const uint32_t& channel, const ImVec2& pos, const ImVec2& size)
 	{
 		ImDrawList* list = ImGui::GetWindowDrawList();
@@ -47,6 +37,14 @@ namespace Blueberry
 		ImGui::Dummy(size);
 	}
 
+	void MeshEditor::OnEnable()
+	{
+		if (s_RenderTexture == nullptr)
+		{
+			s_RenderTexture = GfxRenderTexturePool::Get(512, 512, 1);
+		}
+	}
+
 	void MeshEditor::OnDrawInspector()
 	{
 		Mesh* mesh = static_cast<Mesh*>(m_SerializedObject->GetTarget());
@@ -60,15 +58,15 @@ namespace Blueberry
 
 		ImVec2 pos = ImGui::GetCursorScreenPos();
 		ImVec2 size = ImGui::GetContentRegionAvail();
-		ImVec2 imageSize = ImVec2(size.x, (m_RenderTexture->GetHeight() * size.x) / static_cast<float>(m_RenderTexture->GetWidth()));
+		ImVec2 imageSize = ImVec2(size.x, (s_RenderTexture->GetHeight() * size.x) / static_cast<float>(s_RenderTexture->GetWidth()));
 
 		switch (previewType)
 		{
 		case 0:
 		{
 			static MeshPreview preview;
-			preview.Draw(mesh, m_RenderTexture);
-			ImGui::Image(reinterpret_cast<ImTextureID>(m_RenderTexture->GetHandle()), imageSize, ImVec2(0, 0), ImVec2(1, 1));
+			preview.Draw(mesh, s_RenderTexture);
+			ImGui::Image(reinterpret_cast<ImTextureID>(s_RenderTexture->GetHandle()), imageSize, ImVec2(0, 0), ImVec2(1, 1));
 		}
 		break;
 		case 1:

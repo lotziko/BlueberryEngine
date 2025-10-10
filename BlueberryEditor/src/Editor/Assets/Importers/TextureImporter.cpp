@@ -115,14 +115,27 @@ namespace Blueberry
 		m_FilterMode = filterMode;
 	}
 
+	String TextureImporter::GetTexturePath(const Guid& guid)
+	{
+		std::filesystem::path dataPath = Path::GetTextureCachePath();
+		if (!std::filesystem::exists(dataPath))
+		{
+			std::filesystem::create_directories(dataPath);
+		}
+		dataPath.append(guid.ToString().append(".texture"));
+		return String(dataPath.string());
+	}
+
 	void TextureImporter::ImportData()
 	{
 		Guid guid = GetGuid();
 		FileId id = static_cast<size_t>(m_TextureShape) + 1;
+		String texturePath = GetTexturePath(guid);
 
 		Texture* object;
 		if (AssetDB::HasAssetWithGuidInData(guid) && ObjectDB::HasGuidAndFileId(guid, id))
 		{
+			// TODO what if texture in cache does not exist
 			auto objects = AssetDB::LoadAssetObjects(guid, ObjectDB::GetObjectsFromGuid(guid));
 			if (objects.size() == 1)
 			{
@@ -133,7 +146,7 @@ namespace Blueberry
 					ObjectDB::AllocateIdToGuid(object, guid, objects[0].second);
 					uint8_t* data;
 					size_t length;
-					FileHelper::Load(data, length, GetTexturePath());
+					FileHelper::Load(data, length, texturePath);
 					texture->SetData(data, length);
 					texture->Apply();
 					texture->SetState(ObjectState::Default);
@@ -145,7 +158,7 @@ namespace Blueberry
 					ObjectDB::AllocateIdToGuid(object, guid, objects[0].second);
 					uint8_t* data;
 					size_t length;
-					FileHelper::Load(data, length, GetTexturePath());
+					FileHelper::Load(data, length, texturePath);
 					texture->SetData(data, length);
 					texture->Apply();
 					texture->SetState(ObjectState::Default);
@@ -200,7 +213,7 @@ namespace Blueberry
 				object = texture;
 
 				AssetDB::SaveAssetObjectsToCache(List<Object*> { object });
-				FileHelper::Save(image.GetPixels(), image.GetPixelsSize(), GetTexturePath());
+				FileHelper::Save(image.GetPixels(), image.GetPixelsSize(), texturePath);
 			}
 			else if (m_TextureShape == TextureShape::TextureCube)
 			{
@@ -245,23 +258,12 @@ namespace Blueberry
 				object = texture;
 
 				AssetDB::SaveAssetObjectsToCache(List<Object*> { object });
-				FileHelper::Save(image.GetPixels(), image.GetPixelsSize(), GetTexturePath());
+				FileHelper::Save(image.GetPixels(), image.GetPixelsSize(), texturePath);
 			}
 			//BB_INFO("Texture \"" << GetName() << "\" imported and created from: " + path);
 		}
 		object->SetName(GetName());
 		SetMainObject(id);
-	}
-
-	String TextureImporter::GetTexturePath()
-	{
-		std::filesystem::path dataPath = Path::GetTextureCachePath();
-		if (!std::filesystem::exists(dataPath))
-		{
-			std::filesystem::create_directories(dataPath);
-		}
-		dataPath.append(GetGuid().ToString().append(".texture"));
-		return String(dataPath.string());
 	}
 
 	Blueberry::TextureFormat TextureImporter::GetFormat()

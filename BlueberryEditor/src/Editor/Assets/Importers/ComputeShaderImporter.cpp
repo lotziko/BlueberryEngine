@@ -13,6 +13,17 @@ namespace Blueberry
 		DEFINE_BASE_FIELDS(ComputeShaderImporter, AssetImporter)
 	}
 
+	String ComputeShaderImporter::GetShaderFolder(const Guid& guid)
+	{
+		std::filesystem::path dataPath = Path::GetShaderCachePath();
+		dataPath.append(guid.ToString());
+		if (!std::filesystem::exists(dataPath))
+		{
+			std::filesystem::create_directories(dataPath);
+		}
+		return dataPath.string().data();
+	}
+
 	void ComputeShaderImporter::ImportData()
 	{
 		Guid guid = GetGuid();
@@ -21,7 +32,7 @@ namespace Blueberry
 		if (AssetDB::HasAssetWithGuidInData(guid))
 		{
 			HLSLComputeShaderProcessor processor;
-			if (processor.LoadKernels(GetShaderFolder()))
+			if (processor.LoadKernels(GetShaderFolder(guid)))
 			{
 				auto objects = AssetDB::LoadAssetObjects(guid, ObjectDB::GetObjectsFromGuid(guid));
 				if (objects.size() == 1 && objects[0].first->IsClassType(ComputeShader::Type))
@@ -41,7 +52,7 @@ namespace Blueberry
 
 			if (processor.Compile(path))
 			{
-				processor.SaveKernels(GetShaderFolder());
+				processor.SaveKernels(GetShaderFolder(guid));
 
 				object = ComputeShader::Create(processor.GetShaders(), processor.GetComputeShaderData(), static_cast<ComputeShader*>(ObjectDB::GetObjectFromGuid(guid, 1)));
 				object->SetState(ObjectState::Default);
@@ -56,16 +67,5 @@ namespace Blueberry
 		}
 		object->SetName(GetName());
 		SetMainObject(1);
-	}
-
-	String ComputeShaderImporter::GetShaderFolder()
-	{
-		std::filesystem::path dataPath = Path::GetShaderCachePath();
-		dataPath.append(GetGuid().ToString());
-		if (!std::filesystem::exists(dataPath))
-		{
-			std::filesystem::create_directories(dataPath);
-		}
-		return dataPath.string().data();
 	}
 }

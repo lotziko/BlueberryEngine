@@ -5,9 +5,13 @@
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\ComputeShader.h"
+#include "Blueberry\Tools\FileHelper.h"
 
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Assets\AssetImporter.h"
+#include "Editor\Assets\Importers\TextureImporter.h"
+#include "Editor\Assets\Importers\ShaderImporter.h"
+#include "Editor\Assets\Importers\ComputeShaderImporter.h"
 #include "Editor\Assets\Processors\HLSLShaderProcessor.h"
 #include "Editor\Assets\Processors\HLSLComputeShaderProcessor.h"
 #include "Editor\Misc\TextureHelper.h"
@@ -36,6 +40,11 @@ namespace Blueberry
 		return nullptr;
 	}
 
+	long long GetLastWriteTime(const String& path)
+	{
+		return std::chrono::duration_cast<std::chrono::seconds>(std::filesystem::last_write_time(path).time_since_epoch()).count();
+	}
+
 	Object* EditorAssetLoader::LoadImpl(const String& path)
 	{
 		auto it = m_LoadedAssets.find(path);
@@ -45,45 +54,129 @@ namespace Blueberry
 		}
 
 		std::filesystem::path assetPath = path;
+		std::string name = assetPath.filename().string();
+		Guid guid = Guid(TO_HASH(String(name)), 0);
 		std::string extension = assetPath.extension().string();
+		
 		if (extension == ".png")
 		{
-			DirectX::ScratchImage image = {};
-			TextureHelper::Load(image, path, ".png", true);
-			TextureHelper::Flip(image);
-			auto metadata = image.GetMetadata();
-			Texture2D* texture = Texture2D::Create(metadata.width, metadata.height, metadata.mipLevels, static_cast<TextureFormat>(metadata.format), WrapMode::Repeat);
-			texture->SetName(assetPath.stem().string().data());
-			texture->SetData(static_cast<uint8_t*>(image.GetPixels()), image.GetPixelsSize());
-			texture->Apply();
-			m_LoadedAssets.insert_or_assign(path, texture);
+			String texturePath = TextureImporter::GetTexturePath(guid);
+			Texture2D* texture = nullptr;
+
+			bool needImport = true;
+			if (AssetDB::HasAssetWithGuidInData(guid) && std::filesystem::exists(texturePath.data()) && GetLastWriteTime(path) < GetLastWriteTime(texturePath))
+			{
+				auto objects = AssetDB::LoadAssetObjects(guid, ObjectDB::GetObjectsFromGuid(guid));
+				if (objects.size() == 1 && objects[0].first->IsClassType(Texture2D::Type))
+				{
+					texture = static_cast<Texture2D*>(objects[0].first);
+					ObjectDB::AllocateIdToGuid(texture, guid, 1);
+					uint8_t* data;
+					size_t length;
+					FileHelper::Load(data, length, texturePath);
+					texture->SetData(data, length);
+					texture->Apply();
+					needImport = false;
+				}
+			}
+
+			if (needImport)
+			{
+				DirectX::ScratchImage image = {};
+				TextureHelper::Load(image, path, ".png", true);
+				TextureHelper::Flip(image);
+				auto metadata = image.GetMetadata();
+				texture = Texture2D::Create(metadata.width, metadata.height, metadata.mipLevels, static_cast<TextureFormat>(metadata.format), WrapMode::Repeat);
+				ObjectDB::AllocateIdToGuid(texture, guid, 1);
+				texture->SetData(static_cast<uint8_t*>(image.GetPixels()), image.GetPixelsSize());
+				texture->Apply();
+
+				AssetDB::SaveAssetObjectsToCache(List<Object*> { texture });
+				FileHelper::Save(image.GetPixels(), image.GetPixelsSize(), texturePath);
+			}
+
+			if (texture != nullptr)
+			{
+				texture->SetName(assetPath.stem().string().data());
+				m_LoadedAssets.insert_or_assign(path, texture);
+			}
 			return texture;
 		}
 		else if (extension == ".shader")
 		{
-			std::string shaderCode;
-			HLSLShaderProcessor processor;
-			if (processor.Compile(path))
+			String folderPath = ShaderImporter::GetShaderFolder(guid);
+			Shader* shader = nullptr;
+			HLSLShaderProcessor processor = {};
+
+			bool needImport = true;
+			if (AssetDB::HasAssetWithGuidInData(guid) && processor.LoadVariants(folderPath) && GetLastWriteTime(path) < GetLastWriteTime(folderPath))
 			{
-				Shader* shader = Shader::Create(processor.GetVariantsData(), processor.GetShaderData());
+				auto objects = AssetDB::LoadAssetObjects(guid, ObjectDB::GetObjectsFromGuid(guid));
+				if (objects.size() == 1 && objects[0].first->IsClassType(Shader::Type))
+				{
+					shader = static_cast<Shader*>(objects[0].first);
+					ObjectDB::AllocateIdToGuid(shader, guid, 1);
+					shader->Initialize(processor.GetVariantsData());
+					needImport = false;
+				}
+			}
+
+			if (needImport)
+			{
+				processor = {};
+				if (processor.Compile(path))
+				{
+					processor.SaveVariants(folderPath);
+					shader = Shader::Create(processor.GetVariantsData(), processor.GetShaderData());
+					ObjectDB::AllocateIdToGuid(shader, guid, 1);
+					AssetDB::SaveAssetObjectsToCache(List<Object*> { shader });
+				}
+			}
+
+			if (shader != nullptr)
+			{
 				shader->SetName(assetPath.stem().string().data());
 				m_LoadedAssets.insert_or_assign(path, shader);
-				return shader;
 			}
-			return nullptr;
+			return shader;
 		}
 		else if (extension == ".compute")
 		{
-			std::string shaderCode;
-			HLSLComputeShaderProcessor processor;
-			if (processor.Compile(path))
+			String folderPath = ComputeShaderImporter::GetShaderFolder(guid);
+			ComputeShader* shader = nullptr;
+			HLSLComputeShaderProcessor processor = {};
+
+			bool needImport = true;
+			if (AssetDB::HasAssetWithGuidInData(guid) && processor.LoadKernels(folderPath) && GetLastWriteTime(path) < GetLastWriteTime(folderPath))
 			{
-				ComputeShader* shader = ComputeShader::Create(processor.GetShaders(), processor.GetComputeShaderData());
+				auto objects = AssetDB::LoadAssetObjects(guid, ObjectDB::GetObjectsFromGuid(guid));
+				if (objects.size() == 1 && objects[0].first->IsClassType(ComputeShader::Type))
+				{
+					shader = static_cast<ComputeShader*>(objects[0].first);
+					ObjectDB::AllocateIdToGuid(shader, guid, 1);
+					shader->Initialize(processor.GetShaders());
+					needImport = false;
+				}
+			}
+			
+			if (needImport)
+			{
+				processor = {};
+				if (processor.Compile(path))
+				{
+					processor.SaveKernels(folderPath);
+					shader = ComputeShader::Create(processor.GetShaders(), processor.GetComputeShaderData());
+					ObjectDB::AllocateIdToGuid(shader, guid, 1);
+					AssetDB::SaveAssetObjectsToCache(List<Object*> { shader });
+				}
+			}
+
+			if (shader != nullptr)
+			{
 				shader->SetName(assetPath.stem().string().data());
 				m_LoadedAssets.insert_or_assign(path, shader);
-				return shader;
 			}
-			return nullptr;
+			return shader;
 		}
 		return nullptr;
 	}
