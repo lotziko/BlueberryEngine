@@ -28,6 +28,7 @@ namespace Blueberry
 		R8G8B8A8_UNorm_SRGB = 29,
 		R8G8B8A8_UInt = 30,
 		D32_Float = 40,
+		R32_UInt = 42,
 		R24G8_Typeless = 44,
 		D24_UNorm = 45,
 		R8G8_UNorm = 49,

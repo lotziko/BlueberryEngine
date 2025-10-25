@@ -119,20 +119,21 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 	float3 indirectDiffuseTerm = CalculateIndirectDiffuse(/*_AmbientLightColor.rgb*/inputData.bakedGI, surfaceData.occlusion);
 	float3 indirectSpecularTerm = CalculateIndirectSpecular(inputData.normalWS, inputData.positionWS, inputData.viewDirectionWS, geometricRoughness, surfaceData.occlusion, reflectance);
 
-#if (SHADOWS)
-	if (_MainShadowCascades[0].w > 0)
+	// Main light
 	{
 		float cascadeIndex = ComputeCascadeIndex(inputData.positionWS, _MainShadowCascades);
 		float4 positionSS = ApplyShadowBias(TransformWorldToShadow(inputData.positionWS, _MainWorldToShadow[cascadeIndex]), inputData.normalWS, _MainLightDirection.xyz);
 
-		//return float4(1 * (cascadeIndex == 0), 1 * (cascadeIndex == 1), 1 * (cascadeIndex == 2), 1);
-
 		float shadowAttenuation = 1;
-		if (!IsOutOfBounds(positionSS, _MainShadowBounds[cascadeIndex]))
+#if (SHADOWS)
+		if (_MainLightHasShadow)
 		{
-			shadowAttenuation = ComputeShadowPCF3x3(positionSS, _ShadowTexture, _ShadowTexture_Sampler, _Shadow3x3PCFTermC0, _Shadow3x3PCFTermC1, _Shadow3x3PCFTermC2, _Shadow3x3PCFTermC3);
+			if (!IsOutOfBounds(positionSS, _MainShadowBounds[cascadeIndex]))
+			{
+				shadowAttenuation = ComputeShadowPCF3x3(positionSS, _ShadowTexture, _ShadowTexture_Sampler, _Shadow3x3PCFTermC0, _Shadow3x3PCFTermC1, _Shadow3x3PCFTermC2, _Shadow3x3PCFTermC3);
+			}
 		}
-
+#endif
 		float falloff = 1;
 		float3 lightDirectionWS = _MainLightDirection.xyz;
 		float3 lightColor = _MainLightColor.rgb;
@@ -140,46 +141,85 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 		directDiffuseTerm += CalculateDirectDiffuse(inputData.normalWS, lightDirectionWS, lightColor, shadowAttenuation, falloff, diffuseExponent);
 		directSpecularTerm += CalculateDirectSpecular(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, shadowAttenuation, falloff, reflectance, geometricRoughness);
 	}
-#endif
 
-	for (int i = 0; i < int(_LightsCount.x); i++)
+	uint2 pointCluster = GetCluster(inputData.positionVS, inputData.normalizedScreenSpaceUV);
+	uint2 spotCluster = OffsetCluster(pointCluster);
+
+	// Point lights
+	for (int j = 0; j < MAX_LIGHTS; j++)
 	{
-		float4 lightPositionWS = _LightPosition[i];
-		float3 posToLight = lightPositionWS.xyz - inputData.positionWS * lightPositionWS.w;
+		uint i = LOAD_TEXTURE2D(_LightIndexTexture, pointCluster).r;
+		if (i == 0xFFFF)
+		{
+			break;
+		}
+		pointCluster.x += 1;
+
+		PointLightData data = _PointLightsData[i];
+
+		float3 lightPositionWS = data.positionWS;
+		float3 posToLight = lightPositionWS - inputData.positionWS;
 		float distanceSqr = dot(posToLight, posToLight);
 
-		if (distanceSqr > _LightParam[i].w)
+		float3 lightDirectionWS = normalize(posToLight);
+		float distanceAttenuation = DistanceAttenuation(distanceSqr, data.attenuation.xy);
+		float falloff = LightFalloff(distanceSqr);
+		float3 lightColor = data.color;
+
+		float shadowAttenuation = 1.0;
+#if (SHADOWS)
+		if (data.hasShadow)
 		{
-			continue;
+			uint faceIndex = GetFaceIndex(-lightDirectionWS);
+			shadowAttenuation = 0;
+			float4 positionSS = ApplyShadowBias(TransformWorldToShadow(inputData.positionWS, data.worldToShadow[faceIndex]));
+			if (!IsOutOfBounds(positionSS, data.shadowBounds[faceIndex]))
+			{
+				shadowAttenuation = ComputeShadowPCF3x3(positionSS, _ShadowTexture, _ShadowTexture_Sampler, _Shadow3x3PCFTermC0, _Shadow3x3PCFTermC1, _Shadow3x3PCFTermC2, _Shadow3x3PCFTermC3);
+			}
 		}
+#endif
+		directDiffuseTerm += CalculateDirectDiffuse(inputData.normalWS, lightDirectionWS, lightColor, distanceAttenuation * shadowAttenuation, falloff, diffuseExponent);
+		directSpecularTerm += CalculateDirectSpecular(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, distanceAttenuation * shadowAttenuation, falloff, reflectance, geometricRoughness);
+	}
+
+	// Spot lights
+	for (j = 0; j < MAX_LIGHTS; j++)
+	{
+		uint i = LOAD_TEXTURE2D(_LightIndexTexture, spotCluster).r;
+		if (i == 0xFFFF)
+		{
+			break;
+		}
+		spotCluster.x += 1;
+		
+		SpotLightData data = _SpotLightsData[i];
+
+		float3 lightPositionWS = data.positionWS;
+		float3 posToLight = lightPositionWS - inputData.positionWS;
+		float distanceSqr = dot(posToLight, posToLight);
 
 		float3 lightDirectionWS = normalize(posToLight);
-		float spotAttenuation = AngleAttenuation(lightDirectionWS, _LightDirection[i].xyz, _LightAttenuation[i].zw);
-
-		if (spotAttenuation <= 0.0)
-		{
-			continue;
-		}
-
-		float distanceAttenuation = DistanceAttenuation(distanceSqr, _LightAttenuation[i].xy);
+		float distanceAttenuation = DistanceAttenuation(distanceSqr, data.attenuation.xy);
+		float spotAttenuation = AngleAttenuation(lightDirectionWS, data.directionWS, data.attenuation.zw);
 		float falloff = LightFalloff(distanceSqr);
-		float3 lightColor = _LightColor[i].rgb;
+		float3 lightColor = data.color;
 
 		float cookieAttenuation = 1.0;
-		if (_LightParam[i].y > 0)
+		if (data.hasCookie)
 		{
-			float4 positionLCS = TransformWorldToShadow(inputData.positionWS, _WorldToCookie[i]);
+			float4 positionLCS = TransformWorldToShadow(inputData.positionWS, data.worldToCookie);
 			cookieAttenuation = SAMPLE_TEXTURE3D_LOD(_CookieTexture, _CookieTexture_Sampler, positionLCS.xyz, 0).r;
 			cookieAttenuation *= (positionLCS.x > 0.0 && positionLCS.x < 1.0 && positionLCS.y > 0.0 && positionLCS.y < 1.0);
 		}
 
 		float shadowAttenuation = 1.0;
 #if (SHADOWS)
-		if (_LightParam[i].x > 0)
+		if (data.hasShadow)
 		{
 			shadowAttenuation = 0;
-			float4 positionSS = ApplyShadowBias(TransformWorldToShadow(inputData.positionWS, _WorldToShadow[i]));//, inputData.normalWS, lightDirectionWS);
-			if (!IsOutOfBounds(positionSS, _ShadowBounds[i]))
+			float4 positionSS = ApplyShadowBias(TransformWorldToShadow(inputData.positionWS, data.worldToShadow));
+			if (!IsOutOfBounds(positionSS, data.shadowBounds))
 			{
 				shadowAttenuation = ComputeShadowPCF3x3(positionSS, _ShadowTexture, _ShadowTexture_Sampler, _Shadow3x3PCFTermC0, _Shadow3x3PCFTermC1, _Shadow3x3PCFTermC2, _Shadow3x3PCFTermC3);
 			}

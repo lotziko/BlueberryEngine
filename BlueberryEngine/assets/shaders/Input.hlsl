@@ -19,11 +19,6 @@ cbuffer PerDrawData
 	float4x4 _ModelMatrix;
 }
 
-cbuffer PerDrawDataInstanced
-{
-	float4x4 _ModelMatrixInstanced[128];
-}
-
 cbuffer PerCameraData
 {
 	uint4 _ViewCount;
@@ -41,24 +36,53 @@ cbuffer PerCameraData
 	float4 _FogNearFarClipPlane;
 };
 
+struct PointLightData
+{
+	float3 positionWS;
+	float hasShadow;
+	float3 positionVS;
+	float hasFog;
+	float3 color;
+	float squareRange;
+	float4 attenuation;				// z,w unused
+	float4x4 worldToShadow[6];
+	float4 shadowBounds[6];			// stores shadowmap slice offsets to counter atlas offsets in _WorldToShadow, otherwise it's just (0, 0, 1, 1)
+};
+
+struct SpotLightData
+{
+	float3 positionWS;
+	float hasShadow;
+	float3 positionVS;
+	float hasFog;
+	float3 color;
+	float hasCookie;
+	float4 attenuation;
+	float3 directionWS;
+	float range;
+	float3 directionVS;
+	float coneOuterAngle;
+	float4x4 worldToShadow;
+	float4 shadowBounds;
+	float4x4 worldToCookie;
+};
+
+StructuredBuffer<PointLightData> _PointLightsData;
+StructuredBuffer<SpotLightData> _SpotLightsData;
+
 cbuffer PerCameraLightData
 {
-	float4 _MainLightColor;
-	float4 _MainLightDirection;
+	float3 _MainLightColor;
+	float _MainLightHasShadow;
+	float3 _MainLightDirection;
+	float _MainLightHasFog;
 	float4x4 _MainWorldToShadow[MAIN_LIGHT_CASCADES + 1]; // extra empty cascade for far distances
 	float4 _MainShadowBounds[MAIN_LIGHT_CASCADES + 1];
 	float4 _MainShadowCascades[MAIN_LIGHT_CASCADES];
 	float4 _AmbientLightColor;
+	// maybe put here clusters size
 
-	float4 _LightsCount;
-	float4 _LightParam[MAX_REALTIME_LIGHTS]; // x greater than 0 - has shadow, w - light.range * light.range
-	float4 _LightPosition[MAX_REALTIME_LIGHTS];
-	float4 _LightColor[MAX_REALTIME_LIGHTS];
-	float4 _LightAttenuation[MAX_REALTIME_LIGHTS];
-	float4 _LightDirection[MAX_REALTIME_LIGHTS];
-	float4x4 _WorldToShadow[MAX_REALTIME_LIGHTS];
-	float4 _ShadowBounds[MAX_REALTIME_LIGHTS]; // stores shadowmap slice offsets to counter atlas offsets in _WorldToShadow, otherwise it's just (0, 0, 1, 1)
-	float4x4 _WorldToCookie[MAX_REALTIME_LIGHTS];
+	float4 _LightsCount;		// x - point lights, y - spot lights
 	float4 _Shadow3x3PCFTermC0;
 	float4 _Shadow3x3PCFTermC1;
 	float4 _Shadow3x3PCFTermC2;
@@ -82,6 +106,8 @@ SAMPLER(_ReflectionTexture_Sampler);
 
 TEXTURE2D(_LightmapTexture);
 SAMPLER(_LightmapTexture_Sampler);
+
+TEXTURE2D_UINT(_LightIndexTexture);
 
 TEXTURE2D(_BlueNoiseLUT);
 SAMPLER(_BlueNoiseLUT_Sampler);

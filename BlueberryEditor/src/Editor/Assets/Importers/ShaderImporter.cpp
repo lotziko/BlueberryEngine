@@ -4,6 +4,7 @@
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Assets\Processors\HLSLShaderParser.h"
 #include "Editor\Assets\Processors\HLSLShaderProcessor.h"
+#include "Editor\Misc\PathHelper.h"
 
 namespace Blueberry
 {
@@ -11,6 +12,8 @@ namespace Blueberry
 	{
 		DEFINE_BASE_FIELDS(ShaderImporter, AssetImporter)
 	}
+
+	static long long s_LastFilesWriteTime = 0;
 
 	String ShaderImporter::GetShaderFolder(const Guid& guid)
 	{
@@ -23,13 +26,30 @@ namespace Blueberry
 		return dataPath.string().data();
 	}
 
+	long long ShaderImporter::GetLastFilesWriteTime()
+	{
+		if (s_LastFilesWriteTime == 0)
+		{
+			String filesPath = "assets/shaders/";
+			for (const auto& entry : std::filesystem::directory_iterator(filesPath))
+			{
+				std::filesystem::path path = entry;
+				if (path.extension() == ".hlsl")
+				{
+					s_LastFilesWriteTime = std::max(s_LastFilesWriteTime, PathHelper::GetLastWriteTime(path));
+				}
+			}
+		}
+		return s_LastFilesWriteTime;
+	}
+
 	void ShaderImporter::ImportData()
 	{
 		Guid guid = GetGuid();
 
 		Shader* object;
 		String folderPath = GetShaderFolder(guid);
-		if (AssetDB::HasAssetWithGuidInData(guid))
+		if (AssetDB::HasAssetWithGuidInData(guid) && GetLastFilesWriteTime() < PathHelper::GetDirectoryLastWriteTime(folderPath))
 		{
 			HLSLShaderProcessor processor;
 			if (processor.LoadVariants(folderPath))

@@ -80,7 +80,10 @@ namespace Blueberry
 			m_Shader->m_Dependencies.erase(m_ObjectId);
 		}
 		m_Shader = shader;
-		m_Shader->m_Dependencies.emplace(m_ObjectId);
+		if (m_Shader.IsValid() && m_Shader->GetState() == ObjectState::Default)
+		{
+			m_Shader->m_Dependencies.emplace(m_ObjectId);
+		}
 	}
 
 	void Material::ApplyProperties()

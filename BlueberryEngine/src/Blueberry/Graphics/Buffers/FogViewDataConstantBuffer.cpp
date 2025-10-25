@@ -24,7 +24,7 @@ namespace Blueberry
 		//float4 _FogVolumeScale[MAX_FOG_VOLUMES];
 	};
 
-	static size_t s_FogViewDataId = TO_HASH("_FogViewData");
+	static size_t s_FogViewDataId = TO_HASH("FogViewData");
 
 	void FogViewDataConstantBuffer::BindData(const CameraData& data, const Vector3Int& frustumVolumeSize)
 	{
@@ -47,14 +47,14 @@ namespace Blueberry
 		float fogNearClipPlane = camera->GetNearClipPlane();
 		float fogFarClipPlane = 128;
 
-		Matrix view = camera->GetViewMatrix();
+		Matrix inverseView = camera->GetInverseViewMatrix();
 		Matrix projection = Matrix::CreatePerspectiveFieldOfView(ToRadians(camera->GetFieldOfView()), camera->GetAspectRatio(), fogNearClipPlane, fogFarClipPlane);
 		Transform* transform = camera->GetTransform();
 		Vector4 position = transform->GetPosition();
 
 		Frustum frustum = {};
 		frustum.CreateFromMatrix(frustum, projection, false);
-		frustum.Transform(frustum, view.Invert());
+		frustum.Transform(frustum, inverseView);
 
 		Vector3 corners[8];
 		frustum.GetCorners(corners);

@@ -61,7 +61,7 @@ namespace Blueberry
 			std::filesystem::path path = folderPath;
 			path.append(std::to_string(i));
 			ComPtr<ID3DBlob> blob = m_Blobs[i];
-			if (blob->GetBufferSize() > 0)
+			if (blob != nullptr && blob->GetBufferSize() > 0)
 			{
 				D3DWriteBlobToFile(blob.Get(), StringConverter::StringToWide(String(path.string())).c_str(), true);
 			}

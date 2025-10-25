@@ -3,6 +3,24 @@
 
 #include "Macros.hlsl"
 
+uint GetFaceIndex(float3 direction)
+{
+	float faceID;
+	if (abs(direction.z) >= abs(direction.x) && abs(direction.z) >= abs(direction.y))
+	{
+		faceID = (direction.z < 0.0) ? 1 : 0;
+	}
+	else if (abs(direction.y) >= abs(direction.x))
+	{
+		faceID = (direction.y < 0.0) ? 5 : 4;
+	}
+	else
+	{
+		faceID = (direction.x < 0.0) ? 2 : 3;
+	}
+	return faceID;
+}
+
 bool IsOutOfBounds(float4 position, float4 bounds)
 {
 	float3 lower = float3(position.xy >= bounds.xy, position.z >= 0.0);

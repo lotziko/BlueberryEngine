@@ -4,9 +4,11 @@
 struct InputData
 {
 	float3 positionWS;
+	float3 positionVS;
 	float3 normalWS;
 	float3 normalGS; //geometric roughness
 	float3 viewDirectionWS;
+	float2 normalizedScreenSpaceUV;
 	float3 bakedGI;
 };
 

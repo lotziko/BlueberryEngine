@@ -45,6 +45,7 @@ namespace Blueberry
 		CookieAtlas::Initialize();
 		PostProcessing::Initialize();
 		VolumetricFog::Initialize();
+		RealtimeLights::Initialize();
 		s_ResolveMSAAMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/ResolveMSAA.shader")));
 		s_ShadowAtlas = new ShadowAtlas(4096, 4096, 128);
 		GfxDevice::SetGlobalTexture(TO_HASH("_LightmapTexture"), DefaultTextures::GetWhite2D()->Get());
@@ -58,6 +59,7 @@ namespace Blueberry
 		CookieAtlas::Shutdown();
 		PostProcessing::Shutdown();
 		VolumetricFog::Shutdown();
+		RealtimeLights::Shutdown();
 	}
 	
 	void DefaultRenderer::Draw(Scene* scene, Camera* camera, Rectangle viewport, Color background, GfxTexture* colorOutput, GfxTexture* depthOutput, const bool& simplified)
@@ -126,13 +128,18 @@ namespace Blueberry
 			s_ShadowAtlas->Draw(s_DefaultContext, s_Results);
 			GfxDevice::SetGlobalTexture(s_ShadowTextureId, s_ShadowAtlas->GetAtlasTexture());
 			BB_PROFILE_END();
+		}
+		
+		s_DefaultContext.BindCamera(s_Results, cameraData);
 
+		// Lights are binded after shadows finished rendering to have valid shadow matrices
+		RealtimeLights::BindLights(s_Results, s_ShadowAtlas);
+
+		if (!simplified)
+		{
 			VolumetricFog::CalculateFrustum(s_Results, cameraData, s_ShadowAtlas);
 			GfxDevice::SetGlobalTexture(s_VolumetricFogTextureId, VolumetricFog::GetFrustumTexture());
 		}
-		
-		// Lights are binded after shadows finished rendering to have valid shadow matrices
-		RealtimeLights::BindLights(s_Results, s_ShadowAtlas);
 		
 		// Depth/normal prepass
 		BB_PROFILE_BEGIN("Depth/normals");
@@ -144,7 +151,6 @@ namespace Blueberry
 		DrawingSettings drawingSettings = {};
 		drawingSettings.passIndex = 1;
 		drawingSettings.sortingMode = SortingMode::FrontToBack;
-		s_DefaultContext.BindCamera(s_Results, cameraData);
 		s_DefaultContext.DrawRenderers(s_Results, drawingSettings);
 		BB_PROFILE_END();
 
@@ -169,6 +175,7 @@ namespace Blueberry
 
 		// Forward pass
 		BB_PROFILE_BEGIN("Forward");
+		RealtimeLights::CalculateClusters();
 		GfxDevice::SetRenderTarget(colorMSAARenderTarget, depthStencilMSAARenderTarget);
 		GfxDevice::ClearColor({ 0.0f, 0.0f, 0.0f, 0.0f });
 		s_DefaultContext.DrawSky(s_Results);

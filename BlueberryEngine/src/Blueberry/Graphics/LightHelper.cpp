@@ -69,7 +69,7 @@ namespace Blueberry
 		}
 	}
 
-	Vector4 GetAttenuation(LightType type, float lightRange, float spotOuterAngle, float spotInnerAngle)
+	Vector4 LightHelper::GetAttenuation(LightType type, float lightRange, float spotOuterAngle, float spotInnerAngle)
 	{
 		Vector4 lightAttenuation = Vector4(0.0f, 1.0f, 0.0f, 1.0f);
 
@@ -98,40 +98,5 @@ namespace Blueberry
 		}
 
 		return lightAttenuation;
-	}
-
-	void LightHelper::GetRenderingData(Light* light, Transform* transform, LightRenderingData& data)
-	{
-		Vector4 position;
-		Vector4 direction = Vector4(0.0f, 0.0f, 1.0f, 0.0f);
-		LightType type = light->GetType();
-		Color color = light->GetColor();
-		float intensity = light->GetIntensity();
-		float range = light->GetRange();
-		float outerSpotAngle = light->GetOuterSpotAngle();
-		float innerSpotAngle = light->GetInnerSpotAngle();
-
-		if (type == LightType::Spot)
-		{
-			Vector3 dir = Vector3::Transform(Vector3::Backward, transform->GetRotation());
-			direction = Vector4(dir.x, dir.y, dir.z, 0.0f);
-		}
-
-		if (type == LightType::Directional)
-		{
-			Vector3 dir = Vector3::Transform(Vector3::Backward, transform->GetRotation());
-			position = Vector4(dir.x, dir.y, dir.z, 0.0f);
-		}
-		else
-		{
-			Vector3 pos = transform->GetPosition();
-			position = Vector4(pos.x, pos.y, pos.z, 1.0f);
-		}
-
-		data.lightParam = Vector4(light->IsCastingShadows() ? 1.0f : 0.0f, light->GetCookie() != nullptr || (light->GetType() == LightType::Point && light->IsCastingShadows()) ? 1.0f : 0.0f, 0.0f, range * range);
-		data.lightPosition = position;
-		data.lightColor = Vector4(color.x * intensity, color.y * intensity, color.z * intensity, 1.0f);
-		data.lightAttenuation = GetAttenuation(type, range, outerSpotAngle, innerSpotAngle);
-		data.lightDirection = direction;
 	}
 }

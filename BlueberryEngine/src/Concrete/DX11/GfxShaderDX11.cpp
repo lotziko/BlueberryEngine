@@ -52,10 +52,6 @@ namespace Blueberry
 			{
 				m_ConstantBufferSlots.insert({ TO_HASH(String(shaderBufferDesc.Name)), i });
 			}
-			else if (shaderBufferDesc.Type == D3D_CT_RESOURCE_BIND_INFO)
-			{
-				m_StructuredBufferSlots.insert({ TO_HASH(String(shaderBufferDesc.Name)), std::make_pair(i, 0) });
-			}
 		}
 
 		unsigned int resourceBindingCount = vertexShaderDesc.BoundResources;
@@ -66,12 +62,28 @@ namespace Blueberry
 			vertexShaderReflection->GetResourceBindingDesc(i, &inputBindDesc);
 			if (inputBindDesc.Type == D3D_SIT_TEXTURE)
 			{
-				// TODO
+				uint32_t samplerSlot = -1;
+				if (inputBindDesc.NumSamples > 8)
+				{
+					for (uint32_t j = 0; j < resourceBindingCount; j++)
+					{
+						D3D11_SHADER_INPUT_BIND_DESC samplerInputBindDesc;
+						vertexShaderReflection->GetResourceBindingDesc(j, &samplerInputBindDesc);
+						if (samplerInputBindDesc.Type == D3D10_SIT_SAMPLER)
+						{
+							if (strncmp(samplerInputBindDesc.Name, inputBindDesc.Name, strlen(inputBindDesc.Name)) == 0)
+							{
+								samplerSlot = samplerInputBindDesc.BindPoint;
+								break;
+							}
+						}
+					}
+				}
+				m_TextureSlots.insert({ TO_HASH(String(inputBindDesc.Name)), std::make_pair(inputBindDesc.BindPoint, samplerSlot) });
 			}
 			else if (inputBindDesc.Type == D3D_SIT_STRUCTURED)
 			{
-				auto pair = &m_StructuredBufferSlots[TO_HASH(String(inputBindDesc.Name))];
-				pair->second = i;
+				m_StructuredBufferSlots.insert({ TO_HASH(String(inputBindDesc.Name)), inputBindDesc.BindPoint });
 			}
 		}
 
@@ -261,7 +273,10 @@ namespace Blueberry
 			ID3D11ShaderReflectionConstantBuffer* constantBufferReflection = pixelShaderReflection->GetConstantBufferByIndex(i);
 			D3D11_SHADER_BUFFER_DESC shaderBufferDesc;
 			constantBufferReflection->GetDesc(&shaderBufferDesc);
-			m_ConstantBufferSlots.insert({ TO_HASH(String(shaderBufferDesc.Name)), i });
+			if (shaderBufferDesc.Type == D3D_CT_CBUFFER)
+			{
+				m_ConstantBufferSlots.insert({ TO_HASH(String(shaderBufferDesc.Name)), i });
+			}
 		}
 
 		unsigned int resourceBindingCount = pixelShaderDesc.BoundResources;
@@ -293,7 +308,7 @@ namespace Blueberry
 			}
 			else if (inputBindDesc.Type == D3D_SIT_STRUCTURED)
 			{
-
+				m_StructuredBufferSlots.insert({ TO_HASH(String(inputBindDesc.Name)), inputBindDesc.BindPoint });
 			}
 		}
 

@@ -5,7 +5,7 @@
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\GfxTexture.h"
 #include "..\RenderContext.h"
-#include "..\Buffers\FogLightDataConstantBuffer.h"
+#include "..\Buffers\PerCameraLightDataConstantBuffer.h"
 #include "..\Buffers\FogViewDataConstantBuffer.h"
 #include "ShadowAtlas.h"
 #include "Blueberry\Graphics\ComputeShader.h"
@@ -65,29 +65,14 @@ namespace Blueberry
 
 	void VolumetricFog::Shutdown()
 	{
+		Object::Destroy(s_VolumetricFogShader);
 		delete s_FrustumVolume0;
 		delete s_FrustumVolume1;
 	}
 
 	void VolumetricFog::CalculateFrustum(const CullingResults& results, const CameraData& data, ShadowAtlas* atlas)
 	{
-		Light* mainLight = nullptr;
-		List<Light*> lights = {};
-		for (Light* light : results.lights)
-		{
-			if (!light->IsCastingFog())
-			{
-				continue;
-			}
-			if (light->GetType() == LightType::Directional && light->IsCastingShadows())
-			{
-				mainLight = light;
-				continue;
-			}
-			lights.emplace_back(light);
-		}
 		bool isEven = Time::GetFrameCount() % 2 == 0;
-		FogLightDataConstantBuffer::BindData(mainLight, lights, atlas->GetSize());
 		FogViewDataConstantBuffer::BindData(data, s_FrustumVolumeSize);
 		GfxDevice::SetGlobalTexture(s_InjectFogVolumeId, s_FrustumVolume0);
 		GfxDevice::Dispatch(s_VolumetricFogShader->GetKernel(0), s_FrustumVolumeSize.x / 16, s_FrustumVolumeSize.y / 16, 1);

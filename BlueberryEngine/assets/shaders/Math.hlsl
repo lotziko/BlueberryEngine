@@ -17,6 +17,11 @@ float3 GetNormalizedViewDirectionWS(float3 positionWS)
 	return normalize(CAMERA_POSITION_WS - positionWS);
 }
 
+float2 GetNormalizedScreenSpaceUV(float4 positionCS)
+{
+	return positionCS.xy * CAMERA_SIZE_INV_SIZE.zw;
+}
+
 float3 TransformObjectToWorld(float3 positionOS)
 {
 	return mul(float4(positionOS, 1.0f), OBJECT_TO_WORLD_MATRIX).xyz;
@@ -25,6 +30,11 @@ float3 TransformObjectToWorld(float3 positionOS)
 float4 TransformWorldToClip(float3 positionWS)
 {
 	return mul(float4(positionWS, 1.0f), VIEW_PROJECTION_MATRIX);
+}
+
+float3 TransformWorldToView(float3 positionWS)
+{
+	return mul(float4(positionWS, 1.0f), VIEW_MATRIX).xyz;
 }
 
 float4 TransformObjectToClip(float3 positionOS)

@@ -1,7 +1,9 @@
 #include "AssemblyManager.h"
 
 #include "Blueberry\Core\Base.h"
+#include "Editor\Assets\AssetDB.h"
 #include "Editor\Path.h"
+#include "Editor\Misc\PathHelper.h"
 
 #include <sstream>
 #include <fstream>
@@ -60,7 +62,7 @@ namespace Blueberry
 		String sourcePath = GetAssemblyPath().append("\\src");
 		for (const auto& entry : std::filesystem::directory_iterator(sourcePath))
 		{
-			auto writeTime = std::chrono::duration_cast<std::chrono::seconds>(std::filesystem::last_write_time(entry.path()).time_since_epoch()).count();
+			auto writeTime = PathHelper::GetLastWriteTime(entry.path());
 			result = std::max(result, writeTime);
 		}
 		return result;
@@ -71,7 +73,7 @@ namespace Blueberry
 		String dllPath = GetAssemblyPath().append("\\bin\\").append(GetDebugReleaseFolder()).append("\\GameAssembly\\GameAssembly.dll");
 		if (std::filesystem::exists(dllPath))
 		{
-			return std::chrono::duration_cast<std::chrono::seconds>(std::filesystem::last_write_time(dllPath).time_since_epoch()).count();
+			return PathHelper::GetLastWriteTime(dllPath);
 		}
 		return 0;
 	}

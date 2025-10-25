@@ -19,10 +19,6 @@ namespace Blueberry
 			{
 				s_Pointers[index] = nullptr;
 			}
-			else
-			{
-				BB_INFO("cant");
-			}
 		}
 
 		T* Get(const uint32_t& index) const

@@ -3,43 +3,9 @@
 #pragma compute CSBlurHorizontal
 #pragma compute CSBlurVertical
 
-#include "RealtimeLights.hlsl"
-#include "RealtimeShadows.hlsl"
+#include "Core.hlsl"
 
-#define MAIN_LIGHT_CASCADES 3
-#define MAX_REALTIME_LIGHTS 128
-#define MAX_LIGHTS 128
-
-TEXTURE2D(_ShadowTexture);
-SAMPLER_CMP(_ShadowTexture_Sampler);
-
-TEXTURE3D(_CookieTexture);
-SAMPLER(_CookieTexture_Sampler);
-
-cbuffer _FogLightData
-{
-	float4 _MainLightColor;
-	float4 _MainLightDirection;
-	float4x4 _MainWorldToShadow[MAIN_LIGHT_CASCADES + 1]; // extra empty cascade for far distances
-	float4 _MainShadowBounds[MAIN_LIGHT_CASCADES + 1];
-	float4 _MainShadowCascades[MAIN_LIGHT_CASCADES];
-
-	float4 _LightsCount;
-	float4 _LightParam[MAX_REALTIME_LIGHTS]; // x greater than 0 - has shadow, w - light.range * light.range
-	float4 _LightPosition[MAX_REALTIME_LIGHTS];
-	float4 _LightColor[MAX_REALTIME_LIGHTS];
-	float4 _LightAttenuation[MAX_REALTIME_LIGHTS];
-	float4 _LightDirection[MAX_REALTIME_LIGHTS];
-	float4x4 _WorldToShadow[MAX_REALTIME_LIGHTS];
-	float4 _ShadowBounds[MAX_REALTIME_LIGHTS]; // stores shadowmap slice offsets to counter atlas offsets in _WorldToShadow, otherwise it's just (0, 0, 1, 1)
-	float4x4 _WorldToCookie[MAX_REALTIME_LIGHTS];
-	float4 _Shadow3x3PCFTermC0;
-	float4 _Shadow3x3PCFTermC1;
-	float4 _Shadow3x3PCFTermC2;
-	float4 _Shadow3x3PCFTermC3;
-};
-
-cbuffer _FogViewData
+cbuffer FogViewData
 {
 	float4 _ViewInvCount; // is used to offset position during inject volume sampling
 	float4 _ViewDX[2];
@@ -59,54 +25,51 @@ float3 CalculateLight(float3 positionWS)
 {
 	float3 light = 0;
 
-	if (_MainShadowCascades[0].w > 0)
+	// Main light
+	if (_MainLightHasFog)
 	{
 		float cascadeIndex = ComputeCascadeIndex(positionWS, _MainShadowCascades);
 		float4 positionSS = TransformWorldToShadow(positionWS, _MainWorldToShadow[cascadeIndex]);
 
 		float shadowAttenuation = 1;
-		if (!IsOutOfBounds(positionSS, _MainShadowBounds[cascadeIndex]))
+		if (_MainLightHasShadow)
 		{
-			shadowAttenuation = ComputeShadowPCF3x3(positionSS, _ShadowTexture, _ShadowTexture_Sampler, _Shadow3x3PCFTermC0, _Shadow3x3PCFTermC1, _Shadow3x3PCFTermC2, _Shadow3x3PCFTermC3);
+			if (!IsOutOfBounds(positionSS, _MainShadowBounds[cascadeIndex]))
+			{
+				shadowAttenuation = ComputeShadowPCF3x3(positionSS, _ShadowTexture, _ShadowTexture_Sampler, _Shadow3x3PCFTermC0, _Shadow3x3PCFTermC1, _Shadow3x3PCFTermC2, _Shadow3x3PCFTermC3);
+			}
 		}
-
-		float3 lightDirectionWS = _MainLightDirection.xyz;
 		float3 lightColor = _MainLightColor.rgb;
 		light += lightColor * shadowAttenuation;
 	}
 
-	for (int i = 0; i < int(_LightsCount.x); ++i)
+	// Point lights
+	for (int i = 0; i < int(_LightsCount.x); i++)
 	{
-		float3 posToLight = _LightPosition[i].xyz - positionWS * _LightPosition[i].w;
+		PointLightData data = _PointLightsData[i];
+
+		if (!data.hasFog)
+		{
+			continue;
+		}
+
+		float3 posToLight = data.positionWS - positionWS;
 		float distanceSqr = dot(posToLight, posToLight);
 
-		if (distanceSqr > _LightParam[i].w) //voxel is out of light range
+		if (distanceSqr > data.squareRange) //voxel is out of light range
 		{
 			continue;
 		}
 
 		float3 lightDirectionWS = normalize(posToLight);
-		float spotAttenuation = AngleAttenuation(lightDirectionWS, _LightDirection[i].xyz, _LightAttenuation[i].zw);
-
-		if (spotAttenuation <= 0.0)
-		{
-			continue;
-		}
-
-		float cookieAttenuation = 1.0;
-		if (_LightParam[i].y > 0) //has cookie
-		{
-			float4 positionLCS = ApplyShadowBias(TransformWorldToShadow(positionWS, _WorldToCookie[i]));
-			cookieAttenuation = _CookieTexture.SampleLevel(_CookieTexture_Sampler, positionLCS.xyz, 0).r;
-			cookieAttenuation *= (positionLCS.x > 0.0 && positionLCS.x < 1.0 && positionLCS.y > 0.0 && positionLCS.y < 1.0);
-		}
 
 		float shadowAttenuation = 1.0;
-		if (_LightParam[i].x > 0) // has shadow
+		if (data.hasShadow)
 		{
+			uint faceIndex = GetFaceIndex(-lightDirectionWS);
 			shadowAttenuation = 0.0;
-			float4 positionSS = TransformWorldToShadow(positionWS, _WorldToShadow[i]);
-			if (!IsOutOfBounds(positionSS, _ShadowBounds[i]))
+			float4 positionSS = TransformWorldToShadow(positionWS, data.worldToShadow[faceIndex]);
+			if (!IsOutOfBounds(positionSS, data.shadowBounds[faceIndex]))
 			{
 				shadowAttenuation = ComputeShadowPCF3x3(positionSS, _ShadowTexture, _ShadowTexture_Sampler, _Shadow3x3PCFTermC0, _Shadow3x3PCFTermC1, _Shadow3x3PCFTermC2, _Shadow3x3PCFTermC3);
 			}
@@ -117,9 +80,66 @@ float3 CalculateLight(float3 positionWS)
 			continue;
 		}
 
-		float distanceAttenuation = DistanceAttenuation(distanceSqr, _LightAttenuation[i].xy);
+		float distanceAttenuation = DistanceAttenuation(distanceSqr, data.attenuation.xy);
 		float falloff = LightFalloff(distanceSqr);
-		float3 lightColor = _LightColor[i].rgb;
+		float3 lightColor = data.color;
+		float lightMask = distanceAttenuation * falloff * shadowAttenuation;
+		light += lightColor * lightMask;
+	}
+
+	// Spot lights
+	for (int i = 0; i < int(_LightsCount.y); ++i)
+	{
+		SpotLightData data = _SpotLightsData[i];
+
+		if (!data.hasFog)
+		{
+			continue;
+		}
+
+		float3 posToLight = data.positionWS - positionWS;
+		float distanceSqr = dot(posToLight, posToLight);
+
+		if (distanceSqr > data.range * data.range) //voxel is out of light range
+		{
+			continue;
+		}
+
+		float3 lightDirectionWS = normalize(posToLight);
+		float spotAttenuation = AngleAttenuation(lightDirectionWS, data.directionWS, data.attenuation.zw);
+
+		if (spotAttenuation <= 0.0)
+		{
+			continue;
+		}
+
+		float cookieAttenuation = 1.0;
+		if (data.hasCookie) //has cookie
+		{
+			float4 positionLCS = ApplyShadowBias(TransformWorldToShadow(positionWS, data.worldToCookie));
+			cookieAttenuation = _CookieTexture.SampleLevel(_CookieTexture_Sampler, positionLCS.xyz, 0).r;
+			cookieAttenuation *= (positionLCS.x > 0.0 && positionLCS.x < 1.0 && positionLCS.y > 0.0 && positionLCS.y < 1.0);
+		}
+
+		float shadowAttenuation = 1.0;
+		if (data.hasShadow) // has shadow
+		{
+			shadowAttenuation = 0.0;
+			float4 positionSS = TransformWorldToShadow(positionWS, data.worldToShadow);
+			if (!IsOutOfBounds(positionSS, data.shadowBounds))
+			{
+				shadowAttenuation = ComputeShadowPCF3x3(positionSS, _ShadowTexture, _ShadowTexture_Sampler, _Shadow3x3PCFTermC0, _Shadow3x3PCFTermC1, _Shadow3x3PCFTermC2, _Shadow3x3PCFTermC3);
+			}
+		}
+
+		if (shadowAttenuation == 0.0)
+		{
+			continue;
+		}
+
+		float distanceAttenuation = DistanceAttenuation(distanceSqr, data.attenuation.xy);
+		float falloff = LightFalloff(distanceSqr);
+		float3 lightColor = data.color;
 		float lightMask = distanceAttenuation * falloff * spotAttenuation * cookieAttenuation * shadowAttenuation;
 		light += lightColor * lightMask;
 	}
@@ -210,8 +230,7 @@ void CSInject(uint3 id : SV_DispatchThreadID)
 	float3 vectorFS = _ViewDY[viewIndex].xyz * positionFS.y + (_ViewDX[viewIndex].xyz * positionFS.x + _ViewCorner[viewIndex].xyz); // Vector to far plane
 
 	uint steps = (uint)_FrustumVolumeSize.z;
-	float4 accum = float4(0, 0, 0, 1);
-
+	
 	for (uint z = 0; z < steps; ++z)
 	{
 		positionFVS.z = z;

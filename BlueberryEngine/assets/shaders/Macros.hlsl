@@ -29,8 +29,10 @@ static uint _RenderInstanceId;
 
 #define OBJECT_TO_WORLD_MATRIX				_PerDrawData[_RenderInstanceId].modelMatrix
 #define LIGHTMAP_CHART_OFFSET				_PerDrawData[_RenderInstanceId].lightmapChartOffset
+#define VIEW_MATRIX							_ViewMatrix[_ViewIndex]
 #define VIEW_PROJECTION_MATRIX				_ViewProjectionMatrix[_ViewIndex]
 #define INVERSE_VIEW_PROJECTION_MATRIX		_InverseViewProjectionMatrix[_ViewIndex]
+#define INVERSE_PROJECTION_MATRIX			_InverseProjectionMatrix[_ViewIndex]
 #define CAMERA_POSITION_WS					_CameraPositionWS
 #define CAMERA_FORWARD_DIRECTION_WS			_CameraForwardDirectionWS
 #define CAMERA_SIZE_INV_SIZE				_CameraSizeInvSize
@@ -38,6 +40,7 @@ static uint _RenderInstanceId;
 
 
 #define TEXTURE2D(textureName)							Texture2D textureName
+#define TEXTURE2D_UINT(textureName)						Texture2D<uint> textureName
 #define TEXTURE2D_MSAA(textureName, samples)			Texture2DMS<float4, samples> textureName
 #define TEXTURE2D_MSAA_FLOAT(textureName, samples)		Texture2DMS<float, samples> textureName
 #define TEXTURE2D_ARRAY(textureName)					Texture2DArray textureName
@@ -53,6 +56,7 @@ static uint _RenderInstanceId;
 #define SAMPLE_TEXTURE2D_ARRAY(textureName, samplerName, coord2, index)		textureName.Sample(samplerName, float3(coord2, index))
 #define SAMPLE_TEXTURE2D_LOD(textureName, samplerName, coord2, lod)			textureName.SampleLevel(samplerName, coord2, lod)
 #define SAMPLE_TEXTURE2D_SHADOW(textureName, samplerName, coord2, depth)    textureName.SampleCmpLevelZero(samplerName, coord2, depth)
+#define LOAD_TEXTURE2D(textureName, coord2)									textureName.Load(uint3(coord2, 0))
 #define LOAD_TEXTURE2D_MSAA(textureName, uv, sampleIndex)					textureName.Load(uv, sampleIndex)
 #define LOAD_TEXTURE2D_ARRAY_MSAA(textureName, uv, index, sampleIndex)		textureName.Load(uint3(uv, index), sampleIndex)
 #define SAMPLE_TEXTURECUBE(textureName, samplerName, coord3)				textureName.Sample(samplerName, coord3)

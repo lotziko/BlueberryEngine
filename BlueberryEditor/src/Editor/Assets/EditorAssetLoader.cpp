@@ -15,6 +15,7 @@
 #include "Editor\Assets\Processors\HLSLShaderProcessor.h"
 #include "Editor\Assets\Processors\HLSLComputeShaderProcessor.h"
 #include "Editor\Misc\TextureHelper.h"
+#include "Editor\Misc\PathHelper.h"
 
 #include <directxtex\DirectXTex.h>
 
@@ -40,11 +41,6 @@ namespace Blueberry
 		return nullptr;
 	}
 
-	long long GetLastWriteTime(const String& path)
-	{
-		return std::chrono::duration_cast<std::chrono::seconds>(std::filesystem::last_write_time(path).time_since_epoch()).count();
-	}
-
 	Object* EditorAssetLoader::LoadImpl(const String& path)
 	{
 		auto it = m_LoadedAssets.find(path);
@@ -64,7 +60,7 @@ namespace Blueberry
 			Texture2D* texture = nullptr;
 
 			bool needImport = true;
-			if (AssetDB::HasAssetWithGuidInData(guid) && std::filesystem::exists(texturePath.data()) && GetLastWriteTime(path) < GetLastWriteTime(texturePath))
+			if (AssetDB::HasAssetWithGuidInData(guid) && std::filesystem::exists(texturePath.data()) && PathHelper::GetLastWriteTime(path) < PathHelper::GetLastWriteTime(texturePath))
 			{
 				auto objects = AssetDB::LoadAssetObjects(guid, ObjectDB::GetObjectsFromGuid(guid));
 				if (objects.size() == 1 && objects[0].first->IsClassType(Texture2D::Type))
@@ -105,11 +101,12 @@ namespace Blueberry
 		else if (extension == ".shader")
 		{
 			String folderPath = ShaderImporter::GetShaderFolder(guid);
+			auto folderWriteTime = PathHelper::GetDirectoryLastWriteTime(folderPath);
 			Shader* shader = nullptr;
 			HLSLShaderProcessor processor = {};
 
 			bool needImport = true;
-			if (AssetDB::HasAssetWithGuidInData(guid) && processor.LoadVariants(folderPath) && GetLastWriteTime(path) < GetLastWriteTime(folderPath))
+			if (AssetDB::HasAssetWithGuidInData(guid) && PathHelper::GetLastWriteTime(path) < folderWriteTime && ShaderImporter::GetLastFilesWriteTime() < folderWriteTime && processor.LoadVariants(folderPath))
 			{
 				auto objects = AssetDB::LoadAssetObjects(guid, ObjectDB::GetObjectsFromGuid(guid));
 				if (objects.size() == 1 && objects[0].first->IsClassType(Shader::Type))
@@ -143,11 +140,12 @@ namespace Blueberry
 		else if (extension == ".compute")
 		{
 			String folderPath = ComputeShaderImporter::GetShaderFolder(guid);
+			auto folderWriteTime = PathHelper::GetDirectoryLastWriteTime(folderPath);
 			ComputeShader* shader = nullptr;
 			HLSLComputeShaderProcessor processor = {};
 
 			bool needImport = true;
-			if (AssetDB::HasAssetWithGuidInData(guid) && processor.LoadKernels(folderPath) && GetLastWriteTime(path) < GetLastWriteTime(folderPath))
+			if (AssetDB::HasAssetWithGuidInData(guid) && PathHelper::GetLastWriteTime(path) < folderWriteTime && ShaderImporter::GetLastFilesWriteTime() < folderWriteTime && processor.LoadKernels(folderPath))
 			{
 				auto objects = AssetDB::LoadAssetObjects(guid, ObjectDB::GetObjectsFromGuid(guid));
 				if (objects.size() == 1 && objects[0].first->IsClassType(ComputeShader::Type))

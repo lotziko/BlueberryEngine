@@ -8,6 +8,7 @@
 #include "Editor\Assets\Importers\NativeAssetImporter.h"
 #include "Editor\Assets\PathModifyCache.h"
 #include "Editor\Assets\ImporterInfoCache.h"
+#include "Editor\Misc\PathHelper.h"
 
 namespace Blueberry
 {
@@ -33,8 +34,8 @@ namespace Blueberry
 			{
 				s_GuidToPath.insert_or_assign(importer->GetGuid(), importer->GetRelativeFilePath());
 				// Delete asset from cache if it is dirty
-				auto assetLastWriteTime = std::chrono::duration_cast<std::chrono::seconds>(std::filesystem::last_write_time(importer->GetFilePath()).time_since_epoch()).count();
-				auto metaLastWriteTime = std::chrono::duration_cast<std::chrono::seconds>(std::filesystem::last_write_time(importer->GetMetaFilePath()).time_since_epoch()).count();
+				auto assetLastWriteTime = PathHelper::GetLastWriteTime(importer->GetFilePath());
+				auto metaLastWriteTime = PathHelper::GetLastWriteTime(importer->GetMetaFilePath());
 				auto lastWriteCacheInfo = PathModifyCache::Get(importer->GetRelativeFilePath());
 				bool needsClearing = false;
 

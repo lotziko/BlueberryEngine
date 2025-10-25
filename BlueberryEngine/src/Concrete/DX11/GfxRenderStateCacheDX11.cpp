@@ -88,7 +88,7 @@ namespace Blueberry
 				{
 					if (it1->first == it->first)
 					{
-						bindingState.vertexBuffers.push_back({ offset, true, UINT8_MAX, it->second.second });
+						bindingState.vertexBuffers.push_back({ offset, true, UINT8_MAX, it->second });
 						break;
 					}
 				}
@@ -152,6 +152,20 @@ namespace Blueberry
 					if (it1->first == it->first)
 					{
 						bindingState.pixelBuffers.push_back({ offset, true, it->second, UINT8_MAX });
+						break;
+					}
+				}
+			}
+
+			// Fragment global structured buffers
+			for (auto it = dxFragmentShader->m_StructuredBufferSlots.begin(); it != dxFragmentShader->m_StructuredBufferSlots.end(); it++)
+			{
+				uint32_t offset = 0;
+				for (auto it1 = m_Device->m_BindedBuffers.begin(); it1 < m_Device->m_BindedBuffers.end(); ++it1, ++offset)
+				{
+					if (it1->first == it->first)
+					{
+						bindingState.pixelBuffers.push_back({ offset, true, UINT8_MAX, it->second });
 						break;
 					}
 				}

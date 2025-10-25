@@ -11,6 +11,7 @@ namespace Blueberry
 		ShaderImporter() = default;
 
 		static String GetShaderFolder(const Guid& guid);
+		static long long GetLastFilesWriteTime();
 
 	protected:
 		virtual void ImportData() override;
