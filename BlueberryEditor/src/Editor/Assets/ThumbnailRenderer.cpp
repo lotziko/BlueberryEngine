@@ -23,7 +23,7 @@ namespace Blueberry
 	{
 		if (s_ThumbnailRenderTarget == nullptr)
 		{
-			s_ThumbnailRenderTarget = GfxRenderTexturePool::Get(size, size, 1, 1, TextureFormat::R8G8B8A8_UNorm, TextureDimension::Texture2D, WrapMode::Clamp, FilterMode::Bilinear, true);
+			s_ThumbnailRenderTarget = GfxRenderTexturePool::Get(size, size, 1, 1, 1, TextureFormat::R8G8B8A8_UNorm, TextureDimension::Texture2D, WrapMode::Clamp, FilterMode::Bilinear, true);
 		}
 
 		if (asset->IsClassType(Texture2D::Type))

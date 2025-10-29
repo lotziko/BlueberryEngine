@@ -55,8 +55,8 @@ namespace Blueberry
 		m_Camera->m_IsVR = false;
 		cameraEntity->OnCreate();
 
-		m_ColorRenderTarget = GfxRenderTexturePool::Get(Screen::GetWidth(), Screen::GetHeight(), 1, 1, TextureFormat::R8G8B8A8_UNorm);
-		m_DepthStencilRenderTarget = GfxRenderTexturePool::Get(Screen::GetWidth(), Screen::GetHeight(), 1, 1, TextureFormat::D24_UNorm);
+		m_ColorRenderTarget = GfxRenderTexturePool::Get(Screen::GetWidth(), Screen::GetHeight(), 1, 1, 1, TextureFormat::R8G8B8A8_UNorm);
+		m_DepthStencilRenderTarget = GfxRenderTexturePool::Get(Screen::GetWidth(), Screen::GetHeight(), 1, 1, 1, TextureFormat::D24_UNorm);
 
 		Selection::GetSelectionChanged().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
 		EditorSceneManager::GetSceneLoaded().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);

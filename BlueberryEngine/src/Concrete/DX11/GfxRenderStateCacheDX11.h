@@ -57,6 +57,7 @@ namespace Blueberry
 		ID3D11BlendState* blendState;
 
 		bool isValid;
+		uint32_t crc;
 	};
 
 	struct GfxTextureBinding

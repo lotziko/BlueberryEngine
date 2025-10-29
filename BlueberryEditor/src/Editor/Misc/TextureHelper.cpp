@@ -201,7 +201,7 @@ namespace Blueberry
 		Texture2D* temporaryTexture = Texture2D::Create(metadata.width, metadata.height, 1, uncompressedFormat);
 		temporaryTexture->SetData(temporaryData, scratchImage.GetPixelsSize());
 		temporaryTexture->Apply();
-		GfxTexture* temporaryTextureCube = GfxRenderTexturePool::Get(size, size, 1, 1, uncompressedFormat, TextureDimension::TextureCube, WrapMode::Clamp, FilterMode::Bilinear, true);
+		GfxTexture* temporaryTextureCube = GfxRenderTexturePool::Get(size, size, 1, 1, 1, uncompressedFormat, TextureDimension::TextureCube, WrapMode::Clamp, FilterMode::Bilinear, true);
 		uint32_t blockSize = static_cast<uint32_t>(scratchImage.GetPixelsSize() / (metadata.width * metadata.height));
 		size_t dataSize = size * size * 6 * blockSize;
 

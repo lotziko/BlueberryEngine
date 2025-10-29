@@ -317,6 +317,9 @@ namespace Blueberry
 				ParseProperties(propertiesBlock, shaderData);
 			}
 
+			String includeBlock;
+			ParseBlock(shaderBlock, "", "HLSLINCLUDE", "HLSLEND", includeBlock);
+
 			String passBlock;
 			while (ParseBlock(shaderBlock, "Pass", "{", "}", passBlock))
 			{
@@ -341,6 +344,12 @@ namespace Blueberry
 				{
 					size_t end = codeBlock.find("\n", offset);
 					codeBlock.replace(offset, end - offset, " ");
+				}
+
+				if (includeBlock.size() > 0)
+				{
+					String includeCopy = includeBlock;
+					codeBlock = includeCopy.append(codeBlock);
 				}
 
 				compilationPass.shaderCode = codeBlock;

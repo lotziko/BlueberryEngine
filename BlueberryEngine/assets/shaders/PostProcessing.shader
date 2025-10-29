@@ -29,7 +29,7 @@ Shader
 			VERTEX_OUTPUT_VIEW_INDEX
 		};
 
-		cbuffer _PostProcessingData
+		cbuffer PostProcessingData
 		{
 			float4 _ExposureTime;
 		};
@@ -51,7 +51,8 @@ Shader
 			return color * whitePointScale;
 		}
 
-		TEXTURE2D(_ScreenColorTexture);	SAMPLER(_ScreenColorTexture_Sampler);
+		TEXTURE2D(_ScreenColorTexture);		SAMPLER(_ScreenColorTexture_Sampler);
+		TEXTURE2D(_ScreenBloomTexture);		SAMPLER(_ScreenBloomTexture_Sampler);
 
 		float3 Uncharted2Tonemap(float3 x)
 		{
@@ -81,9 +82,10 @@ Shader
 		{
 			// TODO bloom
 			float4 color = SAMPLE_TEXTURE2D_X(_ScreenColorTexture, _ScreenColorTexture_Sampler, input.texcoord);
+			float4 bloom = SAMPLE_TEXTURE2D_X(_ScreenBloomTexture, _ScreenBloomTexture_Sampler, input.texcoord);
 
-			float3 mixedColor = color.rgb;
-			float3 tonemappedColor = Uncharted2Tonemap(mixedColor * _ExposureTime.x);
+			float3 mixedColor = color.rgb + bloom.rgb;
+			float3 tonemappedColor = TonemapFilmic(mixedColor * _ExposureTime.x);
 
 			// Gamma correction
 			tonemappedColor = LinearToSRGB(tonemappedColor);

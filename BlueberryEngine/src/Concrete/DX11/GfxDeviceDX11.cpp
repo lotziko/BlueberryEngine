@@ -688,15 +688,27 @@ namespace Blueberry
 		// Clear SRVs to avoid binding them both into targets and inputs
 		for (uint32_t i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT / 8; ++i)
 		{
-			m_RenderState.vertexShaderResourceViews[i] = {};
-			m_RenderState.vertexSamplerStates[i] = {};
-			m_RenderState.pixelShaderResourceViews[i] = {};
-			m_RenderState.pixelSamplerStates[i] = {};
+			if (m_RenderState.vertexShaderResourceViews[i] != nullptr)
+			{
+				m_RenderState.vertexShaderResourceViews[i] = {};
+				m_DeviceContext->VSSetShaderResources(i, 1, m_EmptyShaderResourceViews);
+			}
+			if (m_RenderState.vertexSamplerStates[i] != nullptr)
+			{
+				m_RenderState.vertexSamplerStates[i] = {};
+				m_DeviceContext->VSSetSamplers(i, 1, m_EmptySamplers);
+			}
+			if (m_RenderState.pixelShaderResourceViews[i] != nullptr)
+			{
+				m_RenderState.pixelShaderResourceViews[i] = {};
+				m_DeviceContext->PSSetShaderResources(i, 1, m_EmptyShaderResourceViews);
+			}
+			if (m_RenderState.pixelSamplerStates[i] != nullptr)
+			{
+				m_RenderState.pixelSamplerStates[i] = {};
+				m_DeviceContext->PSSetSamplers(i, 1, m_EmptySamplers);
+			}
 		}
-		m_DeviceContext->VSSetShaderResources(0, 16, m_EmptyShaderResourceViews);
-		m_DeviceContext->VSSetSamplers(0, 16, m_EmptySamplers);
-		m_DeviceContext->PSSetShaderResources(0, 16, m_EmptyShaderResourceViews);
-		m_DeviceContext->PSSetSamplers(0, 16, m_EmptySamplers);
 	}
 
 	ID3D11RasterizerState* GfxDeviceDX11::GetRasterizerState(const CullMode& mode)

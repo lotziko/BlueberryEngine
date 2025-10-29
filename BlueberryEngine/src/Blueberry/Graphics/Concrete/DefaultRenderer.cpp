@@ -46,7 +46,6 @@ namespace Blueberry
 		PostProcessing::Initialize();
 		VolumetricFog::Initialize();
 		RealtimeLights::Initialize();
-		s_ResolveMSAAMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/ResolveMSAA.shader")));
 		s_ShadowAtlas = new ShadowAtlas(4096, 4096, 128);
 		GfxDevice::SetGlobalTexture(TO_HASH("_LightmapTexture"), DefaultTextures::GetWhite2D()->Get());
 	}
@@ -54,7 +53,6 @@ namespace Blueberry
 	void DefaultRenderer::Shutdown()
 	{
 		HBAORenderer::Shutdown();
-		Object::Destroy(s_ResolveMSAAMaterial);
 		delete s_ShadowAtlas;
 		CookieAtlas::Shutdown();
 		PostProcessing::Shutdown();
@@ -94,14 +92,14 @@ namespace Blueberry
 			cameraData.renderTargetSize = size;
 		}
 
-		colorMSAARenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 4, TextureFormat::R16G16B16A16_Float, textureDimension);
-		//normalMSAARenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 4, TextureFormat::R8G8B8A8_UNorm, textureDimension);
-		depthStencilMSAARenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 4, TextureFormat::D24_UNorm, textureDimension);
+		colorMSAARenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 4, 1, TextureFormat::R16G16B16A16_Float, textureDimension);
+		//normalMSAARenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 4, 1, TextureFormat::R8G8B8A8_UNorm, textureDimension);
+		depthStencilMSAARenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 4, 1, TextureFormat::D24_UNorm, textureDimension);
 
-		colorNormalRenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 1, TextureFormat::R16G16B16A16_Float, textureDimension);
-		depthStencilRenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 1, TextureFormat::D24_UNorm, textureDimension);
-		HBAORenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 1, TextureFormat::R8G8B8A8_UNorm, textureDimension);
-		resultRenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 1, TextureFormat::R8G8B8A8_UNorm, textureDimension);
+		colorNormalRenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 1, 1, TextureFormat::R16G16B16A16_Float, textureDimension, WrapMode::Clamp, FilterMode::Bilinear, false, true);
+		depthStencilRenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 1, 1, TextureFormat::D24_UNorm, textureDimension);
+		HBAORenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 1, 1, TextureFormat::R8G8B8A8_UNorm, textureDimension);
+		resultRenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 1, 1, TextureFormat::R8G8B8A8_UNorm, textureDimension);
 
 		BB_PROFILE_BEGIN("Culling");
 		s_DefaultContext.Cull(scene, cameraData, s_Results);
@@ -160,7 +158,7 @@ namespace Blueberry
 		GfxDevice::ClearDepth(1.0f);
 		//GfxDevice::SetGlobalTexture(s_ScreenColorTextureId, normalMSAARenderTarget);
 		GfxDevice::SetGlobalTexture(s_ScreenDepthStencilTextureId, depthStencilMSAARenderTarget);
-		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_ResolveMSAAMaterial, 0));
+		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetResolveMSAA(), 0));
 
 		// HBAO
 		if (simplified)
@@ -183,26 +181,8 @@ namespace Blueberry
 		drawingSettings.sortingMode = SortingMode::Default;
 		s_DefaultContext.DrawRenderers(s_Results, drawingSettings);
 		BB_PROFILE_END();
-
-		// Resolve color
-		GfxDevice::SetRenderTarget(colorNormalRenderTarget);
-		GfxDevice::ClearColor(background);
-		GfxDevice::SetGlobalTexture(s_ScreenColorTextureId, colorMSAARenderTarget);
-		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_ResolveMSAAMaterial, 1));
 		
-		GfxDevice::SetRenderTarget(nullptr);
-		if (!simplified)
-		{
-			PostProcessing::Draw(colorNormalRenderTarget, viewport);
-		}
-
-		// Tonemapping
-		// Gamma correction is done manually together with MSAA resolve to avoid using SRGB swapchain
-		GfxDevice::SetRenderTarget(resultRenderTarget);
-		GfxDevice::SetViewport(0, 0, size.x, size.y);
-		GfxDevice::SetGlobalTexture(s_ScreenColorTextureId, colorNormalRenderTarget);
-		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetPostProcessing(), simplified ? 1 : 0));
-		GfxDevice::SetRenderTarget(nullptr);
+		PostProcessing::Draw(colorMSAARenderTarget, colorNormalRenderTarget, resultRenderTarget, viewport, size, simplified);
 
 		if (isVr)
 		{

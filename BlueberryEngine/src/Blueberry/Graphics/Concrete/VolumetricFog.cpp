@@ -14,24 +14,6 @@
 
 namespace Blueberry
 {
-	#define MAX_REALTIME_LIGHTS 128
-
-	struct CONSTANTS
-	{
-		Vector4 lightsCount;
-		Vector4 lightParam[MAX_REALTIME_LIGHTS];
-		Vector4 lightPosition[MAX_REALTIME_LIGHTS];
-		Vector4 lightColor[MAX_REALTIME_LIGHTS];
-		Vector4 lightAttenuation[MAX_REALTIME_LIGHTS];
-		Vector4 lightDirection[MAX_REALTIME_LIGHTS];
-		Matrix worldToShadow[MAX_REALTIME_LIGHTS];
-		Vector4 shadowBounds[MAX_REALTIME_LIGHTS];
-		Vector4 shadow3x3PCFTermC0;
-		Vector4 shadow3x3PCFTermC1;
-		Vector4 shadow3x3PCFTermC2;
-		Vector4 shadow3x3PCFTermC3;
-	};
-
 	static Vector3Int s_FrustumVolumeSize = Vector3Int(128, 96, 128);
 	static size_t s_InjectFogVolumeId = TO_HASH("_InjectFogVolume");
 	static size_t s_InjectedFogVolumeId = TO_HASH("_InjectedFogVolume");

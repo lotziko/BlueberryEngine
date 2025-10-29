@@ -147,7 +147,7 @@ namespace Blueberry
 			m_Crc = 0;
 			m_Crc = CRCHelper::Calculate(m_Shader->m_ObjectId, m_Crc);
 			m_Crc = CRCHelper::Calculate(m_Shader->m_UpdateCount, m_Crc);
-			for (auto& binding : m_BindedTextures)
+			/*for (auto& binding : m_BindedTextures)
 			{
 				Texture* texture = static_cast<Texture*>(ObjectDB::GetObject(binding.objectId));
 				m_Crc = CRCHelper::Calculate(&binding, sizeof(TextureBinding), m_Crc);
@@ -156,7 +156,7 @@ namespace Blueberry
 			for (auto& keyword : m_ActiveKeywords)
 			{
 				m_Crc = CRCHelper::Calculate(&keyword, keyword.size(), m_Crc);
-			}
+			}*/
 		}
 		return m_Crc;
 	}

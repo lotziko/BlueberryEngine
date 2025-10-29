@@ -19,6 +19,14 @@ namespace Blueberry
 		return first != other.first || second != other.second;
 	}
 
+	GfxRenderTexturePoolKey GetKey(const uint32_t& width, const uint32_t& height, const uint32_t& depth, const uint32_t& antiAliasing, const uint32_t& mipCount, const TextureFormat& textureFormat, const TextureDimension& textureDimension, const WrapMode& wrapMode, const FilterMode& filterMode, const bool& isReadable, const bool& isUnorderedAccess)
+	{
+		GfxRenderTexturePoolKey key;
+		key.first = static_cast<uint64_t>(width) | static_cast<uint64_t>(height) << 16 | static_cast<uint64_t>(depth) << 32 | static_cast<uint64_t>(antiAliasing) << 40 | static_cast<uint64_t>(mipCount) << 48 | static_cast<uint64_t>(textureFormat) << 56;
+		key.second = static_cast<uint16_t>(textureDimension) | static_cast<uint16_t>(wrapMode) << 8 | static_cast<uint16_t>(filterMode) << 11 | static_cast<uint16_t>(isReadable) << 14 | static_cast<uint16_t>(isUnorderedAccess) << 15;
+		return key;
+	}
+
 	void GfxRenderTexturePool::Shutdown()
 	{
 		for (auto it = s_TemporaryPool.begin(); it != s_TemporaryPool.end(); ++it)
@@ -56,43 +64,44 @@ namespace Blueberry
 		}
 	}
 
-	GfxTexture* GfxRenderTexturePool::Get(const uint32_t& width, const uint32_t& height, const uint32_t& depth, const uint32_t& antiAliasing, const TextureFormat& textureFormat, const TextureDimension& textureDimension, const WrapMode& wrapMode, const FilterMode& filterMode, const bool& isReadable, const bool& isUnorderedAccess)
+	GfxTexture* GfxRenderTexturePool::Get(const TextureProperties& textureProperties)
 	{
-		GfxRenderTexturePoolKey key;
-		key.first = static_cast<uint64_t>(width) | static_cast<uint64_t>(height) << 16 | static_cast<uint64_t>(depth) << 32 | static_cast<uint64_t>(antiAliasing) << 40 | static_cast<uint64_t>(textureFormat) << 48 | static_cast<uint64_t>(textureDimension) << 56;
-		key.second = static_cast<uint8_t>(wrapMode) | static_cast<uint8_t>(filterMode) << 3 | static_cast<uint8_t>(isReadable) << 6 | static_cast<uint8_t>(isUnorderedAccess) << 7;
+		GfxRenderTexturePoolKey key = GetKey(textureProperties.width, textureProperties.height, textureProperties.depth, textureProperties.antiAliasing, textureProperties.mipCount, textureProperties.format, textureProperties.dimension, textureProperties.wrapMode, textureProperties.filterMode, textureProperties.isReadable, textureProperties.isUnorderedAccess);
+		GfxTexture* texture = Find(key);
 
-		auto it = s_TemporaryPool.find(key);
-		if (it != s_TemporaryPool.end())
+		if (texture == nullptr)
 		{
-			List<std::pair<GfxTexture*, size_t>>& textures = it->second;
-			if (textures.size() > 0)
-			{
-				GfxTexture* last = (textures.end() - 1)->first;
-				textures.erase(textures.end() - 1);
-				return last;
-			}
+			texture = Allocate(textureProperties);
+			s_TemporaryKeys.insert_or_assign(texture, key);
 		}
+		return texture;
+	}
 
-		TextureProperties textureProperties = {};
+	GfxTexture* GfxRenderTexturePool::Get(const uint32_t& width, const uint32_t& height, const uint32_t& depth, const uint32_t& antiAliasing, const uint32_t& mipCount, const TextureFormat& textureFormat, const TextureDimension& textureDimension, const WrapMode& wrapMode, const FilterMode& filterMode, const bool& isReadable, const bool& isUnorderedAccess)
+	{
+		GfxRenderTexturePoolKey key = GetKey(width, height, depth, antiAliasing, mipCount, textureFormat, textureDimension, wrapMode, filterMode, isReadable, isUnorderedAccess);
+		GfxTexture* texture = Find(key);
 
-		textureProperties.width = width;
-		textureProperties.height = height;
-		textureProperties.depth = depth;
-		textureProperties.antiAliasing = antiAliasing;
-		textureProperties.mipCount = 1;
-		textureProperties.format = textureFormat;
-		textureProperties.dimension = textureDimension;
-		textureProperties.wrapMode = wrapMode;
-		textureProperties.filterMode = filterMode;
-		textureProperties.isRenderTarget = true;
-		textureProperties.isReadable = isReadable;
-		textureProperties.isUnorderedAccess = isUnorderedAccess;
-		
-		// Allocate new texture
-		GfxTexture* texture = nullptr;
-		GfxDevice::CreateTexture(textureProperties, texture);
-		s_TemporaryKeys.insert_or_assign(texture, key);
+		if (texture == nullptr)
+		{
+			TextureProperties textureProperties = {};
+
+			textureProperties.width = width;
+			textureProperties.height = height;
+			textureProperties.depth = depth;
+			textureProperties.antiAliasing = antiAliasing;
+			textureProperties.mipCount = mipCount;
+			textureProperties.format = textureFormat;
+			textureProperties.dimension = textureDimension;
+			textureProperties.wrapMode = wrapMode;
+			textureProperties.filterMode = filterMode;
+			textureProperties.isRenderTarget = true;
+			textureProperties.isReadable = isReadable;
+			textureProperties.isUnorderedAccess = isUnorderedAccess;
+
+			texture = Allocate(textureProperties);
+			s_TemporaryKeys.insert_or_assign(texture, key);
+		}
 		return texture;
 	}
 
@@ -124,5 +133,28 @@ namespace Blueberry
 		{
 			BB_ERROR("Trying to release non temporary render texture.");
 		}
+	}
+
+	GfxTexture* GfxRenderTexturePool::Find(const GfxRenderTexturePoolKey& key)
+	{
+		auto it = s_TemporaryPool.find(key);
+		if (it != s_TemporaryPool.end())
+		{
+			List<std::pair<GfxTexture*, size_t>>& textures = it->second;
+			if (textures.size() > 0)
+			{
+				GfxTexture* last = (textures.end() - 1)->first;
+				textures.erase(textures.end() - 1);
+				return last;
+			}
+		}
+		return nullptr;
+	}
+
+	GfxTexture* GfxRenderTexturePool::Allocate(const TextureProperties& textureProperties)
+	{
+		GfxTexture* texture = nullptr;
+		GfxDevice::CreateTexture(textureProperties, texture);
+		return texture;
 	}
 }

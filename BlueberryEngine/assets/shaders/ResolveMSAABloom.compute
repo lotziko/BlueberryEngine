@@ -1,0 +1,88 @@
+#pragma compute CSSingleTexture
+
+#include "Core.hlsl"
+
+#define MSAA_SAMPLES 4
+
+cbuffer ResolveMSAABloomData
+{
+	float3 _BloomThreshold;
+	float _BloomScale;
+	float _Exposure;
+	float3 _Dummy;
+};
+
+Texture2DMS<float4, MSAA_SAMPLES> _MSAASourceTexture;
+RWTexture2D<float4> _ColorOutputTexture;
+RWTexture2D<float4> _BloomOutputTexture;
+
+groupshared float _RShared[64];
+groupshared float _GShared[64];
+groupshared float _BShared[64];
+
+[numthreads(8, 8, 1)]
+void CSSingleTexture(uint3 id : SV_DispatchThreadID, uint3 groupId : SV_GroupThreadID, uint groupIdFlattened : SV_GroupIndex)
+{
+	float3 color = 0;
+	for (int i = 0; i < MSAA_SAMPLES; ++i)
+	{
+		float3 sampledColor = min(max(LOAD_TEXTURE2D_MSAA(_MSAASourceTexture, id.xy, i).rgb, float3(0, 0, 0)), float3(65504, 65504, 65504));
+		float maxValue = max(sampledColor.x, max(sampledColor.y, sampledColor.z));
+		maxValue = rcp(maxValue + 1) / MSAA_SAMPLES;
+
+		color = sampledColor * maxValue + color;
+	}
+
+	_RShared[groupIdFlattened] = color.r;
+	_GShared[groupIdFlattened] = color.g;
+	_BShared[groupIdFlattened] = color.b;
+
+	_ColorOutputTexture[id.xy] = float4(color * rcp(1 - max(color.r, max(color.g, color.b))), 1);
+	uint3 mask = uint3(groupIdFlattened & 1, groupIdFlattened & 3, groupIdFlattened & 27);
+
+	if (mask.x == 0)
+	{
+		_RShared[groupIdFlattened] = _RShared[groupIdFlattened + 1] + color.r;
+		_GShared[groupIdFlattened] = _GShared[groupIdFlattened + 1] + color.g;
+		_BShared[groupIdFlattened] = _BShared[groupIdFlattened + 1] + color.b;
+	}
+
+	GroupMemoryBarrierWithGroupSync();
+
+	if (groupId.y & 1 == 0)
+	{
+		_RShared[groupIdFlattened] = _RShared[groupIdFlattened + 8] + _RShared[groupIdFlattened];
+		_GShared[groupIdFlattened] = _GShared[groupIdFlattened + 8] + _GShared[groupIdFlattened];
+		_BShared[groupIdFlattened] = _BShared[groupIdFlattened + 8] + _BShared[groupIdFlattened];
+	}
+
+	GroupMemoryBarrierWithGroupSync();
+
+	if (mask.y == 0)
+	{
+		_RShared[groupIdFlattened] = _RShared[groupIdFlattened + 2] + _RShared[groupIdFlattened];
+		_GShared[groupIdFlattened] = _GShared[groupIdFlattened + 2] + _GShared[groupIdFlattened];
+		_BShared[groupIdFlattened] = _BShared[groupIdFlattened + 2] + _BShared[groupIdFlattened];
+	}
+
+	GroupMemoryBarrierWithGroupSync();
+
+	if (mask.z == 0)
+	{
+		float3 bloom = 0;
+		bloom.r = _RShared[groupIdFlattened] + _RShared[groupIdFlattened + 16];
+		bloom.g = _GShared[groupIdFlattened] + _GShared[groupIdFlattened + 16];
+		bloom.b = _BShared[groupIdFlattened] + _BShared[groupIdFlattened + 16];
+		bloom /= 16;
+
+		float tonemapScalar = _Exposure;
+		
+		float inverseKey = rcp(1.0 - max(bloom.r, max(bloom.g, bloom.b)));
+		bloom *= inverseKey;
+		float grayscale = dot(bloom, float3(0.3, 0.59, 0.11));
+		grayscale *= tonemapScalar;
+		grayscale = saturate(grayscale * _BloomThreshold.y + _BloomThreshold.x);
+
+		_BloomOutputTexture[id.xy >> 2] = float4(bloom * grayscale * _BloomScale, 1);
+	}
+}

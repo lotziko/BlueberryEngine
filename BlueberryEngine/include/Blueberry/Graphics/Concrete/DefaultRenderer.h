@@ -23,7 +23,6 @@ namespace Blueberry
 		static void Draw(Scene* scene, Camera* camera, Rectangle viewport, Color background, GfxTexture* colorOutput = nullptr, GfxTexture* depthOutput = nullptr, const bool& simplified = false);
 		
 	private:
-		static inline Material* s_ResolveMSAAMaterial = nullptr;
 		static inline ShadowAtlas* s_ShadowAtlas = nullptr;
 	};
 }

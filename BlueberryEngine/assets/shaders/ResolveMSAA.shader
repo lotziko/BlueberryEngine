@@ -2,7 +2,7 @@ Shader
 {
 	Pass
 	{
-		Blend SrcAlpha OneMinusSrcAlpha
+		Blend One Zero
 		ZWrite On
 		Cull None
 
@@ -68,7 +68,7 @@ Shader
 	}
 	Pass
 	{
-		Blend SrcAlpha OneMinusSrcAlpha
+		Blend One Zero
 		ZWrite On
 		Cull None
 

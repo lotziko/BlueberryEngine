@@ -31,11 +31,12 @@ namespace Blueberry
 	{
 		uint64_t keywordMask = static_cast<uint64_t>(Shader::GetActiveKeywordsMask()) | (static_cast<uint64_t>(material->GetActiveKeywordsMask()) << 32);
 		ObjectId objectId = material->GetObjectId(); // Maybe also use shader id to be able to switch it
-		
+		uint32_t crc = material->GetCRC();
+
 		GfxRenderStateDX11 renderState;
 		GfxRenderStateKeyDX11 key = { keywordMask, objectId, passIndex };
 		auto it = m_RenderStates.find(key);
-		if (it != m_RenderStates.end())
+		if (it != m_RenderStates.end() && crc == it->second.first.crc)
 		{
 			renderState = it->second.first;
 			FillRenderState(material, renderState, it->second.second);
@@ -50,6 +51,7 @@ namespace Blueberry
 			renderState = {};
 			GfxPassData passData = GetPassData(material, passIndex);
 			renderState.isValid = passData.isValid;
+			renderState.crc = crc;
 
 			if (!renderState.isValid)
 			{

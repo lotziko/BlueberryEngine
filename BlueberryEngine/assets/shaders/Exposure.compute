@@ -6,7 +6,7 @@
 #define RGB_TO_LUMINANCE float3(0.2125, 0.7154, 0.0721)
 #define EPSILON 0.005
 
-cbuffer _ExposureData
+cbuffer ExposureData
 {
 	float _MinLogLuminance;
 	float _LogLuminanceRange;

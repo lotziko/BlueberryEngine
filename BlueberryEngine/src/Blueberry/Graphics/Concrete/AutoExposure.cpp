@@ -8,8 +8,18 @@
 
 namespace Blueberry
 {
+	struct ExposureData
+	{
+		float minLogLuminance;
+		float logLuminanceRange;
+		float inverseLogLuminanceRange;
+		float numPixels;
+		Vector2 viewport;
+		Vector2 dummy;
+	};
+
 	static size_t s_ScreenColorTextureId = TO_HASH("_ScreenColorTexture");
-	static size_t s_ExposureDataId = TO_HASH("_ExposureData");
+	static size_t s_ExposureDataId = TO_HASH("ExposureData");
 	static size_t s_HistogramId = TO_HASH("_Histogram");
 	static size_t s_ResultId = TO_HASH("_Result");
 
@@ -25,7 +35,7 @@ namespace Blueberry
 		BufferProperties constantBufferProperties = {};
 		constantBufferProperties.type = BufferType::Constant;
 		constantBufferProperties.elementCount = 1;
-		constantBufferProperties.elementSize = sizeof(float) * 8;
+		constantBufferProperties.elementSize = sizeof(ExposureData);
 		constantBufferProperties.isWritable = true;
 		GfxDevice::CreateBuffer(constantBufferProperties, s_ExposureData);
 
@@ -54,15 +64,22 @@ namespace Blueberry
 		delete s_Result;
 	}
 
-	float AutoExposure::Calculate(GfxTexture* color, const Rectangle& viewport)
+	void AutoExposure::Calculate(GfxTexture* color, const Rectangle& viewport)
 	{
 		if (s_RecalculateTimer == 0)
 		{
 			s_RecalculateTimer = 60;
 			float minLogLum = -8.0f / 2;
 			float maxLogLum = 3.5f / 2;
-			float histogramParams[8] = { minLogLum, maxLogLum - minLogLum, 1.0f / (maxLogLum - minLogLum), static_cast<float>(viewport.width * viewport.height), static_cast<float>(viewport.width), static_cast<float>(viewport.height), 0, 0 };
-			s_ExposureData->SetData(reinterpret_cast<char*>(histogramParams), sizeof(float) * 8);
+
+			ExposureData constants = {};
+			constants.minLogLuminance = minLogLum;
+			constants.logLuminanceRange = maxLogLum - minLogLum;
+			constants.inverseLogLuminanceRange = 1.0f / (maxLogLum - minLogLum);
+			constants.numPixels = static_cast<float>(viewport.width * viewport.height);
+			constants.viewport = Vector2(static_cast<float>(viewport.width), static_cast<float>(viewport.height));
+
+			s_ExposureData->SetData(reinterpret_cast<char*>(&constants), sizeof(ExposureData));
 
 			GfxDevice::SetGlobalTexture(s_ScreenColorTextureId, color);
 			GfxDevice::SetGlobalBuffer(s_ExposureDataId, s_ExposureData);
@@ -83,6 +100,10 @@ namespace Blueberry
 		float deltaTime = 1.0f / 60.0f;
 		float t = 1.0f - std::expf(-adaptationSpeed * deltaTime);
 		s_CurrentExposure = Lerp(s_CurrentExposure, s_TargetExposure, t);
+	}
+
+	float AutoExposure::GetExposure()
+	{
 		return s_CurrentExposure;
 	}
 }

@@ -13,7 +13,8 @@ namespace Blueberry
 	public:
 		static void Initialize();
 		static void Shutdown();
-		static float Calculate(GfxTexture* color, const Rectangle& viewport);
+		static void Calculate(GfxTexture* color, const Rectangle& viewport);
+		static float GetExposure();
 
 	private:
 		static inline ComputeShader* s_ExposureShader = nullptr;

@@ -12,7 +12,7 @@ namespace Blueberry
 {
 	ShadowAtlas::ShadowAtlas(const uint32_t& width, const uint32_t& height, const uint32_t& maxLightCount) : m_MaxLightCount(maxLightCount)
 	{
-		m_AtlasTexture = GfxRenderTexturePool::Get(width, height, 1, 1, TextureFormat::D32_Float, TextureDimension::Texture2D, WrapMode::Clamp, FilterMode::CompareDepth);
+		m_AtlasTexture = GfxRenderTexturePool::Get(width, height, 1, 1, 1, TextureFormat::D32_Float, TextureDimension::Texture2D, WrapMode::Clamp, FilterMode::CompareDepth);
 		m_Requests = BB_MALLOC_ARRAY(ShadowRequest, maxLightCount);
 		m_Size = Vector2Int(width, height);
 	}

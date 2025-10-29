@@ -16,7 +16,7 @@ namespace Blueberry
 
 	void CookieAtlas::Initialize()
 	{
-		s_AtlasTexture = GfxRenderTexturePool::Get(512, 512, s_MaxCookies, 1, TextureFormat::R8G8B8A8_UNorm_SRGB, TextureDimension::Texture3D, WrapMode::Clamp, FilterMode::Point);
+		s_AtlasTexture = GfxRenderTexturePool::Get(512, 512, s_MaxCookies, 1, 1, TextureFormat::R8G8B8A8_UNorm_SRGB, TextureDimension::Texture3D, WrapMode::Clamp, FilterMode::Point);
 		GfxDevice::SetRenderTarget(s_AtlasTexture);
 		GfxDevice::ClearColor(Color(1, 1, 1, 1));
 		GfxDevice::SetRenderTarget(nullptr);

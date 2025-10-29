@@ -579,7 +579,6 @@ namespace Blueberry
 			if (useRTV)
 			{
 				textureDesc.BindFlags |= D3D11_BIND_RENDER_TARGET;
-				m_SlicesRenderTargetViews.resize(arraySize);
 				if (properties.generateMipMaps)
 				{
 					textureDesc.MipLevels = 0;
@@ -738,6 +737,23 @@ namespace Blueberry
 			{
 				renderTargetViewDesc.ViewDimension = antiAliasing > 1 ? D3D11_RTV_DIMENSION_TEXTURE2DMS : D3D11_RTV_DIMENSION_TEXTURE2D;
 				renderTargetViewDesc.Texture2D.MipSlice = 0;
+
+				m_SlicesRenderTargetViews.resize(mipLevels);
+
+				D3D11_RENDER_TARGET_VIEW_DESC sliceRenderTargetViewDesc = renderTargetViewDesc;
+				for (uint32_t i = 0; i < mipLevels; ++i)
+				{
+					sliceRenderTargetViewDesc.Texture2DArray.MipSlice = i;
+					sliceRenderTargetViewDesc.Texture2DArray.FirstArraySlice = 0;
+					sliceRenderTargetViewDesc.Texture2DArray.ArraySize = 6;
+
+					hr = m_Device->CreateRenderTargetView(m_Texture.Get(), &sliceRenderTargetViewDesc, m_SlicesRenderTargetViews[i].GetAddressOf());
+					if (FAILED(hr))
+					{
+						BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create render target view."));
+						return false;
+					}
+				}
 			}
 
 			hr = m_Device->CreateRenderTargetView(m_Texture.Get(), &renderTargetViewDesc, m_RenderTargetView.GetAddressOf());
