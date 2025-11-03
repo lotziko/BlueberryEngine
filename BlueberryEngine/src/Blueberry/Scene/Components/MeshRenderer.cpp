@@ -90,6 +90,11 @@ namespace Blueberry
 		}
 	}
 
+	uint32_t MeshRenderer::GetMaterialCount()
+	{
+		return static_cast<uint32_t>(m_Materials.size());
+	}
+
 	const AABB& MeshRenderer::GetBounds()
 	{
 		if (!m_Mesh.IsValid())

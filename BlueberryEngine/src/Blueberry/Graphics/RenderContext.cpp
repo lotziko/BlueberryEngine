@@ -77,7 +77,7 @@ namespace Blueberry
 		for (uint32_t i = 0; i < operationCount; ++i)
 		{
 			auto& operation = s_DrawingOperations[i];
-			s_PerDrawData.emplace_back(std::move(std::make_pair(GfxDevice::GetGPUMatrix(operation.matrix), Vector4(operation.lightmapChartOffset, 0, 0, 0))));
+			s_PerDrawData.push_back(std::move(std::make_pair(GfxDevice::GetGPUMatrix(operation.matrix), Vector4(operation.lightmapChartOffset, 0, 0, 0))));
 		}
 		PerDrawDataConstantBuffer::BindDataInstanced(s_PerDrawData.data(), operationCount);
 	}
@@ -134,7 +134,7 @@ namespace Blueberry
 						Material* material = GfxDrawingOperation::GetValidMaterial(meshRenderer->GetMaterial(i));
 						if (material != nullptr)
 						{
-							s_DrawingOperations.emplace_back(std::move(DrawingOperation{ matrix, mesh, mesh->GetObjectId(), static_cast<uint8_t>(i), material, material->GetObjectId(), 1, distance, lightmapChartOffset }));
+							s_DrawingOperations.push_back(std::move(DrawingOperation{ matrix, mesh, mesh->GetObjectId(), static_cast<uint8_t>(i), material, material->GetObjectId(), 1, distance, lightmapChartOffset }));
 						}
 					}
 				}
@@ -143,7 +143,7 @@ namespace Blueberry
 					Material* material = GfxDrawingOperation::GetValidMaterial(meshRenderer->GetMaterial());
 					if (material != nullptr)
 					{
-						s_DrawingOperations.emplace_back(std::move(DrawingOperation{ matrix, mesh, mesh->GetObjectId(), 255, material, material->GetObjectId(), 1, distance, lightmapChartOffset }));
+						s_DrawingOperations.push_back(std::move(DrawingOperation{ matrix, mesh, mesh->GetObjectId(), 255, material, material->GetObjectId(), 1, distance, lightmapChartOffset }));
 					}
 				}
 			}
@@ -182,8 +182,9 @@ namespace Blueberry
 		cameraFrustumInfo.object = camera;
 		cameraFrustumInfo.viewMatrix = camera->GetViewMatrix();
 		cameraFrustum.GetPlanes(&cameraFrustumInfo.planes[0], &cameraFrustumInfo.planes[1], &cameraFrustumInfo.planes[2], &cameraFrustumInfo.planes[3], &cameraFrustumInfo.planes[4], &cameraFrustumInfo.planes[5]);
-		results.cullerInfos.emplace_back(cameraFrustumInfo);
+		results.cullerInfos.push_back(cameraFrustumInfo);
 
+		results.skyRenderer = nullptr;
 		for (auto component : scene->GetIterator<SkyRenderer>())
 		{
 			results.skyRenderer = static_cast<SkyRenderer*>(component.second);
@@ -209,7 +210,7 @@ namespace Blueberry
 			LightType type = light->GetType();
 			if (type == LightType::Directional || bounds.ContainedBy(cameraFrustumInfo.planes[0], cameraFrustumInfo.planes[1], cameraFrustumInfo.planes[2], cameraFrustumInfo.planes[3], cameraFrustumInfo.planes[4], cameraFrustumInfo.planes[5]))
 			{
-				results.lights.emplace_back(light);
+				results.lights.push_back(light);
 
 				CullingResults::CullerInfo lightCullerInfo = {};
 				lightCullerInfo.object = light;
@@ -308,7 +309,7 @@ namespace Blueberry
 
 							lightCullerInfo.index = i;
 							lightCullerInfo.viewMatrix = view;
-							results.cullerInfos.emplace_back(lightCullerInfo);
+							results.cullerInfos.push_back(std::move(lightCullerInfo));
 						}
 					}
 					else if (type == LightType::Spot)
@@ -324,7 +325,7 @@ namespace Blueberry
 						light->m_WorldToShadow[0] = view * projection;
 
 						lightCullerInfo.viewMatrix = view;
-						results.cullerInfos.emplace_back(lightCullerInfo);
+						results.cullerInfos.push_back(std::move(lightCullerInfo));
 					}
 					else if (type == LightType::Point)
 					{
@@ -341,7 +342,7 @@ namespace Blueberry
 
 							lightCullerInfo.index = i;
 							lightCullerInfo.viewMatrix = view;
-							results.cullerInfos.emplace_back(lightCullerInfo);
+							results.cullerInfos.push_back(std::move(lightCullerInfo));
 						}
 					}
 				}

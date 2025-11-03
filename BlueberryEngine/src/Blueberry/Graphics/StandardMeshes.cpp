@@ -15,6 +15,13 @@ namespace Blueberry
 				{ 1.0f, 1.0f, 0.0f },
 				{ 1.0f, -1.0f, 0.0f }
 			};
+			Vector3 normals[] =
+			{
+				{ 0.0f, 0.0f, -1.0f },
+				{ 0.0f, 0.0f, -1.0f },
+				{ 0.0f, 0.0f, -1.0f },
+				{ 0.0f, 0.0f, -1.0f }
+			};
 			Vector2 uvs[] =
 			{
 				{ 0.0f, 1.0f }, // fullscreen meshes are flipped vertically
@@ -26,8 +33,10 @@ namespace Blueberry
 			s_FullscreenMesh = Mesh::Create();
 			s_FullscreenMesh->SetName("Fullscreen");
 			s_FullscreenMesh->SetVertices(vertices, 4);
+			s_FullscreenMesh->SetNormals(normals, 4);
 			s_FullscreenMesh->SetIndices(indices, 6);
 			s_FullscreenMesh->SetUVs(0, uvs, 4);
+			s_FullscreenMesh->GenerateTangents();
 			s_FullscreenMesh->Apply();
 		}
 
@@ -45,6 +54,13 @@ namespace Blueberry
 				{ 1.0f, 0.0f, 1.0f },
 				{ 1.0f, 0.0f, -1.0f }
 			};
+			Vector3 normals[] =
+			{
+				{ 0.0f, 1.0f, 0.0f },
+				{ 0.0f, 1.0f, 0.0f },
+				{ 0.0f, 1.0f, 0.0f },
+				{ 0.0f, 1.0f, 0.0f }
+			};
 			Vector2 uvs[] =
 			{
 				{ 0.0f, 0.0f },
@@ -56,8 +72,10 @@ namespace Blueberry
 			s_PlaneMesh = Mesh::Create();
 			s_PlaneMesh->SetName("Plane");
 			s_PlaneMesh->SetVertices(vertices, 4);
+			s_PlaneMesh->SetNormals(normals, 4);
 			s_PlaneMesh->SetIndices(indices, 6);
 			s_PlaneMesh->SetUVs(0, uvs, 4);
+			s_PlaneMesh->GenerateTangents();
 			s_PlaneMesh->Apply();
 		}
 
@@ -177,6 +195,38 @@ namespace Blueberry
 				{ 0.5f,  0.5f,  0.5f },
 				{ 0.5f, -0.5f,  0.5f }
 			};
+			Vector3 normals[] =
+			{
+				{ 0.0f, 0.0f, -1.0f },
+				{ 0.0f, 0.0f, -1.0f },
+				{ 0.0f, 0.0f, -1.0f },
+				{ 0.0f, 0.0f, -1.0f },
+
+				{ 0.0f, 0.0f, 1.0f },
+				{ 0.0f, 0.0f, 1.0f },
+				{ 0.0f, 0.0f, 1.0f },
+				{ 0.0f, 0.0f, 1.0f },
+
+				{ 0.0f, 1.0f, 0.0f },
+				{ 0.0f, 1.0f, 0.0f },
+				{ 0.0f, 1.0f, 0.0f },
+				{ 0.0f, 1.0f, 0.0f },
+
+				{ 0.0f, -1.0f, 0.0f },
+				{ 0.0f, -1.0f, 0.0f },
+				{ 0.0f, -1.0f, 0.0f },
+				{ 0.0f, -1.0f, 0.0f },
+
+				{ -1.0f, 0.0f, 0.0f },
+				{ -1.0f, 0.0f, 0.0f },
+				{ -1.0f, 0.0f, 0.0f },
+				{ -1.0f, 0.0f, 0.0f },
+
+				{ 1.0f, 0.0f, 0.0f },
+				{ 1.0f, 0.0f, 0.0f },
+				{ 1.0f, 0.0f, 0.0f },
+				{ 1.0f, 0.0f, 0.0f },
+			};
 			Vector2 uvs[] =
 			{
 				{ 0.0f, 0.0f },
@@ -221,8 +271,10 @@ namespace Blueberry
 			s_CubeMesh = Mesh::Create();
 			s_CubeMesh->SetName("Cube");
 			s_CubeMesh->SetVertices(vertices, ARRAYSIZE(vertices));
+			s_CubeMesh->SetNormals(normals, ARRAYSIZE(normals));
 			s_CubeMesh->SetIndices(indices, ARRAYSIZE(indices));
 			s_CubeMesh->SetUVs(0, uvs, ARRAYSIZE(uvs));
+			s_CubeMesh->GenerateTangents();
 			s_CubeMesh->Apply();
 		}
 

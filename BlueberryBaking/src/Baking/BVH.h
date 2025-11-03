@@ -17,6 +17,7 @@ struct __align__(16) BVHInstance
 	float4* tangents;
 	uint3* indices;
 	unsigned int vertexCount;
+	unsigned int globalIndex;
 };
 
 struct __align__(16) BVHNode

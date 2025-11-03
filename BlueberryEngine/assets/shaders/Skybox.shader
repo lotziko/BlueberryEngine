@@ -47,7 +47,7 @@ Shader
 
 		float4 SkyboxFragment(Varyings input) : SV_TARGET
 		{
-			float4 color = SAMPLE_TEXTURECUBE(_BaseMap, _BaseMap_Sampler, input.texcoord);
+			float4 color = SAMPLE_TEXTURECUBE(_BaseMap, _BaseMap_Sampler, input.texcoord) * 10; // TODO exposure property
 			color = ApplyVolumetricFog(color, input.positionCS.xy * CAMERA_SIZE_INV_SIZE.zw, 1);
 			return color;
 		}

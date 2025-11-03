@@ -58,6 +58,8 @@ namespace Blueberry
 		CUdeviceptr normalBuffer;
 		CUdeviceptr tangentBuffer;
 		CUdeviceptr indexBuffer;
+
+		unsigned int globalIndex;
 	};
 
 	struct CUDABVH

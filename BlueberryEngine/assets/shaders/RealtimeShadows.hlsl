@@ -6,17 +6,17 @@
 uint GetFaceIndex(float3 direction)
 {
 	float faceID;
-	if (abs(direction.z) >= abs(direction.x) && abs(direction.z) >= abs(direction.y))
+	if (abs(direction.x) >= abs(direction.y) && abs(direction.x) >= abs(direction.z))
 	{
-		faceID = (direction.z < 0.0) ? 1 : 0;
+		faceID = (direction.x < 0.0) ? 1 : 0;
 	}
-	else if (abs(direction.y) >= abs(direction.x))
+	else if (abs(direction.y) >= abs(direction.x) && abs(direction.y) >= abs(direction.z))
 	{
-		faceID = (direction.y < 0.0) ? 5 : 4;
+		faceID = (direction.y < 0.0) ? 3 : 2;
 	}
 	else
 	{
-		faceID = (direction.x < 0.0) ? 2 : 3;
+		faceID = (direction.z < 0.0) ? 5 : 4;
 	}
 	return faceID;
 }

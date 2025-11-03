@@ -40,6 +40,7 @@ namespace Blueberry
 
 	private:
 		static AssetImporter* CreateOrGetImporter(const std::filesystem::path& path);
+		static AssetImporter* CreateImporter(const std::filesystem::path& path);
 
 	public:
 		static void Register(const String& extension, const size_t& importerType);

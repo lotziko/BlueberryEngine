@@ -3,9 +3,17 @@
 #include "Blueberry\Core\Time.h"
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Scene\Components\MeshRenderer.h"
+#include "Blueberry\Scene\Components\SkyRenderer.h"
 #include "Blueberry\Scene\Components\Light.h"
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Graphics\Mesh.h"
+#include "Blueberry\Graphics\Material.h"
+#include "Blueberry\Graphics\Texture.h"
+#include "Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\GfxTexture.h"
+#include "Blueberry\Graphics\GfxRenderTexturePool.h"
+#include "Blueberry\Graphics\StandardMeshes.h"
+#include "Blueberry\Graphics\DefaultMaterials.h"
 #include "Blueberry\Tools\FileHelper.h"
 
 #include "Log.h"
@@ -43,6 +51,12 @@ namespace Blueberry
 		uint32_t index;
 	};
 
+	struct InstanceData
+	{
+		MeshRenderer* renderer;
+		Transform* transform;
+	};
+
 	struct MeshData
 	{
 		void Release()
@@ -50,17 +64,21 @@ namespace Blueberry
 			vertexBuffer.free();
 			normalBuffer.free();
 			tangentBuffer.free();
+			uvBuffer.free();
+			submeshBuffer.free();
 			indexBuffer.free();
 			CUDA_CHECK(cudaFree((void*)gasOutput));
 		}
 
 		Mesh* mesh;
 		uint32_t chartCount;
-		List<Transform*> transforms;
+		List<InstanceData> instances;
 
 		CUDABuffer vertexBuffer;
 		CUDABuffer normalBuffer;
 		CUDABuffer tangentBuffer;
+		CUDABuffer uvBuffer;
+		CUDABuffer submeshBuffer;
 		CUDABuffer indexBuffer;
 
 		OptixTraversableHandle gasHandle;
@@ -99,6 +117,7 @@ namespace Blueberry
 		CalculationParams params = {};
 
 		List<MeshData> meshDatas = {};
+		Dictionary<ObjectId, CUDABuffer> textures = {};
 		OptixTraversableHandle iasHandle = 0;
 
 		PassState pass = {};
@@ -111,6 +130,7 @@ namespace Blueberry
 		List<uint2> validTexels = {};
 		List<uint32_t> atlasMask = {};
 		CalculationResult result = {};
+		CUDABuffer pointLights = {};
 		CUDABVH bvh = {};
 		unsigned int* completeCounter;
 
@@ -129,6 +149,7 @@ namespace Blueberry
 	static CUdeviceptr s_ParamsPtr = 0;
 	static CUdeviceptr s_DenoisingParamsPtr = 0;
 	static int s_Padding = 0;
+	static size_t s_BaseMapId = TO_HASH("_BaseMap");
 
 	typedef Record<RayGenData> RayGenSbtRecord;
 	typedef Record<MissData> MissSbtRecord;
@@ -157,36 +178,89 @@ namespace Blueberry
 			OPTIX_CHECK(optixDeviceContextCreate(cuCtx, &options, &state.context));
 		}
 	}
+
+	void CreateTextures(LightmapperState& state, const Dictionary<ObjectId, List<uint8_t>>& buffers)
+	{
+		for (auto& pair : buffers)
+		{
+			auto it = state.textures.find(pair.first);
+			if (it != state.textures.end())
+			{
+				it->second.upload(pair.second.data(), pair.second.size());
+			}
+			else
+			{
+				CUDABuffer texture = {};
+				texture.alloc_and_upload(pair.second.data(), pair.second.size());
+				state.textures.insert_or_assign(pair.first, texture);
+			}
+		}
+	}
 	
 	void InitializeAccels(LightmapperState& state, Scene* scene)
 	{
-		// Initialize meshes
+		// Initialize meshes and materials
 		{
 			Dictionary<ObjectId, uint32_t> existingMeshes = {};
 
 			for (auto& component : scene->GetIterator<MeshRenderer>())
 			{
 				MeshRenderer* meshRenderer = static_cast<MeshRenderer*>(component.second);
-				//AABB bounds = meshRenderer->GetBounds();
-				//float scale = (bounds.Extents.x + bounds.Extents.y + bounds.Extents.z) / 3;
 				Mesh* mesh = meshRenderer->GetMesh();
+				if (mesh == nullptr)
+				{
+					BB_ERROR(meshRenderer->GetEntity()->GetName() << " has no mesh.");
+					continue;
+				}
+				VertexLayout layout = mesh->GetLayout();
+				if (meshRenderer->GetMaterialCount() == 0)
+				{
+					BB_ERROR(meshRenderer->GetEntity()->GetName() << " has no materials.");
+					continue;
+				}
+				if (!layout.Has(VertexAttribute::Tangent))
+				{
+					BB_ERROR(mesh->GetName() << " has no tangents.");
+					continue;
+				}
+				if (!layout.Has(VertexAttribute::Texcoord1))
+				{
+					BB_ERROR(mesh->GetName() << " has no lightmap UVs.");
+					continue;
+				}
+				Material* material = meshRenderer->GetMaterial();
 				auto it = existingMeshes.find(mesh->GetObjectId());
 				if (it != existingMeshes.end())
 				{
-					//state.meshDatas[it->second].scales.emplace_back(scale);
-					state.meshDatas[it->second].transforms.emplace_back(meshRenderer->GetTransform());
+					state.meshDatas[it->second].instances.push_back({ meshRenderer, meshRenderer->GetTransform() });
 				}
 				else
 				{
+					existingMeshes.insert_or_assign(mesh->GetObjectId(), state.meshDatas.size());
 					MeshData data = {};
 					data.mesh = mesh;
-					//data.scales.emplace_back(scale);
-					data.transforms.emplace_back(meshRenderer->GetTransform());
+					data.instances.push_back({ meshRenderer, meshRenderer->GetTransform() });
 					data.vertexBuffer.alloc_and_upload(mesh->GetVertices(), mesh->GetVertexCount());
 					data.normalBuffer.alloc_and_upload(mesh->GetNormals(), mesh->GetVertexCount());
 					data.tangentBuffer.alloc_and_upload(mesh->GetTangents(), mesh->GetVertexCount());
+					data.uvBuffer.alloc_and_upload(mesh->GetUVs(0), mesh->GetVertexCount() * 2);
 					data.indexBuffer.alloc_and_upload(mesh->GetIndices(), mesh->GetIndexCount());
-					state.meshDatas.emplace_back(data);
+
+					uint32_t submeshCount = mesh->GetSubMeshCount();
+					if (submeshCount > 1)
+					{
+						List<uint32_t> submeshOffsets = {};
+						submeshOffsets.resize(mesh->GetIndexCount());
+						for (uint32_t i = 0; i < submeshCount; ++i)
+						{
+							auto& submesh = mesh->GetSubMesh(i);
+							uint32_t* begin = submeshOffsets.data() + submesh.GetIndexStart();
+							uint32_t* end = begin + submesh.GetIndexCount();
+							std::fill(begin, end, i);
+						}
+						data.submeshBuffer.alloc_and_upload(submeshOffsets.data(), mesh->GetIndexCount());
+					}
+					state.meshDatas.push_back(data);
 				}
 			}
 		}
@@ -201,7 +275,9 @@ namespace Blueberry
 			{
 				Mesh* mesh = data.mesh;
 				OptixBuildInput buildInput = {};
-				unsigned int flags = 1;
+				List<unsigned int> flags = {};
+				flags.resize(mesh->GetSubMeshCount());
+				std::fill(flags.begin(), flags.end(), 1); // any hit disabled
 
 				buildInput.type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
 				buildInput.triangleArray.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
@@ -212,8 +288,11 @@ namespace Blueberry
 				buildInput.triangleArray.indexStrideInBytes = sizeof(int3);
 				buildInput.triangleArray.numIndexTriplets = static_cast<unsigned int>(mesh->GetIndexCount()) / 3;
 				buildInput.triangleArray.indexBuffer = data.indexBuffer.data;
-				buildInput.triangleArray.flags = &flags;
-				buildInput.triangleArray.numSbtRecords = 1;
+				buildInput.triangleArray.flags = flags.data();
+				buildInput.triangleArray.numSbtRecords = mesh->GetSubMeshCount();
+				buildInput.triangleArray.sbtIndexOffsetBuffer = data.submeshBuffer.data;
+				buildInput.triangleArray.sbtIndexOffsetSizeInBytes = sizeof(uint32_t);
+				buildInput.triangleArray.sbtIndexOffsetStrideInBytes = sizeof(uint32_t);
 
 				OptixAccelBufferSizes gasBufferSizes;
 				OPTIX_CHECK(optixAccelComputeMemoryUsage(state.context, &accelOptions, &buildInput, 1, &gasBufferSizes));
@@ -246,7 +325,7 @@ namespace Blueberry
 			unsigned int instanceCount = 0;
 			for (auto& data : state.meshDatas)
 			{
-				instanceCount += data.transforms.size();
+				instanceCount += data.instances.size();
 			}
 			size_t instanceSizeInBytes = sizeof(OptixInstance) * instanceCount;
 
@@ -275,12 +354,14 @@ namespace Blueberry
 			OptixInstance* optixInstanceArray = BB_MALLOC_ARRAY(OptixInstance, instanceCount);
 			Matrix3x4* instanceMatrixArray = BB_MALLOC_ARRAY(Matrix3x4, instanceCount);
 			size_t instanceOffset = 0;
+			size_t sbtOffset = 0;
 
 			for (auto& data : state.meshDatas)
 			{
-				for (Transform* transform : data.transforms)
+				size_t sbtCount = data.mesh->GetSubMeshCount() * CLOSEST_HIT_COUNT;
+				for (auto& instance : data.instances)
 				{
-					Matrix transformMatrix = transform->GetLocalToWorldMatrix();
+					Matrix transformMatrix = instance.transform->GetLocalToWorldMatrix();
 					float tr[] = 
 					{
 						transformMatrix._11, transformMatrix._21, transformMatrix._31, transformMatrix._41,
@@ -292,13 +373,15 @@ namespace Blueberry
 					memcpy(optixInstance.transform, tr, sizeof(float) * 12);
 					optixInstance.flags = OPTIX_INSTANCE_FLAG_NONE;
 					optixInstance.instanceId = static_cast<unsigned int>(instanceOffset);
-					optixInstance.sbtOffset = static_cast<unsigned int>(instanceOffset * CLOSEST_HIT_COUNT);
+					optixInstance.sbtOffset = static_cast<unsigned int>(sbtOffset);
 					optixInstance.visibilityMask = 1u;
 					optixInstance.traversableHandle = data.gasHandle;
 
 					optixInstanceArray[instanceOffset] = optixInstance;
 					instanceMatrixArray[instanceOffset] = Matrix3x4(tr);
-					++instanceOffset;
+
+					instanceOffset += 1;
+					sbtOffset += sbtCount;
 				}
 			}
 
@@ -339,7 +422,7 @@ namespace Blueberry
 			{
 				state.pass.pipelineCompileOptions.usesMotionBlur = false;
 				state.pass.pipelineCompileOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_ANY;
-				state.pass.pipelineCompileOptions.numPayloadValues = 6;
+				state.pass.pipelineCompileOptions.numPayloadValues = 8;
 				state.pass.pipelineCompileOptions.numAttributeValues = 2;
 				state.pass.pipelineCompileOptions.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE; // should be OPTIX_EXCEPTION_FLAG_STACK_OVERFLOW;
 				state.pass.pipelineCompileOptions.pipelineLaunchParamsVariableName = "params";
@@ -369,7 +452,7 @@ namespace Blueberry
 		{
 			CUDA_CHECK_RESULT(cuModuleLoad(&state.denoiserPtxModule, "assets\\ptx\\Denoising.ptx"));
 			CUDA_CHECK_RESULT(cuModuleGetFunction(&state.denoiserKernelFirstPass, state.denoiserPtxModule, "__denoise__firstpass"));
-			CUDA_CHECK_RESULT(cuModuleGetFunction(&state.denoiserKernelpass, state.denoiserPtxModule, "__denoise__pass"));
+			CUDA_CHECK_RESULT(cuModuleGetFunction(&state.denoiserKernelpass, state.denoiserPtxModule, "__denoise__secondpass"));
 		}
 	}
 
@@ -553,43 +636,57 @@ namespace Blueberry
 				{
 					MissSbtRecord occlusionRecord = {};
 					OPTIX_CHECK(optixSbtRecordPackHeader(state.pass.missOcclusionProgGroup, &occlusionRecord));
-					missRecordsList.emplace_back(occlusionRecord);
+					missRecordsList.push_back(occlusionRecord);
 
 					MissSbtRecord radianceRecord = {};
 					OPTIX_CHECK(optixSbtRecordPackHeader(state.pass.missRadianceProgGroup, &radianceRecord));
-					missRecordsList.emplace_back(radianceRecord);
+					missRecordsList.push_back(radianceRecord);
 
 					MissSbtRecord shadowRecord = {};
 					OPTIX_CHECK(optixSbtRecordPackHeader(state.pass.missShadowProgGroup, &shadowRecord));
-					missRecordsList.emplace_back(shadowRecord);
+					missRecordsList.push_back(shadowRecord);
 				}
 
 				List<HitGroupSbtRecord> hitgroupRecordsList = {};
 				for (auto& data : state.meshDatas)
 				{
-					HitGroupSbtRecord occlusionRecord = {};
-					occlusionRecord.data.vertices = (float3*)data.vertexBuffer.data;
-					occlusionRecord.data.normals = (float3*)data.normalBuffer.data;
-					occlusionRecord.data.tangents = (float4*)data.tangentBuffer.data;
-					occlusionRecord.data.indices = (uint3*)data.indexBuffer.data;
-					OPTIX_CHECK(optixSbtRecordPackHeader(state.pass.hitgroupOcclusionProgGroup, &occlusionRecord));
-					hitgroupRecordsList.push_back(occlusionRecord);
+					for (auto& instance : data.instances)
+					{
+						uint32_t submeshCount = instance.renderer->GetMesh()->GetSubMeshCount();
+						for (uint32_t i = 0; i < submeshCount; ++i)
+						{
+							Material* material = instance.renderer->GetMaterial(i); // if empty or no base map need white texture
+							Texture* texture = material->GetTexture(s_BaseMapId);
 
-					HitGroupSbtRecord radianceRecord = {};
-					radianceRecord.data.vertices = (float3*)data.vertexBuffer.data;
-					radianceRecord.data.normals = (float3*)data.normalBuffer.data;
-					radianceRecord.data.tangents = (float4*)data.tangentBuffer.data;
-					radianceRecord.data.indices = (uint3*)data.indexBuffer.data;
-					OPTIX_CHECK(optixSbtRecordPackHeader(state.pass.hitgroupRadianceProgGroup, &radianceRecord));
-					hitgroupRecordsList.push_back(radianceRecord);
+							HitGroupSbtRecord occlusionRecord = {};
+							occlusionRecord.data.vertices = (float3*)data.vertexBuffer.data;
+							occlusionRecord.data.normals = (float3*)data.normalBuffer.data;
+							occlusionRecord.data.tangents = (float4*)data.tangentBuffer.data;
+							occlusionRecord.data.uvs = (float2*)data.uvBuffer.data;
+							occlusionRecord.data.indices = (uint3*)data.indexBuffer.data;
+							OPTIX_CHECK(optixSbtRecordPackHeader(state.pass.hitgroupOcclusionProgGroup, &occlusionRecord));
+							hitgroupRecordsList.push_back(occlusionRecord);
 
-					HitGroupSbtRecord shadowRecord = {};
-					shadowRecord.data.vertices = (float3*)data.vertexBuffer.data;
-					shadowRecord.data.normals = (float3*)data.normalBuffer.data;
-					shadowRecord.data.tangents = (float4*)data.tangentBuffer.data;
-					shadowRecord.data.indices = (uint3*)data.indexBuffer.data;
-					OPTIX_CHECK(optixSbtRecordPackHeader(state.pass.hitgroupShadowProgGroup, &shadowRecord));
-					hitgroupRecordsList.push_back(shadowRecord);
+							HitGroupSbtRecord radianceRecord = {};
+							radianceRecord.data.vertices = (float3*)data.vertexBuffer.data;
+							radianceRecord.data.normals = (float3*)data.normalBuffer.data;
+							radianceRecord.data.tangents = (float4*)data.tangentBuffer.data;
+							radianceRecord.data.uvs = (float2*)data.uvBuffer.data;
+							radianceRecord.data.indices = (uint3*)data.indexBuffer.data;
+							radianceRecord.data.materialColor = texture == nullptr ? nullptr : (uchar4*)state.textures[texture->GetObjectId()].data;
+							OPTIX_CHECK(optixSbtRecordPackHeader(state.pass.hitgroupRadianceProgGroup, &radianceRecord));
+							hitgroupRecordsList.push_back(radianceRecord);
+
+							HitGroupSbtRecord shadowRecord = {};
+							shadowRecord.data.vertices = (float3*)data.vertexBuffer.data;
+							shadowRecord.data.normals = (float3*)data.normalBuffer.data;
+							shadowRecord.data.tangents = (float4*)data.tangentBuffer.data;
+							shadowRecord.data.uvs = (float2*)data.uvBuffer.data;
+							shadowRecord.data.indices = (uint3*)data.indexBuffer.data;
+							OPTIX_CHECK(optixSbtRecordPackHeader(state.pass.hitgroupShadowProgGroup, &shadowRecord));
+							hitgroupRecordsList.push_back(shadowRecord);
+						}
+					}
 				}
 
 				CUdeviceptr missRecords = 0;
@@ -660,19 +757,19 @@ namespace Blueberry
 						chartBounds.w = std::max(uv.y, chartBounds.w);
 					}
 				}
-				charts.emplace_back(chartBounds);
+				charts.push_back(chartBounds);
 			}
 			
 			float texelPerUnit = state.params.texelPerUnit;
-			for (auto& transform : data.transforms)
+			for (auto& instance : data.instances)
 			{
-				if (!transform->GetEntity()->GetComponent<MeshRenderer>()->IsBakeable())
+				if (!instance.renderer->IsBakeable())
 				{
 					continue;
 				}
 
-				state.result.chartInstanceOffset.insert_or_assign(transform->GetEntity()->GetComponent<MeshRenderer>()->GetObjectId(), atlasCharts.size() + 1);
-				Matrix localToWorld = transform->GetLocalToWorldMatrix();
+				state.result.chartInstanceOffset.insert_or_assign(instance.renderer->GetObjectId(), atlasCharts.size() + 1);
+				Matrix localToWorld = instance.transform->GetLocalToWorldMatrix();
 				
 				for (uint32_t i = 0; i < data.chartCount; ++i)
 				{
@@ -719,7 +816,7 @@ namespace Blueberry
 							atlasChartBounds.y = std::min(vertex.y, atlasChartBounds.y);
 							atlasChartBounds.z = std::max(vertex.x, atlasChartBounds.z);
 							atlasChartBounds.w = std::max(vertex.y, atlasChartBounds.w);
-							atlasVertices.emplace_back(vertex);
+							atlasVertices.push_back(vertex);
 						}
 					}
 
@@ -750,7 +847,7 @@ namespace Blueberry
 							chartData.mask[x + y * chartData.size.x] = intersects;
 						}
 					}
-					atlasCharts.emplace_back(std::move(chartData));
+					atlasCharts.push_back(std::move(chartData));
 				}
 			}
 		}
@@ -835,7 +932,7 @@ namespace Blueberry
 									if (state.atlasMask[index] == 0 && chart.mask[y * chart.size.x + x])
 									{
 										state.atlasMask[index] = maskChartOffset;
-										state.validTexels.emplace_back(make_uint2(i + x, j + y));
+										state.validTexels.push_back(make_uint2(i + x, j + y));
 									}
 								}
 							}
@@ -852,6 +949,7 @@ namespace Blueberry
 			++maskChartOffset;
 		}
 
+		uint32_t instanceOffset = 0;
 		maskChartOffset = 1;
 		for (auto& data : state.meshDatas)
 		{
@@ -859,10 +957,11 @@ namespace Blueberry
 			uint32_t vertexCount = data.mesh->GetVertexCount();
 			Vector3* ligthmapUvs = reinterpret_cast<Vector3*>(mesh->GetUVs(1));
 
-			for (Transform* transform : data.transforms)
+			for (auto& instance : data.instances)
 			{
-				if (!transform->GetEntity()->GetComponent<MeshRenderer>()->IsBakeable())
+				if (!instance.renderer->IsBakeable())
 				{
+					instanceOffset += 1;
 					continue;
 				}
 
@@ -872,12 +971,13 @@ namespace Blueberry
 					Vector4 scaleOffset = state.result.chartOffsetScale[maskChartOffset + static_cast<uint32_t>(uv.z)];
 					uv.x = uv.x * scaleOffset.z + scaleOffset.x;
 					uv.y = uv.y * scaleOffset.w + scaleOffset.y;
-					uvs.emplace_back(uv);
+					uvs.push_back(uv);
 				}
 
-				CUDABVHInput bvhInput = { uvs.data(), data.mesh->GetIndices(), data.mesh->GetVertexCount(), data.mesh->GetIndexCount(), data.vertexBuffer.data, data.normalBuffer.data, data.tangentBuffer.data, data.indexBuffer.data };
+				CUDABVHInput bvhInput = { uvs.data(), data.mesh->GetIndices(), data.mesh->GetVertexCount(), data.mesh->GetIndexCount(), data.vertexBuffer.data, data.normalBuffer.data, data.tangentBuffer.data, data.indexBuffer.data, instanceOffset };
 				state.bvh.AddInstance(bvhInput);
 				uvs.clear();
+				instanceOffset += 1;
 				maskChartOffset += data.chartCount;
 			}
 		}
@@ -929,19 +1029,46 @@ namespace Blueberry
 
 	void InitializeLights(LightmapperState& state, Scene* scene)
 	{
+		List<PointLight> pointLights = {};
 		for (auto component : scene->GetIterator<Light>())
 		{
 			Light* light = static_cast<Light*>(component.second);
-			if (light->GetType() == LightType::Directional)
+			Transform* transform = light->GetTransform();
+			LightType type = light->GetType();
+			Color color = light->GetColor();
+			float intensity = light->GetIntensity();
+
+			if (type == LightType::Point)
 			{
-				Transform* transform = light->GetTransform();
+				Vector3 pos = transform->GetPosition();
+				PointLight pointLight = {};
+				pointLight.position = make_float3(pos.x, pos.y, pos.z);
+				pointLight.color = make_float3(color.R() * intensity, color.G() * intensity, color.B() * intensity);
+				pointLights.push_back(std::move(pointLight));
+			}
+			else if (type == LightType::Directional)
+			{
 				Vector3 dir = Vector3::Transform(Vector3::Backward, transform->GetRotation());
 				dir.Normalize();
-				Color color = light->GetColor();
-				float intensity = light->GetIntensity();
-				state.lightmappingParams.directionalLight.direction = { dir.x, dir.y, dir.z };
-				state.lightmappingParams.directionalLight.color = { color.R() * intensity, color.G() * intensity, color.B() * intensity };
+				DirectionalLight directionalLight = {};
+				directionalLight.direction = make_float3(dir.x, dir.y, dir.z);
+				directionalLight.color = make_float3(color.R() * intensity, color.G() * intensity, color.B() * intensity);
+				state.lightmappingParams.directionalLight = directionalLight;
 			}
+		}
+		size_t pointLightCount = pointLights.size();
+		if (pointLightCount > 0)
+		{
+			state.pointLights.resize(pointLightCount * sizeof(PointLight));
+			state.pointLights.upload(pointLights.data(), pointLightCount);
+			state.lightmappingParams.pointLights = reinterpret_cast<PointLight*>(state.pointLights.data);
+		}
+		state.lightmappingParams.pointLightCount = static_cast<unsigned int>(pointLightCount);
+
+		auto it = state.textures.find(0);
+		if (it != state.textures.end())
+		{
+			state.lightmappingParams.skyColor = (uchar4*)it->second.data;
 		}
 	}
 
@@ -1012,6 +1139,20 @@ namespace Blueberry
 	void FixCharts(Vector4* temp, Vector4* result, const Vector2Int& resultSize)
 	{
 		int atlasSize = static_cast<int>(s_State.atlasMask.size());
+		/*for (int j = 0; j < resultSize.y; ++j)
+		{
+			for (int i = 0; i < resultSize.x; ++i)
+			{
+				int index = j * resultSize.x + i;
+				Vector4 center = *(temp + index);
+				uint32_t centerChartIndex = s_State.atlasMask[index];
+
+				if (center.w > 0.5)
+				{
+					*(result + index) = Vector4(0, 1, 0, 1);
+				}
+			}
+		}*/
 		for (int j = 0; j < resultSize.y; ++j)
 		{
 			for (int i = 0; i < resultSize.x; ++i)
@@ -1058,7 +1199,7 @@ namespace Blueberry
 					for (int y = 0; y < 4; ++y)
 					{
 						int index = (j + y) * resultSize.x + (i + x);
-						Vector4 color = temp[index];
+						Vector4 color = result[index];
 						if (color.w > 0.5)
 						{
 							anyValid = true;
@@ -1079,9 +1220,9 @@ namespace Blueberry
 						for (int y = 0; y < 4; ++y)
 						{
 							int index = (j + y) * resultSize.x + (i + x);
-							if (temp[index].w < 0.5)
+							if (result[index].w < 0.5)
 							{
-								temp[index] = mean;
+								result[index] = mean;
 							}
 						}
 					}
@@ -1097,8 +1238,77 @@ namespace Blueberry
 			return;
 		}
 
+		// Render textures
+		Dictionary<ObjectId, List<uint8_t>> buffers = {};
+		GfxTexture* renderTexture = GfxRenderTexturePool::Get(MATERIAL_COLOR_SIZE, MATERIAL_COLOR_SIZE, 1, 1, 1, TextureFormat::R8G8B8A8_UNorm_SRGB, TextureDimension::Texture2D, WrapMode::Clamp, FilterMode::Bilinear, true, false);
+		GfxDevice::SetRenderTarget(renderTexture);
+		GfxDevice::SetViewport(0, 0, MATERIAL_COLOR_SIZE, MATERIAL_COLOR_SIZE);
+		for (auto& component : scene->GetIterator<MeshRenderer>())
+		{
+			MeshRenderer* meshRenderer = static_cast<MeshRenderer*>(component.second);
+			for (uint32_t i = 0; i < meshRenderer->GetMaterialCount(); ++i)
+			{
+				Material* material = meshRenderer->GetMaterial(i);
+				if (material == nullptr)
+				{
+					continue;
+				}
+				Texture* texture = material->GetTexture(s_BaseMapId);
+				ObjectId objectId = texture->GetObjectId();
+
+				auto it = buffers.find(objectId);
+				if (it == buffers.end())
+				{
+					GfxDevice::SetGlobalTexture(TO_HASH("_BlitTexture"), texture->Get());
+					GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetBlit(), 0));
+					List<uint8_t> buffer = {};
+					buffer.resize(MATERIAL_COLOR_SIZE * MATERIAL_COLOR_SIZE * 4);
+					renderTexture->GetData(buffer.data());
+					buffers.insert_or_assign(objectId, std::move(buffer));
+				}
+			}
+		}
+
+		for (auto& component : scene->GetIterator<SkyRenderer>())
+		{
+			SkyRenderer* skyRenderer = static_cast<SkyRenderer*>(component.second);
+			GfxTexture* skyboxRenderTexture = GfxRenderTexturePool::Get(SKY_COLOR_SIZE, SKY_COLOR_SIZE, 1, 1, 1, TextureFormat::R8G8B8A8_UNorm_SRGB, TextureDimension::TextureCube, WrapMode::Clamp, FilterMode::Bilinear, true, false);
+			
+			GfxDevice::SetViewCount(6);
+			GfxDevice::SetRenderTarget(skyboxRenderTexture);
+			GfxDevice::SetViewport(0, 0, SKY_COLOR_SIZE, SKY_COLOR_SIZE);
+			GfxDevice::SetGlobalTexture(TO_HASH("_BlitTexture"), skyRenderer->GetMaterial()->GetTexture(s_BaseMapId)->Get());
+			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetBlit(), 1)); // TODO render material instead of blit
+			GfxDevice::SetViewCount(1);
+
+			List<uint8_t> temporarybuffer = {};
+			temporarybuffer.resize(SKY_COLOR_SIZE * SKY_COLOR_SIZE * 6 * 4);
+			List<uint8_t> buffer = {};
+			buffer.resize(temporarybuffer.size());
+			skyboxRenderTexture->GetData(temporarybuffer.data());
+
+			uint32_t bytesPerPixel = 4;
+			size_t rowPitch = SKY_COLOR_SIZE * bytesPerPixel;
+			size_t wideRowPitch = rowPitch * 6;
+			size_t slicePitch = rowPitch * SKY_COLOR_SIZE;
+			size_t wideSlicePitch = slicePitch * 6;
+			for (uint32_t i = 0; i < 6; ++i)
+			{
+				for (uint32_t j = 0; j < SKY_COLOR_SIZE; ++j)
+				{
+					memcpy(buffer.data() + i * rowPitch + j * wideRowPitch, temporarybuffer.data() + i * slicePitch + j * rowPitch, SKY_COLOR_SIZE * bytesPerPixel);
+				}
+			}
+			buffers.insert_or_assign(0, std::move(buffer));
+			
+			GfxRenderTexturePool::Release(skyboxRenderTexture);
+			break;
+		}
+		GfxDevice::SetRenderTarget(nullptr);
+		GfxRenderTexturePool::Release(renderTexture);
+
 		s_LightmappingState = LightmappingState::Calculating;
-		std::thread worker([scene, params]()
+		std::thread worker([scene, params, buffers]()
 		{
 			BB_INITIALIZE_ALLOCATOR_THREAD();
 			s_State = {};
@@ -1107,6 +1317,7 @@ namespace Blueberry
 			CreateContext(s_State);
 			//CreateOptixDenoiser(s_State);
 			CreateDenoiserPTXModule(s_State);
+			CreateTextures(s_State, buffers);
 			InitializeAccels(s_State, scene);
 			CreatePTXModule(s_State);
 			CreateProgramGroups(s_State);

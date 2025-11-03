@@ -120,6 +120,10 @@ namespace Blueberry
 								Mesh* mesh = meshRenderer->GetMesh();
 								uint32_t* indices = mesh->GetIndices();
 								Vector3* uvs = reinterpret_cast<Vector3*>(mesh->GetUVs(1));
+								if (uvs == nullptr)
+								{
+									continue;
+								}
 								uint32_t indexCount = mesh->GetIndexCount();
 
 								for (uint32_t i = 0; i < indexCount; i += 3)
@@ -175,8 +179,9 @@ namespace Blueberry
 					auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
 					TextureImporter* importer = static_cast<TextureImporter*>(AssetDB::GetImporter(relativePath.string().data()));
 					importer->SetTextureShape(TextureImporter::TextureShape::Texture2D);
-					importer->SetTextureFormat(TextureImporter::TextureFormat::RGBA32);
-					importer->SetFilterMode(FilterMode::Trilinear);
+					importer->SetTextureFormat(TextureImporter::TextureFormat::BC6H);
+					importer->SetFilterMode(FilterMode::Bilinear);
+					importer->SetGenerateMipMaps(false);
 					importer->SaveAndReimport();
 					AssetDB::Refresh();
 					Texture2D* lightmap = static_cast<Texture2D*>(ObjectDB::GetObjectFromGuid(importer->GetGuid(), importer->GetMainObject()));

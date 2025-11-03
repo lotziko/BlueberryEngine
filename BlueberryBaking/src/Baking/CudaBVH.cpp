@@ -29,11 +29,11 @@ namespace Blueberry
 			Vector3 p3 = vertices[indices[i + 2]];
 
 			BVHTriangle triangle = { make_float2(p1.x, p1.y), make_float2(p2.x, p2.y), make_float2(p3.x, p3.y), make_uint2(instanceIndex, i) };
-			s_Triangles.emplace_back(std::move(triangle));
+			s_Triangles.push_back(std::move(triangle));
 		}
 
-		BVHInstance instance = { (float3*)input.vertexBuffer, (float3*)input.normalBuffer, (float4*)input.tangentBuffer, (uint3*)input.indexBuffer, input.vertexCount };
-		s_Instances.emplace_back(instance);
+		BVHInstance instance = { (float3*)input.vertexBuffer, (float3*)input.normalBuffer, (float4*)input.tangentBuffer, (uint3*)input.indexBuffer, input.vertexCount, input.globalIndex };
+		s_Instances.push_back(std::move(instance));
 	}
 
 	void CUDABVH::Build()
@@ -225,7 +225,7 @@ namespace Blueberry
 		node.bounds = bounds;
 		node.triangleStart = triangleStart;
 		node.triangleCount = triangleCount;
-		s_Nodes.emplace_back(node);
+		s_Nodes.push_back(std::move(node));
 		return static_cast<uint32_t>(size);
 	}
 }

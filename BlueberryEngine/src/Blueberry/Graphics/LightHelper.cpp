@@ -7,22 +7,22 @@ namespace Blueberry
 {
 	static Matrix s_PointLightMatrices[6] =
 	{
-		Matrix::CreateLookAt(Vector3::Zero, Vector3::Forward, Vector3::Up),
-		Matrix::CreateLookAt(Vector3::Zero, Vector3::Backward, Vector3::Up),
-		Matrix::CreateLookAt(Vector3::Zero, Vector3::Left, Vector3::Up),
 		Matrix::CreateLookAt(Vector3::Zero, Vector3::Right, Vector3::Up),
+		Matrix::CreateLookAt(Vector3::Zero, Vector3::Left, Vector3::Up),
 		Matrix::CreateLookAt(Vector3::Zero, Vector3::Up, Vector3::Backward),
-		Matrix::CreateLookAt(Vector3::Zero, Vector3::Down, Vector3::Forward)
+		Matrix::CreateLookAt(Vector3::Zero, Vector3::Down, Vector3::Forward),
+		Matrix::CreateLookAt(Vector3::Zero, Vector3::Forward, Vector3::Up),
+		Matrix::CreateLookAt(Vector3::Zero, Vector3::Backward, Vector3::Up)
 	};
 
 	static Vector3 s_PointLightDirection[6] =
 	{
-		Vector3::Forward, Vector3::Backward, Vector3::Left, Vector3::Right, Vector3::Up, Vector3::Down
+		Vector3::Right, Vector3::Left, Vector3::Up, Vector3::Down, Vector3::Forward, Vector3::Backward
 	};
 
 	static Vector3 s_PointLightUp[6] =
 	{
-		Vector3::Up, Vector3::Up, Vector3::Up, Vector3::Up, Vector3::Backward, Vector3::Forward
+		Vector3::Up, Vector3::Up, Vector3::Backward, Vector3::Forward, Vector3::Up, Vector3::Up
 	};
 
 	Matrix LightHelper::GetViewMatrix(Light* light, Transform* transform, const uint8_t& slice)

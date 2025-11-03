@@ -28,6 +28,8 @@ namespace Blueberry
 
 		void SetMaterials(const List<Material*> materials);
 
+		uint32_t GetMaterialCount();
+
 		virtual const AABB& GetBounds() final;
 
 		const bool& IsBakeable();

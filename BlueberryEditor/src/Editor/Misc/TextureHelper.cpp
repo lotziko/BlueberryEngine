@@ -9,6 +9,7 @@
 #include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Graphics\GfxBuffer.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
+#include "Blueberry\Graphics\DefaultMaterials.h"
 #include "Concrete\Windows\ComPtr.h"
 #include "BCFlipper.h"
 
@@ -202,11 +203,9 @@ namespace Blueberry
 		temporaryTexture->SetData(temporaryData, scratchImage.GetPixelsSize());
 		temporaryTexture->Apply();
 		GfxTexture* temporaryTextureCube = GfxRenderTexturePool::Get(size, size, 1, 1, 1, uncompressedFormat, TextureDimension::TextureCube, WrapMode::Clamp, FilterMode::Bilinear, true);
-		uint32_t blockSize = static_cast<uint32_t>(scratchImage.GetPixelsSize() / (metadata.width * metadata.height));
-		size_t dataSize = size * size * 6 * blockSize;
-
+		
 		DirectX::ScratchImage cubeScratchImage = {};
-		cubeScratchImage.InitializeCube(static_cast<DXGI_FORMAT>(uncompressedFormat), metadata.width, metadata.height, 1, 1);
+		cubeScratchImage.InitializeCube(static_cast<DXGI_FORMAT>(uncompressedFormat), size, size, 1, 1);
 	
 		if (s_EquirectangularToCubemapMaterial == nullptr)
 		{
@@ -223,7 +222,7 @@ namespace Blueberry
 		temporaryTextureCube->GetData(cubeScratchImage.GetPixels());
 
 		Object::Destroy(temporaryTexture);
-		GfxRenderTexturePool::Release(temporaryTextureCube);
+		//GfxRenderTexturePool::Release(temporaryTextureCube);
 		scratchImage = std::move(cubeScratchImage);
 	}
 
@@ -256,13 +255,7 @@ namespace Blueberry
 		auto metadata = scratchImage.GetMetadata();
 		const uint32_t bytesPerPixel = 8;
 		uint32_t size = std::min(metadata.width, metadata.height);
-
-		if (s_GenerateReflectionMaterial == nullptr)
-		{
-			Shader* shader = static_cast<Shader*>(AssetLoader::Load("assets/shaders/GenerateReflection.shader"));
-			s_GenerateReflectionMaterial = Material::Create(shader);
-		}
-
+		
 		static GfxTexture* temporaryTexture = nullptr;
 
 		if (temporaryTexture == nullptr)
@@ -287,7 +280,7 @@ namespace Blueberry
 		GfxDevice::SetGlobalTexture(TO_HASH("_SourceTexture"), texture);
 		GfxDevice::SetRenderTarget(temporaryTexture, nullptr);
 		GfxDevice::SetViewport(0, 0, size, size);
-		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_GenerateReflectionMaterial, 0));
+		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetBlit(), 1));
 		GfxDevice::SetRenderTarget(nullptr);
 		GfxDevice::SetViewCount(1);
 		temporaryTexture->GetData(scratchImage.GetPixels());
@@ -378,7 +371,7 @@ namespace Blueberry
 			GfxDevice::SetRenderTarget(temporaryTexture1, nullptr, i);
 			GfxDevice::SetViewport(0, 0, viewportSize, viewportSize);
 			GfxDevice::SetGlobalTexture(TO_HASH("_SourceTexture"), temporaryTexture0);
-			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_GenerateReflectionMaterial, 1));
+			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_GenerateReflectionMaterial, 0));
 
 			viewportSize /= 2;
 		}

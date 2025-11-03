@@ -400,6 +400,13 @@ namespace Blueberry
 
 	void Mesh::Apply()
 	{
+		if (m_SubMeshes.size() == 0)
+		{
+			SubMeshData subMesh = {};
+			subMesh.SetIndexCount(m_VertexCount);
+			m_SubMeshes.push_back(std::move(subMesh));
+		}
+
 		if (m_BufferIsDirty)
 		{
 			m_Layout.Apply();

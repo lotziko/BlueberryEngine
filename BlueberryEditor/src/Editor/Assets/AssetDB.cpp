@@ -93,7 +93,9 @@ namespace Blueberry
 		{
 			return dataIt->second;
 		}
-		return nullptr;
+		auto path = Path::GetAssetsPath();
+		path.append(relativePath);
+		return CreateImporter(path);
 	}
 
 	AssetImporter* AssetDB::GetImporter(const Guid& guid)
@@ -105,7 +107,7 @@ namespace Blueberry
 		}
 		return nullptr;
 	}
-	
+
 	List<std::pair<Object*, FileId>> AssetDB::LoadAssetObjects(const Guid& guid, const Dictionary<FileId, ObjectId>& existingObjects)
 	{
 		BinarySerializer serializer;
@@ -276,16 +278,24 @@ namespace Blueberry
 		}
 
 		auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
-		auto relativePathString = relativePath.string();
-		auto relativeMetaPath = relativePath;
-		relativeMetaPath += ".meta";
-		auto relativeMetaPathString = relativeMetaPath.string();
-
-		AssetImporter* existingImporter = GetImporter(String(relativePathString));
+		AssetImporter* existingImporter = GetImporter(String(relativePath.string()));
 		if (existingImporter != nullptr)
 		{
 			return existingImporter;
 		}
+
+		return CreateImporter(relativePath);
+	}
+
+	AssetImporter* AssetDB::CreateImporter(const std::filesystem::path& path)
+	{
+		auto extension = path.extension();
+		auto extensionString = extension.string();
+
+		auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
+		auto relativeMetaPath = relativePath;
+		relativeMetaPath += ".meta";
+		auto relativeMetaPathString = relativeMetaPath.string();
 
 		auto metaPath = path;
 		metaPath += ".meta";
@@ -311,7 +321,7 @@ namespace Blueberry
 			importer = AssetImporter::CreateFromMeta(relativePath, relativeMetaPath);
 			ImporterInfoCache::Get(importer);
 		}
-		s_Importers.insert_or_assign(String(relativePathString), importer);
+		s_Importers.insert_or_assign(String(relativePath.string()), importer);
 		return importer;
 	}
 
