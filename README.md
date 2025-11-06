@@ -8,6 +8,8 @@ This is my hobby 3d game engine written in C++ for Windows.
 ## Features
 - Global illumination (lightmaps, probes)
 - Volumetric fog
+- Clustered forward shading
+- Post processing (bloom, auto exposure, tonemapping)
 - PBR
 - Shader variants
 - Physics
