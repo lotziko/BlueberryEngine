@@ -1,61 +1,147 @@
-#include "bbpch.h"
-#include "Engine.h"
+#include "Blueberry\Core\Engine.h"
 
-#include "Blueberry\Scene\Scene.h"
-#include "Blueberry\Graphics\GraphicsDevice.h"
-#include "Blueberry\Graphics\Renderer2D.h"
-#include "Blueberry\Core\ServiceContainer.h"
-
+#include "..\Core\LayerStack.h"
+#include "Blueberry\Core\Window.h"
 #include "Blueberry\Core\Layer.h"
+#include "Blueberry\Scene\Scene.h"
+#include "..\Scene\RegisterSceneTypes.h"
+#include "Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\Renderer2D.h"
+#include "Blueberry\Graphics\Concrete\DefaultRenderer.h"
+#include "Blueberry\Input\Input.h"
+#include "Blueberry\Threading\JobSystem.h"
+#include "..\Graphics\RegisterGraphicsTypes.h"
+#include "Blueberry\Graphics\DefaultShaders.h"
 
-bool Engine::Initialize(const WindowProperties& properties)
+#include <chrono>
+#include <thread>
+
+namespace Blueberry
 {
-	m_Window = Window::Create(properties);
-
-	Ref<EventDispatcher> eventDispatcher = CreateRef<EventDispatcher>();
-	m_Window->SetEventDispatcher(eventDispatcher);
-
-	Ref<GraphicsDevice> graphicsDevice = GraphicsDevice::Create();
-	if (!graphicsDevice->Initialize(properties.Width, properties.Height, m_Window->GetHandle()))
+	bool Engine::Initialize(const WindowProperties& properties)
 	{
-		return false;
+		m_Window = Window::Create(properties);
+		m_LayerStack = new LayerStack();
+		s_Instance = this;
+
+		ObjectDB::Initialize();
+
+		if (!GfxDevice::Initialize(properties.Width, properties.Height, m_Window->GetHandle()))
+		{
+			return false;
+		}
+
+		if (!Renderer2D::Initialize())
+		{
+			return false;
+		}
+
+		RegisterSceneTypes();
+		RegisterGraphicsTypes();
+
+		DefaultRenderer::Initialize();
+		Input::Initialize();
+		JobSystem::Initialize();
+		DefaultShaders::Initialize();
+
+		return true;
 	}
 
-	Ref<Renderer2D> renderer2D = CreateRef<Renderer2D>(graphicsDevice);
-	if (!renderer2D->Initialize())
+	void Engine::Shutdown()
 	{
-		return false;
+		Renderer2D::Shutdown();
+		DefaultRenderer::Shutdown();
+		Input::Shutdown();
+		delete m_LayerStack;
+		delete m_Window;
+
+		ObjectDB::Shutdown();
+		GfxDevice::Shutdown();
 	}
 
-	Ref<ContentManager> contentManager = CreateRef<ContentManager>(graphicsDevice);
+	void Engine::Run()
+	{
+		// Based on https://stackoverflow.com/questions/63429337/limit-fps-in-loop-c
+		using framerate = std::chrono::duration<int, std::ratio<1, 60>>;
+		auto prev = std::chrono::system_clock::now();
+		auto next = prev + framerate{ 1 };
+		int N = 0;
+		std::chrono::system_clock::duration sum{ 0 };
 
-	m_ServiceContainer = CreateRef<ServiceContainer>();
-	m_ServiceContainer->EventDispatcher = eventDispatcher;
-	m_ServiceContainer->ContentManager = contentManager;
-	m_ServiceContainer->GraphicsDevice = graphicsDevice;
-	m_ServiceContainer->Renderer2D = renderer2D;
+		while (ProcessMessages())
+		{
+			bool hasCallbacks = m_WaitFrameCallback != nullptr;
+			if (hasCallbacks)
+			{
+				m_WaitFrameCallback();
+			}
+			else
+			{
+				std::this_thread::sleep_until(next);
+				next += framerate{ 1 };
+			}
 
-	return true;
-}
+			Update();
+			Draw();
 
-bool Engine::ProcessMessages()
-{
-	return m_Window->ProcessMessages();
-}
+			if (!hasCallbacks)
+			{
+				auto now = std::chrono::system_clock::now();
+				sum += now - prev;
+				++N;
+				prev = now;
+			}
+		}
+	}
 
-void Engine::Update()
-{
-}
+	void Engine::PushLayer(Layer* layer)
+	{
+		m_LayerStack->PushLayer(layer);
+		layer->OnAttach();
+	}
 
-void Engine::Draw()
-{
-	for (Layer* layer : m_LayerStack)
-		layer->OnDraw();
-}
+	void Engine::AddWaitFrameCallback(void(*waitFrameCallback)())
+	{
+		m_WaitFrameCallback = waitFrameCallback;
+	}
 
-void Engine::PushLayer(Layer* layer)
-{
-	m_LayerStack.PushLayer(layer);
-	layer->SetServiceContainer(m_ServiceContainer);
-	layer->OnAttach();
+	void Engine::RemoveWaitFrameCallback(void(*waitFrameCallback)())
+	{
+		if (m_WaitFrameCallback == waitFrameCallback)
+		{
+			m_WaitFrameCallback = nullptr;
+		}
+	}
+
+	Engine* Engine::GetInstance()
+	{
+		return s_Instance;
+	}
+
+	bool Engine::ProcessMessages()
+	{
+		return m_Window->ProcessMessages();
+	}
+
+	void Engine::Update()
+	{
+		if (m_Window->IsActive())
+		{
+			for (Layer* layer : *m_LayerStack)
+			{
+				layer->OnUpdate();
+			}
+		}
+	}
+
+	void Engine::Draw()
+	{
+		if (m_Window->IsActive())
+		{
+			for (Layer* layer : *m_LayerStack)
+			{
+				layer->OnDraw();
+			}
+		}
+	}
 }

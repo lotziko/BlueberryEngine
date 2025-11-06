@@ -1,0 +1,79 @@
+#include "VolumetricFog.h"
+
+#include "Blueberry\Assets\AssetLoader.h"
+#include "Blueberry\Core\Time.h"
+#include "Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\GfxTexture.h"
+#include "..\RenderContext.h"
+#include "..\Buffers\PerCameraLightDataConstantBuffer.h"
+#include "..\Buffers\FogViewDataConstantBuffer.h"
+#include "ShadowAtlas.h"
+#include "Blueberry\Graphics\ComputeShader.h"
+#include "Blueberry\Graphics\Structs.h"
+#include "Blueberry\Scene\Components\Light.h"
+
+namespace Blueberry
+{
+	static Vector3Int s_FrustumVolumeSize = Vector3Int(128, 96, 128);
+	static size_t s_InjectFogVolumeId = TO_HASH("_InjectFogVolume");
+	static size_t s_InjectedFogVolumeId = TO_HASH("_InjectedFogVolume");
+	static size_t s_ScatterNoBlurFogVolumeId = TO_HASH("_ScatterNoBlurFogVolume");
+	static size_t s_ScatterBlurFogVolumeId = TO_HASH("_ScatterBlurFogVolume");
+	static size_t s_ScatterFogVolumeId = TO_HASH("_ScatterFogVolume");
+
+	void VolumetricFog::Initialize()
+	{
+		s_VolumetricFogShader = static_cast<ComputeShader*>(AssetLoader::Load("assets/shaders/VolumetricFog.compute"));
+
+		TextureProperties textureProperties = {};
+
+		textureProperties.width = s_FrustumVolumeSize.x;
+		textureProperties.height = s_FrustumVolumeSize.y;
+		textureProperties.depth = s_FrustumVolumeSize.z;
+		textureProperties.antiAliasing = 1;
+		textureProperties.mipCount = 1;
+		textureProperties.format = TextureFormat::R16G16B16A16_UNorm;
+		textureProperties.dimension = TextureDimension::Texture3D;
+		textureProperties.wrapMode = WrapMode::Clamp;
+		textureProperties.filterMode = FilterMode::Bilinear;
+		textureProperties.isRenderTarget = false;
+		textureProperties.isReadable = false;
+		textureProperties.isWritable = false;
+		textureProperties.isUnorderedAccess = true;
+
+		GfxDevice::CreateTexture(textureProperties, s_FrustumVolume0);
+		GfxDevice::CreateTexture(textureProperties, s_FrustumVolume1);
+	}
+
+	void VolumetricFog::Shutdown()
+	{
+		Object::Destroy(s_VolumetricFogShader);
+		delete s_FrustumVolume0;
+		delete s_FrustumVolume1;
+	}
+
+	void VolumetricFog::CalculateFrustum(const CullingResults& results, const CameraData& data, ShadowAtlas* atlas)
+	{
+		bool isEven = Time::GetFrameCount() % 2 == 0;
+		FogViewDataConstantBuffer::BindData(data, s_FrustumVolumeSize);
+		GfxDevice::SetGlobalTexture(s_InjectFogVolumeId, s_FrustumVolume0);
+		GfxDevice::Dispatch(s_VolumetricFogShader->GetKernel(0), s_FrustumVolumeSize.x / 16, s_FrustumVolumeSize.y / 16, 1);
+		
+		GfxDevice::SetGlobalTexture(s_InjectedFogVolumeId, s_FrustumVolume0);
+		GfxDevice::SetGlobalTexture(s_ScatterFogVolumeId, s_FrustumVolume1);
+		GfxDevice::Dispatch(s_VolumetricFogShader->GetKernel(1), s_FrustumVolumeSize.x / 8, s_FrustumVolumeSize.y / 8, 1);
+
+		GfxDevice::SetGlobalTexture(s_ScatterNoBlurFogVolumeId, s_FrustumVolume1);
+		GfxDevice::SetGlobalTexture(s_ScatterBlurFogVolumeId, s_FrustumVolume0);
+		GfxDevice::Dispatch(s_VolumetricFogShader->GetKernel(2), s_FrustumVolumeSize.x / 8, s_FrustumVolumeSize.y / 8, s_FrustumVolumeSize.z / 8);
+		
+		GfxDevice::SetGlobalTexture(s_ScatterNoBlurFogVolumeId, s_FrustumVolume0);
+		GfxDevice::SetGlobalTexture(s_ScatterBlurFogVolumeId, s_FrustumVolume1);
+		GfxDevice::Dispatch(s_VolumetricFogShader->GetKernel(3), s_FrustumVolumeSize.x / 8, s_FrustumVolumeSize.y / 8, s_FrustumVolumeSize.z / 8);
+	}
+
+	GfxTexture* VolumetricFog::GetFrustumTexture()
+	{
+		return s_FrustumVolume1;
+	}
+}

@@ -1,19 +1,26 @@
 #pragma once
 
-class Layer;
+#include "Blueberry\Core\Base.h"
 
-class LayerStack
+namespace Blueberry
 {
-public:
-	LayerStack() = default;
-	~LayerStack();
+	class Layer;
 
-	void PushLayer(Layer* layer);
-	void PopLayer(Layer* layer);
+	class LayerStack
+	{
+	public:
+		BB_OVERRIDE_NEW_DELETE;
 
-	std::vector<Layer*>::iterator begin() { return m_Layers.begin(); }
-	std::vector<Layer*>::iterator end() { return m_Layers.end(); }
+		LayerStack() = default;
+		virtual ~LayerStack();
 
-private:
-	std::vector<Layer*> m_Layers;
-};
+		void PushLayer(Layer* layer);
+		void PopLayer(Layer* layer);
+
+		List<Layer*>::iterator begin();
+		List<Layer*>::iterator end();
+
+	private:
+		List<Layer*> m_Layers;
+	};
+}

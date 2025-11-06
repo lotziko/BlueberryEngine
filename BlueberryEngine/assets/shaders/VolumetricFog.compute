@@ -1,0 +1,322 @@
+#pragma compute CSInject
+#pragma compute CSScatter
+#pragma compute CSBlurHorizontal
+#pragma compute CSBlurVertical
+
+#include "Core.hlsl"
+
+cbuffer FogViewData
+{
+	float4 _ViewInvCount; // is used to offset position during inject volume sampling
+	float4 _ViewDX[2];
+	float4 _ViewDY[2];
+	float4 _ViewCorner[2];
+	float4 _ViewPos[2];
+	float4x4 _PreviousViewProj[2];
+	float4 _FogNearRange;
+	float4 _FrustumVolumeInvSize;
+	float4 _FrustumVolumeSize;
+	//int4 _FogVolumesCount;
+	//float4 _FogVolumeMin[MAX_FOG_VOLUMES];
+	//float4 _FogVolumeScale[MAX_FOG_VOLUMES];
+}
+
+float3 CalculateLight(float3 positionWS)
+{
+	float3 light = 0;
+
+	// Main light
+	if (_MainLightHasFog)
+	{
+		float cascadeIndex = ComputeCascadeIndex(positionWS, _MainShadowCascades);
+		float4 positionSS = TransformWorldToShadow(positionWS, _MainWorldToShadow[cascadeIndex]);
+
+		float shadowAttenuation = 1;
+		if (_MainLightHasShadow)
+		{
+			if (!IsOutOfBounds(positionSS, _MainShadowBounds[cascadeIndex]))
+			{
+				shadowAttenuation = ComputeShadowPCF3x3(positionSS, _ShadowTexture, _ShadowTexture_Sampler, _Shadow3x3PCFTermC0, _Shadow3x3PCFTermC1, _Shadow3x3PCFTermC2, _Shadow3x3PCFTermC3);
+			}
+		}
+		float3 lightColor = _MainLightColor.rgb;
+		light += lightColor * shadowAttenuation;
+	}
+
+	// Point lights
+	for (int i = 0; i < int(_LightsCount.x); i++)
+	{
+		PointLightData data = _PointLightsData[i];
+
+		if (!data.hasFog)
+		{
+			continue;
+		}
+
+		float3 posToLight = data.positionWS - positionWS;
+		float distanceSqr = dot(posToLight, posToLight);
+
+		if (distanceSqr > data.squareRange) //voxel is out of light range
+		{
+			continue;
+		}
+
+		float3 lightDirectionWS = normalize(posToLight);
+
+		float shadowAttenuation = 1.0;
+		if (data.hasShadow)
+		{
+			uint faceIndex = GetFaceIndex(-lightDirectionWS);
+			shadowAttenuation = 0.0;
+			float4 positionSS = TransformWorldToShadow(positionWS, data.worldToShadow[faceIndex]);
+			if (!IsOutOfBounds(positionSS, data.shadowBounds[faceIndex]))
+			{
+				shadowAttenuation = ComputeShadowPCF3x3(positionSS, _ShadowTexture, _ShadowTexture_Sampler, _Shadow3x3PCFTermC0, _Shadow3x3PCFTermC1, _Shadow3x3PCFTermC2, _Shadow3x3PCFTermC3);
+			}
+		}
+
+		if (shadowAttenuation == 0.0)
+		{
+			continue;
+		}
+
+		float distanceAttenuation = DistanceAttenuation(distanceSqr, data.attenuation.xy);
+		float falloff = LightFalloff(distanceSqr);
+		float3 lightColor = data.color;
+		float lightMask = distanceAttenuation * falloff * shadowAttenuation;
+		light += lightColor * lightMask;
+	}
+
+	// Spot lights
+	for (int i = 0; i < int(_LightsCount.y); ++i)
+	{
+		SpotLightData data = _SpotLightsData[i];
+
+		if (!data.hasFog)
+		{
+			continue;
+		}
+
+		float3 posToLight = data.positionWS - positionWS;
+		float distanceSqr = dot(posToLight, posToLight);
+
+		if (distanceSqr > data.range * data.range) //voxel is out of light range
+		{
+			continue;
+		}
+
+		float3 lightDirectionWS = normalize(posToLight);
+		float spotAttenuation = AngleAttenuation(lightDirectionWS, data.directionWS, data.attenuation.zw);
+
+		if (spotAttenuation <= 0.0)
+		{
+			continue;
+		}
+
+		float cookieAttenuation = 1.0;
+		if (data.hasCookie) //has cookie
+		{
+			float4 positionLCS = ApplyShadowBias(TransformWorldToShadow(positionWS, data.worldToCookie));
+			cookieAttenuation = _CookieTexture.SampleLevel(_CookieTexture_Sampler, positionLCS.xyz, 0).r;
+			cookieAttenuation *= (positionLCS.x > 0.0 && positionLCS.x < 1.0 && positionLCS.y > 0.0 && positionLCS.y < 1.0);
+		}
+
+		float shadowAttenuation = 1.0;
+		if (data.hasShadow) // has shadow
+		{
+			shadowAttenuation = 0.0;
+			float4 positionSS = TransformWorldToShadow(positionWS, data.worldToShadow);
+			if (!IsOutOfBounds(positionSS, data.shadowBounds))
+			{
+				shadowAttenuation = ComputeShadowPCF3x3(positionSS, _ShadowTexture, _ShadowTexture_Sampler, _Shadow3x3PCFTermC0, _Shadow3x3PCFTermC1, _Shadow3x3PCFTermC2, _Shadow3x3PCFTermC3);
+			}
+		}
+
+		if (shadowAttenuation == 0.0)
+		{
+			continue;
+		}
+
+		float distanceAttenuation = DistanceAttenuation(distanceSqr, data.attenuation.xy);
+		float falloff = LightFalloff(distanceSqr);
+		float3 lightColor = data.color;
+		float lightMask = distanceAttenuation * falloff * spotAttenuation * cookieAttenuation * shadowAttenuation;
+		light += lightColor * lightMask;
+	}
+	return light;
+}
+
+float4 EncodeColor(float4 color)
+{
+	return float4(sqrt(color.rgb * 0.5), color.a);
+}
+
+float4 DecodeColor(float4 color)
+{
+	return float4(color.rgb * color.rgb * 2, color.a);
+}
+
+RWTexture3D<float4> _InjectFogVolume;
+Texture3D<float4> _PreviousFrameInjectFogVolume;
+SamplerState _PreviousFrameInjectFogVolume_Sampler;
+
+static const float2 kJitterOffsets[32] = {
+	float2(0.371874, -0.375308),
+	float2(-0.130226, 0.099150),
+	float2(-0.096666, -0.421821),
+	float2(0.332157, 0.118035),
+	float2(-0.383946, 0.353036),
+	float2(0.110471, -0.147564),
+	float2(-0.423303, -0.114404),
+	float2(0.087176, 0.324898),
+	float2(0.365693, 0.375798),
+	float2(0.145775, -0.447766),
+	float2(-0.372990, -0.394564),
+	float2(-0.167171, -0.152689),
+	float2(-0.156223, 0.370692),
+	float2(-0.362633, 0.123191),
+	float2(0.360994, -0.096994),
+	float2(0.046399, 0.029792),
+	float2(0.252188, -0.248480),
+	float2(0.015620, -0.290557),
+	float2(-0.244693, 0.233475),
+	float2(0.496936, 0.468280),
+	float2(0.163739, 0.148503),
+	float2(0.486423, -0.243782),
+	float2(0.218557, -0.008263),
+	float2(-0.246523, -0.012347),
+	float2(-0.264365, -0.492388),
+	float2(0.476591, 0.247342),
+	float2(0.476166, 0.023091),
+	float2(-0.183181, -0.299435),
+	float2(0.250643, 0.459100),
+	float2(-0.006889, 0.207618),
+	float2(-0.326251, -0.240938),
+	float2(0.006445, 0.454088)
+};
+
+float Linear01Depth(float z)
+{
+	return 1.0 / (_FogNearRange.x * z + _FogNearRange.y);
+}
+
+float4 ScatterStep(float3 accumulatedLight, float accumulatedTransmittance, float3 sliceLight, float sliceDensity, float stepSize)
+{
+	sliceDensity = max(sliceDensity, 0.000001);
+	float sliceTransmittance = exp(-sliceDensity * stepSize);
+
+	// Seb Hillaire's improved transmission by calculating an integral over slice depth instead of
+	// constant per slice value. Light still constant per slice, but that's acceptable. See slide 28 of
+	// Physically-based & Unified Volumetric Rendering in Frostbite
+	// http://www.frostbite.com/2015/08/physically-based-unified-volumetric-rendering-in-frostbite/
+	float3 sliceLightIntegral = sliceLight * (1.0 - sliceTransmittance) / sliceDensity;
+
+	accumulatedLight += sliceLightIntegral * accumulatedTransmittance;
+	accumulatedTransmittance *= sliceTransmittance;
+
+	return float4(accumulatedLight, accumulatedTransmittance);
+}
+
+[numthreads(16, 16, 1)]
+void CSInject(uint3 id : SV_DispatchThreadID)
+{
+	uint viewIndex = id.z;
+	uint3 positionFVS = uint3((uint)_FrustumVolumeSize.x * viewIndex + id.x, id.y, 0);
+
+	uint jitterIndex = (id.y * 6547 + id.x * 4159) & 31;
+	float3 positionWSJitter = (_ViewDX[viewIndex].xyz * kJitterOffsets[jitterIndex].x + _ViewDY[viewIndex].xyz * kJitterOffsets[jitterIndex].y) / 4000;
+
+	float3 positionFS = float3(id.x + 0.5, id.y + 0.5, 0) * _FrustumVolumeInvSize.xyz;// FS means frustum space
+	float3 vectorFS = _ViewDY[viewIndex].xyz * positionFS.y + (_ViewDX[viewIndex].xyz * positionFS.x + _ViewCorner[viewIndex].xyz); // Vector to far plane
+
+	uint steps = (uint)_FrustumVolumeSize.z;
+	
+	for (uint z = 0; z < steps; ++z)
+	{
+		positionFVS.z = z;
+		positionFS.z = pow(z * _FrustumVolumeInvSize.w, 2); // .w has size.z - 1 value to match [0, 1] depth range here
+		float zVS = _FogNearRange.z + positionFS.z * (1 - _FogNearRange.z); // Depth is in range [0, 1], so transform it to [near/far, 1] to match the frustum
+		float3 positionWS = _ViewPos[viewIndex].xyz + vectorFS * zVS;
+
+		float4 color = float4(0, 0, 0, 1);//DecodeColor(SampleBakedColor(positionWS + positionWSJitter));
+		float3 light = CalculateLight(positionWS + positionWSJitter * (z * _FrustumVolumeInvSize.z));
+		color.rgb += light * color.a;
+
+		_InjectFogVolume[positionFVS] = color;
+	}
+}
+
+Texture3D<float4> _InjectedFogVolume;
+SamplerState _InjectedFogVolume_Sampler;
+RWTexture3D<float4> _ScatterFogVolume;
+
+[numthreads(8, 8, 1)]
+void CSScatter(uint3 id : SV_DispatchThreadID)
+{
+	uint viewIndex = id.z;
+	uint3 pos = uint3((uint)_FrustumVolumeSize.x * viewIndex + id.x, id.y, 0);
+	// Store transmission in .a, as opposed to density in _VolumeInject
+	float4 accum = float4(0, 0, 0, 1);
+	uint steps = _FrustumVolumeSize.z;
+
+	float3 positionVS = 0;
+
+	for (uint z = 0; z < steps; ++z)
+	{
+		pos.z = z;
+		positionVS = float3(pos.x + 0.5, pos.y + 0.5, pos.z + 0.5) * float3(_FrustumVolumeInvSize.x * _ViewInvCount.x, _FrustumVolumeInvSize.yz);
+
+		float4 slice0 = _InjectedFogVolume.SampleLevel(_InjectedFogVolume_Sampler, positionVS + float3(-0.5, -0.5, -0.5) * _FrustumVolumeInvSize.xyz, 0);
+		float4 slice1 = _InjectedFogVolume.SampleLevel(_InjectedFogVolume_Sampler, positionVS + float3(-0.5, -0.5, 0.5) * _FrustumVolumeInvSize.xyz, 0);
+		float4 slice2 = _InjectedFogVolume.SampleLevel(_InjectedFogVolume_Sampler, positionVS + float3(-0.5, 0.5, -0.5) * _FrustumVolumeInvSize.xyz, 0);
+		float4 slice3 = _InjectedFogVolume.SampleLevel(_InjectedFogVolume_Sampler, positionVS + float3(-0.5, 0.5, 0.5) * _FrustumVolumeInvSize.xyz, 0);
+		float4 slice4 = _InjectedFogVolume.SampleLevel(_InjectedFogVolume_Sampler, positionVS + float3(0.5, -0.5, -0.5) * _FrustumVolumeInvSize.xyz, 0);
+		float4 slice5 = _InjectedFogVolume.SampleLevel(_InjectedFogVolume_Sampler, positionVS + float3(0.5, -0.5, 0.5) * _FrustumVolumeInvSize.xyz, 0);
+		float4 slice6 = _InjectedFogVolume.SampleLevel(_InjectedFogVolume_Sampler, positionVS + float3(0.5, 0.5, -0.5) * _FrustumVolumeInvSize.xyz, 0);
+		float4 slice7 = _InjectedFogVolume.SampleLevel(_InjectedFogVolume_Sampler, positionVS + float3(0.5, 0.5, 0.5) * _FrustumVolumeInvSize.xyz, 0);
+
+		float4 slice = (slice0 + slice1 + slice2 + slice3 + slice4 + slice5 + slice6 + slice7) * 0.125;
+
+		float stepSize = pow((z + 1) *  _FrustumVolumeInvSize.z, 2) - pow(z * _FrustumVolumeInvSize.z, 2);
+		accum = ScatterStep(accum.rgb, accum.a, slice.rgb, slice.a, stepSize);
+		_ScatterFogVolume[pos] = accum;
+	}
+}
+
+
+Texture3D<float4> _ScatterNoBlurFogVolume;
+RWTexture3D<float4> _ScatterBlurFogVolume;
+
+static const uint2 kBlurOffsets[5] = {
+	uint2(-2, 0),
+	uint2(-1, 0),
+	uint2(0, 0),
+	uint2(1, 0),
+	uint2(2, 0),
+};
+
+[numthreads(8, 8, 8)]
+void CSBlurHorizontal(uint3 id : SV_DispatchThreadID)
+{
+	uint2 size = (uint2)_FrustumVolumeSize.xy - 1;
+	float4 result = 0;
+	for (int i = 0; i < 5; i++)
+	{
+		uint3 pos = uint3(min(max(id.xy + kBlurOffsets[i], uint2(0, 0)), size), id.z);
+		result += _ScatterNoBlurFogVolume[pos] * 0.2;
+	}
+	_ScatterBlurFogVolume[id] = result;
+}
+
+[numthreads(8, 8, 8)]
+void CSBlurVertical(uint3 id : SV_DispatchThreadID)
+{
+	uint2 size = (uint2)_FrustumVolumeSize.xy - 1;
+	float4 result = 0;
+	for (int i = 0; i < 5; i++)
+	{
+		uint3 pos = uint3(min(max(id.xy + kBlurOffsets[i].yx, uint2(0, 0)), size), id.z);
+		result += _ScatterNoBlurFogVolume[pos] * 0.2;
+	}
+	_ScatterBlurFogVolume[id] = result;
+}

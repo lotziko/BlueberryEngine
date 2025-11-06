@@ -1,4 +1,82 @@
-#include "bbpch.h"
-#include "Object.h"
+#include "Blueberry\Core\Object.h"
 
-const std::size_t Object::Type = std::hash<std::string>()(TO_STRING(Object));
+#include "Blueberry\Core\ObjectDB.h"
+#include "Blueberry\Core\ClassDB.h"
+#include "Blueberry\Core\ObjectCloner.h"
+
+namespace Blueberry
+{
+	const size_t Object::Type = TO_OBJECT_TYPE(TO_STRING(Object));
+	const size_t Object::ParentType = 0;
+	const String Object::TypeName = "Object";
+	
+	Object::Object()
+	{
+		ObjectDB::AllocateId(this);
+	}
+
+	Object::~Object()
+	{
+		ObjectDB::FreeId(this);
+	}
+
+	bool Object::IsClassType(const size_t classType) const
+	{
+		return classType == Type;
+	}
+
+	size_t Object::GetType() const
+	{
+		return Type;
+	}
+
+	String Object::GetTypeName() const
+	{
+		return TypeName;
+	}
+
+	ObjectId Object::GetObjectId() const
+	{
+		return m_ObjectId;
+	}
+
+	const String& Object::GetName()
+	{
+		return m_Name;
+	}
+
+	void Object::SetName(const String& name)
+	{
+		m_Name = name;
+	}
+
+	const ObjectState& Object::GetState()
+	{
+		return m_State;
+	}
+
+	const bool Object::IsDefaultState()
+	{
+		return m_State == ObjectState::Default;
+	}
+
+	void Object::SetState(const ObjectState& state)
+	{
+		m_State = state;
+	}
+
+	void Object::DefineFields()
+	{
+		DEFINE_FIELD(Object, m_Name, BindingType::String, FieldOptions().SetVisibility(VisibilityType::Hidden))
+	}
+
+	Object* Object::Clone(Object* object)
+	{
+		return ObjectCloner::Clone(object);
+	}
+
+	void Object::Destroy(Object* object)
+	{
+		delete object;
+	}
+}

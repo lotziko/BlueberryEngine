@@ -1,0 +1,109 @@
+#pragma compute CSClustering
+
+// https://github.com/DaveH355/clustered-shading
+
+#include "Core.hlsl"
+
+bool IsSphereAABBIntersecting(float3 position, float squareRange, float3 aabbMin, float3 aabbMax)
+{
+	float3 closestPoint = clamp(position, aabbMin, aabbMax);
+	float distanceSquared = dot(closestPoint - position, closestPoint - position);
+	return distanceSquared <= squareRange;
+}
+
+// https://simoncoenen.com/blog/programming/graphics/SpotlightCulling
+bool IsConeAABBIntersecting(float3 position, float3 direction, float range, float angle, float3 aabbCenter, float3 aabbExtents)
+{
+	float sphereRadius = max(aabbExtents.x, max(aabbExtents.y, aabbExtents.z));
+	float3 v = aabbCenter - position;
+	float lenSq = dot(v, v);
+	float v1Len = dot(v, -direction);
+	float distanceClosestPoint = cos(angle) * sqrt(lenSq - v1Len * v1Len) - v1Len * sin(angle);
+	bool angleCull = distanceClosestPoint > sphereRadius;
+	bool frontCull = v1Len > sphereRadius + range;
+	bool backCull = v1Len < -sphereRadius;
+	return !(angleCull || frontCull || backCull);
+}
+
+float3 ScreenToView(float2 positionSS)
+{
+	float4 positionNdc = float4(positionSS * 2.0 - 1.0, 0.0, 1.0);
+	positionNdc.y = -positionNdc.y;	// DirectX convention ndc is flipped
+	float4 positionVS = mul(positionNdc, INVERSE_PROJECTION_MATRIX);
+	positionVS.xyz /= positionVS.w;
+	return positionVS.xyz;
+}
+
+float3 LineIntersectionWithZPlane(float3 startPoint, float3 endPoint, float zDistance)
+{
+	float3 direction = endPoint - startPoint;
+	float3 normal = float3(0.0, 0.0, 1.0);
+
+	float t = (zDistance - dot(normal, startPoint)) / dot(normal, direction);
+	return startPoint + t * direction;
+}
+
+#define CLUSTERS_X 30
+#define CLUSTERS_Y 17
+#define CLUSTERS_Z 16
+#define MAX_LIGHTS 64
+
+RWTexture2D<uint> _ClusteringLightIndexTexture;
+
+// Possible to avoid calculation of clusters every frame by storing them in a buffer instead and recalculating only when need more lights (up to 256)
+
+[numthreads(1, 1, 1)]
+void CSClustering(uint3 id : SV_DispatchThreadID)
+{
+	uint viewIndex = id.z;
+	uint3 positionFVS = uint3(id.x, id.y, 0);
+
+	float linearDepth = 0.5;
+	float zNear = _CameraNearFarClipPlane.x;
+	float zFar = _CameraNearFarClipPlane.y;
+	float zFarOverNear = _CameraNearFarClipPlane.w;
+
+	float3 frustumInvSize = 1.0 / float3(CLUSTERS_X, CLUSTERS_Y, CLUSTERS_Z);
+
+	float3 minPosition = ScreenToView(id.xy * frustumInvSize.xy);
+	float3 maxPosition = ScreenToView((id.xy + 1) * frustumInvSize.xy);
+
+	float planeNear = zNear * pow(zFarOverNear, id.z * frustumInvSize.z);
+	float planeFar = zNear * pow(zFarOverNear, (id.z + 1) * frustumInvSize.z);
+
+	float3 minPositionNear = LineIntersectionWithZPlane(float3(0, 0, 0), minPosition, planeNear);
+	float3 minPositionFar = LineIntersectionWithZPlane(float3(0, 0, 0), minPosition, planeFar);
+	float3 maxPositionNear = LineIntersectionWithZPlane(float3(0, 0, 0), maxPosition, planeNear);
+	float3 maxPositionFar = LineIntersectionWithZPlane(float3(0, 0, 0), maxPosition, planeFar);
+
+	minPosition = min(minPositionNear, minPositionFar);
+	maxPosition = max(maxPositionNear, maxPositionFar);
+
+	float3 center = lerp(minPosition, maxPosition, 0.5);
+	float3 extents = maxPosition - center;
+
+	uint2 indexPoint = uint2(id.x * MAX_LIGHTS, id.y * CLUSTERS_Z + id.z);
+	uint2 indexSpot = uint2(indexPoint.x, indexPoint.y + CLUSTERS_Z * CLUSTERS_Y);
+	for (int i = 0; i < int(_LightsCount.x); i++)
+	{
+		PointLightData data = _PointLightsData[i];
+		
+		if (IsSphereAABBIntersecting(data.positionVS, data.squareRange, minPosition, maxPosition))
+		{
+			_ClusteringLightIndexTexture[indexPoint] = i;
+			indexPoint.x += 1;
+		}
+	}
+	for (i = 0; i < int(_LightsCount.y); i++)
+	{
+		SpotLightData data = _SpotLightsData[i];
+
+		if (IsConeAABBIntersecting(data.positionVS, data.directionVS, data.range, data.coneOuterAngle, center, extents))
+		{
+			_ClusteringLightIndexTexture[indexSpot] = i;
+			indexSpot.x += 1;
+		}
+	}
+	_ClusteringLightIndexTexture[indexPoint] = 0xFFFF;
+	_ClusteringLightIndexTexture[indexSpot] = 0xFFFF;
+}

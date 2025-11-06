@@ -1,62 +1,75 @@
-#include "bbpch.h"
-#include "VertexLayout.h"
+#include "Blueberry\Graphics\VertexLayout.h"
 
-VertexLayout::Element::Element(ElementType type, UINT offset) : m_Type(type), m_Offset(offset)
-{
-}
+#include "Blueberry\Tools\CRCHelper.h"
 
-constexpr UINT VertexLayout::Element::GetSize(ElementType type)
+namespace Blueberry
 {
-	switch (type)
+	VertexLayout::Element::Element(const uint32_t& size) : m_Size(size)
 	{
-	case ElementType::Position2D:
-		return sizeof(Vector2);
-	case ElementType::Position3D:
-		return sizeof(Vector3);
-	case ElementType::Float3Color:
-		return sizeof(Vector3);
-	case ElementType::Float4Color:
-		return sizeof(Color);
-	case ElementType::TextureCoord:
-		return sizeof(Vector2);
 	}
 
-	BB_ERROR("Unknown vertex layout element type.");
-	return 0;
-}
+	const uint32_t& VertexLayout::Element::GetSize()
+	{
+		return m_Size;
+	}
 
-VertexLayout::ElementType VertexLayout::Element::GetType() const
-{
-	return m_Type;
-}
+	const uint32_t& VertexLayout::Element::GetOffset()
+	{
+		return m_Size;
+	}
 
-UINT VertexLayout::Element::GetOffset() const
-{
-	return m_Offset;
-}
+	VertexLayout& VertexLayout::Append(const VertexAttribute& type, const uint32_t& size)
+	{
+		m_Elements[static_cast<uint32_t>(type)] = Element(size);
+		m_Crc = UINT32_MAX;
+		return *this;
+	}
 
-UINT VertexLayout::Element::GetOffsetAfter() const
-{
-	return m_Offset + GetSize();
-}
+	VertexLayout& VertexLayout::Apply()
+	{
+		m_Crc = 0;
+		uint32_t offset = 0;
+		for (uint32_t i = 0; i < VERTEX_ATTRIBUTE_COUNT; ++i)
+		{
+			Element& element = m_Elements[i];
+			if (element.m_Size > 0)
+			{
+				element.m_Offset = offset;
+				offset += element.m_Size;
+			}
+			m_Crc = CRCHelper::Calculate(element.m_Offset, m_Crc);
+		}
+		m_Size = offset;
+		return *this;
+	}
 
-UINT VertexLayout::Element::GetSize() const
-{
-	return GetSize(m_Type);
-}
+	const bool VertexLayout::Has(const VertexAttribute& type)
+	{
+		return m_Elements[static_cast<uint32_t>(type)].m_Size > 0;
+	}
 
-VertexLayout& VertexLayout::Append(ElementType type)
-{
-	m_Elements.emplace_back(type, GetSize());
-	return *this;
-}
+	const uint32_t& VertexLayout::GetOffset(const VertexAttribute& type)
+	{
+		return m_Elements[static_cast<uint32_t>(type)].m_Offset;
+	}
 
-const VertexLayout::Element& VertexLayout::ResolveByIndex(UINT i) const
-{
-	return m_Elements[i];
-}
+	const uint32_t& VertexLayout::GetOffset(const uint32_t& index)
+	{
+		return m_Elements[index].m_Offset;
+	}
 
-UINT VertexLayout::GetSize() const
-{
-	return m_Elements.empty() ? 0 : m_Elements.back().GetOffsetAfter();
+	const uint32_t& VertexLayout::GetSize(const VertexAttribute& type)
+	{
+		return m_Elements[static_cast<uint32_t>(type)].m_Size;
+	}
+
+	const uint32_t& VertexLayout::GetSize()
+	{
+		return m_Size;
+	}
+
+	const uint32_t& VertexLayout::GetCrc()
+	{
+		return m_Crc;
+	}
 }

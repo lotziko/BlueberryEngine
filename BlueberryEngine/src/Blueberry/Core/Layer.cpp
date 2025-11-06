@@ -1,8 +1,13 @@
-#include "bbpch.h"
-#include "Layer.h"
+#include "Blueberry\Core\Layer.h"
 
-#include "Blueberry\Core\ServiceContainer.h"
-
-Layer::Layer(const std::string& name) : m_Name(name)
+namespace Blueberry
 {
+	Layer::Layer(const String& name) : m_Name(name)
+	{
+	}
+
+	const String& Layer::GetName() const
+	{
+		return m_Name;
+	}
 }

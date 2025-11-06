@@ -1,42 +1,134 @@
-#include "bbpch.h"
-#include "Scene.h"
+#include "Blueberry\Scene\Scene.h"
 
-#include "Blueberry\Core\ServiceContainer.h"
+#include "Blueberry\Scene\Entity.h"
+#include "Blueberry\Scene\Components\Transform.h"
+#include "Blueberry\Scene\Components\Component.h"
+#include "Blueberry\Serialization\Serializer.h"
+#include "Blueberry\Core\ClassDB.h"
 
-Scene::Scene(const Ref<ServiceContainer>& serviceContainer) : m_ServiceContainer(serviceContainer)
+namespace Blueberry
 {
-}
-
-bool Scene::Initialize()
-{
-	AddComponentManager<TransformManager>();
-	AddComponentManager<SpriteRendererManager>();
-	AddComponentManager<CameraManager>();
-	return true;
-}
-
-void Scene::Draw()
-{
-	//Update cameras and render
+	bool Scene::Initialize()
 	{
-		for (auto camera : GetIterator<Camera>())
+		return true;
+	}
+
+	void Scene::Update(const float& deltaTime)
+	{
+		if (m_CreatedComponents.size() > 0)
 		{
-			camera.second->Update();
-			DrawCamera(camera.second);
+			for (auto& component : m_CreatedComponents)
+			{
+				component->OnBeginPlay();
+			}
+			m_CreatedComponents.clear();
+		}
+
+		// Update
+		{
+			for (auto& component : m_ComponentManager.GetIterator(UpdatableComponent::Type))
+			{
+				component.second->OnUpdate();
+			}
 		}
 	}
-}
 
-void Scene::DrawCamera(Camera* camera)
-{
-	//Draw sprites
+	void Scene::Destroy()
 	{
-		auto renderer2D = m_ServiceContainer->Renderer2D;
-		renderer2D->Begin(camera->GetViewMatrix(), camera->GetProjectionMatrix());
-		for (auto spriteRenderer : GetIterator<SpriteRenderer>())
+		for (auto& rootEntity : m_RootEntities)
 		{
-			renderer2D->Draw(spriteRenderer.second->GetEntity()->GetTransform()->GetWorldMatrix(), spriteRenderer.second->GetTexture().get(), spriteRenderer.second->GetColor());
+			if (rootEntity.IsValid())
+			{
+				DestroyEntity(rootEntity.Get());
+			}
 		}
-		renderer2D->End();
+		m_Entities.clear();
+		m_RootEntities.clear();
+	}
+
+	Entity* Scene::CreateEntity(const String& name = "Entity")
+	{
+		//BB_INFO("Entity is created.")
+		Entity* entity = Object::Create<Entity>();
+		entity->m_Scene = this;
+		entity->m_Name = name;
+		m_Entities[entity->GetObjectId()] = entity;
+		AddToRoot(entity);
+
+		entity->AddComponent<Transform>();
+		entity->OnCreate();
+		return entity;
+	}
+
+	void Scene::AddEntity(Entity* entity)
+	{
+		//BB_INFO("Entity is added.")
+		entity->m_Scene = this;
+		m_Entities[entity->GetObjectId()] = entity;
+		if (entity->GetTransform()->GetParent() == nullptr)
+		{
+			m_RootEntities.emplace_back(entity);
+		}
+		if (entity->IsActiveInHierarchy())
+		{
+			entity->UpdateComponents();
+		}
+		for (uint32_t i = 0; i < entity->GetComponentCount(); ++i)
+		{
+			entity->AddToCreatedComponents(entity->GetComponent(i));
+		}
+		for (auto& child : entity->GetTransform()->GetChildren())
+		{
+			AddEntity(child.Get()->GetEntity());
+		}
+	}
+
+	void Scene::DestroyEntity(Entity* entity)
+	{
+		auto snapshot = entity->GetTransform()->GetChildren();
+		for (auto& child : snapshot)
+		{
+			DestroyEntity(child.Get()->GetEntity());
+		}
+		//BB_INFO("Entity is destroyed.");
+		entity->OnDestroy();
+		if (entity->GetTransform()->GetParent() == nullptr)
+		{
+			RemoveFromRoot(entity);
+		}
+		m_Entities.erase(entity->GetObjectId());
+		Object::Destroy(entity);
+	}
+
+	const Dictionary<ObjectId, ObjectPtr<Entity>>& Scene::GetEntities()
+	{
+		return m_Entities;
+	}
+
+	const List<ObjectPtr<Entity>>& Scene::GetRootEntities()
+	{
+		return m_RootEntities;
+	}
+
+	RendererTree& Scene::GetRendererTree()
+	{
+		return m_RendererTree;
+	}
+
+	void Scene::AddToRoot(Entity* entity)
+	{
+		m_RootEntities.emplace_back(entity);
+	}
+
+	void Scene::RemoveFromRoot(Entity* entity)
+	{
+		for (auto it = m_RootEntities.begin(); it < m_RootEntities.end(); ++it)
+		{
+			if (it->Get() == entity)
+			{
+				m_RootEntities.erase(it);
+				break;
+			}
+		}
 	}
 }

@@ -1,32 +1,39 @@
 #pragma once
 
+#include "Blueberry\Core\Base.h"
 #include "Blueberry\Core\Window.h"
 
-class WindowsWindow : public Window
+namespace Blueberry
 {
-public:
-	WindowsWindow(const WindowProperties& properties);
-	virtual ~WindowsWindow();
+	struct WindowProperties;
 
-	virtual bool ProcessMessages() final;
+	class WindowsWindow : public Window
+	{
+	public:
+		WindowsWindow(const WindowProperties& properties);
+		virtual ~WindowsWindow();
 
-	virtual void* GetHandle() final;
+		virtual bool IsActive() final;
+		virtual bool ProcessMessages() final;
 
-	virtual int GetWidth() const final;
-	virtual int GetHeight() const final;
+		virtual void* GetHandle() final;
 
-	LRESULT WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+		virtual int GetWidth() const final;
+		virtual int GetHeight() const final;
 
-private:
-	void RegisterWindowClass();
+		LRESULT WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-private:
-	HWND m_Handle = NULL;
-	HINSTANCE m_HInstance = NULL;
-	std::string m_WindowTitle = "";
-	std::wstring m_WindowTitleWide = L""; //Wide string representation of window title
-	std::string m_WindowClass = "";
-	std::wstring m_WindowClassWide = L""; //Wide string representation of window class name
-	int m_Width = 0;
-	int m_Height = 0;
-};
+	private:
+		void RegisterWindowClass();
+
+	private:
+		HWND m_Handle = NULL;
+		HINSTANCE m_HInstance = NULL;
+		String m_WindowTitle = "";
+		WString m_WindowTitleWide = L""; //Wide string representation of window title
+		String m_WindowClass = "";
+		WString m_WindowClassWide = L""; //Wide string representation of window class name
+		int m_Width = 0;
+		int m_Height = 0;
+	};
+}
