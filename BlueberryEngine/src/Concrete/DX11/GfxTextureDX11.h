@@ -23,11 +23,13 @@ namespace Blueberry
 
 		virtual uint32_t GetWidth() const override;
 		virtual uint32_t GetHeight() const override;
+		virtual TextureFormat GetFormat() const override;
 		virtual void* GetHandle() override;
 
 		virtual void GetData(void* target, const Rectangle& area) override;
 		virtual void GetData(void* target) override;
 		virtual void SetData(void* data, const size_t& size) override;
+		virtual void SetData(void* data, const size_t& size, const uint32_t& slice) override;
 
 		virtual void GenerateMipMaps() override;
 

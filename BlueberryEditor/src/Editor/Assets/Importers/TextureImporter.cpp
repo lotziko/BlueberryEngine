@@ -202,8 +202,8 @@ namespace Blueberry
 				else
 				{
 					texture = Texture2D::Create(metadata.width, metadata.height, metadata.mipLevels, format, m_WrapMode, m_FilterMode);
-					ObjectDB::AllocateIdToGuid(texture, guid, id);
 				}
+				ObjectDB::AllocateIdToGuid(texture, guid, id);
 
 				uint8_t* textureData = BB_MALLOC_ARRAY(uint8_t, image.GetPixelsSize());
 				memcpy(textureData, image.GetPixels(), image.GetPixelsSize());
@@ -247,8 +247,8 @@ namespace Blueberry
 				else
 				{
 					texture = TextureCube::Create(size, size, mipCount, compressedFormat, m_WrapMode, m_FilterMode);
-					ObjectDB::AllocateIdToGuid(texture, guid, id);
 				}
+				ObjectDB::AllocateIdToGuid(texture, guid, id);
 
 				uint8_t* textureData = BB_MALLOC_ARRAY(uint8_t, image.GetPixelsSize());
 				memcpy(textureData, image.GetPixels(), image.GetPixelsSize());

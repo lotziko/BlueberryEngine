@@ -23,7 +23,7 @@ namespace Blueberry
 	// TODO import data always if it was found in project but not in cache instead of importing on mouse over icon
 	void AssetDB::Refresh()
 	{
-		List<AssetImporter*> importersToImport;
+		List<AssetImporter*> importersToImport = {};
 		PathModifyCache::Load();
 		ImporterInfoCache::Load();
 		
@@ -185,11 +185,12 @@ namespace Blueberry
 		auto metaPath = Path::GetAssetsPath();
 		metaPath.append(relativeMetaPath);
 
-		YamlSerializer serializer;
+		Serializer* serializer = GetSerializer(object);
 		auto dataPath = Path::GetAssetsPath();
 		dataPath.append(relativePath);
-		serializer.AddObject(object);
-		serializer.Serialize(String(dataPath.string()));
+		serializer->AddObject(object);
+		serializer->Serialize(String(dataPath.string()));
+		delete serializer;
 		BB_INFO("Asset was saved to the path: " << relativePath);
 
 		AssetImporter* importer = CreateOrGetImporter(dataPath);
@@ -235,11 +236,12 @@ namespace Blueberry
 				if (it != s_GuidToPath.end())
 				{
 					String relativePath = s_GuidToPath[pair.first];
-					YamlSerializer serializer;
+					Serializer* serializer = GetSerializer(object);
 					auto dataPath = Path::GetAssetsPath();
 					dataPath.append(relativePath);
-					serializer.AddObject(object);
-					serializer.Serialize(String(dataPath.string()));
+					serializer->AddObject(object);
+					serializer->Serialize(String(dataPath.string()));
+					delete serializer;
 					BB_INFO("Asset was saved to the path: " << relativePath);
 				}
 				else if (object->IsClassType(AssetImporter::Type))
@@ -258,6 +260,16 @@ namespace Blueberry
 	AssetDBRefreshEvent& AssetDB::GetAssetDBRefreshed()
 	{
 		return s_AssetDBRefreshed;
+	}
+
+	Serializer* AssetDB::GetSerializer(Object* object)
+	{
+		bool isBinary = ClassDB::GetInfo(object->GetType()).preferBinary;
+		if (isBinary)
+		{
+			return new BinarySerializer();
+		}
+		return new YamlSerializer();
 	}
 
 	AssetImporter* AssetDB::CreateOrGetImporter(const std::filesystem::path& path)

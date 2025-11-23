@@ -22,7 +22,7 @@ namespace Blueberry
 
 	private:
 		void DrawNode(List<TransformTreeNode>& nodes, const size_t& index, bool& isValid);
-		void DrawCreateEntity(TransformTreeNode& node, bool& isValid);
+		void DrawCreateEntity(bool& isValid);
 		void DrawDestroyEntity(bool& isValid);
 		void DrawUnpackPrefabEntity(bool& isValid);
 

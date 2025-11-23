@@ -9,6 +9,7 @@
 namespace Blueberry
 {
 	class AssetImporter;
+	class Serializer;
 
 	using AssetDBRefreshEvent = Event<>;
 
@@ -39,6 +40,7 @@ namespace Blueberry
 		static AssetDBRefreshEvent& GetAssetDBRefreshed();
 
 	private:
+		static Serializer* GetSerializer(Object* object);
 		static AssetImporter* CreateOrGetImporter(const std::filesystem::path& path);
 		static AssetImporter* CreateImporter(const std::filesystem::path& path);
 

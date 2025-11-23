@@ -11,6 +11,8 @@ namespace Blueberry
 	public:
 		~TextureCube();
 
+		uint8_t* GetData();
+		const size_t GetDataSize();
 		void SetData(uint8_t* data, const size_t& dataSize);
 		void Apply();
 

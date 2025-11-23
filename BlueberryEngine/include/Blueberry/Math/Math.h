@@ -50,6 +50,11 @@ namespace Blueberry
 		return Vector3(degrees.x * RadToDegree, degrees.y * RadToDegree, degrees.z * RadToDegree);
 	}
 
+	inline float Lerp(float a, float b, float t)
+	{
+		return a + (b - a) * t;
+	}
+
 	// https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2
 	inline uint32_t NextPowerOfTwo(uint32_t value)
 	{
@@ -61,6 +66,12 @@ namespace Blueberry
 		value |= value >> 16;
 		value++;
 		return value;
+	}
+
+	inline uint32_t NextDivisableBy(uint32_t value, uint32_t by)
+	{
+		uint32_t mod = value % by;
+		return mod == 0 ? value : (value + by - mod);
 	}
 
 	inline Matrix CreateTRS(Vector3 position, Quaternion rotation, Vector3 scale)

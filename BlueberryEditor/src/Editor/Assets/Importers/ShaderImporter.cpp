@@ -85,7 +85,10 @@ namespace Blueberry
 				BB_ERROR("Shader \"" << GetName() << "\" failed to compile.");
 			}
 		}
-		object->SetName(GetName());
+		if (object != nullptr)
+		{
+			object->SetName(GetName());
+		}
 		SetMainObject(1);
 	}
 }

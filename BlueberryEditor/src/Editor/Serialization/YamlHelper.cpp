@@ -5,6 +5,15 @@
 
 namespace Blueberry
 {
+	bool YamlHelper::IsYaml(const String& path)
+	{
+		auto file = fopen(path.c_str(), "rb");
+		String data(1, '\0');
+		fread(data.data(), sizeof(char), 1, file);
+		fclose(file);
+		return data[0] == '!'; // There is a chance that binary file starts with ! too
+	}
+
 	void YamlHelper::Save(ryml::Tree& tree, const String& path)
 	{
 		auto file = fopen(path.c_str(), "wb");

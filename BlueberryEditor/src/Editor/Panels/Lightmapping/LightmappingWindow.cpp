@@ -31,7 +31,9 @@ namespace Blueberry
 		DEFINE_FIELD(LightmappingWindow, m_TexelPerUnit, BindingType::Float, {})
 		DEFINE_FIELD(LightmappingWindow, m_SamplePerTexel, BindingType::Int, {})
 		DEFINE_FIELD(LightmappingWindow, m_PreferredSize, BindingType::Int, {})
+		DEFINE_FIELD(LightmappingWindow, m_DistanceBetweenProbes, BindingType::Float, {})
 		DEFINE_FIELD(LightmappingWindow, m_Denoise, BindingType::Bool, {})
+		DEFINE_FIELD(LightmappingWindow, m_GenerateProbes, BindingType::Bool, {})
 		EditorMenuManager::AddItem("Window/Lightmapping", &LightmappingWindow::Open);
 	}
 
@@ -45,8 +47,6 @@ namespace Blueberry
 	void LightmappingWindow::OnDrawUI()
 	{
 		Scene* scene = EditorSceneManager::GetScene();
-		SceneSettings* settings = EditorSceneManager::GetSettings();
-		LightingData* lightingData = settings->GetLightingData();
 
 		if (scene != nullptr)
 		{
@@ -54,7 +54,18 @@ namespace Blueberry
 			ImGui::FloatEdit("Texel per unit", &m_TexelPerUnit);
 			ImGui::IntEdit("Sample per texel", &m_SamplePerTexel);
 			ImGui::IntEdit("Preferred size", &m_PreferredSize);
+			ImGui::FloatEdit("Distance between probes", &m_DistanceBetweenProbes);
 			ImGui::BoolEdit("Denoise", &m_Denoise);
+			ImGui::BoolEdit("Generate probes", &m_GenerateProbes);
+
+			SceneSettings* settings = EditorSceneManager::GetSettings();
+			LightingData* lightingData = settings->GetLightingData();
+
+			if (lightingData == nullptr || lightingData->GetState() != ObjectState::Default)
+			{
+				lightingData = Object::Create<LightingData>();
+				settings->SetLightingData(lightingData);
+			}
 
 			switch (LightmappingManager::GetLightmappingState())
 			{
@@ -69,7 +80,9 @@ namespace Blueberry
 							params.texelPerUnit = m_TexelPerUnit;
 							params.samplePerTexel = m_SamplePerTexel;
 							params.maxSize = m_PreferredSize;
+							params.distanceBetweenProbes = m_DistanceBetweenProbes;
 							params.denoise = m_Denoise;
+							params.generateProbes = m_GenerateProbes;
 
 							LightmappingManager::Calculate(EditorSceneManager::GetScene(), params);
 						}
@@ -99,7 +112,7 @@ namespace Blueberry
 					if (lightingData != nullptr && lightingData->GetState() == ObjectState::Default)
 					{
 						Texture2D* lightmap = lightingData->GetLightmap();
-						if (lightmap != nullptr)
+						if (lightmap != nullptr && lightmap->GetState() == ObjectState::Default)
 						{
 							list->AddImage(reinterpret_cast<ImTextureID>(lightmap->GetHandle()), pos, pos + size);
 						}
@@ -161,45 +174,46 @@ namespace Blueberry
 				case LightmappingState::Waiting:
 				{
 					CalculationResult& result = LightmappingManager::GetCalculationResult();
-					DirectX::ScratchImage image = {};
-					image.Initialize2D(DXGI_FORMAT_R32G32B32A32_FLOAT, result.outputSize.x, result.outputSize.y, 1, 1);
-					memcpy(image.GetPixels(), result.output.data(), result.outputSize.x * result.outputSize.y * sizeof(Vector4));
-					TextureHelper::Flip(image);
-
-					String path = EditorSceneManager::GetPath();
-					path.replace(path.find(".scene"), 6, "\\Lightmap.hdr");
-
-					std::filesystem::create_directories(std::filesystem::path(path).parent_path());
-					HRESULT hr = DirectX::SaveToHDRFile(*image.GetImages(), WString(path.begin(), path.end()).c_str());
-					if (FAILED(hr))
+					
+					if (result.output.size() > 0)
 					{
-						BB_ERROR("Failed to save texture.");
+						DirectX::ScratchImage image = {};
+						image.Initialize2D(DXGI_FORMAT_R32G32B32A32_FLOAT, result.outputSize.x, result.outputSize.y, 1, 1);
+						memcpy(image.GetPixels(), result.output.data(), result.outputSize.x * result.outputSize.y * sizeof(Vector4));
+						TextureHelper::Flip(image);
+
+						String path = EditorSceneManager::GetPath();
+						path.replace(path.find(".scene"), 6, "\\Lightmap.hdr");
+
+						std::filesystem::create_directories(std::filesystem::path(path).parent_path());
+						HRESULT hr = DirectX::SaveToHDRFile(*image.GetImages(), WString(path.begin(), path.end()).c_str());
+						if (FAILED(hr))
+						{
+							BB_ERROR("Failed to save texture.");
+						}
+
+						auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
+						TextureImporter* importer = static_cast<TextureImporter*>(AssetDB::GetImporter(relativePath.string().data()));
+						importer->SetTextureShape(TextureImporter::TextureShape::Texture2D);
+						importer->SetTextureFormat(TextureImporter::TextureFormat::BC6H);
+						importer->SetFilterMode(FilterMode::Bilinear);
+						importer->SetGenerateMipMaps(false);
+						importer->SaveAndReimport();
+						AssetDB::Refresh();
+						Texture2D* lightmap = static_cast<Texture2D*>(ObjectDB::GetObjectFromGuid(importer->GetGuid(), importer->GetMainObject()));
+					
+						lightingData->SetLightmapData(lightmap, result.chartOffsetScale, result.chartInstanceOffset);
+						lightingData->ApplyLightmap();
+
+						path = EditorSceneManager::GetPath();
+						path.replace(path.find(".scene"), 6, "\\LightingData.asset");
+						relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
+						AssetDB::CreateAsset(lightingData, relativePath.string().data());
 					}
-
-					auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
-					TextureImporter* importer = static_cast<TextureImporter*>(AssetDB::GetImporter(relativePath.string().data()));
-					importer->SetTextureShape(TextureImporter::TextureShape::Texture2D);
-					importer->SetTextureFormat(TextureImporter::TextureFormat::BC6H);
-					importer->SetFilterMode(FilterMode::Bilinear);
-					importer->SetGenerateMipMaps(false);
-					importer->SaveAndReimport();
-					AssetDB::Refresh();
-					Texture2D* lightmap = static_cast<Texture2D*>(ObjectDB::GetObjectFromGuid(importer->GetGuid(), importer->GetMainObject()));
-
-					if (lightingData == nullptr || lightingData->GetState() != ObjectState::Default)
+					else if (result.probeOutput.size() > 0)
 					{
-						lightingData = Object::Create<LightingData>();
-						settings->SetLightingData(lightingData);
+						// TODO
 					}
-					lightingData->SetLightmap(lightmap);
-					lightingData->SetChartScaleOffset(result.chartOffsetScale);
-					lightingData->SetInstanceOffset(result.chartInstanceOffset);
-					lightingData->Apply(scene);
-
-					path = EditorSceneManager::GetPath();
-					path.replace(path.find(".scene"), 6, "\\LightingData.asset");
-					relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
-					AssetDB::CreateAsset(lightingData, relativePath.string().data());
 					EditorSceneManager::Save();
 					LightmappingManager::Shutdown();
 				}

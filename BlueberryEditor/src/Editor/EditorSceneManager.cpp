@@ -200,7 +200,7 @@ namespace Blueberry
 			LightingData* lightingData = s_SceneSettings->GetLightingData();
 			if (lightingData != nullptr)
 			{
-				lightingData->Apply(s_Scene);
+				lightingData->Apply();
 			}
 		}
 	}

@@ -142,6 +142,8 @@ namespace Blueberry
 		CUDABuffer positionBuffer = {};
 		CUDABuffer chartIndexBuffer = {};
 		CUDABuffer denoisedColorBuffer = {};
+		CUDABuffer probePositionBuffer = {};
+		CUDABuffer probeColorBuffer = {};
 		LightmappingParams lightmappingParams = {};
 		DenoisingParams denoisingParams = {};
 	} s_State = {};
@@ -160,6 +162,76 @@ namespace Blueberry
 		std::cout << message << std::endl;
 		//std::cerr << "[" << std::setw(2) << level << "][" << std::setw(12) << tag << "]: "
 		//	<< message << "\n";
+	}
+
+	void RenderTextures(Scene* scene, Dictionary<ObjectId, List<uint8_t>>& buffers)
+	{
+		GfxTexture* renderTexture = GfxRenderTexturePool::Get(MATERIAL_COLOR_SIZE, MATERIAL_COLOR_SIZE, 1, 1, 1, TextureFormat::R8G8B8A8_UNorm_SRGB, TextureDimension::Texture2D, WrapMode::Clamp, FilterMode::Bilinear, true, false);
+		GfxDevice::SetRenderTarget(renderTexture);
+		GfxDevice::SetViewport(0, 0, MATERIAL_COLOR_SIZE, MATERIAL_COLOR_SIZE);
+		for (auto& component : scene->GetIterator<MeshRenderer>())
+		{
+			MeshRenderer* meshRenderer = static_cast<MeshRenderer*>(component.second);
+			for (uint32_t i = 0; i < meshRenderer->GetMaterialCount(); ++i)
+			{
+				Material* material = meshRenderer->GetMaterial(i);
+				if (material == nullptr)
+				{
+					continue;
+				}
+				Texture* texture = material->GetTexture(s_BaseMapId);
+				ObjectId objectId = texture->GetObjectId();
+
+				auto it = buffers.find(objectId);
+				if (it == buffers.end())
+				{
+					GfxDevice::SetGlobalTexture(TO_HASH("_BlitTexture"), texture->Get());
+					GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetBlit(), 0));
+					List<uint8_t> buffer = {};
+					buffer.resize(MATERIAL_COLOR_SIZE * MATERIAL_COLOR_SIZE * 4);
+					renderTexture->GetData(buffer.data());
+					buffers.insert_or_assign(objectId, std::move(buffer));
+				}
+			}
+		}
+
+		for (auto& component : scene->GetIterator<SkyRenderer>())
+		{
+			SkyRenderer* skyRenderer = static_cast<SkyRenderer*>(component.second);
+			GfxTexture* skyboxRenderTexture = GfxRenderTexturePool::Get(SKY_COLOR_SIZE, SKY_COLOR_SIZE, 1, 1, 1, TextureFormat::R8G8B8A8_UNorm_SRGB, TextureDimension::TextureCube, WrapMode::Clamp, FilterMode::Bilinear, true, false);
+
+			GfxDevice::SetViewCount(6);
+			GfxDevice::SetRenderTarget(skyboxRenderTexture);
+			GfxDevice::SetViewport(0, 0, SKY_COLOR_SIZE, SKY_COLOR_SIZE);
+			GfxDevice::SetGlobalTexture(TO_HASH("_BlitTexture"), skyRenderer->GetMaterial()->GetTexture(s_BaseMapId)->Get());
+			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetBlit(), 1)); // TODO render material instead of blit
+			GfxDevice::SetViewCount(1);
+
+			List<uint8_t> temporarybuffer = {};
+			temporarybuffer.resize(SKY_COLOR_SIZE * SKY_COLOR_SIZE * 6 * 4);
+			List<uint8_t> buffer = {};
+			buffer.resize(temporarybuffer.size());
+			skyboxRenderTexture->GetData(temporarybuffer.data());
+
+			uint32_t bytesPerPixel = 4;
+			size_t rowPitch = SKY_COLOR_SIZE * bytesPerPixel;
+			size_t wideRowPitch = rowPitch * 6;
+			size_t slicePitch = rowPitch * SKY_COLOR_SIZE;
+			size_t wideSlicePitch = slicePitch * 6;
+			for (uint32_t i = 0; i < 6; ++i)
+			{
+				for (uint32_t j = 0; j < SKY_COLOR_SIZE; ++j)
+				{
+					memcpy(buffer.data() + i * rowPitch + j * wideRowPitch, temporarybuffer.data() + i * slicePitch + j * rowPitch, SKY_COLOR_SIZE * bytesPerPixel);
+				}
+			}
+			buffers.insert_or_assign(0, std::move(buffer));
+
+			GfxRenderTexturePool::Release(skyboxRenderTexture);
+			break;
+		}
+		GfxDevice::SetRenderTarget(nullptr);
+		GfxRenderTexturePool::Release(renderTexture);
 	}
 
 	void CreateContext(LightmapperState& state)
@@ -456,7 +528,7 @@ namespace Blueberry
 		}
 	}
 
-	void CreateProgramGroups(LightmapperState& state)
+	void CreateProgramGroups(LightmapperState& state, bool probes)
 	{
 		// Create program groups
 		{
@@ -467,7 +539,7 @@ namespace Blueberry
 				OptixProgramGroupDesc raygenProgGroupDesc = {};
 				raygenProgGroupDesc.kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN;
 				raygenProgGroupDesc.raygen.module = state.pass.ptxModule;
-				raygenProgGroupDesc.raygen.entryFunctionName = "__raygen__pass";
+				raygenProgGroupDesc.raygen.entryFunctionName = probes ? "__raygen__probepass" : "__raygen__pass";
 
 				char log[2048];
 				size_t sizeofLog = sizeof(log);
@@ -715,6 +787,7 @@ namespace Blueberry
 		CUDA_CHECK(cudaStreamCreate(&state.stream));
 		state.lightmappingParams.handle = state.iasHandle;
 		state.lightmappingParams.instanceMatrices = reinterpret_cast<Matrix3x4*>(state.instanceMatrices.data);
+		state.lightmappingParams.samplePerTexel = state.params.samplePerTexel;
 	}
 
 	bool CompareCharts(ChartData& c1, ChartData& c2)
@@ -822,6 +895,11 @@ namespace Blueberry
 
 					const float epsilon = 0.5 + s_Padding;
 					Vector4Int roundedAtlasChartBounds = Vector4Int(static_cast<int>(std::floorf(atlasChartBounds.x - epsilon)), static_cast<int>(std::floorf(atlasChartBounds.y - epsilon)), static_cast<int>(std::ceilf(atlasChartBounds.z + epsilon)), static_cast<int>(std::ceilf(atlasChartBounds.w + epsilon)));
+					Vector2Int roundedSize = Vector2Int(roundedAtlasChartBounds.z - roundedAtlasChartBounds.x, roundedAtlasChartBounds.w - roundedAtlasChartBounds.y);
+					roundedSize.x = NextDivisableBy(roundedSize.x, 4);
+					roundedSize.y = NextDivisableBy(roundedSize.y, 4);
+					roundedAtlasChartBounds = Vector4Int(-roundedSize.x / 2, -roundedSize.y / 2, roundedSize.x / 2, roundedSize.y / 2);
+
 					chartData.meshBounds = meshChartBounds;
 					chartData.maskBounds = atlasChartBounds;
 					chartData.size = Vector2Int(roundedAtlasChartBounds.z - roundedAtlasChartBounds.x, roundedAtlasChartBounds.w - roundedAtlasChartBounds.y);
@@ -830,11 +908,11 @@ namespace Blueberry
 					Vector2Int halfSize = Vector2Int(chartData.size.x / 2, chartData.size.y / 2);
 					uint32_t chartVertexCount = static_cast<uint32_t>(atlasVertices.size());
 
-					for (int x = 0; x < chartData.size.x; ++x)
+					for (int x = 0; x < chartData.size.x; x += 4)
 					{
-						for (int y = 0; y < chartData.size.y; ++y)
+						for (int y = 0; y < chartData.size.y; y += 4)
 						{
-							Vector4 texelBounds = Vector4(x - halfSize.x - 0.5f - s_Padding, y - halfSize.y - 0.5f - s_Padding, x - halfSize.x + 1.5f + s_Padding, y - halfSize.y + 1.5f + s_Padding);
+							Vector4 texelBounds = Vector4(x - halfSize.x, y - halfSize.y, x - halfSize.x + 4, y - halfSize.y + 4);//Vector4(x - halfSize.x - 0.5f - s_Padding, y - halfSize.y - 0.5f - s_Padding, x - halfSize.x + 1.5f + s_Padding, y - halfSize.y + 1.5f + s_Padding);
 							bool intersects = false;
 							for (uint32_t j = 0; j < chartVertexCount; j += 3)
 							{
@@ -844,7 +922,13 @@ namespace Blueberry
 									break;
 								}
 							}
-							chartData.mask[x + y * chartData.size.x] = intersects;
+							for (int x1 = 0; x1 < 4; ++x1)
+							{
+								for (int y1 = 0; y1 < 4; ++y1)
+								{
+									chartData.mask[(x + x1) + (y + y1) * chartData.size.x] = intersects;
+								}
+							}
 						}
 					}
 					atlasCharts.push_back(std::move(chartData));
@@ -874,10 +958,10 @@ namespace Blueberry
 			}
 			bool placeFound = false;
 			uint32_t rows = size - chart.size.y;
-			for (uint32_t j = row; j < rows; ++j)
+			for (uint32_t j = row; j < rows; j += 4)
 			{
 				uint32_t columns = size - chart.size.x;
-				for (uint32_t i = 0; i < columns; ++i)
+				for (uint32_t i = 0; i < columns; i += 4)
 				{
 					if (state.atlasMask[j * size + i] == 0)
 					{
@@ -990,11 +1074,57 @@ namespace Blueberry
 		state.chartIndexBuffer.upload(state.atlasMask.data(), state.atlasMask.size());
 	}
 
+	void InitializeProbes(LightmapperState& state, Scene* scene)
+	{
+		Vector3 minPosition = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
+		Vector3 maxPosition = Vector3(FLT_MIN, FLT_MIN, FLT_MIN);
+
+		for (auto& component : scene->GetIterator<MeshRenderer>())
+		{
+			MeshRenderer* meshRenderer = static_cast<MeshRenderer*>(component.second);
+			AABB bounds = meshRenderer->GetBounds();
+			Vector3 center = static_cast<Vector3>(bounds.Center);
+			Vector3 min = center - bounds.Extents;
+			Vector3 max = center + bounds.Extents;
+			minPosition = Vector3(std::fminf(minPosition.x, min.x), std::fminf(minPosition.y, min.y), std::fminf(minPosition.z, min.z));
+			maxPosition = Vector3(std::fmaxf(maxPosition.x, max.x), std::fmaxf(maxPosition.y, max.y), std::fmaxf(maxPosition.z, max.z));
+		}
+
+		Vector3Int size = Vector3Int(static_cast<uint32_t>(std::roundf((maxPosition.x - minPosition.x) / state.params.distanceBetweenProbes)), static_cast<uint32_t>(std::roundf((maxPosition.y - minPosition.y) / state.params.distanceBetweenProbes)), static_cast<uint32_t>(std::roundf((maxPosition.z - minPosition.z) / state.params.distanceBetweenProbes)));
+		Vector3 invSize = Vector3(1.0f / static_cast<float>(size.x - 1), 1.0f / static_cast<float>(size.y - 1), 1.0f / static_cast<float>(size.z - 1));
+		
+		List<float3> positions = {};
+		positions.resize(size.x * size.y * size.z);
+		float3* ptr = positions.data();
+		for (uint32_t k = 0; k < size.z; ++k)
+		{
+			for (uint32_t j = 0; j < size.y; ++j)
+			{
+				for (uint32_t i = 0; i < size.x; ++i)
+				{
+					*ptr = make_float3(Lerp(minPosition.x, maxPosition.x, i * invSize.x), Lerp(minPosition.y, maxPosition.y, j * invSize.y), Lerp(minPosition.z, maxPosition.z, k * invSize.z));
+					++ptr;
+				}
+			}
+		}
+
+		state.probePositionBuffer.resize(positions.size() * sizeof(float3));
+		state.probePositionBuffer.upload(positions.data(), positions.size());
+		state.probeColorBuffer.resize(positions.size() * sizeof(unsigned int));
+
+		state.lightmappingParams.probePosition = reinterpret_cast<float3*>(state.probePositionBuffer.data);
+		state.lightmappingParams.probeColor = reinterpret_cast<unsigned int*>(state.probeColorBuffer.data);
+		state.lightmappingParams.probeCount = positions.size();
+		state.lightmappingParams.distanceBetweenProbes = state.params.distanceBetweenProbes;
+
+		s_State.result.probeBounds = AABB(Vector3::Lerp(minPosition, maxPosition, 0.5f), (maxPosition - minPosition) / 2.0f);
+		s_State.result.probeOutputSize = size;
+	}
+
 	void InitializeFrameBuffer(LightmapperState& state, const Vector2Int& viewport)
 	{
 		state.lightmappingParams.imageSize.x = viewport.x;
 		state.lightmappingParams.imageSize.y = viewport.y;
-		state.lightmappingParams.samplePerTexel = state.params.samplePerTexel;
 		state.lightmappingParams.texelPerUnit = state.params.texelPerUnit;
 		state.denoisingParams.imageSize.x = viewport.x;
 		state.denoisingParams.imageSize.y = viewport.y;
@@ -1077,6 +1207,7 @@ namespace Blueberry
 		// Launch
 		{
 			cudaHostAlloc(&s_State.completeCounter, sizeof(unsigned int), cudaHostAllocMapped | cudaHostAllocPortable);
+			*s_State.completeCounter = 0;
 			cudaHostGetDevicePointer(&s_State.lightmappingParams.completeCounter, s_State.completeCounter, 0);
 
 			if (s_ParamsPtr == 0)
@@ -1238,74 +1369,8 @@ namespace Blueberry
 			return;
 		}
 
-		// Render textures
 		Dictionary<ObjectId, List<uint8_t>> buffers = {};
-		GfxTexture* renderTexture = GfxRenderTexturePool::Get(MATERIAL_COLOR_SIZE, MATERIAL_COLOR_SIZE, 1, 1, 1, TextureFormat::R8G8B8A8_UNorm_SRGB, TextureDimension::Texture2D, WrapMode::Clamp, FilterMode::Bilinear, true, false);
-		GfxDevice::SetRenderTarget(renderTexture);
-		GfxDevice::SetViewport(0, 0, MATERIAL_COLOR_SIZE, MATERIAL_COLOR_SIZE);
-		for (auto& component : scene->GetIterator<MeshRenderer>())
-		{
-			MeshRenderer* meshRenderer = static_cast<MeshRenderer*>(component.second);
-			for (uint32_t i = 0; i < meshRenderer->GetMaterialCount(); ++i)
-			{
-				Material* material = meshRenderer->GetMaterial(i);
-				if (material == nullptr)
-				{
-					continue;
-				}
-				Texture* texture = material->GetTexture(s_BaseMapId);
-				ObjectId objectId = texture->GetObjectId();
-
-				auto it = buffers.find(objectId);
-				if (it == buffers.end())
-				{
-					GfxDevice::SetGlobalTexture(TO_HASH("_BlitTexture"), texture->Get());
-					GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetBlit(), 0));
-					List<uint8_t> buffer = {};
-					buffer.resize(MATERIAL_COLOR_SIZE * MATERIAL_COLOR_SIZE * 4);
-					renderTexture->GetData(buffer.data());
-					buffers.insert_or_assign(objectId, std::move(buffer));
-				}
-			}
-		}
-
-		for (auto& component : scene->GetIterator<SkyRenderer>())
-		{
-			SkyRenderer* skyRenderer = static_cast<SkyRenderer*>(component.second);
-			GfxTexture* skyboxRenderTexture = GfxRenderTexturePool::Get(SKY_COLOR_SIZE, SKY_COLOR_SIZE, 1, 1, 1, TextureFormat::R8G8B8A8_UNorm_SRGB, TextureDimension::TextureCube, WrapMode::Clamp, FilterMode::Bilinear, true, false);
-			
-			GfxDevice::SetViewCount(6);
-			GfxDevice::SetRenderTarget(skyboxRenderTexture);
-			GfxDevice::SetViewport(0, 0, SKY_COLOR_SIZE, SKY_COLOR_SIZE);
-			GfxDevice::SetGlobalTexture(TO_HASH("_BlitTexture"), skyRenderer->GetMaterial()->GetTexture(s_BaseMapId)->Get());
-			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetBlit(), 1)); // TODO render material instead of blit
-			GfxDevice::SetViewCount(1);
-
-			List<uint8_t> temporarybuffer = {};
-			temporarybuffer.resize(SKY_COLOR_SIZE * SKY_COLOR_SIZE * 6 * 4);
-			List<uint8_t> buffer = {};
-			buffer.resize(temporarybuffer.size());
-			skyboxRenderTexture->GetData(temporarybuffer.data());
-
-			uint32_t bytesPerPixel = 4;
-			size_t rowPitch = SKY_COLOR_SIZE * bytesPerPixel;
-			size_t wideRowPitch = rowPitch * 6;
-			size_t slicePitch = rowPitch * SKY_COLOR_SIZE;
-			size_t wideSlicePitch = slicePitch * 6;
-			for (uint32_t i = 0; i < 6; ++i)
-			{
-				for (uint32_t j = 0; j < SKY_COLOR_SIZE; ++j)
-				{
-					memcpy(buffer.data() + i * rowPitch + j * wideRowPitch, temporarybuffer.data() + i * slicePitch + j * rowPitch, SKY_COLOR_SIZE * bytesPerPixel);
-				}
-			}
-			buffers.insert_or_assign(0, std::move(buffer));
-			
-			GfxRenderTexturePool::Release(skyboxRenderTexture);
-			break;
-		}
-		GfxDevice::SetRenderTarget(nullptr);
-		GfxRenderTexturePool::Release(renderTexture);
+		RenderTextures(scene, buffers);
 
 		s_LightmappingState = LightmappingState::Calculating;
 		std::thread worker([scene, params, buffers]()
@@ -1320,41 +1385,80 @@ namespace Blueberry
 			CreateTextures(s_State, buffers);
 			InitializeAccels(s_State, scene);
 			CreatePTXModule(s_State);
-			CreateProgramGroups(s_State);
+			CreateProgramGroups(s_State, params.generateProbes);
 			CreatePipeline(s_State);
 			CreateSBT(s_State);
 			InitializeParams(s_State);
-
-			int size = params.maxSize;
-			s_State.result.output.resize(size * size * (sizeof(Vector4) / sizeof(uint8_t)));
-			s_State.result.outputSize = Vector2Int(size, size);
-			Vector4* temp = BB_MALLOC_ARRAY(Vector4, size * size);
-
-			InitializeFrameBuffer(s_State, s_State.result.outputSize);
-			//InitializeOptixDenoiserFrameBuffer(s_State);
 			InitializeLights(s_State, scene);
-			InitializeChartsAndBVH(s_State);
 
-			uint32_t tileSize = static_cast<uint32_t>(params.tileSize * params.tileSize);
-			s_State.launchSize = tileSize;
-			BB_INFO("Started baking");
-			Launch(s_State);
-			BB_INFO("Ended baking");
-
-			if (params.denoise)
+			if (params.generateProbes)
 			{
-				LaunchDenoiser(s_State);
-				//LaunchOptixDenoiser(s_State);
-				s_State.colorBuffer.download(temp, s_State.colorBuffer.sizeInBytes / sizeof(Vector4));
+				InitializeProbes(s_State, scene);
+
+				uint32_t tileSize = static_cast<uint32_t>(params.tileSize * params.tileSize);
+				s_State.launchSize = tileSize;
+				BB_INFO("Started baking");
+				Launch(s_State);
+				BB_INFO("Ended baking");
+
+				s_State.result.probeOutput.resize(s_State.lightmappingParams.probeCount * sizeof(unsigned int));
+				s_State.probeColorBuffer.download(s_State.result.probeOutput.data(), s_State.result.probeOutput.size());
+				
+				List<float3> positions = {};
+				positions.resize(s_State.lightmappingParams.probeCount);
+				s_State.result.probePositions.resize(positions.size());
+
+				s_State.probePositionBuffer.download(positions.data(), positions.size());
+				for (uint32_t i = 0; i < s_State.lightmappingParams.probeCount; ++i)
+				{
+					float3 position = positions[i];
+					s_State.result.probePositions[i] = Vector3(position.x, position.y, position.z);
+				}
+				/*uint32_t probeCount = s_State.lightmappingParams.probeCount;
+				List<Probe> probes = {};
+				probes.resize(probeCount);
+				s_State.result.probesOutput.resize(probeCount);
+				s_State.probesBuffer.download(probes.data(), probeCount);
+				for (uint32_t i = 0; i < probeCount; ++i)
+				{
+					Probe probe = probes[i];
+					s_State.result.probesOutput[i] = { Vector3(probe.position.x, probe.position.y, probe.position.z), Vector3(probe.color.x, probe.color.y, probe.color.z) };
+				}*/
 			}
 			else
 			{
-				s_State.colorBuffer.download(temp, s_State.colorBuffer.sizeInBytes / sizeof(Vector4));
+				int size = params.maxSize;
+				s_State.result.output.resize(size * size * (sizeof(Vector4) / sizeof(uint8_t)));
+				s_State.result.outputSize = Vector2Int(size, size);
+				Vector4* temp = BB_MALLOC_ARRAY(Vector4, size * size);
+
+				InitializeFrameBuffer(s_State, s_State.result.outputSize);
+
+				//InitializeOptixDenoiserFrameBuffer(s_State);
+				InitializeChartsAndBVH(s_State);
+
+				uint32_t tileSize = static_cast<uint32_t>(params.tileSize * params.tileSize);
+				s_State.launchSize = tileSize;
+				BB_INFO("Started baking");
+				Launch(s_State);
+				BB_INFO("Ended baking");
+
+				if (params.denoise)
+				{
+					LaunchDenoiser(s_State);
+					//LaunchOptixDenoiser(s_State);
+					s_State.colorBuffer.download(temp, s_State.colorBuffer.sizeInBytes / sizeof(Vector4));
+				}
+				else
+				{
+					s_State.colorBuffer.download(temp, s_State.colorBuffer.sizeInBytes / sizeof(Vector4));
+				}
+
+				FixCharts(temp, reinterpret_cast<Vector4*>(s_State.result.output.data()), s_State.result.outputSize);
+
+				BB_FREE(temp);
 			}
-
-			FixCharts(temp, reinterpret_cast<Vector4*>(s_State.result.output.data()), s_State.result.outputSize);
-
-			BB_FREE(temp);
+			
 			BB_SHUTDOWN_ALLOCATOR_THREAD();
 			s_LightmappingState = LightmappingState::Waiting;
 		});
@@ -1401,7 +1505,14 @@ namespace Blueberry
 		{
 			return 0;
 		}
-		return static_cast<float>(*s_State.completeCounter) / s_State.validTexels.size();
+		if (s_State.params.generateProbes)
+		{
+			return static_cast<float>(*s_State.completeCounter) / s_State.lightmappingParams.probeCount;
+		}
+		else
+		{
+			return static_cast<float>(*s_State.completeCounter) / s_State.validTexels.size();
+		}
 	}
 
 	const LightmappingState& LightmappingManager::GetLightmappingState()

@@ -15,6 +15,5 @@ namespace Blueberry
 
 	private:
 		SerializedProperty m_MaterialProperty;
-		SerializedProperty m_ReflectionTextureProperty;
 	};
 }

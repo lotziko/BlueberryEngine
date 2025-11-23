@@ -7,12 +7,8 @@ namespace Blueberry
 	class Scene;
 	class Camera;
 	class GfxTexture;
-	class Material;
-	class HBAORenderer;
 	class ShadowAtlas;
-	class AutoExposure;
-
-	class TextureCube;
+	class ReflectionAtlas;
 
 	class DefaultRenderer
 	{
@@ -20,7 +16,7 @@ namespace Blueberry
 		static void Initialize();
 		static void Shutdown();
 		
-		static void Draw(Scene* scene, Camera* camera, Rectangle viewport, Color background, GfxTexture* colorOutput = nullptr, GfxTexture* depthOutput = nullptr, const bool& simplified = false);
+		static void Draw(Scene* scene, Camera* camera, Rectangle viewport, Color background, GfxTexture* colorOutput = nullptr, GfxTexture* depthOutput = nullptr);
 		
 	private:
 		static inline ShadowAtlas* s_ShadowAtlas = nullptr;

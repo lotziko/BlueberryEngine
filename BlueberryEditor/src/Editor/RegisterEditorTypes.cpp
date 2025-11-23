@@ -30,6 +30,8 @@ namespace Blueberry
 		REGISTER_CLASS(StatisticsWindow);
 		REGISTER_CLASS(LightmappingWindow);
 		REGISTER_CLASS(SceneSettings);
+		REGISTER_DATA_CLASS(MeshRendererData);
+		REGISTER_DATA_CLASS(ReflectionProbeData);
 		REGISTER_CLASS(LightingData);
 	}
 }

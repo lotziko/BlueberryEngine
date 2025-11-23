@@ -177,6 +177,30 @@ namespace Blueberry
 			case BindingType::AABB:
 				output.write(reinterpret_cast<char*>(&(*value.Get<AABB>()).Center), 6 * sizeof(float));
 				break;
+			case BindingType::Vector2List:
+			{
+				List<Vector2> data = *value.Get<List<Vector2>>();
+				size_t dataSize = data.size();
+				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
+				output.write(reinterpret_cast<char*>(data.data()), data.size() * sizeof(Vector2));
+			}
+			break;
+			case BindingType::Vector3List:
+			{
+				List<Vector3> data = *value.Get<List<Vector3>>();
+				size_t dataSize = data.size();
+				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
+				output.write(reinterpret_cast<char*>(data.data()), data.size() * sizeof(Vector3));
+			}
+			break;
+			case BindingType::Vector4List:
+			{
+				List<Vector4> data = *value.Get<List<Vector4>>();
+				size_t dataSize = data.size();
+				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
+				output.write(reinterpret_cast<char*>(data.data()), data.size() * sizeof(Vector4));
+			}
+			break;
 			case BindingType::Raw:
 				output.write(reinterpret_cast<char*>(value.Get()), field.options.size);
 				break;
@@ -350,6 +374,33 @@ namespace Blueberry
 				case BindingType::AABB:
 					input.read(reinterpret_cast<char*>(&(*value.Get<AABB>()).Center), 6 * sizeof(float));
 					break;
+				case BindingType::Vector2List:
+				{
+					size_t dataSize;
+					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
+					List<Vector2> data(dataSize);
+					input.read(reinterpret_cast<char*>(data.data()), dataSize * sizeof(Vector2));
+					*value.Get<List<Vector2>>() = std::move(data);
+				}
+				break;
+				case BindingType::Vector3List:
+				{
+					size_t dataSize;
+					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
+					List<Vector3> data(dataSize);
+					input.read(reinterpret_cast<char*>(data.data()), dataSize * sizeof(Vector3));
+					*value.Get<List<Vector3>>() = std::move(data);
+				}
+				break;
+				case BindingType::Vector4List:
+				{
+					size_t dataSize;
+					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
+					List<Vector4> data(dataSize);
+					input.read(reinterpret_cast<char*>(data.data()), dataSize * sizeof(Vector4));
+					*value.Get<List<Vector4>>() = std::move(data);
+				}
+				break;
 				case BindingType::Raw:
 				{
 					char* data = reinterpret_cast<char*>(value.Get());

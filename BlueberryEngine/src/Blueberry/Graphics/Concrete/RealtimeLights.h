@@ -19,6 +19,5 @@ namespace Blueberry
 	private:
 		static inline ComputeShader* s_ClusteringShader = nullptr;
 		static inline GfxTexture* s_LightIndexTexture = nullptr;
-		static inline GfxTexture* s_DebugTexture = nullptr;
 	};
 }

@@ -214,6 +214,10 @@ namespace Blueberry
 		{
 			return 1;
 		}
+		else if (dimension == TextureDimension::TextureCubeArray)
+		{
+			return 6 * depth;
+		}
 		else if (dimension == TextureDimension::TextureCube)
 		{
 			return 6;
@@ -333,6 +337,11 @@ namespace Blueberry
 		return m_Height;
 	}
 
+	TextureFormat GfxTextureDX11::GetFormat() const
+	{
+		return static_cast<TextureFormat>(m_Format);
+	}
+
 	void* GfxTextureDX11::GetHandle()
 	{
 		return m_ShaderResourceView.Get();
@@ -415,13 +424,58 @@ namespace Blueberry
 			BB_ERROR("The texture cannot be writed.");
 			return;
 		}
-		D3D11_MAPPED_SUBRESOURCE mappedBuffer;
-		ZeroMemory(&mappedBuffer, sizeof(D3D11_MAPPED_SUBRESOURCE));
+		D3D11_MAPPED_SUBRESOURCE mappedTexture;
+		ZeroMemory(&mappedTexture, sizeof(D3D11_MAPPED_SUBRESOURCE));
 
-		m_DeviceContext->Map(m_StagingTexture.Get(), 0, D3D11_MAP_WRITE, 0, &mappedBuffer);
-		memcpy(mappedBuffer.pData, data, size);
+		m_DeviceContext->Map(m_StagingTexture.Get(), 0, D3D11_MAP_WRITE, 0, &mappedTexture);
+		memcpy(mappedTexture.pData, data, size);
 		m_DeviceContext->Unmap(m_StagingTexture.Get(), 0);
 
+		m_DeviceContext->CopyResource(m_Texture.Get(), m_StagingTexture.Get());
+	}
+
+	void GfxTextureDX11::SetData(void* data, const size_t& size, const uint32_t& slice)
+	{
+		if (m_StagingTexture.Get() == nullptr)
+		{
+			BB_ERROR("The texture cannot be writed.");
+			return;
+		}
+		uint32_t bytesPerPixel = GetBitsPerPixel(m_Format) / 8;
+		uint32_t bytesPerBlock = IsCompressed(m_Format) ? 4 : 1;
+		uint8_t* src = static_cast<uint8_t*>(data);
+		D3D11_MAPPED_SUBRESOURCE mappedTexture;
+		ZeroMemory(&mappedTexture, sizeof(D3D11_MAPPED_SUBRESOURCE));
+
+		uint32_t subSliceCount = std::max(1u, m_ArraySize / m_Depth);
+
+		for (uint32_t i = 0; i < subSliceCount; ++i)
+		{
+			uint32_t width = m_Width * bytesPerBlock;
+			uint32_t height = m_Height / bytesPerBlock;
+			for (uint32_t j = 0; j < m_MipLevels; ++j)
+			{
+				UINT subresource = D3D11CalcSubresource(j, slice * subSliceCount + i, m_MipLevels);
+				HRESULT hr = m_DeviceContext->Map(m_StagingTexture.Get(), subresource, D3D11_MAP_WRITE, 0, &mappedTexture);
+				if (FAILED(hr))
+				{
+					BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to get texture data."));
+					return;
+				}
+				uint8_t* ptr = static_cast<uint8_t*>(mappedTexture.pData);
+				uint32_t dataSize = width * bytesPerPixel;
+				for (uint32_t k = 0; k < height; ++k)
+				{
+					memcpy(ptr, src, dataSize);
+					src += dataSize;
+					ptr += mappedTexture.RowPitch;
+				}
+				m_DeviceContext->Unmap(m_StagingTexture.Get(), subresource);
+				width /= 2;
+				height /= 2;
+			}
+		}
+		
 		m_DeviceContext->CopyResource(m_Texture.Get(), m_StagingTexture.Get());
 	}
 
@@ -514,7 +568,8 @@ namespace Blueberry
 		uint32_t arraySize = GetArraySize(properties.dimension, properties.depth);
 		uint32_t mipLevels = std::max(1u, properties.mipCount);
 		bool isCubemap = properties.dimension == TextureDimension::TextureCube;
-		bool isArray = !isCubemap && arraySize > 1;
+		bool isCubemapArray = properties.dimension == TextureDimension::TextureCubeArray;
+		bool isArray = !isCubemapArray && !isCubemap && arraySize > 1;
 		bool isVolume = properties.dimension == TextureDimension::Texture3D;
 		
 		bool useDSV = IsDepth(m_Format);
@@ -593,7 +648,7 @@ namespace Blueberry
 			{
 				textureDesc.BindFlags |= D3D11_BIND_UNORDERED_ACCESS;
 			}
-			if (isCubemap)
+			if (isCubemap || isCubemapArray)
 			{
 				textureDesc.MiscFlags |= D3D11_RESOURCE_MISC_TEXTURECUBE;
 			}
@@ -633,6 +688,14 @@ namespace Blueberry
 				resourceViewDesc.Texture2DArray.FirstArraySlice = 0;
 				resourceViewDesc.Texture2DArray.MostDetailedMip = 0;
 			}
+		}
+		else if (isCubemapArray)
+		{
+			resourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBEARRAY;
+			resourceViewDesc.TextureCubeArray.MipLevels = mipLevels;
+			resourceViewDesc.TextureCubeArray.MostDetailedMip = 0;
+			resourceViewDesc.TextureCubeArray.First2DArrayFace = 0;
+			resourceViewDesc.TextureCubeArray.NumCubes = arraySize / 6;
 		}
 		else if (isCubemap)
 		{
@@ -694,7 +757,6 @@ namespace Blueberry
 			}
 			else if (isArray)
 			{
-				m_SlicesRenderTargetViews.resize(arraySize);
 				if (antiAliasing > 1)
 				{
 					renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DMSARRAY;

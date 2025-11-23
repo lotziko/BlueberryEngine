@@ -13,26 +13,24 @@ namespace Blueberry
 	void SkyRendererEditor::OnEnable()
 	{
 		m_MaterialProperty = m_SerializedObject->FindProperty("m_Material");
-		m_ReflectionTextureProperty = m_SerializedObject->FindProperty("m_ReflectionTexture");
 	}
 
 	void SkyRendererEditor::OnDrawInspector()
 	{
 		ObjectEditor::OnDrawInspector();
-		if (ImGui::Button("Bake"))
+		if (m_SerializedObject->GetTargets().size() == 1 && ImGui::Button("Bake"))
 		{
-			// Rewrite into .hdr with 16 bit
-			Material* material = static_cast<Material*>(m_MaterialProperty.GetObjectPtr().Get());
-			if (material != nullptr)
+			if (m_MaterialProperty.GetObjectPtr().Get() != nullptr)
 			{
-				Texture* baseMap = material->GetTexture(TO_HASH("_BaseMap"));
-				if (baseMap != nullptr)
-				{
-					m_ReflectionTextureProperty.SetObjectPtr(ReflectionGenerator::GenerateReflectionTexture(static_cast<TextureCube*>(baseMap)));
-					m_SerializedObject->ApplyModifiedProperties();
-					SceneArea::RequestRedrawAll();
-				}
+				SkyRenderer* skyRenderer = static_cast<SkyRenderer*>(m_SerializedObject->GetTarget());
+				ReflectionGenerator::GenerateReflectionTexture(skyRenderer);
+				SceneArea::RequestRedrawAll();
 			}
+		}
+
+		if (m_SerializedObject->ApplyModifiedProperties())
+		{
+			SceneArea::RequestRedrawAll();
 		}
 	}
 }

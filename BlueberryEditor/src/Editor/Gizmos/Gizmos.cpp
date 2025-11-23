@@ -10,7 +10,7 @@
 
 namespace Blueberry
 {
-	static const uint32_t MAX_LINES = 1024;
+	static const uint32_t MAX_LINES = 16384;
 	static const uint32_t MAX_VERTICES = MAX_LINES * 2;
 	static const uint32_t MAX_INDICES = MAX_LINES * 2;
 
@@ -323,6 +323,9 @@ namespace Blueberry
 		s_ArcVertexBuffer->SetData(s_ArcVertexData, s_ArcCount * s_ArcVertexBuffer->GetElementSize());
 
 		GfxDevice::Draw(GfxDrawingOperation(s_ArcVertexBuffer, nullptr, s_ArcMaterial, &s_ArcLayout, 0, 0, s_ArcCount, Topology::PointList, 0));
-		GfxDevice::Draw(GfxDrawingOperation(s_ArcVertexBuffer, nullptr, s_ArcMaterial, &s_ArcLayout, 0, 1, s_ArcCount, Topology::PointList, 1));
+		//GfxDevice::Draw(GfxDrawingOperation(s_ArcVertexBuffer, nullptr, s_ArcMaterial, &s_ArcLayout, 0, 1, s_ArcCount, Topology::PointList, 1));
+	
+		s_ArcCount = 0;
+		s_ArcVertexDataPtr = s_ArcVertexData;
 	}
 }

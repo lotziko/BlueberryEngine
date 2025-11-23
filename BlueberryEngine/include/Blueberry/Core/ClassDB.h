@@ -31,7 +31,11 @@ namespace Blueberry
 		Color,
 		AABB,
 
-		// POD class of fixed size stored in objectType
+		Vector2List,
+		Vector3List,
+		Vector4List,
+
+		// POD class of fixed size
 		Raw,
 
 		// Derived from Object
@@ -85,6 +89,7 @@ namespace Blueberry
 		size_t parentId;
 		Object*(*createInstance)() = nullptr;
 		bool isObject;
+		bool preferBinary;
 		size_t offset;
 		List<FieldInfo> fields;
 		Dictionary<String, FieldInfo> fieldsMap;
@@ -107,6 +112,7 @@ namespace Blueberry
 		static void Bind();
 
 		static void DefineField(FieldInfo info);
+		static void DefinePreferBinary(); // TODO class attributes
 
 		template <class ObjectType, class BaseObjectType>
 		static void DefineBaseFields();
@@ -127,6 +133,7 @@ namespace Blueberry
 	private:
 		static Dictionary<size_t, ClassInfo> s_Classes;
 		static List<FieldInfo> s_CurrentFieldInfos;
+		static ClassInfo s_CurrentClassInfo;
 		static uint32_t s_CurrentOffset;
 	};
 
@@ -141,6 +148,7 @@ namespace Blueberry
 
 	#define DEFINE_BASE_FIELDS( className, baseClassName ) ClassDB::DefineBaseFields<className, baseClassName>();
 	#define DEFINE_FIELD( className, fieldName, fieldType, fieldOptions ) ClassDB::DefineField({ TO_STRING(fieldName), offsetof(className, className::fieldName), fieldType, fieldOptions, IsList(fieldType) });
+	#define DEFINE_PREFER_BINARY() ClassDB::DefinePreferBinary();
 
 	template<class ObjectType>
 	inline void ClassDB::Register()
@@ -157,8 +165,7 @@ namespace Blueberry
 		info.createInstance = createFunction;
 		info.isObject = true;
 		info.offset = offset;
-
-		s_Classes.insert_or_assign(id, info);
+		s_CurrentClassInfo = info;
 
 		ObjectType::DefineFields();
 		ClassDB::Bind<ObjectType>();
@@ -178,8 +185,7 @@ namespace Blueberry
 		info.createInstance = nullptr;
 		info.isObject = true;
 		info.offset = offset;
-
-		s_Classes.insert_or_assign(id, info);
+		s_CurrentClassInfo = info;
 
 		ObjectType::DefineFields();
 		ClassDB::Bind<ObjectType>();
@@ -188,7 +194,6 @@ namespace Blueberry
 	template<class ObjectType>
 	inline void ClassDB::RegisterData()
 	{
-		size_t id = ObjectType::Type;
 		size_t parentId = 0;
 		String name = ObjectType::TypeName;
 		size_t offset = reinterpret_cast<char*>(static_cast<Data*>(reinterpret_cast<ObjectType*>(0x10000000))) - reinterpret_cast<char*>(0x10000000);
@@ -199,8 +204,7 @@ namespace Blueberry
 		info.createInstance = nullptr;
 		info.isObject = false;
 		info.offset = offset;
-
-		s_Classes.insert_or_assign(id, info);
+		s_CurrentClassInfo = info;
 
 		ObjectType::DefineFields();
 		ClassDB::Bind<ObjectType>();
@@ -209,15 +213,14 @@ namespace Blueberry
 	template<class ObjectType>
 	inline void ClassDB::Bind()
 	{
-		auto classInfoIt = s_Classes.find(ObjectType::Type);
-		if (classInfoIt != s_Classes.end())
+		size_t id = ObjectType::Type;
+		ClassInfo info = s_CurrentClassInfo;
+		for (FieldInfo fieldInfo : s_CurrentFieldInfos)
 		{
-			for (FieldInfo info : s_CurrentFieldInfos)
-			{
-				classInfoIt->second.fields.emplace_back(info);
-				classInfoIt->second.fieldsMap.insert_or_assign(info.name, info);
-			}
+			info.fields.emplace_back(fieldInfo);
+			info.fieldsMap.insert_or_assign(fieldInfo.name, fieldInfo);
 		}
+		s_Classes.insert_or_assign(id, std::move(info));
 		s_CurrentFieldInfos.clear();
 	}
 

@@ -13,6 +13,8 @@
 #include "Blueberry\Scene\Components\SkyRenderer.h"
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Scene\Components\Light.h"
+#include "Blueberry\Scene\Components\ProbeVolume.h"
+#include "Blueberry\Scene\Components\ReflectionProbe.h"
 #include "Blueberry\Scene\Components\PhysicsBody.h"
 #include "Blueberry\Scene\Components\Collider.h"
 #include "Blueberry\Scene\Components\BoxCollider.h"
@@ -34,6 +36,8 @@ namespace Blueberry
 		REGISTER_CLASS(SkyRenderer);
 		REGISTER_CLASS(Camera);
 		REGISTER_CLASS(Light);
+		REGISTER_CLASS(ProbeVolume);
+		REGISTER_CLASS(ReflectionProbe);
 		REGISTER_CLASS(PhysicsBody);
 		REGISTER_ABSTRACT_CLASS(Collider);
 		REGISTER_CLASS(BoxCollider);

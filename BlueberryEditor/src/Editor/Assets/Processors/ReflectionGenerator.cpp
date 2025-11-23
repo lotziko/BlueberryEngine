@@ -1,14 +1,25 @@
 #include "ReflectionGenerator.h"
 
+#include "Blueberry\Scene\Entity.h"
+#include "Blueberry\Scene\Components\Camera.h"
+#include "Blueberry\Scene\Components\Transform.h"
+#include "Blueberry\Scene\Components\SkyRenderer.h"
+#include "Blueberry\Scene\Components\ReflectionProbe.h"
 #include "Blueberry\Graphics\Enums.h"
+#include "Blueberry\Graphics\Concrete\DefaultRenderer.h"
+#include "Blueberry\Graphics\Buffers\PerCameraDataConstantBuffer.h"
+#include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\TextureCube.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Graphics\GfxTexture.h"
+#include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Tools\StringConverter.h"
 
 #include "Editor\Misc\TextureHelper.h"
 #include "Editor\EditorSceneManager.h"
+#include "Editor\Scene\SceneSettings.h"
+#include "Editor\Scene\LightingData.h"
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Assets\Importers\TextureImporter.h"
 
@@ -16,14 +27,123 @@
 
 namespace Blueberry
 {
-	TextureCube* ReflectionGenerator::GenerateReflectionTexture(TextureCube* source)
+	#define SIZE 128
+	#define SLICE_SIZE SIZE * SIZE * 8
+
+	static Quaternion s_Rotation[6] = {};
+	static List<uint8_t> s_SliceData = {};
+
+	void ReflectionGenerator::GenerateReflectionTexture(SkyRenderer* skyRenderer)
+	{
+		Initialize();
+		Transform* cameraTransform = s_Camera->GetTransform();
+		cameraTransform->SetLocalPosition(Vector3::Zero);
+		GfxDevice::SetRenderTarget(s_RenderTargetTexture);
+		GfxDevice::SetViewport(0, 0, SIZE, SIZE);
+		for (uint32_t i = 0; i < 6; ++i)
+		{
+			cameraTransform->SetLocalRotation(s_Rotation[i]);
+			PerCameraDataConstantBuffer::BindData(s_Camera, s_RenderTargetTexture);
+			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetCube(), skyRenderer->GetMaterial(), 0));
+			s_RenderTargetTexture->GetData(s_SliceData.data() + SLICE_SIZE * i);
+		}
+		s_CubeTexture->SetData(s_SliceData.data(), SLICE_SIZE * 6);
+		GfxDevice::SetRenderTarget(nullptr);
+
+		LightingData* lightingData = EditorSceneManager::GetSettings()->GetLightingData();
+		TextureCube* result = Save(0);
+		skyRenderer->SetReflectionTexture(result);
+		lightingData->SetSkyReflection(skyRenderer);
+		AssetDB::SetDirty(lightingData);
+		AssetDB::SaveAssets();
+	}
+
+	void ReflectionGenerator::GenerateReflectionTexture(ReflectionProbe* reflectionProbe)
+	{
+		Initialize();
+		Transform* cameraTransform = s_Camera->GetTransform();
+		cameraTransform->SetLocalPosition(reflectionProbe->GetTransform()->GetPosition());
+		for (uint32_t i = 0; i < 6; ++i)
+		{
+			cameraTransform->SetLocalRotation(s_Rotation[i]);
+			DefaultRenderer::Draw(reflectionProbe->GetScene(), s_Camera, Rectangle(0, 0, SIZE, SIZE), Color(0, 0, 0), s_RenderTargetTexture, nullptr);
+			s_RenderTargetTexture->GetData(s_SliceData.data() + SLICE_SIZE * i);
+		}
+		s_CubeTexture->SetData(s_SliceData.data(), SLICE_SIZE * 6);
+
+		LightingData* lightingData = EditorSceneManager::GetSettings()->GetLightingData();
+		uint32_t index = lightingData->GetReflectionProbeIndex(reflectionProbe->GetReflectionTexture());
+		if (index == UINT_MAX)
+		{
+			index = std::max(static_cast<uint32_t>(lightingData->GetReflectionProbeCount()), 1u);
+		}
+		TextureCube* result = Save(index);
+		reflectionProbe->SetReflectionTexture(result);
+		reflectionProbe->SetAtlasIndex(index);
+		lightingData->SetReflectionProbe(index - 1, reflectionProbe);
+		AssetDB::SetDirty(lightingData);
+		AssetDB::SaveAssets();
+	}
+
+	void ReflectionGenerator::Initialize()
+	{
+		if (s_RenderTargetTexture == nullptr)
+		{
+			TextureProperties textureProperties = {};
+			textureProperties.width = SIZE;
+			textureProperties.height = SIZE;
+			textureProperties.depth = 1;
+			textureProperties.antiAliasing = 1;
+			textureProperties.mipCount = 1;
+			textureProperties.format = TextureFormat::R16G16B16A16_Float;
+			textureProperties.dimension = TextureDimension::Texture2D;
+			textureProperties.wrapMode = WrapMode::Clamp;
+			textureProperties.filterMode = FilterMode::Bilinear;
+			textureProperties.isRenderTarget = true;
+			textureProperties.isReadable = true;
+			GfxDevice::CreateTexture(textureProperties, s_RenderTargetTexture);
+
+			textureProperties.dimension = TextureDimension::TextureCube;
+			textureProperties.isReadable = false;
+			textureProperties.isWritable = true;
+			GfxDevice::CreateTexture(textureProperties, s_CubeTexture);
+		}
+
+		if (s_Camera == nullptr)
+		{
+			Entity* cameraEntity = Object::Create<Entity>();
+			cameraEntity->AddComponent<Transform>();
+			s_Camera = cameraEntity->AddComponent<Camera>();
+			s_Camera->SetCameraType(CameraType::Reflection);
+			s_Camera->SetOrthographic(false);
+			s_Camera->SetFieldOfView(90.0f);
+			s_Camera->SetAspectRatio(1.0f);
+			cameraEntity->OnCreate();
+
+			Vector3 direction[6] = { Vector3::Right, Vector3::Left, Vector3::Up, Vector3::Down, Vector3::Forward, Vector3::Backward };
+			Vector3 up[6] = { Vector3::Up, Vector3::Up, Vector3::Backward, Vector3::Forward, Vector3::Up, Vector3::Up };
+
+			for (uint32_t i = 0; i < 6; ++i)
+			{
+				Matrix rotationMatrix = Matrix::CreateLookAt(Vector3::Zero, direction[i], up[i]);
+				s_Rotation[i] = Quaternion::CreateFromRotationMatrix(rotationMatrix);
+			}
+
+			s_SliceData.resize(SLICE_SIZE * 6);
+		}
+	}
+
+	TextureCube* ReflectionGenerator::Save(const uint32_t& index)
 	{
 		DirectX::ScratchImage image = {};
-		image.InitializeCube(DXGI_FORMAT_R16G16B16A16_FLOAT, 128, 128, 1, 1);
-		TextureHelper::DownscaleTextureCube(source->Get(), image);
-		
+		image.InitializeCube(DXGI_FORMAT_R16G16B16A16_FLOAT, SIZE, SIZE, 1, 1);
+		TextureHelper::DownscaleTextureCube(s_CubeTexture, image);
+
 		String path = EditorSceneManager::GetPath();
-		path.replace(path.find(".scene"), 6, "\\ReflectionTexture0.hdr");
+		String name = "\\ReflectionTexture";
+		name.append(std::to_string(index));
+		name.append(".hdr");
+		path.replace(path.find(".scene"), 6, name);
 
 		std::filesystem::create_directories(std::filesystem::path(path).parent_path());
 		HRESULT hr = DirectX::SaveToHDRFile(*image.GetImages(), WString(path.begin(), path.end()).c_str());
@@ -36,6 +156,7 @@ namespace Blueberry
 		auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
 		TextureImporter* importer = static_cast<TextureImporter*>(AssetDB::GetImporter(relativePath.string().data()));
 		importer->SetTextureShape(TextureImporter::TextureShape::TextureCube);
+		importer->SetTextureFormat(TextureImporter::TextureFormat::BC6H);
 		importer->SetTextureCubeType(TextureImporter::TextureCubeType::Slices);
 		importer->SetTextureCubeIBLType(TextureImporter::TextureCubeIBLType::Specular);
 		importer->SaveAndReimport();

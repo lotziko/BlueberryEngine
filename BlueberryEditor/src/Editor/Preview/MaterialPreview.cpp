@@ -44,12 +44,13 @@ namespace Blueberry
 			m_Camera->SetAspectRatio(1.0f);
 			m_Camera->SetFieldOfView(15.0f);
 			m_Camera->SetPixelSize(Vector2(target->GetWidth(), target->GetHeight()));
+			m_Camera->SetCameraType(CameraType::Preview);
 
 			Entity* skyEntity = m_Scene->CreateEntity("Sky");
 			SkyRenderer* skyRenderer = skyEntity->AddComponent<SkyRenderer>();
 			skyRenderer->SetAmbientColor(Color(0.01f, 0.01f, 0.01f, 1));
 		}
 		m_Renderer->SetMaterial(material);
-		DefaultRenderer::Draw(m_Scene, m_Camera, Rectangle(0, 0, target->GetWidth(), target->GetHeight()), Color(0, 0, 0, 1), target, nullptr, true);
+		DefaultRenderer::Draw(m_Scene, m_Camera, Rectangle(0, 0, target->GetWidth(), target->GetHeight()), Color(0, 0, 0, 1), target, nullptr);
 	}
 }

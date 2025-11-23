@@ -24,6 +24,7 @@ namespace Blueberry
 		R32G32B32A32_Float = 2,
 		R16G16B16A16_Float = 10,
 		R16G16B16A16_UNorm = 11,
+		R11G11B10_Float = 26,
 		R8G8B8A8_UNorm = 28,
 		R8G8B8A8_UNorm_SRGB = 29,
 		R8G8B8A8_UInt = 30,

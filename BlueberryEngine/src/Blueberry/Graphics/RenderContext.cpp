@@ -5,6 +5,8 @@
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Scene\Components\MeshRenderer.h"
 #include "Blueberry\Scene\Components\SkyRenderer.h"
+#include "Blueberry\Scene\Components\ProbeVolume.h"
+#include "Blueberry\Scene\Components\ReflectionProbe.h"
 #include "Blueberry\Graphics\Texture.h"
 #include "Blueberry\Scene\Components\Light.h"
 #include "Blueberry\Scene\Components\Transform.h"
@@ -170,6 +172,7 @@ namespace Blueberry
 
 		results.camera = camera;
 		results.lights.clear();
+		results.reflectionProbes.clear();
 		results.cullerInfos.clear();
 
 		Matrix view = cameraData.isMultiview ? cameraData.multiviewViewMatrix[0].Invert() : camera->GetInverseViewMatrix();
@@ -188,6 +191,20 @@ namespace Blueberry
 		for (auto component : scene->GetIterator<SkyRenderer>())
 		{
 			results.skyRenderer = static_cast<SkyRenderer*>(component.second);
+			break;
+		}
+
+		results.probeVolume = nullptr;
+		for (auto component : scene->GetIterator<ProbeVolume>())
+		{
+			results.probeVolume = static_cast<ProbeVolume*>(component.second);
+			break;
+		}
+
+		// TODO culling
+		for (auto component : scene->GetIterator<ReflectionProbe>())
+		{
+			results.reflectionProbes.push_back(static_cast<ReflectionProbe*>(component.second));
 		}
 
 		if (s_LastCullingFrame < Time::GetFrameCount())
@@ -373,14 +390,6 @@ namespace Blueberry
 			Material* material = results.skyRenderer->GetMaterial();
 			if (material != nullptr)
 			{
-				// Generate IBL 128x128 texture and store in project or in scene (in sky renderer) instead
-				// Also generate same IBL for reflection probes
-				// Can generate IBLs in engine method similar to Unity
-				TextureCube* reflectionTexture = results.skyRenderer->GetReflectionTexture();
-				if (reflectionTexture != nullptr)
-				{
-					GfxDevice::SetGlobalTexture(TO_HASH("_ReflectionTexture"), reflectionTexture->Get());
-				}
 				GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetCube(), material, 0));
 			}
 		}

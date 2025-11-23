@@ -57,4 +57,9 @@ float3 ReconstructNormal(float3 normal)
 	return normalize(float3(normal.x, normal.y, sqrt(saturate(1 - dot(normal.xy, normal.xy)))));
 }
 
+bool IsInsideAABB(float3 position, float3 min, float3 max)
+{
+	return (position.x > min.x && position.x < max.x && position.y > min.y && position.y < max.y && position.z > min.z && position.z < max.z);
+}
+
 #endif

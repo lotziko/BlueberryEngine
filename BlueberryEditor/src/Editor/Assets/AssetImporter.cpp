@@ -59,7 +59,10 @@ namespace Blueberry
 		if (m_MainObject > 0)
 		{
 			Object* mainObject = ObjectDB::GetObjectFromGuid(m_Guid, m_MainObject);
-			return mainObject->GetState() != ObjectState::AwaitingLoading;
+			if (mainObject != nullptr)
+			{
+				return mainObject->GetState() != ObjectState::AwaitingLoading;
+			}
 		}
 		return false;
 	}
@@ -74,7 +77,10 @@ namespace Blueberry
 		if (m_MainObject > 0)
 		{
 			Object* mainObject = ObjectDB::GetObjectFromGuid(m_Guid, m_MainObject);
-			mainObject->SetState(ObjectState::AwaitingLoading);
+			if (mainObject != nullptr)
+			{
+				mainObject->SetState(ObjectState::AwaitingLoading);
+			}
 		}
 	}
 

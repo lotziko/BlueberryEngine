@@ -47,22 +47,25 @@ static uint _RenderInstanceId;
 #define TEXTURE2D_ARRAY_MSAA(textureName, samples)		Texture2DMSArray<float4, samples> textureName
 #define TEXTURE2D_ARRAY_MSAA_FLOAT(textureName, samples)Texture2DMSArray<float, samples> textureName
 #define TEXTURECUBE(textureName)						TextureCube textureName
+#define TEXTURECUBE_ARRAY(textureName)					TextureCubeArray textureName
 #define TEXTURE3D(textureName)							Texture3D textureName
 
 #define SAMPLER(samplerName)							SamplerState samplerName
 #define SAMPLER_CMP(samplerName)						SamplerComparisonState samplerName
 
-#define SAMPLE_TEXTURE2D(textureName, samplerName, coord2)					textureName.Sample(samplerName, coord2)
-#define SAMPLE_TEXTURE2D_ARRAY(textureName, samplerName, coord2, index)		textureName.Sample(samplerName, float3(coord2, index))
-#define SAMPLE_TEXTURE2D_LOD(textureName, samplerName, coord2, lod)			textureName.SampleLevel(samplerName, coord2, lod)
-#define SAMPLE_TEXTURE2D_SHADOW(textureName, samplerName, coord2, depth)    textureName.SampleCmpLevelZero(samplerName, coord2, depth)
-#define LOAD_TEXTURE2D(textureName, coord2)									textureName.Load(uint3(coord2, 0))
-#define LOAD_TEXTURE2D_MSAA(textureName, uv, sampleIndex)					textureName.Load(uv, sampleIndex)
-#define LOAD_TEXTURE2D_ARRAY_MSAA(textureName, uv, index, sampleIndex)		textureName.Load(uint3(uv, index), sampleIndex)
-#define SAMPLE_TEXTURECUBE(textureName, samplerName, coord3)				textureName.Sample(samplerName, coord3)
-#define SAMPLE_TEXTURECUBE_LOD(textureName, samplerName, coord3, lod)		textureName.SampleLevel(samplerName, coord3, lod)
-#define SAMPLE_TEXTURE3D(textureName, samplerName, coord3)					textureName.Sample(samplerName, coord3)
-#define SAMPLE_TEXTURE3D_LOD(textureName, samplerName, coord3, lod)			textureName.SampleLevel(samplerName, coord3, lod)
+#define SAMPLE_TEXTURE2D(textureName, samplerName, coord2)							textureName.Sample(samplerName, coord2)
+#define SAMPLE_TEXTURE2D_ARRAY(textureName, samplerName, coord2, index)				textureName.Sample(samplerName, float3(coord2, index))
+#define SAMPLE_TEXTURE2D_LOD(textureName, samplerName, coord2, lod)					textureName.SampleLevel(samplerName, coord2, lod)
+#define SAMPLE_TEXTURE2D_SHADOW(textureName, samplerName, coord2, depth)			textureName.SampleCmpLevelZero(samplerName, coord2, depth)
+#define LOAD_TEXTURE2D(textureName, coord2)											textureName.Load(uint3(coord2, 0))
+#define LOAD_TEXTURE2D_MSAA(textureName, uv, sampleIndex)							textureName.Load(uv, sampleIndex)
+#define LOAD_TEXTURE2D_ARRAY_MSAA(textureName, uv, index, sampleIndex)				textureName.Load(uint3(uv, index), sampleIndex)
+#define LOAD_TEXTURE3D(textureName, coord3)											textureName.Load(uint4(coord3, 0))
+#define SAMPLE_TEXTURECUBE(textureName, samplerName, coord3)						textureName.Sample(samplerName, coord3)
+#define SAMPLE_TEXTURECUBE_LOD(textureName, samplerName, coord3, lod)				textureName.SampleLevel(samplerName, coord3, lod)
+#define SAMPLE_TEXTURECUBE_ARRAY_LOD(textureName, samplerName, coord3, index, lod)	textureName.SampleLevel(samplerName, float4(coord3, index), lod)
+#define SAMPLE_TEXTURE3D(textureName, samplerName, coord3)							textureName.Sample(samplerName, coord3)
+#define SAMPLE_TEXTURE3D_LOD(textureName, samplerName, coord3, lod)					textureName.SampleLevel(samplerName, coord3, lod)
 
 #if (MULTIVIEW)
 

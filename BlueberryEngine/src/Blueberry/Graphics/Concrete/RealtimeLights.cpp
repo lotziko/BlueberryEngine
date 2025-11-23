@@ -1,7 +1,6 @@
 #include "RealtimeLights.h"
 
 #include "Blueberry\Assets\AssetLoader.h"
-#include "Blueberry\Graphics\GfxRenderTexturePool.h"
 #include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "..\RenderContext.h"
@@ -16,7 +15,7 @@ namespace Blueberry
 	#define CLUSTERS_Y 17
 	#define CLUSTERS_Z 16
 	#define MAX_LIGHTS 64
-	#define LIGHT_TYPE_COUNT 2
+	#define LIGHT_TYPE_COUNT (2 + 1)
 
 	static size_t s_ClusteringLightIndexTextureId = TO_HASH("_ClusteringLightIndexTexture");
 	static size_t s_LightIndexTextureId = TO_HASH("_LightIndexTexture");
@@ -97,7 +96,7 @@ namespace Blueberry
 			}
 			lights.emplace_back(light);
 		}
-		PerCameraLightDataConstantBuffer::BindData(results.camera, mainLight, results.skyRenderer, lights, atlas->GetSize());
+		PerCameraLightDataConstantBuffer::BindData(results.camera, mainLight, results.skyRenderer, results.probeVolume, lights, results.reflectionProbes, atlas->GetSize());
 	}
 
 	void RealtimeLights::CalculateClusters()

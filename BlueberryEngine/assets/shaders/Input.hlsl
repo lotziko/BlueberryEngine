@@ -4,6 +4,7 @@
 #define MAIN_LIGHT_CASCADES 3
 #define MAX_REALTIME_LIGHTS 128
 #define MAX_VIEW_COUNT 2
+#define REFLECTION_LOD_COUNT 5
 
 struct PerDrawData
 {
@@ -45,8 +46,8 @@ struct PointLightData
 	float3 color;
 	float squareRange;
 	float4 attenuation;				// z,w unused
-	float4x4 worldToShadow[6];
-	float4 shadowBounds[6];			// stores shadowmap slice offsets to counter atlas offsets in _WorldToShadow, otherwise it's just (0, 0, 1, 1)
+	float4x4 worldToShadow;
+	float4 shadowBounds;			// stores shadowmap slice offsets to counter atlas offsets in _WorldToShadow, otherwise it's just (0, 0, 1, 1)
 };
 
 struct SpotLightData
@@ -67,8 +68,19 @@ struct SpotLightData
 	float4x4 worldToCookie;
 };
 
+struct ReflectionProbeData
+{
+	float3 positionMinWS;
+	float3 positionMinVS;
+	float3 positionMaxWS;
+	float3 positionMaxVS;
+	float index;
+	float3 dummy;
+};
+
 StructuredBuffer<PointLightData> _PointLightsData;
 StructuredBuffer<SpotLightData> _SpotLightsData;
+StructuredBuffer<ReflectionProbeData> _ReflectionProbesData;
 
 cbuffer PerCameraLightData
 {
@@ -82,7 +94,11 @@ cbuffer PerCameraLightData
 	float4 _AmbientLightColor;
 	// maybe put here clusters size
 
-	float4 _LightsCount;		// x - point lights, y - spot lights
+	float4 _LightsCount;		// x - point lights, y - spot lights, z - reflection probes
+	float4 _ProbeVolumeMin;
+	float4 _ProbeVolumeSize;
+	float4 _ProbeVolumeInvSize;
+	float4 _ProbeVolumeCellSize;
 	float4 _Shadow3x3PCFTermC0;
 	float4 _Shadow3x3PCFTermC1;
 	float4 _Shadow3x3PCFTermC2;
@@ -101,11 +117,14 @@ SAMPLER(_CookieTexture_Sampler);
 TEXTURE3D(_VolumetricFogTexture);
 SAMPLER(_VolumetricFogTexture_Sampler);
 
-TEXTURECUBE(_ReflectionTexture);
+TEXTURECUBE_ARRAY(_ReflectionTexture);
 SAMPLER(_ReflectionTexture_Sampler);
 
 TEXTURE2D(_LightmapTexture);
 SAMPLER(_LightmapTexture_Sampler);
+
+TEXTURE3D(_ProbeVolumeTexture);
+SAMPLER(_ProbeVolumeTexture_Sampler);
 
 TEXTURE2D_UINT(_LightIndexTexture);
 

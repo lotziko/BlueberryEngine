@@ -277,7 +277,7 @@ namespace Blueberry
 		}
 
 		GfxDevice::SetViewCount(6);
-		GfxDevice::SetGlobalTexture(TO_HASH("_SourceTexture"), texture);
+		GfxDevice::SetGlobalTexture(TO_HASH("_BlitTexture"), texture);
 		GfxDevice::SetRenderTarget(temporaryTexture, nullptr);
 		GfxDevice::SetViewport(0, 0, size, size);
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetBlit(), 1));

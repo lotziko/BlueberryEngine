@@ -25,6 +25,11 @@ bool IsConeAABBIntersecting(float3 position, float3 direction, float range, floa
 	return !(angleCull || frontCull || backCull);
 }
 
+bool IsAABBAABBIntersecting(float3 aabbMin1, float3 aabbMax1, float3 aabbMin2, float3 aabbMax2)
+{
+	return (aabbMin1.x < aabbMax2.x && aabbMax1.x > aabbMin2.x && aabbMin1.y < aabbMax2.y && aabbMax1.y > aabbMin2.y && aabbMin1.z < aabbMax2.z && aabbMax1.z > aabbMin2.z);
+}
+
 float3 ScreenToView(float2 positionSS)
 {
 	float4 positionNdc = float4(positionSS * 2.0 - 1.0, 0.0, 1.0);
@@ -76,14 +81,15 @@ void CSClustering(uint3 id : SV_DispatchThreadID)
 	float3 maxPositionNear = LineIntersectionWithZPlane(float3(0, 0, 0), maxPosition, planeNear);
 	float3 maxPositionFar = LineIntersectionWithZPlane(float3(0, 0, 0), maxPosition, planeFar);
 
-	minPosition = min(minPositionNear, minPositionFar);
-	maxPosition = max(maxPositionNear, maxPositionFar);
+	minPosition = min(min(minPositionNear, minPositionFar), min(maxPositionNear, maxPositionFar));
+	maxPosition = max(max(minPositionNear, minPositionFar), max(maxPositionNear, maxPositionFar));
 
 	float3 center = lerp(minPosition, maxPosition, 0.5);
 	float3 extents = maxPosition - center;
 
 	uint2 indexPoint = uint2(id.x * MAX_LIGHTS, id.y * CLUSTERS_Z + id.z);
 	uint2 indexSpot = uint2(indexPoint.x, indexPoint.y + CLUSTERS_Z * CLUSTERS_Y);
+	uint2 indexReflectionProbe = uint2(indexSpot.x, indexSpot.y + CLUSTERS_Z * CLUSTERS_Y);
 	for (int i = 0; i < int(_LightsCount.x); i++)
 	{
 		PointLightData data = _PointLightsData[i];
@@ -104,6 +110,17 @@ void CSClustering(uint3 id : SV_DispatchThreadID)
 			indexSpot.x += 1;
 		}
 	}
+	for (i = 0; i < int(_LightsCount.z); i++)
+	{
+		ReflectionProbeData data = _ReflectionProbesData[i];
+
+		if (IsAABBAABBIntersecting(minPosition, maxPosition, data.positionMinVS, data.positionMaxVS))
+		{
+			_ClusteringLightIndexTexture[indexReflectionProbe] = i;
+			indexReflectionProbe.x += 1;
+		}
+	}
 	_ClusteringLightIndexTexture[indexPoint] = 0xFFFF;
 	_ClusteringLightIndexTexture[indexSpot] = 0xFFFF;
+	_ClusteringLightIndexTexture[indexReflectionProbe] = 0xFFFF;
 }

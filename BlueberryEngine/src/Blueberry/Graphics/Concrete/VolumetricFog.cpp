@@ -5,7 +5,6 @@
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\GfxTexture.h"
 #include "..\RenderContext.h"
-#include "..\Buffers\PerCameraLightDataConstantBuffer.h"
 #include "..\Buffers\FogViewDataConstantBuffer.h"
 #include "ShadowAtlas.h"
 #include "Blueberry\Graphics\ComputeShader.h"

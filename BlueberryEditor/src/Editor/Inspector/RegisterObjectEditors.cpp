@@ -9,6 +9,8 @@
 #include "Concrete\MeshRendererEditor.h"
 #include "Concrete\SkyRendererEditor.h"
 #include "Concrete\LightEditor.h"
+#include "Concrete\ProbeVolumeEditor.h"
+#include "Concrete\ReflectionProbeEditor.h"
 #include "Concrete\SphereColliderEditor.h"
 #include "Concrete\BoxColliderEditor.h"
 #include "Concrete\CharacterControllerEditor.h"
@@ -29,6 +31,8 @@ namespace Blueberry
 		REGISTER_OBJECT_EDITOR(MeshRendererEditor, MeshRenderer);
 		REGISTER_OBJECT_EDITOR(SkyRendererEditor, SkyRenderer);
 		REGISTER_OBJECT_EDITOR(LightEditor, Light);
+		REGISTER_OBJECT_EDITOR(ProbeVolumeEditor, ProbeVolume);
+		REGISTER_OBJECT_EDITOR(ReflectionProbeEditor, ReflectionProbe);
 		REGISTER_OBJECT_EDITOR(SphereColliderEditor, SphereCollider);
 		REGISTER_OBJECT_EDITOR(BoxColliderEditor, BoxCollider);
 		REGISTER_OBJECT_EDITOR(CharacterControllerEditor, CharacterController);

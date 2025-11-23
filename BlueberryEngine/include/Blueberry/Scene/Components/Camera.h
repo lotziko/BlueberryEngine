@@ -4,6 +4,14 @@
 
 namespace Blueberry
 {
+	enum class CameraType
+	{
+		Game,
+		VR,
+		Preview,
+		Reflection,
+	};
+
 	class BB_API Camera : public Component
 	{
 		OBJECT_DECLARATION(Camera)
@@ -49,6 +57,9 @@ namespace Blueberry
 		Vector3 WorldToScreenPoint(Vector3 position);
 		Vector3 ScreenToWorldPoint(Vector3 position);
 
+		const CameraType& GetCameraType();
+		void SetCameraType(const CameraType& cameraType);
+
 	private:
 		bool IsViewDirty();
 		void InvalidateProjection();
@@ -83,7 +94,6 @@ namespace Blueberry
 		float m_ZNearPlane = 0.1f;
 		float m_ZFarPlane = 1000.0f;
 
-	public:
-		bool m_IsVR = true;
+		CameraType m_CameraType = CameraType::Game;
 	};
 }

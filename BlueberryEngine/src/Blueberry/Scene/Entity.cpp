@@ -93,7 +93,7 @@ namespace Blueberry
 				m_IsActiveInHierarchy = m_IsActive;
 				return m_IsActiveInHierarchy;
 			}
-			m_IsActiveInHierarchy = parent->GetEntity()->IsActiveInHierarchy();
+			m_IsActiveInHierarchy = parent->GetEntity()->IsActiveInHierarchy() && m_IsActive;
 			return m_IsActiveInHierarchy;
 		}
 		else

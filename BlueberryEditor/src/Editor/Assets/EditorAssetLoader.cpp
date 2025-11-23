@@ -79,7 +79,7 @@ namespace Blueberry
 			if (needImport)
 			{
 				DirectX::ScratchImage image = {};
-				TextureHelper::Load(image, path, ".png", true);
+				TextureHelper::Load(image, path, ".png", false); // TODO parameter for srgb
 				TextureHelper::Flip(image);
 				auto metadata = image.GetMetadata();
 				texture = Texture2D::Create(metadata.width, metadata.height, metadata.mipLevels, static_cast<TextureFormat>(metadata.format), WrapMode::Repeat);

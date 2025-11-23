@@ -23,11 +23,6 @@ namespace Blueberry
 	static size_t s_HistogramId = TO_HASH("_Histogram");
 	static size_t s_ResultId = TO_HASH("_Result");
 
-	float Lerp(float a, float b, float t)
-	{
-		return a + (b - a) * t;
-	}
-
 	void AutoExposure::Initialize()
 	{
 		s_ExposureShader = static_cast<ComputeShader*>(AssetLoader::Load("assets/shaders/Exposure.compute"));

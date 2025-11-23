@@ -43,9 +43,9 @@ namespace Blueberry
 		ID3D11GeometryShader* geometryShader;
 		ID3D11PixelShader* pixelShader;
 
-		ID3D11ShaderResourceView* vertexShaderResourceViews[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT / 8];
+		ID3D11ShaderResourceView* vertexShaderResourceViews[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT / 4];
 		ID3D11SamplerState* vertexSamplerStates[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT];
-		ID3D11ShaderResourceView* pixelShaderResourceViews[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT / 8];
+		ID3D11ShaderResourceView* pixelShaderResourceViews[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT / 4];
 		ID3D11SamplerState* pixelSamplerStates[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT];
 
 		ID3D11Buffer* vertexConstantBuffers[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT];

@@ -106,7 +106,10 @@ namespace Blueberry
 		if (info.mainObject > 0)
 		{
 			Object* mainObject = ObjectDB::GetObjectFromGuid(guid, info.mainObject);
-			info.objects.emplace_back(std::make_tuple(info.mainObject, mainObject->GetType(), mainObject->GetName()));
+			if (mainObject != nullptr)
+			{
+				info.objects.emplace_back(std::make_tuple(info.mainObject, mainObject->GetType(), mainObject->GetName()));
+			}
 		}
 
 		for (auto& object : importer->GetAssetObjects())

@@ -4,6 +4,7 @@ namespace Blueberry
 {
 	Dictionary<size_t, ClassInfo> ClassDB::s_Classes = {};
 	List<FieldInfo> ClassDB::s_CurrentFieldInfos = {};
+	ClassInfo ClassDB::s_CurrentClassInfo = {};
 	uint32_t ClassDB::s_CurrentOffset = 0;
 
 	const ClassInfo& ClassDB::GetInfo(const size_t& id)
@@ -37,6 +38,11 @@ namespace Blueberry
 	{
 		info.offset += s_CurrentOffset;
 		s_CurrentFieldInfos.emplace_back(std::move(info));
+	}
+
+	void ClassDB::DefinePreferBinary()
+	{
+		s_CurrentClassInfo.preferBinary = true;
 	}
 
 	FieldOptions& FieldOptions::SetEnumHint(char* hintData)

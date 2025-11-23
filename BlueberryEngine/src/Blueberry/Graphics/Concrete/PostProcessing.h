@@ -9,13 +9,14 @@ namespace Blueberry
 	class GfxTexture;
 	class Texture2D;
 	class Material;
+	enum class CameraType;
 
 	class PostProcessing
 	{
 	public:
 		static void Initialize();
 		static void Shutdown();
-		static void Draw(GfxTexture* msaaColor, GfxTexture* color, GfxTexture* output, const Rectangle& viewport, const Vector2Int& size, const bool& simplified);
+		static void Draw(GfxTexture* msaaColor, GfxTexture* color, GfxTexture* output, const Rectangle& viewport, const Vector2Int& size, const CameraType& cameraType);
 
 	private:
 		static inline ComputeShader* s_ResolveMSAABloomShader = nullptr;

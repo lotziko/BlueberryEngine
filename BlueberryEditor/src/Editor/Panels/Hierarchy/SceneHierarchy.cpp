@@ -130,9 +130,22 @@ namespace Blueberry
 			--currentDepth;
 		}
 
-		if (!isHoveringAny && ImGui::IsMouseClicked(0) && ImGui::IsWindowHovered() && !ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
+		if (!isHoveringAny && ImGui::IsWindowHovered())
 		{
-			Selection::SetActiveObject(nullptr);
+			if (ImGui::IsMouseClicked(0) && !ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
+			{
+				Selection::SetActiveObject(nullptr);
+			}
+			else if (ImGui::IsMouseClicked(1))
+			{
+				ImGui::OpenPopup(ImGui::GetID("Popup"));
+			}
+		}
+
+		if (ImGui::BeginPopup(ImGui::GetID("Popup")))
+		{
+			DrawCreateEntity(isValid);
+			ImGui::EndPopup();
 		}
 
 		if (!isValid)
@@ -232,7 +245,7 @@ namespace Blueberry
 		
 		if (ImGui::BeginPopup(ImGui::GetID("Popup")))
 		{
-			DrawCreateEntity(node, isValid);
+			DrawCreateEntity(isValid);
 			DrawUnpackPrefabEntity(isValid);
 			DrawDestroyEntity(isValid);
 			ImGui::EndPopup();
@@ -284,11 +297,13 @@ namespace Blueberry
 		ImGui::PopID();
 	}
 
-	void SceneHierarchy::DrawCreateEntity(TransformTreeNode& node, bool& isValid)
+	void SceneHierarchy::DrawCreateEntity(bool& isValid)
 	{
 		if (ImGui::MenuItem("Create Empty Entity"))
 		{
 			Entity* entity = EditorObjectManager::CreateEntity("Empty Entity");
+			m_RenamingEntity = entity;
+			isValid = false;
 
 			Object* selectedObject = Selection::GetActiveObject();
 			if (selectedObject != nullptr && selectedObject->IsClassType(Entity::Type))
@@ -296,8 +311,6 @@ namespace Blueberry
 				Entity* selectedEntity = static_cast<Entity*>(selectedObject);
 				entity->GetTransform()->SetParent(selectedEntity->GetTransform());
 				m_ExpandedNodes.insert(selectedEntity->GetObjectId());
-				m_RenamingEntity = entity;
-				isValid = false;
 			}
 		}
 	}

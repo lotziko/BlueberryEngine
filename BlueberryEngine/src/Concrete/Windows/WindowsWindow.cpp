@@ -98,7 +98,7 @@ namespace Blueberry
 		ZeroMemory(&msg, sizeof(MSG));
 
 		while (PeekMessage(&msg, //Where to store message (if one exists) See: https://msdn.microsoft.com/en-us/library/windows/desktop/ms644943(v=vs.85).aspx
-			m_Handle, //Handle to window we are checking messages for
+			NULL, //No handle to avoid blocking messages
 			0,    //Minimum Filter Msg Value - We are not filtering for specific messages, but the min/max could be used to filter only mouse messages for example.
 			0,    //Maximum Filter Msg Value
 			PM_REMOVE))//Remove message after capturing it via PeekMessage. For more argument options, see: https://msdn.microsoft.com/en-us/library/windows/desktop/ms644943(v=vs.85).aspx

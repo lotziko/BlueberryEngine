@@ -66,10 +66,9 @@ float3 CalculateLight(float3 positionWS)
 		float shadowAttenuation = 1.0;
 		if (data.hasShadow)
 		{
-			uint faceIndex = GetFaceIndex(-lightDirectionWS);
 			shadowAttenuation = 0.0;
-			float4 positionSS = TransformWorldToShadow(positionWS, data.worldToShadow[faceIndex]);
-			if (!IsOutOfBounds(positionSS, data.shadowBounds[faceIndex]))
+			float4 positionSS = TransformWorldToShadow(positionWS, data.worldToShadow);
+			if (!IsOutOfBounds(positionSS, data.shadowBounds))
 			{
 				shadowAttenuation = ComputeShadowPCF3x3(positionSS, _ShadowTexture, _ShadowTexture_Sampler, _Shadow3x3PCFTermC0, _Shadow3x3PCFTermC1, _Shadow3x3PCFTermC2, _Shadow3x3PCFTermC3);
 			}

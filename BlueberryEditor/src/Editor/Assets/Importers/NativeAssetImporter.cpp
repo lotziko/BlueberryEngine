@@ -1,6 +1,8 @@
 #include "NativeAssetImporter.h"
 
 #include "Editor\Serialization\YamlSerializer.h"
+#include "Editor\Serialization\YamlHelper.h"
+#include "Blueberry\Serialization\BinarySerializer.h"
 #include "Blueberry\Core\ObjectDB.h"
 
 namespace Blueberry
@@ -22,20 +24,21 @@ namespace Blueberry
 		}
 		else
 		{
-			YamlSerializer serializer;
+			String path = GetFilePath();
+			Serializer* serializer = YamlHelper::IsYaml(path) ? static_cast<Serializer*>(new YamlSerializer()) : static_cast<Serializer*>(new BinarySerializer());
 			for (auto& object : ObjectDB::GetObjectsFromGuid(guid))
 			{
 				Object* importedObject = ObjectDB::GetObject(object.second);
 				if (importedObject != nullptr)
 				{
-					serializer.AddObject(importedObject, object.first);
+					serializer->AddObject(importedObject, object.first);
 				}
 			}
-			serializer.Deserialize(GetFilePath());
-
+			serializer->Deserialize(path);
+			auto& deserializedObjects = serializer->GetDeserializedObjects();
+			
 			bool mainObjectIsSet = false;
-			auto& deserializedObjects = serializer.GetDeserializedObjects();
-			for (auto pair : deserializedObjects)
+			for (auto& pair : deserializedObjects)
 			{
 				Object* importedObject = pair.first;
 				FileId fileId = pair.second;
@@ -49,6 +52,7 @@ namespace Blueberry
 					mainObjectIsSet = true;
 				}
 			}
+			delete serializer;
 			//BB_INFO("NativeAsset \"" << GetName() << "\" imported.");
 		}
 	}

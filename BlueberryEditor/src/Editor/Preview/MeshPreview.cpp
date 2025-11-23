@@ -31,6 +31,7 @@ namespace Blueberry
 			m_Camera->SetAspectRatio(1.0f);
 			m_Camera->SetFieldOfView(60.0f);
 			m_Camera->SetPixelSize(Vector2(target->GetWidth(), target->GetHeight()));
+			m_Camera->SetCameraType(CameraType::Preview);
 		}
 		m_Renderer->SetMesh(mesh);
 		AABB bounds = m_Renderer->GetBounds();
@@ -40,6 +41,6 @@ namespace Blueberry
 		m_Camera->GetTransform()->SetRotation(Quaternion::CreateFromYawPitchRoll(ToRadians(45), ToRadians(15), 0));
 		m_Camera->GetTransform()->SetPosition(cameraPosition);
 
-		DefaultRenderer::Draw(m_Scene, m_Camera, Rectangle(0, 0, target->GetWidth(), target->GetHeight()), Color(0, 0, 0, 1), target, nullptr, true);
+		DefaultRenderer::Draw(m_Scene, m_Camera, Rectangle(0, 0, target->GetWidth(), target->GetHeight()), Color(0, 0, 0, 1), target, nullptr);
 	}
 }

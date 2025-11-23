@@ -13,6 +13,7 @@
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\DefaultMaterials.h"
+#include "Blueberry\Scene\Components\Camera.h"
 
 namespace Blueberry
 {
@@ -98,9 +99,9 @@ namespace Blueberry
 		AutoExposure::Shutdown();
 	}
 
-	void PostProcessing::Draw(GfxTexture* msaaColor, GfxTexture* color, GfxTexture* output, const Rectangle& viewport, const Vector2Int& size, const bool& simplified)
+	void PostProcessing::Draw(GfxTexture* msaaColor, GfxTexture* color, GfxTexture* output, const Rectangle& viewport, const Vector2Int& size, const CameraType& cameraType)
 	{
-		if (simplified)
+		if (cameraType == CameraType::Preview)
 		{
 			// Resolve color
 			GfxDevice::SetRenderTarget(color);
@@ -114,12 +115,16 @@ namespace Blueberry
 			GfxDevice::SetRenderTarget(output);
 			GfxDevice::SetViewport(0, 0, size.x, size.y);
 			GfxDevice::SetGlobalTexture(s_ScreenColorTextureId, color);
-			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetPostProcessing(), simplified ? 1 : 0));
+			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetPostProcessing(), 1));
 			GfxDevice::SetRenderTarget(nullptr);
 		}
 		else
 		{
 			float exposure = 0.2f / AutoExposure::GetExposure();
+			if (cameraType == CameraType::Reflection)
+			{
+				exposure = 1.0f;
+			}
 			PostProcessingData postProcessingConstants = {};
 			postProcessingConstants.exposureTime = Vector4(exposure, Time::GetFrameCount() / 60.0f / 10, 0, 0);
 
@@ -317,7 +322,7 @@ namespace Blueberry
 			GfxDevice::SetRenderTarget(output);
 			GfxDevice::SetViewport(0, 0, size.x, size.y);
 			GfxDevice::SetGlobalTexture(s_ScreenColorTextureId, color);
-			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetPostProcessing(), simplified ? 1 : 0));
+			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetPostProcessing(), 0));
 			GfxDevice::SetRenderTarget(nullptr);
 
 			GfxRenderTexturePool::Release(bloom);

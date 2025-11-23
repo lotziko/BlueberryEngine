@@ -262,6 +262,16 @@ namespace Blueberry
 		return Vector3::Zero;
 	}
 
+	const CameraType& Camera::GetCameraType()
+	{
+		return m_CameraType;
+	}
+
+	void Camera::SetCameraType(const CameraType& cameraType)
+	{
+		m_CameraType = cameraType;
+	}
+
 	bool Camera::IsViewDirty()
 	{
 		// This may cause problems some time later

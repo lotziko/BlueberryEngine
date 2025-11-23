@@ -52,7 +52,6 @@ namespace Blueberry
 		Entity* cameraEntity = Object::Create<Entity>();
 		cameraEntity->AddComponent<Transform>();
 		m_Camera = cameraEntity->AddComponent<Camera>();
-		m_Camera->m_IsVR = false;
 		cameraEntity->OnCreate();
 
 		m_ColorRenderTarget = GfxRenderTexturePool::Get(Screen::GetWidth(), Screen::GetHeight(), 1, 1, 1, TextureFormat::R8G8B8A8_UNorm);

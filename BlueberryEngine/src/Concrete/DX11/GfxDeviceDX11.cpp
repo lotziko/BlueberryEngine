@@ -238,7 +238,6 @@ namespace Blueberry
 	void GfxDeviceDX11::CopyImpl(GfxTexture* source, GfxTexture* target) const
 	{
 		m_DeviceContext->CopyResource(static_cast<GfxTextureDX11*>(target)->m_Texture.Get(), static_cast<GfxTextureDX11*>(source)->m_Texture.Get());
-		//m_DeviceContext->CopySubresourceRegion(static_cast<GfxTextureDX11*>(target)->m_Texture.Get(), 0, 0, 0, 0, static_cast<GfxTextureDX11*>(source)->m_Texture.Get(), 0, NULL);
 	}
 
 	void GfxDeviceDX11::CopyImpl(GfxTexture* source, GfxTexture* target, const Rectangle& area) const
@@ -252,6 +251,17 @@ namespace Blueberry
 		src.back = 1;
 
 		m_DeviceContext->CopySubresourceRegion(static_cast<GfxTextureDX11*>(target)->m_Texture.Get(), 0, 0, 0, 0, static_cast<GfxTextureDX11*>(source)->m_Texture.Get(), 0, &src);
+	}
+
+	void GfxDeviceDX11::CopyImpl(GfxTexture* source, GfxTexture* target, const uint32_t& sourceSlice, const uint32_t& targetSlice, const uint32_t& mipLevel) const
+	{
+		GfxTextureDX11* dxSource = static_cast<GfxTextureDX11*>(source);
+		GfxTextureDX11* dxTarget = static_cast<GfxTextureDX11*>(target);
+
+		UINT sourceSubresource = D3D11CalcSubresource(mipLevel, sourceSlice, dxSource->m_MipLevels);
+		UINT targetSubresource = D3D11CalcSubresource(mipLevel, targetSlice, dxTarget->m_MipLevels);
+
+		m_DeviceContext->CopySubresourceRegion(dxTarget->m_Texture.Get(), targetSubresource, 0, 0, 0, dxSource->m_Texture.Get(), sourceSubresource, NULL);
 	}
 
 	void GfxDeviceDX11::SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture)
@@ -374,20 +384,23 @@ namespace Blueberry
 		{
 			m_DeviceContext->PSSetShader(renderState.pixelShader, NULL, 0);
 		}
-		for (uint32_t i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT / 8; ++i)
+		for (uint32_t i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT / 4; ++i)
 		{
 			// Maybe bind all at once?
 			if (renderState.vertexShaderResourceViews[i] != m_RenderState.vertexShaderResourceViews[i])
 			{
 				m_DeviceContext->VSSetShaderResources(i, 1, renderState.vertexShaderResourceViews + i);
 			}
-			if (renderState.vertexSamplerStates[i] != m_RenderState.vertexSamplerStates[i])
-			{
-				m_DeviceContext->VSSetSamplers(i, 1, renderState.vertexSamplerStates + i);
-			}
 			if (renderState.pixelShaderResourceViews[i] != m_RenderState.pixelShaderResourceViews[i])
 			{
 				m_DeviceContext->PSSetShaderResources(i, 1, renderState.pixelShaderResourceViews + i);
+			}
+		}
+		for (uint32_t i = 0; i < D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT; ++i)
+		{
+			if (renderState.vertexSamplerStates[i] != m_RenderState.vertexSamplerStates[i])
+			{
+				m_DeviceContext->VSSetSamplers(i, 1, renderState.vertexSamplerStates + i);
 			}
 			if (renderState.pixelSamplerStates[i] != m_RenderState.pixelSamplerStates[i])
 			{
@@ -686,22 +699,25 @@ namespace Blueberry
 	void GfxDeviceDX11::Clear()
 	{
 		// Clear SRVs to avoid binding them both into targets and inputs
-		for (uint32_t i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT / 8; ++i)
+		for (uint32_t i = 0; i < D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT / 4; ++i)
 		{
 			if (m_RenderState.vertexShaderResourceViews[i] != nullptr)
 			{
 				m_RenderState.vertexShaderResourceViews[i] = {};
 				m_DeviceContext->VSSetShaderResources(i, 1, m_EmptyShaderResourceViews);
 			}
-			if (m_RenderState.vertexSamplerStates[i] != nullptr)
-			{
-				m_RenderState.vertexSamplerStates[i] = {};
-				m_DeviceContext->VSSetSamplers(i, 1, m_EmptySamplers);
-			}
 			if (m_RenderState.pixelShaderResourceViews[i] != nullptr)
 			{
 				m_RenderState.pixelShaderResourceViews[i] = {};
 				m_DeviceContext->PSSetShaderResources(i, 1, m_EmptyShaderResourceViews);
+			}
+		}
+		for (uint32_t i = 0; i < D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT; ++i)
+		{
+			if (m_RenderState.vertexSamplerStates[i] != nullptr)
+			{
+				m_RenderState.vertexSamplerStates[i] = {};
+				m_DeviceContext->VSSetSamplers(i, 1, m_EmptySamplers);
 			}
 			if (m_RenderState.pixelSamplerStates[i] != nullptr)
 			{

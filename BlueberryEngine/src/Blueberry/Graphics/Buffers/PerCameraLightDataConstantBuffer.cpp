@@ -4,6 +4,8 @@
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Scene\Components\Light.h"
 #include "Blueberry\Scene\Components\SkyRenderer.h"
+#include "Blueberry\Scene\Components\ProbeVolume.h"
+#include "Blueberry\Scene\Components\ReflectionProbe.h"
 
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\GfxBuffer.h"
@@ -26,6 +28,10 @@ namespace Blueberry
 		Vector4 ambientLightColor;
 
 		Vector4 lightsCount;
+		Vector4 probeVolumeMin;
+		Vector4 probeVolumeSize;
+		Vector4 probeVolumeInvSize;
+		Vector4 probeVolumeCellSize;
 		Vector4 shadow3x3PCFTermC0;
 		Vector4 shadow3x3PCFTermC1;
 		Vector4 shadow3x3PCFTermC2;
@@ -41,8 +47,8 @@ namespace Blueberry
 		Vector3 color;
 		float squareRange;
 		Vector4 attenuation;
-		Matrix worldToShadow[6];
-		Vector4 shadowBounds[6];
+		Matrix worldToShadow;
+		Vector4 shadowBounds;
 	};
 
 	struct SpotLightData
@@ -63,11 +69,22 @@ namespace Blueberry
 		Matrix worldToCookie;
 	};
 
+	struct ReflectionProbeData1
+	{
+		Vector3 positionMinWS;
+		Vector3 positionMinVS;
+		Vector3 positionMaxWS;
+		Vector3 positionMaxVS;
+		float index;
+		Vector3 dummy;
+	};
+
 	static size_t s_PerCameraLightDataId = TO_HASH("PerCameraLightData");
 	static size_t s_PointLightsDataId = TO_HASH("_PointLightsData");
 	static size_t s_SpotLightsDataId = TO_HASH("_SpotLightsData");
+	static size_t s_ReflectionProbesDataId = TO_HASH("_ReflectionProbesData");
 
-	void PerCameraLightDataConstantBuffer::BindData(Camera* camera, Light* mainLight, SkyRenderer* skyRenderer, const List<Light*>& lights, const Vector2Int& shadowAtlasSize)
+	void PerCameraLightDataConstantBuffer::BindData(Camera* camera, Light* mainLight, SkyRenderer* skyRenderer, ProbeVolume* probeVolume, const List<Light*>& lights, const List<ReflectionProbe*>& reflectionProbes, const Vector2Int& shadowAtlasSize)
 	{
 		if (s_ConstantBuffer == nullptr)
 		{
@@ -94,6 +111,14 @@ namespace Blueberry
 			spotLightsBufferProperties.isWritable = true;
 
 			GfxDevice::CreateBuffer(spotLightsBufferProperties, s_SpotLightsBuffer);
+
+			BufferProperties reflectionProbesBufferProperties = {};
+			reflectionProbesBufferProperties.type = BufferType::Structured;
+			reflectionProbesBufferProperties.elementCount = MAX_REALTIME_LIGHTS;
+			reflectionProbesBufferProperties.elementSize = sizeof(ReflectionProbeData1);
+			reflectionProbesBufferProperties.isWritable = true;
+
+			GfxDevice::CreateBuffer(reflectionProbesBufferProperties, s_ReflectionProbesBuffer);
 		}
 
 		PerCameraLightData constants = {};
@@ -123,10 +148,12 @@ namespace Blueberry
 
 		PointLightData pointDatas[MAX_REALTIME_LIGHTS];
 		SpotLightData spotDatas[MAX_REALTIME_LIGHTS];
+		ReflectionProbeData1 reflectionProbeDatas[MAX_REALTIME_LIGHTS];
 
 		uint8_t pointOffset = 0;
 		uint8_t spotOffset = 0;
-		for (int i = 0; i < lights.size(); i++)
+		uint8_t reflectionProbeOffset = 0;
+		for (size_t i = 0; i < lights.size(); ++i)
 		{
 			Light* light = lights[i];
 
@@ -143,19 +170,19 @@ namespace Blueberry
 
 			if (lightType == LightType::Point)
 			{
+				float squareRange = range * range;
+				Vector4 attenuation = LightHelper::GetAttenuation(LightType::Point, light->GetRange(), 0, 0);
+
 				PointLightData data;
 				data.positionWS = positionWS;
 				data.hasShadow = hasShadow;
 				data.positionVS = positionVS;
 				data.hasFog = hasFog;
 				data.color = finalColor;
-				data.squareRange = range * range;
-				data.attenuation = LightHelper::GetAttenuation(LightType::Point, light->GetRange(), 0, 0);
-				for (int i = 0; i < 6; ++i)
-				{
-					data.worldToShadow[i] = GfxDevice::GetGPUMatrix(light->m_AtlasWorldToShadow[i]);
-					data.shadowBounds[i] = light->m_ShadowBounds[i];
-				}
+				data.squareRange = squareRange;
+				data.attenuation = attenuation;
+				data.worldToShadow = GfxDevice::GetGPUMatrix(light->m_AtlasWorldToShadow[0]);
+				data.shadowBounds = light->m_ShadowBounds[0];
 				pointDatas[pointOffset] = data;
 				++pointOffset;
 			}
@@ -180,7 +207,49 @@ namespace Blueberry
 				++spotOffset;
 			}
 		}
-		constants.lightsCount = Vector4(pointOffset, spotOffset, 0.0f, 0.0f);
+		for (size_t i = 0; i < reflectionProbes.size(); ++i)
+		{
+			ReflectionProbe* reflectionProbe = reflectionProbes[i];
+			if (reflectionProbe->m_AtlasIndex != UINT_MAX)
+			{
+				Transform* transform = reflectionProbe->GetTransform();
+				Vector3 positionWS = transform->GetPosition();
+				Vector3 positionMinVS = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
+				Vector3 positionMaxVS = Vector3(FLT_MIN, FLT_MIN, FLT_MIN);
+				Vector3 halfSize = reflectionProbe->m_Size * 0.5f;
+
+				for (uint32_t j = 0; j < 8; ++j)
+				{
+					Vector3 cornerWS = positionWS + Vector3((j & 1 ? 1 : -1) * halfSize.x, (j & 2 ? 1 : -1) * halfSize.y, (j & 4 ? 1 : -1) * halfSize.z);
+					Vector3 cornerVS = Vector3::Transform(cornerWS, view);
+					positionMinVS = Vector3::Min(positionMinVS, cornerVS);
+					positionMaxVS = Vector3::Max(positionMaxVS, cornerVS);
+				}
+
+				ReflectionProbeData1 data;
+				data.positionMinWS = positionWS - halfSize;
+				data.positionMinVS = positionMinVS;
+				data.positionMaxWS = positionWS + halfSize;
+				data.positionMaxVS = positionMaxVS;
+				data.index = reflectionProbe->m_AtlasIndex;
+				reflectionProbeDatas[reflectionProbeOffset] = data;
+				++reflectionProbeOffset;
+			}
+		}
+		constants.lightsCount = Vector4(pointOffset, spotOffset, reflectionProbeOffset, 0.0f);
+
+		if (probeVolume != nullptr)
+		{
+			AABB bounds = probeVolume->GetBounds();
+			Vector3 center = bounds.Center;
+			Vector3 extents = bounds.Extents;
+			Vector3 size = extents * 2;
+			Vector3Int intSize = probeVolume->GetSize();
+			constants.probeVolumeMin = Vector4(center - extents);
+			constants.probeVolumeSize = Vector4(intSize.x, intSize.y, intSize.z, 0);
+			constants.probeVolumeInvSize = Vector4(1.0f / (extents.x * 2), 1.0f / (extents.y * 2), 1.0f / (extents.z * 2), 0);
+			constants.probeVolumeCellSize = Vector4(size.x / intSize.x, size.y / intSize.y, size.z / intSize.z, 0);
+		}
 
 		float texelEpsilonX = 1.0f / shadowAtlasSize.x;
 		float texelEpsilonY = 1.0f / shadowAtlasSize.y;
@@ -192,8 +261,10 @@ namespace Blueberry
 		s_ConstantBuffer->SetData(reinterpret_cast<char*>(&constants), sizeof(constants));
 		s_PointLightsBuffer->SetData(reinterpret_cast<char*>(&pointDatas), sizeof(PointLightData) * pointOffset);
 		s_SpotLightsBuffer->SetData(reinterpret_cast<char*>(&spotDatas), sizeof(SpotLightData) * spotOffset);
+		s_ReflectionProbesBuffer->SetData(reinterpret_cast<char*>(&reflectionProbeDatas), sizeof(ReflectionProbeData1) * reflectionProbeOffset);
 		GfxDevice::SetGlobalBuffer(s_PerCameraLightDataId, s_ConstantBuffer);
 		GfxDevice::SetGlobalBuffer(s_PointLightsDataId, s_PointLightsBuffer);
 		GfxDevice::SetGlobalBuffer(s_SpotLightsDataId, s_SpotLightsBuffer);
+		GfxDevice::SetGlobalBuffer(s_ReflectionProbesDataId, s_ReflectionProbesBuffer);
 	}
 }

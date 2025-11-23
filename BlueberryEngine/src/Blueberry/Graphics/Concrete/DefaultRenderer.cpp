@@ -34,6 +34,7 @@ namespace Blueberry
 	static size_t s_ScreenDepthStencilTextureId = TO_HASH("_ScreenDepthStencilTexture");
 	static size_t s_ShadowTextureId = TO_HASH("_ShadowTexture");
 	static size_t s_CookieTextureId = TO_HASH("_CookieTexture");
+	static size_t s_ReflectionTextureId = TO_HASH("_ReflectionTexture");
 	static size_t s_HBAOTextureId = TO_HASH("_ScreenOcclusionTexture");
 	static size_t s_VolumetricFogTextureId = TO_HASH("_VolumetricFogTexture");
 	static size_t s_MultiviewKeywordId = TO_HASH("MULTIVIEW");
@@ -60,10 +61,12 @@ namespace Blueberry
 		RealtimeLights::Shutdown();
 	}
 	
-	void DefaultRenderer::Draw(Scene* scene, Camera* camera, Rectangle viewport, Color background, GfxTexture* colorOutput, GfxTexture* depthOutput, const bool& simplified)
+	void DefaultRenderer::Draw(Scene* scene, Camera* camera, Rectangle viewport, Color background, GfxTexture* colorOutput, GfxTexture* depthOutput)
 	{
 		CameraData cameraData = {};
 		cameraData.camera = camera;
+
+		CameraType cameraType = camera->GetCameraType();
 
 		GfxTexture* colorMSAARenderTarget = nullptr;
 		//GfxTexture* normalMSAARenderTarget = nullptr;
@@ -74,7 +77,7 @@ namespace Blueberry
 		GfxTexture* HBAORenderTarget = nullptr;
 		GfxTexture* resultRenderTarget = nullptr;
 
-		bool isVr = OpenXRRenderer::IsActive() && camera->m_IsVR;
+		bool isVr = OpenXRRenderer::IsActive() && cameraType == CameraType::VR;
 		TextureDimension textureDimension = isVr ? TextureDimension::Texture2DArray : TextureDimension::Texture2D;
 		uint32_t viewCount = isVr ? 2 : 1;
 		Vector2Int size = Vector2Int(colorOutput->GetWidth(), colorOutput->GetHeight());
@@ -99,13 +102,13 @@ namespace Blueberry
 		colorNormalRenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 1, 1, TextureFormat::R16G16B16A16_Float, textureDimension, WrapMode::Clamp, FilterMode::Bilinear, false, true);
 		depthStencilRenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 1, 1, TextureFormat::D24_UNorm, textureDimension);
 		HBAORenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 1, 1, TextureFormat::R8G8B8A8_UNorm, textureDimension);
-		resultRenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 1, 1, TextureFormat::R8G8B8A8_UNorm, textureDimension);
+		resultRenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 1, 1, colorOutput->GetFormat(), textureDimension);
 
 		BB_PROFILE_BEGIN("Culling");
 		s_DefaultContext.Cull(scene, cameraData, s_Results);
 		BB_PROFILE_END();
 
-		if (simplified)
+		if (cameraType == CameraType::Preview)
 		{
 			Shader::SetKeyword(s_ShadowsKeywordId, false);
 			GfxDevice::SetGlobalTexture(s_CookieTextureId, DefaultTextures::GetWhite3D()->Get());
@@ -133,7 +136,7 @@ namespace Blueberry
 		// Lights are binded after shadows finished rendering to have valid shadow matrices
 		RealtimeLights::BindLights(s_Results, s_ShadowAtlas);
 
-		if (!simplified)
+		if (cameraType != CameraType::Preview)
 		{
 			VolumetricFog::CalculateFrustum(s_Results, cameraData, s_ShadowAtlas);
 			GfxDevice::SetGlobalTexture(s_VolumetricFogTextureId, VolumetricFog::GetFrustumTexture());
@@ -161,7 +164,7 @@ namespace Blueberry
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetResolveMSAA(), 0));
 
 		// HBAO
-		if (simplified)
+		if (cameraType == CameraType::Preview)
 		{
 			GfxDevice::SetGlobalTexture(s_HBAOTextureId, DefaultTextures::GetWhite2D()->Get());
 		}
@@ -176,13 +179,16 @@ namespace Blueberry
 		RealtimeLights::CalculateClusters();
 		GfxDevice::SetRenderTarget(colorMSAARenderTarget, depthStencilMSAARenderTarget);
 		GfxDevice::ClearColor({ 0.0f, 0.0f, 0.0f, 0.0f });
-		s_DefaultContext.DrawSky(s_Results);
+		if (cameraType != CameraType::Preview)
+		{
+			s_DefaultContext.DrawSky(s_Results);
+		}
 		drawingSettings.passIndex = 0;
 		drawingSettings.sortingMode = SortingMode::Default;
 		s_DefaultContext.DrawRenderers(s_Results, drawingSettings);
 		BB_PROFILE_END();
 		
-		PostProcessing::Draw(colorMSAARenderTarget, colorNormalRenderTarget, resultRenderTarget, viewport, size, simplified);
+		PostProcessing::Draw(colorMSAARenderTarget, colorNormalRenderTarget, resultRenderTarget, viewport, size, cameraType);
 
 		if (isVr)
 		{

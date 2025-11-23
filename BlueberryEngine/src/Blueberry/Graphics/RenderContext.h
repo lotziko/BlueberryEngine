@@ -10,6 +10,8 @@ namespace Blueberry
 	class Renderer;
 	class Camera;
 	class SkyRenderer;
+	class ProbeVolume;
+	class ReflectionProbe;
 	class Light;
 	class Material;
 	class MeshRenderer;
@@ -38,6 +40,8 @@ namespace Blueberry
 
 		Camera* camera;
 		SkyRenderer* skyRenderer;
+		ProbeVolume* probeVolume;
+		List<ReflectionProbe*> reflectionProbes;
 		List<Light*> lights;
 		List<CullerInfo> cullerInfos;
 	};

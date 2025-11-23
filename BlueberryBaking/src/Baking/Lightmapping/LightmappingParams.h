@@ -47,6 +47,11 @@ namespace Blueberry
 		uchar4* skyColor;
 		BVH bvh;
 
+		float3* probePosition;
+		unsigned int* probeColor; // R11G10B11
+		unsigned int probeCount;
+		float distanceBetweenProbes;
+
 		Matrix3x4* instanceMatrices;
 		OptixTraversableHandle handle;
 	};

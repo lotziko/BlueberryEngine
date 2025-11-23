@@ -19,6 +19,16 @@ namespace Blueberry
 		}
 	}
 
+	uint8_t* TextureCube::GetData()
+	{
+		return m_RawData.data();
+	}
+
+	const size_t TextureCube::GetDataSize()
+	{
+		return m_RawData.size();
+	}
+
 	void TextureCube::SetData(uint8_t* data, const size_t& dataSize)
 	{
 		m_RawData.resize(dataSize);
