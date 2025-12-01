@@ -35,32 +35,23 @@ namespace Blueberry
 			switch (light->GetType())
 			{
 			case LightType::Directional:
-				continue;
 			case LightType::Point:
+				continue;
 			case LightType::Spot:
 				Texture* cookie = light->GetCookie();
-				for (uint32_t i = 0; i < light->m_SliceCount; ++i)
+				uint32_t index = GetIndex(cookie);
+
+				Matrix scaleBiasTransform = Matrix::Identity;
+				scaleBiasTransform._11 = 0.5f;
+				scaleBiasTransform._22 = -0.5f;
+				scaleBiasTransform._33 = 0.0f;
+				scaleBiasTransform._41 = 0.5f;
+				scaleBiasTransform._42 = 0.5f;
+				scaleBiasTransform._43 = (1.0f / (s_MaxCookies * 2)) + (float)index / s_MaxCookies;
+
+				if (light->IsCastingShadows() && light->GetType() == LightType::Spot)
 				{
-					uint32_t index = GetIndex(cookie);
-
-					Matrix scaleBiasTransform = Matrix::Identity;
-					scaleBiasTransform._11 = 0.5f;
-					scaleBiasTransform._22 = -0.5f;
-					scaleBiasTransform._33 = 0.0f;
-					scaleBiasTransform._41 = 0.5f;
-					scaleBiasTransform._42 = 0.5f;
-					scaleBiasTransform._43 = (1.0f / (s_MaxCookies * 2)) + (float)index / s_MaxCookies;
-
-					if (light->IsCastingShadows() && light->GetType() != LightType::Point)
-					{
-						light->m_WorldToCookie[i] = light->m_WorldToShadow[i] * scaleBiasTransform;
-					}
-					else
-					{
-						Matrix view = LightHelper::GetViewMatrix(light, light->GetTransform(), i);
-						Matrix projection = LightHelper::GetProjectionMatrix(light);
-						light->m_WorldToCookie[i] = view * projection * scaleBiasTransform;
-					}
+					light->m_WorldToCookie = light->m_WorldToShadow[0] * scaleBiasTransform;
 				}
 				break;
 			}

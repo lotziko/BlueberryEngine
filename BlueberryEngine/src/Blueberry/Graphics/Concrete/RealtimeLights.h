@@ -3,7 +3,6 @@
 namespace Blueberry
 {
 	struct CullingResults;
-	class ShadowAtlas;
 	class ComputeShader;
 	class GfxTexture;
 
@@ -12,8 +11,8 @@ namespace Blueberry
 	public:
 		static void Initialize();
 		static void Shutdown();
-		static void PrepareShadows(CullingResults& results, ShadowAtlas* atlas);
-		static void BindLights(CullingResults& results, ShadowAtlas* atlas);
+		static void PrepareShadows(CullingResults& results);
+		static void BindLights(CullingResults& results);
 		static void CalculateClusters();
 
 	private:

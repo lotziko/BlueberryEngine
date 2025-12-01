@@ -18,6 +18,7 @@ namespace Blueberry
 		m_LocalRotationProperty = m_SerializedObject->FindProperty("m_LocalRotation");
 		m_LocalScaleProperty = m_SerializedObject->FindProperty("m_LocalScale");
 		m_LocalRotationEulerHintProperty = m_SerializedObject->FindProperty("m_LocalRotationEulerHint");
+		m_IsStaticProperty = m_SerializedObject->FindProperty("m_IsStatic");
 	}
 
 	void TransformEditor::OnDrawInspector()
@@ -29,6 +30,7 @@ namespace Blueberry
 			m_LocalRotationProperty.SetQuaternion(Quaternion::CreateFromYawPitchRoll(ToRadians(euler.y), ToRadians(euler.x), ToRadians(euler.z)));
 		}
 		ImGui::Property(&m_LocalScaleProperty, "Scale");
+		ImGui::Property(&m_IsStaticProperty, "Is Static");
 
 		if (m_SerializedObject->ApplyModifiedProperties())
 		{

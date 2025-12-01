@@ -75,7 +75,7 @@ namespace Blueberry
 		{
 			for (int i = 0; i < m_Objects.size(); ++i)
 			{
-				result.emplace_back(m_Objects[i].second);
+				result.push_back(m_Objects[i].second);
 			}
 			if (m_Children[0])
 			{
@@ -91,7 +91,7 @@ namespace Blueberry
 			{
 				if (m_Objects[i].first.ContainedBy(planes[0], planes[1], planes[2], planes[3], planes[4], planes[5]))
 				{
-					result.emplace_back(m_Objects[i].second);
+					result.push_back(m_Objects[i].second);
 				}
 			}
 			if (m_Children[0])
@@ -118,7 +118,7 @@ namespace Blueberry
 		{
 			for (int i = 0; i < 8; ++i)
 			{
-				result.emplace_back(m_ChildBounds[i]);
+				result.push_back(m_ChildBounds[i]);
 				m_Children[i]->GatherChildrenBounds(result);
 			}
 		}
@@ -228,7 +228,7 @@ namespace Blueberry
 		{
 			if (m_Objects.size() < MAX_OBJECTS_COUNT || (m_Size / 2.0f) < m_MinNodeSize)
 			{
-				m_Objects.emplace_back(std::make_pair(bounds, object));
+				m_Objects.push_back(std::make_pair(bounds, object));
 				return;
 			}
 
@@ -263,7 +263,7 @@ namespace Blueberry
 		}
 		else
 		{
-			m_Objects.emplace_back(std::make_pair(bounds, object));
+			m_Objects.push_back(std::make_pair(bounds, object));
 		}
 	}
 
@@ -342,7 +342,7 @@ namespace Blueberry
 			OctreeNode* child = m_Children[i].get();
 			for (int j = static_cast<int>(child->m_Objects.size()) - 1; j >= 0; --j)
 			{
-				m_Objects.emplace_back(child->m_Objects[j]);
+				m_Objects.push_back(child->m_Objects[j]);
 			}
 			m_Children[i] = nullptr;
 		}

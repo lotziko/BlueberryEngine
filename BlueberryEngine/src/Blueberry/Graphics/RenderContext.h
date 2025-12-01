@@ -52,16 +52,25 @@ namespace Blueberry
 		FrontToBack
 	};
 
+	enum class ObjectsFilter
+	{
+		All,
+		Dynamic,
+		Static
+	};
+
 	struct DrawingSettings
 	{
 		uint8_t passIndex;
 		SortingMode sortingMode;
+		ObjectsFilter objectsFilter;
 	};
 
 	struct ShadowDrawingSettings
 	{
 		Light* light;
-		uint8_t sliceIndex;
+		uint32_t sliceIndex;
+		ObjectsFilter objectsFilter;
 	};
 
 	class RenderContext

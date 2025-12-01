@@ -13,6 +13,7 @@ namespace Blueberry
 	{
 	public:
 		static Entity* CreateEntity(const String& name);
+		static Entity* CloneEntity(Entity* entity);
 		static void DestroyEntity(Entity* entity);
 
 		static EntityCreateEvent& GetEntityCreated();

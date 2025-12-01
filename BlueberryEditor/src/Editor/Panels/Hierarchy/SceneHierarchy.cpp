@@ -161,8 +161,12 @@ namespace Blueberry
 		Entity* entity = node.entity.Get();
 		if (!ImGui::IsItemToggledOpen())
 		{
+			// Only select should happen on down, other things on release
+			ImGuiID id = ImGui::GetID(0);
+			static ImGuiID activeId = 0;
 			if (ImGui::IsItemClicked(0))
 			{
+				activeId = id;
 				if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
 				{
 					Selection::AddActiveObject(entity);
@@ -180,7 +184,7 @@ namespace Blueberry
 							Selection::AddActiveObject(entityToSelect);
 							if (m_ExpandedNodes.count(entityToSelect->GetObjectId()) == 0)
 							{
-								for (j += 1; j < to - 1; ++j)
+								for (; j < to - 1; ++j)
 								{
 									if (nodes[j + 1].depth == nodeToSelect.depth)
 									{
@@ -193,19 +197,24 @@ namespace Blueberry
 				}
 				else
 				{
-					if (index == m_LastClickedItem)
-					{
-						if (ImGui::IsMouseDoubleClicked(0))
-						{
-							m_RenamingEntity = entity;
-						}
-					}
-					else
+					if (!Selection::IsActiveObject(entity))
 					{
 						Selection::SetActiveObject(entity);
 					}
 				}
 				m_LastClickedItem = index;
+			}
+			if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0) && index == m_LastClickedItem)
+			{
+				m_RenamingEntity = entity;	// check IsItemActiveAsInputText
+			}
+			else if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(0) && activeId == id)
+			{
+				activeId = 0;
+				if (!ImGui::IsKeyDown(ImGuiKey_LeftCtrl) && !ImGui::IsKeyDown(ImGuiKey_LeftShift))
+				{
+					Selection::SetActiveObject(entity);
+				}
 			}
 			else if (ImGui::IsItemClicked(1))
 			{
@@ -236,7 +245,18 @@ namespace Blueberry
 				if (object != nullptr && object != entity && ImGui::AcceptDragDropPayload("OBJECT_ID"))
 				{
 					m_ExpandedNodes.insert(entity->GetObjectId());
-					(static_cast<Entity*>(object))->GetTransform()->SetParent(entity->GetTransform());
+					Transform* parent = entity->GetTransform();
+					for (Object* object : Selection::GetActiveObjects())
+					{
+						if (object->GetType() == Entity::Type)
+						{
+							Entity* selectedEntity = static_cast<Entity*>(object);
+							if (entity != selectedEntity)
+							{
+								selectedEntity->GetTransform()->SetParent(parent);
+							}
+						}
+					}
 					isValid = false;
 				}
 			}
@@ -246,6 +266,7 @@ namespace Blueberry
 		if (ImGui::BeginPopup(ImGui::GetID("Popup")))
 		{
 			DrawCreateEntity(isValid);
+			DrawCloneEntity(isValid);
 			DrawUnpackPrefabEntity(isValid);
 			DrawDestroyEntity(isValid);
 			ImGui::EndPopup();
@@ -311,6 +332,21 @@ namespace Blueberry
 				Entity* selectedEntity = static_cast<Entity*>(selectedObject);
 				entity->GetTransform()->SetParent(selectedEntity->GetTransform());
 				m_ExpandedNodes.insert(selectedEntity->GetObjectId());
+			}
+		}
+	}
+
+	void SceneHierarchy::DrawCloneEntity(bool& isValid)
+	{
+		if (ImGui::MenuItem("Clone Entity"))
+		{
+			Object* selectedObject = Selection::GetActiveObject();
+			if (selectedObject != nullptr && selectedObject->IsClassType(Entity::Type))
+			{
+				Entity* entity = static_cast<Entity*>(selectedObject);
+				Entity* newEntity = EditorObjectManager::CloneEntity(entity);
+				newEntity->GetTransform()->SetParent(entity->GetTransform()->GetParent());
+				isValid = false;
 			}
 		}
 	}

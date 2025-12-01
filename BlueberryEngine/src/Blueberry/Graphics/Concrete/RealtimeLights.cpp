@@ -20,28 +20,6 @@ namespace Blueberry
 	static size_t s_ClusteringLightIndexTextureId = TO_HASH("_ClusteringLightIndexTexture");
 	static size_t s_LightIndexTextureId = TO_HASH("_LightIndexTexture");
 
-	uint32_t GetShadowSize(const LightType& type)
-	{
-		if (type == LightType::Spot)
-			return 512;
-		if (type == LightType::Directional)
-			return 2048;
-		if (type == LightType::Point)
-			return 256;
-		return 0;
-	}
-
-	uint8_t GetSliceCount(const LightType& type)
-	{
-		if (type == LightType::Spot)
-			return 1;
-		if (type == LightType::Directional)
-			return 3;
-		if (type == LightType::Point)
-			return 6;
-		return 0;
-	}
-
 	void RealtimeLights::Initialize()
 	{
 		s_ClusteringShader = static_cast<ComputeShader*>(AssetLoader::Load("assets/shaders/Clustering.compute"));
@@ -71,19 +49,18 @@ namespace Blueberry
 		delete s_LightIndexTexture;
 	}
 
-	void RealtimeLights::PrepareShadows(CullingResults& results, ShadowAtlas* atlas)
+	void RealtimeLights::PrepareShadows(CullingResults& results)
 	{
 		for (Light* light : results.lights)
 		{
 			if (light->IsCastingShadows())
 			{
-				LightType type = light->GetType();
-				atlas->Insert(light, GetShadowSize(type), GetSliceCount(type));
+				ShadowAtlas::Insert(light);
 			}
 		}
 	}
 
-	void RealtimeLights::BindLights(CullingResults& results, ShadowAtlas* atlas)
+	void RealtimeLights::BindLights(CullingResults& results)
 	{
 		Light* mainLight = nullptr;
 		List<Light*> lights = {};
@@ -94,9 +71,9 @@ namespace Blueberry
 				mainLight = light;
 				continue;
 			}
-			lights.emplace_back(light);
+			lights.push_back(light);
 		}
-		PerCameraLightDataConstantBuffer::BindData(results.camera, mainLight, results.skyRenderer, results.probeVolume, lights, results.reflectionProbes, atlas->GetSize());
+		PerCameraLightDataConstantBuffer::BindData(results.camera, mainLight, results.skyRenderer, results.probeVolume, lights, results.reflectionProbes, ShadowAtlas::GetSize());
 	}
 
 	void RealtimeLights::CalculateClusters()

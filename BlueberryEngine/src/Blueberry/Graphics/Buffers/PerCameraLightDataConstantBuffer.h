@@ -22,6 +22,7 @@ namespace Blueberry
 		static inline GfxBuffer* s_ConstantBuffer = nullptr;
 		static inline GfxBuffer* s_PointLightsBuffer = nullptr;
 		static inline GfxBuffer* s_SpotLightsBuffer = nullptr;
+		static inline GfxBuffer* s_ShadowsBuffer = nullptr;
 		static inline GfxBuffer* s_ReflectionProbesBuffer = nullptr;
 	};
 }

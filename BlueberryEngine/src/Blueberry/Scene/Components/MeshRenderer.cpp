@@ -123,30 +123,33 @@ namespace Blueberry
 
 	void MeshRenderer::UpdateBounds()
 	{
-		Transform* transform = GetTransform();
-		size_t transformRecalculationFrame = transform->GetRecalculationFrame();
-		if (m_RecalculationFrame < transformRecalculationFrame)
+		if (m_Mesh.IsValid())
 		{
-			AABB bounds = m_Mesh->GetBounds();
-			Matrix matrix = transform->GetLocalToWorldMatrix();
-
-			Vector3 corners[8];
-			bounds.GetCorners(corners);
-
-			for (int i = 0; i < 8; i++)
+			Transform* transform = GetTransform();
+			size_t transformRecalculationFrame = transform->GetRecalculationFrame();
+			if (m_RecalculationFrame < transformRecalculationFrame)
 			{
-				Vector3 corner = corners[i];
-				Vector3::Transform(corner, matrix, corners[i]);
-			}
+				AABB bounds = m_Mesh->GetBounds();
+				Matrix matrix = transform->GetLocalToWorldMatrix();
 
-			AABB::CreateFromPoints(bounds, 8, corners, sizeof(Vector3));
-			if (!m_CullingDirty)
-			{
-				m_PreviousBounds = m_Bounds;
-				m_CullingDirty = true;
+				Vector3 corners[8];
+				bounds.GetCorners(corners);
+
+				for (int i = 0; i < 8; i++)
+				{
+					Vector3 corner = corners[i];
+					Vector3::Transform(corner, matrix, corners[i]);
+				}
+
+				AABB::CreateFromPoints(bounds, 8, corners, sizeof(Vector3));
+				if (!m_CullingDirty)
+				{
+					m_PreviousBounds = m_Bounds;
+					m_CullingDirty = true;
+				}
+				m_Bounds = bounds;
+				m_RecalculationFrame = transformRecalculationFrame;
 			}
-			m_Bounds = bounds;
-			m_RecalculationFrame = transformRecalculationFrame;
 		}
 	}
 

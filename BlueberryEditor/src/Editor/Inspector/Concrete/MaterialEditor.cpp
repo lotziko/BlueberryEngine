@@ -96,6 +96,6 @@ namespace Blueberry
 		preview.Draw(static_cast<Material*>(m_SerializedObject->GetTarget()), s_RenderTexture);
 
 		ImVec2 size = ImGui::GetContentRegionAvail();
-		ImGui::Image(reinterpret_cast<ImTextureID>(s_RenderTexture->GetHandle()), ImVec2(size.x, (s_RenderTexture->GetHeight() * size.x) / static_cast<float>(s_RenderTexture->GetWidth())), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::Image(reinterpret_cast<ImTextureID>(s_RenderTexture->GetHandle()), ImVec2(size.x, (s_RenderTexture->GetHeight() * size.x) / static_cast<float>(s_RenderTexture->GetWidth())));
 	}
 }

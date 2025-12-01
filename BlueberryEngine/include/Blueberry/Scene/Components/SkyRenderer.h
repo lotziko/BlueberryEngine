@@ -23,12 +23,8 @@ namespace Blueberry
 		const Color& GetAmbientColor();
 		void SetAmbientColor(const Color& color);
 
-		TextureCube* GetReflectionTexture();
-		void SetReflectionTexture(TextureCube* texture);
-
 	private:
 		ObjectPtr<Material> m_Material;
 		Color m_AmbientColor;
-		ObjectPtr<TextureCube> m_ReflectionTexture;
 	};
 }

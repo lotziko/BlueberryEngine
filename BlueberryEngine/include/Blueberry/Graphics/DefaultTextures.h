@@ -7,6 +7,7 @@ namespace Blueberry
 	class Texture;
 	class Texture2D;
 	class TextureCube;
+	class TextureCubeArray;
 	class Texture3D;
 	enum class TextureDimension;
 
@@ -19,6 +20,7 @@ namespace Blueberry
 		static Texture2D* GetNormal2D();
 		static TextureCube* GetWhiteCube();
 		static TextureCube* GetBlackCube();
+		static TextureCubeArray* GetBlackCubeArray();
 		static Texture3D* GetWhite3D();
 		static Texture3D* GetBlack3D();
 
@@ -28,6 +30,7 @@ namespace Blueberry
 		static inline Texture2D* s_NormalTexture2D = nullptr;
 		static inline TextureCube* s_WhiteTextureCube = nullptr;
 		static inline TextureCube* s_BlackTextureCube = nullptr;
+		static inline TextureCubeArray* s_BlackTextureCubeArray = nullptr;
 		static inline Texture3D* s_WhiteTexture3D = nullptr;
 		static inline Texture3D* s_BlackTexture3D = nullptr;
 	};

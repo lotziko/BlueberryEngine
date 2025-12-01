@@ -222,7 +222,7 @@ namespace Blueberry
 		temporaryTextureCube->GetData(cubeScratchImage.GetPixels());
 
 		Object::Destroy(temporaryTexture);
-		//GfxRenderTexturePool::Release(temporaryTextureCube);
+		GfxRenderTexturePool::Release(temporaryTextureCube);
 		scratchImage = std::move(cubeScratchImage);
 	}
 

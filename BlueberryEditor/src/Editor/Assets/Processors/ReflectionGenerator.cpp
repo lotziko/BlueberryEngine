@@ -36,6 +36,7 @@ namespace Blueberry
 	void ReflectionGenerator::GenerateReflectionTexture(SkyRenderer* skyRenderer)
 	{
 		Initialize();
+		EditorSceneManager::Save();
 		Transform* cameraTransform = s_Camera->GetTransform();
 		cameraTransform->SetLocalPosition(Vector3::Zero);
 		GfxDevice::SetRenderTarget(s_RenderTargetTexture);
@@ -52,8 +53,7 @@ namespace Blueberry
 
 		LightingData* lightingData = EditorSceneManager::GetSettings()->GetLightingData();
 		TextureCube* result = Save(0);
-		skyRenderer->SetReflectionTexture(result);
-		lightingData->SetSkyReflection(skyRenderer);
+		lightingData->SetSkyReflection(skyRenderer, result);
 		AssetDB::SetDirty(lightingData);
 		AssetDB::SaveAssets();
 	}
@@ -61,6 +61,7 @@ namespace Blueberry
 	void ReflectionGenerator::GenerateReflectionTexture(ReflectionProbe* reflectionProbe)
 	{
 		Initialize();
+		EditorSceneManager::Save();
 		Transform* cameraTransform = s_Camera->GetTransform();
 		cameraTransform->SetLocalPosition(reflectionProbe->GetTransform()->GetPosition());
 		for (uint32_t i = 0; i < 6; ++i)
@@ -72,15 +73,14 @@ namespace Blueberry
 		s_CubeTexture->SetData(s_SliceData.data(), SLICE_SIZE * 6);
 
 		LightingData* lightingData = EditorSceneManager::GetSettings()->GetLightingData();
-		uint32_t index = lightingData->GetReflectionProbeIndex(reflectionProbe->GetReflectionTexture());
+		uint32_t index = reflectionProbe->GetAtlasIndex();
 		if (index == UINT_MAX)
 		{
 			index = std::max(static_cast<uint32_t>(lightingData->GetReflectionProbeCount()), 1u);
 		}
 		TextureCube* result = Save(index);
-		reflectionProbe->SetReflectionTexture(result);
 		reflectionProbe->SetAtlasIndex(index);
-		lightingData->SetReflectionProbe(index - 1, reflectionProbe);
+		lightingData->SetReflectionProbe(index - 1, reflectionProbe, result);
 		AssetDB::SetDirty(lightingData);
 		AssetDB::SaveAssets();
 	}
@@ -120,14 +120,12 @@ namespace Blueberry
 			s_Camera->SetAspectRatio(1.0f);
 			cameraEntity->OnCreate();
 
-			Vector3 direction[6] = { Vector3::Right, Vector3::Left, Vector3::Up, Vector3::Down, Vector3::Forward, Vector3::Backward };
-			Vector3 up[6] = { Vector3::Up, Vector3::Up, Vector3::Backward, Vector3::Forward, Vector3::Up, Vector3::Up };
-
-			for (uint32_t i = 0; i < 6; ++i)
-			{
-				Matrix rotationMatrix = Matrix::CreateLookAt(Vector3::Zero, direction[i], up[i]);
-				s_Rotation[i] = Quaternion::CreateFromRotationMatrix(rotationMatrix);
-			}
+			s_Rotation[0] = Quaternion::CreateFromAxisAngle(Vector3::Up, ToRadians(90));
+			s_Rotation[1] = Quaternion::CreateFromAxisAngle(Vector3::Up, ToRadians(-90));
+			s_Rotation[2] = Quaternion::CreateFromAxisAngle(Vector3::Right, ToRadians(-90));
+			s_Rotation[3] = Quaternion::CreateFromAxisAngle(Vector3::Right, ToRadians(90));
+			s_Rotation[4] = Quaternion::Identity;
+			s_Rotation[5] = Quaternion::CreateFromAxisAngle(Vector3::Up, ToRadians(180));
 
 			s_SliceData.resize(SLICE_SIZE * 6);
 		}

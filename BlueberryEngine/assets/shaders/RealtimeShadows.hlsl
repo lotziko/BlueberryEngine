@@ -86,4 +86,9 @@ float ComputeShadowPCF3x3(float4 positionSS, Texture2D shadowmap, SamplerCompari
 	return attenuation;
 }
 
+float SampleShadowAtlas(float4 positionSS)
+{
+	return ComputeShadowPCF3x3(positionSS, _ShadowTexture, _ShadowTexture_Sampler, _Shadow3x3PCFTermC0, _Shadow3x3PCFTermC1, _Shadow3x3PCFTermC2, _Shadow3x3PCFTermC3);
+}
+
 #endif

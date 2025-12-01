@@ -14,6 +14,7 @@ namespace Blueberry
 
 	private:
 		static inline Mesh* s_FullscreenMesh = nullptr;
+		static inline Mesh* s_BlitMesh = nullptr;
 		static inline Mesh* s_PlaneMesh = nullptr;
 		static inline Mesh* s_SphereMesh = nullptr;
 		static inline Mesh* s_CubeMesh = nullptr;

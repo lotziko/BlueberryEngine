@@ -93,7 +93,7 @@ namespace Blueberry
 
 		ImGui::SameLine();
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 4);
-		ImGui::Image(reinterpret_cast<ImTextureID>((opened && node.children.size() > 0) ? m_FolderIconSmallOpened->GetHandle() : m_FolderIconSmall->GetHandle()), ImVec2(style.ProjectFolderIconSize, style.ProjectFolderIconSize), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::Image(reinterpret_cast<ImTextureID>((opened && node.children.size() > 0) ? m_FolderIconSmallOpened->GetHandle() : m_FolderIconSmall->GetHandle()), ImVec2(style.ProjectFolderIconSize, style.ProjectFolderIconSize));
 		ImGui::SameLine();
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 4);
 		ImGui::Text("%s", label);
@@ -349,7 +349,7 @@ namespace Blueberry
 		{
 			icon = IconDB::GetAssetIcon(iconObject);
 		}
-		ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(icon->GetHandle()), ImVec2(screenPos.x + style.ProjectCellIconPadding, screenPos.y), ImVec2(screenPos.x + style.ProjectCellSize - style.ProjectCellIconPadding, screenPos.y + style.ProjectCellSize - style.ProjectCellIconPadding * 2), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(icon->GetHandle()), ImVec2(screenPos.x + style.ProjectCellIconPadding, screenPos.y), ImVec2(screenPos.x + style.ProjectCellSize - style.ProjectCellIconPadding, screenPos.y + style.ProjectCellSize - style.ProjectCellIconPadding * 2));
 
 		ImGui::PopStyleVar();
 		ImGui::PopID();

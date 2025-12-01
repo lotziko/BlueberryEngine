@@ -41,7 +41,7 @@ namespace Blueberry
 		return nullptr;
 	}
 
-	Object* EditorAssetLoader::LoadImpl(const String& path)
+	Object* EditorAssetLoader::LoadImpl(const String& path, void* args)
 	{
 		auto it = m_LoadedAssets.find(path);
 		if (it != m_LoadedAssets.end())
@@ -78,11 +78,15 @@ namespace Blueberry
 
 			if (needImport)
 			{
+				auto parameters = std::make_pair(true, WrapMode::Repeat);
+				if (args != nullptr)
+				{
+					parameters = *static_cast<std::pair<bool, WrapMode>*>(args);
+				}
 				DirectX::ScratchImage image = {};
-				TextureHelper::Load(image, path, ".png", false); // TODO parameter for srgb
-				TextureHelper::Flip(image);
+				TextureHelper::Load(image, path, ".png", parameters.first);
 				auto metadata = image.GetMetadata();
-				texture = Texture2D::Create(metadata.width, metadata.height, metadata.mipLevels, static_cast<TextureFormat>(metadata.format), WrapMode::Repeat);
+				texture = Texture2D::Create(metadata.width, metadata.height, metadata.mipLevels, static_cast<TextureFormat>(metadata.format), parameters.second);
 				ObjectDB::AllocateIdToGuid(texture, guid, 1);
 				texture->SetData(static_cast<uint8_t*>(image.GetPixels()), image.GetPixelsSize());
 				texture->Apply();

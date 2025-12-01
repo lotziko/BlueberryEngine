@@ -36,7 +36,7 @@ float3 CalculateLight(float3 positionWS)
 		{
 			if (!IsOutOfBounds(positionSS, _MainShadowBounds[cascadeIndex]))
 			{
-				shadowAttenuation = ComputeShadowPCF3x3(positionSS, _ShadowTexture, _ShadowTexture_Sampler, _Shadow3x3PCFTermC0, _Shadow3x3PCFTermC1, _Shadow3x3PCFTermC2, _Shadow3x3PCFTermC3);
+				shadowAttenuation = SampleShadowAtlas(positionSS);
 			}
 		}
 		float3 lightColor = _MainLightColor.rgb;
@@ -48,7 +48,7 @@ float3 CalculateLight(float3 positionWS)
 	{
 		PointLightData data = _PointLightsData[i];
 
-		if (!data.hasFog)
+		if ((data.flags & 2) == 0)
 		{
 			continue;
 		}
@@ -64,13 +64,15 @@ float3 CalculateLight(float3 positionWS)
 		float3 lightDirectionWS = normalize(posToLight);
 
 		float shadowAttenuation = 1.0;
-		if (data.hasShadow)
+		if ((data.flags & 1) != 0)
 		{
+			uint faceIndex = GetFaceIndex(-lightDirectionWS);
+			ShadowData shadowData = _ShadowsData[data.shadowDataOffset + faceIndex];
 			shadowAttenuation = 0.0;
-			float4 positionSS = TransformWorldToShadow(positionWS, data.worldToShadow);
-			if (!IsOutOfBounds(positionSS, data.shadowBounds))
+			float4 positionSS = TransformWorldToShadow(positionWS, shadowData.worldToShadow);
+			if (!IsOutOfBounds(positionSS, shadowData.shadowBounds))
 			{
-				shadowAttenuation = ComputeShadowPCF3x3(positionSS, _ShadowTexture, _ShadowTexture_Sampler, _Shadow3x3PCFTermC0, _Shadow3x3PCFTermC1, _Shadow3x3PCFTermC2, _Shadow3x3PCFTermC3);
+				shadowAttenuation = SampleShadowAtlas(positionSS);
 			}
 		}
 
@@ -91,7 +93,7 @@ float3 CalculateLight(float3 positionWS)
 	{
 		SpotLightData data = _SpotLightsData[i];
 
-		if (!data.hasFog)
+		if ((data.flags & 2) == 0)
 		{
 			continue;
 		}
@@ -113,7 +115,7 @@ float3 CalculateLight(float3 positionWS)
 		}
 
 		float cookieAttenuation = 1.0;
-		if (data.hasCookie) //has cookie
+		if ((data.flags & 4) != 0) //has cookie
 		{
 			float4 positionLCS = ApplyShadowBias(TransformWorldToShadow(positionWS, data.worldToCookie));
 			cookieAttenuation = _CookieTexture.SampleLevel(_CookieTexture_Sampler, positionLCS.xyz, 0).r;
@@ -121,13 +123,14 @@ float3 CalculateLight(float3 positionWS)
 		}
 
 		float shadowAttenuation = 1.0;
-		if (data.hasShadow) // has shadow
+		if ((data.flags & 1) != 0) // has shadow
 		{
+			ShadowData shadowData = _ShadowsData[data.shadowDataOffset];
 			shadowAttenuation = 0.0;
-			float4 positionSS = TransformWorldToShadow(positionWS, data.worldToShadow);
-			if (!IsOutOfBounds(positionSS, data.shadowBounds))
+			float4 positionSS = TransformWorldToShadow(positionWS, shadowData.worldToShadow);
+			if (!IsOutOfBounds(positionSS, shadowData.shadowBounds))
 			{
-				shadowAttenuation = ComputeShadowPCF3x3(positionSS, _ShadowTexture, _ShadowTexture_Sampler, _Shadow3x3PCFTermC0, _Shadow3x3PCFTermC1, _Shadow3x3PCFTermC2, _Shadow3x3PCFTermC3);
+				shadowAttenuation = SampleShadowAtlas(positionSS);
 			}
 		}
 

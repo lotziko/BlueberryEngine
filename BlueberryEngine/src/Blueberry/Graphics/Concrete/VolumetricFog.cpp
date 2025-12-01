@@ -6,7 +6,6 @@
 #include "Blueberry\Graphics\GfxTexture.h"
 #include "..\RenderContext.h"
 #include "..\Buffers\FogViewDataConstantBuffer.h"
-#include "ShadowAtlas.h"
 #include "Blueberry\Graphics\ComputeShader.h"
 #include "Blueberry\Graphics\Structs.h"
 #include "Blueberry\Scene\Components\Light.h"
@@ -51,7 +50,7 @@ namespace Blueberry
 		delete s_FrustumVolume1;
 	}
 
-	void VolumetricFog::CalculateFrustum(const CullingResults& results, const CameraData& data, ShadowAtlas* atlas)
+	void VolumetricFog::CalculateFrustum(const CullingResults& results, const CameraData& data)
 	{
 		bool isEven = Time::GetFrameCount() % 2 == 0;
 		FogViewDataConstantBuffer::BindData(data, s_FrustumVolumeSize);

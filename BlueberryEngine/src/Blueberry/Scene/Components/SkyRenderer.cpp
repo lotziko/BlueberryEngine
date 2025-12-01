@@ -40,18 +40,4 @@ namespace Blueberry
 	{
 		m_AmbientColor = color;
 	}
-
-	TextureCube* SkyRenderer::GetReflectionTexture()
-	{
-		if (!m_ReflectionTexture.IsValid())
-		{
-			return DefaultTextures::GetBlackCube();
-		}
-		return m_ReflectionTexture.Get();
-	}
-
-	void SkyRenderer::SetReflectionTexture(TextureCube* texture)
-	{
-		m_ReflectionTexture = texture;
-	}
 }

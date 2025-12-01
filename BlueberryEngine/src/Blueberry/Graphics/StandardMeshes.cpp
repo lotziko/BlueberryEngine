@@ -24,10 +24,10 @@ namespace Blueberry
 			};
 			Vector2 uvs[] =
 			{
-				{ 0.0f, 1.0f }, // fullscreen meshes are flipped vertically
+				{ 0.0f, 1.0f }, // fullscreen mesh is flipped vertically to avoid NDC inversion
 				{ 0.0f, 0.0f },
 				{ 1.0f, 0.0f },
-				{ 1.0f, 1.0f },
+				{ 1.0f, 1.0f }
 			};
 			uint32_t indices[] = { 0, 1, 2, 2, 3, 0 };
 			s_FullscreenMesh = Mesh::Create();
@@ -66,7 +66,7 @@ namespace Blueberry
 				{ 0.0f, 0.0f },
 				{ 0.0f, 1.0f },
 				{ 1.0f, 1.0f },
-				{ 1.0f, 0.0f },
+				{ 1.0f, 0.0f }
 			};
 			uint32_t indices[] = { 0, 1, 2, 2, 3, 0 };
 			s_PlaneMesh = Mesh::Create();
@@ -225,7 +225,7 @@ namespace Blueberry
 				{ 1.0f, 0.0f, 0.0f },
 				{ 1.0f, 0.0f, 0.0f },
 				{ 1.0f, 0.0f, 0.0f },
-				{ 1.0f, 0.0f, 0.0f },
+				{ 1.0f, 0.0f, 0.0f }
 			};
 			Vector2 uvs[] =
 			{
@@ -257,7 +257,7 @@ namespace Blueberry
 				{ 0.0f, 0.0f },
 				{ 0.0f, 1.0f },
 				{ 1.0f, 1.0f },
-				{ 1.0f, 0.0f },
+				{ 1.0f, 0.0f }
 			};
 			uint32_t indices[] = 
 			{ 

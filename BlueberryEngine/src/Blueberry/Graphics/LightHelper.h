@@ -12,6 +12,8 @@ namespace Blueberry
 	class LightHelper
 	{
 	public:
+		static uint32_t GetShadowSize(const LightType& type);
+		static uint32_t GetSliceCount(const LightType& type);
 		static Matrix GetViewMatrix(Light* light, Transform* transform, const uint8_t& slice = 0);
 		static Matrix GetInverseViewMatrix(Light* light, Transform* transform, const uint8_t& slice = 0);
 		static Matrix GetProjectionMatrix(Light* light, const float& guardAngle = 0);

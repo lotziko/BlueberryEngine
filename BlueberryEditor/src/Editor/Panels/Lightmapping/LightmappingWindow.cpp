@@ -118,7 +118,7 @@ namespace Blueberry
 						}
 
 						list->PushClipRect(pos, pos + size, true);
-						Vector4* chartScaleOffset = lightingData->GetChartScaleOffset();
+						Vector4* chartScaleOffset = lightingData->GetChartOffsetScale();
 						for (auto& component : scene->GetIterator<MeshRenderer>())
 						{
 							MeshRenderer* meshRenderer = static_cast<MeshRenderer*>(component.second);
@@ -180,8 +180,7 @@ namespace Blueberry
 						DirectX::ScratchImage image = {};
 						image.Initialize2D(DXGI_FORMAT_R32G32B32A32_FLOAT, result.outputSize.x, result.outputSize.y, 1, 1);
 						memcpy(image.GetPixels(), result.output.data(), result.outputSize.x * result.outputSize.y * sizeof(Vector4));
-						TextureHelper::Flip(image);
-
+						
 						String path = EditorSceneManager::GetPath();
 						path.replace(path.find(".scene"), 6, "\\Lightmap.hdr");
 

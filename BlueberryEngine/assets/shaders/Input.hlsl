@@ -40,46 +40,53 @@ cbuffer PerCameraData
 struct PointLightData
 {
 	float3 positionWS;
-	float hasShadow;
 	float3 positionVS;
-	float hasFog;
 	float3 color;
 	float squareRange;
 	float4 attenuation;				// z,w unused
-	float4x4 worldToShadow;
-	float4 shadowBounds;			// stores shadowmap slice offsets to counter atlas offsets in _WorldToShadow, otherwise it's just (0, 0, 1, 1)
+	uint flags;						// 1 - has shadow, 2 - has fog
+	uint shadowDataOffset;
 };
 
 struct SpotLightData
 {
 	float3 positionWS;
-	float hasShadow;
 	float3 positionVS;
-	float hasFog;
 	float3 color;
-	float hasCookie;
 	float4 attenuation;
 	float3 directionWS;
 	float range;
 	float3 directionVS;
 	float coneOuterAngle;
-	float4x4 worldToShadow;
-	float4 shadowBounds;
 	float4x4 worldToCookie;
+	uint flags;						// 1 - has shadow, 2 - has fog, 4 - has cookie
+	uint shadowDataOffset;
+	float dummy;
+};
+
+struct ShadowData
+{
+	float4x4 worldToShadow;
+	float4 shadowBounds;	// stores shadowmap slice offsets to counter atlas offsets in _WorldToShadow, otherwise it's just (0, 0, 1, 1)
 };
 
 struct ReflectionProbeData
 {
-	float3 positionMinWS;
-	float3 positionMinVS;
+	float3 positionWS;
+	float squareRange;
+	float weight;
+	float fade;
+	float3 positionMinWS;	// x is used as range for sphere
+	float3 positionMinVS;	// is used as positionVS for sphere
 	float3 positionMaxWS;
 	float3 positionMaxVS;
-	float index;
-	float3 dummy;
+	uint index;
+	uint type;		// 0 - sphere, 1 - box
 };
 
 StructuredBuffer<PointLightData> _PointLightsData;
 StructuredBuffer<SpotLightData> _SpotLightsData;
+StructuredBuffer<ShadowData> _ShadowsData;
 StructuredBuffer<ReflectionProbeData> _ReflectionProbesData;
 
 cbuffer PerCameraLightData
@@ -94,7 +101,7 @@ cbuffer PerCameraLightData
 	float4 _AmbientLightColor;
 	// maybe put here clusters size
 
-	float4 _LightsCount;		// x - point lights, y - spot lights, z - reflection probes
+	uint4 _LightsCount;		// x - point lights, y - spot lights, z - reflection probes
 	float4 _ProbeVolumeMin;
 	float4 _ProbeVolumeSize;
 	float4 _ProbeVolumeInvSize;

@@ -172,7 +172,6 @@ namespace Blueberry
 			String extension = String(std::filesystem::path(path).extension().string());
 			DirectX::ScratchImage image = {};
 			TextureHelper::Load(image, path, extension, m_IsSRGB);
-			TextureHelper::Flip(image);
 			
 			const auto& objects = ObjectDB::GetObjectsFromGuid(guid);
 			auto it = objects.find(id);

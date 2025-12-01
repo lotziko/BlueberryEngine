@@ -25,7 +25,7 @@ namespace Blueberry
 			m_Renderer->SetMesh(StandardMeshes::GetSphere());
 
 			Entity* lightEntity = m_Scene->CreateEntity("Light");
-			lightEntity->GetTransform()->SetPosition(Vector3(4, -3, 3));
+			lightEntity->GetTransform()->SetPosition(Vector3(4, 3, 3));
 			Light* light = lightEntity->AddComponent<Light>();
 			light->SetType(LightType::Point);
 			light->SetCastingShadows(false);

@@ -3,6 +3,7 @@
 #include "Blueberry\Graphics\Material.h"
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Assets\Importers\ModelImporter.h"
+#include "Editor\Assets\ThumbnailCache.h"
 #include "Editor\Misc\ImGuiHelper.h"
 
 #include <imgui\imgui.h>
@@ -37,6 +38,13 @@ namespace Blueberry
 			for (Object* object : m_SerializedObject->GetTargets())
 			{
 				AssetDB::SetDirty(object);
+				ThumbnailCache::Refresh(object);
+				ModelImporter* modelImporter = static_cast<ModelImporter*>(object);
+				Guid guid = modelImporter->GetGuid();
+				for (auto& pair : modelImporter->GetAssetObjects())
+				{
+					ThumbnailCache::Refresh(ObjectDB::GetObjectFromGuid(guid, pair.first));
+				}
 			}
 			AssetDB::SaveAssets();
 		}

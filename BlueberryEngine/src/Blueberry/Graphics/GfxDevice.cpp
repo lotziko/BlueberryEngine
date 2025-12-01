@@ -116,6 +116,11 @@ namespace Blueberry
 		s_Instance->CopyImpl(source, target, area);
 	}
 
+	void GfxDevice::Copy(GfxTexture* source, GfxTexture* target, const Vector2Int& offset, const Rectangle& area)
+	{
+		s_Instance->CopyImpl(source, target, offset, area);
+	}
+
 	void GfxDevice::Copy(GfxTexture* source, GfxTexture* target, const uint32_t& sourceSlice, const uint32_t& targetSlice, const uint32_t& mipLevel)
 	{
 		s_Instance->CopyImpl(source, target, sourceSlice, targetSlice, mipLevel);

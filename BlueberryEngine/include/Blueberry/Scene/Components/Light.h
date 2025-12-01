@@ -12,6 +12,7 @@ namespace Blueberry
 	};
 
 	class Texture;
+	class GfxTexture;
 
 	class BB_API Light : public Component
 	{
@@ -23,6 +24,8 @@ namespace Blueberry
 
 		virtual void OnEnable() final;
 		virtual void OnDisable() final;
+
+		void OnPreCull();
 
 		const LightType& GetType();
 		void SetType(const LightType& type);
@@ -45,8 +48,17 @@ namespace Blueberry
 		const bool& IsCastingFog();
 		void SetCastingFog(const bool& castingFog);
 
+		const bool& IsCached();
+		void SetCached(const bool& cached);
+
 		Texture* GetCookie();
 		void SetCookie(Texture* cookie);
+
+	private:
+		GfxTexture* GetCachedShadow();
+		void ReleaseCachedShadow();
+
+		void UpdateBounds();
 
 	private:
 		LightType m_Type = LightType::Point;
@@ -57,15 +69,18 @@ namespace Blueberry
 		float m_InnerSpotAngle = 15.0f;
 		bool m_IsCastingShadows = true;
 		bool m_IsCastingFog = true;
+		bool m_IsCached = true;
 		ObjectPtr<Texture> m_Cookie;
 
 	private:
-		uint8_t m_SliceCount = 1;
+		GfxTexture* m_CachedShadow;
+		size_t m_RecalculationFrame = 0;
+		bool m_IsDirty[6] = { true, true, true, true, true, true };
 		Matrix m_WorldToShadow[6];
 		Matrix m_AtlasWorldToShadow[6];
 		Vector4 m_ShadowBounds[6];
 		Vector4 m_ShadowCascades[6];
-		Matrix m_WorldToCookie[6];
+		Matrix m_WorldToCookie;
 
 		friend class RenderContext;
 		friend class ShadowAtlas;

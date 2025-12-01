@@ -8,8 +8,10 @@
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\TextureCube.h"
+#include "Blueberry\Graphics\TextureCubeArray.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\GfxBuffer.h"
+#include "Blueberry\Graphics\DefaultTextures.h"
 
 #include "Editor\Prefabs\PrefabManager.h"
 #include "Editor\Prefabs\PrefabInstance.h"
@@ -19,6 +21,11 @@ namespace Blueberry
 {
 	static GfxBuffer* s_ScaleOffsetBuffer = nullptr;
 	static GfxTexture* s_ReflectionTexture = nullptr;
+
+	static size_t s_LightmapTextureId = TO_HASH("_LightmapTexture");
+	static size_t s_ReflectionTextureId = TO_HASH("_ReflectionTexture");
+	static size_t s_PerLightmapInstanceDataId = TO_HASH("_PerLightmapInstanceData");
+	static size_t s_LightmapId = TO_HASH("LIGHTMAP");
 
 	#define REFLECTION_SIZE 128
 	
@@ -85,9 +92,9 @@ namespace Blueberry
 		m_TextureCube = textureCube;
 	}
 
-	Vector4* LightingData::GetChartScaleOffset()
+	Vector4* LightingData::GetChartOffsetScale()
 	{
-		return reinterpret_cast<Vector4*>(m_ChartScaleOffset.data());
+		return m_ChartOffsetScale.data();
 	}
 
 	Texture2D* LightingData::GetLightmap()
@@ -110,8 +117,8 @@ namespace Blueberry
 	void LightingData::SetLightmapData(Texture2D* lightmap, const List<Vector4>& scaleOffset, const Dictionary<ObjectId, uint32_t>& instanceOffset)
 	{
 		m_Lightmap = lightmap;
-		m_ChartScaleOffset.resize(scaleOffset.size() * sizeof(Vector4));
-		memcpy(m_ChartScaleOffset.data(), scaleOffset.data(), m_ChartScaleOffset.size());
+		m_ChartOffsetScale.resize(scaleOffset.size());
+		memcpy(m_ChartOffsetScale.data(), scaleOffset.data(), scaleOffset.size() * sizeof(Vector4));
 
 		m_MeshRenderers.clear();
 		for (auto& pair : instanceOffset)
@@ -124,24 +131,12 @@ namespace Blueberry
 		}
 	}
 
-	uint32_t LightingData::GetReflectionProbeIndex(TextureCube* probeTexture)
-	{
-		for (size_t i = 0; i < m_ReflectionProbes.size(); ++i)
-		{
-			if (m_ReflectionProbes[i].GetTextureCube() == probeTexture)
-			{
-				return i;
-			}
-		}
-		return UINT_MAX;
-	}
-
 	const size_t LightingData::GetReflectionProbeCount()
 	{
 		return m_ReflectionProbes.size();
 	}
 
-	void LightingData::SetSkyReflection(SkyRenderer* skyRenderer)
+	void LightingData::SetSkyReflection(SkyRenderer* skyRenderer, TextureCube* textureCube)
 	{
 		if (m_ReflectionProbes.size() == 0)
 		{
@@ -150,12 +145,12 @@ namespace Blueberry
 
 		ReflectionProbeData data = {};
 		data.SetObjectId(GetGlobalObjectId(skyRenderer->GetEntity()));
-		data.SetTextureCube(skyRenderer->GetReflectionTexture());
+		data.SetTextureCube(textureCube);
 		m_ReflectionProbes[0] = data;
 		ApplyReflections();
 	}
 
-	void LightingData::SetReflectionProbe(const uint32_t& index, ReflectionProbe* reflectionProbe)
+	void LightingData::SetReflectionProbe(const uint32_t& index, ReflectionProbe* reflectionProbe, TextureCube* textureCube)
 	{
 		if (m_ReflectionProbes.size() <= 1 + index)
 		{
@@ -164,7 +159,7 @@ namespace Blueberry
 
 		ReflectionProbeData data = {};
 		data.SetObjectId(GetGlobalObjectId(reflectionProbe->GetEntity()));
-		data.SetTextureCube(reflectionProbe->GetReflectionTexture());
+		data.SetTextureCube(textureCube);
 		m_ReflectionProbes[1 + index] = data;
 		ApplyReflections();
 	}
@@ -203,11 +198,11 @@ namespace Blueberry
 		if (m_Lightmap.IsValid() && m_Lightmap->GetState() == ObjectState::Default)
 		{
 			Texture2D* lightmap = m_Lightmap.Get();
-			GfxDevice::SetGlobalTexture(TO_HASH("_LightmapTexture"), lightmap->Get());
+			GfxDevice::SetGlobalTexture(s_LightmapTextureId, lightmap->Get());
 		}
 		else
 		{
-			Shader::SetKeyword(TO_HASH("LIGHTMAP"), false);
+			Shader::SetKeyword(s_LightmapId, false);
 			return;
 		}
 
@@ -226,11 +221,11 @@ namespace Blueberry
 			properties.dataSize = m_ChartOffsetScale.size() * sizeof(Vector4);
 
 			GfxDevice::CreateBuffer(properties, s_ScaleOffsetBuffer);
-			GfxDevice::SetGlobalBuffer(TO_HASH("_PerLightmapInstanceData"), s_ScaleOffsetBuffer);
+			GfxDevice::SetGlobalBuffer(s_PerLightmapInstanceDataId, s_ScaleOffsetBuffer);
 		}
 		else
 		{
-			Shader::SetKeyword(TO_HASH("LIGHTMAP"), false);
+			Shader::SetKeyword(s_LightmapId, false);
 			return;
 		}
 
@@ -294,11 +289,11 @@ namespace Blueberry
 		}
 		else
 		{
-			Shader::SetKeyword(TO_HASH("LIGHTMAP"), false);
+			Shader::SetKeyword(s_LightmapId, false);
 			return;
 		}
 
-		Shader::SetKeyword(TO_HASH("LIGHTMAP"), true);
+		Shader::SetKeyword(s_LightmapId, true);
 	}
 
 	void LightingData::ApplyReflections()
@@ -367,12 +362,14 @@ namespace Blueberry
 				{
 					entity = entities.find(id.objectFileId)->second;
 				}
-				if (entity != nullptr && i > 0)
-				{
-					entity->GetComponent<ReflectionProbe>()->SetAtlasIndex(i);
-				}
 
 				TextureCube* texture = data.GetTextureCube();
+				if (entity != nullptr && i > 0)
+				{
+					ReflectionProbe* reflectionProbe = entity->GetComponent<ReflectionProbe>();
+					reflectionProbe->SetAtlasIndex(i);
+				}
+
 				if (texture != nullptr)
 				{
 					memcpy(textureData.data() + textureSize * i, texture->GetData(), textureSize);
@@ -380,22 +377,29 @@ namespace Blueberry
 			}
 		}
 
-		TextureProperties textureProperties = {};
+		if (probeCount > 0)
+		{
+			TextureProperties textureProperties = {};
 
-		textureProperties.width = REFLECTION_SIZE;
-		textureProperties.height = REFLECTION_SIZE;
-		textureProperties.depth = std::max(1u, probeCount);
-		textureProperties.antiAliasing = 1;
-		textureProperties.mipCount = 6;
-		textureProperties.format = TextureFormat::BC6H_UFloat;
-		textureProperties.dimension = TextureDimension::TextureCubeArray;
-		textureProperties.wrapMode = WrapMode::Clamp;
-		textureProperties.filterMode = FilterMode::Bilinear;
-		textureProperties.data = textureData.data();
-		textureProperties.dataSize = textureData.size();
+			textureProperties.width = REFLECTION_SIZE;
+			textureProperties.height = REFLECTION_SIZE;
+			textureProperties.depth = probeCount;
+			textureProperties.antiAliasing = 1;
+			textureProperties.mipCount = 6;
+			textureProperties.format = TextureFormat::BC6H_UFloat;
+			textureProperties.dimension = TextureDimension::TextureCubeArray;
+			textureProperties.wrapMode = WrapMode::Clamp;
+			textureProperties.filterMode = FilterMode::Bilinear;
+			textureProperties.data = textureData.data();
+			textureProperties.dataSize = textureData.size();
 
-		GfxDevice::CreateTexture(textureProperties, s_ReflectionTexture);
+			GfxDevice::CreateTexture(textureProperties, s_ReflectionTexture);
 
-		GfxDevice::SetGlobalTexture(TO_HASH("_ReflectionTexture"), s_ReflectionTexture);
+			GfxDevice::SetGlobalTexture(s_ReflectionTextureId, s_ReflectionTexture);
+		}
+		else
+		{
+			GfxDevice::SetGlobalTexture(s_ReflectionTextureId, DefaultTextures::GetBlackCubeArray()->Get());
+		}
 	}
 }

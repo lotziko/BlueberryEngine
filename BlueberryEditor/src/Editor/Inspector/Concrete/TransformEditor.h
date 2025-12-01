@@ -18,5 +18,6 @@ namespace Blueberry
 		SerializedProperty m_LocalRotationProperty;
 		SerializedProperty m_LocalScaleProperty;
 		SerializedProperty m_LocalRotationEulerHintProperty;
+		SerializedProperty m_IsStaticProperty;
 	};
 }

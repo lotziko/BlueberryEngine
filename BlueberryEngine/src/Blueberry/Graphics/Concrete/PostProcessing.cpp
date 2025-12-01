@@ -80,8 +80,10 @@ namespace Blueberry
 
 		GfxDevice::CreateBuffer(bloomBufferProperties, s_BloomData);
 
-		s_BlueNoiseLUT = static_cast<Texture2D*>(AssetLoader::Load("assets/textures/BlueNoiseLUT.png"));
-		s_BRDFIntegrationLUT = static_cast<Texture2D*>(AssetLoader::Load("assets/textures/BRDFIntegrationLUT.png"));
+		auto blueNoiseParameters = std::make_pair(false, WrapMode::Repeat); // TODO remove sampler from texture
+		auto brdfParameters = std::make_pair(false, WrapMode::Clamp);
+		s_BlueNoiseLUT = static_cast<Texture2D*>(AssetLoader::Load("assets/textures/BlueNoiseLUT.png", &blueNoiseParameters));
+		s_BRDFIntegrationLUT = static_cast<Texture2D*>(AssetLoader::Load("assets/textures/BRDFIntegrationLUT.png", &brdfParameters));
 		GfxDevice::SetGlobalTexture(s_BlueNoiseLUTId, s_BlueNoiseLUT->Get());
 		GfxDevice::SetGlobalTexture(s_BRDFIntegrationLUTId, s_BRDFIntegrationLUT->Get());
 		AutoExposure::Initialize();
@@ -105,7 +107,6 @@ namespace Blueberry
 		{
 			// Resolve color
 			GfxDevice::SetRenderTarget(color);
-			//GfxDevice::ClearColor(background);
 			GfxDevice::SetGlobalTexture(s_ScreenColorTextureId, msaaColor);
 			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetResolveMSAA(), 1));
 			GfxDevice::SetRenderTarget(nullptr);
@@ -115,16 +116,12 @@ namespace Blueberry
 			GfxDevice::SetRenderTarget(output);
 			GfxDevice::SetViewport(0, 0, size.x, size.y);
 			GfxDevice::SetGlobalTexture(s_ScreenColorTextureId, color);
-			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetPostProcessing(), 1));
+			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetPostProcessing(), 2));
 			GfxDevice::SetRenderTarget(nullptr);
 		}
 		else
 		{
 			float exposure = 0.2f / AutoExposure::GetExposure();
-			if (cameraType == CameraType::Reflection)
-			{
-				exposure = 1.0f;
-			}
 			PostProcessingData postProcessingConstants = {};
 			postProcessingConstants.exposureTime = Vector4(exposure, Time::GetFrameCount() / 60.0f / 10, 0, 0);
 
@@ -322,7 +319,7 @@ namespace Blueberry
 			GfxDevice::SetRenderTarget(output);
 			GfxDevice::SetViewport(0, 0, size.x, size.y);
 			GfxDevice::SetGlobalTexture(s_ScreenColorTextureId, color);
-			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetPostProcessing(), 0));
+			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetPostProcessing(), cameraType == CameraType::Reflection ? 1 : 0));
 			GfxDevice::SetRenderTarget(nullptr);
 
 			GfxRenderTexturePool::Release(bloom);

@@ -49,6 +49,9 @@ namespace Blueberry
 		const bool& IsDirty() const;
 		const size_t& GetRecalculationFrame() const;
 
+		const bool& IsStatic() const;
+		void SetStatic(const bool& isStatic);
+
 	private:
 		void InvalidateHierarchy();
 		void RecalculateHierarchy();
@@ -68,6 +71,7 @@ namespace Blueberry
 		Quaternion m_LocalRotation;
 		Vector3 m_LocalScale = Vector3(1, 1, 1);
 		Vector3 m_LocalRotationEulerHint;
+		bool m_IsStatic = true;
 
 		Vector3 m_Position;
 		Quaternion m_Rotation;

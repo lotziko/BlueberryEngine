@@ -458,7 +458,7 @@ bool ImGui::FloatEdit(const char* label, float* v, float min, float max)
 	PROPERTY_BEGIN_VALUE()
 	
 	bool result = false;
-	if (ImGui::DragFloat("##float", v, 1.0f, min, max))
+	if (ImGui::DragFloat("##float", v, 0.02f, min, max))
 	{
 		result = true;
 	}

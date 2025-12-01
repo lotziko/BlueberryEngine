@@ -413,7 +413,7 @@ namespace Blueberry
 				for (uint32_t i = 0; i < verticesCount; ++i)
 				{
 					fbxsdk::FbxVector2 fbxUv = fbxUvs0[i];
-					uvs[i] = Vector2(static_cast<float>(fbxUv[0]), static_cast<float>(fbxUv[1]));
+					uvs[i] = Vector2(static_cast<float>(fbxUv[0]), 1.0f - static_cast<float>(fbxUv[1])); // Flip vertically
 				}
 				mesh->SetUVs(0, uvs, verticesCount);
 			}

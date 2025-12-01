@@ -25,6 +25,28 @@ namespace Blueberry
 		Vector3::Up, Vector3::Up, Vector3::Backward, Vector3::Forward, Vector3::Up, Vector3::Up
 	};
 
+	uint32_t LightHelper::GetShadowSize(const LightType& type)
+	{
+		if (type == LightType::Spot)
+			return 512;
+		if (type == LightType::Directional)
+			return 1024;
+		if (type == LightType::Point)
+			return 256;
+		return 0;
+	}
+
+	uint32_t LightHelper::GetSliceCount(const LightType& type)
+	{
+		if (type == LightType::Spot)
+			return 1;
+		if (type == LightType::Directional)
+			return 3;
+		if (type == LightType::Point)
+			return 6;
+		return 0;
+	}
+
 	Matrix LightHelper::GetViewMatrix(Light* light, Transform* transform, const uint8_t& slice)
 	{
 		switch (light->GetType())

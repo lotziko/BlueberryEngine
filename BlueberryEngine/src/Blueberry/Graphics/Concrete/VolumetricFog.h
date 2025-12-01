@@ -6,14 +6,13 @@ namespace Blueberry
 	class GfxTexture;
 	struct CullingResults;
 	struct CameraData;
-	class ShadowAtlas;
 
 	class VolumetricFog
 	{
 	public:
 		static void Initialize();
 		static void Shutdown();
-		static void CalculateFrustum(const CullingResults& results, const CameraData& data, ShadowAtlas* atlas);
+		static void CalculateFrustum(const CullingResults& results, const CameraData& data);
 		static GfxTexture* GetFrustumTexture();
 
 	private:

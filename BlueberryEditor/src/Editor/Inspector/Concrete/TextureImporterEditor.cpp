@@ -127,6 +127,8 @@ namespace Blueberry
 			for (Object* object : m_SerializedObject->GetTargets())
 			{
 				AssetDB::SetDirty(object);
+				TextureImporter* textureImporter = static_cast<TextureImporter*>(object);
+				ThumbnailCache::Refresh(ObjectDB::GetObjectFromGuid(textureImporter->GetGuid(), textureImporter->GetMainObject()));
 			}
 			AssetDB::SaveAssets();
 		}
@@ -137,7 +139,7 @@ namespace Blueberry
 		if (texture->IsClassType(Texture2D::Type))
 		{
 			ImVec2 size = ImGui::GetContentRegionAvail();
-			ImGui::Image(reinterpret_cast<ImTextureID>(texture->GetHandle()), ImVec2(size.x, (texture->GetHeight() * size.x) / static_cast<float>(texture->GetWidth())), ImVec2(0, 1), ImVec2(1, 0));
+			ImGui::Image(reinterpret_cast<ImTextureID>(texture->GetHandle()), ImVec2(size.x, (texture->GetHeight() * size.x) / static_cast<float>(texture->GetWidth())), ImVec2(0, 0), ImVec2(1, 1));
 		}
 	}
 }

@@ -243,14 +243,27 @@ namespace Blueberry
 	void GfxDeviceDX11::CopyImpl(GfxTexture* source, GfxTexture* target, const Rectangle& area) const
 	{
 		D3D11_BOX src;
-		src.left = area.x;
-		src.top = area.y;
-		src.right = area.x + area.width;
-		src.bottom = area.y + area.height;
+		src.left = static_cast<UINT>(area.x);
+		src.top = static_cast<UINT>(area.y);
+		src.right = static_cast<UINT>(area.x + area.width);
+		src.bottom = static_cast<UINT>(area.y + area.height);
 		src.front = 0;
 		src.back = 1;
 
 		m_DeviceContext->CopySubresourceRegion(static_cast<GfxTextureDX11*>(target)->m_Texture.Get(), 0, 0, 0, 0, static_cast<GfxTextureDX11*>(source)->m_Texture.Get(), 0, &src);
+	}
+
+	void GfxDeviceDX11::CopyImpl(GfxTexture* source, GfxTexture* target, const Vector2Int& offset, const Rectangle& area) const
+	{
+		D3D11_BOX src;
+		src.left = static_cast<UINT>(area.x);
+		src.top = static_cast<UINT>(area.y);
+		src.right = static_cast<UINT>(area.x + area.width);
+		src.bottom = static_cast<UINT>(area.y + area.height);
+		src.front = 0;
+		src.back = 1;
+
+		m_DeviceContext->CopySubresourceRegion(static_cast<GfxTextureDX11*>(target)->m_Texture.Get(), static_cast<UINT>(offset.x), static_cast<UINT>(offset.y), 0, 0, static_cast<GfxTextureDX11*>(source)->m_Texture.Get(), 0, &src);
 	}
 
 	void GfxDeviceDX11::CopyImpl(GfxTexture* source, GfxTexture* target, const uint32_t& sourceSlice, const uint32_t& targetSlice, const uint32_t& mipLevel) const

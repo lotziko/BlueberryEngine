@@ -30,21 +30,39 @@ namespace Blueberry
 
 	void ReflectionProbeEditor::OnEnable()
 	{
+		m_TypeProperty = m_SerializedObject->FindProperty("m_Type");
+		m_RadiusProperty = m_SerializedObject->FindProperty("m_Radius");
 		m_SizeProperty = m_SerializedObject->FindProperty("m_Size");
+		m_FadeProperty = m_SerializedObject->FindProperty("m_Fade");
 	}
 
 	void ReflectionProbeEditor::OnDrawInspector()
 	{
-		ImGui::Property(&m_SizeProperty, "Size");
-
-		if (m_SerializedObject->GetTargets().size() == 1 && ImGui::Button("Bake"))
+		if (m_SerializedObject->GetTargets().size() == 1)
 		{
-			Scene* scene = EditorSceneManager::GetScene();
-			if (scene != nullptr)
+			ImGui::Property(&m_TypeProperty, "Type");
+
+			ReflectionProbeType type = m_TypeProperty.GetEnum<ReflectionProbeType>();
+			if (type == ReflectionProbeType::Sphere)
 			{
-				ReflectionProbe* reflectionProbe = static_cast<ReflectionProbe*>(m_SerializedObject->GetTarget());
-				ReflectionGenerator::GenerateReflectionTexture(reflectionProbe);
-				SceneArea::RequestRedrawAll();
+				ImGui::Property(&m_RadiusProperty, "Radius");
+			}
+			else
+			{
+				ImGui::Property(&m_SizeProperty, "Size");
+			}
+
+			ImGui::Property(&m_FadeProperty, "Fade");
+
+			if (ImGui::Button("Bake"))
+			{
+				Scene* scene = EditorSceneManager::GetScene();
+				if (scene != nullptr)
+				{
+					ReflectionProbe* reflectionProbe = static_cast<ReflectionProbe*>(m_SerializedObject->GetTarget());
+					ReflectionGenerator::GenerateReflectionTexture(reflectionProbe);
+					SceneArea::RequestRedrawAll();
+				}
 			}
 		}
 
@@ -67,7 +85,14 @@ namespace Blueberry
 			Transform* transform = reflectionProbe->GetTransform();
 
 			Gizmos::SetMatrix(Matrix::Identity);
-			Gizmos::DrawBox(transform->GetPosition(), reflectionProbe->GetSize());
+			if (reflectionProbe->GetType() == ReflectionProbeType::Sphere)
+			{
+				Gizmos::DrawSphere(transform->GetPosition(), reflectionProbe->GetRadius());
+			}
+			else
+			{
+				Gizmos::DrawBox(transform->GetPosition(), reflectionProbe->GetSize());
+			}
 		}
 	}
 }

@@ -59,15 +59,14 @@ namespace Blueberry
 		LightingData() = default;
 		virtual ~LightingData() = default;
 
-		Vector4* GetChartScaleOffset();
+		Vector4* GetChartOffsetScale();
 
 		Texture2D* GetLightmap();
 		void SetLightmapData(Texture2D* lightmap, const List<Vector4>& scaleOffset, const Dictionary<ObjectId, uint32_t>& instanceOffset);
 
-		uint32_t GetReflectionProbeIndex(TextureCube* probeTexture);
 		const size_t GetReflectionProbeCount();
-		void SetSkyReflection(SkyRenderer* skyRenderer);
-		void SetReflectionProbe(const uint32_t& index, ReflectionProbe* reflectionProbe);
+		void SetSkyReflection(SkyRenderer* skyRenderer, TextureCube* textureCube);
+		void SetReflectionProbe(const uint32_t& index, ReflectionProbe* reflectionProbe, TextureCube* textureCube);
 		
 		void Apply();
 		void ApplyLightmap();

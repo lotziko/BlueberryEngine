@@ -66,7 +66,7 @@ namespace Blueberry
 		{
 			static MeshPreview preview;
 			preview.Draw(mesh, s_RenderTexture);
-			ImGui::Image(reinterpret_cast<ImTextureID>(s_RenderTexture->GetHandle()), imageSize, ImVec2(0, 0), ImVec2(1, 1));
+			ImGui::Image(reinterpret_cast<ImTextureID>(s_RenderTexture->GetHandle()), imageSize);
 		}
 		break;
 		case 1:

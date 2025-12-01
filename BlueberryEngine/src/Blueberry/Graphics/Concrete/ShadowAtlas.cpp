@@ -3,69 +3,148 @@
 #include "..\RenderContext.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\GfxTexture.h"
+#include "Blueberry\Graphics\GfxBuffer.h"
+#include "Blueberry\Graphics\Material.h"
+#include "Blueberry\Graphics\Shader.h"
+#include "Blueberry\Graphics\StandardMeshes.h"
+#include "Blueberry\Graphics\DefaultMaterials.h"
 #include "..\LightHelper.h"
 #include "Blueberry\Graphics\GfxRenderTexturePool.h"
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Components\Light.h"
+#include "Blueberry\Assets\AssetLoader.h"
 
 namespace Blueberry
 {
-	ShadowAtlas::ShadowAtlas(const uint32_t& width, const uint32_t& height, const uint32_t& maxLightCount) : m_MaxLightCount(maxLightCount)
+	#define SIZE 4096
+
+	List<ShadowAtlas::ShadowRequest> ShadowAtlas::s_Requests = {};
+
+	static size_t s_DepthBlitDataId = TO_HASH("DepthBlitData");
+	static size_t s_BlitTextureId = TO_HASH("_BlitTexture");
+
+	struct DepthBlitData
 	{
-		m_AtlasTexture = GfxRenderTexturePool::Get(width, height, 1, 1, 1, TextureFormat::D32_Float, TextureDimension::Texture2D, WrapMode::Clamp, FilterMode::CompareDepth);
-		m_Requests = BB_MALLOC_ARRAY(ShadowRequest, maxLightCount);
-		m_Size = Vector2Int(width, height);
+		Vector4 offsetScale;
+	};
+
+	void ShadowAtlas::Initialize()
+	{
+		s_ShadowAtlasMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/ShadowAtlas.shader")));
+
+		TextureProperties textureProperties = {};
+
+		textureProperties.width = SIZE;
+		textureProperties.height = SIZE;
+		textureProperties.depth = 1;
+		textureProperties.antiAliasing = 1;
+		textureProperties.mipCount = 1;
+		textureProperties.format = TextureFormat::D32_Float;
+		textureProperties.dimension = TextureDimension::Texture2D;
+		textureProperties.wrapMode = WrapMode::Clamp;
+		textureProperties.filterMode = FilterMode::CompareDepth;
+		textureProperties.isRenderTarget = true;
+
+		GfxDevice::CreateTexture(textureProperties, s_AtlasTexture);
+
+		BufferProperties depthBlitBufferProperties = {};
+		depthBlitBufferProperties.type = BufferType::Constant;
+		depthBlitBufferProperties.elementCount = 1;
+		depthBlitBufferProperties.elementSize = sizeof(DepthBlitData) * 1;
+		depthBlitBufferProperties.isWritable = true;
+
+		GfxDevice::CreateBuffer(depthBlitBufferProperties, s_DepthBlitData);
 	}
 
-	ShadowAtlas::~ShadowAtlas()
+	void ShadowAtlas::Shutdown()
 	{
-		GfxRenderTexturePool::Release(m_AtlasTexture);
-		BB_FREE(m_Requests);
+		delete s_AtlasTexture;
+		delete s_DepthBlitData;
 	}
 
 	void ShadowAtlas::Clear()
 	{
-		m_RequestCount = 0;
+		s_Requests.clear();
 	}
 
-	void ShadowAtlas::Insert(Light* light, const uint32_t& size, const uint8_t& sliceCount)
+	void ShadowAtlas::Insert(Light* light)
 	{
-		for (uint8_t i = 0; i < sliceCount; ++i)
-		{
-			ShadowRequest request = { size, 0u, 0u, light, i };
-			m_Requests[m_RequestCount] = request;
-			++m_RequestCount;
-		}
+		LightType type = light->GetType();
+		uint32_t size = LightHelper::GetShadowSize(type);
+		uint32_t sliceCount = LightHelper::GetSliceCount(type);
 
-		light->m_SliceCount = sliceCount;
+		for (uint32_t i = 0; i < sliceCount; ++i)
+		{
+			ShadowRequest request = { size, 0u, 0u, light, i, sliceCount };
+			s_Requests.push_back(request);
+		}
 	}
 
 	void ShadowAtlas::Draw(RenderContext& context, CullingResults& results)
 	{
 		PackRequests();
 
-		GfxDevice::SetDepthBias(0.0005, 1.0);
-		GfxDevice::SetRenderTarget(nullptr, m_AtlasTexture);
+		GfxDevice::SetDepthBias(0, 2.5f);
+		GfxDevice::SetRenderTarget(nullptr, s_AtlasTexture);
 		GfxDevice::ClearDepth(1.0f);
 
-		for (uint32_t i = 0; i < m_RequestCount; ++i)
+		// If has dirty flag render cached slices
+		// Switching isStatic should update shadows
+
+		for (size_t i = 0; i < s_Requests.size(); ++i)
 		{
-			ShadowRequest request = m_Requests[i];
-			uint8_t sliceIndex = request.sliceIndex;
+			ShadowRequest request = s_Requests[i];
+			uint32_t sliceIndex = request.sliceIndex;
+			float sliceScale = 1.0f / static_cast<float>(request.sliceCount);
+			uint32_t size = request.size;
+			uint32_t offset = size * sliceIndex;
 			Light* light = request.light;
 
 			ShadowDrawingSettings shadowDrawingSettings = {};
 			shadowDrawingSettings.light = light;
 			shadowDrawingSettings.sliceIndex = request.sliceIndex;
 
-			GfxDevice::SetViewport(request.offsetX, request.offsetY, request.size, request.size);
+			if (light->m_IsCached)
+			{
+				GfxTexture* cachedTexture = light->GetCachedShadow();
+
+				if (light->m_IsDirty[sliceIndex])
+				{
+					shadowDrawingSettings.objectsFilter = ObjectsFilter::Static;
+
+					GfxDevice::SetRenderTarget(nullptr, cachedTexture);
+					GfxDevice::SetViewport(offset, 0, size, size);
+					GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_ShadowAtlasMaterial, 0));
+					context.DrawShadows(results, shadowDrawingSettings);
+					GfxDevice::SetRenderTarget(nullptr, s_AtlasTexture);
+
+					light->m_IsDirty[sliceIndex] = false;
+				}
+
+				shadowDrawingSettings.objectsFilter = ObjectsFilter::Dynamic;
+				GfxDevice::SetViewport(request.offsetX, request.offsetY, request.size, request.size);
+
+				DepthBlitData depthBlitConstants = {};
+				depthBlitConstants.offsetScale = Vector4(sliceIndex * sliceScale, 0, sliceScale, 1);
+				s_DepthBlitData->SetData(reinterpret_cast<char*>(&depthBlitConstants), sizeof(DepthBlitData));
+
+				GfxDevice::SetGlobalBuffer(s_DepthBlitDataId, s_DepthBlitData);
+				GfxDevice::SetGlobalTexture(s_BlitTextureId, cachedTexture);
+				GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_ShadowAtlasMaterial, 1));
+			}
+			else
+			{
+				shadowDrawingSettings.objectsFilter = ObjectsFilter::All;
+				GfxDevice::SetViewport(request.offsetX, request.offsetY, request.size, request.size);
+			}
+
 			context.DrawShadows(results, shadowDrawingSettings);
 
 			Matrix sliceTransform = Matrix::Identity;
-			sliceTransform._11 = static_cast<float>(request.size) / m_AtlasTexture->GetWidth();
-			sliceTransform._22 = static_cast<float>(request.size) / m_AtlasTexture->GetHeight();
-			sliceTransform._41 = static_cast<float>(request.offsetX) / m_AtlasTexture->GetWidth();
-			sliceTransform._42 = static_cast<float>(request.offsetY) / m_AtlasTexture->GetHeight();
+			sliceTransform._11 = static_cast<float>(request.size) / SIZE;
+			sliceTransform._22 = static_cast<float>(request.size) / SIZE;
+			sliceTransform._41 = static_cast<float>(request.offsetX) / SIZE;
+			sliceTransform._42 = static_cast<float>(request.offsetY) / SIZE;
 
 			Matrix scaleBiasTransform = Matrix::Identity;
 			scaleBiasTransform._11 = 0.5f;
@@ -82,14 +161,14 @@ namespace Blueberry
 		GfxDevice::SetRenderTarget(nullptr);
 	}
 
-	const Vector2Int& ShadowAtlas::GetSize()
+	const Vector2Int ShadowAtlas::GetSize()
 	{
-		return m_Size;
+		return Vector2Int(SIZE, SIZE);
 	}
 
 	GfxTexture* ShadowAtlas::GetAtlasTexture()
 	{
-		return m_AtlasTexture;
+		return s_AtlasTexture;
 	}
 
 	bool CompareRequests(ShadowAtlas::ShadowRequest s1, ShadowAtlas::ShadowRequest s2)
@@ -99,21 +178,15 @@ namespace Blueberry
 
 	void ShadowAtlas::PackRequests()
 	{
-		std::sort(m_Requests, m_Requests + m_RequestCount, CompareRequests);
-
-		struct Vector2Int
-		{
-			uint32_t x;
-			uint32_t y;
-		};
+		std::sort(s_Requests.begin(), s_Requests.end(), CompareRequests);
 
 		int layer = 0;
 		int free = 1;
-		Vector2Int layerSize = { m_AtlasTexture->GetWidth(), m_AtlasTexture->GetHeight() };
+		Vector2Int layerSize = Vector2Int(SIZE, SIZE);
 		Vector2Int previousSize = layerSize;
-		for (uint32_t i = 0; i < m_RequestCount; ++i)
+		for (size_t i = 0; i < s_Requests.size(); ++i)
 		{
-			uint32_t currentRequestSize = m_Requests[i].size;
+			uint32_t currentRequestSize = s_Requests[i].size;
 
 			if (free == 0)
 			{
@@ -132,15 +205,15 @@ namespace Blueberry
 			{
 				if ((slotIndex & (1 << 2 * (layerDepth - j - 1))) != 0)
 				{
-					m_Requests[i].offsetX += layerSize.x >> (j + 1);
+					s_Requests[i].offsetX += layerSize.x >> (j + 1);
 				}
 				if ((slotIndex & (1 << (2 * (layerDepth - j - 1) + 1))) != 0)
 				{
-					m_Requests[i].offsetY += layerSize.y >> (j + 1);
+					s_Requests[i].offsetY += layerSize.y >> (j + 1);
 				}
 			}
 
-			previousSize = { currentRequestSize, currentRequestSize };
+			previousSize = Vector2Int(currentRequestSize, currentRequestSize);
 			--free;
 		}
 	}

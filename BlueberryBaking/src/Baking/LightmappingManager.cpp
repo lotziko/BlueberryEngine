@@ -198,7 +198,7 @@ namespace Blueberry
 		for (auto& component : scene->GetIterator<SkyRenderer>())
 		{
 			SkyRenderer* skyRenderer = static_cast<SkyRenderer*>(component.second);
-			GfxTexture* skyboxRenderTexture = GfxRenderTexturePool::Get(SKY_COLOR_SIZE, SKY_COLOR_SIZE, 1, 1, 1, TextureFormat::R8G8B8A8_UNorm_SRGB, TextureDimension::TextureCube, WrapMode::Clamp, FilterMode::Bilinear, true, false);
+			GfxTexture* skyboxRenderTexture = GfxRenderTexturePool::Get(SKY_COLOR_SIZE, SKY_COLOR_SIZE, 1, 1, 1, TextureFormat::R8G8B8A8_UNorm, TextureDimension::TextureCube, WrapMode::Clamp, FilterMode::Bilinear, true, false);
 
 			GfxDevice::SetViewCount(6);
 			GfxDevice::SetRenderTarget(skyboxRenderTexture);

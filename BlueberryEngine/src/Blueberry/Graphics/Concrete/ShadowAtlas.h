@@ -4,7 +4,9 @@
 
 namespace Blueberry
 {
+	class Material;
 	class GfxTexture;
+	class GfxBuffer;
 	class Light;
 	class RenderContext;
 	struct CullingResults;
@@ -20,29 +22,31 @@ namespace Blueberry
 			uint32_t offsetX;
 			uint32_t offsetY;
 			Light* light;
-			uint8_t sliceIndex;
+			uint32_t sliceIndex;
+			uint32_t sliceCount;
 		};
 
 	public:
 		ShadowAtlas() = default;
-		ShadowAtlas(const uint32_t& width, const uint32_t& height, const uint32_t& maxLightCount);
-		~ShadowAtlas();
+		~ShadowAtlas() = default;
 
-		void Clear();
-		void Insert(Light* light, const uint32_t& size, const uint8_t& sliceCount);
-		void Draw(RenderContext& context, CullingResults& results);
-		const Vector2Int& GetSize();
+		static void Initialize();
+		static void Shutdown();
 
-		GfxTexture* GetAtlasTexture();
+		static void Clear();
+		static void Insert(Light* light);
+		static void Draw(RenderContext& context, CullingResults& results);
+		static const Vector2Int GetSize();
+
+		static GfxTexture* GetAtlasTexture();
 
 	private:
-		void PackRequests();
+		static void PackRequests();
 
 	private:
-		GfxTexture* m_AtlasTexture = nullptr;
-		ShadowRequest* m_Requests;
-		Vector2Int m_Size;
-		uint32_t m_MaxLightCount;
-		uint32_t m_RequestCount;
+		static inline Material* s_ShadowAtlasMaterial = nullptr;
+		static inline GfxTexture* s_AtlasTexture = nullptr;
+		static inline GfxBuffer* s_DepthBlitData = nullptr;
+		static List<ShadowRequest> s_Requests;
 	};
 }
