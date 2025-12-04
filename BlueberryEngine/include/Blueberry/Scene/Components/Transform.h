@@ -32,7 +32,7 @@ namespace Blueberry
 		const List<ObjectPtr<Transform>>& GetChildren() const;
 		const size_t GetChildrenCount() const;
 
-		const uint32_t GetSiblingIndex();
+		const size_t GetSiblingIndex();
 
 		void SetLocalPosition(const Vector3& position);
 		void SetLocalRotation(const Quaternion& rotation);
@@ -43,8 +43,8 @@ namespace Blueberry
 		void SetPosition(const Vector3& position);
 		void SetRotation(const Quaternion& rotation);
 
-		void SetParent(Transform* parent);
-		void SetSiblingIndex(const uint32_t& index);
+		void SetParent(Transform* parent, const bool& worldPositionStays = true);
+		void SetSiblingIndex(const size_t& index);
 
 		const bool& IsDirty() const;
 		const size_t& GetRecalculationFrame() const;

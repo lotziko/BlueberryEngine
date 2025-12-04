@@ -360,7 +360,11 @@ namespace Blueberry
 				}
 				else
 				{
-					entity = entities.find(id.objectFileId)->second;
+					auto it = entities.find(id.objectFileId);
+					if (it != entities.end())
+					{
+						entity = it->second;
+					}
 				}
 
 				TextureCube* texture = data.GetTextureCube();

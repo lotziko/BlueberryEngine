@@ -65,9 +65,9 @@ namespace Blueberry
 	{
 		ImGui::Property(&m_ShaderProperty, "Shader");
 
-		for (uint32_t i = 0; i < m_TexturesProperty.GetArraySize(); ++i)
+		for (uint32_t i = 0; i < m_TexturesProperty.GetListSize(); ++i)
 		{
-			SerializedProperty textureDataProperty = m_TexturesProperty.GetArrayElement(i);
+			SerializedProperty textureDataProperty = m_TexturesProperty.GetListElement(i);
 			SerializedProperty nameProperty = textureDataProperty.FindProperty("m_Name");
 			SerializedProperty textureProperty = textureDataProperty.FindProperty("m_Texture");
 			ImGui::Property(&textureProperty, nameProperty.GetString().c_str());

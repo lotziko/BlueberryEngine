@@ -45,6 +45,8 @@ namespace Blueberry
 	private:
 		void AddToRoot(Entity* entity);
 		void RemoveFromRoot(Entity* entity);
+		const size_t GetRootIndex(Entity* entity);
+		void SetRootIndex(Entity* entity, const size_t& index);
 
 	private:
 		Dictionary<ObjectId, ObjectPtr<Entity>> m_Entities;

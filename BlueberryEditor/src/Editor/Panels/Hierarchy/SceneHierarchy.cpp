@@ -24,6 +24,20 @@ namespace Blueberry
 		EditorMenuManager::AddItem("Window/Hierarchy", &SceneHierarchy::Open);
 	}
 
+	HierarchyUpdateEvent SceneHierarchy::s_HierarchyUpdated = {};
+
+	SceneHierarchy::SceneHierarchy()
+	{
+		EditorObjectManager::GetEntityCreated().AddCallback<SceneHierarchy, &SceneHierarchy::Invalidate>(this);
+		EditorObjectManager::GetEntityDestroyed().AddCallback<SceneHierarchy, &SceneHierarchy::Invalidate>(this);
+	}
+
+	SceneHierarchy::~SceneHierarchy()
+	{
+		EditorObjectManager::GetEntityCreated().RemoveCallback<SceneHierarchy, &SceneHierarchy::Invalidate>(this);
+		EditorObjectManager::GetEntityDestroyed().RemoveCallback<SceneHierarchy, &SceneHierarchy::Invalidate>(this);
+	}
+
 	void SceneHierarchy::Open()
 	{
 		EditorWindow* window = GetWindow(SceneHierarchy::Type);
@@ -43,7 +57,6 @@ namespace Blueberry
 
 		List<TransformTreeNode>& nodes = m_TransformTree.GetNodes();
 		size_t size = nodes.size();
-		bool isValid = true;
 		bool isHoveringAny = false;
 		int currentDepth = 0;
 
@@ -70,7 +83,7 @@ namespace Blueberry
 			ImGuiTreeNodeFlags flags = (Selection::IsActiveObject(entity) ? ImGuiTreeNodeFlags_Selected : 0) | (hasChildren ? ImGuiTreeNodeFlags_OpenOnArrow : (ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen));
 			flags |= ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
 			
-			ImGui::SetNextItemOpen(m_ExpandedNodes.count(id));//m_ExpandedNodes
+			ImGui::SetNextItemOpen(m_ExpandedNodes.count(id));
 			bool opened = ImGui::TreeNodeEx(entity, flags, "");
 			if (ImGui::IsItemToggledOpen())
 			{
@@ -89,7 +102,7 @@ namespace Blueberry
 				isHoveringAny = true;
 			}
 
-			DrawNode(nodes, i, isValid);
+			DrawNode(nodes, i);
 
 			ImVec2 pos = ImGui::GetCursorScreenPos();
 			if (ImGui::IsDragDropActive())
@@ -109,7 +122,7 @@ namespace Blueberry
 							Transform* transform = (static_cast<Entity*>(object))->GetTransform();
 							transform->SetParent(entity->GetTransform()->GetParent());
 							transform->SetSiblingIndex(entity->GetTransform()->GetSiblingIndex() + 1);
-							isValid = false;
+							Invalidate();
 						}
 					}
 					ImGui::EndDragDropTarget();
@@ -144,24 +157,29 @@ namespace Blueberry
 
 		if (ImGui::BeginPopup(ImGui::GetID("Popup")))
 		{
-			DrawCreateEntity(isValid);
+			DrawCreateEntity();
 			ImGui::EndPopup();
 		}
 
-		if (!isValid)
+		if (scene != nullptr && !m_IsValid)
 		{
 			UpdateTree();
+			m_IsValid = true;
 		}
 	}
 
-	void SceneHierarchy::DrawNode(List<TransformTreeNode>& nodes, const size_t& index, bool& isValid)
+	HierarchyUpdateEvent& SceneHierarchy::GetHierarchyUpdated()
+	{
+		return s_HierarchyUpdated;
+	}
+
+	void SceneHierarchy::DrawNode(List<TransformTreeNode>& nodes, const size_t& index)
 	{
 		ImGui::PushID(index);
 		TransformTreeNode& node = nodes[index];
 		Entity* entity = node.entity.Get();
 		if (!ImGui::IsItemToggledOpen())
 		{
-			// Only select should happen on down, other things on release
 			ImGuiID id = ImGui::GetID(0);
 			static ImGuiID activeId = 0;
 			if (ImGui::IsItemClicked(0))
@@ -257,7 +275,7 @@ namespace Blueberry
 							}
 						}
 					}
-					isValid = false;
+					Invalidate();
 				}
 			}
 			ImGui::EndDragDropTarget();
@@ -265,10 +283,10 @@ namespace Blueberry
 		
 		if (ImGui::BeginPopup(ImGui::GetID("Popup")))
 		{
-			DrawCreateEntity(isValid);
-			DrawCloneEntity(isValid);
-			DrawUnpackPrefabEntity(isValid);
-			DrawDestroyEntity(isValid);
+			DrawCreateEntity();
+			DrawCloneEntity();
+			DrawUnpackPrefabEntity();
+			DrawDestroyEntity();
 			ImGui::EndPopup();
 		}
 
@@ -318,13 +336,12 @@ namespace Blueberry
 		ImGui::PopID();
 	}
 
-	void SceneHierarchy::DrawCreateEntity(bool& isValid)
+	void SceneHierarchy::DrawCreateEntity()
 	{
 		if (ImGui::MenuItem("Create Empty Entity"))
 		{
 			Entity* entity = EditorObjectManager::CreateEntity("Empty Entity");
 			m_RenamingEntity = entity;
-			isValid = false;
 
 			Object* selectedObject = Selection::GetActiveObject();
 			if (selectedObject != nullptr && selectedObject->IsClassType(Entity::Type))
@@ -336,7 +353,7 @@ namespace Blueberry
 		}
 	}
 
-	void SceneHierarchy::DrawCloneEntity(bool& isValid)
+	void SceneHierarchy::DrawCloneEntity()
 	{
 		if (ImGui::MenuItem("Clone Entity"))
 		{
@@ -346,12 +363,11 @@ namespace Blueberry
 				Entity* entity = static_cast<Entity*>(selectedObject);
 				Entity* newEntity = EditorObjectManager::CloneEntity(entity);
 				newEntity->GetTransform()->SetParent(entity->GetTransform()->GetParent());
-				isValid = false;
 			}
 		}
 	}
 
-	void SceneHierarchy::DrawDestroyEntity(bool& isValid)
+	void SceneHierarchy::DrawDestroyEntity()
 	{
 		if (ImGui::MenuItem("Delete Entity"))
 		{
@@ -364,11 +380,10 @@ namespace Blueberry
 				}
 			}
 			Selection::SetActiveObject(nullptr);
-			isValid = false;
 		}
 	}
 
-	void SceneHierarchy::DrawUnpackPrefabEntity(bool& isValid)
+	void SceneHierarchy::DrawUnpackPrefabEntity()
 	{
 		Object* selectedObject = Selection::GetActiveObject();
 		if (selectedObject != nullptr && selectedObject->IsClassType(Entity::Type))
@@ -379,14 +394,20 @@ namespace Blueberry
 				if (ImGui::MenuItem("Unpack prefab"))
 				{
 					PrefabManager::UnpackPrefabInstance(selectedEntity);
-					isValid = false;
+					Invalidate();
 				}
 			}
 		}
 	}
 
+	void SceneHierarchy::Invalidate()
+	{
+		m_IsValid = false;
+	}
+
 	void SceneHierarchy::UpdateTree()
 	{
 		m_TransformTree.Update(m_CurrentScene->GetRootEntities());
+		s_HierarchyUpdated.Invoke();
 	}
 }

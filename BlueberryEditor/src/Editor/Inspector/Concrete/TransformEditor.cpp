@@ -6,6 +6,7 @@
 #include "Editor\Misc\ImGuiHelper.h"
 #include "Editor\Preferences.h"
 #include "Editor\Panels\Scene\SceneArea.h"
+#include "Editor\Panels\Hierarchy\SceneHierarchy.h"
 
 #include <imgui\imgui.h>
 #include <imgui\imguizmo.h>
@@ -19,6 +20,12 @@ namespace Blueberry
 		m_LocalScaleProperty = m_SerializedObject->FindProperty("m_LocalScale");
 		m_LocalRotationEulerHintProperty = m_SerializedObject->FindProperty("m_LocalRotationEulerHint");
 		m_IsStaticProperty = m_SerializedObject->FindProperty("m_IsStatic");
+		SceneHierarchy::GetHierarchyUpdated().AddCallback<TransformEditor, &TransformEditor::OnHierarchyUpdate>(this);
+	}
+
+	void TransformEditor::OnDisable()
+	{
+		SceneHierarchy::GetHierarchyUpdated().RemoveCallback<TransformEditor, &TransformEditor::OnHierarchyUpdate>(this);
 	}
 
 	void TransformEditor::OnDrawInspector()
@@ -192,5 +199,10 @@ namespace Blueberry
 				SceneArea::RequestRedrawAll();
 			}
 		}
+	}
+
+	void TransformEditor::OnHierarchyUpdate()
+	{
+		m_SerializedObject->Update();
 	}
 }

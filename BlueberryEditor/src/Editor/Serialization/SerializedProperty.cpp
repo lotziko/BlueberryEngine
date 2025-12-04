@@ -6,6 +6,11 @@
 
 namespace Blueberry
 {
+	size_t SerializedProperty::GetId()
+	{
+		return reinterpret_cast<size_t>(m_TreeNode);
+	}
+
 	const String& SerializedProperty::GetName()
 	{
 		return m_TreeNode->name;
@@ -31,18 +36,55 @@ namespace Blueberry
 		return m_TreeNode->fieldInfo->options.hintData;
 	}
 
-	const uint32_t SerializedProperty::GetArraySize()
+	const size_t SerializedProperty::GetListSize()
 	{
 		if (m_TreeNode->type == PropertyType::List)
 		{
-			return static_cast<uint32_t>(m_TreeNode->children.size());
+			return m_TreeNode->children.size();
 		}
 		return 0;
 	}
 
-	SerializedProperty SerializedProperty::GetArrayElement(const uint32_t& index)
+	SerializedProperty SerializedProperty::GetListElement(const size_t& index)
 	{
 		return SerializedProperty(m_SerializedObject, m_TreeNode->children[index].get());
+	}
+
+	void SerializedProperty::InsertListElement(const size_t& index)
+	{
+		// TODO move into SerializedObject and use id instead of PropertyTreeNode*
+		std::shared_ptr<PropertyTreeNode> childNode = m_SerializedObject->CreateChild(m_TreeNode);
+		m_TreeNode->children.insert(m_TreeNode->children.begin() + index, childNode);
+		for (size_t i = index + 1; i < m_TreeNode->children.size(); ++i)
+		{
+			m_TreeNode->children[i]->index = i;
+		}
+		m_SerializedObject->AddModifiedProperty(m_TreeNode, PropertyModificationType::Insert, index);
+	}
+
+	void SerializedProperty::DeleteListElement(const size_t& index)
+	{
+		m_TreeNode->children[index]->isDeleted = true;
+		m_SerializedObject->AddModifiedProperty(m_TreeNode, PropertyModificationType::Delete, index);
+	}
+
+	void SerializedProperty::MoveListElement(const size_t& fromIndex, const size_t& toIndex)
+	{
+		m_TreeNode->children.move_element(fromIndex, toIndex);
+		for (size_t i = 0; i < m_TreeNode->children.size(); ++i)
+		{
+			m_TreeNode->children[i]->index = i;
+		}
+		m_SerializedObject->AddModifiedProperty(m_TreeNode, PropertyModificationType::Move, fromIndex, toIndex);
+	}
+
+	void SerializedProperty::ClearList()
+	{
+		for (auto& childNode : m_TreeNode->children)
+		{
+			childNode->isDeleted = true;
+		}
+		m_SerializedObject->AddModifiedProperty(m_TreeNode, PropertyModificationType::Clear);
 	}
 
 	const bool& SerializedProperty::GetBool()
@@ -56,7 +98,7 @@ namespace Blueberry
 		{
 			m_TreeNode->values[i] = value;
 		}
-		m_SerializedObject->AddModifiedProperty(this);
+		m_SerializedObject->AddModifiedProperty(m_TreeNode);
 	}
 
 	const int& SerializedProperty::GetInt()
@@ -70,7 +112,7 @@ namespace Blueberry
 		{
 			m_TreeNode->values[i] = value;
 		}
-		m_SerializedObject->AddModifiedProperty(this);
+		m_SerializedObject->AddModifiedProperty(m_TreeNode);
 	}
 
 	const float& SerializedProperty::GetFloat()
@@ -84,7 +126,7 @@ namespace Blueberry
 		{
 			m_TreeNode->values[i] = value;
 		}
-		m_SerializedObject->AddModifiedProperty(this);
+		m_SerializedObject->AddModifiedProperty(m_TreeNode);
 	}
 
 	const String& SerializedProperty::GetString()
@@ -98,7 +140,7 @@ namespace Blueberry
 		{
 			m_TreeNode->values[i] = value;
 		}
-		m_SerializedObject->AddModifiedProperty(this);
+		m_SerializedObject->AddModifiedProperty(m_TreeNode);
 	}
 
 	const Vector2& SerializedProperty::GetVector2()
@@ -124,7 +166,7 @@ namespace Blueberry
 			}
 			m_TreeNode->values[i] = nodeValue;
 		}
-		m_SerializedObject->AddModifiedProperty(this);
+		m_SerializedObject->AddModifiedProperty(m_TreeNode);
 	}
 
 	const Vector3& SerializedProperty::GetVector3()
@@ -154,7 +196,7 @@ namespace Blueberry
 			}
 			m_TreeNode->values[i] = nodeValue;
 		}
-		m_SerializedObject->AddModifiedProperty(this);
+		m_SerializedObject->AddModifiedProperty(m_TreeNode);
 	}
 
 	const Vector4& SerializedProperty::GetVector4()
@@ -188,7 +230,7 @@ namespace Blueberry
 			}
 			m_TreeNode->values[i] = nodeValue;
 		}
-		m_SerializedObject->AddModifiedProperty(this);
+		m_SerializedObject->AddModifiedProperty(m_TreeNode);
 	}
 
 	const Quaternion& SerializedProperty::GetQuaternion()
@@ -222,7 +264,7 @@ namespace Blueberry
 			}
 			m_TreeNode->values[i] = nodeValue;
 		}
-		m_SerializedObject->AddModifiedProperty(this);
+		m_SerializedObject->AddModifiedProperty(m_TreeNode);
 	}
 
 	const Color& SerializedProperty::GetColor()
@@ -236,7 +278,7 @@ namespace Blueberry
 		{
 			m_TreeNode->values[i] = value;
 		}
-		m_SerializedObject->AddModifiedProperty(this);
+		m_SerializedObject->AddModifiedProperty(m_TreeNode);
 	}
 
 	const ObjectPtr<Object>& SerializedProperty::GetObjectPtr()
@@ -250,7 +292,7 @@ namespace Blueberry
 		{
 			m_TreeNode->values[i] = value;
 		}
-		m_SerializedObject->AddModifiedProperty(this);
+		m_SerializedObject->AddModifiedProperty(m_TreeNode);
 	}
 
 	const size_t& SerializedProperty::GetObjectPtrType()
@@ -264,7 +306,7 @@ namespace Blueberry
 		m_TreeNode = treeNode;
 	}
 
-	bool SerializedProperty::Next()
+	bool SerializedProperty::Next(const bool& enterChildren)
 	{
 		while (!m_Stack.empty())
 		{
@@ -272,10 +314,13 @@ namespace Blueberry
 			if (pair.second < pair.first->children.size())
 			{
 				PropertyTreeNode* child = pair.first->children[pair.second++].get();
-				if (child->isVisible)
+				if (child->isVisible && !child->isDeleted)
 				{
 					m_TreeNode = child;
-					m_Stack.push(std::make_pair(child, 0));
+					if (enterChildren)
+					{
+						m_Stack.push(std::make_pair(child, 0));
+					}
 					return true;
 				}
 			}

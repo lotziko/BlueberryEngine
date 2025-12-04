@@ -13,6 +13,7 @@ namespace Blueberry
 	class EditorSceneManager
 	{
 	public:
+		static bool HasScene();
 		static Scene* GetScene();
 		static const String& GetPath();
 		static const Guid& GetGuid();

@@ -16,14 +16,19 @@ namespace Blueberry
 		
 		SerializedProperty() = default;
 
+		size_t GetId();
 		const String& GetName();
 		const BindingType GetType();
 		const bool IsMixedValue();
 		const bool* GetMixedMask();
 		void* GetHintData();
 
-		const uint32_t GetArraySize();
-		SerializedProperty GetArrayElement(const uint32_t& index);
+		const size_t GetListSize();
+		SerializedProperty GetListElement(const size_t& index);
+		void InsertListElement(const size_t& index);
+		void DeleteListElement(const size_t& index);
+		void MoveListElement(const size_t& fromIndex, const size_t& toIndex);
+		void ClearList();
 
 		const bool& GetBool();
 		void SetBool(const bool& value);
@@ -60,7 +65,7 @@ namespace Blueberry
 
 		const size_t& GetObjectPtrType();
 
-		bool Next();
+		bool Next(const bool& enterChildren = true);
 		SerializedProperty FindProperty(const String& name);
 
 	private:

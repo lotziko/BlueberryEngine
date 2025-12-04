@@ -17,6 +17,28 @@ static Blueberry::List<bool> s_ChangeStack = {};
 static bool s_MixedValue = false;
 static const bool* s_MixedValueMask = {};
 
+#define PROPERTY_LABEL( text )\
+ImGui::PushID(text);\
+float availableWidth = ImGui::GetContentRegionAvail().x;\
+float labelWidth = std::max(150.0f, availableWidth * 0.4f);\
+float valueWidth = std::max(0.0f, availableWidth - labelWidth);\
+ImGui::Text(text);\
+ImGui::SameLine(labelWidth);\
+
+#define PROPERTY_BEGIN_VALUE()\
+if (s_MixedValue)\
+{\
+	ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, true);\
+}\
+ImGui::SetNextItemWidth(valueWidth);\
+
+#define PROPERTY_END_VALUE()\
+if (s_MixedValue)\
+{\
+	ImGui::PopItemFlag();\
+}\
+ImGui::PopID();\
+
 void ImGui::CreateEditorContext()
 {
 	GEditor = static_cast<EditorContext*>(BB_MALLOC(sizeof(ImGui::EditorContext)));
@@ -39,6 +61,7 @@ bool ImGui::Property(Blueberry::SerializedProperty* property)
 
 bool ImGui::Property(Blueberry::SerializedProperty* property, const char* label)
 {
+	ImGui::PushID(property->GetId());
 	s_MixedValue = property->IsMixedValue();
 	s_MixedValueMask = property->GetMixedMask();
 	bool result = false;
@@ -154,11 +177,42 @@ bool ImGui::Property(Blueberry::SerializedProperty* property, const char* label)
 		}
 	}
 	break;
+	case Blueberry::BindingType::FloatList:
+	case Blueberry::BindingType::StringList:
+	case Blueberry::BindingType::Vector2List:
+	case Blueberry::BindingType::Vector3List:
+	case Blueberry::BindingType::Vector4List:
+	case Blueberry::BindingType::ObjectPtrList:
+	case Blueberry::BindingType::DataList:
+	{
+		ImGui::Text(label);
+		ImGui::BeginChild("##list", ImVec2(0, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
+		Blueberry::SerializedProperty listProperty = *property;
+		for (size_t i = 0; i < listProperty.GetListSize(); ++i)
+		{
+			ImGui::Property(&listProperty.GetListElement(i));
+			property->Next(false);
+		}
+		ImGui::EndChild();
+		if (ImGui::Button("+"))
+		{
+			listProperty.InsertListElement(listProperty.GetListSize());
+			TriggerChange();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("-"))
+		{
+			listProperty.DeleteListElement(listProperty.GetListSize() - 1);
+			TriggerChange();
+		}
+	}
+	break;
 	default:
 		ImGui::Text(label);
 		break;
 	}
 	s_MixedValue = false;
+	ImGui::PopID();
 	return result;
 }
 
@@ -203,28 +257,6 @@ bool ImGui::BeginPopup(ImGuiID id, ImGuiWindowFlags flags)
 	flags |= ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings;
 	return BeginPopupEx(id, flags);
 }
-
-#define PROPERTY_LABEL( text )\
-ImGui::PushID(text);\
-float availableWidth = ImGui::GetContentRegionAvail().x;\
-float labelWidth = std::max(150.0f, availableWidth * 0.4f);\
-float valueWidth = std::max(0.0f, availableWidth - labelWidth);\
-ImGui::Text(text);\
-ImGui::SameLine(labelWidth);\
-
-#define PROPERTY_BEGIN_VALUE()\
-if (s_MixedValue)\
-{\
-	ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, true);\
-}\
-ImGui::SetNextItemWidth(valueWidth);\
-
-#define PROPERTY_END_VALUE()\
-if (s_MixedValue)\
-{\
-	ImGui::PopItemFlag();\
-}\
-ImGui::PopID();\
 
 bool ImGui::DragVector2(const char* label, Blueberry::Vector2* v)
 {

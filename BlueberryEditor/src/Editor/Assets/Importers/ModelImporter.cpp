@@ -225,7 +225,7 @@ namespace Blueberry
 
 		if (parent != nullptr)
 		{
-			transform->SetParent(parent);
+			transform->SetParent(parent, false);
 		}
 		else
 		{

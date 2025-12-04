@@ -131,4 +131,30 @@ namespace Blueberry
 			}
 		}
 	}
+
+	const size_t Scene::GetRootIndex(Entity* entity)
+	{
+		for (size_t i = 0; i < m_RootEntities.size(); ++i)
+		{
+			if (m_RootEntities[i].Get() == entity)
+			{
+				return i;
+			}
+		}
+		return 0;
+	}
+
+	void Scene::SetRootIndex(Entity* entity, const size_t& index)
+	{
+		size_t oldIndex = 0;
+		for (size_t i = 0; i < m_RootEntities.size(); ++i)
+		{
+			if (m_RootEntities[i].Get() == entity)
+			{
+				oldIndex = i;
+				break;
+			}
+		}
+		m_RootEntities.move_element(oldIndex, index);
+	}
 }

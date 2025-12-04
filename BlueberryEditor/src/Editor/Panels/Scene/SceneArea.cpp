@@ -202,13 +202,12 @@ namespace Blueberry
 
 				if (object != nullptr && object->IsClassType(Entity::Type) && ImGui::AcceptDragDropPayload("OBJECT_ID"))
 				{
-					Scene* scene = EditorSceneManager::GetScene();
-					if (scene != nullptr)
+					if (EditorSceneManager::HasScene())
 					{
 						if (Blueberry::ObjectDB::HasGuid(object))
 						{
 							AssetLoader::Load(Blueberry::ObjectDB::GetGuidFromObject(object));
-							scene->AddEntity(PrefabManager::CreateInstance(static_cast<Entity*>(object))->GetEntity());
+							EditorObjectManager::AddEntity(PrefabManager::CreateInstance(static_cast<Entity*>(object))->GetEntity());
 						}
 					}
 				}

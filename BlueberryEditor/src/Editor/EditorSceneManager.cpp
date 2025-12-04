@@ -35,6 +35,11 @@ namespace Blueberry
 		s_SceneLoaded.Invoke();
 	}
 
+	bool EditorSceneManager::HasScene()
+	{
+		return s_Scene != nullptr;
+	}
+
 	Scene* EditorSceneManager::GetScene()
 	{
 		return s_Scene;

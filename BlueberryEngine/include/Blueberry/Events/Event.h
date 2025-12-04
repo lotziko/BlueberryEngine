@@ -16,13 +16,13 @@ namespace Blueberry
 
 		Event() { m_Callbacks = std::make_shared<List<CallbackData>>(); }
 
-		template <class OwnerObject, void(OwnerObject::*methodPtr)()>
+		template <class OwnerObject, void(OwnerObject::*method)()>
 		void AddCallback(OwnerObject* const object);
-		template <void(*methodPtr)()>
+		template <void(*method)()>
 		void AddCallback();
-		template <class OwnerObject, void(OwnerObject::*methodPtr)()>
+		template <class OwnerObject, void(OwnerObject::*method)()>
 		void RemoveCallback(OwnerObject* const object);
-		template <void(*methodPtr)()>
+		template <void(*method)()>
 		void RemoveCallback();
 		bool HasCallbacks();
 		void Invoke();
@@ -47,13 +47,13 @@ namespace Blueberry
 
 		Event() { m_Callbacks = std::make_shared<List<CallbackData>>(); }
 
-		template <class OwnerObject, void(OwnerObject::*methodPtr)(const EventType&)>
+		template <class OwnerObject, void(OwnerObject::*method)(const EventType&)>
 		void AddCallback(OwnerObject* const object);
-		template <void(*methodPtr)(const EventType&)>
+		template <void(*method)(const EventType&)>
 		void AddCallback();
-		template <class OwnerObject, void(OwnerObject::*methodPtr)(const EventType&)>
+		template <class OwnerObject, void(OwnerObject::*method)(const EventType&)>
 		void RemoveCallback(OwnerObject* const object);
-		template <void(*methodPtr)(const EventType&)>
+		template <void(*method)(const EventType&)>
 		void RemoveCallback();
 		bool HasCallbacks();
 		void Invoke(EventType& event);
@@ -70,10 +70,10 @@ namespace Blueberry
 		bool m_IsInvoking = false;
 	};
 
-	template <class OwnerObject, void(OwnerObject::*methodPtr)()>
+	template <class OwnerObject, void(OwnerObject::*method)()>
 	inline void Event<void>::AddCallback(OwnerObject* const object)
 	{
-		CallbackData data = { reinterpret_cast<uint64_t>(&methodPtr), reinterpret_cast<uint64_t>(object), Delegate<>::Create<OwnerObject, methodPtr>(object) };
+		CallbackData data = { reinterpret_cast<uint64_t>(object), *reinterpret_cast<uint64_t*>(&method), Delegate<>::Create<OwnerObject, method>(object) };
 		if (m_IsInvoking)
 		{
 			std::shared_ptr<List<CallbackData>> newCallbacks = std::make_shared<List<CallbackData>>(*m_Callbacks);
@@ -86,10 +86,10 @@ namespace Blueberry
 		}
 	}
 
-	template<void(*methodPtr)()>
+	template<void(*method)()>
 	inline void Event<void>::AddCallback()
 	{
-		CallbackData data = { reinterpret_cast<uint64_t>(&methodPtr), 0, Delegate<>::Create<methodPtr>() };
+		CallbackData data = { 0, *reinterpret_cast<uint64_t*>(&method), Delegate<>::Create<method>() };
 		if (m_IsInvoking)
 		{
 			std::shared_ptr<List<CallbackData>> newCallbacks = std::make_shared<List<CallbackData>>(*m_Callbacks);
@@ -102,11 +102,11 @@ namespace Blueberry
 		}
 	}
 
-	template <class OwnerObject, void(OwnerObject::*methodPtr)()>
+	template <class OwnerObject, void(OwnerObject::*method)()>
 	inline void Event<void>::RemoveCallback(OwnerObject* const object)
 	{
 		uint64_t ownerPtr = reinterpret_cast<uint64_t>(object);
-		uint64_t methodPtr = reinterpret_cast<uint64_t>(&methodPtr);
+		uint64_t methodPtr = *reinterpret_cast<uint64_t*>(&method);
 		if (m_IsInvoking)
 		{
 			std::shared_ptr<List<CallbackData>> newCallbacks = std::make_shared<List<CallbackData>>(*m_Callbacks);
@@ -133,10 +133,10 @@ namespace Blueberry
 		}
 	}
 
-	template <void(*methodPtr)()>
+	template <void(*method)()>
 	inline void Event<void>::RemoveCallback()
 	{
-		uint64_t methodPtr = reinterpret_cast<uint64_t>(&methodPtr);
+		uint64_t methodPtr = *reinterpret_cast<uint64_t*>(&method);
 		if (m_IsInvoking)
 		{
 			std::shared_ptr<List<CallbackData>> newCallbacks = std::make_shared<List<CallbackData>>(*m_Callbacks);
@@ -180,10 +180,10 @@ namespace Blueberry
 	}
 
 	template <class EventType>
-	template <class OwnerObject, void(OwnerObject::*methodPtr)(const EventType&)>
+	template <class OwnerObject, void(OwnerObject::*method)(const EventType&)>
 	inline void Event<EventType>::AddCallback(OwnerObject* const object)
 	{
-		CallbackData data = { reinterpret_cast<uint64_t>(&methodPtr), reinterpret_cast<uint64_t>(object), Delegate<const EventType&>::Create<OwnerObject, methodPtr>(object) };
+		CallbackData data = { reinterpret_cast<uint64_t>(object), *reinterpret_cast<uint64_t*>(&method), Delegate<const EventType&>::Create<OwnerObject, method>(object) };
 		if (m_IsInvoking)
 		{
 			std::shared_ptr<List<CallbackData>> newCallbacks = std::make_shared<List<CallbackData>>(*m_Callbacks);
@@ -197,10 +197,10 @@ namespace Blueberry
 	}
 
 	template <class EventType>
-	template <void(*methodPtr)(const EventType&)>
+	template <void(*method)(const EventType&)>
 	inline void Event<EventType>::AddCallback()
 	{
-		CallbackData data = { reinterpret_cast<uint64_t>(&methodPtr), 0, Delegate<const EventType&>::Create<methodPtr>() };
+		CallbackData data = { 0, *reinterpret_cast<uint64_t*>(&method), Delegate<const EventType&>::Create<method>() };
 		if (m_IsInvoking)
 		{
 			std::shared_ptr<List<CallbackData>> newCallbacks = std::make_shared<List<CallbackData>>(*m_Callbacks);
@@ -214,11 +214,11 @@ namespace Blueberry
 	}
 
 	template <class EventType>
-	template <class OwnerObject, void(OwnerObject::*methodPtr)(const EventType&)>
+	template <class OwnerObject, void(OwnerObject::*method)(const EventType&)>
 	inline void Event<EventType>::RemoveCallback(OwnerObject* const object)
 	{
 		uint64_t ownerPtr = reinterpret_cast<uint64_t>(object);
-		uint64_t methodPtr = reinterpret_cast<uint64_t>(&methodPtr);
+		uint64_t methodPtr = *reinterpret_cast<uint64_t*>(&method);
 		if (m_IsInvoking)
 		{
 			std::shared_ptr<List<CallbackData>> newCallbacks = std::make_shared<List<CallbackData>>(*m_Callbacks);
@@ -246,10 +246,10 @@ namespace Blueberry
 	}
 
 	template <class EventType>
-	template <void(*methodPtr)(const EventType&)>
+	template <void(*method)(const EventType&)>
 	inline void Event<EventType>::RemoveCallback()
 	{
-		uint64_t methodPtr = reinterpret_cast<uint64_t>(&methodPtr);
+		uint64_t methodPtr = *reinterpret_cast<uint64_t*>(&method);
 		if (m_IsInvoking)
 		{
 			std::shared_ptr<List<CallbackData>> newCallbacks = std::make_shared<List<CallbackData>>(*m_Callbacks);

@@ -119,7 +119,7 @@ namespace Blueberry
 		return m_Children.size();
 	}
 
-	const uint32_t Transform::GetSiblingIndex()
+	const size_t Transform::GetSiblingIndex()
 	{
 		if (m_Parent.IsValid())
 		{
@@ -131,6 +131,10 @@ namespace Blueberry
 					return i;
 				}
 			}
+		}
+		else
+		{
+			return GetScene()->GetRootIndex(m_Entity.Get());
 		}
 		return 0;
 	}
@@ -193,8 +197,13 @@ namespace Blueberry
 		InvalidateHierarchy();
 	}
 
-	void Transform::SetParent(Transform* parent)
+	void Transform::SetParent(Transform* parent, const bool& worldPositionStays)
 	{
+		if (m_Parent == parent)
+		{
+			return;
+		}
+
 		Scene* scene = GetScene();
 		if (scene != nullptr && (parent != nullptr) != m_Parent.IsValid())
 		{
@@ -208,7 +217,14 @@ namespace Blueberry
 			}
 		}
 
-		// TODO worldTransformStays
+		Vector3 previousPosition;
+		Quaternion previousRotation;
+		if (worldPositionStays)
+		{
+			previousPosition = GetPosition();
+			previousRotation = GetRotation();
+		}
+
 		if (m_Parent.IsValid())
 		{
 			if (m_Parent->m_Children.size() > 0)
@@ -221,17 +237,39 @@ namespace Blueberry
 		{
 			m_Parent->m_Children.emplace_back(this);
 		}
-		InvalidateHierarchy();
-		// Reset activity
+
+		if (worldPositionStays)
+		{
+			SetPosition(previousPosition);
+			SetRotation(previousRotation);
+		}
+		else
+		{
+			InvalidateHierarchy();
+		}
+
 		m_Entity->UpdateHierarchy(true);
 	}
 
-	void Transform::SetSiblingIndex(const uint32_t& index)
+	void Transform::SetSiblingIndex(const size_t& index)
 	{
 		if (m_Parent.IsValid())
 		{
-			m_Parent->m_Children.erase(std::find_if(m_Parent->m_Children.begin(), m_Parent->m_Children.end(), [this](ObjectPtr<Transform> const& i) { return i.Get() == this; }));
-			m_Parent->m_Children.insert(m_Parent->m_Children.begin() + index, this);
+			size_t oldIndex = 0;
+			auto& children = m_Parent->m_Children;
+			for (size_t i = 0; i < children.size(); ++i)
+			{
+				if (children[i].Get() == this)
+				{
+					oldIndex = i;
+					break;
+				}
+			}
+			children.move_element(oldIndex, index);
+		}
+		else
+		{
+			GetScene()->SetRootIndex(m_Entity.Get(), index);
 		}
 	}
 

@@ -24,6 +24,12 @@ namespace Blueberry
 		return newEntity;
 	}
 
+	void EditorObjectManager::AddEntity(Entity* entity)
+	{
+		EditorSceneManager::GetScene()->AddEntity(entity);
+		s_EntityCreated.Invoke();
+	}
+
 	void EditorObjectManager::DestroyEntity(Entity* entity)
 	{
 		EditorSceneManager::GetScene()->DestroyEntity(entity);

@@ -10,7 +10,7 @@ namespace Blueberry
 	SerializedObject::SerializedObject(Object* target)
 	{
 		m_ClassInfo = &ClassDB::GetInfo(target->GetType());
-		m_Targets.emplace_back(target);
+		m_Targets.push_back(target);
 		BuildTree();
 	}
 
@@ -19,7 +19,7 @@ namespace Blueberry
 		m_ClassInfo = &ClassDB::GetInfo(targets[0]->GetType());
 		for (Object* target : targets)
 		{
-			m_Targets.emplace_back(target);
+			m_Targets.push_back(target);
 		}
 		BuildTree();
 	}
@@ -56,18 +56,63 @@ namespace Blueberry
 		return m_Targets;
 	}
 
+	void SerializedObject::Update()
+	{
+		ReadTree();
+	}
+
 	bool SerializedObject::ApplyModifiedProperties()
 	{
-		if (m_ModifiedNodes.size() > 0)
+		if (m_Modifications.size() > 0)
 		{
-			for (PropertyTreeNode* node : m_ModifiedNodes)
+			for (PropertyModification modification : m_Modifications)
 			{
-				ApplyValues(node);
+				ApplyModification(modification);
 			}
-			m_ModifiedNodes.clear();
+			m_Modifications.clear();
 			return true;
 		}
 		return false;
+	}
+
+	void GetDefaultValue(const BindingType& type, PropertyValue& value)
+	{
+		switch (type)
+		{
+		case BindingType::Bool:
+			value = false;
+			break;
+		case BindingType::Int:
+			value = 0;
+			break;
+		case BindingType::Float:
+			value = 0.0f;
+			break;
+		case BindingType::Enum:
+			value = 0;
+			break;
+		case BindingType::String:
+			value = "";
+			break;
+		case BindingType::Vector2:
+			value = Vector2::Zero;
+			break;
+		case BindingType::Vector3:
+			value = Vector3::Zero;
+			break;
+		case BindingType::Vector4:
+			value = Vector4::Zero;
+			break;
+		case BindingType::Quaternion:
+			value = Quaternion::Identity;
+			break;
+		case BindingType::Color:
+			value = Color(0, 0, 0, 0);
+			break;
+		case BindingType::ObjectPtr:
+			value = ObjectPtr<Object>();
+			break;
+		}
 	}
 
 	void ReadValue(const BindingType& type, Variant& variant, PropertyValue& value)
@@ -154,8 +199,22 @@ namespace Blueberry
 	{
 		switch (type)
 		{
+		case BindingType::IntList:
+			return BindingType::Int;
+		case BindingType::FloatList:
+			return BindingType::Float;
+		case BindingType::StringList:
+			return BindingType::String;
+		case BindingType::Vector2List:
+			return BindingType::Vector2;
+		case BindingType::Vector3List:
+			return BindingType::Vector3;
+		case BindingType::Vector4List:
+			return BindingType::Vector4;
 		case BindingType::ObjectPtrList:
 			return BindingType::ObjectPtr;
+		case BindingType::DataList:
+			return BindingType::Data;
 		default:
 			return BindingType::None;
 		}
@@ -173,7 +232,7 @@ namespace Blueberry
 			case BindingType::Vector2:
 			{
 				Vector2 vectorFirst = std::get<Vector2>(first);
-				for (uint32_t i = 1; i < values.size(); ++i)
+				for (size_t i = 1; i < values.size(); ++i)
 				{
 					Vector2 vectorValue = std::get<Vector2>(values[i]);
 					if (vectorFirst.x != vectorValue.x)
@@ -191,7 +250,7 @@ namespace Blueberry
 			case BindingType::Vector3:
 			{
 				Vector3 vectorFirst = std::get<Vector3>(first);
-				for (uint32_t i = 1; i < values.size(); ++i)
+				for (size_t i = 1; i < values.size(); ++i)
 				{
 					Vector3 vectorValue = std::get<Vector3>(values[i]);
 					if (vectorFirst.x != vectorValue.x)
@@ -213,7 +272,7 @@ namespace Blueberry
 			case BindingType::Vector4:
 			{
 				Vector4 vectorFirst = std::get<Vector4>(first);
-				for (uint32_t i = 1; i < values.size(); ++i)
+				for (size_t i = 1; i < values.size(); ++i)
 				{
 					Vector4 vectorValue = std::get<Vector4>(values[i]);
 					if (vectorFirst.x != vectorValue.x)
@@ -239,7 +298,7 @@ namespace Blueberry
 			case BindingType::Quaternion:
 			{
 				Quaternion quaternionFirst = std::get<Quaternion>(first);
-				for (uint32_t i = 1; i < values.size(); ++i)
+				for (size_t i = 1; i < values.size(); ++i)
 				{
 					Quaternion quaternionValue = std::get<Quaternion>(values[i]);
 					if (quaternionFirst.x != quaternionValue.x)
@@ -263,7 +322,7 @@ namespace Blueberry
 			}
 			break;
 			default:
-				for (uint32_t i = 1; i < values.size(); ++i)
+				for (size_t i = 1; i < values.size(); ++i)
 				{
 					if (first == values[i])
 					{
@@ -287,7 +346,7 @@ namespace Blueberry
 		List<void*> targets;
 		for (Object* target : m_Targets)
 		{
-			targets.emplace_back(static_cast<void*>(target));
+			targets.push_back(static_cast<void*>(target));
 		}
 		BuildProperties(m_Root, classInfo, targets);
 	}
@@ -323,11 +382,11 @@ namespace Blueberry
 					Variant variant(targets[j], fieldInfo.offset);
 					PropertyValue value = {};
 					ReadValue(fieldInfo.type, variant, value);
-					childNode->values.emplace_back(std::move(value));
+					childNode->values.push_back(std::move(value));
 				}
 			}
 			CalculateMixedMask(childNode.get());
-			parentShared->children.emplace_back(std::move(childNode));
+			parentShared->children.push_back(std::move(childNode));
 		}
 	}
 
@@ -336,12 +395,12 @@ namespace Blueberry
 		std::shared_ptr<PropertyTreeNode> parentShared = parent.lock();
 		bool visible = fieldInfo.options.visibility == VisibilityType::Visible;
 
-		uint32_t elementCount = UINT32_MAX;
+		size_t elementCount = UINT32_MAX;
 		for (size_t i = 0; i < targets.size(); ++i)
 		{
 			Variant variant(targets[i], fieldInfo.offset);
 			ListBase* list = variant.Get<ListBase>();
-			uint32_t size = static_cast<uint32_t>(list->size_base());
+			size_t size = list->size_base();
 			if (size < UINT32_MAX && size != elementCount)
 			{
 				parentShared->mixedMask[0] = true;
@@ -350,19 +409,17 @@ namespace Blueberry
 		}
 
 		BindingType childType = GetChildType(fieldInfo.type);
-		for (uint32_t i = 0; i < elementCount; ++i)
+		for (size_t i = 0; i < elementCount; ++i)
 		{
 			std::shared_ptr<PropertyTreeNode> listNode = std::make_shared<PropertyTreeNode>();
-			String name = "Element ";
-			name.append(std::to_string(i));
-			listNode->name = name;
+			listNode->name = "Element";
 			listNode->parent = parent;
 			listNode->index = i;
 			listNode->fieldInfo = &fieldInfo;
 			listNode->bindingType = childType;
 			listNode->isVisible = visible;
 			listNode->type = PropertyType::Value;
-			parentShared->children.emplace_back(std::move(listNode));
+			parentShared->children.push_back(std::move(listNode));
 		}
 
 		if (fieldInfo.type == BindingType::DataList)
@@ -372,14 +429,14 @@ namespace Blueberry
 			for (size_t i = 0; i < targets.size(); ++i)
 			{
 				Variant variant(targets[i], fieldInfo.offset);
-				lists.emplace_back(variant.Get<ListBase>());
+				lists.push_back(variant.Get<ListBase>());
 			}
 			List<void*> newTargets = {};
-			for (uint32_t i = 0; i < elementCount; ++i)
+			for (size_t i = 0; i < elementCount; ++i)
 			{
 				for (size_t j = 0; j < targets.size(); ++j)
 				{
-					newTargets.emplace_back(lists[j]->get_base(i));
+					newTargets.push_back(lists[j]->get_base(i));
 				}
 				BuildProperties(parentShared->children[i], &info, newTargets);
 				newTargets.clear();
@@ -391,40 +448,157 @@ namespace Blueberry
 			{
 				Variant variant(targets[i], fieldInfo.offset);
 				ListBase* list = variant.Get<ListBase>();
-				for (uint32_t j = 0; j < elementCount; ++j)
+				for (size_t j = 0; j < elementCount; ++j)
 				{
 					PropertyValue value = {};
 					variant = Variant(list->get_base(j), 0);
 					ReadValue(childType, variant, value);
-					parentShared->children[j]->values.emplace_back(std::move(value));
+					parentShared->children[j]->values.push_back(std::move(value));
 				}
 			}
 		}
 	}
 
-	void SerializedObject::AddModifiedProperty(SerializedProperty* property)
+	void SerializedObject::ReadTree()
 	{
-		m_ModifiedNodes.emplace_back(std::move(property->m_TreeNode));
+		const ClassInfo* classInfo = m_ClassInfo;
+		List<void*> targets;
+		for (Object* target : m_Targets)
+		{
+			targets.push_back(static_cast<void*>(target));
+		}
+		ReadProperties(m_Root, classInfo, targets);
 	}
 
-	void SerializedObject::ApplyValues(PropertyTreeNode* node)
+	void SerializedObject::ReadProperties(std::weak_ptr<PropertyTreeNode> parent, const ClassInfo* classInfo, const List<void*>& targets)
 	{
-		uint32_t size = static_cast<uint32_t>(node->values.size());
+		std::shared_ptr<PropertyTreeNode> parentShared = parent.lock();
+
+		for (auto& childNode : parentShared->children)
+		{
+			const FieldInfo* fieldInfo = childNode->fieldInfo;
+			if (fieldInfo->isList)
+			{
+				ReadList(childNode, *fieldInfo, targets);
+			}
+			else
+			{
+				for (size_t i = 0; i < targets.size(); ++i)
+				{
+					Variant variant(targets[i], fieldInfo->offset);
+					PropertyValue value = {};
+					ReadValue(fieldInfo->type, variant, value);
+					childNode->values[i] = std::move(value);
+				}
+			}
+			CalculateMixedMask(childNode.get());
+		}
+	}
+
+	void SerializedObject::ReadList(std::weak_ptr<PropertyTreeNode> parent, const FieldInfo& fieldInfo, const List<void*>& targets)
+	{
+		std::shared_ptr<PropertyTreeNode> parentShared = parent.lock();
+		size_t elementCount = parentShared->children.size();
+		BindingType childType = GetChildType(fieldInfo.type);
+		if (fieldInfo.type == BindingType::DataList)
+		{
+			const ClassInfo& info = ClassDB::GetInfo(fieldInfo.options.objectType);
+			List<ListBase*> lists = {};
+			for (size_t i = 0; i < targets.size(); ++i)
+			{
+				Variant variant(targets[i], fieldInfo.offset);
+				lists.push_back(variant.Get<ListBase>());
+			}
+			List<void*> newTargets = {};
+			for (size_t i = 0; i < elementCount; ++i)
+			{
+				for (size_t j = 0; j < targets.size(); ++j)
+				{
+					newTargets.push_back(lists[j]->get_base(i));
+				}
+				ReadProperties(parentShared->children[i], &info, newTargets);
+				newTargets.clear();
+			}
+		}
+		else
+		{
+			for (size_t i = 0; i < targets.size(); ++i)
+			{
+				Variant variant(targets[i], fieldInfo.offset);
+				ListBase* list = variant.Get<ListBase>();
+				for (size_t j = 0; j < elementCount; ++j)
+				{
+					PropertyValue value = {};
+					variant = Variant(list->get_base(j), 0);
+					ReadValue(childType, variant, value);
+					parentShared->children[j]->values[i] = std::move(value);
+				}
+			}
+		}
+	}
+
+	void SerializedObject::AddModifiedProperty(PropertyTreeNode* node, const PropertyModificationType& type, const size_t& index1, const size_t& index2)
+	{
+		m_Modifications.push_back({ node, type, index1, index2 });
+	}
+
+	std::shared_ptr<PropertyTreeNode> SerializedObject::CreateChild(PropertyTreeNode* parent)
+	{
+		if (parent->type == PropertyType::List)
+		{
+			std::shared_ptr<PropertyTreeNode> parentShared;
+			for (auto& child : parent->parent.lock()->children)
+			{
+				if (child.get() == parent)
+				{
+					parentShared = child;
+					break;
+				}
+			}
+
+			BindingType childType = GetChildType(parent->bindingType);
+			std::shared_ptr<PropertyTreeNode> listNode = std::make_shared<PropertyTreeNode>();
+			listNode->name = "Element";
+			listNode->parent = parentShared;
+			listNode->fieldInfo = parentShared->fieldInfo;
+			listNode->bindingType = childType;
+			listNode->isVisible = parentShared->isVisible;
+			listNode->type = PropertyType::Value;
+
+			if (childType != BindingType::Data)
+			{
+				for (size_t i = 0; i < m_Targets.size(); ++i)
+				{
+					PropertyValue value = {};
+					GetDefaultValue(childType, value);
+					listNode->values.push_back(std::move(value));
+				}
+			}
+
+			return listNode;
+		}
+		return nullptr;
+	}
+
+	void SerializedObject::FindPath(PropertyTreeNode* node, List<char*>& result, size_t& offset)
+	{
+		size_t size = m_Targets.size();
 		List<PropertyTreeNode*> path;
 		PropertyTreeNode* currentNode = node;
 		PropertyTreeNode* parentNode = nullptr;
 		while (currentNode->type != PropertyType::Root)
 		{
-			path.emplace_back(currentNode);
+			path.push_back(currentNode);
 			currentNode = currentNode->parent.lock().get();
 		}
-		List<char*> targets;
-		for (uint32_t i = 0; i < size; ++i)
+
+		for (size_t i = 0; i < size; ++i)
 		{
-			targets.emplace_back(reinterpret_cast<char*>(m_Targets[i]));
+			result.push_back(reinterpret_cast<char*>(m_Targets[i]));
 		}
 		int pathSize = static_cast<int>(path.size());
-		uint32_t offset = 0;
+		offset = 0;
+
 		for (int i = pathSize - 1; i >= 0; --i)
 		{
 			currentNode = path[i];
@@ -433,32 +607,103 @@ namespace Blueberry
 			if (parentNode != nullptr && parentNode->type == PropertyType::List)
 			{
 				offset = 0;
-				for (uint32_t j = 0; j < size; ++j)
+				for (size_t j = 0; j < size; ++j)
 				{
-					Variant variant(targets[j], parentNode->fieldInfo->offset);
+					Variant variant(result[j], parentNode->fieldInfo->offset);
 					ListBase* list = variant.Get<ListBase>();
-					targets[j] = reinterpret_cast<char*>(list->get_base(currentNode->index));
+					result[j] = reinterpret_cast<char*>(list->get_base(currentNode->index));
 				}
 			}
 			else
 			{
 				offset += fieldInfo->offset;
 			}
-			if (currentNode->type == PropertyType::Value)
-			{
-				MethodBind* callback = fieldInfo->options.updateCallback;
-				for (uint32_t j = 0; j < size; ++j)
-				{
-					Variant variant(targets[j], offset);
-					WriteValue(currentNode->bindingType, variant, currentNode->values[j]);
-					if (callback != nullptr)
-					{
-						callback->Invoke(m_Targets[j]);
-					}
-				}
-			}
 			parentNode = currentNode;
 		}
-		CalculateMixedMask(node);
+	}
+
+	void SerializedObject::ApplyModification(const PropertyModification& modification)
+	{
+		PropertyTreeNode* node = modification.node;
+		size_t offset = 0;
+		switch (modification.type)
+		{
+		case PropertyModificationType::Value:
+		{
+			List<char*> targets;
+			FindPath(node, targets, offset);
+			size_t size = node->values.size();
+			const FieldInfo* fieldInfo = node->fieldInfo;
+			MethodBind* callback = fieldInfo->options.updateCallback;
+			for (size_t i = 0; i < size; ++i)
+			{
+				Variant variant(targets[i], offset);
+				WriteValue(node->bindingType, variant, node->values[i]);
+				if (callback != nullptr)
+				{
+					callback->Invoke(m_Targets[i]);
+				}
+			}
+			CalculateMixedMask(node);
+		}
+		break;
+		case PropertyModificationType::Insert:
+		{
+			List<char*> targets;
+			FindPath(node, targets, offset);
+			const FieldInfo* fieldInfo = node->fieldInfo;
+			for (size_t i = 0; i < targets.size(); ++i)
+			{
+				Variant variant(targets[i], offset);
+				ListBase* list = variant.Get<ListBase>();
+				list->insert_base(modification.index1);
+			}
+		}
+		break;
+		case PropertyModificationType::Delete:
+		{
+			List<char*> targets;
+			FindPath(node, targets, offset);
+			const FieldInfo* fieldInfo = node->fieldInfo;
+			for (size_t i = 0; i < targets.size(); ++i)
+			{
+				Variant variant(targets[i], offset);
+				ListBase* list = variant.Get<ListBase>();
+				list->erase_base(modification.index1);
+			}
+			node->children.erase(node->children.begin() + modification.index1);
+		}
+		break;
+		case PropertyModificationType::Move:
+		{
+			List<char*> targets;
+			FindPath(node, targets, offset);
+			const FieldInfo* fieldInfo = node->fieldInfo;
+			for (size_t i = 0; i < targets.size(); ++i)
+			{
+				Variant variant(targets[i], offset);
+				ListBase* list = variant.Get<ListBase>();
+				list->move_element_base(modification.index1, modification.index2);
+			}
+		}
+		break;
+		case PropertyModificationType::Clear:
+		{
+			if (node->children.size() > 0)
+			{
+				List<char*> targets;
+				FindPath(node, targets, offset);
+				const FieldInfo* fieldInfo = node->fieldInfo;
+				for (size_t i = 0; i < targets.size(); ++i)
+				{
+					Variant variant(targets[i], offset);
+					ListBase* list = variant.Get<ListBase>();
+					list->clear_base();
+				}
+				node->children.clear();
+			}
+		}
+		break;
+		}
 	}
 }

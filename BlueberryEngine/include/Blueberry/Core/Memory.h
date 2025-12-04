@@ -89,8 +89,12 @@ namespace Blueberry
 	{
 	public:
 		virtual size_t size_base() = 0;
+		virtual void insert_base(const size_t& index) = 0;
+		virtual void erase_base(const size_t& index) = 0;
+		virtual void move_element_base(const size_t& from, const size_t& to) = 0;
+		virtual void clear_base() = 0;
 		virtual void* emplace_back_base() = 0;
-		virtual void* get_base(const uint32_t& index) = 0;
+		virtual void* get_base(const size_t& index) = 0;
 	};
 
 	template <class T>
@@ -98,15 +102,58 @@ namespace Blueberry
 	{
 	public:
 		using std::vector<T, STLAllocator<T>>::vector;
+		void move_element(const size_t& from, const size_t& to);
 		virtual size_t size_base() final;
+		virtual void insert_base(const size_t& index) final;
+		virtual void erase_base(const size_t& index) final;
+		virtual void move_element_base(const size_t& from, const size_t& to) final;
+		virtual void clear_base() final;
 		virtual void* emplace_back_base() final;
-		virtual void* get_base(const uint32_t& index) final;
+		virtual void* get_base(const size_t& index) final;
 	};
+
+	template<class T>
+	inline void List<T>::move_element(const size_t& from, const size_t& to)
+	{
+		if (from < to)
+		{
+			size_t newTo = std::min(to, size() - 1);
+			std::rotate(begin() + from, begin() + from + 1, begin() + newTo + 1);
+		}
+		else
+		{
+			std::rotate(begin() + to, begin() + from, begin() + from + 1);
+		}
+	}
 
 	template<class T>
 	inline size_t List<T>::size_base()
 	{
 		return size();
+	}
+
+	template<class T>
+	inline void List<T>::insert_base(const size_t& index)
+	{
+		insert(this->begin() + index, T());
+	}
+
+	template<class T>
+	inline void List<T>::erase_base(const size_t& index)
+	{
+		erase(this->begin() + index);
+	}
+
+	template<class T>
+	inline void List<T>::move_element_base(const size_t& from, const size_t& to)
+	{
+		move_element(from, to);
+	}
+
+	template<class T>
+	inline void List<T>::clear_base()
+	{
+		clear();
 	}
 
 	template<class T>
@@ -121,7 +168,7 @@ namespace Blueberry
 	}
 
 	template<class T>
-	inline void* List<T>::get_base(const uint32_t& index)
+	inline void* List<T>::get_base(const size_t& index)
 	{
 		if constexpr (!std::is_same_v<T, bool>)
 		{

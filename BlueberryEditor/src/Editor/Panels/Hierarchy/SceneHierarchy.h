@@ -3,30 +3,37 @@
 #include "Editor\Panels\EditorWindow.h"
 #include "TransformTree.h"
 
+#include "Blueberry\Events\Event.h"
+
 namespace Blueberry
 {
 	class Scene;
 	class Entity;
+
+	using HierarchyUpdateEvent = Event<>;
 
 	class SceneHierarchy : public EditorWindow
 	{
 		OBJECT_DECLARATION(SceneHierarchy)
 
 	public:
-		SceneHierarchy() = default;
-		virtual ~SceneHierarchy() = default;
+		SceneHierarchy();
+		virtual ~SceneHierarchy();
 
 		static void Open();
 
 		virtual void OnDrawUI() final;
 
-	private:
-		void DrawNode(List<TransformTreeNode>& nodes, const size_t& index, bool& isValid);
-		void DrawCreateEntity(bool& isValid);
-		void DrawCloneEntity(bool& isValid);
-		void DrawDestroyEntity(bool& isValid);
-		void DrawUnpackPrefabEntity(bool& isValid);
+		static HierarchyUpdateEvent& GetHierarchyUpdated();
 
+	private:
+		void DrawNode(List<TransformTreeNode>& nodes, const size_t& index);
+		void DrawCreateEntity();
+		void DrawCloneEntity();
+		void DrawDestroyEntity();
+		void DrawUnpackPrefabEntity();
+
+		void Invalidate();
 		void UpdateTree();
 
 		Scene* m_CurrentScene;
@@ -34,5 +41,8 @@ namespace Blueberry
 		TransformTree m_TransformTree;
 		size_t m_LastClickedItem = UINT64_MAX;
 		HashSet<ObjectId> m_ExpandedNodes;
+		bool m_IsValid = false;
+
+		static HierarchyUpdateEvent s_HierarchyUpdated;
 	};
 }

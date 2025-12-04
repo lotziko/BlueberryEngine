@@ -20,9 +20,9 @@ namespace Blueberry
 
 	void ModelImporterEditor::OnDrawInspector()
 	{
-		for (uint32_t i = 0; i < m_MaterialsProperty.GetArraySize(); ++i)
+		for (uint32_t i = 0; i < m_MaterialsProperty.GetListSize(); ++i)
 		{
-			SerializedProperty materialDataProperty = m_MaterialsProperty.GetArrayElement(i);
+			SerializedProperty materialDataProperty = m_MaterialsProperty.GetListElement(i);
 			SerializedProperty nameProperty = materialDataProperty.FindProperty("m_Name");
 			SerializedProperty materialProperty = materialDataProperty.FindProperty("m_Material");
 			ImGui::Property(&materialProperty, nameProperty.GetString().c_str());

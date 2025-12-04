@@ -40,8 +40,6 @@ namespace Blueberry
 		virtual void OnDrawSceneSelected();
 
 	private:
-		void DrawField(Object* object, FieldInfo& info);
-
 		static Dictionary<ObjectId, ObjectEditor*> s_Editors;
 		static Dictionary<size_t, ObjectEditor*> s_DefaultEditors;
 
