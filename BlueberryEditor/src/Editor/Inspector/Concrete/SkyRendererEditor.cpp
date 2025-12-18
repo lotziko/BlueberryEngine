@@ -5,6 +5,7 @@
 #include "Blueberry\Scene\Components\SkyRenderer.h"
 #include "Editor\Assets\Processors\ReflectionGenerator.h"
 #include "Editor\Panels\Scene\SceneArea.h"
+#include "Editor\Misc\ImGuiHelper.h"
 
 #include <imgui\imgui.h>
 
@@ -17,7 +18,10 @@ namespace Blueberry
 
 	void SkyRendererEditor::OnDrawInspector()
 	{
+		ImGui::EditorStyle& style = ImGui::GetEditorStyle();
+
 		ObjectEditor::OnDrawInspector();
+		ImGui::Indent(style.InspectorIndent);
 		if (m_SerializedObject->GetTargets().size() == 1 && ImGui::Button("Bake"))
 		{
 			if (m_MaterialProperty.GetObjectPtr().Get() != nullptr)
@@ -27,6 +31,7 @@ namespace Blueberry
 				SceneArea::RequestRedrawAll();
 			}
 		}
+		ImGui::Unindent(style.InspectorIndent);
 
 		if (m_SerializedObject->ApplyModifiedProperties())
 		{

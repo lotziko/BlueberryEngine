@@ -79,8 +79,13 @@ namespace Blueberry
 				// Do not create the imported object if it already exists
 				if (!ObjectDB::HasGuidAndFileId(guid, fileId))
 				{
-					ClassInfo classInfo = ClassDB::GetInfo(type);
-					Object* importedObject = static_cast<Object*>(classInfo.createInstance());
+					const ClassInfo* classInfo = ClassDB::GetInfo(type);
+					if (classInfo == nullptr)
+					{
+						BB_ERROR("Class not exists.");
+						return false;
+					}
+					Object* importedObject = static_cast<Object*>(classInfo->createInstance());
 					importedObject->SetName(name);
 					importedObject->SetState(ObjectState::AwaitingLoading);
 
@@ -108,7 +113,7 @@ namespace Blueberry
 			Object* mainObject = ObjectDB::GetObjectFromGuid(guid, info.mainObject);
 			if (mainObject != nullptr)
 			{
-				info.objects.emplace_back(std::make_tuple(info.mainObject, mainObject->GetType(), mainObject->GetName()));
+				info.objects.push_back(std::make_tuple(info.mainObject, mainObject->GetType(), mainObject->GetName()));
 			}
 		}
 
@@ -117,7 +122,7 @@ namespace Blueberry
 			Object* assetObject = ObjectDB::GetObject(object.second);
 			if (assetObject != nullptr)
 			{
-				info.objects.emplace_back(std::make_tuple(object.first, assetObject->GetType(), assetObject->GetName()));
+				info.objects.push_back(std::make_tuple(object.first, assetObject->GetType(), assetObject->GetName()));
 			}
 		}
 		s_ImporterInfoCache.insert_or_assign(guid, info);

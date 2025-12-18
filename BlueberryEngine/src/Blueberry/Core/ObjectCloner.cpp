@@ -1,79 +1,92 @@
 #include "Blueberry\Core\ObjectCloner.h"
 
 #include "Blueberry\Core\ClassDB.h"
-#include "Blueberry\Core\Variant.h"
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Scene\Components\Component.h"
 #include "Blueberry\Scene\Components\Transform.h"
 
 namespace Blueberry
 {
+	// Need something like clone or resolve for prefabs
 	Object* ObjectCloner::Clone(Object* object)
 	{
+		HashSet<ObjectId> visited;
 		ObjectMapping objectMapping;
-		Object* clone = CloneObject(objectMapping, object);
-		return clone;
+		return CloneObject(visited, objectMapping, object);
 	}
 
-	Object* ObjectCloner::CloneObject(ObjectMapping& mapping, Object* object)
+	Object* ObjectCloner::Clone(ObjectMapping& mapping, Object* object)
+	{
+		HashSet<ObjectId> visited;
+		return CloneObject(visited, mapping, object);
+	}
+
+	Object* ObjectCloner::CloneObject(HashSet<ObjectId>& visited, ObjectMapping& mapping, Object* object)
 	{
 		// TODO iterate object fields and clone them too if they have references to objects inside
 
-		ClassInfo info = ClassDB::GetInfo(object->GetType());
-		Object* clone = info.createInstance();
-		mapping.insert_or_assign(object->GetObjectId(), clone->GetObjectId());
-
-		Variant originalValue;
-		Variant cloneValue;
-		for (auto field : info.fields)
+		const ClassInfo* info = ClassDB::GetInfo(object->GetType());
+		if (info == nullptr)
 		{
-			originalValue = Variant(object, field.offset);
-			cloneValue = Variant(clone, field.offset);
+			BB_ERROR("Class not exists.");
+			return nullptr;
+		}
+		Object* clone;
 
+		auto mappingIt = mapping.find(object->GetObjectId());
+		if (mappingIt != mapping.end())
+		{
+			clone = ObjectDB::GetObject(mappingIt->second);
+			if (visited.count(object->GetObjectId()) > 0)
+			{
+				return clone;
+			}
+		}
+		else
+		{
+			clone = info->createInstance();
+			mapping.insert_or_assign(object->GetObjectId(), clone->GetObjectId());
+		}
+		visited.insert(object->GetObjectId());
+
+		for (auto field : info->fields)
+		{
 			switch (field.type)
 			{
 			case BindingType::Bool:
-				*cloneValue.Get<bool>() = *originalValue.Get<bool>();
+				*field.Get<bool>(clone) = *field.Get<bool>(object);
 				break;
 			case BindingType::Int:
-				*cloneValue.Get<int>() = *originalValue.Get<int>();
+				*field.Get<int>(clone) = *field.Get<int>(object);
 				break;
 			case BindingType::Float:
-				*cloneValue.Get<float>() = *originalValue.Get<float>();
+				*field.Get<float>(clone) = *field.Get<float>(object);
 				break;
 			case BindingType::String:
-				*cloneValue.Get<String>() = *originalValue.Get<String>();
+				*field.Get<String>(clone) = *field.Get<String>(object);
 				break;
 			case BindingType::ObjectPtr:
 			{
-				ObjectPtr<Object> objectRefValue = *originalValue.Get<ObjectPtr<Object>>();
+				ObjectPtr<Object> objectRefValue = *field.Get<ObjectPtr<Object>>(object);
 				if (objectRefValue.IsValid())
 				{
 					Object* child = objectRefValue.Get();
 					if (!ObjectDB::HasGuid(child) || child->IsClassType(Component::Type) || child->IsClassType(Entity::Type))
 					{
-						ObjectId childId = child->GetObjectId();
-						auto mappingIt = mapping.find(childId);
-						if (mappingIt != mapping.end())
-						{
-							child = ObjectDB::GetObject(mappingIt->second);
-						}
-						else
-						{
-							child = CloneObject(mapping, child);
-						}
+						child = CloneObject(visited, mapping, child);
 					}
-					*cloneValue.Get<ObjectPtr<Object>>() = child;
+					*field.Get<ObjectPtr<Object>>(clone) = child;
 				}
 			}
 			break;
 			case BindingType::ObjectPtrList:
 			{
-				List<ObjectPtr<Object>> objectRefArrayValue = *originalValue.Get<List<ObjectPtr<Object>>>();
-				List<ObjectPtr<Object>>* cloneObjectRefArrayPointer = cloneValue.Get<List<ObjectPtr<Object>>>();
+				List<ObjectPtr<Object>> objectRefArrayValue = *field.Get<List<ObjectPtr<Object>>>(object);
+				List<ObjectPtr<Object>>* cloneObjectRefArrayPointer = field.Get<List<ObjectPtr<Object>>>(clone);
 				
 				if (objectRefArrayValue.size() > 0)
 				{
+					cloneObjectRefArrayPointer->clear();
 					for (ObjectPtr<Object>& objectRefValue : objectRefArrayValue)
 					{
 						if (objectRefValue.IsValid())
@@ -81,48 +94,45 @@ namespace Blueberry
 							Object* child = objectRefValue.Get();
 							if (!ObjectDB::HasGuid(child) || child->IsClassType(Component::Type) || child->IsClassType(Entity::Type))
 							{
-								ObjectId childId = child->GetObjectId();
-								auto mappingIt = mapping.find(childId);
-								if (mappingIt != mapping.end())
-								{
-									child = ObjectDB::GetObject(mappingIt->second);
-								}
-								else
-								{
-									child = CloneObject(mapping, child);
-								}
+								child = CloneObject(visited, mapping, child);
 							}
-							cloneObjectRefArrayPointer->emplace_back(child);
+							cloneObjectRefArrayPointer->push_back(child);
 						}
 						else
 						{
-							cloneObjectRefArrayPointer->emplace_back(nullptr);
+							cloneObjectRefArrayPointer->push_back(nullptr);
 						}
 					}
 				}
 			}
 			break;
 			case BindingType::Enum:
-				*cloneValue.Get<int>() = *originalValue.Get<int>();
+				*field.Get<int>(clone) = *field.Get<int>(object);
 				break;
 			case BindingType::Vector2:
-				*cloneValue.Get<Vector2>() = *originalValue.Get<Vector2>();
+				*field.Get<Vector2>(clone) = *field.Get<Vector2>(object);
 				break;
 			case BindingType::Vector3:
-				*cloneValue.Get<Vector3>() = *originalValue.Get<Vector3>();
+				*field.Get<Vector3>(clone) = *field.Get<Vector3>(object);
 				break;
 			case BindingType::Vector4:
-				*cloneValue.Get<Vector4>() = *originalValue.Get<Vector4>();
+				*field.Get<Vector4>(clone) = *field.Get<Vector4>(object);
 				break;
 			case BindingType::Quaternion:
-				*cloneValue.Get<Quaternion>() = *originalValue.Get<Quaternion>();
+				*field.Get<Quaternion>(clone) = *field.Get<Quaternion>(object);
 				break;
 			case BindingType::Color:
-				*cloneValue.Get<Color>() = *originalValue.Get<Color>();
+				*field.Get<Color>(clone) = *field.Get<Color>(object);
 				break;
 			default:
 				BB_INFO("Can't clone field " << field.name);
 				break;
+			}
+
+			MethodBind* callback = field.options.updateCallback;
+			if (callback != nullptr)
+			{
+				callback->Invoke(clone);
 			}
 		}
 		clone->OnCreate();

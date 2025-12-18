@@ -21,7 +21,7 @@ namespace Blueberry
 		}
 
 		// Based on https://github.com/holy-shit/clion-directx-example/blob/master/main.cpp
-		uint32_t dataSize;
+		std::streampos dataSize;
 		char* buffer;
 
 		std::ifstream infile;
@@ -33,7 +33,7 @@ namespace Blueberry
 		infile.read(buffer, dataSize);
 		infile.close();
 
-		*pBytes = dataSize;
+		*pBytes = static_cast<UINT>(dataSize);
 		*ppData = buffer;
 
 		return S_OK;
@@ -59,7 +59,7 @@ namespace Blueberry
 		ShaderCompilationData compilationData = {};
 		if (HLSLShaderParser::Parse(path, m_ShaderData, compilationData))
 		{
-			for (int i = 0; i < compilationData.passes.size(); ++i)
+			for (size_t i = 0; i < compilationData.passes.size(); ++i)
 			{
 				auto& compilationPass = compilationData.passes[i];
 				PassData& pass = compilationData.dataPasses[i];
@@ -68,9 +68,9 @@ namespace Blueberry
 
 				if (!compilationPass.vertexEntryPoint.empty())
 				{
-					uint32_t keywordCount = compilationPass.vertexKeywords.size();
+					size_t keywordCount = compilationPass.vertexKeywords.size();
 					D3D_SHADER_MACRO keywords[256];
-					for (int j = 0; j < keywordCount; ++j)
+					for (size_t j = 0; j < keywordCount; ++j)
 					{
 						keywords[j].Name = compilationPass.vertexKeywords[j].c_str();
 					}
@@ -78,13 +78,13 @@ namespace Blueberry
 					keywords[keywordCount].Name = nullptr;
 					keywords[keywordCount].Definition = nullptr;
 
-					pass.SetVertexOffset(m_VariantsData.vertexShaderIndices.size());
+					pass.SetVertexOffset(static_cast<uint32_t>(m_VariantsData.vertexShaderIndices.size()));
 
 					for (size_t j = 0; j < vertexVariantCount; ++j)
 					{
-						for (uint32_t k = 0; k < keywordCount; ++k)
+						for (size_t k = 0; k < keywordCount; ++k)
 						{
-							keywords[k].Definition = (1 << k) & j ? "1" : "0";
+							keywords[k].Definition = (1ull << k) & j ? "1" : "0";
 						}
 
 						ComPtr<ID3DBlob> vertexBlob;
@@ -92,9 +92,9 @@ namespace Blueberry
 						{
 							return false;
 						}
-						m_VariantsData.shaders.emplace_back(vertexBlob.Get());
-						m_VariantsData.vertexShaderIndices.emplace_back(m_Blobs.size());
-						m_Blobs.emplace_back(vertexBlob);
+						m_VariantsData.shaders.push_back(vertexBlob.Get());
+						m_VariantsData.vertexShaderIndices.push_back(static_cast<uint32_t>(m_Blobs.size()));
+						m_Blobs.push_back(vertexBlob);
 					}
 				}
 				else
@@ -104,27 +104,27 @@ namespace Blueberry
 
 				if (!compilationPass.geometryEntryPoint.empty())
 				{
-					pass.SetGeometryOffset(m_VariantsData.geometryShaderIndices.size());
+					pass.SetGeometryOffset(static_cast<uint32_t>(m_VariantsData.geometryShaderIndices.size()));
 
 					ComPtr<ID3DBlob> geometryBlob;
 					if (!Compile(compilationPass.shaderCode, compilationPass.geometryEntryPoint.c_str(), "gs_5_0", nullptr, geometryBlob))
 					{
 						return false;
 					}
-					m_VariantsData.shaders.emplace_back(geometryBlob.Get());
-					m_VariantsData.geometryShaderIndices.emplace_back(m_Blobs.size());
-					m_Blobs.emplace_back(geometryBlob);
+					m_VariantsData.shaders.push_back(geometryBlob.Get());
+					m_VariantsData.geometryShaderIndices.push_back(static_cast<uint32_t>(m_Blobs.size()));
+					m_Blobs.push_back(geometryBlob);
 				}
 				else
 				{
-					m_VariantsData.geometryShaderIndices.emplace_back(-1);
+					m_VariantsData.geometryShaderIndices.push_back(-1);
 				}
 
 				if (!compilationPass.fragmentEntryPoint.empty())
 				{
-					uint32_t keywordCount = compilationPass.fragmentKeywords.size();
+					size_t keywordCount = compilationPass.fragmentKeywords.size();
 					D3D_SHADER_MACRO keywords[256];
-					for (uint32_t j = 0; j < keywordCount; ++j)
+					for (size_t j = 0; j < keywordCount; ++j)
 					{
 						keywords[j].Name = compilationPass.fragmentKeywords[j].c_str();
 					}
@@ -132,13 +132,13 @@ namespace Blueberry
 					keywords[keywordCount].Name = nullptr;
 					keywords[keywordCount].Definition = nullptr;
 
-					pass.SetFragmentOffset(m_VariantsData.fragmentShaderIndices.size());
+					pass.SetFragmentOffset(static_cast<uint32_t>(m_VariantsData.fragmentShaderIndices.size()));
 
 					for (size_t j = 0; j < fragmentVariantCount; ++j)
 					{
 						for (uint32_t k = 0; k < keywordCount; ++k)
 						{
-							keywords[k].Definition = (1 << k) & j ? "1" : "0";
+							keywords[k].Definition = (1ull << k) & j ? "1" : "0";
 						}
 
 						ComPtr<ID3DBlob> fragmentBlob;
@@ -146,9 +146,9 @@ namespace Blueberry
 						{
 							return false;
 						}
-						m_VariantsData.shaders.emplace_back(fragmentBlob.Get());
-						m_VariantsData.fragmentShaderIndices.emplace_back(m_Blobs.size());
-						m_Blobs.emplace_back(fragmentBlob);
+						m_VariantsData.shaders.push_back(fragmentBlob.Get());
+						m_VariantsData.fragmentShaderIndices.push_back(static_cast<uint32_t>(m_Blobs.size()));
+						m_Blobs.push_back(fragmentBlob);
 					}
 				}
 				else
@@ -230,8 +230,8 @@ namespace Blueberry
 					BB_ERROR("Failed to load shader: " + String(stringPath.begin(), stringPath.end()));
 					return false;
 				}
-				m_Blobs.emplace_back(blob);
-				m_VariantsData.shaders.emplace_back(blob.Get());
+				m_Blobs.push_back(blob);
+				m_VariantsData.shaders.push_back(blob.Get());
 			}
 			return true;
 		}

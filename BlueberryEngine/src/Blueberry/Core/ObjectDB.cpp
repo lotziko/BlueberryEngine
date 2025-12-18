@@ -135,10 +135,15 @@ namespace Blueberry
 							continue;
 						}
 					}
-					result.emplace_back(std::move(object));
+					result.push_back(object);
 				}
 			}
 		}
+	}
+
+	void ObjectDB::AllocateIdToFileId(const ObjectId& id, const FileId& fileId)
+	{
+		s_ObjectIdToFileId.insert_or_assign(id, fileId);
 	}
 
 	void ObjectDB::AllocateIdToFileId(Object* object, const FileId& fileId)

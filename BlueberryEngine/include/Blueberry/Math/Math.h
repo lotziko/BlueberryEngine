@@ -4,6 +4,78 @@
 
 #include <algorithm>
 
+namespace DirectX::SimpleMath
+{
+	struct Vector2Int
+	{
+		int32_t x;
+		int32_t y;
+
+		Vector2Int() = default;
+
+		Vector2Int(const Vector2Int&) = default;
+		Vector2Int& operator=(const Vector2Int&) = default;
+
+		Vector2Int(Vector2Int&&) = default;
+		Vector2Int& operator=(Vector2Int&&) = default;
+
+		bool operator == (const Vector2Int& V) const noexcept
+		{
+			return x == V.x && y == V.y;
+		}
+
+		constexpr Vector2Int(int32_t _x, int32_t _y) noexcept : x(_x), y(_y) {}
+		explicit Vector2Int(_In_reads_(2) const int32_t* pArray) noexcept : x(pArray[0]), y(pArray[1]) {}
+	};
+
+	struct Vector3Int
+	{
+		int32_t x;
+		int32_t y;
+		int32_t z;
+
+		Vector3Int() = default;
+
+		Vector3Int(const Vector3Int&) = default;
+		Vector3Int& operator=(const Vector3Int&) = default;
+
+		Vector3Int(Vector3Int&&) = default;
+		Vector3Int& operator=(Vector3Int&&) = default;
+
+		bool operator == (const Vector3Int& V) const noexcept
+		{
+			return x == V.x && y == V.y && z == V.z;
+		}
+
+		constexpr Vector3Int(int32_t _x, int32_t _y, int32_t _z) noexcept : x(_x), y(_y), z(_z) {}
+		explicit Vector3Int(_In_reads_(3) const int32_t* pArray) noexcept : x(pArray[0]), y(pArray[1]), z(pArray[2]) {}
+	};
+
+	struct Vector4Int
+	{
+		int32_t x;
+		int32_t y;
+		int32_t z;
+		int32_t w;
+
+		Vector4Int() = default;
+
+		Vector4Int(const Vector4Int&) = default;
+		Vector4Int& operator=(const Vector4Int&) = default;
+
+		Vector4Int(Vector4Int&&) = default;
+		Vector4Int& operator=(Vector4Int&&) = default;
+
+		bool operator == (const Vector4Int& V) const noexcept
+		{
+			return x == V.x && y == V.y && z == V.z && w == V.w;
+		}
+
+		constexpr Vector4Int(int32_t _x, int32_t _y, int32_t _z, int32_t _w) noexcept : x(_x), y(_y), z(_z), w(_w) {}
+		explicit Vector4Int(_In_reads_(4) const int32_t* pArray) noexcept : x(pArray[0]), y(pArray[1]), z(pArray[2]), w(pArray[3]) {}
+	};
+}
+
 namespace Blueberry
 {
 	#undef max
@@ -12,9 +84,10 @@ namespace Blueberry
 	using Vector2 = DirectX::SimpleMath::Vector2;
 	using Vector3 = DirectX::SimpleMath::Vector3;
 	using Vector4 = DirectX::SimpleMath::Vector4;
-	using Vector2Int = DirectX::XMINT2;
-	using Vector3Int = DirectX::XMINT3;
-	using Vector4Int = DirectX::XMINT4;
+	using Vector2Int = DirectX::SimpleMath::Vector2Int;
+	using Vector3Int = DirectX::SimpleMath::Vector3Int;
+	using Vector4Int = DirectX::SimpleMath::Vector4Int;
+	using Vector2Uint = DirectX::XMUINT2;
 	using Vector3Uint = DirectX::XMUINT3;
 	using Vector4Uint = DirectX::XMUINT4;
 	using Quaternion = DirectX::SimpleMath::Quaternion;
@@ -31,6 +104,7 @@ namespace Blueberry
 	constexpr auto Pi = 3.1415926535f;
 	constexpr auto DegreeToRad = 57.29577951471995f;
 	constexpr auto RadToDegree = 0.0174532925194444f;
+	constexpr auto Epsilon = 1.4e-45f;
 
 	inline float ToDegrees(float radians)
 	{
@@ -57,6 +131,30 @@ namespace Blueberry
 		return a + (b - a) * t;
 	}
 
+	inline Vector3 Round(Vector3 vector)
+	{
+		return Vector3(std::roundf(vector.x), std::roundf(vector.y), std::roundf(vector.z));
+	}
+
+	inline Vector3 RoundToN(Vector3 value, uint32_t n)
+	{
+		float powerOf10 = std::pow(10.0f, static_cast<float>(n));
+		value.x = std::roundf(value.x * powerOf10) / powerOf10;
+		value.y = std::roundf(value.y * powerOf10) / powerOf10;
+		value.z = std::roundf(value.z * powerOf10) / powerOf10;
+		return value;
+	}
+
+	inline Quaternion RoundToN(Quaternion value, uint32_t n)
+	{
+		float powerOf10 = std::pow(10.0f, static_cast<float>(n));
+		value.x = std::roundf(value.x * powerOf10) / powerOf10;
+		value.y = std::roundf(value.y * powerOf10) / powerOf10;
+		value.z = std::roundf(value.z * powerOf10) / powerOf10;
+		value.w = std::roundf(value.w * powerOf10) / powerOf10;
+		return value;
+	}
+
 	// https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2
 	inline uint32_t NextPowerOfTwo(uint32_t value)
 	{
@@ -74,6 +172,22 @@ namespace Blueberry
 	{
 		uint32_t mod = value % by;
 		return mod == 0 ? value : (value + by - mod);
+	}
+
+	inline bool Approximately(float a, float b)
+	{
+		return std::abs(b - a) < std::max(0.000001f * std::max(std::abs(a), std::abs(b)), Epsilon * 8.0f);
+	}
+
+	// TODO intrinsics
+	inline bool Approximately(Vector3 a, Vector3 b)
+	{
+		return Approximately(a.x, b.x) && Approximately(a.y, b.y) && Approximately(a.z, b.z);
+	}
+
+	inline bool Approximately(Quaternion a, Quaternion b)
+	{
+		return Approximately(a.x, b.x) && Approximately(a.y, b.y) && Approximately(a.z, b.z) && Approximately(a.w, b.w);
 	}
 
 	inline Matrix CreateTRS(Vector3 position, Quaternion rotation, Vector3 scale)

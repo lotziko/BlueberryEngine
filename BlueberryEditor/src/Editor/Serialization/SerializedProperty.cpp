@@ -55,7 +55,7 @@ namespace Blueberry
 		// TODO move into SerializedObject and use id instead of PropertyTreeNode*
 		std::shared_ptr<PropertyTreeNode> childNode = m_SerializedObject->CreateChild(m_TreeNode);
 		m_TreeNode->children.insert(m_TreeNode->children.begin() + index, childNode);
-		for (size_t i = index + 1; i < m_TreeNode->children.size(); ++i)
+		for (size_t i = index; i < m_TreeNode->children.size(); ++i)
 		{
 			m_TreeNode->children[i]->index = i;
 		}
@@ -85,6 +85,16 @@ namespace Blueberry
 			childNode->isDeleted = true;
 		}
 		m_SerializedObject->AddModifiedProperty(m_TreeNode, PropertyModificationType::Clear);
+	}
+
+	const bool SerializedProperty::IsOverriden()
+	{
+		return m_TreeNode->isOverriden;
+	}
+
+	void SerializedProperty::ClearOverride()
+	{
+		m_SerializedObject->AddModifiedProperty(m_TreeNode, PropertyModificationType::ClearOverride);
 	}
 
 	const bool& SerializedProperty::GetBool()

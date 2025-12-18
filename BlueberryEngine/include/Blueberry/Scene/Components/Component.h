@@ -27,10 +27,6 @@ namespace Blueberry
 		virtual void OnUpdate() { };
 
 	protected:
-		void AddToSceneComponents(const size_t& type);
-		void RemoveFromSceneComponents(const size_t& type);
-
-	protected:
 		ObjectPtr<Entity> m_Entity;
 
 		bool m_IsActive = false;

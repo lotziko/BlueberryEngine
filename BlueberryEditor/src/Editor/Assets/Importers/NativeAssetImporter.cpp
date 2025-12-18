@@ -1,6 +1,7 @@
 #include "NativeAssetImporter.h"
 
 #include "Editor\Serialization\YamlSerializer.h"
+#include "Editor\Serialization\YamlSceneSerializer.h"
 #include "Editor\Serialization\YamlHelper.h"
 #include "Blueberry\Serialization\BinarySerializer.h"
 #include "Blueberry\Core\ObjectDB.h"
@@ -25,7 +26,8 @@ namespace Blueberry
 		else
 		{
 			String path = GetFilePath();
-			Serializer* serializer = YamlHelper::IsYaml(path) ? static_cast<Serializer*>(new YamlSerializer()) : static_cast<Serializer*>(new BinarySerializer());
+			String extension = String(std::filesystem::path(path).extension().string());
+			Serializer* serializer = extension == ".prefab" ? static_cast<Serializer*>(new YamlSceneSerializer()) : (YamlHelper::IsYaml(path) ? static_cast<Serializer*>(new YamlSerializer()) : static_cast<Serializer*>(new BinarySerializer()));
 			for (auto& object : ObjectDB::GetObjectsFromGuid(guid))
 			{
 				Object* importedObject = ObjectDB::GetObject(object.second);
@@ -44,10 +46,10 @@ namespace Blueberry
 				FileId fileId = pair.second;
 
 				ObjectDB::AllocateIdToGuid(importedObject, guid, fileId);
-				importedObject->SetName(GetName());
 				importedObject->SetState(ObjectState::Default);
 				if (!mainObjectIsSet)
 				{
+					importedObject->SetName(GetName());
 					SetMainObject(fileId);
 					mainObjectIsSet = true;
 				}

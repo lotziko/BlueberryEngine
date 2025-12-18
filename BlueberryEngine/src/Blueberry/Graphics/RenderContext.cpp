@@ -87,7 +87,7 @@ namespace Blueberry
 		for (uint32_t i = 0; i < operationCount; ++i)
 		{
 			auto& operation = s_DrawingOperations[i];
-			s_PerDrawData.push_back(std::move(std::make_pair(GfxDevice::GetGPUMatrix(operation.matrix), Vector4(operation.lightmapChartOffset, 0, 0, 0))));
+			s_PerDrawData.push_back(std::move(std::make_pair(GfxDevice::GetGPUMatrix(operation.matrix), Vector4(static_cast<float>(operation.lightmapChartOffset), 0.0f, 0.0f, 0.0f))));
 		}
 		PerDrawDataConstantBuffer::BindDataInstanced(s_PerDrawData.data(), operationCount);
 	}
@@ -261,12 +261,12 @@ namespace Blueberry
 						Quaternion rotation = transform->GetRotation();
 						Vector3 forward = Vector3::Transform(Vector3::Forward, rotation);
 						Vector3 up = Vector3::Transform(Vector3::Up, rotation);
-						const float shadowSize = LightHelper::GetShadowSize(LightType::Directional);
+						const float shadowSize = static_cast<float>(LightHelper::GetShadowSize(LightType::Directional));
 
 						if (light->m_IsCached)
 						{
 							float planes[] = { 10.0f, 25.0f, 60.0f };
-							float grid[] = { 2.0f, 5.0f, 12.0f };
+							float grid[] = { 1.0f, 5.0f, 12.0f };
 
 							Vector3 center = camera->GetTransform()->GetPosition();
 							float zRange = 100.0f;

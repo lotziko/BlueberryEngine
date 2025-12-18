@@ -27,7 +27,7 @@ namespace Blueberry
 				child.path = path;
 				child.name = path.filename().string();
 				Populate(&child);
-				parent->children.emplace_back(child);
+				parent->children.push_back(child);
 			}
 		}
 	}

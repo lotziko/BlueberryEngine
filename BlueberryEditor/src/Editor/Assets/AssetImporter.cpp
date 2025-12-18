@@ -103,7 +103,7 @@ namespace Blueberry
 
 	void AssetImporter::Save()
 	{
-		YamlMetaSerializer serializer;
+		YamlMetaSerializer serializer = {};
 		serializer.SetGuid(m_Guid);
 		serializer.AddObject(this);
 		serializer.Serialize(GetMetaFilePath());
@@ -119,8 +119,8 @@ namespace Blueberry
 
 	AssetImporter* AssetImporter::CreateNew(const size_t& type, const std::filesystem::path& relativePath, const std::filesystem::path& relativeMetaPath)
 	{
-		auto info = ClassDB::GetInfo(type);
-		AssetImporter* importer = static_cast<AssetImporter*>(info.createInstance());
+		const ClassInfo* info = ClassDB::GetInfo(type);
+		AssetImporter* importer = static_cast<AssetImporter*>(info->createInstance());
 		importer->m_Guid = Guid::Create();
 		importer->m_RelativePath = relativePath.string();
 		importer->m_RelativeMetaPath = relativeMetaPath.string();
@@ -132,7 +132,7 @@ namespace Blueberry
 
 	AssetImporter* AssetImporter::CreateFromMeta(const std::filesystem::path& relativePath, const std::filesystem::path& relativeMetaPath)
 	{
-		YamlMetaSerializer serializer;
+		YamlMetaSerializer serializer = {};
 		auto dataPath = Path::GetAssetsPath();
 		dataPath.append(relativeMetaPath.string());
 		serializer.Deserialize(String(dataPath.string()));
@@ -156,7 +156,7 @@ namespace Blueberry
 
 	void AssetImporter::LoadFromMeta(AssetImporter* importer)
 	{
-		YamlMetaSerializer serializer;
+		YamlMetaSerializer serializer = {};
 		serializer.AddObject(importer);
 		auto dataPath = Path::GetAssetsPath();
 		dataPath.append(importer->GetRelativeMetaFilePath());

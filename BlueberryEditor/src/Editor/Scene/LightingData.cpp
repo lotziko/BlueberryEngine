@@ -175,10 +175,10 @@ namespace Blueberry
 		if (m_ChartInstanceOffset.size() > 0 && m_MeshRenderers.size() == 0)
 		{
 			uint8_t* ptr = m_ChartInstanceOffset.data();
-			uint32_t rendererCount = (m_ChartInstanceOffset.size()) / (sizeof(GlobalObjectId) + sizeof(uint32_t));
+			size_t rendererCount = (m_ChartInstanceOffset.size()) / (sizeof(GlobalObjectId) + sizeof(uint32_t));
 
 			m_MeshRenderers.resize(rendererCount);
-			for (uint32_t i = 0; i < rendererCount; ++i)
+			for (size_t i = 0; i < rendererCount; ++i)
 			{
 				GlobalObjectId objectId = *reinterpret_cast<GlobalObjectId*>(ptr);
 				ptr += sizeof(GlobalObjectId);
@@ -274,16 +274,24 @@ namespace Blueberry
 					if (it != prefabs.end())
 					{
 						PrefabInstance* instance = it->second;
-						entity = instance->GetEntity(id.objectFileId);
+						entity = static_cast<Entity*>(instance->GetCorrespondingObject(id.objectFileId));
 					}
 				}
 				else
 				{
-					entity = entities.find(id.objectFileId)->second;
+					auto it = entities.find(id.objectFileId);
+					if (it != entities.end())
+					{
+						entity = it->second;
+					}
 				}
 				if (entity != nullptr)
 				{
-					entity->GetComponent<MeshRenderer>()->SetLightmapChartOffset(offset);
+					MeshRenderer* meshRenderer = entity->GetComponent<MeshRenderer>();
+					if (meshRenderer != nullptr)
+					{
+						meshRenderer->SetLightmapChartOffset(offset);
+					}
 				}
 			}
 		}
@@ -298,8 +306,8 @@ namespace Blueberry
 
 	void LightingData::ApplyReflections()
 	{
-		uint32_t probeCount = static_cast<uint32_t>(m_ReflectionProbes.size());
-		uint32_t textureSize = 0;
+		size_t probeCount = m_ReflectionProbes.size();
+		size_t textureSize = 0;
 		List<uint8_t> textureData = {};
 
 		if (probeCount > 0)
@@ -332,7 +340,7 @@ namespace Blueberry
 				prefabs.insert_or_assign(ObjectDB::GetFileIdFromObject(object), instance);
 			}
 
-			for (uint32_t i = 0; i < probeCount; ++i)
+			for (size_t i = 0; i < probeCount; ++i)
 			{
 				ReflectionProbeData data = m_ReflectionProbes[i];
 				TextureCube* texture = data.GetTextureCube();
@@ -344,7 +352,7 @@ namespace Blueberry
 				}
 			}
 
-			for (uint32_t i = 0; i < probeCount; ++i)
+			for (size_t i = 0; i < probeCount; ++i)
 			{
 				ReflectionProbeData data = m_ReflectionProbes[i];
 				GlobalObjectId id = data.GetObjectId();
@@ -355,7 +363,7 @@ namespace Blueberry
 					if (it != prefabs.end())
 					{
 						PrefabInstance* instance = it->second;
-						entity = instance->GetEntity(id.objectFileId);
+						entity = static_cast<Entity*>(instance->GetCorrespondingObject(id.objectFileId));
 					}
 				}
 				else
@@ -371,7 +379,7 @@ namespace Blueberry
 				if (entity != nullptr && i > 0)
 				{
 					ReflectionProbe* reflectionProbe = entity->GetComponent<ReflectionProbe>();
-					reflectionProbe->SetAtlasIndex(i);
+					reflectionProbe->SetAtlasIndex(static_cast<uint32_t>(i));
 				}
 
 				if (texture != nullptr)
@@ -387,7 +395,7 @@ namespace Blueberry
 
 			textureProperties.width = REFLECTION_SIZE;
 			textureProperties.height = REFLECTION_SIZE;
-			textureProperties.depth = probeCount;
+			textureProperties.depth = static_cast<uint32_t>(probeCount);
 			textureProperties.antiAliasing = 1;
 			textureProperties.mipCount = 6;
 			textureProperties.format = TextureFormat::BC6H_UFloat;
@@ -405,5 +413,10 @@ namespace Blueberry
 		{
 			GfxDevice::SetGlobalTexture(s_ReflectionTextureId, DefaultTextures::GetBlackCubeArray()->Get());
 		}
+	}
+
+	void LightingData::Clear()
+	{
+		Shader::SetKeyword(s_LightmapId, false);
 	}
 }

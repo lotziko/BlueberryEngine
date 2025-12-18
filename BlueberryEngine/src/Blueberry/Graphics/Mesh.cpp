@@ -205,7 +205,7 @@ namespace Blueberry
 		{
 			return 0;
 		}
-		return m_UVs[channel].size() / m_VertexCount;
+		return static_cast<uint32_t>(m_UVs[channel].size() / m_VertexCount);
 	}
 
 	void Mesh::SetVertices(const Vector3* vertices, const uint32_t& vertexCount)

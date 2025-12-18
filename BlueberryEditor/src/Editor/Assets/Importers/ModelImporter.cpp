@@ -217,7 +217,7 @@ namespace Blueberry
 		}
 
 		ObjectDB::AllocateIdToGuid(entity, guid, entityFileId);
-		objects.emplace_back(entity);
+		objects.push_back(entity);
 
 		fbxsdk::FbxDouble3 fbxTranslation = node->LclTranslation.Get();
 		fbxsdk::FbxDouble3 fbxRotation = node->LclRotation.Get();
@@ -349,7 +349,7 @@ namespace Blueberry
 					{
 						if (materialIndices->GetAt(j) == i)
 						{
-							sortedPolygonIndexes.emplace_back(j);
+							sortedPolygonIndexes.push_back(j);
 							subMeshSize += fbxMesh->mPolygons[j].mSize == 3 ? 3 : 6;
 						}
 					}
@@ -364,7 +364,7 @@ namespace Blueberry
 			{
 				for (uint32_t i = 0; i < polygonCount; ++i)
 				{
-					sortedPolygonIndexes.emplace_back(i);
+					sortedPolygonIndexes.push_back(i);
 				}
 			}
 
@@ -577,7 +577,7 @@ namespace Blueberry
 				{
 					ModelMaterialData data = {};
 					data.SetName(name);
-					m_Materials.emplace_back(data);
+					m_Materials.push_back(data);
 				}
 				else
 				{
@@ -593,7 +593,7 @@ namespace Blueberry
 			//BB_INFO("Mesh \"" << nodeName << "\" imported.");
 			mesh->SetName(nodeName);
 			AddAssetObject(mesh, meshFileId);
-			objects.emplace_back(mesh);
+			objects.push_back(mesh);
 		}
 		for (int i = 0; i < node->GetChildCount(); ++i)
 		{

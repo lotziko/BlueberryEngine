@@ -105,7 +105,7 @@ namespace Blueberry
 						info.transform = entity->GetTransform();
 						info.component = component;
 						info.editor = editor;
-						s_IconsCache.emplace_back(std::move(info));
+						s_IconsCache.push_back(std::move(info));
 					}
 				}
 			}

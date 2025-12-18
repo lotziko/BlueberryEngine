@@ -4,6 +4,7 @@
 #include "Blueberry\Core\ObjectPtr.h"
 #include "Blueberry\Core\Structs.h"
 #include "Blueberry\Core\Guid.h"
+#include "Blueberry\Core\Variant.h"
 #include "Blueberry\Tools\ByteConverter.h"
 
 #include <rapidyaml\ryml.h>
@@ -13,11 +14,20 @@ namespace DirectX::SimpleMath
 	void write(ryml::NodeRef* n, const Vector2& val);
 	bool read(const ryml::ConstNodeRef& n, Vector2* val);
 
+	void write(ryml::NodeRef* n, const Vector2Int& val);
+	bool read(const ryml::ConstNodeRef& n, Vector2Int* val);
+
 	void write(ryml::NodeRef* n, const Vector3& val);
 	bool read(const ryml::ConstNodeRef& n, Vector3* val);
 
+	void write(ryml::NodeRef* n, const Vector3Int& val);
+	bool read(const ryml::ConstNodeRef& n, Vector3Int* val);
+
 	void write(ryml::NodeRef* n, const Vector4& val);
 	bool read(const ryml::ConstNodeRef& n, Vector4* val);
+
+	void write(ryml::NodeRef* n, const Vector4Int& val);
+	bool read(const ryml::ConstNodeRef& n, Vector4Int* val);
 
 	void write(ryml::NodeRef* n, const Quaternion& val);
 	bool read(const ryml::ConstNodeRef& n, Quaternion* val);

@@ -12,6 +12,7 @@ namespace Blueberry
 	{
 		ObjectPtr<Entity> entity;
 		ObjectPtr<Transform> transform;
+		uint32_t type;
 		int depth = 0;
 	};
 

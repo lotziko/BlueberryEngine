@@ -71,7 +71,7 @@ namespace Blueberry
 		constants.previousViewProj[0] = GfxDevice::GetGPUMatrix(previousViewProj);
 		constants.fogNearRange = Vector4(1.0f - fogFarClipPlane / fogNearClipPlane, fogFarClipPlane / fogNearClipPlane, fogNearClipPlane / fogFarClipPlane, 1.0f / (1.0f - fogNearClipPlane / fogFarClipPlane));
 		constants.frustumVolumeInvSize = Vector4(1.0f / frustumVolumeSize.x, 1.0f / frustumVolumeSize.y, 1.0f / frustumVolumeSize.z, 1.0f / (frustumVolumeSize.z - 1.0f));
-		constants.frustumVolumeSize = Vector4(frustumVolumeSize.x, frustumVolumeSize.y, frustumVolumeSize.z, 0);
+		constants.frustumVolumeSize = Vector4(static_cast<float>(frustumVolumeSize.x), static_cast<float>(frustumVolumeSize.y), static_cast<float>(frustumVolumeSize.z), 0.0f);
 	
 		previousViewProj = camera->GetViewProjectionMatrix();
 

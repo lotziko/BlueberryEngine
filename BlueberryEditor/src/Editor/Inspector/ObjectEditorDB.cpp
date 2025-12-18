@@ -12,7 +12,7 @@ namespace Blueberry
 		return s_ObjectEditors;
 	}
 
-	const ObjectEditorInfo& ObjectEditorDB::GetInfo(const size_t& id)
+	const ObjectEditorInfo* ObjectEditorDB::GetInfo(const size_t& id)
 	{
 		size_t inheritsId = id;
 		while (true)
@@ -20,9 +20,9 @@ namespace Blueberry
 			auto objectEditorIt = s_ObjectEditors.find(inheritsId);
 			if (objectEditorIt != s_ObjectEditors.end())
 			{
-				return objectEditorIt->second;
+				return &objectEditorIt->second;
 			}
-			inheritsId = ClassDB::GetInfo(inheritsId).parentId;
+			inheritsId = ClassDB::GetInfo(inheritsId)->parentId;
 			if (inheritsId == 0)
 			{
 				break;

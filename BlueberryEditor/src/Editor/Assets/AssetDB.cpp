@@ -63,7 +63,7 @@ namespace Blueberry
 						DeleteAssetFromData(guid);
 						importer->ResetImport();
 					}
-					importersToImport.emplace_back(importer);
+					importersToImport.push_back(importer);
 				}
 				PathModifyCache::Set(importer->GetRelativeFilePath(), { assetLastWriteTime, metaLastWriteTime });
 				if (needsClearing)
@@ -110,7 +110,7 @@ namespace Blueberry
 
 	List<std::pair<Object*, FileId>> AssetDB::LoadAssetObjects(const Guid& guid, const Dictionary<FileId, ObjectId>& existingObjects)
 	{
-		BinarySerializer serializer;
+		BinarySerializer serializer = {};
 		std::filesystem::path dataPath = Path::GetAssetCachePath();
 		for (auto& object : existingObjects)
 		{
@@ -199,7 +199,7 @@ namespace Blueberry
 
 	void AssetDB::SaveAssetObjectsToCache(const List<Object*>& objects)
 	{
-		BinarySerializer serializer;
+		BinarySerializer serializer = {};
 		for (Object* object : objects)
 		{
 			serializer.AddObject(object);
@@ -214,7 +214,7 @@ namespace Blueberry
 			return;
 		}
 
-		s_DirtyAssets.emplace_back(object->GetObjectId());
+		s_DirtyAssets.push_back(object->GetObjectId());
 	}
 
 	void AssetDB::DeleteAssetFromData(const Guid& guid)
@@ -264,7 +264,7 @@ namespace Blueberry
 
 	Serializer* AssetDB::GetSerializer(Object* object)
 	{
-		bool isBinary = ClassDB::GetInfo(object->GetType()).preferBinary;
+		bool isBinary = ClassDB::GetInfo(object->GetType())->preferBinary;
 		if (isBinary)
 		{
 			return new BinarySerializer();

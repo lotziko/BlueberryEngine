@@ -15,7 +15,7 @@ namespace Blueberry
 	{
 	public:
 		static Dictionary<size_t, ObjectEditorInfo>& GetInfos();
-		static const ObjectEditorInfo& GetInfo(const size_t& type);
+		static const ObjectEditorInfo* GetInfo(const size_t& type);
 
 		template<class ObjectEditorType>
 		static void Register(const size_t& type);

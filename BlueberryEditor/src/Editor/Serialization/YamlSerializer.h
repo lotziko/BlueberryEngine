@@ -14,8 +14,8 @@ namespace Blueberry
 		virtual void Deserialize(const String& path) override;
 
 	protected:
-		void SerializeNode(ryml::NodeRef& objectNode, Context context);
-		void DeserializeNode(ryml::NodeRef& objectNode, Context context);
+		virtual void SerializeNode(ryml::NodeRef& objectNode, Context context);
+		virtual void DeserializeNode(ryml::NodeRef& objectNode, Context context);
 
 	protected:
 		concurrency::concurrent_vector<std::string> m_Tags;

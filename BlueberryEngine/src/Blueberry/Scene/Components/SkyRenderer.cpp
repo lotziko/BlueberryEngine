@@ -14,16 +14,7 @@ namespace Blueberry
 		DEFINE_BASE_FIELDS(SkyRenderer, Component)
 		DEFINE_FIELD(SkyRenderer, m_Material, BindingType::ObjectPtr, FieldOptions().SetObjectType(Material::Type))
 		DEFINE_FIELD(SkyRenderer, m_AmbientColor, BindingType::Color, {})
-	}
-
-	void SkyRenderer::OnEnable()
-	{
-		AddToSceneComponents(SkyRenderer::Type);
-	}
-
-	void SkyRenderer::OnDisable()
-	{
-		RemoveFromSceneComponents(SkyRenderer::Type);
+		DEFINE_ITERATOR(SkyRenderer)
 	}
 
 	Material* SkyRenderer::GetMaterial()

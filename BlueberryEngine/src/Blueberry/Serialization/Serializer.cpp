@@ -12,7 +12,7 @@ namespace Blueberry
 	{
 		FileId fileId = GetFileId(object);
 		m_FileIdToObject.insert({ fileId, object });
-		m_ObjectsToSerialize.emplace_back(object);
+		m_ObjectsToSerialize.push_back(object);
 	}
 
 	void Serializer::AddObject(Object* object, const FileId& fileId)
@@ -38,7 +38,7 @@ namespace Blueberry
 		{
 			m_AdditionalObjectsIds.insert(fileId);
 			m_FileIdToObject.insert_or_assign(fileId, object);
-			m_AdditionalObjectsToSerialize.emplace_back(object);
+			m_AdditionalObjectsToSerialize.push_back(object);
 		}
 	}
 
@@ -46,7 +46,7 @@ namespace Blueberry
 	{
 		ObjectDB::AllocateIdToFileId(object, fileId);
 		m_FileIdToObject.insert_or_assign(fileId, object);
-		m_DeserializedObjects.emplace_back(std::make_pair(object, fileId));
+		m_DeserializedObjects.push_back(std::make_pair(object, fileId));
 	}
 
 	FileId Serializer::GetFileId(Object* object)

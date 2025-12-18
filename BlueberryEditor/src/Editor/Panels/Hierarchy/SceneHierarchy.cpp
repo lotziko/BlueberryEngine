@@ -321,9 +321,9 @@ namespace Blueberry
 			}
 			else
 			{
-				bool isPrefab = PrefabManager::IsPartOfPrefabInstance(entity);
 				bool isActive = entity->IsActiveInHierarchy();
-				ImVec4 color = isPrefab ? ImVec4(0, 1, 0, 1) : ImVec4(1, 1, 1, 1);
+				static ImVec4 colors[3] = { ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ImVec4(0.0f, 1.0f, 0.0f, 1.0f), ImVec4(0.0f, 0.7f, 0.0f, 1.0f) };
+				ImVec4 color = colors[node.type];
 				if (!isActive)
 				{
 					color.w *= 0.5f;
@@ -407,7 +407,7 @@ namespace Blueberry
 
 	void SceneHierarchy::UpdateTree()
 	{
-		m_TransformTree.Update(m_CurrentScene->GetRootEntities());
+		m_TransformTree.Update(m_CurrentScene == nullptr ? List<ObjectPtr<Entity>>() : m_CurrentScene->GetRootEntities());
 		s_HierarchyUpdated.Invoke();
 	}
 }

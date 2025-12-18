@@ -27,10 +27,10 @@ namespace Blueberry
 
 					size_t nameSize;
 					is.read((char*)&nameSize, sizeof(size_t));
-					std::string name(nameSize, ' ');
+					String name(nameSize, ' ');
 					is.read(name.data(), nameSize);
 
-					objects.emplace_back(std::tuple { objectFileId, type, name });
+					objects.push_back(std::make_tuple(objectFileId, type, name));
 				}
 			}
 

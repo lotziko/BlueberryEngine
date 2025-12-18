@@ -7,6 +7,7 @@ namespace Blueberry
 {
 	class Scene;
 	class SceneSettings;
+	class Entity;
 
 	using SceneLoadEvent = Event<>;
 
@@ -14,6 +15,7 @@ namespace Blueberry
 	{
 	public:
 		static bool HasScene();
+		static bool HasPrefabScene();
 		static Scene* GetScene();
 		static const String& GetPath();
 		static const Guid& GetGuid();
@@ -22,6 +24,9 @@ namespace Blueberry
 		static void Reload();
 		static void Save();
 		static void Unload();
+
+		static void OpenPrefab(Entity* root);
+		static void ClosePrefab(const bool& all);
 
 		static void Run();
 		static void Stop();
@@ -35,9 +40,11 @@ namespace Blueberry
 	private:
 		static void Serialize(const String& path);
 		static void Deserialize(const String& path);
+		static void UpdateLighting();
 
 	private:
 		static Scene* s_Scene;
+		static List<Scene*> s_PrefabScenes;
 		static String s_Path;
 		static SceneLoadEvent s_SceneLoaded;
 		static bool s_IsRunning;

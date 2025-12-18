@@ -21,7 +21,7 @@ namespace Blueberry
 		List<Object*> result;
 		for (ObjectId id : s_ActiveObjects)
 		{
-			result.emplace_back(ObjectDB::GetObject(id));
+			result.push_back(ObjectDB::GetObject(id));
 		}
 		return result;
 	}

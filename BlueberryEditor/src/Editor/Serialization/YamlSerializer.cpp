@@ -45,16 +45,21 @@ namespace Blueberry
 				{
 					ryml::csubstr key = node.key();
 					String typeName(key.str, key.size());
-					ClassInfo info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
-					Object* instance = info.createInstance();
+					const ClassInfo* info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
+					if (info == nullptr)
+					{
+						BB_ERROR("Class not exists.");
+						continue;
+					}
+					Object* instance = info->createInstance();
 					AddDeserializedObject(instance, fileId);
-					deserializedNodes.emplace_back(i, instance);
+					deserializedNodes.push_back({ i, instance });
 				}
 				else
 				{
 					Object* instance = it->second;
 					AddDeserializedObject(instance, fileId);
-					deserializedNodes.emplace_back(i, instance);
+					deserializedNodes.push_back({ i, instance });
 				}
 			}
 		}
@@ -68,30 +73,29 @@ namespace Blueberry
 	void YamlSerializer::SerializeNode(ryml::NodeRef& objectNode, Context context)
 	{
 		ryml::csubstr key;
-		Variant value;
 
-		for (auto& field : context.info.fields)
+		for (auto& field : context.info->fields)
 		{
 			key = ryml::to_csubstr(field.name.data());
-			value = Variant(context.ptr, field.offset);
+			void* ptr = context.ptr;
 
 			switch (field.type)
 			{
 			case BindingType::Bool:
-				objectNode[key] << *value.Get<bool>();
+				objectNode[key] << *field.Get<bool>(ptr);
 				break;
 			case BindingType::Int:
-				objectNode[key] << *value.Get<int>();
+				objectNode[key] << *field.Get<int>(ptr);
 				break;
 			case BindingType::Float:
-				objectNode[key] << *value.Get<float>();
+				objectNode[key] << *field.Get<float>(ptr);
 				break;
 			case BindingType::String:
-				objectNode[key] << *value.Get<String>();
+				objectNode[key] << *field.Get<String>(ptr);
 				break;
 			case BindingType::ByteData:
 			{
-				ByteData data = *value.Get<ByteData>();
+				ByteData data = *field.Get<ByteData>(ptr);
 				if (data.size() > 0)
 				{
 					DataWrapper<ByteData> wrapper = { data };
@@ -101,21 +105,21 @@ namespace Blueberry
 			break;
 			case BindingType::IntList:
 			{
-				List<int> data = *value.Get<List<int>>();
+				List<int> data = *field.Get<List<int>>(ptr);
 				DataWrapper<List<int>> wrapper = { data };
 				objectNode[key] << wrapper;
 			}
 			break;
 			case BindingType::FloatList:
 			{
-				List<float> data = *value.Get<List<float>>();
+				List<float> data = *field.Get<List<float>>(ptr);
 				DataWrapper<List<float>> wrapper = { data };
 				objectNode[key] << wrapper;
 			}
 			break;
 			case BindingType::StringList:
 			{
-				List<String> arrayValue = *value.Get<List<String>>();
+				List<String> arrayValue = *field.Get<List<String>>(ptr);
 				if (arrayValue.size() > 0)
 				{
 					ryml::NodeRef sequence = objectNode[key];
@@ -128,35 +132,35 @@ namespace Blueberry
 			}
 			break;
 			case BindingType::Enum:
-				objectNode[key] << *value.Get<int>();
+				objectNode[key] << *field.Get<int>(ptr);
 				break;
 			case BindingType::Vector2:
-				objectNode[key] << *value.Get<Vector2>();
+				objectNode[key] << *field.Get<Vector2>(ptr);
 				break;
 			case BindingType::Vector3:
-				objectNode[key] << *value.Get<Vector3>();
+				objectNode[key] << *field.Get<Vector3>(ptr);
 				break;
 			case BindingType::Vector4:
-				objectNode[key] << *value.Get<Vector4>();
+				objectNode[key] << *field.Get<Vector4>(ptr);
 				break;
 			case BindingType::Quaternion:
-				objectNode[key] << *value.Get<Quaternion>();
+				objectNode[key] << *field.Get<Quaternion>(ptr);
 				break;
 			case BindingType::Color:
-				objectNode[key] << *value.Get<Color>();
+				objectNode[key] << *field.Get<Color>(ptr);
 				break;
 			case BindingType::Raw:
 			{
 				ByteData byteData;
 				byteData.resize(field.options.size);
-				memcpy(byteData.data(), value.Get<uint8_t>(), field.options.size);
+				memcpy(byteData.data(), field.Get<uint8_t>(ptr), field.options.size);
 				DataWrapper<ByteData> wrapper = { byteData };
 				objectNode[key] << wrapper;
 			}
 			break;
 			case BindingType::ObjectPtr:
 			{
-				ObjectPtr<Object> objectRefValue = *value.Get<ObjectPtr<Object>>();
+				ObjectPtr<Object> objectRefValue = *field.Get<ObjectPtr<Object>>(ptr);
 				ObjectPtrData data = {};
 				if (objectRefValue.IsValid())
 				{
@@ -171,7 +175,7 @@ namespace Blueberry
 			break;
 			case BindingType::ObjectPtrList:
 			{
-				List<ObjectPtr<Object>> arrayValue = *value.Get<List<ObjectPtr<Object>>>();
+				List<ObjectPtr<Object>> arrayValue = *field.Get<List<ObjectPtr<Object>>>(ptr);
 				if (arrayValue.size() > 0)
 				{
 					ryml::NodeRef sequence = objectNode[key];
@@ -194,14 +198,14 @@ namespace Blueberry
 			break;
 			case BindingType::Data:
 			{
-				Data* data = value.Get<Data>();
+				Data* data = field.Get<Data>(ptr);
 				Context context = Context::CreateNoOffset(data, field.options.objectType);
 				SerializeNode(objectNode, context);
 			}
 			break;
 			case BindingType::DataList:
 			{
-				ListBase* dataArrayPointer = value.Get<ListBase>();
+				ListBase* dataArrayPointer = field.Get<ListBase>(ptr);
 				uint32_t dataSize = static_cast<uint32_t>(dataArrayPointer->size_base());
 				if (dataSize > 0)
 				{
@@ -218,6 +222,71 @@ namespace Blueberry
 				}
 			}
 			break;
+			case BindingType::Variant:
+			{
+				Variant variant = *field.Get<Variant>(ptr);
+				ryml::NodeRef node = objectNode[key];
+				node |= ryml::MAP;
+				node |= ryml::_WIP_STYLE_FLOW_SL;
+				node["type"] << variant.index();
+
+				key = "data";
+				switch (variant.index())
+				{
+				case 0:
+					node[key] << std::get<bool>(variant);
+					break;
+				case 1:
+					node[key] << std::get<int32_t>(variant);
+					break;
+				case 2:
+					node[key] << std::get<uint32_t>(variant);
+					break;
+				case 3:
+					node[key] << std::get<int64_t>(variant);
+					break;
+				case 4:
+					node[key] << std::get<uint64_t>(variant);
+					break;
+				case 5:
+					node[key] << std::get<float>(variant);
+					break;
+				case 6:
+					node[key] << std::get<String>(variant);
+					break;
+				case 7:
+					node[key] << std::get<Vector2>(variant);
+					break;
+				case 8:
+					node[key] << std::get<Vector2Int>(variant);
+					break;
+				case 9:
+					node[key] << std::get<Vector3>(variant);
+					break;
+				case 10:
+					node[key] << std::get<Vector3Int>(variant);
+					break;
+				case 11:
+					node[key] << std::get<Vector4>(variant);
+					break;
+				case 12:
+					node[key] << std::get<Vector4Int>(variant);
+					break;
+				case 13:
+					node[key] << std::get<Quaternion>(variant);
+					break;
+				case 14:
+					node[key] << std::get<Color>(variant);
+					break;
+				case 15:
+					node[key] << GetPtrData(std::get<Blueberry::ObjectPtr<Object>>(variant).Get());
+					break;
+				default:
+					BB_INFO("Can't serialize field " << field.name);
+					break;
+				}
+			}
+			break;
 			default:
 				BB_INFO("Can't serialize field " << field.name);
 				continue;
@@ -228,36 +297,34 @@ namespace Blueberry
 	void YamlSerializer::DeserializeNode(ryml::NodeRef& objectNode, Context context)
 	{
 		ryml::csubstr key;
-		Variant value;
 
-		auto fields = context.info.fields;
-		for (auto& field : fields)
+		for (auto& field : context.info->fields)
 		{
 			key = ryml::to_csubstr(field.name.data());
-			value = Variant(context.ptr, field.offset);
+			void* ptr = context.ptr;
 
 			if (objectNode.has_child(key))
 			{
 				switch (field.type)
 				{
 				case BindingType::Bool:
-					objectNode[key] >> *value.Get<bool>();
+					objectNode[key] >> *field.Get<bool>(ptr);
 					break;
 				case BindingType::Int:
-					objectNode[key] >> *value.Get<int>();
+					objectNode[key] >> *field.Get<int>(ptr);
 					break;
 				case BindingType::Float:
-					objectNode[key] >> *value.Get<float>();
+					objectNode[key] >> *field.Get<float>(ptr);
 					break;
 				case BindingType::String:
-					objectNode[key] >> *value.Get<String>();
+					objectNode[key] >> *field.Get<String>(ptr);
 					break;
 				case BindingType::ByteData:
 				{
 					ByteData data;
 					DataWrapper<ByteData> wrapper = { data };
 					objectNode[key] >> wrapper;
-					*value.Get<ByteData>() = std::move(data);
+					*field.Get<ByteData>(ptr) = std::move(data);
 				}
 				break;
 				case BindingType::IntList:
@@ -265,7 +332,7 @@ namespace Blueberry
 					List<int> data;
 					DataWrapper<List<int>> wrapper = { data };
 					objectNode[key] >> wrapper;
-					*value.Get<List<int>>() = std::move(data);
+					*field.Get<List<int>>(ptr) = std::move(data);
 				}
 				break;
 				case BindingType::FloatList:
@@ -273,44 +340,44 @@ namespace Blueberry
 					List<float> data;
 					DataWrapper<List<float>> wrapper = { data };
 					objectNode[key] >> wrapper;
-					*value.Get<List<float>>() = std::move(data);
+					*field.Get<List<float>>(ptr) = std::move(data);
 				}
 				break;
 				case BindingType::StringList:
 				{
-					List<String>* arrayPointer = value.Get<List<String>>();
+					List<String>* arrayPointer = field.Get<List<String>>(ptr);
 					for (auto& child : objectNode[key].children())
 					{
 						String stringValue;
 						child >> stringValue;
-						arrayPointer->emplace_back(stringValue);
+						arrayPointer->push_back(stringValue);
 					}
 				}
 				break;
 				case BindingType::Enum:
-					objectNode[key] >> *value.Get<int>();
+					objectNode[key] >> *field.Get<int>(ptr);
 					break;
 				case BindingType::Vector2:
-					objectNode[key] >> *value.Get<Vector2>();
+					objectNode[key] >> *field.Get<Vector2>(ptr);
 					break;
 				case BindingType::Vector3:
-					objectNode[key] >> *value.Get<Vector3>();
+					objectNode[key] >> *field.Get<Vector3>(ptr);
 					break;
 				case BindingType::Vector4:
-					objectNode[key] >> *value.Get<Vector4>();
+					objectNode[key] >> *field.Get<Vector4>(ptr);
 					break;
 				case BindingType::Quaternion:
-					objectNode[key] >> *value.Get<Quaternion>();
+					objectNode[key] >> *field.Get<Quaternion>(ptr);
 					break;
 				case BindingType::Color:
-					objectNode[key] >> *value.Get<Color>();
+					objectNode[key] >> *field.Get<Color>(ptr);
 					break;
 				case BindingType::Raw:
 				{
 					ByteData byteData;
 					DataWrapper<ByteData> wrapper = { byteData };
 					objectNode[key] >> wrapper;
-					memcpy(value.Get<uint8_t>(), byteData.data(), byteData.size());
+					memcpy(field.Get<uint8_t>(ptr), byteData.data(), byteData.size());
 				}
 				break;
 				case BindingType::ObjectPtr:
@@ -318,35 +385,164 @@ namespace Blueberry
 					ObjectPtrData data = {};
 					objectNode[key] >> data;
 					Object* obj = GetPtrObject(data);
-					*value.Get<ObjectPtr<Object>>() = obj;
+					*field.Get<ObjectPtr<Object>>(ptr) = obj;
 				}
 				break;
 				case BindingType::ObjectPtrList:
 				{
-					List<ObjectPtr<Object>>* refArrayPointer = value.Get<List<ObjectPtr<Object>>>();
+					List<ObjectPtr<Object>>* refArrayPointer = field.Get<List<ObjectPtr<Object>>>(ptr);
 					for (auto& child : objectNode[key].cchildren())
 					{
 						ObjectPtrData data = {};
 						child >> data;
-						refArrayPointer->emplace_back(GetPtrObject(data));
+						refArrayPointer->push_back(GetPtrObject(data));
 					}
 				}
 				break;
 				case BindingType::Data:
 				{
-					Data* data = value.Get<Data>();
+					Data* data = field.Get<Data>(ptr);
 					Context context = Context::CreateNoOffset(data, field.options.objectType);
 					DeserializeNode(objectNode, context);
 				}
 				break;
 				case BindingType::DataList:
 				{
-					ListBase* dataArrayPointer = value.Get<ListBase>();
+					ListBase* dataArrayPointer = field.Get<ListBase>(ptr);
 					for (auto& child : objectNode[key].children())
 					{
 						void* data = dataArrayPointer->emplace_back_base();
 						Context context = Context::CreateNoOffset(data, field.options.objectType);
 						DeserializeNode(child, context);
+					}
+				}
+				break;
+				case BindingType::Variant:
+				{
+					Variant* variant = field.Get<Variant>(ptr);
+					ryml::NodeRef node = objectNode[key];
+					size_t index;
+					node["type"] >> index;
+
+					key = "data";
+					switch (index)
+					{
+					case 0:
+					{
+						bool value;
+						node[key] >> value;
+						*variant = value;
+					}
+					break;
+					case 1:
+					{
+						int32_t value;
+						node[key] >> value;
+						*variant = value;
+					}
+					break;
+					case 2:
+					{
+						uint32_t value;
+						node[key] >> value;
+						*variant = value;
+					}
+					break;
+					case 3:
+					{
+						int64_t value;
+						node[key] >> value;
+						*variant = value;
+					}
+					break;
+					case 4:
+					{
+						uint64_t value;
+						node[key] >> value;
+						*variant = value;
+					}
+					break;
+					case 5:
+					{
+						float value;
+						node[key] >> value;
+						*variant = value;
+					}
+					break;
+					case 6:
+					{
+						String value;
+						node[key] >> value;
+						*variant = value;
+					}
+					break;
+					case 7:
+					{
+						Vector2 value;
+						node[key] >> value;
+						*variant = value;
+					}
+					break;
+					case 8:
+					{
+						Vector2Int value;
+						node[key] >> value;
+						*variant = value;
+					}
+					break;
+					case 9:
+					{
+						Vector3 value;
+						node[key] >> value;
+						*variant = value;
+					}
+					break;
+					case 10:
+					{
+						Vector3Int value;
+						node[key] >> value;
+						*variant = value;
+					}
+					break;
+					case 11:
+					{
+						Vector4 value;
+						node[key] >> value;
+						*variant = value;
+					}
+					break;
+					case 12:
+					{
+						Vector4Int value;
+						node[key] >> value;
+						*variant = value;
+					}
+					break;
+					case 13:
+					{
+						Quaternion value;
+						node[key] >> value;
+						*variant = value;
+					}
+					break;
+					case 14:
+					{
+						Color value;
+						node[key] >> value;
+						*variant = value;
+					}
+					break;
+					case 15:
+					{
+						ObjectPtrData data = {};
+						node[key] >> data;
+						Object* obj = GetPtrObject(data);
+						*variant = ObjectPtr<Object>(obj);
+					}
+					break;
+					default:
+						BB_INFO("Can't deserialize field " << field.name);
+						break;
 					}
 				}
 				break;

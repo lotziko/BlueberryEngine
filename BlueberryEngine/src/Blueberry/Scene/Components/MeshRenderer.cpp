@@ -16,13 +16,12 @@ namespace Blueberry
 		DEFINE_BASE_FIELDS(MeshRenderer, Renderer)
 		DEFINE_FIELD(MeshRenderer, m_Mesh, BindingType::ObjectPtr, FieldOptions().SetObjectType(Mesh::Type).SetUpdateCallback(MethodBind::Create(&MeshRenderer::InvalidateBounds)))
 		DEFINE_FIELD(MeshRenderer, m_Materials, BindingType::ObjectPtrList, FieldOptions().SetObjectType(Material::Type))
-		DEFINE_FIELD(MeshRenderer, m_IsBakeable, BindingType::Bool, {});
+		DEFINE_FIELD(MeshRenderer, m_IsBakeable, BindingType::Bool, {})
+		DEFINE_ITERATOR(MeshRenderer)
 	}
 
 	void MeshRenderer::OnEnable()
 	{
-		AddToSceneComponents(MeshRenderer::Type);
-		// TODO handle prefabs
 		Scene* scene = GetScene();
 		if (scene != nullptr)
 		{
@@ -34,7 +33,6 @@ namespace Blueberry
 
 	void MeshRenderer::OnDisable()
 	{
-		RemoveFromSceneComponents(MeshRenderer::Type);
 		Scene* scene = GetScene();
 		if (scene != nullptr)
 		{
@@ -86,7 +84,7 @@ namespace Blueberry
 		m_Materials.clear();
 		for (Material* material : materials)
 		{
-			m_Materials.emplace_back(material);
+			m_Materials.push_back(material);
 		}
 	}
 

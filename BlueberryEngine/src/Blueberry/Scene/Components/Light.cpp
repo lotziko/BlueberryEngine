@@ -22,16 +22,11 @@ namespace Blueberry
 		DEFINE_FIELD(Light, m_IsCastingFog, BindingType::Bool, {})
 		DEFINE_FIELD(Light, m_IsCached, BindingType::Bool, {})
 		DEFINE_FIELD(Light, m_Cookie, BindingType::ObjectPtr, FieldOptions().SetObjectType(Texture::Type))
-	}
-
-	void Light::OnEnable()
-	{
-		AddToSceneComponents(Light::Type);
+		DEFINE_ITERATOR(Light)
 	}
 
 	void Light::OnDisable()
 	{
-		RemoveFromSceneComponents(Light::Type);
 		ReleaseCachedShadow();
 	}
 

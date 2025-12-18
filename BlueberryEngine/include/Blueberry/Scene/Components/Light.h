@@ -22,7 +22,6 @@ namespace Blueberry
 		Light() = default;
 		virtual ~Light() = default;
 
-		virtual void OnEnable() final;
 		virtual void OnDisable() final;
 
 		void OnPreCull();

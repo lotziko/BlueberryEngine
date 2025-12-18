@@ -2,6 +2,7 @@
 
 #include "Blueberry\Core\Base.h"
 #include "Blueberry\Core\Object.h"
+#include "Blueberry\Core\Variant.h"
 
 namespace Blueberry
 {
@@ -12,16 +13,21 @@ namespace Blueberry
 	{
 	public:
 		static bool IsPrefabInstanceRoot(Entity* entity);
-		static bool IsPartOfPrefabInstance(Entity* entity);
-		static PrefabInstance* GetInstance(Entity* entity);
+		static bool IsPartOfPrefabInstance(Object* object);
+		static PrefabInstance* GetInstance(Object* object);
 		static PrefabInstance* CreateInstance(Entity* entity);
+		static Object* GetCorrespondingPrefabObject(Object* object);
 
 		static void CreatePrefab(const String& path, Entity* entity);
 		static void UnpackPrefabInstance(Entity* entity);
+		static void AddModification(Object* object, const String& path, Variant& value);
+		static void RemoveModification(Object* object, const String& path);
+		static const bool HasModification(Object* object, const String& path);
 
 	private:
-		static Dictionary<ObjectId, ObjectId> s_EntityToPrefabInstance;
-		static Dictionary<ObjectId, ObjectId> s_PrefabEntities;
+		static Dictionary<ObjectId, ObjectId> s_RootToPrefabInstance;
+		static Dictionary<ObjectId, ObjectId> s_ObjectToPrefabInstance;
+		static Dictionary<ObjectId, ObjectId> s_ObjectToPrefabObject;
 
 		friend class PrefabInstance;
 	};

@@ -7,9 +7,14 @@ namespace Blueberry
 	ClassInfo ClassDB::s_CurrentClassInfo = {};
 	uint32_t ClassDB::s_CurrentOffset = 0;
 
-	const ClassInfo& ClassDB::GetInfo(const size_t& id)
+	const ClassInfo* ClassDB::GetInfo(const size_t& id)
 	{
-		return s_Classes.find(id)->second;
+		auto it = s_Classes.find(id);
+		if (it != s_Classes.end())
+		{
+			return &it->second;
+		}
+		return nullptr;
 	}
 
 	Dictionary<size_t, ClassInfo>& ClassDB::GetInfos()
@@ -37,7 +42,12 @@ namespace Blueberry
 	void ClassDB::DefineField(FieldInfo info)
 	{
 		info.offset += s_CurrentOffset;
-		s_CurrentFieldInfos.emplace_back(std::move(info));
+		s_CurrentFieldInfos.push_back(std::move(info));
+	}
+
+	void ClassDB::DefineIterator(const size_t& type)
+	{
+		s_CurrentClassInfo.iterators.push_back(type);
 	}
 
 	void ClassDB::DefinePreferBinary()

@@ -20,9 +20,6 @@ namespace Blueberry
 		ReflectionProbe() = default;
 		virtual ~ReflectionProbe() = default;
 
-		virtual void OnEnable() final;
-		virtual void OnDisable() final;
-
 		const ReflectionProbeType& GetType();
 		void SetType(const ReflectionProbeType& type);
 

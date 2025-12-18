@@ -235,7 +235,7 @@ namespace Blueberry
 		m_Parent = parent;
 		if (parent != nullptr)
 		{
-			m_Parent->m_Children.emplace_back(this);
+			m_Parent->m_Children.push_back(this);
 		}
 
 		if (worldPositionStays)
@@ -278,8 +278,13 @@ namespace Blueberry
 		return m_IsDirty;
 	}
 
-	const size_t& Transform::GetRecalculationFrame() const
+	const size_t& Transform::GetRecalculationFrame()
 	{
+		if (m_IsDirty)
+		{
+			RecalculateHierarchy();
+		}
+
 		return m_RecalculationFrame;
 	}
 
@@ -296,10 +301,13 @@ namespace Blueberry
 
 	void Transform::InvalidateHierarchy()
 	{
-		m_IsDirty = true;
-		for (auto& child : m_Children)
+		if (!m_IsDirty)
 		{
-			child->InvalidateHierarchy();
+			m_IsDirty = true;
+			for (auto& child : m_Children)
+			{
+				child->InvalidateHierarchy();
+			}
 		}
 	}
 
@@ -309,7 +317,10 @@ namespace Blueberry
 		m_IsDirty = false;
 		if (m_Parent.IsValid())
 		{
-			m_Parent.Get()->RecalculateHierarchy();
+			if (m_Parent->m_IsDirty)
+			{
+				m_Parent.Get()->RecalculateHierarchy();
+			}
 			m_LocalToWorldMatrix = m_LocalMatrix * (m_Parent->m_LocalToWorldMatrix);
 			m_LocalToWorldMatrix.Decompose(m_Scale, m_Rotation, m_Position);
 		}

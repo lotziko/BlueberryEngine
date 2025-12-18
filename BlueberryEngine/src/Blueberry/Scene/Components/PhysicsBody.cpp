@@ -18,6 +18,7 @@ namespace Blueberry
 	{
 		DEFINE_BASE_FIELDS(PhysicsBody, Component)
 		DEFINE_FIELD(PhysicsBody, m_BodyType, BindingType::Enum, FieldOptions().SetEnumHint("Static,Kinematic,Dynamic"))
+		DEFINE_ITERATOR(UpdatableComponent)
 	}
 
 	struct PhysicsBody::PrivateData
@@ -35,7 +36,6 @@ namespace Blueberry
 
 	void PhysicsBody::OnEnable()
 	{
-		AddToSceneComponents(UpdatableComponent::Type);
 		if (m_IsInitialized)
 		{
 			JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
@@ -48,7 +48,6 @@ namespace Blueberry
 
 	void PhysicsBody::OnDisable()
 	{
-		RemoveFromSceneComponents(UpdatableComponent::Type);
 		if (m_IsInitialized)
 		{
 			JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();

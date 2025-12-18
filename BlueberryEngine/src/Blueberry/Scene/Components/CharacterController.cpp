@@ -30,6 +30,7 @@ namespace Blueberry
 		DEFINE_FIELD(CharacterController, m_CameraTransform, BindingType::ObjectPtr, FieldOptions().SetObjectType(Transform::Type))
 		DEFINE_FIELD(CharacterController, m_Height, BindingType::Float, {})
 		DEFINE_FIELD(CharacterController, m_Radius, BindingType::Float, {})
+		DEFINE_ITERATOR(UpdatableComponent)
 	}
 
 	static inline JPH::EBackFaceMode sBackFaceMode = JPH::EBackFaceMode::CollideWithBackFaces;
@@ -68,7 +69,6 @@ namespace Blueberry
 
 	void CharacterController::OnEnable()
 	{
-		AddToSceneComponents(UpdatableComponent::Type);
 		if (m_IsInitialized)
 		{
 			JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
@@ -81,7 +81,6 @@ namespace Blueberry
 
 	void CharacterController::OnDisable()
 	{
-		RemoveFromSceneComponents(UpdatableComponent::Type);
 		if (m_IsInitialized)
 		{
 			JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();

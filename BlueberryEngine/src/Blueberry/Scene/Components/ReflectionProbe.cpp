@@ -12,16 +12,7 @@ namespace Blueberry
 		DEFINE_FIELD(ReflectionProbe, m_Radius, BindingType::Float, {})
 		DEFINE_FIELD(ReflectionProbe, m_Size, BindingType::Vector3, {})
 		DEFINE_FIELD(ReflectionProbe, m_Fade, BindingType::Float, {})
-	}
-
-	void ReflectionProbe::OnEnable()
-	{
-		AddToSceneComponents(ReflectionProbe::Type);
-	}
-
-	void ReflectionProbe::OnDisable()
-	{
-		RemoveFromSceneComponents(ReflectionProbe::Type);
+		DEFINE_ITERATOR(ReflectionProbe)
 	}
 
 	const ReflectionProbeType& ReflectionProbe::GetType()

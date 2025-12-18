@@ -42,12 +42,17 @@ namespace Blueberry
 		ryml::ConstNodeRef node = root[1];
 		ryml::csubstr key = node.key();
 		String typeName(key.str, key.size());
-		ClassInfo info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
+		const ClassInfo* info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
+		if (info == nullptr)
+		{
+			BB_ERROR("Class not exists.");
+			return;
+		}
 		// Importer is only created during first deserialization
 		if (m_FileIdToObject.size() == 0)
 		{
-			Object* instance = info.createInstance();
-			m_DeserializedObjects.emplace_back(std::make_pair(instance, 0));
+			Object* instance = info->createInstance();
+			m_DeserializedObjects.push_back(std::make_pair(instance, 0));
 		}
 		else
 		{

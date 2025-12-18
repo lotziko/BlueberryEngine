@@ -15,6 +15,7 @@
 ImGui::EditorContext* ImGui::GEditor = NULL;
 static Blueberry::List<bool> s_ChangeStack = {};
 static bool s_MixedValue = false;
+static bool s_ShowPopup = false;
 static const bool* s_MixedValueMask = {};
 
 #define PROPERTY_LABEL( text )\
@@ -23,6 +24,10 @@ float availableWidth = ImGui::GetContentRegionAvail().x;\
 float labelWidth = std::max(150.0f, availableWidth * 0.4f);\
 float valueWidth = std::max(0.0f, availableWidth - labelWidth);\
 ImGui::Text(text);\
+if (ImGui::IsItemClicked(ImGuiMouseButton_Right))\
+{\
+	s_ShowPopup = true;\
+}\
 ImGui::SameLine(labelWidth);\
 
 #define PROPERTY_BEGIN_VALUE()\
@@ -59,9 +64,26 @@ bool ImGui::Property(Blueberry::SerializedProperty* property)
 	return Property(property, name.c_str());
 }
 
+ImVec2 GetPropertyHeight(Blueberry::SerializedProperty* property)
+{
+	if (property->GetType() == Blueberry::BindingType::DataList)
+	{
+		return ImVec2(0, 0);
+	}
+	return ImVec2(0, property->GetListSize() * (ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f + ImGui::GetStyle().ItemSpacing.y) + 6);
+}
+
 bool ImGui::Property(Blueberry::SerializedProperty* property, const char* label)
 {
 	ImGui::PushID(property->GetId());
+	if (property->IsOverriden())
+	{
+		ImVec2 screenPos = ImGui::GetCursorScreenPos();
+		ImVec2 min = screenPos;
+		ImVec2 max = screenPos + ImVec2(4, ImGui::GetTextLineHeightWithSpacing());
+		ImGui::GetWindowDrawList()->AddRectFilled(min, max, ImGui::GetColorU32(ImGuiCol_SeparatorActive));
+	}
+	ImGui::Indent(GEditor->Style.InspectorIndent);
 	s_MixedValue = property->IsMixedValue();
 	s_MixedValueMask = property->GetMixedMask();
 	bool result = false;
@@ -186,7 +208,8 @@ bool ImGui::Property(Blueberry::SerializedProperty* property, const char* label)
 	case Blueberry::BindingType::DataList:
 	{
 		ImGui::Text(label);
-		ImGui::BeginChild("##list", ImVec2(0, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
+		ImGui::BeginChild("##list", GetPropertyHeight(property), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
+		ImGui::Dummy(ImVec2(0, 1));
 		Blueberry::SerializedProperty listProperty = *property;
 		for (size_t i = 0; i < listProperty.GetListSize(); ++i)
 		{
@@ -211,7 +234,32 @@ bool ImGui::Property(Blueberry::SerializedProperty* property, const char* label)
 		ImGui::Text(label);
 		break;
 	}
+	const char* popupId = "PropertyPopup";
+	if (s_ShowPopup)
+	{
+		ImGui::OpenPopup(popupId);
+		s_ShowPopup = false;
+	}
+	if (ImGui::BeginPopup(popupId))
+	{
+		bool hasAnyItem = false;
+		if (property->IsOverriden())
+		{
+			if (ImGui::MenuItem("Clear override"))
+			{
+				property->ClearOverride();
+				TriggerChange();
+			}
+			hasAnyItem = true;
+		}
+		if (!hasAnyItem)
+		{
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
 	s_MixedValue = false;
+	ImGui::Unindent(GEditor->Style.InspectorIndent);
 	ImGui::PopID();
 	return result;
 }
@@ -659,6 +707,23 @@ void ImGui::HorizontalSplitter(const char* strId, float* size, float minSize)
 	}
 }
 
+bool ImGui::CenteredButton(const char* label)
+{
+	// https://github.com/ocornut/imgui/discussions/3862
+	ImGuiStyle& style = ImGui::GetStyle();
+
+	float size = ImGui::CalcTextSize(label).x + style.FramePadding.x * 2.0f;
+	float avail = ImGui::GetContentRegionAvail().x;
+
+	float off = (avail - size) * 0.5f;
+	if (off > 0.0f)
+	{
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
+	}
+
+	return ImGui::Button(label);
+}
+
 void ImGui::ApplyEditorDarkTheme()
 {
 	ImGuiStyle* style = &ImGui::GetStyle();
@@ -747,6 +812,7 @@ void ImGui::ApplyEditorDarkTheme()
 	editorStyle->ProjectCellIconPadding = 8 * scale;
 	editorStyle->ProjectExpandIconSize = 16 * scale;
 	editorStyle->ProjectFolderIconSize = 16 * scale;
+	editorStyle->InspectorIndent = 20 * scale;
 }
 
 void ImGui::LoadDefaultEditorFonts()

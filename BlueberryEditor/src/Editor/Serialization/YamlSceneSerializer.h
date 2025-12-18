@@ -5,16 +5,18 @@
 
 namespace Blueberry
 {
-	class YamlMetaSerializer : public YamlSerializer
+	class Scene;
+	class Entity;
+
+	class YamlSceneSerializer : public YamlSerializer
 	{
 	public:
-		const Guid& GetGuid();
-		void SetGuid(const Guid& guid);
+		void AddSceneObjects(Scene* scene);
 
 		virtual void Serialize(const String& path) override;
 		virtual void Deserialize(const String& path) override;
 
 	private:
-		Guid m_Guid;
+		void GatherSceneObjects(Entity* entity);
 	};
 }

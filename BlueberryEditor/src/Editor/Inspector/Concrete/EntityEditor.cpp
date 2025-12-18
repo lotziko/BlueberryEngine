@@ -32,7 +32,6 @@ namespace Blueberry
 
 	void EntityEditor::OnEnable()
 	{
-		m_HasPadding = false;
 		m_IsActiveProperty = m_SerializedObject->FindProperty("m_IsActive");
 		m_ComponentsProperty = m_SerializedObject->FindProperty("m_Components");
 		
@@ -45,7 +44,7 @@ namespace Blueberry
 			{
 				Component* component = entity->GetComponent(i);
 				size_t type = component->GetType();
-				components[type].emplace_back(component);
+				components[type].push_back(component);
 			}
 		}
 		
@@ -57,7 +56,7 @@ namespace Blueberry
 				ObjectEditor* editor = ObjectEditor::GetEditor(list);
 				if (editor != nullptr)
 				{
-					m_ComponentsEditors.emplace_back(std::make_pair(list[0], editor));
+					m_ComponentsEditors.push_back(std::make_pair(list[0], editor));
 				}
 			}
 		}
@@ -103,7 +102,7 @@ namespace Blueberry
 				pair.second->DrawInspector();
 			}
 
-			if (ImGui::BeginPopup(popupId))
+			/*if (ImGui::BeginPopup(popupId))
 			{
 				if (ImGui::MenuItem("Remove component"))
 				{
@@ -111,7 +110,7 @@ namespace Blueberry
 				ImGui::EndPopup();
 			}
 
-			ImGui::OpenPopupOnItemClick(popupId, ImGuiPopupFlags_MouseButtonRight);
+			ImGui::OpenPopupOnItemClick(popupId, ImGuiPopupFlags_MouseButtonRight);*/
 
 			ImGui::PopID();
 		}
@@ -121,7 +120,8 @@ namespace Blueberry
 			SceneArea::RequestRedrawAll();
 		}
 
-		if (ImGui::Button("Add component..."))
+		ImGui::Dummy(ImVec2(0, 10));
+		if (ImGui::CenteredButton("   Add Component   "))
 		{
 			ImGui::OpenPopup("addComponent");
 		}

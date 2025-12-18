@@ -22,6 +22,7 @@ namespace ImGui
 		float ProjectCellIconPadding;
 		float ProjectExpandIconSize;
 		float ProjectFolderIconSize;
+		float InspectorIndent;
 	};
 
 	struct EditorContext
@@ -60,6 +61,8 @@ namespace ImGui
 	bool SearchInputText(const char* hint, std::string* text);
 
 	void HorizontalSplitter(const char* strId, float* size, float minSize);
+
+	bool CenteredButton(const char* label);
 
 	void ApplyEditorDarkTheme();
 	void LoadDefaultEditorFonts();

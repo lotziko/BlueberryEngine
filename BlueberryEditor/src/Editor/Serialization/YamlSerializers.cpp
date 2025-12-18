@@ -17,6 +17,21 @@ namespace DirectX::SimpleMath
 		return true;
 	}
 
+	void write(ryml::NodeRef* n, const Vector2Int& val)
+	{
+		*n |= ryml::MAP;
+		*n |= ryml::_WIP_STYLE_FLOW_SL;
+		n->append_child() << ryml::key("x") << val.x;
+		n->append_child() << ryml::key("y") << val.y;
+	}
+
+	bool read(const ryml::ConstNodeRef& n, Vector2Int* val)
+	{
+		n["x"] >> val->x;
+		n["y"] >> val->y;
+		return true;
+	}
+
 	void write(ryml::NodeRef* n, const Vector3& val)
 	{
 		*n |= ryml::MAP;
@@ -27,6 +42,23 @@ namespace DirectX::SimpleMath
 	}
 
 	bool read(const ryml::ConstNodeRef& n, Vector3* val)
+	{
+		n["x"] >> val->x;
+		n["y"] >> val->y;
+		n["z"] >> val->z;
+		return true;
+	}
+
+	void write(ryml::NodeRef* n, const Vector3Int& val)
+	{
+		*n |= ryml::MAP;
+		*n |= ryml::_WIP_STYLE_FLOW_SL;
+		n->append_child() << ryml::key("x") << val.x;
+		n->append_child() << ryml::key("y") << val.y;
+		n->append_child() << ryml::key("z") << val.z;
+	}
+
+	bool read(const ryml::ConstNodeRef& n, Vector3Int* val)
 	{
 		n["x"] >> val->x;
 		n["y"] >> val->y;
@@ -45,6 +77,25 @@ namespace DirectX::SimpleMath
 	}
 
 	bool read(const ryml::ConstNodeRef& n, Vector4* val)
+	{
+		n["x"] >> val->x;
+		n["y"] >> val->y;
+		n["z"] >> val->z;
+		n["w"] >> val->w;
+		return true;
+	}
+
+	void write(ryml::NodeRef* n, const Vector4Int& val)
+	{
+		*n |= ryml::MAP;
+		*n |= ryml::_WIP_STYLE_FLOW_SL;
+		n->append_child() << ryml::key("x") << val.x;
+		n->append_child() << ryml::key("y") << val.y;
+		n->append_child() << ryml::key("z") << val.z;
+		n->append_child() << ryml::key("w") << val.w;
+	}
+
+	bool read(const ryml::ConstNodeRef& n, Vector4Int* val)
 	{
 		n["x"] >> val->x;
 		n["y"] >> val->y;

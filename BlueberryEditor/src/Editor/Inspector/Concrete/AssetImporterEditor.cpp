@@ -25,7 +25,7 @@ namespace Blueberry
 			Object* mainObject = ObjectDB::GetObjectFromGuid(assetImporter->GetGuid(), assetImporter->GetMainObject());
 			if (mainObject != nullptr)
 			{
-				mainObjects.emplace_back(mainObject);
+				mainObjects.push_back(mainObject);
 			}
 		}
 		if (mainObjects.size() > 0)

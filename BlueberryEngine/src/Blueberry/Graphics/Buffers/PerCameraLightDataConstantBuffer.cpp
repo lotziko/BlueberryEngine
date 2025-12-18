@@ -161,6 +161,10 @@ namespace Blueberry
 		{
 			constants.ambientLightColor = skyRenderer->GetAmbientColor();
 		}
+		else
+		{
+			constants.ambientLightColor = Vector4::One;
+		}
 
 		PointLightBufferData pointDatas[MAX_REALTIME_LIGHTS];
 		SpotLightBufferData spotDatas[MAX_REALTIME_LIGHTS];
@@ -306,7 +310,7 @@ namespace Blueberry
 			Vector3 size = extents * 2;
 			Vector3Int intSize = probeVolume->GetSize();
 			constants.probeVolumeMin = Vector4(center - extents);
-			constants.probeVolumeSize = Vector4(intSize.x, intSize.y, intSize.z, 0);
+			constants.probeVolumeSize = Vector4(static_cast<float>(intSize.x), static_cast<float>(intSize.y), static_cast<float>(intSize.z), 0.0f);
 			constants.probeVolumeInvSize = Vector4(1.0f / (extents.x * 2), 1.0f / (extents.y * 2), 1.0f / (extents.z * 2), 0);
 			constants.probeVolumeCellSize = Vector4(size.x / intSize.x, size.y / intSize.y, size.z / intSize.z, 0);
 		}

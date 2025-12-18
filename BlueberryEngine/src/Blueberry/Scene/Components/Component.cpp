@@ -26,15 +26,5 @@ namespace Blueberry
 		return m_Entity.Get()->GetScene();
 	}
 
-	void Component::AddToSceneComponents(const size_t& type)
-	{
-		m_Entity.Get()->AddComponentToScene(this, type);
-	}
-
-	void Component::RemoveFromSceneComponents(const size_t& type)
-	{
-		m_Entity.Get()->RemoveComponentFromScene(this, type);
-	}
-
 	const size_t UpdatableComponent::Type = TO_OBJECT_TYPE(TO_STRING(UpdatableComponent));
 }

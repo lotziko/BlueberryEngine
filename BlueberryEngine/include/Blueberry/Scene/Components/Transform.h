@@ -47,7 +47,7 @@ namespace Blueberry
 		void SetSiblingIndex(const size_t& index);
 
 		const bool& IsDirty() const;
-		const size_t& GetRecalculationFrame() const;
+		const size_t& GetRecalculationFrame();
 
 		const bool& IsStatic() const;
 		void SetStatic(const bool& isStatic);

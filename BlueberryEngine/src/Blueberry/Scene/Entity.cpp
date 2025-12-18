@@ -33,7 +33,7 @@ namespace Blueberry
 			if (componentSlot.IsValid())
 			{
 				//BB_INFO(componentSlot->GetTypeName() << " is destroyed.");
-				//RemoveComponentFromScene(componentSlot.Get());
+				RemoveComponentFromScene(componentSlot.Get());
 				componentSlot->OnDisable();
 				componentSlot->OnDestroy();
 				Object::Destroy(componentSlot.Get());
@@ -41,18 +41,18 @@ namespace Blueberry
 		}
 	}
 
-	Component* Entity::GetComponent(const uint32_t& index)
+	Component* Entity::GetComponent(const size_t& index)
 	{
-		if (index >= 0 && index < static_cast<uint32_t>(m_Components.size()))
+		if (index >= 0 && index < m_Components.size())
 		{
 			return m_Components[index].Get();
 		}
 		return nullptr;
 	}
 
-	const uint32_t Entity::GetComponentCount()
+	const size_t Entity::GetComponentCount()
 	{
-		return static_cast<uint32_t>(m_Components.size());
+		return m_Components.size();
 	}
 
 	Transform* Entity::GetTransform()
@@ -108,69 +108,94 @@ namespace Blueberry
 		{
 			return;
 		}
-		m_Scene->m_CreatedComponents.emplace_back(component);
+		m_Scene->m_CreatedComponents.push_back(component);
 	}
 
-	void Entity::AddComponentToScene(Component* component, const size_t& type)
+	void Entity::AddComponentToScene(Component* component)
 	{
 		if (m_Scene == nullptr)
 		{
 			return;
 		}
-		m_Scene->m_ComponentManager.AddComponent(component, type);
+		for (size_t type : ClassDB::GetInfo(component->GetType())->iterators)
+		{
+			m_Scene->m_ComponentManager.AddComponent(component, type);
+		}
 	}
 
-	void Entity::RemoveComponentFromScene(Component* component, const size_t& type)
+	void Entity::RemoveComponentFromScene(Component* component)
 	{
 		if (m_Scene == nullptr)
 		{
 			return;
 		}
-		m_Scene->m_ComponentManager.RemoveComponent(component, type);
+		for (size_t type : ClassDB::GetInfo(component->GetType())->iterators)
+		{
+			m_Scene->m_ComponentManager.RemoveComponent(component, type);
+		}
 	}
 
 	void Entity::UpdateHierarchy()
 	{
+		if (m_Scene == nullptr)
+		{
+			return;
+		}
 		UpdateHierarchy(m_IsActive);
 	}
 
 	void Entity::UpdateHierarchy(const bool& active)
 	{
-		m_IsActiveInHierarchy = active;
-		if (GetTransform()->GetChildrenCount() > 0)
+		if (m_IsActiveInHierarchy != active)
 		{
-			for (auto& child : GetTransform()->GetChildren())
+			m_IsActiveInHierarchy = active;
+			if (GetTransform()->GetChildrenCount() > 0)
 			{
-				child.Get()->GetEntity()->UpdateHierarchy(active);
+				for (auto& child : GetTransform()->GetChildren())
+				{
+					child.Get()->GetEntity()->UpdateHierarchy(active);
+				}
 			}
+			UpdateComponents();
 		}
-		UpdateComponents();
 	}
 
 	void Entity::UpdateComponents()
 	{
 		if (m_IsActiveInHierarchy)
 		{
-			for (auto&& componentSlot : m_Components)
-			{
-				Component* component = componentSlot.Get();
-				if (!component->m_IsActive)
-				{
-					component->m_IsActive = true;
-					component->OnEnable();
-				}
-			}
+			EnableComponents();
 		}
 		else
 		{
-			for (auto&& componentSlot : m_Components)
+			DisableComponents();
+		}
+	}
+
+	void Entity::EnableComponents()
+	{
+		for (auto&& componentSlot : m_Components)
+		{
+			Component* component = componentSlot.Get();
+			if (!component->m_IsActive)
 			{
-				Component* component = componentSlot.Get();
-				if (component->m_IsActive)
-				{
-					component->m_IsActive = false;
-					component->OnDisable();
-				}
+				AddComponentToScene(component);
+				component->m_IsActive = true;
+				component->OnEnable();
+			}
+		}
+	}
+
+	void Entity::DisableComponents()
+	{
+		for (auto&& componentSlot : m_Components)
+		{
+			Component* component = componentSlot.Get();
+			if (component->m_IsActive)
+			{
+				RemoveComponentFromScene(component);
+				component->m_IsActive = false;
+				component->OnDisable();
 			}
 		}
 	}

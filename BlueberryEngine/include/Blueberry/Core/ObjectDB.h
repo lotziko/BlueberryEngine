@@ -59,6 +59,7 @@ namespace Blueberry
 		static Object* GetObject(const ObjectId& id);
 		static void GetObjects(const size_t& type, List<Object*>& result, SearchObjectType searchType = SearchObjectType::Any);
 
+		static void AllocateIdToFileId(const ObjectId& id, const FileId& fileId);
 		static void AllocateIdToFileId(Object* object, const FileId& fileId);
 		static void AllocateIdToGuid(const ObjectId& id, const Guid& guid, const FileId& fileId);
 		static void AllocateIdToGuid(Object* object, const Guid& guid, const FileId& fileId);

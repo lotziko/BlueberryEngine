@@ -46,6 +46,5 @@ namespace Blueberry
 	protected:
 		std::shared_ptr<SerializedObject> m_SerializedObject;
 		Object* m_Object;
-		bool m_HasPadding = true;
 	};
 }

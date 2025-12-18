@@ -122,6 +122,10 @@ namespace Blueberry
 				m_Children[i]->GatherChildrenBounds(result);
 			}
 		}
+		else
+		{
+			result.push_back(m_Bounds);
+		}
 	}
 
 	std::shared_ptr<OctreeNode> OctreeNode::ShrinkIfPossible(const float& minSize)

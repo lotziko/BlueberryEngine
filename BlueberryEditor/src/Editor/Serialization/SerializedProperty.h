@@ -30,6 +30,9 @@ namespace Blueberry
 		void MoveListElement(const size_t& fromIndex, const size_t& toIndex);
 		void ClearList();
 
+		const bool IsOverriden();
+		void ClearOverride();
+
 		const bool& GetBool();
 		void SetBool(const bool& value);
 

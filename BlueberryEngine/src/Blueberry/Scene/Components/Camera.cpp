@@ -15,16 +15,7 @@ namespace Blueberry
 		DEFINE_FIELD(Camera, m_AspectRatio, BindingType::Float, FieldOptions().SetUpdateCallback(MethodBind::Create(&Camera::InvalidateProjection)))
 		DEFINE_FIELD(Camera, m_ZNearPlane, BindingType::Float, FieldOptions().SetUpdateCallback(MethodBind::Create(&Camera::InvalidateProjection)))
 		DEFINE_FIELD(Camera, m_ZFarPlane, BindingType::Float, FieldOptions().SetUpdateCallback(MethodBind::Create(&Camera::InvalidateProjection)))
-	}
-
-	void Camera::OnEnable()
-	{
-		AddToSceneComponents(Camera::Type);
-	}
-
-	void Camera::OnDisable()
-	{
-		RemoveFromSceneComponents(Camera::Type);
+		DEFINE_ITERATOR(Camera)
 	}
 
 	const Matrix& Camera::GetProjectionMatrix()

@@ -12,9 +12,6 @@ namespace Blueberry
 		ProbeVolume() = default;
 		virtual ~ProbeVolume() = default;
 
-		virtual void OnEnable() final;
-		virtual void OnDisable() final;
-
 		const AABB& GetBounds();
 		const Vector3Int& GetSize();
 

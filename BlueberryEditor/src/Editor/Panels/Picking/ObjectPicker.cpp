@@ -24,16 +24,16 @@ namespace Blueberry
 	void ObjectPicker::Open(Object** object, const size_t& type)
 	{
 		s_IdPtr = object;
-		s_Label = Blueberry::ClassDB::GetInfo(type).name.c_str();
+		s_Label = Blueberry::ClassDB::GetInfo(type)->name.c_str();
 		s_SearchName.clear();
 		s_AllObjects.clear();
 		s_Objects.clear();
-		s_AllObjects.emplace_back(nullptr);
+		s_AllObjects.push_back(nullptr);
 		ObjectDB::GetObjects(type, s_AllObjects, SearchObjectType::WithGuid);
 		Object* objectValue = *object;
 		for (auto it = s_AllObjects.begin(); it < s_AllObjects.end(); ++it)
 		{
-			s_Objects.emplace_back(*it);
+			s_Objects.push_back(*it);
 		}
 		for (auto it = s_AllObjects.begin(); it < s_AllObjects.end(); ++it)
 		{
@@ -71,12 +71,12 @@ namespace Blueberry
 			{
 				String name = String(s_SearchName);
 				s_Objects.clear();
-				s_Objects.emplace_back(s_AllObjects[0]);
+				s_Objects.push_back(s_AllObjects[0]);
 				for (auto it = s_AllObjects.begin() + 1; it < s_AllObjects.end(); ++it)
 				{
 					if (StringHelper::HasSubstring((*it)->GetName(), name))
 					{
-						s_Objects.emplace_back(*it);
+						s_Objects.push_back(*it);
 					}
 				}
 			}
@@ -190,7 +190,7 @@ namespace Blueberry
 		{
 			icon = IconDB::GetAssetIcon(object);
 		}
-		ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(icon->GetHandle()), ImVec2(screenPos.x + style.ProjectCellIconPadding, screenPos.y), ImVec2(screenPos.x + style.ProjectCellSize - style.ProjectCellIconPadding, screenPos.y + style.ProjectCellSize - style.ProjectCellIconPadding * 2), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(icon->GetHandle()), ImVec2(screenPos.x + style.ProjectCellIconPadding, screenPos.y), ImVec2(screenPos.x + style.ProjectCellSize - style.ProjectCellIconPadding, screenPos.y + style.ProjectCellSize - style.ProjectCellIconPadding * 2));
 
 		ImGui::PopStyleVar();
 		ImGui::PopID();

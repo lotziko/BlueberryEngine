@@ -30,7 +30,7 @@ namespace Blueberry
 				return;
 			}
 		}
-		s_ActiveWindows.emplace_back(std::move(this));
+		s_ActiveWindows.push_back(this);
 	}
 
 	void EditorWindow::ShowPopup()
@@ -41,7 +41,7 @@ namespace Blueberry
 
 	void EditorWindow::Close()
 	{
-		s_ToRemoveWindows.emplace_back(std::move(this));
+		s_ToRemoveWindows.push_back(this);
 	}
 
 	void EditorWindow::DrawUI()
@@ -85,7 +85,7 @@ namespace Blueberry
 
 		if (std::filesystem::exists(layoutPath))
 		{
-			YamlSerializer serializer;
+			YamlSerializer serializer = {};
 			serializer.Deserialize(layoutPath.string().data());
 			for (auto& pair : serializer.GetDeserializedObjects())
 			{
@@ -126,7 +126,7 @@ namespace Blueberry
 		if (s_ActiveWindows.size() > 0)
 		{
 			ImGui::PrepareWindowData();
-			YamlSerializer serializer;
+			YamlSerializer serializer = {};
 			for (auto& activeWindow : s_ActiveWindows)
 			{
 				const char* title = activeWindow->m_Title.c_str();
@@ -200,7 +200,13 @@ namespace Blueberry
 				return window.Get();
 			}
 		}
-		EditorWindow* window = (EditorWindow*)ClassDB::GetInfo(type).createInstance();
+		const ClassInfo* info = ClassDB::GetInfo(type);
+		if (info == nullptr)
+		{
+			BB_ERROR("Class not exists.");
+			return nullptr;
+		}
+		EditorWindow* window = (EditorWindow*)info->createInstance();
 		return window;
 	}
 

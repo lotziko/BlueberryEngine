@@ -2,7 +2,6 @@
 
 #include "Blueberry\Core\ObjectPtr.h"
 #include "Blueberry\Core\ClassDB.h"
-#include "Blueberry\Core\Variant.h"
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Misc\ImGuiHelper.h"
 #include "Editor\Panels\Scene\SceneArea.h"
@@ -35,21 +34,7 @@ namespace Blueberry
 
 	void ObjectEditor::DrawInspector()
 	{
-		if (m_HasPadding)
-		{
-			ImGui::Dummy(ImVec2(3, 0));
-			ImGui::SameLine();
-			ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(3, 6));
-			ImGui::BeginChild("Inspector", ImVec2(0, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
-			ImGui::PopStyleColor();
-		}
 		OnDrawInspector();
-		if (m_HasPadding)
-		{
-			ImGui::EndChild();
-			ImGui::PopStyleVar();
-		}
 	}
 
 	void ObjectEditor::DrawSceneSelected()
@@ -102,10 +87,10 @@ namespace Blueberry
 			return it->second;
 		}
 		size_t type = object->GetType();
-		const ObjectEditorInfo& info = ObjectEditorDB::GetInfo(type);
-		if (info.createInstance != nullptr)
+		const ObjectEditorInfo* info = ObjectEditorDB::GetInfo(type);
+		if (info != nullptr)
 		{
-			ObjectEditor* editor = info.createInstance();
+			ObjectEditor* editor = info->createInstance();
 			editor->OnPrepareTargets(List<Object*> { object });
 			editor->m_SerializedObject = std::make_shared<SerializedObject>(object);
 			editor->OnEnable();
@@ -128,10 +113,10 @@ namespace Blueberry
 			return it->second;
 		}
 		size_t type = objects[0]->GetType();
-		const ObjectEditorInfo& info = ObjectEditorDB::GetInfo(type);
-		if (info.createInstance != nullptr)
+		const ObjectEditorInfo* info = ObjectEditorDB::GetInfo(type);
+		if (info != nullptr)
 		{
-			ObjectEditor* editor = info.createInstance();
+			ObjectEditor* editor = info->createInstance();
 			editor->OnPrepareTargets(objects);
 			editor->m_SerializedObject = std::make_shared<SerializedObject>(objects);
 			editor->OnEnable();
@@ -149,10 +134,10 @@ namespace Blueberry
 		{
 			return it->second;
 		}
-		const ObjectEditorInfo& info = ObjectEditorDB::GetInfo(type);
-		if (info.createInstance != nullptr)
+		const ObjectEditorInfo* info = ObjectEditorDB::GetInfo(type);
+		if (info != nullptr)
 		{
-			ObjectEditor* editor = info.createInstance();
+			ObjectEditor* editor = info->createInstance();
 			s_DefaultEditors.insert_or_assign(type, editor);
 			return editor;
 		}

@@ -29,12 +29,12 @@ namespace Blueberry
 				ComPtr<ID3DBlob> computeBlob;
 				if (!Compile(compilationData.shaderCode, compilationData.computeEntryPoints[i].c_str(), "cs_5_0", computeBlob))
 				{
-					m_Blobs.emplace_back(nullptr);
-					m_Shaders.emplace_back(nullptr);
+					m_Blobs.push_back(nullptr);
+					m_Shaders.push_back(nullptr);
 					continue;
 				}
-				m_Blobs.emplace_back(computeBlob);
-				m_Shaders.emplace_back(computeBlob.Get());
+				m_Blobs.push_back(computeBlob);
+				m_Shaders.push_back(computeBlob.Get());
 			}
 			m_ComputeShaderData.SetKernels(compilationData.dataKernels);
 		}
@@ -93,8 +93,8 @@ namespace Blueberry
 					BB_ERROR("Failed to load shader: " + String(stringPath.begin(), stringPath.end()));
 					return false;
 				}
-				m_Blobs.emplace_back(blob);
-				m_Shaders.emplace_back(blob.Get());
+				m_Blobs.push_back(blob);
+				m_Shaders.push_back(blob.Get());
 			}
 			return true;
 		}

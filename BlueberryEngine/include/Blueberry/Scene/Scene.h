@@ -35,6 +35,7 @@ namespace Blueberry
 
 		Entity* CreateEntity(const String& name);
 		void AddEntity(Entity* entity);
+		void RemoveEntity(Entity* entity);
 		void DestroyEntity(Entity* entity);
 
 		const Dictionary<ObjectId, ObjectPtr<Entity>>& GetEntities();
@@ -52,7 +53,7 @@ namespace Blueberry
 		Dictionary<ObjectId, ObjectPtr<Entity>> m_Entities;
 		List<ObjectPtr<Entity>> m_RootEntities;
 		List<Component*> m_CreatedComponents;
-		// Stores only components added using AddToSceneComponents()
+		// Stores only components with iterators
 		ComponentManager m_ComponentManager;
 		RendererTree m_RendererTree;
 

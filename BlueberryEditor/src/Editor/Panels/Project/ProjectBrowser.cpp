@@ -307,25 +307,30 @@ namespace Blueberry
 		ImGui::PushID(object->GetObjectId());
 		ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 1.0f));
 		
-		if (ImGui::Selectable(object->GetName().c_str(), Selection::IsActiveObject(object), 0, ImVec2(style.ProjectCellSize, style.ProjectCellSize)))
-		{
-			if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
-			{
-				Selection::AddActiveObject(object);
-			}
-			else
-			{
-				Selection::SetActiveObject(object);
-			}
-			asset.importer->ImportDataIfNeeded();
-		}
+		ImGui::Selectable(object->GetName().c_str(), Selection::IsActiveObject(object), 0, ImVec2(style.ProjectCellSize, style.ProjectCellSize));
 
-		if (ImGui::IsItemHovered())
+		if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
 		{
 			if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 			{
 				OpenAsset(asset);
 			}
+			else
+			{
+				if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
+				{
+					Selection::AddActiveObject(object);
+				}
+				else
+				{
+					Selection::SetActiveObject(object);
+				}
+				asset.importer->ImportDataIfNeeded();
+			}
+		}
+		
+		if (ImGui::IsItemHovered())
+		{
 			anyHovered = true;
 		}
 
@@ -370,9 +375,11 @@ namespace Blueberry
 			{
 				EditorSceneManager::Load(stringPath);
 			}
-			else
+			else if (filePath.extension() == ".prefab")
 			{
-				// TODO
+				Entity* root = static_cast<Entity*>(ObjectDB::GetObjectFromGuid(asset.importer->GetGuid(), asset.importer->GetMainObject()));
+				EditorSceneManager::OpenPrefab(root);
+				Selection::SetActiveObject(root);
 			}
 		}
 	}
@@ -403,10 +410,10 @@ namespace Blueberry
 				info.path = path;
 				info.pathString = path.string();
 				info.importer = AssetDB::GetImporter(relativePath.string().data());
-				info.objects.emplace_back(nullptr);
+				info.objects.push_back(nullptr);
 				info.positions.resize(1);
 				info.isDirectory = true;
-				m_CurrentDirectoryAssets.emplace_back(info);
+				m_CurrentDirectoryAssets.push_back(info);
 			}
 		}
 		for (auto& it : std::filesystem::directory_iterator(m_CurrentDirectory))
@@ -426,23 +433,23 @@ namespace Blueberry
 					info.importer = importer;
 					if (mainObject != nullptr)
 					{
-						info.objects.emplace_back(mainObject);
+						info.objects.push_back(mainObject);
 					}
 					for (auto& pair : importer->GetAssetObjects())
 					{
 						Object* object = ObjectDB::GetObject(pair.second);
 						if (object != nullptr && object != mainObject)
 						{
-							info.objects.emplace_back(object);
+							info.objects.push_back(object);
 						}
 					}
 					if (info.objects.size() == 0)
 					{
-						info.objects.emplace_back(nullptr);
+						info.objects.push_back(nullptr);
 					}
 					info.positions.resize(std::max(1ull, info.objects.size()));
 					info.isDirectory = false;
-					m_CurrentDirectoryAssets.emplace_back(info);
+					m_CurrentDirectoryAssets.push_back(info);
 				}
 			}
 		}

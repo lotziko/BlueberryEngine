@@ -13,6 +13,9 @@ namespace Blueberry
 
 		Bool,
 		Int,
+		Uint,
+		Long,
+		Ulong,
 		Float,
 		String,
 		ByteData,
@@ -25,8 +28,11 @@ namespace Blueberry
 		Enum,
 
 		Vector2,
+		Vector2Int,
 		Vector3,
+		Vector3Int,
 		Vector4,
+		Vector4Int,
 		Quaternion,
 		Color,
 		AABB,
@@ -44,7 +50,9 @@ namespace Blueberry
 
 		// Not derived from Object
 		Data,
-		DataList
+		DataList,
+
+		Variant
 	};
 
 	inline bool IsList(const BindingType& type)
@@ -81,6 +89,12 @@ namespace Blueberry
 		BindingType type;
 		FieldOptions options;
 		bool isList;
+
+		template<class Type>
+		Type* Get(void* target) const;
+
+		template<class Type>
+		void Set(void* target, Type value) const;
 	};
 
 	struct ClassInfo
@@ -93,12 +107,25 @@ namespace Blueberry
 		size_t offset;
 		List<FieldInfo> fields;
 		Dictionary<String, FieldInfo> fieldsMap;
+		List<size_t> iterators;
+
+		const FieldInfo* GetField(const String& name) const
+		{
+			for (auto& field : fields)
+			{
+				if (field.name == name)
+				{
+					return &field;
+				}
+			}
+			return nullptr;
+		}
 	};
 
 	class BB_API ClassDB
 	{
 	public:
-		static const ClassInfo& GetInfo(const size_t&);
+		static const ClassInfo* GetInfo(const size_t&);
 		static Dictionary<size_t, ClassInfo>& GetInfos();
 		static bool IsParent(const size_t& id, const size_t& parentId);
 
@@ -112,6 +139,7 @@ namespace Blueberry
 		static void Bind();
 
 		static void DefineField(FieldInfo info);
+		static void DefineIterator(const size_t& type);
 		static void DefinePreferBinary(); // TODO class attributes
 
 		template <class ObjectType, class BaseObjectType>
@@ -148,6 +176,7 @@ namespace Blueberry
 
 	#define DEFINE_BASE_FIELDS( className, baseClassName ) ClassDB::DefineBaseFields<className, baseClassName>();
 	#define DEFINE_FIELD( className, fieldName, fieldType, fieldOptions ) ClassDB::DefineField({ TO_STRING(fieldName), offsetof(className, className::fieldName), fieldType, fieldOptions, IsList(fieldType) });
+	#define DEFINE_ITERATOR( className ) ClassDB::DefineIterator(className::Type);
 	#define DEFINE_PREFER_BINARY() ClassDB::DefinePreferBinary();
 
 	template<class ObjectType>
@@ -217,7 +246,7 @@ namespace Blueberry
 		ClassInfo info = s_CurrentClassInfo;
 		for (FieldInfo fieldInfo : s_CurrentFieldInfos)
 		{
-			info.fields.emplace_back(fieldInfo);
+			info.fields.push_back(fieldInfo);
 			info.fieldsMap.insert_or_assign(fieldInfo.name, fieldInfo);
 		}
 		s_Classes.insert_or_assign(id, std::move(info));
@@ -231,5 +260,17 @@ namespace Blueberry
 		s_CurrentOffset += offset;
 		BaseObjectType::DefineFields();
 		s_CurrentOffset -= offset;
+	}
+
+	template<class Type>
+	inline Type* FieldInfo::Get(void* target) const
+	{
+		return reinterpret_cast<Type*>(static_cast<char*>(target) + offset);
+	}
+
+	template<class Type>
+	inline void FieldInfo::Set(void* target, Type value) const
+	{
+		*reinterpret_cast<Type*>(static_cast<char*>(target) + offset) = value;
 	}
 }

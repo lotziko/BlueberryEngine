@@ -29,9 +29,9 @@ namespace Blueberry
 		template<class ComponentType>
 		ComponentType* GetComponent();
 
-		Component* GetComponent(const uint32_t& index);
+		Component* GetComponent(const size_t& index);
 
-		const uint32_t GetComponentCount();
+		const size_t GetComponentCount();
 
 		template<class ComponentType>
 		bool HasComponent();
@@ -48,11 +48,13 @@ namespace Blueberry
 
 	private:
 		void AddToCreatedComponents(Component* component);
-		void AddComponentToScene(Component* component, const size_t& type);
-		void RemoveComponentFromScene(Component* component, const size_t& type);
+		void AddComponentToScene(Component* component);
+		void RemoveComponentFromScene(Component* component);
 		void UpdateHierarchy();
 		void UpdateHierarchy(const bool& active);
 		void UpdateComponents();
+		void EnableComponents();
+		void DisableComponents();
 
 	private:
 		List<ObjectPtr<Component>> m_Components;
@@ -89,12 +91,12 @@ namespace Blueberry
 		AddToCreatedComponents(componentToAdd);
 		if (index >= m_Components.size())
 		{
-			m_Components.emplace_back(componentToAdd);
+			m_Components.push_back(componentToAdd);
 		}
 		componentToAdd->OnCreate();
 		if (IsActiveInHierarchy())
 		{
-			// TODO handle prefabs
+			AddComponentToScene(componentToAdd);
 			componentToAdd->OnEnable();
 		}
 		return componentToAdd;
@@ -120,11 +122,12 @@ namespace Blueberry
 		AddToCreatedComponents(component);
 		if (index >= m_Components.size())
 		{
-			m_Components.emplace_back(component);
+			m_Components.push_back(component);
 		}
 		component->OnCreate();
 		if (IsActiveInHierarchy())
 		{
+			AddComponentToScene(component);
 			component->OnEnable();
 		}
 	}
@@ -160,7 +163,9 @@ namespace Blueberry
 	template<class ComponentType>
 	inline void Entity::RemoveComponent(ComponentType* component)
 	{
-		//RemoveComponentFromScene(component);
+		RemoveComponentFromScene(component);
+		component->OnDisable();
+		component->OnDestroy();
 		auto& index = std::find(m_Components.begin(), m_Components.end(), component);
 		m_Components.erase(index);
 		Object::Destroy(component);

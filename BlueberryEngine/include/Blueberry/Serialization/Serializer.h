@@ -14,29 +14,29 @@ namespace Blueberry
 		struct Context
 		{
 			void* ptr;
-			const ClassInfo& info;
+			const ClassInfo* info;
 
 			static Context Create(Object* object, const size_t& type)
 			{
-				const ClassInfo& info = ClassDB::GetInfo(type);
-				return { object - info.offset, info };
+				const ClassInfo* info = ClassDB::GetInfo(type);
+				return { object - info->offset, info };
 			}
 
 			static Context CreateNoOffset(Data* data, const size_t& type)
 			{
-				const ClassInfo& info = ClassDB::GetInfo(type);
+				const ClassInfo* info = ClassDB::GetInfo(type);
 				return { data, info };
 			}
 
 			static Context CreateNoOffset(void* data, const size_t& type)
 			{
-				const ClassInfo& info = ClassDB::GetInfo(type);
+				const ClassInfo* info = ClassDB::GetInfo(type);
 				return { data, info };
 			}
 
-			static Context Create(Data* data, const ClassInfo& info)
+			static Context Create(Data* data, const ClassInfo* info)
 			{
-				return { data - info.offset, info };
+				return { data - info->offset, info };
 			}
 		};
 

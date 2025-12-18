@@ -7,16 +7,7 @@ namespace Blueberry
 	OBJECT_DEFINITION(ProbeVolume, Component)
 	{
 		DEFINE_BASE_FIELDS(ProbeVolume, Component)
-	}
-
-	void ProbeVolume::OnEnable()
-	{
-		AddToSceneComponents(ProbeVolume::Type);
-	}
-
-	void ProbeVolume::OnDisable()
-	{
-		RemoveFromSceneComponents(ProbeVolume::Type);
+		DEFINE_ITERATOR(ProbeVolume)
 	}
 
 	const AABB& ProbeVolume::GetBounds()

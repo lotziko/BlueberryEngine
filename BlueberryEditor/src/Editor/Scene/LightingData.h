@@ -72,6 +72,8 @@ namespace Blueberry
 		void ApplyLightmap();
 		void ApplyReflections();
 
+		void Clear();
+
 	private:
 		ObjectPtr<Texture2D> m_Lightmap;
 		List<MeshRendererData> m_MeshRenderers;

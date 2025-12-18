@@ -202,7 +202,7 @@ namespace Blueberry
 
 				if (object != nullptr && object->IsClassType(Entity::Type) && ImGui::AcceptDragDropPayload("OBJECT_ID"))
 				{
-					if (EditorSceneManager::HasScene())
+					if (EditorSceneManager::HasScene() || EditorSceneManager::HasPrefabScene())
 					{
 						if (Blueberry::ObjectDB::HasGuid(object))
 						{
@@ -223,6 +223,24 @@ namespace Blueberry
 			if (ImGui::IsMouseClicked(0) && mousePos.x >= pos.x && mousePos.y >= pos.y && mousePos.x <= pos.x + size.x && mousePos.y <= pos.y + size.y)
 			{
 				Object* pickedObject = m_ObjectPicker->Pick(EditorSceneManager::GetScene(), m_Camera, static_cast<int>(mousePos.x - pos.x), static_cast<int>(mousePos.y - pos.y));
+				if (PrefabManager::IsPartOfPrefabInstance(pickedObject))
+				{
+					// Avoid locking on prefab root
+					bool isPrefabSelected = false;
+					PrefabInstance* instance = PrefabManager::GetInstance(pickedObject);
+					for (Object* object : Selection::GetActiveObjects())
+					{
+						if (PrefabManager::GetInstance(object) == instance)
+						{
+							isPrefabSelected = true;
+							break;
+						}
+					}
+					if (!isPrefabSelected)
+					{
+						pickedObject = instance->GetEntity();
+					}
+				}
 				if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_LeftShift))
 				{
 					Selection::AddActiveObject(pickedObject);
@@ -418,6 +436,13 @@ namespace Blueberry
 			if (ImGui::Button("Save"))
 			{
 				EditorSceneManager::Save();
+			}
+			ImGui::SameLine();
+
+			if (EditorSceneManager::HasPrefabScene() && ImGui::Button("Close"))
+			{
+				Selection::SetActiveObject(nullptr);
+				EditorSceneManager::ClosePrefab(false);
 			}
 			ImGui::SameLine();
 		}

@@ -2,8 +2,7 @@
 
 #include "Blueberry\Core\Base.h"
 #include "Blueberry\Core\ObjectPtr.h"
-
-#include <variant>
+#include "Blueberry\Core\Variant.h"
 
 namespace Blueberry
 {
@@ -27,10 +26,11 @@ namespace Blueberry
 		Insert,
 		Delete,
 		Move,
-		Clear
+		Clear,
+		ClearOverride
 	};
 
-	using PropertyValue = std::variant<bool, int, float, String, Vector2, Vector3, Vector4, Quaternion, Color, ObjectPtr<Object>>;
+	using PropertyValue = Variant;
 
 	struct PropertyTreeNode
 	{
@@ -38,6 +38,7 @@ namespace Blueberry
 		size_t index;
 		bool isVisible;
 		bool isDeleted;
+		bool isOverriden;
 		BindingType bindingType;
 		const FieldInfo* fieldInfo;
 		PropertyType type;
@@ -86,7 +87,7 @@ namespace Blueberry
 		
 		std::shared_ptr<PropertyTreeNode> CreateChild(PropertyTreeNode* parent);
 
-		void FindPath(PropertyTreeNode* node, List<char*>& result, size_t& offset);
+		void FindPath(PropertyTreeNode* node, List<void*>& result, size_t& offset);
 		void ApplyModification(const PropertyModification& modification);
 
 	private:
@@ -94,6 +95,7 @@ namespace Blueberry
 		List<Object*> m_Targets = {};
 		List<PropertyModification> m_Modifications = {};
 		std::shared_ptr<PropertyTreeNode> m_Root;
+		List<bool> m_IsPrefabInstance = {};
 
 		friend class SerializedProperty;
 	};

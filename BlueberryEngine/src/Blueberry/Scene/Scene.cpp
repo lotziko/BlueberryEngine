@@ -62,12 +62,16 @@ namespace Blueberry
 
 	void Scene::AddEntity(Entity* entity)
 	{
+		if (entity == nullptr)
+		{
+			return;
+		}
 		//BB_INFO("Entity is added.")
 		entity->m_Scene = this;
 		m_Entities[entity->GetObjectId()] = entity;
 		if (entity->GetTransform()->GetParent() == nullptr)
 		{
-			m_RootEntities.emplace_back(entity);
+			m_RootEntities.push_back(entity);
 		}
 		if (entity->IsActiveInHierarchy())
 		{
@@ -80,6 +84,25 @@ namespace Blueberry
 		for (auto& child : entity->GetTransform()->GetChildren())
 		{
 			AddEntity(child.Get()->GetEntity());
+		}
+	}
+
+	void Scene::RemoveEntity(Entity* entity)
+	{
+		if (entity == nullptr)
+		{
+			return;
+		}
+		entity->m_Scene = nullptr;
+		entity->DisableComponents();
+		if (entity->GetTransform()->GetParent() == nullptr)
+		{
+			RemoveFromRoot(entity);
+		}
+		m_Entities.erase(entity->GetObjectId());
+		for (auto& child : entity->GetTransform()->GetChildren())
+		{
+			RemoveEntity(child.Get()->GetEntity());
 		}
 	}
 
@@ -117,7 +140,7 @@ namespace Blueberry
 
 	void Scene::AddToRoot(Entity* entity)
 	{
-		m_RootEntities.emplace_back(entity);
+		m_RootEntities.push_back(entity);
 	}
 
 	void Scene::RemoveFromRoot(Entity* entity)

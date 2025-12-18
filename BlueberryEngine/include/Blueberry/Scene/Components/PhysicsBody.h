@@ -28,7 +28,7 @@ namespace Blueberry
 		virtual void OnUpdate() final;
 
 	private:
-		BodyType m_BodyType;
+		BodyType m_BodyType = BodyType::Dynamic;
 
 		struct PrivateData;
 

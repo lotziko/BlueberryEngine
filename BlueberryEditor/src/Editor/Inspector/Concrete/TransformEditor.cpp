@@ -158,12 +158,11 @@ namespace Blueberry
 				}
 				
 				transformMatrix.Decompose(scale, rotation, translation);
-				if (translation != m_LocalPositionProperty.GetVector3())
+				if (!Approximately(RoundToN(translation, 4), RoundToN(m_LocalPositionProperty.GetVector3(), 4)))
 				{
 					m_LocalPositionProperty.SetVector3(translation);
 				}
-				Quaternion previousRotation = m_LocalRotationProperty.GetQuaternion();
-				if (rotation != previousRotation)
+				if (!Approximately(RoundToN(rotation, 4), RoundToN(m_LocalRotationProperty.GetQuaternion(), 4)))
 				{
 					m_LocalRotationProperty.SetQuaternion(rotation);
 
@@ -191,7 +190,7 @@ namespace Blueberry
 					}
 					m_LocalRotationEulerHintProperty.SetVector3(euler);
 				}
-				if (scale != m_LocalScaleProperty.GetVector3())
+				if (!Approximately(RoundToN(scale, 4), RoundToN(m_LocalScaleProperty.GetVector3(), 4)))
 				{
 					m_LocalScaleProperty.SetVector3(scale);
 				}

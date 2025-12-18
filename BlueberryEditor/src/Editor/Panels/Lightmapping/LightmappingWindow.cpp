@@ -50,6 +50,9 @@ namespace Blueberry
 
 		if (scene != nullptr)
 		{
+			ImGui::EditorStyle& style = ImGui::GetEditorStyle();
+			ImGui::Indent(style.InspectorIndent);
+
 			ImGui::IntEdit("Tile size", &m_TileSize);
 			ImGui::FloatEdit("Texel per unit", &m_TexelPerUnit);
 			ImGui::IntEdit("Sample per texel", &m_SamplePerTexel);
@@ -97,6 +100,7 @@ namespace Blueberry
 					ImGui::SliderFloat("Zoom", &newZoom, 1, 300);
 					ImGui::Checkbox("Draw all", &drawAll);
 
+					ImGui::Unindent(style.InspectorIndent);
 					ImGui::BeginChild("Zoom");
 
 					ImGuiWindow* window = ImGui::GetCurrentWindow();
@@ -163,6 +167,7 @@ namespace Blueberry
 						ImGui::Dummy(size);
 					}
 					ImGui::EndChild();
+					ImGui::Indent(style.InspectorIndent);
 				}
 				break;
 				case LightmappingState::Calculating:
@@ -218,6 +223,7 @@ namespace Blueberry
 				}
 				break;
 			}
+			ImGui::Unindent(style.InspectorIndent);
 		}
 	}
 }

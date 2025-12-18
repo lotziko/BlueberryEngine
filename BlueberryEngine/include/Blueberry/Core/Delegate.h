@@ -39,13 +39,13 @@ namespace Blueberry
 		template <class OwnerObject, void(OwnerObject::*methodPtr)()>
 		static void MethodStub(void* object)
 		{
-			return (static_cast<OwnerObject*>(object)->*methodPtr)();
+			(static_cast<OwnerObject*>(object)->*methodPtr)();
 		}
 
 		template <void(*methodPtr)()>
 		static void FunctionStub(void*)
 		{
-			return (methodPtr)();
+			(methodPtr)();
 		}
 
 	private:
@@ -86,13 +86,13 @@ namespace Blueberry
 		template <class OwnerObject, void(OwnerObject::*methodPtr)(Args...)>
 		static void MethodStub(void* object, Args&&... args)
 		{
-			return (static_cast<OwnerObject*>(object)->*methodPtr)(std::forward<Args>(args)...);
+			(static_cast<OwnerObject*>(object)->*methodPtr)(std::forward<Args>(args)...);
 		}
 
 		template <void(*methodPtr)(Args...)>
 		static void FunctionStub(void*, Args&&... args)
 		{
-			return (*methodPtr)(std::forward<Args>(args)...);
+			(*methodPtr)(std::forward<Args>(args)...);
 		}
 
 	private:

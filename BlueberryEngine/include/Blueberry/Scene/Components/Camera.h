@@ -20,9 +20,6 @@ namespace Blueberry
 		Camera() = default;
 		virtual ~Camera() = default;
 
-		virtual void OnEnable() final;
-		virtual void OnDisable() final;
-
 		const Matrix& GetProjectionMatrix();
 		const Matrix& GetViewMatrix();
 		const Matrix& GetViewProjectionMatrix();

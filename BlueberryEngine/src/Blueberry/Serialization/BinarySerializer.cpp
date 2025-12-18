@@ -1,7 +1,6 @@
 #include "Blueberry\Serialization\BinarySerializer.h"
 
 #include "Blueberry\Core\ClassDB.h"
-#include "Blueberry\Core\Variant.h"
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Core\ObjectPtr.h"
 #include "Blueberry\Core\Structs.h"
@@ -65,8 +64,13 @@ namespace Blueberry
 				auto it = m_FileIdToObject.find(fileId);
 				if (it == m_FileIdToObject.end())
 				{
-					ClassInfo info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
-					Object* instance = info.createInstance();
+					const ClassInfo* info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
+					if (info == nullptr)
+					{
+						BB_ERROR("Class not exists.");
+						continue;
+					}
+					Object* instance = info->createInstance();
 					AddDeserializedObject(instance, fileId);
 				}
 				else
@@ -89,14 +93,12 @@ namespace Blueberry
 
 	void BinarySerializer::SerializeNode(std::stringstream& output, Context context)
 	{
-		Variant value;
-		auto fields = context.info.fields;
-		size_t fieldCount = fields.size();
+		size_t fieldCount = context.info->fields.size();
 		output.write((char*)&fieldCount, sizeof(size_t));
 
-		for (auto& field : fields)
+		for (auto& field : context.info->fields)
 		{
-			value = Variant(context.ptr, field.offset);
+			void* ptr = context.ptr;
 
 			size_t fieldNameSize = field.name.size();
 			output.write((char*)&fieldNameSize, sizeof(size_t));
@@ -105,17 +107,17 @@ namespace Blueberry
 			switch (field.type)
 			{
 			case BindingType::Bool:
-				output.write(reinterpret_cast<char*>(value.Get<bool>()), sizeof(bool));
+				output.write(reinterpret_cast<char*>(field.Get<bool>(ptr)), sizeof(bool));
 				break;
 			case BindingType::Int:
-				output.write(reinterpret_cast<char*>(value.Get<int>()), sizeof(int));
+				output.write(reinterpret_cast<char*>(field.Get<int>(ptr)), sizeof(int));
 				break;
 			case BindingType::Float:
-				output.write(reinterpret_cast<char*>(value.Get<float>()), sizeof(float));
+				output.write(reinterpret_cast<char*>(field.Get<float>(ptr)), sizeof(float));
 				break;
 			case BindingType::String:
 			{
-				String data = *value.Get<String>();
+				String data = *field.Get<String>(ptr);
 				size_t stringSize = data.size();
 				output.write(reinterpret_cast<char*>(&stringSize), sizeof(size_t));
 				output.write(data.data(), stringSize);
@@ -123,7 +125,7 @@ namespace Blueberry
 			break;
 			case BindingType::ByteData:
 			{
-				ByteData data = *value.Get<ByteData>();
+				ByteData data = *field.Get<ByteData>(ptr);
 				size_t size = data.size();
 				output.write(reinterpret_cast<char*>(&size), sizeof(size_t));
 				output.write(reinterpret_cast<char*>(data.data()), data.size());
@@ -131,7 +133,7 @@ namespace Blueberry
 			break;
 			case BindingType::IntList:
 			{
-				List<int> data = *value.Get<List<int>>();
+				List<int> data = *field.Get<List<int>>(ptr);
 				size_t dataSize = data.size();
 				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 				output.write(reinterpret_cast<char*>(data.data()), data.size() * sizeof(int));
@@ -139,7 +141,7 @@ namespace Blueberry
 			break;
 			case BindingType::FloatList:
 			{
-				List<float> data = *value.Get<List<float>>();
+				List<float> data = *field.Get<List<float>>(ptr);
 				size_t dataSize = data.size();
 				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 				output.write(reinterpret_cast<char*>(data.data()), data.size() * sizeof(float));
@@ -147,7 +149,7 @@ namespace Blueberry
 			break;
 			case BindingType::StringList:
 			{
-				List<String> data = *value.Get<List<String>>();
+				List<String> data = *field.Get<List<String>>(ptr);
 				size_t dataSize = data.size();
 				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 				for (size_t i = 0; i < dataSize; ++i)
@@ -160,26 +162,26 @@ namespace Blueberry
 			}
 			break;
 			case BindingType::Enum:
-				output.write(reinterpret_cast<char*>(value.Get<int>()), sizeof(int));
+				output.write(reinterpret_cast<char*>(field.Get<int>(ptr)), sizeof(int));
 				break;
 			case BindingType::Vector3:
-				output.write(reinterpret_cast<char*>(&(*value.Get<Vector3>()).x), 3 * sizeof(float));
+				output.write(reinterpret_cast<char*>(&(*field.Get<Vector3>(ptr)).x), 3 * sizeof(float));
 				break;
 			case BindingType::Vector4:
-				output.write(reinterpret_cast<char*>(&(*value.Get<Vector4>()).x), 4 * sizeof(float));
+				output.write(reinterpret_cast<char*>(&(*field.Get<Vector4>(ptr)).x), 4 * sizeof(float));
 				break;
 			case BindingType::Quaternion:
-				output.write(reinterpret_cast<char*>(&(*value.Get<Quaternion>()).x), 4 * sizeof(float));
+				output.write(reinterpret_cast<char*>(&(*field.Get<Quaternion>(ptr)).x), 4 * sizeof(float));
 				break;
 			case BindingType::Color:
-				output.write(reinterpret_cast<char*>(&(*value.Get<Color>()).x), 4 * sizeof(float));
+				output.write(reinterpret_cast<char*>(&(*field.Get<Color>(ptr)).x), 4 * sizeof(float));
 				break;
 			case BindingType::AABB:
-				output.write(reinterpret_cast<char*>(&(*value.Get<AABB>()).Center), 6 * sizeof(float));
+				output.write(reinterpret_cast<char*>(&(*field.Get<AABB>(ptr)).Center), 6 * sizeof(float));
 				break;
 			case BindingType::Vector2List:
 			{
-				List<Vector2> data = *value.Get<List<Vector2>>();
+				List<Vector2> data = *field.Get<List<Vector2>>(ptr);
 				size_t dataSize = data.size();
 				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 				output.write(reinterpret_cast<char*>(data.data()), data.size() * sizeof(Vector2));
@@ -187,7 +189,7 @@ namespace Blueberry
 			break;
 			case BindingType::Vector3List:
 			{
-				List<Vector3> data = *value.Get<List<Vector3>>();
+				List<Vector3> data = *field.Get<List<Vector3>>(ptr);
 				size_t dataSize = data.size();
 				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 				output.write(reinterpret_cast<char*>(data.data()), data.size() * sizeof(Vector3));
@@ -195,18 +197,18 @@ namespace Blueberry
 			break;
 			case BindingType::Vector4List:
 			{
-				List<Vector4> data = *value.Get<List<Vector4>>();
+				List<Vector4> data = *field.Get<List<Vector4>>(ptr);
 				size_t dataSize = data.size();
 				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 				output.write(reinterpret_cast<char*>(data.data()), data.size() * sizeof(Vector4));
 			}
 			break;
 			case BindingType::Raw:
-				output.write(reinterpret_cast<char*>(value.Get()), field.options.size);
+				output.write(reinterpret_cast<char*>(field.Get<char*>(ptr)), field.options.size);
 				break;
 			case BindingType::ObjectPtr:
 			{
-				ObjectPtr<Object>* objectRefValue = value.Get<ObjectPtr<Object>>();
+				ObjectPtr<Object>* objectRefValue = field.Get<ObjectPtr<Object>>(ptr);
 				ObjectPtrData data = {};
 				if (objectRefValue->IsValid())
 				{
@@ -221,7 +223,7 @@ namespace Blueberry
 			break;
 			case BindingType::ObjectPtrList:
 			{
-				List<ObjectPtr<Object>>* arrayPointer = value.Get<List<ObjectPtr<Object>>>();
+				List<ObjectPtr<Object>>* arrayPointer = field.Get<List<ObjectPtr<Object>>>(ptr);
 				size_t dataSize = arrayPointer->size();
 				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 				if (dataSize > 0)
@@ -244,14 +246,14 @@ namespace Blueberry
 			break;
 			case BindingType::Data:
 			{
-				Data* data = value.Get<Data>();
+				Data* data = field.Get<Data>(ptr);
 				Context context = Context::CreateNoOffset(data, field.options.objectType);
 				SerializeNode(output, context);
 			}
 			break;
 			case BindingType::DataList:
 			{
-				ListBase* dataArrayPointer = value.Get<ListBase>();
+				ListBase* dataArrayPointer = field.Get<ListBase>(ptr);
 				size_t dataSize = dataArrayPointer->size_base();
 				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 				if (dataSize > 0)
@@ -274,11 +276,9 @@ namespace Blueberry
 
 	void BinarySerializer::DeserializeNode(std::ifstream& input, Context context)
 	{
-		Variant value;
 		size_t fieldCount;
 		input.read(reinterpret_cast<char*>(&fieldCount), sizeof(size_t));
 
-		auto fieldsMap = context.info.fieldsMap;
 		for (size_t i = 0; i < fieldCount; ++i)
 		{
 			size_t fieldNameSize;
@@ -286,22 +286,22 @@ namespace Blueberry
 			String fieldName(fieldNameSize, ' ');
 			input.read(fieldName.data(), fieldNameSize);
 
-			auto fieldIt = fieldsMap.find(fieldName);
-			if (fieldIt != fieldsMap.end())
+			auto fieldIt = context.info->fieldsMap.find(fieldName);
+			if (fieldIt != context.info->fieldsMap.end())
 			{
 				auto& field = fieldIt->second;
-				value = Variant(context.ptr, field.offset);
+				void* ptr = context.ptr;
 
 				switch (field.type)
 				{
 				case BindingType::Bool:
-					input.read(reinterpret_cast<char*>(value.Get<bool>()), sizeof(bool));
+					input.read(reinterpret_cast<char*>(field.Get<bool>(ptr)), sizeof(bool));
 					break;
 				case BindingType::Int:
-					input.read(reinterpret_cast<char*>(value.Get<int>()), sizeof(int));
+					input.read(reinterpret_cast<char*>(field.Get<int>(ptr)), sizeof(int));
 					break;
 				case BindingType::Float:
-					input.read(reinterpret_cast<char*>(value.Get<float>()), sizeof(float));
+					input.read(reinterpret_cast<char*>(field.Get<float>(ptr)), sizeof(float));
 					break;
 				case BindingType::String:
 				{
@@ -309,7 +309,7 @@ namespace Blueberry
 					input.read(reinterpret_cast<char*>(&stringSize), sizeof(size_t));
 					String data(stringSize, ' ');
 					input.read(data.data(), stringSize);
-					*value.Get<String>() = std::move(data);
+					*field.Get<String>(ptr) = std::move(data);
 				}
 				break;
 				case BindingType::ByteData:
@@ -319,7 +319,7 @@ namespace Blueberry
 					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 					data.resize(dataSize);
 					input.read(reinterpret_cast<char*>(data.data()), dataSize);
-					*value.Get<ByteData>() = std::move(data);
+					*field.Get<ByteData>(ptr) = std::move(data);
 				}
 				break;
 				case BindingType::IntList:
@@ -328,7 +328,7 @@ namespace Blueberry
 					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 					List<int> data(dataSize);
 					input.read(reinterpret_cast<char*>(data.data()), dataSize * sizeof(int));
-					*value.Get<List<int>>() = std::move(data);
+					*field.Get<List<int>>(ptr) = std::move(data);
 				}
 				break;
 				case BindingType::FloatList:
@@ -337,7 +337,7 @@ namespace Blueberry
 					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 					List<float> data(dataSize);
 					input.read(reinterpret_cast<char*>(data.data()), dataSize * sizeof(float));
-					*value.Get<List<float>>() = std::move(data);
+					*field.Get<List<float>>(ptr) = std::move(data);
 				}
 				break;
 				case BindingType::StringList:
@@ -353,26 +353,26 @@ namespace Blueberry
 						input.read(string.data(), stringSize);
 						data[i] = string;
 					}
-					*value.Get<List<String>>() = std::move(data);
+					*field.Get<List<String>>(ptr) = std::move(data);
 				}
 				break;
 				case BindingType::Enum:
-					input.read(reinterpret_cast<char*>(value.Get<int>()), sizeof(int));
+					input.read(reinterpret_cast<char*>(field.Get<int>(ptr)), sizeof(int));
 					break;
 				case BindingType::Vector3:
-					input.read(reinterpret_cast<char*>(&(*value.Get<Vector3>()).x), 3 * sizeof(float));
+					input.read(reinterpret_cast<char*>(field.Get<Vector3>(ptr)), 3 * sizeof(float));
 					break;
 				case BindingType::Vector4:
-					input.read(reinterpret_cast<char*>(&(*value.Get<Vector3>()).x), 4 * sizeof(float));
+					input.read(reinterpret_cast<char*>(field.Get<Vector3>(ptr)), 4 * sizeof(float));
 					break;
 				case BindingType::Quaternion:
-					input.read(reinterpret_cast<char*>(&(*value.Get<Vector3>()).x), 4 * sizeof(float));
+					input.read(reinterpret_cast<char*>(field.Get<Vector3>(ptr)), 4 * sizeof(float));
 					break;
 				case BindingType::Color:
-					input.read(reinterpret_cast<char*>(&(*value.Get<Vector3>()).x), 4 * sizeof(float));
+					input.read(reinterpret_cast<char*>(field.Get<Vector3>(ptr)), 4 * sizeof(float));
 					break;
 				case BindingType::AABB:
-					input.read(reinterpret_cast<char*>(&(*value.Get<AABB>()).Center), 6 * sizeof(float));
+					input.read(reinterpret_cast<char*>(field.Get<AABB>(ptr)), 6 * sizeof(float));
 					break;
 				case BindingType::Vector2List:
 				{
@@ -380,7 +380,7 @@ namespace Blueberry
 					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 					List<Vector2> data(dataSize);
 					input.read(reinterpret_cast<char*>(data.data()), dataSize * sizeof(Vector2));
-					*value.Get<List<Vector2>>() = std::move(data);
+					*field.Get<List<Vector2>>(ptr) = std::move(data);
 				}
 				break;
 				case BindingType::Vector3List:
@@ -389,7 +389,7 @@ namespace Blueberry
 					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 					List<Vector3> data(dataSize);
 					input.read(reinterpret_cast<char*>(data.data()), dataSize * sizeof(Vector3));
-					*value.Get<List<Vector3>>() = std::move(data);
+					*field.Get<List<Vector3>>(ptr) = std::move(data);
 				}
 				break;
 				case BindingType::Vector4List:
@@ -398,12 +398,12 @@ namespace Blueberry
 					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 					List<Vector4> data(dataSize);
 					input.read(reinterpret_cast<char*>(data.data()), dataSize * sizeof(Vector4));
-					*value.Get<List<Vector4>>() = std::move(data);
+					*field.Get<List<Vector4>>(ptr) = std::move(data);
 				}
 				break;
 				case BindingType::Raw:
 				{
-					char* data = reinterpret_cast<char*>(value.Get());
+					char* data = reinterpret_cast<char*>(field.Get<char*>(ptr));
 					input.read(data, field.options.size);
 				}
 				break;
@@ -411,25 +411,25 @@ namespace Blueberry
 				{
 					ObjectPtrData data = {};
 					input.read(reinterpret_cast<char*>(&data), sizeof(ObjectPtrData));
-					*value.Get<ObjectPtr<Object>>() = GetPtrObject(data);
+					*field.Get<ObjectPtr<Object>>(ptr) = GetPtrObject(data);
 				}
 				break;
 				case BindingType::ObjectPtrList:
 				{
 					size_t dataSize;
 					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
-					List<ObjectPtr<Object>>* refArrayPointer = value.Get<List<ObjectPtr<Object>>>();
+					List<ObjectPtr<Object>>* refArrayPointer = field.Get<List<ObjectPtr<Object>>>(ptr);
 					for (size_t i = 0; i < dataSize; ++i)
 					{
 						ObjectPtrData data = {};
 						input.read(reinterpret_cast<char*>(&data), sizeof(ObjectPtrData));
-						refArrayPointer->emplace_back(GetPtrObject(data));
+						refArrayPointer->push_back(GetPtrObject(data));
 					}
 				}
 				break;
 				case BindingType::Data:
 				{
-					void* data = value.Get();
+					void* data = field.Get<void*>(ptr);
 					Context context = Context::CreateNoOffset(data, field.options.objectType);
 					DeserializeNode(input, context);
 				}
@@ -438,7 +438,7 @@ namespace Blueberry
 				{
 					size_t dataSize;
 					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
-					ListBase* dataArrayPointer = value.Get<ListBase>();
+					ListBase* dataArrayPointer = field.Get<ListBase>(ptr);
 					for (size_t i = 0; i < dataSize; ++i)
 					{
 						void* data = dataArrayPointer->emplace_back_base();

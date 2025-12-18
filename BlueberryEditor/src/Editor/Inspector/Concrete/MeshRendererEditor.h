@@ -9,6 +9,6 @@ namespace Blueberry
 	public:
 		virtual ~MeshRendererEditor() = default;
 
-		virtual void OnDrawScene() override;
+		virtual void OnDrawSceneSelected() override;
 	};
 }
