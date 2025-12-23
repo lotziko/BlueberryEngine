@@ -6,6 +6,7 @@
 #include "Blueberry\Core\ClassDB.h"
 
 #include "Editor\Panels\Picking\ObjectPicker.h"
+#include "Editor\Panels\Project\ProjectBrowser.h"
 #include "Editor\Serialization\SerializedProperty.h"
 
 #include <imgui\imgui_internal.h>
@@ -13,10 +14,13 @@
 #include <imgui\misc\cpp\imgui_stdlib.h>
 
 ImGui::EditorContext* ImGui::GEditor = NULL;
+ImGui::ClearOverrideEvent ImGui::Events::s_ClearedOverride = {};
+
 static Blueberry::List<bool> s_ChangeStack = {};
 static bool s_MixedValue = false;
 static bool s_ShowPopup = false;
 static const bool* s_MixedValueMask = {};
+static ImVector<ImRect> s_PaddingStack;
 
 #define PROPERTY_LABEL( text )\
 ImGui::PushID(text);\
@@ -44,9 +48,20 @@ if (s_MixedValue)\
 }\
 ImGui::PopID();\
 
+Blueberry::SerializedProperty* ImGui::ClearOverrideEventArgs::GetProperty()
+{
+	return m_Property;
+}
+
+ImGui::ClearOverrideEvent& ImGui::Events::GetClearedOverride()
+{
+	return s_ClearedOverride;
+}
+
 void ImGui::CreateEditorContext()
 {
 	GEditor = static_cast<EditorContext*>(BB_MALLOC(sizeof(ImGui::EditorContext)));
+	s_PaddingStack.push_back(ImRect());
 }
 
 ImGui::EditorStyle& ImGui::GetEditorStyle()
@@ -70,7 +85,7 @@ ImVec2 GetPropertyHeight(Blueberry::SerializedProperty* property)
 	{
 		return ImVec2(0, 0);
 	}
-	return ImVec2(0, property->GetListSize() * (ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f + ImGui::GetStyle().ItemSpacing.y) + 6);
+	return ImVec2(ImGui::GetContentRegionAvail().x, property->GetListSize() * (ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f + ImGui::GetStyle().ItemSpacing.y) + 6);
 }
 
 bool ImGui::Property(Blueberry::SerializedProperty* property, const char* label)
@@ -78,12 +93,11 @@ bool ImGui::Property(Blueberry::SerializedProperty* property, const char* label)
 	ImGui::PushID(property->GetId());
 	if (property->IsOverriden())
 	{
-		ImVec2 screenPos = ImGui::GetCursorScreenPos();
+		ImVec2 screenPos = ImGui::GetCursorScreenPos() - ImVec2(s_PaddingStack.back().Min.x, 0);
 		ImVec2 min = screenPos;
 		ImVec2 max = screenPos + ImVec2(4, ImGui::GetTextLineHeightWithSpacing());
 		ImGui::GetWindowDrawList()->AddRectFilled(min, max, ImGui::GetColorU32(ImGuiCol_SeparatorActive));
 	}
-	ImGui::Indent(GEditor->Style.InspectorIndent);
 	s_MixedValue = property->IsMixedValue();
 	s_MixedValueMask = property->GetMixedMask();
 	bool result = false;
@@ -205,17 +219,17 @@ bool ImGui::Property(Blueberry::SerializedProperty* property, const char* label)
 	case Blueberry::BindingType::Vector3List:
 	case Blueberry::BindingType::Vector4List:
 	case Blueberry::BindingType::ObjectPtrList:
-	case Blueberry::BindingType::DataList:
 	{
 		ImGui::Text(label);
 		ImGui::BeginChild("##list", GetPropertyHeight(property), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
-		ImGui::Dummy(ImVec2(0, 1));
+		ImGui::BeginPaddedArea(ImVec2(10, 5), ImVec2(4, 1));
 		Blueberry::SerializedProperty listProperty = *property;
 		for (size_t i = 0; i < listProperty.GetListSize(); ++i)
 		{
 			ImGui::Property(&listProperty.GetListElement(i));
 			property->Next(false);
 		}
+		ImGui::EndPaddedArea();
 		ImGui::EndChild();
 		if (ImGui::Button("+"))
 		{
@@ -229,7 +243,8 @@ bool ImGui::Property(Blueberry::SerializedProperty* property, const char* label)
 			TriggerChange();
 		}
 	}
-	break;
+	break; 
+	case Blueberry::BindingType::DataList:
 	default:
 		ImGui::Text(label);
 		break;
@@ -238,6 +253,7 @@ bool ImGui::Property(Blueberry::SerializedProperty* property, const char* label)
 	if (s_ShowPopup)
 	{
 		ImGui::OpenPopup(popupId);
+		// gather items
 		s_ShowPopup = false;
 	}
 	if (ImGui::BeginPopup(popupId))
@@ -248,6 +264,12 @@ bool ImGui::Property(Blueberry::SerializedProperty* property, const char* label)
 			if (ImGui::MenuItem("Clear override"))
 			{
 				property->ClearOverride();
+				auto& event = ImGui::Events::GetClearedOverride();
+				if (event.HasCallbacks())
+				{
+					ClearOverrideEventArgs args(property);
+					event.Invoke(args);
+				}
 				TriggerChange();
 			}
 			hasAnyItem = true;
@@ -259,7 +281,6 @@ bool ImGui::Property(Blueberry::SerializedProperty* property, const char* label)
 		ImGui::EndPopup();
 	}
 	s_MixedValue = false;
-	ImGui::Unindent(GEditor->Style.InspectorIndent);
 	ImGui::PopID();
 	return result;
 }
@@ -304,6 +325,22 @@ bool ImGui::BeginPopup(ImGuiID id, ImGuiWindowFlags flags)
 	}
 	flags |= ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings;
 	return BeginPopupEx(id, flags);
+}
+
+void ImGui::BeginPaddedArea(ImVec2 min, ImVec2 max)
+{
+	ImGui::SetCursorPos(ImGui::GetCursorPos() + min);
+	s_PaddingStack.push_back(ImRect(min, max));
+	ImGui::GetCurrentWindow()->ContentRegionRect.Max -= ImVec2(max.x, 0);
+	ImGui::BeginGroup();
+}
+
+void ImGui::EndPaddedArea()
+{
+	ImGui::EndGroup();
+	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + s_PaddingStack.back().Max.y);
+	ImGui::GetCurrentWindow()->ContentRegionRect.Max += ImVec2(s_PaddingStack.back().Max.x, 0);
+	s_PaddingStack.pop_back();
 }
 
 bool ImGui::DragVector2(const char* label, Blueberry::Vector2* v)
@@ -383,13 +420,18 @@ bool ImGui::DragVectorN(const char* label, ImGuiDataType dataType, int component
 	if (window->SkipItems)
 		return false;
 
+	ImGuiContext& g = *GImGui;
 	bool result = false;
 	ImGui::BeginGroup();
-	ImGui::PushMultiItemsWidths(components, ImGui::CalcItemWidth());
+	ImGui::PushID(label);
+	ImGui::PushMultiItemsWidths(components, ImGui::CalcItemWidth());// - s_PaddingStack.back().Max.x);
 	size_t typeSize = ImGui::DataTypeGetInfo(dataType)->Size;
 	for (int i = 0; i < components; i++)
 	{
-		if (i > 0) ImGui::SameLine();
+		if (i > 0)
+		{
+			ImGui::SameLine(0, g.Style.ItemInnerSpacing.x);
+		}
 		ImGui::PushID(i);
 		ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, s_MixedValueMask[i]);
 		if (ImGui::DragScalar("", dataType, data, 0.1f, 0, 0, "%.3f"))
@@ -399,7 +441,9 @@ bool ImGui::DragVectorN(const char* label, ImGuiDataType dataType, int component
 		data = (void*)((char*)data + typeSize);
 		ImGui::PopItemFlag();
 		ImGui::PopID();
+		ImGui::PopItemWidth();
 	}
+	ImGui::PopID();
 	ImGui::EndGroup();
 	return result;
 }
@@ -582,10 +626,15 @@ bool ImGui::ObjectEdit(const char* label, Blueberry::Object** v, const size_t& t
 
 	bool result = false;
 	Blueberry::Object* vObj = *v;
-	if (ImGui::Button((vObj != nullptr && Blueberry::ObjectDB::IsValid(vObj)) ? vObj->GetName().c_str() : "None"))
+	ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32(ImGuiCol_FrameBg));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetColorU32(ImGuiCol_FrameBgHovered));
+	ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
+	if (ImGui::Button((vObj != nullptr && Blueberry::ObjectDB::IsValid(vObj)) ? vObj->GetName().c_str() : "None", ImVec2(ImGui::CalcItemWidth(), 0)))
 	{
 		Blueberry::ObjectPicker::Open(v, type);
 	}
+	ImGui::PopStyleVar();
+	ImGui::PopStyleColor(2);
 	if (Blueberry::ObjectPicker::GetResult(v))
 	{
 		vObj = *v;
@@ -594,6 +643,19 @@ bool ImGui::ObjectEdit(const char* label, Blueberry::Object** v, const size_t& t
 			Blueberry::AssetLoader::Load(Blueberry::ObjectDB::GetGuidFromObject(vObj));
 		}
 		result = true;
+	}
+	
+	if (ImGui::BeginPopupContextItem())
+	{
+		if (ImGui::MenuItem("Show in project"))
+		{
+			Blueberry::ProjectBrowser::ShowObject(vObj);
+		}
+		if (!Blueberry::ObjectDB::HasGuid(vObj))
+		{
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
 	}
 
 	if (ImGui::BeginDragDropTarget())

@@ -1,5 +1,7 @@
 #include "PathHelper.h"
 
+#include <cstdlib>
+
 namespace Blueberry
 {
 	long long PathHelper::GetLastWriteTime(const std::filesystem::path& path)

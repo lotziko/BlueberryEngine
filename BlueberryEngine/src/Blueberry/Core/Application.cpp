@@ -1,4 +1,4 @@
-#include "Blueberry\Core\Engine.h"
+#include "Blueberry\Core\Application.h"
 
 #include "..\Core\LayerStack.h"
 #include "Blueberry\Core\Window.h"
@@ -18,7 +18,7 @@
 
 namespace Blueberry
 {
-	bool Engine::Initialize(const WindowProperties& properties)
+	bool Application::Initialize(const WindowProperties& properties)
 	{
 		m_Window = Window::Create(properties);
 		m_LayerStack = new LayerStack();
@@ -26,7 +26,7 @@ namespace Blueberry
 
 		ObjectDB::Initialize();
 
-		if (!GfxDevice::Initialize(properties.Width, properties.Height, m_Window->GetHandle()))
+		if (!GfxDevice::Initialize(properties.width, properties.height, m_Window->GetHandle()))
 		{
 			return false;
 		}
@@ -47,7 +47,7 @@ namespace Blueberry
 		return true;
 	}
 
-	void Engine::Shutdown()
+	void Application::Shutdown()
 	{
 		Renderer2D::Shutdown();
 		DefaultRenderer::Shutdown();
@@ -59,7 +59,7 @@ namespace Blueberry
 		GfxDevice::Shutdown();
 	}
 
-	void Engine::Run()
+	void Application::Run()
 	{
 		// Based on https://stackoverflow.com/questions/63429337/limit-fps-in-loop-c
 		using framerate = std::chrono::duration<int, std::ratio<1, 60>>;
@@ -94,18 +94,29 @@ namespace Blueberry
 		}
 	}
 
-	void Engine::PushLayer(Layer* layer)
+	Window* Application::GetWindow()
+	{
+		return m_Window;
+	}
+
+	void Application::PushLayer(Layer* layer)
 	{
 		m_LayerStack->PushLayer(layer);
 		layer->OnAttach();
 	}
 
-	void Engine::AddWaitFrameCallback(void(*waitFrameCallback)())
+	void Application::PopLayer(Layer* layer)
+	{
+		m_LayerStack->PopLayer(layer);
+		layer->OnDetach();
+	}
+
+	void Application::AddWaitFrameCallback(void(*waitFrameCallback)())
 	{
 		m_WaitFrameCallback = waitFrameCallback;
 	}
 
-	void Engine::RemoveWaitFrameCallback(void(*waitFrameCallback)())
+	void Application::RemoveWaitFrameCallback(void(*waitFrameCallback)())
 	{
 		if (m_WaitFrameCallback == waitFrameCallback)
 		{
@@ -113,17 +124,17 @@ namespace Blueberry
 		}
 	}
 
-	Engine* Engine::GetInstance()
+	Application* Application::GetInstance()
 	{
 		return s_Instance;
 	}
 
-	bool Engine::ProcessMessages()
+	bool Application::ProcessMessages()
 	{
 		return m_Window->ProcessMessages();
 	}
 
-	void Engine::Update()
+	void Application::Update()
 	{
 		if (m_Window->IsActive())
 		{
@@ -134,7 +145,7 @@ namespace Blueberry
 		}
 	}
 
-	void Engine::Draw()
+	void Application::Draw()
 	{
 		if (m_Window->IsActive())
 		{

@@ -16,6 +16,7 @@
 #include "Editor\Gizmos\GizmoRenderer.h"
 #include "Editor\Gizmos\IconRenderer.h"
 #include "Editor\Menu\EditorMenuManager.h"
+#include "Editor\Serialization\SerializedObject.h"
 
 #include "Blueberry\Core\Screen.h"
 #include "Blueberry\Core\ClassDB.h"
@@ -57,11 +58,13 @@ namespace Blueberry
 		m_ColorRenderTarget = GfxRenderTexturePool::Get(Screen::GetWidth(), Screen::GetHeight(), 1, 1, 1, TextureFormat::R8G8B8A8_UNorm);
 		m_DepthStencilRenderTarget = GfxRenderTexturePool::Get(Screen::GetWidth(), Screen::GetHeight(), 1, 1, 1, TextureFormat::D24_UNorm);
 
-		Selection::GetSelectionChanged().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
-		EditorSceneManager::GetSceneLoaded().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
-		WindowEvents::GetWindowFocused().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
-		EditorObjectManager::GetEntityCreated().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
-		EditorObjectManager::GetEntityDestroyed().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
+		Selection::GetSelectionChanged().AddCallback<&SceneArea::RequestRedrawAll>();
+		EditorSceneManager::GetSceneLoaded().AddCallback<&SceneArea::RequestRedrawAll>();
+		WindowEvents::GetWindowFocused().AddCallback<&SceneArea::RequestRedrawAll>();
+		EditorObjectManager::GetEntityCreated().AddCallback<SceneArea, &SceneArea::OnEntityUpdate>(this);
+		EditorObjectManager::GetEntityDestroyed().AddCallback<SceneArea, &SceneArea::OnEntityUpdate>(this);
+		EditorObjectManager::GetEntityUpdated().AddCallback<SceneArea, &SceneArea::OnEntityUpdate>(this);
+		SerializedObject::GetObjectUpdated().AddCallback<SceneArea, &SceneArea::OnObjectUpdate>(this);
 	}
 
 	SceneArea::~SceneArea()
@@ -71,11 +74,13 @@ namespace Blueberry
 		GfxRenderTexturePool::Release(m_ColorRenderTarget);
 		GfxRenderTexturePool::Release(m_DepthStencilRenderTarget);
 
-		Selection::GetSelectionChanged().RemoveCallback<SceneArea, &SceneArea::RequestRedraw>(this);
-		EditorSceneManager::GetSceneLoaded().RemoveCallback<SceneArea, &SceneArea::RequestRedraw>(this);
-		WindowEvents::GetWindowFocused().RemoveCallback<SceneArea, &SceneArea::RequestRedraw>(this);
-		EditorObjectManager::GetEntityCreated().RemoveCallback<SceneArea, &SceneArea::RequestRedraw>(this);
-		EditorObjectManager::GetEntityDestroyed().RemoveCallback<SceneArea, &SceneArea::RequestRedraw>(this);
+		Selection::GetSelectionChanged().RemoveCallback<&SceneArea::RequestRedrawAll>();
+		EditorSceneManager::GetSceneLoaded().RemoveCallback<&SceneArea::RequestRedrawAll>();
+		WindowEvents::GetWindowFocused().RemoveCallback<&SceneArea::RequestRedrawAll>();
+		EditorObjectManager::GetEntityCreated().RemoveCallback<SceneArea, &SceneArea::OnEntityUpdate>(this);
+		EditorObjectManager::GetEntityDestroyed().RemoveCallback<SceneArea, &SceneArea::OnEntityUpdate>(this);
+		EditorObjectManager::GetEntityUpdated().RemoveCallback<SceneArea, &SceneArea::OnEntityUpdate>(this);
+		SerializedObject::GetObjectUpdated().RemoveCallback<SceneArea, &SceneArea::OnObjectUpdate>(this);
 	}
 
 	Vector3 GetMotion(const Quaternion& rotation)
@@ -273,6 +278,26 @@ namespace Blueberry
 		DrawGizmos(Rectangle(pos.x, pos.y, size.x, size.y));
 	}
 
+	void SceneArea::OnSaveChanges()
+	{
+		EditorSceneManager::Save();
+		SetHasUnsavedChanges(false);
+	}
+
+	void SceneArea::OnDiscardChanges()
+	{
+		SetHasUnsavedChanges(false);
+	}
+
+	WString SceneArea::GetSaveChangesMessage()
+	{
+		if (EditorSceneManager::HasPrefabScene())
+		{
+			return L"Current prefab has unsaved changes.";
+		}
+		return L"Current scene has unsaved changes.";
+	}
+
 	float SceneArea::GetPerspectiveDistance(const float objectSize, const float fov)
 	{
 		return objectSize / sin(ToRadians(fov * 0.5f));
@@ -436,13 +461,17 @@ namespace Blueberry
 			if (ImGui::Button("Save"))
 			{
 				EditorSceneManager::Save();
+				SetHasUnsavedChanges(false);
 			}
 			ImGui::SameLine();
 
 			if (EditorSceneManager::HasPrefabScene() && ImGui::Button("Close"))
 			{
-				Selection::SetActiveObject(nullptr);
-				EditorSceneManager::ClosePrefab(false);
+				if (EditorWindow::Save(SceneArea::Type))
+				{
+					Selection::SetActiveObject(nullptr);
+					EditorSceneManager::ClosePrefab(false);
+				}
 			}
 			ImGui::SameLine();
 		}
@@ -554,8 +583,37 @@ namespace Blueberry
 		m_IsOrthographic = isOrthographic;
 	}
 
-	void SceneArea::RequestRedraw()
+	void SceneArea::OnSelectionChange()
 	{
+		RequestRedrawAll();
+	}
+
+	void SceneArea::OnEntityUpdate()
+	{
+		SetHasUnsavedChanges(true);
+		RequestRedrawAll();
+	}
+
+	void SceneArea::OnObjectUpdate(const ObjectUpdateEventArgs& args)
+	{
+		Scene* scene = EditorSceneManager::GetScene();
+		Object* target = args.GetObject();
+		if (target->IsClassType(Entity::Type))
+		{
+			Entity* entity = static_cast<Entity*>(target);
+			if (entity->GetScene() == scene)
+			{
+				SetHasUnsavedChanges(true);
+			}
+		}
+		else if (target->IsClassType(Component::Type))
+		{
+			Component* component = static_cast<Component*>(target);
+			if (component->GetScene() == scene)
+			{
+				SetHasUnsavedChanges(true);
+			}
+		}
 		RequestRedrawAll();
 	}
 }

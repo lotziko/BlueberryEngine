@@ -10,6 +10,7 @@ namespace Blueberry
 	class Texture2D;
 	class AssetImporter;
 	class Object;
+	class WindowDropFilesEventArgs;
 
 	class ProjectBrowser : public EditorWindow
 	{
@@ -20,7 +21,7 @@ namespace Blueberry
 			std::filesystem::path path;
 			String pathString;
 			AssetImporter* importer;
-			List<Object*> objects; // First object is main
+			List<ObjectPtr<Object>> objects; // First object is main
 			List<Vector2> positions;
 			bool isDirectory;
 			bool expanded;
@@ -31,6 +32,7 @@ namespace Blueberry
 		virtual ~ProjectBrowser();
 
 		static void Open();
+		static void ShowObject(Object* object);
 
 		virtual void OnDrawUI() final;
 
@@ -42,6 +44,8 @@ namespace Blueberry
 		void OpenAsset(const AssetInfo& asset);
 
 		void OnAssetDBRefresh();
+		void OnWindowDropFiles(const WindowDropFilesEventArgs& args);
+
 		void UpdateTree();
 		void UpdateFiles();
 
@@ -49,6 +53,7 @@ namespace Blueberry
 		std::filesystem::path m_PreviousDirectory;
 		std::filesystem::path m_CurrentDirectory;
 		List<AssetInfo> m_CurrentDirectoryAssets;
+		Object* m_ScrollRequest = nullptr;
 
 		FolderTree m_FolderTree;
 		const char* m_OpenedModalPopupId = nullptr;

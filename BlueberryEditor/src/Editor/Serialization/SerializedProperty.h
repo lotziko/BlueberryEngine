@@ -71,6 +71,8 @@ namespace Blueberry
 		bool Next(const bool& enterChildren = true);
 		SerializedProperty FindProperty(const String& name);
 
+		SerializedObject* GetSerializedObject();
+
 	private:
 		SerializedProperty(SerializedObject* serializedObject, PropertyTreeNode* treeNode);
 

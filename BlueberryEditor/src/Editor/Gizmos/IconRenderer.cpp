@@ -33,14 +33,16 @@ namespace Blueberry
 		EditorSceneManager::GetSceneLoaded().AddCallback<&IconRenderer::ClearCache>();
 		EditorObjectManager::GetEntityCreated().AddCallback<&IconRenderer::ClearCache>();
 		EditorObjectManager::GetEntityDestroyed().AddCallback<&IconRenderer::ClearCache>();
+		EditorObjectManager::GetEntityUpdated().AddCallback<&IconRenderer::ClearCache>();
 		return true;
 	}
 
 	void IconRenderer::Shutdown()
 	{
 		EditorSceneManager::GetSceneLoaded().RemoveCallback<&IconRenderer::ClearCache>();
-		EditorObjectManager::GetEntityCreated().RemoveCallback<&IconRenderer::ClearCache>(); // TODO component created/destroyed instead
+		EditorObjectManager::GetEntityCreated().RemoveCallback<&IconRenderer::ClearCache>();
 		EditorObjectManager::GetEntityDestroyed().RemoveCallback<&IconRenderer::ClearCache>();
+		EditorObjectManager::GetEntityUpdated().RemoveCallback<&IconRenderer::ClearCache>();
 		delete s_IconMaterial;
 	}
 

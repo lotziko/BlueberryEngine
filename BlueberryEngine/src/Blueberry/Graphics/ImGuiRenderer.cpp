@@ -7,6 +7,10 @@ namespace Blueberry
 {
 	bool ImGuiRenderer::Initialize()
 	{
+		if (s_Instance != nullptr)
+		{
+			return false;
+		}
 		switch (GraphicsAPI::GetAPI())
 		{
 		case GraphicsAPI::API::None:

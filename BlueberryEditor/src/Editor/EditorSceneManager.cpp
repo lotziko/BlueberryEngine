@@ -1,7 +1,7 @@
 #include "EditorSceneManager.h"
 
+#include "Blueberry\Core\ObjectCloner.h"
 #include "Blueberry\Scene\Scene.h"
-#include "Blueberry\Scene\Components\SpriteRenderer.h"
 #include "Blueberry\Scene\Components\Transform.h"
 
 #include "Editor\Path.h"
@@ -17,7 +17,7 @@
 namespace Blueberry
 {
 	Scene* EditorSceneManager::s_Scene = nullptr;
-	List<Scene*> EditorSceneManager::s_PrefabScenes = {};
+	List<EditorSceneManager::PrefabSceneData> EditorSceneManager::s_PrefabScenes = {};
 	String EditorSceneManager::s_Path = "";
 	SceneLoadEvent EditorSceneManager::s_SceneLoaded = {};
 	bool EditorSceneManager::s_IsRunning = false;
@@ -26,15 +26,8 @@ namespace Blueberry
 	{
 		s_Scene = new Scene();
 		s_Scene->Initialize();
-
-		for (int i = 0; i < 2; i++)
-		{
-			auto test = s_Scene->CreateEntity("Test");
-			test->AddComponent<SpriteRenderer>();
-		}
-
 		Save();
-		UpdateLighting();
+		UpdateScene();
 		s_SceneLoaded.Invoke();
 	}
 
@@ -52,7 +45,7 @@ namespace Blueberry
 	{
 		if (s_PrefabScenes.size() > 0)
 		{
-			return s_PrefabScenes[s_PrefabScenes.size() - 1];
+			return s_PrefabScenes[s_PrefabScenes.size() - 1].scene;
 		}
 		return s_Scene;
 	}
@@ -83,7 +76,7 @@ namespace Blueberry
 		s_Path = path;
 		Deserialize(path);
 
-		UpdateLighting();
+		UpdateScene();
 		s_SceneLoaded.Invoke();
 	}
 
@@ -100,9 +93,12 @@ namespace Blueberry
 	{
 		if (s_PrefabScenes.size() > 0)
 		{
-			String relativePath = AssetDB::GetRelativeAssetPath(s_PrefabScenes[s_PrefabScenes.size() - 1]->GetRootEntities()[0].Get());
+			EditorSceneManager::PrefabSceneData& data = s_PrefabScenes[s_PrefabScenes.size() - 1];
+			String relativePath = AssetDB::GetRelativeAssetPath(data.prefabRoot);
 			auto dataPath = Path::GetAssetsPath();
 			dataPath.append(relativePath);
+
+			ObjectCloner::Resolve(data.reverseMapping, data.root);
 			Serialize(String(dataPath.string()));
 		}
 		else if (s_Scene != nullptr)
@@ -124,25 +120,34 @@ namespace Blueberry
 				}
 			}
 			s_Scene->Destroy();
-			UpdateLighting();
+			UpdateScene();
 		}
 	}
 
-	void EditorSceneManager::OpenPrefab(Entity* root)
+	void EditorSceneManager::OpenPrefab(Entity*& root)
 	{
+		EditorSceneManager::PrefabSceneData data = {};
+		data.prefabRoot = root;
+
+		root = static_cast<Entity*>(ObjectCloner::Clone(data.mapping, root));
+		for (auto& pair : data.mapping)
+		{
+			data.reverseMapping.insert({ pair.second, pair.first });
+		}
 		for (size_t i = 0; i < s_PrefabScenes.size(); ++i)
 		{
-			if (s_PrefabScenes[i]->GetRootEntities()[0].Get() == root)
+			if (s_PrefabScenes[i].root == root)
 			{
 				s_PrefabScenes.move_element(i, s_PrefabScenes.size() - 1);
 				s_SceneLoaded.Invoke();
 				return;
 			}
 		}
-		Scene* prefabScene = new Scene();
-		prefabScene->AddEntity(root);
-		s_PrefabScenes.push_back(prefabScene);
-		UpdateLighting();
+		data.scene = new Scene();
+		data.root = root;
+		data.scene->AddEntity(root);
+		s_PrefabScenes.push_back(std::move(data));
+		UpdateScene();
 		s_SceneLoaded.Invoke();
 	}
 
@@ -150,9 +155,7 @@ namespace Blueberry
 	{
 		for (size_t i = (all ? 0 : s_PrefabScenes.size() - 1); i < s_PrefabScenes.size(); ++i)
 		{
-			Scene* scene = s_PrefabScenes[i];
-			scene->RemoveEntity(scene->GetRootEntities()[0].Get());
-			scene->Destroy();
+			s_PrefabScenes[i].scene->Destroy();
 		}
 		if (all)
 		{
@@ -162,7 +165,7 @@ namespace Blueberry
 		{
 			s_PrefabScenes.pop_back();
 		}
-		UpdateLighting();
+		UpdateScene();
 		s_SceneLoaded.Invoke();
 	}
 
@@ -212,13 +215,19 @@ namespace Blueberry
 	void EditorSceneManager::Serialize(const String& path)
 	{
 		bool isPrefab = s_PrefabScenes.size() > 0;
-		Scene* scene = isPrefab ? s_PrefabScenes[s_PrefabScenes.size() - 1] : s_Scene;
 		YamlSceneSerializer serializer = {};
-		if (!isPrefab && s_SceneSettings.IsValid())
+		if (isPrefab)
 		{
-			serializer.AddObject(s_SceneSettings.Get());
+			serializer.AddObject(s_PrefabScenes[s_PrefabScenes.size() - 1].prefabRoot);
 		}
-		serializer.AddSceneObjects(scene);
+		else
+		{
+			if (s_SceneSettings.IsValid())
+			{
+				serializer.AddObject(s_SceneSettings.Get());
+			}
+			serializer.AddSceneObjects(s_Scene);
+		}
 		serializer.Serialize(path);
 	}
 
@@ -249,7 +258,7 @@ namespace Blueberry
 		}
 	}
 
-	void EditorSceneManager::UpdateLighting()
+	void EditorSceneManager::UpdateScene()
 	{
 		if (s_PrefabScenes.size() == 0 && s_Scene != nullptr)
 		{

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Blueberry\Core\Base.h"
+
 #include <filesystem>
 
 namespace Blueberry
@@ -15,7 +17,7 @@ namespace Blueberry
 		static const std::filesystem::path& GetTextureCachePath();
 		static const std::filesystem::path& GetPhysicsShapeCachePath();
 		static const std::filesystem::path& GetThumbnailCachePath();
-		static void SetProjectPath(const std::wstring& path);
+		static void SetProjectPath(const WString& path);
 
 	private:
 		static std::filesystem::path s_AssetsPath;

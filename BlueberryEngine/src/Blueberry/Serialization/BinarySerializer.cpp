@@ -419,6 +419,7 @@ namespace Blueberry
 					size_t dataSize;
 					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 					List<ObjectPtr<Object>>* refArrayPointer = field.Get<List<ObjectPtr<Object>>>(ptr);
+					refArrayPointer->clear_base();
 					for (size_t i = 0; i < dataSize; ++i)
 					{
 						ObjectPtrData data = {};
@@ -439,6 +440,7 @@ namespace Blueberry
 					size_t dataSize;
 					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 					ListBase* dataArrayPointer = field.Get<ListBase>(ptr);
+					dataArrayPointer->clear_base();
 					for (size_t i = 0; i < dataSize; ++i)
 					{
 						void* data = dataArrayPointer->emplace_back_base();

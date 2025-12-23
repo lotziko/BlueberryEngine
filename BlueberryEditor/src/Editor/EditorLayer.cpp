@@ -26,9 +26,7 @@
 
 //#include "Blueberry\Graphics\OpenXRRenderer.h"
 
-#include <fstream>
 #include <imgui\imgui.h>
-#include <imgui\imguizmo.h>
 #include <imgui\imgui_internal.h>
 
 namespace Blueberry
@@ -55,7 +53,7 @@ namespace Blueberry
 		Gizmos::Initialize();
 		IconRenderer::Initialize();
 		Physics::Initialize();
-		EditorWindow::Load();
+		EditorWindow::Initialize();
 
 		AssetDB::Refresh();
 
@@ -66,7 +64,7 @@ namespace Blueberry
 
 	void EditorLayer::OnDetach()
 	{
-		EditorWindow::Save();
+		EditorWindow::Shutdown();
 		for (auto& window : EditorWindow::GetWindows())
 		{
 			Object::Destroy(window.Get());
@@ -131,22 +129,25 @@ namespace Blueberry
 		}
 	}
 
-	void EditorLayer::OnWindowResize(const WindowResizeEventArgs& event)
+	void EditorLayer::OnWindowResize(const WindowResizeEventArgs& args)
 	{
-		GfxDevice::ResizeBackbuffer(event.GetWidth(), event.GetHeight());
+		GfxDevice::ResizeBackbuffer(args.GetWidth(), args.GetHeight());
 	}
 
 	void EditorLayer::OnWindowFocus()
 	{
-		AssetDB::Refresh();
-
-		if (AssemblyManager::Build())
+		if (!EditorSceneManager::IsRunning())
 		{
-			EditorSceneManager::Save();
-			EditorSceneManager::Unload();
-			AssemblyManager::Unload();
-			AssemblyManager::Load();
-			EditorSceneManager::Reload();
+			AssetDB::Refresh();
+
+			if (AssemblyManager::Build())
+			{
+				EditorSceneManager::Save();
+				EditorSceneManager::Unload();
+				AssemblyManager::Unload();
+				AssemblyManager::Load();
+				EditorSceneManager::Reload();
+			}
 		}
 
 		m_Focused = true;
@@ -188,6 +189,7 @@ namespace Blueberry
 
 			if (EditorSceneManager::GetScene() != nullptr)
 			{
+				static bool isStartingFromScene = false;
 				if (EditorSceneManager::IsRunning())
 				{
 					if (ImGui::Button("Stop"))
@@ -195,15 +197,24 @@ namespace Blueberry
 						Physics::Disable();
 						//OpenXRRenderer::Shutdown();
 						EditorSceneManager::Stop();
+						if (isStartingFromScene)
+						{
+							SceneArea::Open();
+						}
 					}
 				}
 				else
 				{
 					if (ImGui::Button("Run"))
 					{
-						Physics::Enable();
-						//OpenXRRenderer::Initialize();
-						EditorSceneManager::Run();
+						if (EditorWindow::Save())
+						{
+							isStartingFromScene = EditorWindow::IsFocused(SceneArea::Type);
+							Physics::Enable();
+							//OpenXRRenderer::Initialize();
+							GameView::Open();
+							EditorSceneManager::Run();
+						}
 					}
 				}
 			}
@@ -250,7 +261,7 @@ namespace Blueberry
 	{
 		//Dockspace
 		{
-			static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
+			static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoCloseButton;
 			ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
 
 			ImGuiViewport* viewport = ImGui::GetMainViewport();

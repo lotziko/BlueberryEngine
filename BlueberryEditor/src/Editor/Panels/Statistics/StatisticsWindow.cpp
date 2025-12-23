@@ -25,11 +25,11 @@ namespace Blueberry
 	void StatisticsWindow::OnDrawUI()
 	{
 		ImGui::EditorStyle& style = ImGui::GetEditorStyle();
-		ImGui::Indent(style.InspectorIndent);
+		ImGui::BeginPaddedArea(ImVec2(10, 5), ImVec2(10, 5));
 		for (auto& pair : Profiler::GetData())
 		{
 			ImGui::Text("%s %f milliseconds", pair.first, pair.second);
 		}
-		ImGui::Unindent(style.InspectorIndent);
+		ImGui::EndPaddedArea();
 	}
 }

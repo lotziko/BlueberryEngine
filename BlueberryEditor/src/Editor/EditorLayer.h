@@ -24,7 +24,8 @@ namespace Blueberry
 		virtual void OnDetach() override;
 		virtual void OnUpdate() override;
 		virtual void OnDraw() override;
-		void OnWindowResize(const WindowResizeEventArgs& event);
+
+		void OnWindowResize(const WindowResizeEventArgs& args);
 		void OnWindowFocus();
 		void OnWindowUnfocus();
 

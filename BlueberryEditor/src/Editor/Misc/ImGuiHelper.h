@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Blueberry\Core\ObjectDB.h"
+#include "Blueberry\Events\Event.h"
 
 #include <imgui\imgui.h>
 
@@ -14,6 +15,30 @@ namespace Blueberry
 
 namespace ImGui
 {
+	class ClearOverrideEventArgs
+	{
+	public:
+		ClearOverrideEventArgs(Blueberry::SerializedProperty* property) : m_Property(property)
+		{
+		}
+
+		Blueberry::SerializedProperty* GetProperty();
+
+	private:
+		Blueberry::SerializedProperty* m_Property;
+	};
+
+	using ClearOverrideEvent = Blueberry::Event<ClearOverrideEventArgs>;
+
+	class Events
+	{
+	public:
+		static ClearOverrideEvent& GetClearedOverride();
+
+	private:
+		static ClearOverrideEvent s_ClearedOverride;
+	};
+
 	struct EditorStyle
 	{
 		float ProjectBottomPanelSize;
@@ -43,6 +68,9 @@ namespace ImGui
 	void SetMixedValue(const bool& mixed);
 	
 	bool BeginPopup(ImGuiID id, ImGuiWindowFlags flags = 0);
+
+	void BeginPaddedArea(ImVec2 min, ImVec2 max);
+	void EndPaddedArea();
 
 	bool DragVector2(const char* label, Blueberry::Vector2* v);
 	bool DragVector3(const char* label, Blueberry::Vector3* v);

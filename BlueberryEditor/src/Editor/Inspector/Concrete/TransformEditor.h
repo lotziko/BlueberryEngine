@@ -2,6 +2,11 @@
 
 #include "Editor\Inspector\ObjectEditor.h"
 
+namespace ImGui
+{
+	class ClearOverrideEventArgs;
+}
+
 namespace Blueberry
 {
 	class TransformEditor : public ObjectEditor
@@ -16,6 +21,8 @@ namespace Blueberry
 
 	private:
 		void OnHierarchyUpdate();
+
+		static void OnPropertyClear(ImGui::ClearOverrideEventArgs& args);
 
 	private:
 		SerializedProperty m_LocalPositionProperty;

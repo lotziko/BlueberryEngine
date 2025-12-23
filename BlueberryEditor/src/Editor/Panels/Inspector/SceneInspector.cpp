@@ -49,7 +49,14 @@ namespace Blueberry
 		{
 			if (m_Editor != nullptr)
 			{
-				m_Editor->DrawInspector();
+				if (m_Editor->GetSerializedObject()->IsValid())
+				{
+					m_Editor->DrawInspector();
+				}
+				else
+				{
+					Selection::SetActiveObject(nullptr);
+				}
 			}
 		}
 	}

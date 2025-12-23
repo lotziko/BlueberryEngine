@@ -4,6 +4,9 @@
 
 namespace Blueberry
 {
+	class Entity;
+	class Component;
+
 	class EntityEditor : public ObjectEditor
 	{
 	public:
@@ -20,5 +23,7 @@ namespace Blueberry
 		SerializedProperty m_IsActiveProperty;
 		SerializedProperty m_ComponentsProperty;
 		List<std::pair<Object*, ObjectEditor*>> m_ComponentsEditors;
+		List<std::pair<Entity*, Component*>> m_AddedComponents;
+		List<Component*> m_RemovedComponents;
 	};
 }

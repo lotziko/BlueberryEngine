@@ -5,6 +5,8 @@
 
 namespace Blueberry
 {
+	class WindowClosingEventArgs;
+
 	class EditorWindow : public Object
 	{
 		OBJECT_DECLARATION(EditorWindow)
@@ -16,13 +18,22 @@ namespace Blueberry
 		void Show();
 		void ShowPopup();
 		void Close();
+		void Focus();
 
 		void DrawUI();
 
-		void SetTitle(const std::string& title);
+		void SetTitle(const String& title);
 
-		static void Load();
-		static void Save();
+		const bool& HasUnsavedChanges();
+		void SetHasUnsavedChanges(const bool& hasChanges);
+
+		static void Initialize();
+		static void Shutdown();
+		static bool Save(const size_t& type);
+		static bool Save();
+		static bool IsFocused(const size_t& type);
+
+		static void OnWindowClosing(WindowClosingEventArgs& args);
 
 		static void Draw();
 		static EditorWindow* GetWindow(const size_t& type);
@@ -30,15 +41,19 @@ namespace Blueberry
 
 	protected:
 		virtual void OnDrawUI() = 0;
+		virtual void OnSaveChanges();
+		virtual void OnDiscardChanges();
+		virtual WString GetSaveChangesMessage();
 
 	protected:
-		std::string m_Title;
+		String m_Title;
 		uint8_t m_RawData[37];
 
 	private:
 		static List<ObjectPtr<EditorWindow>> s_ToRemoveWindows;
 		static List<ObjectPtr<EditorWindow>> s_ActiveWindows;
 		bool m_Focused = false;
+		bool m_HasUnsavedChanges = false;
 		int m_Flags = 0;
 	};
 }

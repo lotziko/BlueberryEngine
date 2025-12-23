@@ -21,11 +21,13 @@ namespace Blueberry
 		m_LocalRotationEulerHintProperty = m_SerializedObject->FindProperty("m_LocalRotationEulerHint");
 		m_IsStaticProperty = m_SerializedObject->FindProperty("m_IsStatic");
 		SceneHierarchy::GetHierarchyUpdated().AddCallback<TransformEditor, &TransformEditor::OnHierarchyUpdate>(this);
+		ImGui::Events::GetClearedOverride().AddCallback<&TransformEditor::OnPropertyClear>();
 	}
 
 	void TransformEditor::OnDisable()
 	{
 		SceneHierarchy::GetHierarchyUpdated().RemoveCallback<TransformEditor, &TransformEditor::OnHierarchyUpdate>(this);
+		ImGui::Events::GetClearedOverride().RemoveCallback<&TransformEditor::OnPropertyClear>();
 	}
 
 	void TransformEditor::OnDrawInspector()
@@ -39,10 +41,7 @@ namespace Blueberry
 		ImGui::Property(&m_LocalScaleProperty, "Scale");
 		ImGui::Property(&m_IsStaticProperty, "Is Static");
 
-		if (m_SerializedObject->ApplyModifiedProperties())
-		{
-			SceneArea::RequestRedrawAll();
-		}
+		m_SerializedObject->ApplyModifiedProperties();
 	}
 
 	// Based on https://discussions.unity.com/t/quaternion-to-three-hinge-joints/714182/10
@@ -195,13 +194,25 @@ namespace Blueberry
 					m_LocalScaleProperty.SetVector3(scale);
 				}
 				m_SerializedObject->ApplyModifiedProperties();
-				SceneArea::RequestRedrawAll();
 			}
 		}
 	}
 
 	void TransformEditor::OnHierarchyUpdate()
 	{
-		m_SerializedObject->Update();
+		if (m_SerializedObject->IsValid())
+		{
+			m_SerializedObject->Update();
+		}
+	}
+
+	void TransformEditor::OnPropertyClear(ImGui::ClearOverrideEventArgs& args)
+	{
+		SerializedProperty* property = args.GetProperty();
+		SerializedObject* serializedObject = property->GetSerializedObject();
+		if (serializedObject->GetTarget()->IsClassType(Transform::Type) && property->GetName() == "m_LocalRotationEulerHint")
+		{
+			serializedObject->FindProperty("m_LocalRotation").ClearOverride();
+		}
 	}
 }

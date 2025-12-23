@@ -9,6 +9,7 @@ namespace Blueberry
 {
 	class GfxTexture;
 	class Camera;
+	class ObjectUpdateEventArgs;
 
 	class SceneArea : public EditorWindow
 	{
@@ -21,6 +22,9 @@ namespace Blueberry
 		static void Open();
 		
 		virtual void OnDrawUI() final;
+		virtual void OnSaveChanges() final;
+		virtual void OnDiscardChanges() final;
+		virtual WString GetSaveChangesMessage() final;
 
 		float GetPerspectiveDistance(const float objectSize, const float fov);
 		float GetCameraDistance();
@@ -57,7 +61,9 @@ namespace Blueberry
 		void DrawScene(const float width, const float height);
 		void LookAt(const Vector3& point, const Quaternion& direction, const float& newSize, const bool& isOrthographic);
 
-		void RequestRedraw();
+		void OnSelectionChange();
+		void OnEntityUpdate();
+		void OnObjectUpdate(const ObjectUpdateEventArgs& args);
 
 	private:
 		GfxTexture* m_ColorRenderTarget = nullptr;

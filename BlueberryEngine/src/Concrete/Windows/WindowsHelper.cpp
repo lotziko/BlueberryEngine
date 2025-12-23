@@ -17,7 +17,7 @@ namespace Blueberry
 	String WindowsHelper::GetErrorMessage(HRESULT result)
 	{
 		_com_error error(result);
-		std::wstring str = error.ErrorMessage();
+		WString str = error.ErrorMessage();
 		return String(str.begin(), str.end());
 	}
 

@@ -46,13 +46,11 @@ namespace Blueberry
 
 	void LightmappingWindow::OnDrawUI()
 	{
+		ImGui::BeginPaddedArea(ImVec2(10, 5), ImVec2(10, 5));
 		Scene* scene = EditorSceneManager::GetScene();
 
 		if (scene != nullptr)
 		{
-			ImGui::EditorStyle& style = ImGui::GetEditorStyle();
-			ImGui::Indent(style.InspectorIndent);
-
 			ImGui::IntEdit("Tile size", &m_TileSize);
 			ImGui::FloatEdit("Texel per unit", &m_TexelPerUnit);
 			ImGui::IntEdit("Sample per texel", &m_SamplePerTexel);
@@ -70,6 +68,7 @@ namespace Blueberry
 				settings->SetLightingData(lightingData);
 			}
 
+			ImGui::EditorStyle& style = ImGui::GetEditorStyle();
 			switch (LightmappingManager::GetLightmappingState())
 			{
 				case LightmappingState::None:
@@ -100,8 +99,8 @@ namespace Blueberry
 					ImGui::SliderFloat("Zoom", &newZoom, 1, 300);
 					ImGui::Checkbox("Draw all", &drawAll);
 
-					ImGui::Unindent(style.InspectorIndent);
-					ImGui::BeginChild("Zoom");
+					ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 10);
+					ImGui::BeginChild("Zoom", ImVec2(ImGui::GetContentRegionAvail().x + 10, 0));
 
 					ImGuiWindow* window = ImGui::GetCurrentWindow();
 					window->ScrollTarget = window->Scroll * newZoom / zoom;
@@ -167,7 +166,6 @@ namespace Blueberry
 						ImGui::Dummy(size);
 					}
 					ImGui::EndChild();
-					ImGui::Indent(style.InspectorIndent);
 				}
 				break;
 				case LightmappingState::Calculating:
@@ -223,7 +221,7 @@ namespace Blueberry
 				}
 				break;
 			}
-			ImGui::Unindent(style.InspectorIndent);
 		}
+		ImGui::EndPaddedArea();
 	}
 }

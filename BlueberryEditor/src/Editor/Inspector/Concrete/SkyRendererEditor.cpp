@@ -21,7 +21,6 @@ namespace Blueberry
 		ImGui::EditorStyle& style = ImGui::GetEditorStyle();
 
 		ObjectEditor::OnDrawInspector();
-		ImGui::Indent(style.InspectorIndent);
 		if (m_SerializedObject->GetTargets().size() == 1 && ImGui::Button("Bake"))
 		{
 			if (m_MaterialProperty.GetObjectPtr().Get() != nullptr)
@@ -31,11 +30,7 @@ namespace Blueberry
 				SceneArea::RequestRedrawAll();
 			}
 		}
-		ImGui::Unindent(style.InspectorIndent);
 
-		if (m_SerializedObject->ApplyModifiedProperties())
-		{
-			SceneArea::RequestRedrawAll();
-		}
+		m_SerializedObject->ApplyModifiedProperties();
 	}
 }

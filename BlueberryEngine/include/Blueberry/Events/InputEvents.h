@@ -35,10 +35,10 @@ namespace Blueberry
 		Vector2 m_Delta;
 	};
 
-	using KeyDownEvent = Event<KeyEventArgs>;
-	using KeyUpEvent = Event<KeyEventArgs>;
-	using KeyTypeEvent = Event<KeyEventArgs>;
-	using MouseMoveEvent = Event<MouseMoveEventArgs>;
+	using KeyDownEvent = Event<const KeyEventArgs>;
+	using KeyUpEvent = Event<const KeyEventArgs>;
+	using KeyTypeEvent = Event<const KeyEventArgs>;
+	using MouseMoveEvent = Event<const MouseMoveEventArgs>;
 
 	class InputEvents
 	{

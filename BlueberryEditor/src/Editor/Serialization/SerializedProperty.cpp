@@ -358,4 +358,9 @@ namespace Blueberry
 		}
 		return {};
 	}
+
+	SerializedObject* SerializedProperty::GetSerializedObject()
+	{
+		return m_SerializedObject;
+	}
 }

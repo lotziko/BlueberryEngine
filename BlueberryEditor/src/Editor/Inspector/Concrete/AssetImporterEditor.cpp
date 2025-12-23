@@ -20,7 +20,7 @@ namespace Blueberry
 		List<Object*> mainObjects;
 		for (Object* target : m_SerializedObject->GetTargets())
 		{
-			AssetImporter* assetImporter = static_cast<AssetImporter*>(m_SerializedObject->GetTarget());
+			AssetImporter* assetImporter = static_cast<AssetImporter*>(target);
 			assetImporter->ImportDataIfNeeded();
 			Object* mainObject = ObjectDB::GetObjectFromGuid(assetImporter->GetGuid(), assetImporter->GetMainObject());
 			if (mainObject != nullptr)

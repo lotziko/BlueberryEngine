@@ -80,13 +80,14 @@ namespace Blueberry
 
 	void EntityEditor::OnDrawInspector()
 	{
+		ImGui::BeginPaddedArea(ImVec2(10, 5), ImVec2(10, 5));
 		ImGui::Property(&m_IsActiveProperty, "Is Active");
+		ImGui::EndPaddedArea();
 
 		for (auto& pair : m_ComponentsEditors)
 		{
 			String name = pair.first->GetTypeName();
 			const char* headerId = name.c_str();
-			const char* popupId = "InspectorPopup";
 
 			ImGui::PushID(headerId);
 
@@ -97,28 +98,29 @@ namespace Blueberry
 				InspectorExpandedItemsCache::Set(name, opened);
 			}
 
-			if (opened)
-			{
-				pair.second->DrawInspector();
-			}
-
-			/*if (ImGui::BeginPopup(popupId))
+			if (ImGui::BeginPopupContextItem())
 			{
 				if (ImGui::MenuItem("Remove component"))
 				{
+					for (Object* target : pair.second->GetSerializedObject()->GetTargets())
+					{
+						m_RemovedComponents.push_back(static_cast<Component*>(target));
+					}
 				}
 				ImGui::EndPopup();
 			}
 
-			ImGui::OpenPopupOnItemClick(popupId, ImGuiPopupFlags_MouseButtonRight);*/
+			if (opened)
+			{
+				ImGui::BeginPaddedArea(ImVec2(10, 5), ImVec2(10, 5));
+				pair.second->DrawInspector();
+				ImGui::EndPaddedArea();
+			}
 
 			ImGui::PopID();
 		}
 
-		if (m_SerializedObject->ApplyModifiedProperties())
-		{
-			SceneArea::RequestRedrawAll();
-		}
+		m_SerializedObject->ApplyModifiedProperties();
 
 		ImGui::Dummy(ImVec2(0, 10));
 		if (ImGui::CenteredButton("   Add Component   "))
@@ -141,20 +143,43 @@ namespace Blueberry
 				{
 					for (Object* target : m_SerializedObject->GetTargets())
 					{
-						(static_cast<Entity*>(target))->AddComponent(static_cast<Component*>(info.second.createInstance()));
+						m_AddedComponents.push_back(std::make_pair(static_cast<Entity*>(target), static_cast<Component*>(info.second.createInstance())));
 					}
-					OnDisable();
-					OnEnable();
-					SceneArea::RequestRedrawAll();
 				}
 			}
 
 			ImGui::EndPopup();
 		}
+
+		bool hasAddedComponents = m_AddedComponents.size() > 0, hasRemovedComponents = m_RemovedComponents.size() > 0;
+		if (hasAddedComponents)
+		{
+			for (auto& pair : m_AddedComponents)
+			{
+				EditorObjectManager::AddComponent(pair.first, pair.second);
+			}
+			m_AddedComponents.clear();
+		}
+		if (hasRemovedComponents)
+		{
+			for (Component* component : m_RemovedComponents)
+			{
+				EditorObjectManager::RemoveComponent(component);
+			}
+			m_RemovedComponents.clear();
+		}
+		if (hasAddedComponents || hasRemovedComponents)
+		{
+			OnDisable();
+			OnEnable();
+		}
 	}
 
 	void EntityEditor::OnEntityDestroy()
 	{
-		Selection::SetActiveObject(nullptr);
+		if (!m_SerializedObject->IsValid())
+		{
+			Selection::SetActiveObject(nullptr);
+		}
 	}
 }

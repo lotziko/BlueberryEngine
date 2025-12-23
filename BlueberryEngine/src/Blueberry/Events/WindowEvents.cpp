@@ -5,6 +5,8 @@ namespace Blueberry
 	WindowResizeEvent WindowEvents::s_WindowResized = {};
 	WindowFocusEvent WindowEvents::s_WindowFocused = {};
 	WindowUnfocusEvent WindowEvents::s_WindowUnfocused = {};
+	WindowDropFilesEvent WindowEvents::s_WindowDroppedFiles = {};
+	WindowClosingEvent WindowEvents::s_WindowClosing = {};
 
 	uint32_t WindowResizeEventArgs::GetWidth() const
 	{
@@ -29,5 +31,35 @@ namespace Blueberry
 	WindowUnfocusEvent& WindowEvents::GetWindowUnfocused()
 	{
 		return s_WindowUnfocused;
+	}
+
+	WindowDropFilesEvent& WindowEvents::GetWindowDroppedFiles()
+	{
+		return s_WindowDroppedFiles;
+	}
+
+	WindowClosingEvent& WindowEvents::GetWindowClosing()
+	{
+		return s_WindowClosing;
+	}
+
+	void WindowDropFilesEventArgs::AddFile(const WString& path)
+	{
+		m_Pathes.push_back(path);
+	}
+
+	const List<WString>& WindowDropFilesEventArgs::GetFiles() const
+	{
+		return m_Pathes;
+	}
+
+	const bool& WindowClosingEventArgs::IsCanceled()
+	{
+		return m_IsCanceled;
+	}
+
+	void WindowClosingEventArgs::Cancel()
+	{
+		m_IsCanceled = true;
 	}
 }

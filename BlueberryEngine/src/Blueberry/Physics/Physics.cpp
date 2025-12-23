@@ -142,13 +142,6 @@ namespace Blueberry
 		PhysicsSettings settings = s_PhysicsSystem->GetPhysicsSettings();
 		settings.mPointVelocitySleepThreshold /= 4;
 		s_PhysicsSystem->SetPhysicsSettings(settings);
-
-		BoxShapeSettings floorShapeSettings(Vec3(100.0f, 1.0f, 100.0f));
-		ShapeSettings::ShapeResult floor_shape_result = floorShapeSettings.Create();
-		ShapeRefC floor_shape = floor_shape_result.Get();
-		BodyCreationSettings floor_settings(floor_shape, RVec3(0.0f, -1.0f, 0.0f), Quat::sIdentity(), EMotionType::Static, Layers::NON_MOVING);
-		Body *floor = s_PhysicsSystem->GetBodyInterface().CreateBody(floor_settings);
-		s_PhysicsSystem->GetBodyInterface().AddBody(floor->GetID(), EActivation::DontActivate);
 	}
 
 	void Physics::Disable()

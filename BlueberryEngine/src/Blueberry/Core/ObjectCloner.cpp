@@ -21,6 +21,26 @@ namespace Blueberry
 		return CloneObject(visited, mapping, object);
 	}
 
+	Object* ObjectCloner::Resolve(ObjectMapping& mapping, Object* object)
+	{
+		HashSet<ObjectId> visited;
+		Object* result = CloneObject(visited, mapping, object);
+		List<ObjectId> removedIds;
+		for (auto& pair : mapping)
+		{
+			if (visited.count(pair.first) == 0)
+			{
+				removedIds.push_back(pair.first);
+			}
+		}
+		for (ObjectId id : removedIds)
+		{
+			mapping.erase(id);
+			Object::Destroy(ObjectDB::GetObject(id));
+		}
+		return result;
+	}
+
 	Object* ObjectCloner::CloneObject(HashSet<ObjectId>& visited, ObjectMapping& mapping, Object* object)
 	{
 		// TODO iterate object fields and clone them too if they have references to objects inside

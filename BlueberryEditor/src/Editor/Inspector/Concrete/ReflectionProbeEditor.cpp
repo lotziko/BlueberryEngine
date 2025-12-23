@@ -55,7 +55,6 @@ namespace Blueberry
 			ImGui::Property(&m_FadeProperty, "Fade");
 
 			ImGui::EditorStyle& style = ImGui::GetEditorStyle();
-			ImGui::Indent(style.InspectorIndent);
 			if (ImGui::Button("Bake"))
 			{
 				Scene* scene = EditorSceneManager::GetScene();
@@ -66,13 +65,9 @@ namespace Blueberry
 					SceneArea::RequestRedrawAll();
 				}
 			}
-			ImGui::Unindent(style.InspectorIndent);
 		}
 
-		if (m_SerializedObject->ApplyModifiedProperties())
-		{
-			SceneArea::RequestRedrawAll();
-		}
+		m_SerializedObject->ApplyModifiedProperties();
 	}
 
 	Texture* ReflectionProbeEditor::GetIcon(Object* object)

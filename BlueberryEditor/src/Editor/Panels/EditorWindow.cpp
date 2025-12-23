@@ -2,6 +2,8 @@
 
 #include "Editor\Path.h"
 #include "Editor\Serialization\YamlSerializer.h"
+#include "Editor\Misc\PlatformHelper.h"
+#include "Blueberry\Events\WindowEvents.h"
 
 #include "imgui\imgui.h"
 
@@ -23,6 +25,7 @@ namespace Blueberry
 
 	void EditorWindow::Show()
 	{
+		Focus();
 		for (auto it = s_ActiveWindows.begin(); it < s_ActiveWindows.end(); ++it)
 		{
 			if (it->IsValid() && it->Get()->m_ObjectId == m_ObjectId)
@@ -42,6 +45,11 @@ namespace Blueberry
 	void EditorWindow::Close()
 	{
 		s_ToRemoveWindows.push_back(this);
+	}
+
+	void EditorWindow::Focus()
+	{
+		ImGui::SetWindowFocus(m_Title.c_str());
 	}
 
 	void EditorWindow::DrawUI()
@@ -70,12 +78,30 @@ namespace Blueberry
 		}
 	}
 
-	void EditorWindow::SetTitle(const std::string& title)
+	void EditorWindow::SetTitle(const String& title)
 	{
 		m_Title = title;
 	}
 
-	void EditorWindow::Load()
+	const bool& EditorWindow::HasUnsavedChanges()
+	{
+		return m_HasUnsavedChanges;
+	}
+
+	void EditorWindow::SetHasUnsavedChanges(const bool& hasChanges)
+	{
+		m_HasUnsavedChanges = hasChanges;
+		if (hasChanges)
+		{
+			m_Flags |= ImGuiWindowFlags_UnsavedDocument;
+		}
+		else
+		{
+			m_Flags &= ~ImGuiWindowFlags_UnsavedDocument;
+		}
+	}
+
+	void EditorWindow::Initialize()
 	{
 		auto layoutPath = Path::GetDataPath();
 		layoutPath.append("EditorLayout");
@@ -113,9 +139,11 @@ namespace Blueberry
 			input.close();
 		}
 		ImGui::ApplyWindowAndDockNodeData();
+
+		WindowEvents::GetWindowClosing().AddCallback<&EditorWindow::OnWindowClosing>();
 	}
 
-	void EditorWindow::Save()
+	void EditorWindow::Shutdown()
 	{
 		auto layoutPath = Path::GetDataPath();
 		layoutPath.append("EditorLayout");
@@ -151,6 +179,61 @@ namespace Blueberry
 				}
 				output.close();
 			}
+		}
+
+		WindowEvents::GetWindowClosing().RemoveCallback<&EditorWindow::OnWindowClosing>();
+	}
+
+	bool EditorWindow::Save(const size_t& type)
+	{
+		bool result = true;
+		for (auto& window : s_ActiveWindows)
+		{
+			if (window->IsClassType(type))
+			{
+				if (window->m_HasUnsavedChanges)
+				{
+					DialogResult dialogResult = PlatformHelper::OpenDialog(L"Unsaved changes", window->GetSaveChangesMessage(), L"Save", L"Don't save", L"Cancel");
+					switch (dialogResult)
+					{
+					case DialogResult::Yes:
+						window->OnSaveChanges();
+						break;
+					case DialogResult::No:
+						window->OnDiscardChanges();
+						break;
+					case DialogResult::Cancel:
+						result = false;
+						break;
+					}
+				}
+			}
+		}
+		return result;
+	}
+
+	bool EditorWindow::Save()
+	{
+		return Save(EditorWindow::Type);
+	}
+
+	bool EditorWindow::IsFocused(const size_t& type)
+	{
+		for (auto& window : s_ActiveWindows)
+		{
+			if (window->IsClassType(type) && window->m_Focused)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void EditorWindow::OnWindowClosing(WindowClosingEventArgs& args)
+	{
+		if (!Save())
+		{
+			args.Cancel();
 		}
 	}
 
@@ -213,5 +296,18 @@ namespace Blueberry
 	List<ObjectPtr<EditorWindow>>& EditorWindow::GetWindows()
 	{
 		return s_ActiveWindows;
+	}
+
+	void EditorWindow::OnSaveChanges()
+	{
+	}
+
+	void EditorWindow::OnDiscardChanges()
+	{
+	}
+
+	WString EditorWindow::GetSaveChangesMessage()
+	{
+		return L"Window has unsaved changes.";
 	}
 }

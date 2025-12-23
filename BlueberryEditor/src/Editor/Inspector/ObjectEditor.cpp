@@ -27,6 +27,11 @@ namespace Blueberry
 		OnDrawScene();
 	}
 
+	SerializedObject* ObjectEditor::GetSerializedObject()
+	{
+		return m_SerializedObject.get();
+	}
+
 	void ObjectEditor::Enable()
 	{
 		OnEnable();
@@ -65,7 +70,6 @@ namespace Blueberry
 			{
 				m_SerializedObject->ApplyModifiedProperties();
 				AssetDB::SetDirty(m_SerializedObject->GetTarget());
-				SceneArea::RequestRedrawAll();
 			}
 		} 
 	}

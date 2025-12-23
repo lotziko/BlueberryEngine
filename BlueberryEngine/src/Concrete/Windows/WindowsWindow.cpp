@@ -19,16 +19,16 @@ namespace Blueberry
 {
 	WindowsWindow::WindowsWindow(const WindowProperties& properties)
 	{
-		String windowTitle = properties.Title;
+		String windowTitle = properties.title;
 		String windowClass = "WindowClass";
 
-		m_HInstance = *(static_cast<HINSTANCE*>(properties.Data));
+		m_HInstance = *(static_cast<HINSTANCE*>(properties.data));
 		m_WindowTitle = windowTitle;
 		m_WindowTitleWide = StringConverter::StringToWide(windowTitle);
 		m_WindowClass = windowClass;
 		m_WindowClassWide = StringConverter::StringToWide(windowClass);
-		m_Width = properties.Width;
-		m_Height = properties.Height;
+		m_Width = properties.width;
+		m_Height = properties.height;
 
 		this->RegisterWindowClass();
 
@@ -43,14 +43,14 @@ namespace Blueberry
 
 		SetProcessDPIAware();
 
-		int centerX = (GetSystemMetrics(SM_CXSCREEN) - properties.Width) / 2;
-		int centerY = (GetSystemMetrics(SM_CYSCREEN) - properties.Height) / 2;
+		int centerX = (GetSystemMetrics(SM_CXSCREEN) - properties.width) / 2;
+		int centerY = (GetSystemMetrics(SM_CYSCREEN) - properties.height) / 2;
 
 		RECT wr;
 		wr.left = centerX;
 		wr.top = centerY;
-		wr.right = wr.left + properties.Width;
-		wr.bottom = wr.top + properties.Height;
+		wr.right = wr.left + properties.width;
+		wr.bottom = wr.top + properties.height;
 
 		AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
 
@@ -70,6 +70,11 @@ namespace Blueberry
 		if (m_Handle == NULL)
 		{
 			BB_ERROR(WindowsHelper::GetStringLastError() + "CreateWindowEX Failed for window: " + m_WindowTitle);
+		}
+
+		if (properties.canDropFiles)
+		{
+			DragAcceptFiles(m_Handle, TRUE);
 		}
 
 		ShowWindow(m_Handle, SW_SHOW);
@@ -142,9 +147,14 @@ namespace Blueberry
 		{
 		case WM_CLOSE:
 		{
-			DestroyWindow(hwnd);
-			s_IsActive = false;
-			return 0;
+			WindowClosingEventArgs args = {};
+			WindowEvents::GetWindowClosing().Invoke(args);
+			if (!args.IsCanceled())
+			{
+				DestroyWindow(hwnd);
+				s_IsActive = false;
+				return 0;
+			}
 			break;
 		}
 		default:
@@ -261,7 +271,29 @@ namespace Blueberry
 			WindowEvents::GetWindowUnfocused().Invoke();
 			return 0;
 		}
+		case WM_DROPFILES:
+		{
+			HDROP hDrop = (HDROP)wParam;
 
+			UINT count = DragQueryFileW(hDrop, 0xFFFFFFFF, nullptr, 0);
+
+			WindowDropFilesEventArgs args = {};
+			for (UINT i = 0; i < count; ++i)
+			{
+				wchar_t path[MAX_PATH];
+				DragQueryFileW(hDrop, i, path, MAX_PATH);
+				args.AddFile(WString(path));
+			}
+			WindowEvents::GetWindowDroppedFiles().Invoke(args);
+
+			DragFinish(hDrop);
+
+			// Force window focus
+			BringWindowToTop(hwnd);
+			SetActiveWindow(hwnd);
+
+			return 0;
+		}
 		default:
 			break;
 		}

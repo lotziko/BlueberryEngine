@@ -9,7 +9,7 @@ namespace Blueberry
 	class Layer;
 	class LayerStack;
 
-	class Engine
+	class Application
 	{
 	public:
 		BB_OVERRIDE_NEW_DELETE
@@ -18,12 +18,15 @@ namespace Blueberry
 		void Shutdown();
 		void Run();
 
+		Window* GetWindow();
+
 		void PushLayer(Layer* layer);
+		void PopLayer(Layer* layer);
 
 		void AddWaitFrameCallback(void(*waitFrameCallback)());
 		void RemoveWaitFrameCallback(void(*waitFrameCallback)());
 
-		static Engine* GetInstance();
+		static Application* GetInstance();
 		
 	private:
 		bool ProcessMessages();
@@ -31,7 +34,7 @@ namespace Blueberry
 		void Draw();
 
 	private:
-		static inline Engine* s_Instance = nullptr;
+		static inline Application* s_Instance = nullptr;
 		Window* m_Window;
 		LayerStack* m_LayerStack;
 		void(*m_WaitFrameCallback)() = nullptr;

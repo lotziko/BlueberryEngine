@@ -9,10 +9,18 @@
 
 namespace Blueberry
 {
+	ObjectUpdateEvent SerializedObject::s_ObjectUpdated = {};
+
+	Object* ObjectUpdateEventArgs::GetObject() const
+	{
+		return m_Object;
+	}
+
 	SerializedObject::SerializedObject(Object* target)
 	{
 		m_ClassInfo = ClassDB::GetInfo(target->GetType());
 		m_Targets.push_back(target);
+		m_TargetPtrs.push_back(target);
 		m_IsPrefabInstance.push_back(PrefabManager::IsPartOfPrefabInstance(target));
 		BuildTree();
 	}
@@ -23,6 +31,7 @@ namespace Blueberry
 		for (Object* target : targets)
 		{
 			m_Targets.push_back(target);
+			m_TargetPtrs.push_back(target);
 			m_IsPrefabInstance.push_back(PrefabManager::IsPartOfPrefabInstance(target));
 		}
 		BuildTree();
@@ -61,6 +70,18 @@ namespace Blueberry
 		return m_Targets;
 	}
 
+	bool SerializedObject::IsValid()
+	{
+		for (size_t i = 0; i < m_Targets.size(); ++i)
+		{
+			if (!m_TargetPtrs[i].IsValid())
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
 	void SerializedObject::Update()
 	{
 		ReadTree();
@@ -75,9 +96,17 @@ namespace Blueberry
 				ApplyModification(modification);
 			}
 			m_Modifications.clear();
+			// TODO use undo instead
+			ObjectUpdateEventArgs args(m_Targets[0]);
+			s_ObjectUpdated.Invoke(args);
 			return true;
 		}
 		return false;
+	}
+
+	ObjectUpdateEvent& SerializedObject::GetObjectUpdated()
+	{
+		return s_ObjectUpdated;
 	}
 
 	void CalculateMixedMask(PropertyTreeNode* node)

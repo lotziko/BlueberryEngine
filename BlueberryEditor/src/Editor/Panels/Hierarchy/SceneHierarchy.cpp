@@ -30,12 +30,14 @@ namespace Blueberry
 	{
 		EditorObjectManager::GetEntityCreated().AddCallback<SceneHierarchy, &SceneHierarchy::Invalidate>(this);
 		EditorObjectManager::GetEntityDestroyed().AddCallback<SceneHierarchy, &SceneHierarchy::Invalidate>(this);
+		Selection::GetSelectionChanged().AddCallback<SceneHierarchy, &SceneHierarchy::OnSelectionChange>(this);
 	}
 
 	SceneHierarchy::~SceneHierarchy()
 	{
 		EditorObjectManager::GetEntityCreated().RemoveCallback<SceneHierarchy, &SceneHierarchy::Invalidate>(this);
 		EditorObjectManager::GetEntityDestroyed().RemoveCallback<SceneHierarchy, &SceneHierarchy::Invalidate>(this);
+		Selection::GetSelectionChanged().RemoveCallback<SceneHierarchy, &SceneHierarchy::OnSelectionChange>(this);
 	}
 
 	void SceneHierarchy::Open()
@@ -80,7 +82,8 @@ namespace Blueberry
 			Entity* entity = node.entity.Get();
 			ObjectId id = entity->GetObjectId();
 			bool hasChildren = (i < size - 1 && nodes[i + 1].depth > node.depth);
-			ImGuiTreeNodeFlags flags = (Selection::IsActiveObject(entity) ? ImGuiTreeNodeFlags_Selected : 0) | (hasChildren ? ImGuiTreeNodeFlags_OpenOnArrow : (ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen));
+			bool isActive = Selection::IsActiveObject(entity);
+			ImGuiTreeNodeFlags flags = (isActive ? ImGuiTreeNodeFlags_Selected : 0) | (hasChildren ? ImGuiTreeNodeFlags_OpenOnArrow : (ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen));
 			flags |= ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
 			
 			ImGui::SetNextItemOpen(m_ExpandedNodes.count(id));
@@ -97,6 +100,12 @@ namespace Blueberry
 				}
 			}
 
+			if (m_ScrollRequest == i)
+			{
+				ImGui::ScrollToItem(ImGuiScrollFlags_KeepVisibleEdgeY);
+				m_ScrollRequest = UINT64_MAX;
+			}
+			
 			if (ImGui::IsItemHovered())
 			{
 				isHoveringAny = true;
@@ -409,5 +418,48 @@ namespace Blueberry
 	{
 		m_TransformTree.Update(m_CurrentScene == nullptr ? List<ObjectPtr<Entity>>() : m_CurrentScene->GetRootEntities());
 		s_HierarchyUpdated.Invoke();
+	}
+
+	void SceneHierarchy::OnSelectionChange()
+	{
+		for (Object* object : Selection::GetActiveObjects())
+		{
+			if (object->IsClassType(Entity::Type))
+			{
+				Entity* entity = static_cast<Entity*>(object);
+				ObjectId id = entity->GetObjectId();
+				if (entity->GetScene() == m_CurrentScene && m_ExpandedNodes.count(id) == 0)
+				{
+					List<TransformTreeNode>& nodes = m_TransformTree.GetNodes();
+					size_t size = nodes.size();
+					
+					for (size_t i = 1; i < size; ++i)
+					{
+						const TransformTreeNode& node = nodes[i];
+						if (node.entity == entity)
+						{
+							bool hasChildren = (i < size - 1 && nodes[i + 1].depth > node.depth);
+							int currentDepth = node.depth;
+
+							if (hasChildren)
+							{
+								m_ExpandedNodes.insert(id);
+							}
+							m_ScrollRequest = i;
+							for (size_t j = i - 1; j-- > 0;)
+							{
+								const TransformTreeNode& currentNode = nodes[j];
+								int depth = currentNode.depth;
+								if (depth < currentDepth)
+								{
+									m_ExpandedNodes.insert(currentNode.entity.Get()->GetObjectId());
+									currentDepth = depth;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 }

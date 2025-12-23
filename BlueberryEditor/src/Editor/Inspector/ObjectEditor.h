@@ -22,6 +22,8 @@ namespace Blueberry
 		virtual Texture* GetIcon(Object* object);
 		void DrawScene(Object* object);
 
+		SerializedObject* GetSerializedObject();
+
 		void Enable();
 		void DrawInspector();
 		void DrawSceneSelected();

@@ -81,8 +81,12 @@ namespace Blueberry
 
 	void PrefabInstance::Resolve()
 	{
+		if (!m_Prefab.IsValid() || m_Prefab->GetState() != ObjectState::Default)
+		{
+			return;
+		}
 		bool isInitialization = m_Entity == nullptr;
-		m_Entity = static_cast<Entity*>(ObjectCloner::Clone(m_PrefabToInstanceMapping, m_Prefab.Get()));
+		m_Entity = static_cast<Entity*>(ObjectCloner::Resolve(m_PrefabToInstanceMapping, m_Prefab.Get()));
 		PrefabManager::s_RootToPrefabInstance.insert_or_assign(m_Entity->GetObjectId(), GetObjectId());
 		for (auto& pair : m_PrefabToInstanceMapping)
 		{
@@ -120,10 +124,18 @@ namespace Blueberry
 
 		for (auto& modification : m_Modifications)
 		{
-			Object* object = ObjectDB::GetObject(m_PrefabToInstanceMapping[modification.GetTarget()->GetObjectId()]);
-			String path = modification.GetPath();
-			Variant& value = modification.GetValue();
-			ObjectHelper::WriteValue(object, path, value);
+			Object* target = modification.GetTarget();
+			if (target != nullptr)
+			{
+				auto it = m_PrefabToInstanceMapping.find(target->GetObjectId());
+				if (it != m_PrefabToInstanceMapping.end())
+				{
+					Object* object = ObjectDB::GetObject(it->second);
+					String path = modification.GetPath();
+					Variant& value = modification.GetValue();
+					ObjectHelper::WriteValue(object, path, value);
+				}
+			}
 		}
 	}
 

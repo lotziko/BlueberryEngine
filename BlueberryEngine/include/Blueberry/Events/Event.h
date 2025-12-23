@@ -5,7 +5,7 @@
 
 namespace Blueberry
 {
-	template<typename EventType = void>
+	template<typename ArgType = void>
 	class Event;
 
 	template<>
@@ -39,7 +39,7 @@ namespace Blueberry
 		bool m_IsInvoking = false;
 	};
 
-	template<class EventType>
+	template<class ArgType>
 	class Event
 	{
 	public:
@@ -47,23 +47,23 @@ namespace Blueberry
 
 		Event() { m_Callbacks = std::make_shared<List<CallbackData>>(); }
 
-		template <class OwnerObject, void(OwnerObject::*method)(const EventType&)>
+		template <class OwnerObject, void(OwnerObject::*method)(ArgType&)>
 		void AddCallback(OwnerObject* const object);
-		template <void(*method)(const EventType&)>
+		template <void(*method)(ArgType&)>
 		void AddCallback();
-		template <class OwnerObject, void(OwnerObject::*method)(const EventType&)>
+		template <class OwnerObject, void(OwnerObject::*method)(ArgType&)>
 		void RemoveCallback(OwnerObject* const object);
-		template <void(*method)(const EventType&)>
+		template <void(*method)(ArgType&)>
 		void RemoveCallback();
 		bool HasCallbacks();
-		void Invoke(EventType& event);
+		void Invoke(ArgType& args);
 
 	private:
 		struct CallbackData
 		{
 			uint64_t ownerPtr;
 			uint64_t methodPtr;
-			Delegate<const EventType&> delegate;
+			Delegate<ArgType&> delegate;
 		};
 
 		std::shared_ptr<List<CallbackData>> m_Callbacks;
@@ -179,11 +179,11 @@ namespace Blueberry
 		m_IsInvoking = false;
 	}
 
-	template <class EventType>
-	template <class OwnerObject, void(OwnerObject::*method)(const EventType&)>
-	inline void Event<EventType>::AddCallback(OwnerObject* const object)
+	template <class ArgType>
+	template <class OwnerObject, void(OwnerObject::*method)(ArgType&)>
+	inline void Event<ArgType>::AddCallback(OwnerObject* const object)
 	{
-		CallbackData data = { reinterpret_cast<uint64_t>(object), *reinterpret_cast<uint64_t*>(&method), Delegate<const EventType&>::Create<OwnerObject, method>(object) };
+		CallbackData data = { reinterpret_cast<uint64_t>(object), *reinterpret_cast<uint64_t*>(&method), Delegate<ArgType&>::Create<OwnerObject, method>(object) };
 		if (m_IsInvoking)
 		{
 			std::shared_ptr<List<CallbackData>> newCallbacks = std::make_shared<List<CallbackData>>(*m_Callbacks);
@@ -196,11 +196,11 @@ namespace Blueberry
 		}
 	}
 
-	template <class EventType>
-	template <void(*method)(const EventType&)>
-	inline void Event<EventType>::AddCallback()
+	template <class ArgType>
+	template <void(*method)(ArgType&)>
+	inline void Event<ArgType>::AddCallback()
 	{
-		CallbackData data = { 0, *reinterpret_cast<uint64_t*>(&method), Delegate<const EventType&>::Create<method>() };
+		CallbackData data = { 0, *reinterpret_cast<uint64_t*>(&method), Delegate<ArgType&>::Create<method>() };
 		if (m_IsInvoking)
 		{
 			std::shared_ptr<List<CallbackData>> newCallbacks = std::make_shared<List<CallbackData>>(*m_Callbacks);
@@ -213,9 +213,9 @@ namespace Blueberry
 		}
 	}
 
-	template <class EventType>
-	template <class OwnerObject, void(OwnerObject::*method)(const EventType&)>
-	inline void Event<EventType>::RemoveCallback(OwnerObject* const object)
+	template <class ArgType>
+	template <class OwnerObject, void(OwnerObject::*method)(ArgType&)>
+	inline void Event<ArgType>::RemoveCallback(OwnerObject* const object)
 	{
 		uint64_t ownerPtr = reinterpret_cast<uint64_t>(object);
 		uint64_t methodPtr = *reinterpret_cast<uint64_t*>(&method);
@@ -245,9 +245,9 @@ namespace Blueberry
 		}
 	}
 
-	template <class EventType>
-	template <void(*method)(const EventType&)>
-	inline void Event<EventType>::RemoveCallback()
+	template <class ArgType>
+	template <void(*method)(ArgType&)>
+	inline void Event<ArgType>::RemoveCallback()
 	{
 		uint64_t methodPtr = *reinterpret_cast<uint64_t*>(&method);
 		if (m_IsInvoking)
@@ -276,20 +276,20 @@ namespace Blueberry
 		}
 	}
 
-	template<class EventType>
-	inline bool Event<EventType>::HasCallbacks()
+	template<class ArgType>
+	inline bool Event<ArgType>::HasCallbacks()
 	{
 		return m_Callbacks->size() > 0;
 	}
 
-	template<class EventType>
-	inline void Event<EventType>::Invoke(EventType& event)
+	template<class ArgType>
+	inline void Event<ArgType>::Invoke(ArgType& args)
 	{
 		m_IsInvoking = true;
 		auto snapshot = m_Callbacks;
 		for (auto& callback : *snapshot)
 		{
-			callback.delegate.Invoke(event);
+			callback.delegate.Invoke(args);
 		}
 		m_IsInvoking = false;
 	}

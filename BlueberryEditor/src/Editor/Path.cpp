@@ -51,7 +51,7 @@ namespace Blueberry
 		return s_ThumbnailCachePath;
 	}
 
-	void Path::SetProjectPath(const std::wstring& path)
+	void Path::SetProjectPath(const WString& path)
 	{
 		auto assetsPath = path;
 		assetsPath.append(L"\\Assets");

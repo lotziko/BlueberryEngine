@@ -3,6 +3,7 @@
 #include "Blueberry\Core\Base.h"
 #include "Blueberry\Core\ObjectPtr.h"
 #include "Blueberry\Core\Variant.h"
+#include "Blueberry\Events\Event.h"
 
 namespace Blueberry
 {
@@ -57,6 +58,21 @@ namespace Blueberry
 		size_t index2;
 	};
 
+	class ObjectUpdateEventArgs
+	{
+	public:
+		ObjectUpdateEventArgs(Object* object) : m_Object(object)
+		{
+		}
+
+		Object* GetObject() const;
+
+	private:
+		Object* m_Object;
+	};
+
+	using ObjectUpdateEvent = Event<const ObjectUpdateEventArgs>;
+
 	class SerializedObject : public std::enable_shared_from_this<SerializedObject>
 	{
 	public:
@@ -72,9 +88,12 @@ namespace Blueberry
 		Object* GetTarget();
 		const List<Object*>& GetTargets();
 
+		bool IsValid();
 		void Update();
 
 		bool ApplyModifiedProperties();
+
+		static ObjectUpdateEvent& GetObjectUpdated();
 
 	private:
 		void BuildTree();
@@ -93,9 +112,12 @@ namespace Blueberry
 	private:
 		const ClassInfo* m_ClassInfo = nullptr;
 		List<Object*> m_Targets = {};
+		List<ObjectPtr<Object>> m_TargetPtrs = {};
 		List<PropertyModification> m_Modifications = {};
 		std::shared_ptr<PropertyTreeNode> m_Root;
 		List<bool> m_IsPrefabInstance = {};
+
+		static ObjectUpdateEvent s_ObjectUpdated;
 
 		friend class SerializedProperty;
 	};

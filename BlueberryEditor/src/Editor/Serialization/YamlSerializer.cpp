@@ -346,6 +346,7 @@ namespace Blueberry
 				case BindingType::StringList:
 				{
 					List<String>* arrayPointer = field.Get<List<String>>(ptr);
+					arrayPointer->clear_base();
 					for (auto& child : objectNode[key].children())
 					{
 						String stringValue;
@@ -391,6 +392,7 @@ namespace Blueberry
 				case BindingType::ObjectPtrList:
 				{
 					List<ObjectPtr<Object>>* refArrayPointer = field.Get<List<ObjectPtr<Object>>>(ptr);
+					refArrayPointer->clear_base();
 					for (auto& child : objectNode[key].cchildren())
 					{
 						ObjectPtrData data = {};
@@ -409,6 +411,7 @@ namespace Blueberry
 				case BindingType::DataList:
 				{
 					ListBase* dataArrayPointer = field.Get<ListBase>(ptr);
+					dataArrayPointer->clear_base();
 					for (auto& child : objectNode[key].children())
 					{
 						void* data = dataArrayPointer->emplace_back_base();

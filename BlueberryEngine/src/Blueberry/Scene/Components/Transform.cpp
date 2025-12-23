@@ -148,6 +148,7 @@ namespace Blueberry
 	void Transform::SetLocalRotation(const Quaternion& rotation)
 	{
 		m_LocalRotation = rotation;
+		m_LocalRotationEulerHint = ToDegrees(m_LocalRotation.ToEuler());
 		InvalidateHierarchy();
 	}
 
@@ -194,6 +195,7 @@ namespace Blueberry
 		{
 			m_LocalRotation = Quaternion::CreateFromRotationMatrix(Matrix::Transform(m_Parent->m_WorldToLocalMatrix, rotation));
 		}
+		m_LocalRotationEulerHint = ToDegrees(m_LocalRotation.ToEuler());
 		InvalidateHierarchy();
 	}
 

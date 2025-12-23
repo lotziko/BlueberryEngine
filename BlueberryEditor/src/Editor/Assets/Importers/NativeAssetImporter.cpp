@@ -17,45 +17,36 @@ namespace Blueberry
 	{
 		Guid guid = GetGuid();
 
-		if (IsImported())
+		String path = GetFilePath();
+		String extension = String(std::filesystem::path(path).extension().string());
+		Serializer* serializer = extension == ".prefab" ? static_cast<Serializer*>(new YamlSceneSerializer()) : (YamlHelper::IsYaml(path) ? static_cast<Serializer*>(new YamlSerializer()) : static_cast<Serializer*>(new BinarySerializer()));
+		for (auto& object : ObjectDB::GetObjectsFromGuid(guid))
 		{
-			// TODO think how to deserialize into existing object
-			BB_INFO("Asset \"" << GetName() << "\" is already imported.");
-			return;
-		}
-		else
-		{
-			String path = GetFilePath();
-			String extension = String(std::filesystem::path(path).extension().string());
-			Serializer* serializer = extension == ".prefab" ? static_cast<Serializer*>(new YamlSceneSerializer()) : (YamlHelper::IsYaml(path) ? static_cast<Serializer*>(new YamlSerializer()) : static_cast<Serializer*>(new BinarySerializer()));
-			for (auto& object : ObjectDB::GetObjectsFromGuid(guid))
+			Object* importedObject = ObjectDB::GetObject(object.second);
+			if (importedObject != nullptr)
 			{
-				Object* importedObject = ObjectDB::GetObject(object.second);
-				if (importedObject != nullptr)
-				{
-					serializer->AddObject(importedObject, object.first);
-				}
+				serializer->AddObject(importedObject, object.first);
 			}
-			serializer->Deserialize(path);
-			auto& deserializedObjects = serializer->GetDeserializedObjects();
-			
-			bool mainObjectIsSet = false;
-			for (auto& pair : deserializedObjects)
-			{
-				Object* importedObject = pair.first;
-				FileId fileId = pair.second;
+		}
+		serializer->Deserialize(path);
+		auto& deserializedObjects = serializer->GetDeserializedObjects();
 
-				ObjectDB::AllocateIdToGuid(importedObject, guid, fileId);
-				importedObject->SetState(ObjectState::Default);
-				if (!mainObjectIsSet)
-				{
-					importedObject->SetName(GetName());
-					SetMainObject(fileId);
-					mainObjectIsSet = true;
-				}
+		bool mainObjectIsSet = false;
+		for (auto& pair : deserializedObjects)
+		{
+			Object* importedObject = pair.first;
+			FileId fileId = pair.second;
+
+			ObjectDB::AllocateIdToGuid(importedObject, guid, fileId);
+			importedObject->SetState(ObjectState::Default);
+			if (!mainObjectIsSet)
+			{
+				importedObject->SetName(GetName());
+				SetMainObject(fileId);
+				mainObjectIsSet = true;
 			}
-			delete serializer;
-			//BB_INFO("NativeAsset \"" << GetName() << "\" imported.");
 		}
+		delete serializer;
+		//BB_INFO("NativeAsset \"" << GetName() << "\" imported.");
 	}
 }

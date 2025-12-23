@@ -8,6 +8,7 @@ namespace Blueberry
 {
 	EntityCreateEvent EditorObjectManager::s_EntityCreated = {};
 	EntityDestroyEvent EditorObjectManager::s_EntityDestroyed = {};
+	EntityUpdateEvent EditorObjectManager::s_EntityUpdated = {};
 
 	Entity* EditorObjectManager::CreateEntity(const String& name)
 	{
@@ -36,6 +37,18 @@ namespace Blueberry
 		s_EntityDestroyed.Invoke();
 	}
 
+	void EditorObjectManager::AddComponent(Entity* entity, Component* component)
+	{
+		entity->AddComponent(component);
+		s_EntityUpdated.Invoke();
+	}
+
+	void EditorObjectManager::RemoveComponent(Component* component)
+	{
+		component->GetEntity()->RemoveComponent(component);
+		s_EntityUpdated.Invoke();
+	}
+
 	EntityCreateEvent& EditorObjectManager::GetEntityCreated()
 	{
 		return s_EntityCreated;
@@ -44,5 +57,10 @@ namespace Blueberry
 	EntityDestroyEvent& EditorObjectManager::GetEntityDestroyed()
 	{
 		return s_EntityDestroyed;
+	}
+
+	EntityUpdateEvent& EditorObjectManager::GetEntityUpdated()
+	{
+		return s_EntityUpdated;
 	}
 }

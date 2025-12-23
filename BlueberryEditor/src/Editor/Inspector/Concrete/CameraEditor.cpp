@@ -57,10 +57,7 @@ namespace Blueberry
 		ImGui::Property(&m_ZNearPlaneProperty, "Near plane");
 		ImGui::Property(&m_ZFarPlaneProperty, "Far plane");
 
-		if (m_SerializedObject->ApplyModifiedProperties())
-		{
-			SceneArea::RequestRedrawAll();
-		}
+		m_SerializedObject->ApplyModifiedProperties();
 	}
 
 	Texture* CameraEditor::GetIcon(Object* object)

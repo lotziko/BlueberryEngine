@@ -36,12 +36,15 @@ namespace Blueberry
 		void Invalidate();
 		void UpdateTree();
 
+		void OnSelectionChange();
+
 		Scene* m_CurrentScene;
 		Entity* m_RenamingEntity;
 		TransformTree m_TransformTree;
 		size_t m_LastClickedItem = UINT64_MAX;
 		HashSet<ObjectId> m_ExpandedNodes;
 		bool m_IsValid = false;
+		size_t m_ScrollRequest = UINT64_MAX;
 
 		static HierarchyUpdateEvent s_HierarchyUpdated;
 	};
