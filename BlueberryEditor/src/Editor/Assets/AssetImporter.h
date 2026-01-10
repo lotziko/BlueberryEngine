@@ -38,6 +38,8 @@ namespace Blueberry
 		virtual void ImportData() = 0;
 		void AddAssetObject(Object* object, const FileId& fileId);
 		void SetMainObject(const FileId& id);
+		template<class ObjectType>
+		ObjectType* GetOrCreateAssetObject(const FileId& fileId);
 
 	private:
 		Guid m_Guid;
@@ -50,4 +52,24 @@ namespace Blueberry
 
 		friend class ImporterInfoCache;
 	};
+
+	template<class ObjectType>
+	inline ObjectType* AssetImporter::GetOrCreateAssetObject(const FileId& fileId)
+	{
+		Guid guid = GetGuid();
+		ObjectType* result;
+		auto& objects = ObjectDB::GetObjectsFromGuid(guid);
+		auto it = objects.find(fileId);
+		if (it != objects.end())
+		{
+			result = static_cast<ObjectType*>(ObjectDB::GetObject(it->second));
+			result->SetState(ObjectState::Default);
+		}
+		else
+		{
+			result = Object::Create<ObjectType>();
+		}
+		ObjectDB::AllocateIdToGuid(result, guid, fileId);
+		return result;
+	}
 }

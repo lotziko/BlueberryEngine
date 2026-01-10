@@ -86,7 +86,7 @@ namespace Blueberry
 		Vector3 m_Direction = Vector3(0, 0, 1);
 		Vector3 m_Up = Vector3(0, 1, 0);
 
-		size_t m_RecalculationFrame = 0;
+		size_t m_UpdateCount = 0;
 
 		float m_ZNearPlane = 0.1f;
 		float m_ZFarPlane = 1000.0f;

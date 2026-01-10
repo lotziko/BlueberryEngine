@@ -5,8 +5,6 @@
 #include "Blueberry\Graphics\RendererTree.h"
 #include "Blueberry\Graphics\Mesh.h"
 #include "Blueberry\Graphics\Material.h"
-#include "Blueberry\Scene\Entity.h"
-
 #include "Blueberry\Scene\Components\Transform.h"
 
 namespace Blueberry
@@ -124,8 +122,8 @@ namespace Blueberry
 		if (m_Mesh.IsValid())
 		{
 			Transform* transform = GetTransform();
-			size_t transformRecalculationFrame = transform->GetRecalculationFrame();
-			if (m_RecalculationFrame < transformRecalculationFrame)
+			size_t transformUpdateCount = transform->GetUpdateCount();
+			if (m_UpdateCount != transformUpdateCount)
 			{
 				AABB bounds = m_Mesh->GetBounds();
 				Matrix matrix = transform->GetLocalToWorldMatrix();
@@ -146,13 +144,13 @@ namespace Blueberry
 					m_CullingDirty = true;
 				}
 				m_Bounds = bounds;
-				m_RecalculationFrame = transformRecalculationFrame;
+				m_UpdateCount = transformUpdateCount;
 			}
 		}
 	}
 
 	void MeshRenderer::InvalidateBounds()
 	{
-		m_RecalculationFrame = 0;
+		m_UpdateCount = 0;
 	}
 }

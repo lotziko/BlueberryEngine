@@ -35,10 +35,7 @@ namespace Blueberry
 		textureProperties.dimension = TextureDimension::Texture2D;
 		textureProperties.wrapMode = WrapMode::Clamp;
 		textureProperties.filterMode = FilterMode::Point;
-		textureProperties.isRenderTarget = false;
-		textureProperties.isReadable = false;
-		textureProperties.isWritable = false;
-		textureProperties.isUnorderedAccess = true;
+		textureProperties.usageFlags = TextureUsageFlags::UnorderedAccess;
 		
 		GfxDevice::CreateTexture(textureProperties, s_LightIndexTexture);
 	}

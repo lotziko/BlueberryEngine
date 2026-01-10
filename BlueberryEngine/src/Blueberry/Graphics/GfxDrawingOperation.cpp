@@ -37,11 +37,19 @@ namespace Blueberry
 		this->passIndex = passIndex;
 	}
 
-	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material, const uint32_t& indexCount, const uint32_t& indexOffset, const uint32_t& vertexCount, const uint8_t& passIndex, GfxBuffer* instanceBuffer, const uint32_t& instanceOffset, const uint32_t& instanceCount) : GfxDrawingOperation(mesh->m_VertexBuffer, mesh->m_IndexBuffer, material, &mesh->m_Layout, indexCount, indexOffset, vertexCount, mesh->GetTopology(), passIndex, instanceBuffer, instanceOffset, instanceCount)
+	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material, const uint32_t& indexCount, const uint32_t& indexOffset, const uint32_t& vertexCount, const uint8_t& passIndex, GfxBuffer* instanceBuffer, const uint32_t& instanceOffset, const uint32_t& instanceCount) : GfxDrawingOperation(mesh->m_VertexBuffer, mesh->m_IndexBuffer, material, &mesh->m_Layout, indexCount, indexOffset, vertexCount, mesh->m_Topology, passIndex, instanceBuffer, instanceOffset, instanceCount)
 	{
 	}
 
-	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material, const uint8_t& passIndex, GfxBuffer* instanceBuffer, const uint32_t& instanceOffset, const uint32_t& instanceCount) : GfxDrawingOperation(mesh != nullptr && mesh->GetState() != ObjectState::Missing ? mesh->m_VertexBuffer : nullptr, mesh->m_IndexBuffer, material, &mesh->m_Layout, mesh->m_IndexCount, 0, mesh->m_VertexCount, mesh->GetTopology(), passIndex, instanceBuffer, instanceOffset, instanceCount)
+	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, GfxBuffer* vertexBufferOverride, Material* material, const uint32_t& indexCount, const uint32_t& indexOffset, const uint32_t& vertexCount, const uint8_t& passIndex, GfxBuffer* instanceBuffer, const uint32_t& instanceOffset, const uint32_t& instanceCount) : GfxDrawingOperation(vertexBufferOverride == nullptr ? mesh->m_VertexBuffer : vertexBufferOverride, mesh->m_IndexBuffer, material, &mesh->m_Layout, indexCount, indexOffset, vertexCount, mesh->m_Topology, passIndex, instanceBuffer, instanceOffset, instanceCount)
+	{
+	}
+
+	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material, const uint8_t& passIndex, GfxBuffer* instanceBuffer, const uint32_t& instanceOffset, const uint32_t& instanceCount) : GfxDrawingOperation(mesh->m_VertexBuffer, mesh->m_IndexBuffer, material, &mesh->m_Layout, mesh->m_IndexCount, 0, mesh->m_VertexCount, mesh->m_Topology, passIndex, instanceBuffer, instanceOffset, instanceCount)
+	{
+	}
+
+	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, GfxBuffer* vertexBufferOverride, Material* material, const uint8_t& passIndex, GfxBuffer* instanceBuffer, const uint32_t& instanceOffset, const uint32_t& instanceCount) : GfxDrawingOperation(vertexBufferOverride == nullptr ? mesh->m_VertexBuffer : vertexBufferOverride, mesh->m_IndexBuffer, material, &mesh->m_Layout, mesh->m_IndexCount, 0, mesh->m_VertexCount, mesh->m_Topology, passIndex, instanceBuffer, instanceOffset, instanceCount)
 	{
 	}
 

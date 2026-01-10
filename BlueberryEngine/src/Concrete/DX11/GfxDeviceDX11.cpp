@@ -518,20 +518,11 @@ namespace Blueberry
 		{
 			size_t id = pair.first;
 			auto dxBuffer = GfxBufferDX11::s_PointerCache.Get(pair.second);
-			BufferType type = dxBuffer->m_Type;
-			if (type == BufferType::Raw)
+			if (dxBuffer == nullptr)
 			{
-				for (uint32_t i = 0; i < dxShader->m_UAVSlots.size(); ++i)
-				{
-					size_t slotId = dxShader->m_UAVSlots[i];
-					if (id == slotId)
-					{
-						m_DeviceContext->CSSetUnorderedAccessViews(i, 1, dxBuffer->m_UnorderedAccessView.GetAddressOf(), NULL);
-						break;
-					}
-				}
+				continue;
 			}
-			else if (type == BufferType::Constant)
+			if (dxBuffer->m_IsConstant)
 			{
 				for (uint32_t i = 0; i < dxShader->m_ConstantBufferSlots.size(); ++i)
 				{
@@ -542,8 +533,9 @@ namespace Blueberry
 						break;
 					}
 				}
+				continue;
 			}
-			else if (type == BufferType::Structured)
+			if (dxBuffer->m_ShaderResourceView != nullptr)
 			{
 				for (uint32_t i = 0; i < dxShader->m_SRVSlots.size(); ++i)
 				{
@@ -551,14 +543,19 @@ namespace Blueberry
 					if (id == slotId)
 					{
 						m_DeviceContext->CSSetShaderResources(i, 1, dxBuffer->m_ShaderResourceView.GetAddressOf());
+						break;
 					}
 				}
+			}
+			if (dxBuffer->m_UnorderedAccessView != nullptr)
+			{
 				for (uint32_t i = 0; i < dxShader->m_UAVSlots.size(); ++i)
 				{
 					size_t slotId = dxShader->m_UAVSlots[i];
 					if (id == slotId)
 					{
 						m_DeviceContext->CSSetUnorderedAccessViews(i, 1, dxBuffer->m_UnorderedAccessView.GetAddressOf(), NULL);
+						break;
 					}
 				}
 			}

@@ -9,7 +9,7 @@
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\DefaultMaterials.h"
 #include "..\LightHelper.h"
-#include "Blueberry\Graphics\GfxRenderTexturePool.h"
+#include "Blueberry\Graphics\GfxTexturePool.h"
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Components\Light.h"
 #include "Blueberry\Assets\AssetLoader.h"
@@ -43,15 +43,14 @@ namespace Blueberry
 		textureProperties.dimension = TextureDimension::Texture2D;
 		textureProperties.wrapMode = WrapMode::Clamp;
 		textureProperties.filterMode = FilterMode::CompareDepth;
-		textureProperties.isRenderTarget = true;
+		textureProperties.usageFlags = TextureUsageFlags::RenderTarget;
 
 		GfxDevice::CreateTexture(textureProperties, s_AtlasTexture);
 
 		BufferProperties depthBlitBufferProperties = {};
-		depthBlitBufferProperties.type = BufferType::Constant;
 		depthBlitBufferProperties.elementCount = 1;
 		depthBlitBufferProperties.elementSize = sizeof(DepthBlitData) * 1;
-		depthBlitBufferProperties.isWritable = true;
+		depthBlitBufferProperties.usageFlags = BufferUsageFlags::ConstantBuffer;
 
 		GfxDevice::CreateBuffer(depthBlitBufferProperties, s_DepthBlitData);
 	}

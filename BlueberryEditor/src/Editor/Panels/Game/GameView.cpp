@@ -8,7 +8,7 @@
 #include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Graphics\Concrete\DefaultRenderer.h"
 #include "Blueberry\Graphics\GfxTexture.h"
-#include "Blueberry\Graphics\GfxRenderTexturePool.h"
+#include "Blueberry\Graphics\GfxTexturePool.h"
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Input\Cursor.h"
@@ -94,9 +94,9 @@ namespace Blueberry
 				{
 					if (m_RenderTarget != nullptr)
 					{
-						GfxRenderTexturePool::Release(m_RenderTarget);
+						GfxTexturePool::Release(m_RenderTarget);
 					}
-					m_RenderTarget = GfxRenderTexturePool::Get(viewport.x, viewport.y, 1, 1, 1, TextureFormat::R8G8B8A8_UNorm);
+					m_RenderTarget = GfxTexturePool::Get(viewport.x, viewport.y, 1, TextureUsageFlags::RenderTarget, 1, 1, TextureFormat::R8G8B8A8_UNorm);
 					camera->SetPixelSize(Vector2(width, height));
 				}
 

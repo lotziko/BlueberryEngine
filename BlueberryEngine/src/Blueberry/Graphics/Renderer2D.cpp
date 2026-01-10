@@ -29,10 +29,9 @@ namespace Blueberry
 		s_VertexData = BB_MALLOC_ARRAY(float, MAX_VERTICES * size / sizeof(float));
 
 		BufferProperties vertexBufferProperties = {};
-		vertexBufferProperties.type = BufferType::Vertex;
 		vertexBufferProperties.elementCount = MAX_VERTICES;
 		vertexBufferProperties.elementSize = size;
-		vertexBufferProperties.isWritable = true;
+		vertexBufferProperties.usageFlags = BufferUsageFlags::VertexBuffer | BufferUsageFlags::CPUWritable;
 		
 		if (!GfxDevice::CreateBuffer(vertexBufferProperties, s_VertexBuffer))
 		{
@@ -55,10 +54,9 @@ namespace Blueberry
 		}
 		
 		BufferProperties indexBufferProperties = {};
-		indexBufferProperties.type = BufferType::Index;
 		indexBufferProperties.elementCount = MAX_INDICES;
 		indexBufferProperties.elementSize = sizeof(uint32_t);
-		indexBufferProperties.isWritable = true;
+		indexBufferProperties.usageFlags = BufferUsageFlags::IndexBuffer | BufferUsageFlags::CPUWritable;
 
 		if (!GfxDevice::CreateBuffer(indexBufferProperties, s_IndexBuffer))
 		{

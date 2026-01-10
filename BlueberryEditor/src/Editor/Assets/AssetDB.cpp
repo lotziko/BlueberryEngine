@@ -301,7 +301,7 @@ namespace Blueberry
 
 	AssetImporter* AssetDB::CreateImporter(const std::filesystem::path& path)
 	{
-		auto extension = path.extension();
+		auto extension = std::filesystem::is_directory(path) ? "" : path.extension();
 		auto extensionString = extension.string();
 
 		auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());

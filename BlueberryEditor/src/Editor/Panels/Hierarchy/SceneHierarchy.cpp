@@ -432,21 +432,14 @@ namespace Blueberry
 				{
 					List<TransformTreeNode>& nodes = m_TransformTree.GetNodes();
 					size_t size = nodes.size();
-					
 					for (size_t i = 1; i < size; ++i)
 					{
 						const TransformTreeNode& node = nodes[i];
 						if (node.entity == entity)
 						{
-							bool hasChildren = (i < size - 1 && nodes[i + 1].depth > node.depth);
 							int currentDepth = node.depth;
-
-							if (hasChildren)
-							{
-								m_ExpandedNodes.insert(id);
-							}
 							m_ScrollRequest = i;
-							for (size_t j = i - 1; j-- > 0;)
+							for (size_t j = i; j-- > 0;)
 							{
 								const TransformTreeNode& currentNode = nodes[j];
 								int depth = currentNode.depth;
@@ -454,6 +447,10 @@ namespace Blueberry
 								{
 									m_ExpandedNodes.insert(currentNode.entity.Get()->GetObjectId());
 									currentDepth = depth;
+								}
+								if (depth == 0)
+								{
+									break;
 								}
 							}
 						}

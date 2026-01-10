@@ -266,10 +266,10 @@ namespace Blueberry
 	bool Camera::IsViewDirty()
 	{
 		// This may cause problems some time later
-		size_t transformRecalculationFrame = GetTransform()->GetRecalculationFrame();
-		if (m_RecalculationFrame <= transformRecalculationFrame)
+		size_t transformUpdateCount = GetTransform()->GetUpdateCount();
+		if (m_UpdateCount != transformUpdateCount)
 		{
-			m_RecalculationFrame = transformRecalculationFrame;
+			m_UpdateCount = transformUpdateCount;
 			return true;
 		}
 		return false;

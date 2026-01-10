@@ -35,13 +35,17 @@ namespace Blueberry
 
 		const uint32_t& GetVertexCount();
 		const uint32_t& GetIndexCount();
+		const size_t GetBindPoseCount();
+		const Matrix& GetBindPose(const size_t& index);
 		const uint32_t GetSubMeshCount();
-		const SubMeshData& GetSubMesh(const uint32_t& index);
+		const SubMeshData& GetSubMesh(const size_t& index);
 		
 		Vector3* GetVertices();
 		Vector3* GetNormals();
 		Vector4* GetTangents();
 		Color* GetColors();
+		Vector4* GetBoneWeights();
+		Vector4Uint* GetBoneIndices();
 		uint32_t* GetIndices();
 		float* GetUVs(const int& channel);
 		uint32_t GetUVSize(const int& channel);
@@ -54,6 +58,9 @@ namespace Blueberry
 		void SetUVs(const int& channel, const Vector2* uvs, const uint32_t& uvCount);
 		void SetUVs(const int& channel, const Vector3* uvs, const uint32_t& uvCount);
 		void SetUVs(const int& channel, const Vector4* uvs, const uint32_t& uvCount);
+		void SetBoneWeights(const Vector4* weights, const uint32_t& vertexCount);
+		void SetBoneIndices(const Vector4Uint* indices, const uint32_t& vertexCount);
+		void SetBindPoses(const List<Matrix>& bindPoses);
 		void SetSubMesh(const uint32_t& index, const SubMeshData& data);
 
 		void GenerateTangents();
@@ -64,7 +71,12 @@ namespace Blueberry
 		const AABB& GetBounds();
 
 		void Apply();
+
+		GfxBuffer* GetVertexBuffer();
+		GfxBuffer* GetIndexBuffer();
 		const VertexLayout& GetLayout();
+
+		const uint32_t& GetUpdateCount();
 
 		static Mesh* Create();
 
@@ -78,9 +90,12 @@ namespace Blueberry
 		List<Vector4> m_Tangents;
 		List<Color> m_Colors;
 		List<float> m_UVs[4] = {};
+		List<Vector4> m_BoneWeights;
+		List<Vector4Uint> m_BoneIndices;
 
 		List<float> m_VertexData;
 		List<uint32_t> m_IndexData;
+		List<Matrix> m_BindPoses;
 		List<SubMeshData> m_SubMeshes;
 		VertexLayout m_Layout;
 
@@ -89,6 +104,8 @@ namespace Blueberry
 		AABB m_Bounds;
 
 		Topology m_Topology = Topology::TriangleList;
+
+		uint32_t m_UpdateCount = 0;
 
 		friend struct GfxDrawingOperation;
 		friend class TangentGenerator;

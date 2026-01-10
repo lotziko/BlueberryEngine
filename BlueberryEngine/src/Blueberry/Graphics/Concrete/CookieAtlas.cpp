@@ -2,7 +2,7 @@
 
 #include "..\RenderContext.h"
 #include "..\LightHelper.h"
-#include "Blueberry\Graphics\GfxRenderTexturePool.h"
+#include "Blueberry\Graphics\GfxTexturePool.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\DefaultMaterials.h"
@@ -16,7 +16,7 @@ namespace Blueberry
 
 	void CookieAtlas::Initialize()
 	{
-		s_AtlasTexture = GfxRenderTexturePool::Get(512, 512, s_MaxCookies, 1, 1, TextureFormat::R8G8B8A8_UNorm_SRGB, TextureDimension::Texture3D, WrapMode::Clamp, FilterMode::Point);
+		s_AtlasTexture = GfxTexturePool::Get(512, 512, s_MaxCookies, TextureUsageFlags::RenderTarget, 1, 1, TextureFormat::R8G8B8A8_UNorm_SRGB, TextureDimension::Texture3D, WrapMode::Clamp, FilterMode::Point);
 		GfxDevice::SetRenderTarget(s_AtlasTexture);
 		GfxDevice::ClearColor(Color(1, 1, 1, 1));
 		GfxDevice::SetRenderTarget(nullptr);
@@ -25,7 +25,7 @@ namespace Blueberry
 
 	void CookieAtlas::Shutdown()
 	{
-		GfxRenderTexturePool::Release(s_AtlasTexture);
+		GfxTexturePool::Release(s_AtlasTexture);
 	}
 
 	void CookieAtlas::PrepareCookies(CullingResults& results)

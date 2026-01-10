@@ -4,7 +4,7 @@
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\GfxTexture.h"
-#include "Blueberry\Graphics\GfxRenderTexturePool.h"
+#include "Blueberry\Graphics\GfxTexturePool.h"
 
 #include "Editor\Preferences.h"
 #include "Editor\EditorLayer.h"
@@ -55,8 +55,8 @@ namespace Blueberry
 		m_Camera = cameraEntity->AddComponent<Camera>();
 		cameraEntity->OnCreate();
 
-		m_ColorRenderTarget = GfxRenderTexturePool::Get(Screen::GetWidth(), Screen::GetHeight(), 1, 1, 1, TextureFormat::R8G8B8A8_UNorm);
-		m_DepthStencilRenderTarget = GfxRenderTexturePool::Get(Screen::GetWidth(), Screen::GetHeight(), 1, 1, 1, TextureFormat::D24_UNorm);
+		m_ColorRenderTarget = GfxTexturePool::Get(Screen::GetWidth(), Screen::GetHeight(), 1, TextureUsageFlags::RenderTarget, 1, 1, TextureFormat::R8G8B8A8_UNorm);
+		m_DepthStencilRenderTarget = GfxTexturePool::Get(Screen::GetWidth(), Screen::GetHeight(), 1, TextureUsageFlags::RenderTarget, 1, 1, TextureFormat::D24_UNorm);
 
 		Selection::GetSelectionChanged().AddCallback<&SceneArea::RequestRedrawAll>();
 		EditorSceneManager::GetSceneLoaded().AddCallback<&SceneArea::RequestRedrawAll>();
@@ -71,8 +71,8 @@ namespace Blueberry
 	{
 		delete m_ObjectPicker;
 
-		GfxRenderTexturePool::Release(m_ColorRenderTarget);
-		GfxRenderTexturePool::Release(m_DepthStencilRenderTarget);
+		GfxTexturePool::Release(m_ColorRenderTarget);
+		GfxTexturePool::Release(m_DepthStencilRenderTarget);
 
 		Selection::GetSelectionChanged().RemoveCallback<&SceneArea::RequestRedrawAll>();
 		EditorSceneManager::GetSceneLoaded().RemoveCallback<&SceneArea::RequestRedrawAll>();
@@ -265,12 +265,12 @@ namespace Blueberry
 
 		SetupCamera(size.x, size.y);
 
-		if (s_SceneRedrawRequested)
+		if (s_SceneRedrawRequestsCount > 0)
 		{
 			DrawScene(size.x, size.y);
 
 			m_ObjectPicker->DrawOutline(EditorSceneManager::GetScene(), m_Camera, m_ColorRenderTarget);
-			s_SceneRedrawRequested = false;
+			--s_SceneRedrawRequestsCount;
 		}
 
 		ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(m_ColorRenderTarget->GetHandle()), ImVec2(pos.x, pos.y), ImVec2(pos.x + size.x, pos.y + size.y), ImVec2(0, 0), ImVec2(size.x / Screen::GetWidth(), size.y / Screen::GetHeight()));
@@ -375,7 +375,7 @@ namespace Blueberry
 
 	void SceneArea::RequestRedrawAll()
 	{
-		s_SceneRedrawRequested = true;
+		s_SceneRedrawRequestsCount = 2;
 		EditorLayer::RequestFrameUpdate();
 	}
 
@@ -590,30 +590,36 @@ namespace Blueberry
 
 	void SceneArea::OnEntityUpdate()
 	{
-		SetHasUnsavedChanges(true);
-		RequestRedrawAll();
+		if (!EditorSceneManager::IsRunning())
+		{
+			SetHasUnsavedChanges(true);
+			RequestRedrawAll();
+		}
 	}
 
 	void SceneArea::OnObjectUpdate(const ObjectUpdateEventArgs& args)
 	{
-		Scene* scene = EditorSceneManager::GetScene();
-		Object* target = args.GetObject();
-		if (target->IsClassType(Entity::Type))
+		if (!EditorSceneManager::IsRunning())
 		{
-			Entity* entity = static_cast<Entity*>(target);
-			if (entity->GetScene() == scene)
+			Scene* scene = EditorSceneManager::GetScene();
+			Object* target = args.GetObject();
+			if (target->IsClassType(Entity::Type))
 			{
-				SetHasUnsavedChanges(true);
+				Entity* entity = static_cast<Entity*>(target);
+				if (entity->GetScene() == scene)
+				{
+					SetHasUnsavedChanges(true);
+				}
 			}
-		}
-		else if (target->IsClassType(Component::Type))
-		{
-			Component* component = static_cast<Component*>(target);
-			if (component->GetScene() == scene)
+			else if (target->IsClassType(Component::Type))
 			{
-				SetHasUnsavedChanges(true);
+				Component* component = static_cast<Component*>(target);
+				if (component->GetScene() == scene)
+				{
+					SetHasUnsavedChanges(true);
+				}
 			}
+			RequestRedrawAll();
 		}
-		RequestRedrawAll();
 	}
 }

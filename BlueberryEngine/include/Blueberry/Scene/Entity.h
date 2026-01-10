@@ -149,14 +149,13 @@ namespace Blueberry
 	template<class ComponentType>
 	inline bool Entity::HasComponent()
 	{
-		for (int index = m_ComponentsTypeHash.First(ComponentType::Type); index != INVALID_ID; index = m_ComponentsTypeHash.Next(index))
+		for (auto& component : m_Components)
 		{
-			if (m_Components[index]->IsClassType(ComponentType::Type))
+			if (component->IsClassType(ComponentType::Type))
 			{
 				return true;
 			}
 		}
-
 		return false;
 	}
 

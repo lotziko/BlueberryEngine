@@ -248,8 +248,11 @@ namespace Blueberry
 				PrefabInstance* prefabInstance = static_cast<PrefabInstance*>(object.first);
 				prefabInstance->OnCreate();
 				Entity* entity = prefabInstance->GetEntity();
-				s_Scene->AddEntity(entity);
-				entity->OnCreate();
+				if (entity != nullptr)
+				{
+					s_Scene->AddEntity(entity);
+					entity->OnCreate();
+				}
 			}
 			else if (object.first->IsClassType(SceneSettings::Type))
 			{

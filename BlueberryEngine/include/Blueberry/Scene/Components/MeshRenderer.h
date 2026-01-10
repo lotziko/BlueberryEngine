@@ -47,7 +47,7 @@ namespace Blueberry
 		AABB m_PreviousBounds;
 		AABB m_Bounds = AABB(Vector3::Zero, Vector3::Zero);
 		bool m_IsBakeable = true;
-		size_t m_RecalculationFrame = 0;
+		size_t m_UpdateCount = 0;
 		bool m_CullingDirty = true;
 		uint32_t m_LightmapChartOffset = 0;
 	};

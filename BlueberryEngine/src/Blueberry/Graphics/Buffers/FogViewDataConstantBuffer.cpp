@@ -33,10 +33,9 @@ namespace Blueberry
 		if (s_ConstantBuffer == nullptr)
 		{
 			BufferProperties constantBufferProperties = {};
-			constantBufferProperties.type = BufferType::Constant;
 			constantBufferProperties.elementCount = 1;
 			constantBufferProperties.elementSize = sizeof(FogViewData) * 1;
-			constantBufferProperties.isWritable = true;
+			constantBufferProperties.usageFlags = BufferUsageFlags::ConstantBuffer;
 
 			GfxDevice::CreateBuffer(constantBufferProperties, s_ConstantBuffer);
 		}

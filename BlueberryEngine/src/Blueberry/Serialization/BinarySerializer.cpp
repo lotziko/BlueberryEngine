@@ -85,7 +85,10 @@ namespace Blueberry
 				FileId fileId;
 				input.read(reinterpret_cast<char*>(&fileId), sizeof(FileId));
 				Object* object = m_FileIdToObject[fileId];
-				DeserializeNode(input, Context::Create(object, object->GetType()));
+				if (object != nullptr)
+				{
+					DeserializeNode(input, Context::Create(object, object->GetType()));
+				}
 			}
 			input.close();
 		}
@@ -111,6 +114,9 @@ namespace Blueberry
 				break;
 			case BindingType::Int:
 				output.write(reinterpret_cast<char*>(field.Get<int>(ptr)), sizeof(int));
+				break;
+			case BindingType::Uint:
+				output.write(reinterpret_cast<char*>(field.Get<unsigned int>(ptr)), sizeof(unsigned int));
 				break;
 			case BindingType::Float:
 				output.write(reinterpret_cast<char*>(field.Get<float>(ptr)), sizeof(float));
@@ -165,19 +171,22 @@ namespace Blueberry
 				output.write(reinterpret_cast<char*>(field.Get<int>(ptr)), sizeof(int));
 				break;
 			case BindingType::Vector3:
-				output.write(reinterpret_cast<char*>(&(*field.Get<Vector3>(ptr)).x), 3 * sizeof(float));
+				output.write(reinterpret_cast<char*>(field.Get<Vector3>(ptr)), sizeof(Vector3));
 				break;
 			case BindingType::Vector4:
-				output.write(reinterpret_cast<char*>(&(*field.Get<Vector4>(ptr)).x), 4 * sizeof(float));
+				output.write(reinterpret_cast<char*>(field.Get<Vector4>(ptr)), sizeof(Vector4));
 				break;
 			case BindingType::Quaternion:
-				output.write(reinterpret_cast<char*>(&(*field.Get<Quaternion>(ptr)).x), 4 * sizeof(float));
+				output.write(reinterpret_cast<char*>(field.Get<Quaternion>(ptr)), sizeof(Quaternion));
 				break;
 			case BindingType::Color:
-				output.write(reinterpret_cast<char*>(&(*field.Get<Color>(ptr)).x), 4 * sizeof(float));
+				output.write(reinterpret_cast<char*>(field.Get<Color>(ptr)), sizeof(Color));
 				break;
 			case BindingType::AABB:
-				output.write(reinterpret_cast<char*>(&(*field.Get<AABB>(ptr)).Center), 6 * sizeof(float));
+				output.write(reinterpret_cast<char*>(field.Get<AABB>(ptr)), sizeof(AABB));
+				break;
+			case BindingType::Matrix:
+				output.write(reinterpret_cast<char*>(field.Get<Matrix>(ptr)), sizeof(Matrix));
 				break;
 			case BindingType::Vector2List:
 			{
@@ -201,6 +210,22 @@ namespace Blueberry
 				size_t dataSize = data.size();
 				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
 				output.write(reinterpret_cast<char*>(data.data()), data.size() * sizeof(Vector4));
+			}
+			break;
+			case BindingType::QuaternionList:
+			{
+				List<Quaternion> data = *field.Get<List<Quaternion>>(ptr);
+				size_t dataSize = data.size();
+				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
+				output.write(reinterpret_cast<char*>(data.data()), data.size() * sizeof(Quaternion));
+			}
+			break;
+			case BindingType::MatrixList:
+			{
+				List<Matrix> data = *field.Get<List<Matrix>>(ptr);
+				size_t dataSize = data.size();
+				output.write(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
+				output.write(reinterpret_cast<char*>(data.data()), data.size() * sizeof(Matrix));
 			}
 			break;
 			case BindingType::Raw:
@@ -300,6 +325,9 @@ namespace Blueberry
 				case BindingType::Int:
 					input.read(reinterpret_cast<char*>(field.Get<int>(ptr)), sizeof(int));
 					break;
+				case BindingType::Uint:
+					input.read(reinterpret_cast<char*>(field.Get<unsigned int>(ptr)), sizeof(unsigned int));
+					break;
 				case BindingType::Float:
 					input.read(reinterpret_cast<char*>(field.Get<float>(ptr)), sizeof(float));
 					break;
@@ -360,19 +388,22 @@ namespace Blueberry
 					input.read(reinterpret_cast<char*>(field.Get<int>(ptr)), sizeof(int));
 					break;
 				case BindingType::Vector3:
-					input.read(reinterpret_cast<char*>(field.Get<Vector3>(ptr)), 3 * sizeof(float));
+					input.read(reinterpret_cast<char*>(field.Get<Vector3>(ptr)), sizeof(Vector3));
 					break;
 				case BindingType::Vector4:
-					input.read(reinterpret_cast<char*>(field.Get<Vector3>(ptr)), 4 * sizeof(float));
+					input.read(reinterpret_cast<char*>(field.Get<Vector3>(ptr)), sizeof(Vector4));
 					break;
 				case BindingType::Quaternion:
-					input.read(reinterpret_cast<char*>(field.Get<Vector3>(ptr)), 4 * sizeof(float));
+					input.read(reinterpret_cast<char*>(field.Get<Vector3>(ptr)), sizeof(Quaternion));
 					break;
 				case BindingType::Color:
-					input.read(reinterpret_cast<char*>(field.Get<Vector3>(ptr)), 4 * sizeof(float));
+					input.read(reinterpret_cast<char*>(field.Get<Vector3>(ptr)), sizeof(Color));
+					break;
+				case BindingType::Matrix:
+					input.read(reinterpret_cast<char*>(field.Get<Matrix>(ptr)), sizeof(Matrix));
 					break;
 				case BindingType::AABB:
-					input.read(reinterpret_cast<char*>(field.Get<AABB>(ptr)), 6 * sizeof(float));
+					input.read(reinterpret_cast<char*>(field.Get<AABB>(ptr)), sizeof(AABB));
 					break;
 				case BindingType::Vector2List:
 				{
@@ -399,6 +430,24 @@ namespace Blueberry
 					List<Vector4> data(dataSize);
 					input.read(reinterpret_cast<char*>(data.data()), dataSize * sizeof(Vector4));
 					*field.Get<List<Vector4>>(ptr) = std::move(data);
+				}
+				break;
+				case BindingType::QuaternionList:
+				{
+					size_t dataSize;
+					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
+					List<Quaternion> data(dataSize);
+					input.read(reinterpret_cast<char*>(data.data()), dataSize * sizeof(Quaternion));
+					*field.Get<List<Quaternion>>(ptr) = std::move(data);
+				}
+				break;
+				case BindingType::MatrixList:
+				{
+					size_t dataSize;
+					input.read(reinterpret_cast<char*>(&dataSize), sizeof(size_t));
+					List<Matrix> data(dataSize);
+					input.read(reinterpret_cast<char*>(data.data()), dataSize * sizeof(Matrix));
+					*field.Get<List<Matrix>>(ptr) = std::move(data);
 				}
 				break;
 				case BindingType::Raw:

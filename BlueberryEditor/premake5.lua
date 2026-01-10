@@ -16,6 +16,8 @@ project "BlueberryEditor"
 		"vendor/fbxsdk/include/**.h",
 		"vendor/directxtex/**.h",
 		"vendor/directxtex/**.cpp",
+		"vendor/directxmesh/**.h",
+		"vendor/directxmesh/**.cpp",
 	}
 
 	includedirs
@@ -27,6 +29,7 @@ project "BlueberryEditor"
 		"%{IncludeDir.rapidyaml}",
 		"%{IncludeDir.fbxsdk}",
 		"%{IncludeDir.directxtex}",
+		"%{IncludeDir.directxmesh}",
 		"%{IncludeDir.flathashmap}",
 		"%{IncludeDir.xatlas}",
 	}

@@ -12,6 +12,8 @@
 #include "Blueberry\Threading\JobSystem.h"
 #include "..\Graphics\RegisterGraphicsTypes.h"
 #include "Blueberry\Graphics\DefaultShaders.h"
+#include "Blueberry\Graphics\Skinning.h"
+#include "..\Animations\RegisterAnimationsTypes.h"
 
 #include <chrono>
 #include <thread>
@@ -38,11 +40,13 @@ namespace Blueberry
 
 		RegisterSceneTypes();
 		RegisterGraphicsTypes();
+		RegisterAnimationsTypes();
 
 		DefaultRenderer::Initialize();
 		Input::Initialize();
 		JobSystem::Initialize();
 		DefaultShaders::Initialize();
+		Skinning::Initialize();
 
 		return true;
 	}
@@ -51,6 +55,7 @@ namespace Blueberry
 	{
 		Renderer2D::Shutdown();
 		DefaultRenderer::Shutdown();
+		Skinning::Shutdown();
 		Input::Shutdown();
 		delete m_LayerStack;
 		delete m_Window;

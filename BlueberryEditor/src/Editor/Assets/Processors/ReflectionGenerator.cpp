@@ -99,14 +99,14 @@ namespace Blueberry
 			textureProperties.dimension = TextureDimension::Texture2D;
 			textureProperties.wrapMode = WrapMode::Clamp;
 			textureProperties.filterMode = FilterMode::Bilinear;
-			textureProperties.isRenderTarget = true;
-			textureProperties.isReadable = true;
+			textureProperties.usageFlags = TextureUsageFlags::RenderTarget | TextureUsageFlags::CPUReadable;
 			GfxDevice::CreateTexture(textureProperties, s_RenderTargetTexture);
+			s_RenderTargetTexture->SetName("ReflectionGenerator RenderTarget");
 
 			textureProperties.dimension = TextureDimension::TextureCube;
-			textureProperties.isReadable = false;
-			textureProperties.isWritable = true;
+			textureProperties.usageFlags = TextureUsageFlags::RenderTarget | TextureUsageFlags::CPUWritable;
 			GfxDevice::CreateTexture(textureProperties, s_CubeTexture);
+			s_CubeTexture->SetName("ReflectionGenerator CubeTexture");
 		}
 
 		if (s_Camera == nullptr)

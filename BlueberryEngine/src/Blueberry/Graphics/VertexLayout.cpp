@@ -43,32 +43,32 @@ namespace Blueberry
 		return *this;
 	}
 
-	const bool VertexLayout::Has(const VertexAttribute& type)
+	const bool VertexLayout::Has(const VertexAttribute& type) const
 	{
 		return m_Elements[static_cast<uint32_t>(type)].m_Size > 0;
 	}
 
-	const uint32_t& VertexLayout::GetOffset(const VertexAttribute& type)
+	const uint32_t& VertexLayout::GetOffset(const VertexAttribute& type) const
 	{
 		return m_Elements[static_cast<uint32_t>(type)].m_Offset;
 	}
 
-	const uint32_t& VertexLayout::GetOffset(const uint32_t& index)
+	const uint32_t& VertexLayout::GetOffset(const uint32_t& index) const
 	{
 		return m_Elements[index].m_Offset;
 	}
 
-	const uint32_t& VertexLayout::GetSize(const VertexAttribute& type)
+	const uint32_t& VertexLayout::GetSize(const VertexAttribute& type) const
 	{
 		return m_Elements[static_cast<uint32_t>(type)].m_Size;
 	}
 
-	const uint32_t& VertexLayout::GetSize()
+	const uint32_t& VertexLayout::GetSize() const
 	{
 		return m_Size;
 	}
 
-	const uint32_t& VertexLayout::GetCrc()
+	const uint32_t& VertexLayout::GetCrc() const
 	{
 		return m_Crc;
 	}

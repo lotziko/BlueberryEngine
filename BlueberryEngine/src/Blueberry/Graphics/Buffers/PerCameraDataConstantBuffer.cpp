@@ -43,10 +43,9 @@ namespace Blueberry
 		if (s_ConstantBuffer == nullptr)
 		{
 			BufferProperties constantBufferProperties = {};
-			constantBufferProperties.type = BufferType::Constant;
 			constantBufferProperties.elementCount = 1;
 			constantBufferProperties.elementSize = sizeof(PerCameraData) * 1;
-			constantBufferProperties.isWritable = true;
+			constantBufferProperties.usageFlags = BufferUsageFlags::ConstantBuffer;
 
 			GfxDevice::CreateBuffer(constantBufferProperties, s_ConstantBuffer);
 		}
@@ -122,10 +121,9 @@ namespace Blueberry
 		if (s_ConstantBuffer == nullptr)
 		{
 			BufferProperties constantBufferProperties = {};
-			constantBufferProperties.type = BufferType::Constant;
 			constantBufferProperties.elementCount = 1;
 			constantBufferProperties.elementSize = sizeof(PerCameraData) * 1;
-			constantBufferProperties.isWritable = true;
+			constantBufferProperties.usageFlags = BufferUsageFlags::ConstantBuffer;
 
 			GfxDevice::CreateBuffer(constantBufferProperties, s_ConstantBuffer);
 		}

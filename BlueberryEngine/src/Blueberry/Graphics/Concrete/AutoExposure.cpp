@@ -28,27 +28,23 @@ namespace Blueberry
 		s_ExposureShader = static_cast<ComputeShader*>(AssetLoader::Load("assets/shaders/Exposure.compute"));
 
 		BufferProperties constantBufferProperties = {};
-		constantBufferProperties.type = BufferType::Constant;
 		constantBufferProperties.elementCount = 1;
 		constantBufferProperties.elementSize = sizeof(ExposureData);
-		constantBufferProperties.isWritable = true;
+		constantBufferProperties.usageFlags = BufferUsageFlags::ConstantBuffer;
 		GfxDevice::CreateBuffer(constantBufferProperties, s_ExposureData);
 
 		BufferProperties histogramBufferProperties = {};
-		histogramBufferProperties.type = BufferType::Raw;
 		histogramBufferProperties.elementCount = 256;
 		histogramBufferProperties.elementSize = sizeof(uint32_t);
-		histogramBufferProperties.isUnorderedAccess = true;
 		histogramBufferProperties.format = BufferFormat::R32_UInt;
+		histogramBufferProperties.usageFlags = BufferUsageFlags::UnorderedAccess;
 		GfxDevice::CreateBuffer(histogramBufferProperties, s_Histogram);
 
 		BufferProperties resultBufferProperties = {};
-		resultBufferProperties.type = BufferType::Raw;
 		resultBufferProperties.elementCount = 1;
 		resultBufferProperties.elementSize = sizeof(float);
-		resultBufferProperties.isReadable = true;
-		resultBufferProperties.isUnorderedAccess = true;
 		resultBufferProperties.format = BufferFormat::R32_Float;
+		resultBufferProperties.usageFlags = BufferUsageFlags::UnorderedAccess | BufferUsageFlags::CPUReadable;
 		GfxDevice::CreateBuffer(resultBufferProperties, s_Result);
 	}
 

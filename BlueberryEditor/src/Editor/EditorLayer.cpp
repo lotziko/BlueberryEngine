@@ -3,7 +3,7 @@
 #include "Blueberry\Core\Time.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\ImGuiRenderer.h"
-#include "Blueberry\Graphics\GfxRenderTexturePool.h"
+#include "Blueberry\Graphics\GfxTexturePool.h"
 #include "Blueberry\Math\Math.h"
 #include "Blueberry\Events\WindowEvents.h"
 #include "Blueberry\Physics\Physics.h"
@@ -72,7 +72,7 @@ namespace Blueberry
 		Gizmos::Shutdown();
 		IconRenderer::Shutdown();
 		Physics::Shutdown();
-		GfxRenderTexturePool::Shutdown();
+		GfxTexturePool::Shutdown();
 		ImGuiRenderer::Shutdown();
 		/*if (OpenXRRenderer::IsActive())
 		{
@@ -123,7 +123,7 @@ namespace Blueberry
 			if (s_FrameUpdateRequested)
 			{
 				Time::IncrementFrameCount();
-				GfxRenderTexturePool::Update();
+				GfxTexturePool::Update();
 				s_FrameUpdateRequested = false;
 			}
 		}

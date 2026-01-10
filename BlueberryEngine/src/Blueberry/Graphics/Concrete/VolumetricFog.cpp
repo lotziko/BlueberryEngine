@@ -34,10 +34,7 @@ namespace Blueberry
 		textureProperties.dimension = TextureDimension::Texture3D;
 		textureProperties.wrapMode = WrapMode::Clamp;
 		textureProperties.filterMode = FilterMode::Bilinear;
-		textureProperties.isRenderTarget = false;
-		textureProperties.isReadable = false;
-		textureProperties.isWritable = false;
-		textureProperties.isUnorderedAccess = true;
+		textureProperties.usageFlags = TextureUsageFlags::UnorderedAccess;
 
 		GfxDevice::CreateTexture(textureProperties, s_FrustumVolume0);
 		GfxDevice::CreateTexture(textureProperties, s_FrustumVolume1);

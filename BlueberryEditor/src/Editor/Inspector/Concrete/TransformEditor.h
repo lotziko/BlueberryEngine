@@ -30,6 +30,5 @@ namespace Blueberry
 		SerializedProperty m_LocalScaleProperty;
 		SerializedProperty m_LocalRotationEulerHintProperty;
 		SerializedProperty m_IsStaticProperty;
-		int m_Counter = 0;
 	};
 }

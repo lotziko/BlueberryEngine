@@ -23,6 +23,8 @@ namespace Blueberry
 		virtual void SetData(void* data, const size_t& size) = 0;
 		virtual void SetData(void* data, const size_t& size, const uint32_t& slice) = 0;
 
+		virtual void SetName(const String& name) = 0;
+
 		virtual void GenerateMipMaps() = 0;
 
 	protected:

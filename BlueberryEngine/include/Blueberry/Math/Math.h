@@ -101,6 +101,13 @@ namespace Blueberry
 	using Sphere = DirectX::BoundingSphere;
 	using Frustum = DirectX::BoundingFrustum;
 
+	struct TRS
+	{
+		Vector3 position;
+		Quaternion rotation;
+		Vector3 scale;
+	};
+
 	constexpr auto Pi = 3.1415926535f;
 	constexpr auto DegreeToRad = 57.29577951471995f;
 	constexpr auto RadToDegree = 0.0174532925194444f;
@@ -322,3 +329,12 @@ namespace Blueberry
 		return a + GetRandomFloat01()*(b - a);
 	}
 }
+
+template <>
+struct std::hash<Blueberry::Vector2Int>
+{
+	size_t operator()(const Blueberry::Vector2Int& vector) const
+	{
+		return (static_cast<size_t>(vector.x) << 32) ^ static_cast<size_t>(vector.y);
+	}
+};

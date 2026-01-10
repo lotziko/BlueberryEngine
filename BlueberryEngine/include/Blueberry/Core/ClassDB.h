@@ -36,10 +36,13 @@ namespace Blueberry
 		Quaternion,
 		Color,
 		AABB,
+		Matrix,
 
 		Vector2List,
 		Vector3List,
 		Vector4List,
+		QuaternionList,
+		MatrixList,
 
 		// POD class of fixed size
 		Raw,

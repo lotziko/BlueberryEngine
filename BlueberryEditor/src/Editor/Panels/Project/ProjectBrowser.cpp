@@ -10,6 +10,7 @@
 #include "Editor\Panels\Inspector\InspectorExpandedItemsCache.h"
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Graphics\Material.h"
+#include "Blueberry\Animations\AnimationGraph.h"
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Scene\Components\Component.h"
@@ -118,7 +119,6 @@ namespace Blueberry
 	{
 		ImGui::EditorStyle& style = ImGui::GetEditorStyle();
 		const char* contextPopupId = "ProjectPopup";
-		const char* namePopupId = "NamePopup";
 
 		ImVec2 pos = ImGui::GetCursorScreenPos();
 		ImVec2 size = ImGui::GetContentRegionAvail();
@@ -256,7 +256,29 @@ namespace Blueberry
 			}
 			if (ImGui::MenuItem("Material"))
 			{
-				m_OpenedModalPopupId = namePopupId;
+				std::string materialName("New Material");
+				materialName.append(".material");
+
+				auto relativePath = std::filesystem::relative(m_CurrentDirectory, Path::GetAssetsPath());
+				relativePath.append(materialName);
+
+				Material* material = Object::Create<Material>();
+				AssetDB::CreateAsset(material, relativePath.string().data());
+				AssetDB::SaveAssets();
+				AssetDB::Refresh();
+			}
+			if (ImGui::MenuItem("Animation Graph"))
+			{
+				std::string animationGraphName("New Animation Graph");
+				animationGraphName.append(".animgraph");
+
+				auto relativePath = std::filesystem::relative(m_CurrentDirectory, Path::GetAssetsPath());
+				relativePath.append(animationGraphName);
+
+				AnimationGraph* animationGraph = Object::Create<AnimationGraph>();
+				AssetDB::CreateAsset(animationGraph, relativePath.string().data());
+				AssetDB::SaveAssets();
+				AssetDB::Refresh();
 			}
 			if (ImGui::MenuItem("Show in Explorer"))
 			{
@@ -308,35 +330,6 @@ namespace Blueberry
 		ImGui::EndChild();
 		ImGui::PopStyleVar();
 		ImGui::PopStyleColor();
-
-		if (m_OpenedModalPopupId == namePopupId)
-		{
-			ImGui::OpenPopup(namePopupId);
-		}
-		if (ImGui::BeginPopupModal("Enter name", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-		{
-			static char name[256];
-			ImGui::InputText("Name", name, 256);
-			ImGui::Separator();
-
-			if (ImGui::Button("OK", ImVec2(120, 0)))
-			{
-				std::string materialName(name);
-				materialName.append(".material");
-
-				auto relativePath = std::filesystem::relative(m_CurrentDirectory, Path::GetAssetsPath());
-				relativePath.append(materialName);
-
-				Material* material = Object::Create<Material>();
-				AssetDB::CreateAsset(material, relativePath.string().data());
-				AssetDB::SaveAssets();
-				AssetDB::Refresh();
-
-				m_OpenedModalPopupId = nullptr;
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::EndPopup();
-		}
 
 		if (ImGui::IsKeyPressed(ImGuiKey_S) && ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
 		{

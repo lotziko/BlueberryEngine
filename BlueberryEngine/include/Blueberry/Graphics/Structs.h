@@ -13,10 +13,6 @@ namespace Blueberry
 		uint32_t depth;
 		void* data;
 		size_t dataSize;
-		bool isRenderTarget;
-		bool isReadable;
-		bool isWritable;
-		bool isUnorderedAccess;
 		uint32_t antiAliasing;
 		uint32_t mipCount;
 		TextureFormat format;
@@ -25,18 +21,16 @@ namespace Blueberry
 		FilterMode filterMode;
 		uint8_t slices;
 		bool generateMipMaps;
+		TextureUsageFlags usageFlags;
 	};
 
 	struct BB_API BufferProperties
 	{
-		BufferType type;
 		uint32_t elementSize;
 		uint32_t elementCount;
 		void* data;
 		size_t dataSize;
-		bool isReadable;
-		bool isWritable;
-		bool isUnorderedAccess;
 		BufferFormat format;
+		BufferUsageFlags usageFlags;
 	};
 }

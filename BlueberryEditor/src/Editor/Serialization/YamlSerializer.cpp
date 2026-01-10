@@ -87,6 +87,9 @@ namespace Blueberry
 			case BindingType::Int:
 				objectNode[key] << *field.Get<int>(ptr);
 				break;
+			case BindingType::Uint:
+				objectNode[key] << *field.Get<unsigned int>(ptr);
+				break;
 			case BindingType::Float:
 				objectNode[key] << *field.Get<float>(ptr);
 				break;
@@ -312,6 +315,9 @@ namespace Blueberry
 					break;
 				case BindingType::Int:
 					objectNode[key] >> *field.Get<int>(ptr);
+					break;
+				case BindingType::Uint:
+					objectNode[key] >> *field.Get<unsigned int>(ptr);
 					break;
 				case BindingType::Float:
 					objectNode[key] >> *field.Get<float>(ptr);

@@ -73,7 +73,7 @@ namespace Blueberry
 
 	private:
 		GfxTexture* m_CachedShadow;
-		size_t m_RecalculationFrame = 0;
+		size_t m_UpdateCount = 0;
 		bool m_IsDirty[6] = { true, true, true, true, true, true };
 		Matrix m_WorldToShadow[6];
 		Matrix m_AtlasWorldToShadow[6];

@@ -8,6 +8,7 @@
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Scene\Components\MeshRenderer.h"
+#include "Blueberry\Scene\Components\SkinnedMeshRenderer.h"
 #include "Blueberry\Scene\Components\SpriteRenderer.h"
 #include "Blueberry\Graphics\Renderer2D.h"
 #include "Blueberry\Graphics\Material.h"
@@ -18,6 +19,7 @@
 #include "Blueberry\Graphics\Buffers\PerCameraDataConstantBuffer.h"
 #include "Blueberry\Graphics\Buffers\PerDrawDataConstantBuffer.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
+#include "Blueberry\Graphics\Skinning.h"
 
 namespace Blueberry
 {
@@ -44,10 +46,9 @@ namespace Blueberry
 			if (s_ConstantBuffer == nullptr)
 			{
 				BufferProperties constantBufferProperties = {};
-				constantBufferProperties.type = BufferType::Constant;
 				constantBufferProperties.elementCount = 1;
 				constantBufferProperties.elementSize = sizeof(CONSTANTS) * 1;
-				constantBufferProperties.isWritable = true;
+				constantBufferProperties.usageFlags = BufferUsageFlags::ConstantBuffer;
 
 				GfxDevice::CreateBuffer(constantBufferProperties, s_ConstantBuffer);
 			}
@@ -67,17 +68,16 @@ namespace Blueberry
 
 	SceneObjectPicker::SceneObjectPicker()
 	{
-		TextureProperties properties = {};
-		properties.width = Screen::GetWidth();
-		properties.height = Screen::GetHeight();
-		properties.isRenderTarget = true;
-		properties.isReadable = true;
-		properties.format = TextureFormat::R8G8B8A8_UNorm;
-		GfxDevice::CreateTexture(properties, m_SceneRenderTarget);
+		TextureProperties textureProperties = {};
+		textureProperties.width = Screen::GetWidth();
+		textureProperties.height = Screen::GetHeight();
+		textureProperties.format = TextureFormat::R8G8B8A8_UNorm;
+		textureProperties.usageFlags = TextureUsageFlags::RenderTarget | TextureUsageFlags::CPUReadable;
+		GfxDevice::CreateTexture(textureProperties, m_SceneRenderTarget);
 
-		properties.isReadable = false;
-		properties.format = TextureFormat::D24_UNorm;
-		GfxDevice::CreateTexture(properties, m_SceneDepthStencil);
+		textureProperties.usageFlags = TextureUsageFlags::RenderTarget;
+		textureProperties.format = TextureFormat::D24_UNorm;
+		GfxDevice::CreateTexture(textureProperties, m_SceneDepthStencil);
 
 		m_SpriteObjectPickerMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/SpriteObjectPicker.shader")));
 		m_MeshObjectPickerMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/MeshObjectPicker.shader")));
@@ -135,6 +135,21 @@ namespace Blueberry
 				PerDrawDataConstantBuffer::BindData(entity->GetTransform()->GetLocalToWorldMatrix());
 				PerObjectDataConstantBuffer::BindData(ConvertIndexToColor(index));
 				GfxDevice::Draw(GfxDrawingOperation(mesh, m_MeshObjectPickerMaterial));
+				validObjects[index] = entity->GetObjectId();
+				++index;
+			}
+		}
+
+		for (auto& pair : scene->GetIterator<SkinnedMeshRenderer>())
+		{
+			Entity* entity = pair.second->GetEntity();
+			auto skinnedMeshRenderer = static_cast<SkinnedMeshRenderer*>(pair.second);
+			Mesh* mesh = skinnedMeshRenderer->GetMesh();
+			if (mesh != nullptr)
+			{
+				PerDrawDataConstantBuffer::BindData(entity->GetTransform()->GetLocalToWorldMatrix());
+				PerObjectDataConstantBuffer::BindData(ConvertIndexToColor(index));
+				GfxDevice::Draw(GfxDrawingOperation(mesh, Skinning::GetVertexBuffer(skinnedMeshRenderer), m_MeshObjectPickerMaterial));
 				validObjects[index] = entity->GetObjectId();
 				++index;
 			}
@@ -210,7 +225,7 @@ namespace Blueberry
 		}
 		Renderer2D::End();
 
-		for (auto& pair : scene->GetIterator<MeshRenderer>()) // REMOVE FROM LIST WHEN DISABLING INSTEAD OF ITERATING OVER DISABLED ONES
+		for (auto& pair : scene->GetIterator<MeshRenderer>())
 		{
 			Entity* entity = pair.second->GetEntity();
 			if (Selection::IsActiveObject(entity) && entity->IsActiveInHierarchy())
@@ -222,6 +237,22 @@ namespace Blueberry
 					PerDrawDataConstantBuffer::BindData(entity->GetTransform()->GetLocalToWorldMatrix());
 					PerObjectDataConstantBuffer::BindData(ConvertIndexToColor(10000));
 					GfxDevice::Draw(GfxDrawingOperation(mesh, m_MeshObjectPickerMaterial));
+				}
+			}
+		}
+
+		for (auto& pair : scene->GetIterator<SkinnedMeshRenderer>())
+		{
+			Entity* entity = pair.second->GetEntity();
+			if (Selection::IsActiveObject(entity) && entity->IsActiveInHierarchy())
+			{
+				auto skinnedMeshRenderer = static_cast<SkinnedMeshRenderer*>(pair.second);
+				Mesh* mesh = skinnedMeshRenderer->GetMesh();
+				if (mesh != nullptr)
+				{
+					PerDrawDataConstantBuffer::BindData(entity->GetTransform()->GetLocalToWorldMatrix());
+					PerObjectDataConstantBuffer::BindData(ConvertIndexToColor(10000));
+					GfxDevice::Draw(GfxDrawingOperation(mesh, Skinning::GetVertexBuffer(skinnedMeshRenderer), m_MeshObjectPickerMaterial));
 				}
 			}
 		}

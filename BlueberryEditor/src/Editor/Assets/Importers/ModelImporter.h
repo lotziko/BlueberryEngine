@@ -54,7 +54,7 @@ namespace Blueberry
 		virtual void ImportData() override;
 
 	private:
-		void CreateMeshEntity(Transform* parent, fbxsdk::FbxNode* node, List<Object*>& objects);
+		void CreateMeshEntity(Transform* parent, fbxsdk::FbxNode* node, List<fbxsdk::FbxNode*>& skeletonNodes, List<Object*>& objects);
 		std::string GetPhysicsShapePath(const size_t& fileId);
 
 	private:

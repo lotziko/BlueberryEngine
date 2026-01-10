@@ -1,0 +1,61 @@
+#pragma compute CSCopy
+#pragma compute CSPositionNormalTangent
+
+#include "Core.hlsl"
+
+StructuredBuffer<float4x4> _BoneTransformData;
+
+cbuffer SkinningData
+{
+	uint _SourceStride;
+	uint _ResultStride;
+	uint _WeightOffset;
+	uint _VertexCount;
+};
+
+ByteAddressBuffer _VertexSource;
+RWByteAddressBuffer _VertexResult;
+
+[numthreads(64, 1, 1)]
+void CSCopy(uint3 id : SV_DispatchThreadID)
+{
+	if (id.x < _VertexCount)
+	{
+		uint sourceOffset = id.x * _SourceStride;
+		uint resultOffset = id.x * _ResultStride;
+		for (uint i = 0; i < _ResultStride; ++i)
+		{
+			_VertexResult.Store((resultOffset + i) * 4, _VertexSource.Load((sourceOffset + i) * 4));
+		}
+	}
+}
+
+[numthreads(64, 1, 1)]
+void CSPositionNormalTangent(uint3 id : SV_DispatchThreadID)
+{
+	if (id.x < _VertexCount)
+	{
+		uint sourceOffset = id.x * _SourceStride;
+		float3 position = asfloat(_VertexSource.Load3(sourceOffset * 4));
+		float3 normal = asfloat(_VertexSource.Load3((sourceOffset + 3) * 4));
+		float3 tangent = asfloat(_VertexSource.Load3((sourceOffset + 6) * 4));
+		float4 boneWeight = asfloat(_VertexSource.Load4((sourceOffset + _WeightOffset) * 4));
+		uint4 boneIndex = asuint(_VertexSource.Load4((sourceOffset + _WeightOffset + 4) * 4));
+
+		float4x4 totalMatrix = 0;
+		[unroll]
+		for (uint i = 0; i < 4; ++i)
+		{
+			totalMatrix += _BoneTransformData[boneIndex[i]] * boneWeight[i];
+		}
+
+		float3 totalPosition = mul(totalMatrix, float4(position, 1.0f)).xyz;
+		float3 totalNormal = mul(totalMatrix, float4(normal, 0.0f)).xyz;
+		float3 totalTangent = mul(totalMatrix, float4(tangent, 0.0f)).xyz;
+
+		uint resultOffset = id.x * _ResultStride;
+		_VertexResult.Store3(resultOffset * 4, asuint(totalPosition));
+		_VertexResult.Store3((resultOffset + 3) * 4, asuint(totalNormal));
+		_VertexResult.Store3((resultOffset + 6) * 4, asuint(totalTangent));
+	}
+}

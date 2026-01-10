@@ -10,7 +10,9 @@
 #include "Blueberry\Scene\Components\Renderer.h"
 #include "Blueberry\Scene\Components\SpriteRenderer.h"
 #include "Blueberry\Scene\Components\MeshRenderer.h"
+#include "Blueberry\Scene\Components\SkinnedMeshRenderer.h"
 #include "Blueberry\Scene\Components\SkyRenderer.h"
+#include "Blueberry\Scene\Components\Animator.h"
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Scene\Components\Light.h"
 #include "Blueberry\Scene\Components\ProbeVolume.h"
@@ -33,7 +35,9 @@ namespace Blueberry
 		REGISTER_ABSTRACT_CLASS(Renderer);
 		REGISTER_CLASS(SpriteRenderer);
 		REGISTER_CLASS(MeshRenderer);
+		REGISTER_CLASS(SkinnedMeshRenderer);
 		REGISTER_CLASS(SkyRenderer);
+		REGISTER_CLASS(Animator);
 		REGISTER_CLASS(Camera);
 		REGISTER_CLASS(Light);
 		REGISTER_CLASS(ProbeVolume);

@@ -4,7 +4,7 @@
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\Material.h"
-#include "Blueberry\Graphics\GfxRenderTexturePool.h"
+#include "Blueberry\Graphics\GfxTexturePool.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Graphics\GfxBuffer.h"
@@ -202,7 +202,7 @@ namespace Blueberry
 		Texture2D* temporaryTexture = Texture2D::Create(metadata.width, metadata.height, 1, uncompressedFormat);
 		temporaryTexture->SetData(temporaryData, scratchImage.GetPixelsSize());
 		temporaryTexture->Apply();
-		GfxTexture* temporaryTextureCube = GfxRenderTexturePool::Get(size, size, 1, 1, 1, uncompressedFormat, TextureDimension::TextureCube, WrapMode::Clamp, FilterMode::Bilinear, true);
+		GfxTexture* temporaryTextureCube = GfxTexturePool::Get(size, size, 1, TextureUsageFlags::RenderTarget | TextureUsageFlags::CPUReadable, 1, 1, uncompressedFormat, TextureDimension::TextureCube, WrapMode::Clamp, FilterMode::Bilinear);
 		
 		DirectX::ScratchImage cubeScratchImage = {};
 		cubeScratchImage.InitializeCube(static_cast<DXGI_FORMAT>(uncompressedFormat), size, size, 1, 1);
@@ -222,7 +222,7 @@ namespace Blueberry
 		temporaryTextureCube->GetData(cubeScratchImage.GetPixels());
 
 		Object::Destroy(temporaryTexture);
-		GfxRenderTexturePool::Release(temporaryTextureCube);
+		GfxTexturePool::Release(temporaryTextureCube);
 		scratchImage = std::move(cubeScratchImage);
 	}
 
@@ -271,8 +271,7 @@ namespace Blueberry
 			textureProperties.dimension = TextureDimension::TextureCube;
 			textureProperties.wrapMode = WrapMode::Clamp;
 			textureProperties.filterMode = FilterMode::Point;
-			textureProperties.isReadable = true;
-			textureProperties.isRenderTarget = true;
+			textureProperties.usageFlags = TextureUsageFlags::RenderTarget | TextureUsageFlags::CPUReadable;
 			GfxDevice::CreateTexture(textureProperties, temporaryTexture);
 		}
 
@@ -323,10 +322,9 @@ namespace Blueberry
 		if (constantBuffer == nullptr)
 		{
 			BufferProperties constantBufferProperties = {};
-			constantBufferProperties.type = BufferType::Constant;
 			constantBufferProperties.elementCount = 1;
 			constantBufferProperties.elementSize = sizeof(ReflectionGenerationData) * 1;
-			constantBufferProperties.isWritable = true;
+			constantBufferProperties.usageFlags = BufferUsageFlags::ConstantBuffer;
 
 			GfxDevice::CreateBuffer(constantBufferProperties, constantBuffer);
 		}
@@ -347,13 +345,11 @@ namespace Blueberry
 			textureProperties.dimension = TextureDimension::TextureCube;
 			textureProperties.wrapMode = WrapMode::Clamp;
 			textureProperties.filterMode = FilterMode::Trilinear;
-			textureProperties.isWritable = true;
+			textureProperties.usageFlags = TextureUsageFlags::CPUWritable;
 			GfxDevice::CreateTexture(textureProperties, temporaryTexture0);
 
 			textureProperties.mipCount = 6;
-			textureProperties.isReadable = true;
-			textureProperties.isWritable = false;
-			textureProperties.isRenderTarget = true;
+			textureProperties.usageFlags = TextureUsageFlags::RenderTarget | TextureUsageFlags::CPUReadable;
 			GfxDevice::CreateTexture(textureProperties, temporaryTexture1);
 		}
 

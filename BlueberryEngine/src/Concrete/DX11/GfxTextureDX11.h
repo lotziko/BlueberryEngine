@@ -31,6 +31,8 @@ namespace Blueberry
 		virtual void SetData(void* data, const size_t& size) override;
 		virtual void SetData(void* data, const size_t& size, const uint32_t& slice) override;
 
+		virtual void SetName(const String& name) override;
+
 		virtual void GenerateMipMaps() override;
 
 	private:

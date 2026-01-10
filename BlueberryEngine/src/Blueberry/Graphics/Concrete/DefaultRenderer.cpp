@@ -9,7 +9,7 @@
 #include "Blueberry\Graphics\Texture3D.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\GfxTexture.h"
-#include "Blueberry\Graphics\GfxRenderTexturePool.h"
+#include "Blueberry\Graphics\GfxTexturePool.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\DefaultMaterials.h"
 #include "Blueberry\Graphics\DefaultTextures.h"
@@ -94,13 +94,13 @@ namespace Blueberry
 			cameraData.renderTargetSize = size;
 		}
 
-		colorMSAARenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 4, 1, TextureFormat::R16G16B16A16_Float, textureDimension);
-		depthStencilMSAARenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 4, 1, TextureFormat::D24_UNorm, textureDimension);
+		colorMSAARenderTarget = GfxTexturePool::Get(size.x, size.y, viewCount, TextureUsageFlags::RenderTarget, 4, 1, TextureFormat::R16G16B16A16_Float, textureDimension);
+		depthStencilMSAARenderTarget = GfxTexturePool::Get(size.x, size.y, viewCount, TextureUsageFlags::RenderTarget, 4, 1, TextureFormat::D24_UNorm, textureDimension);
 
-		colorRenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 1, 1, TextureFormat::R16G16B16A16_Float, textureDimension, WrapMode::Clamp, FilterMode::Bilinear, false, true);
-		depthStencilRenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 1, 1, TextureFormat::D24_UNorm, textureDimension);
-		HBAORenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 1, 1, TextureFormat::R8G8B8A8_UNorm, textureDimension);
-		resultRenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 1, 1, colorOutput->GetFormat(), textureDimension);
+		colorRenderTarget = GfxTexturePool::Get(size.x, size.y, viewCount, TextureUsageFlags::RenderTarget | TextureUsageFlags::UnorderedAccess, 1, 1, TextureFormat::R16G16B16A16_Float, textureDimension, WrapMode::Clamp, FilterMode::Bilinear);
+		depthStencilRenderTarget = GfxTexturePool::Get(size.x, size.y, viewCount, TextureUsageFlags::RenderTarget, 1, 1, TextureFormat::D24_UNorm, textureDimension);
+		HBAORenderTarget = GfxTexturePool::Get(size.x, size.y, viewCount, TextureUsageFlags::RenderTarget, 1, 1, TextureFormat::R8G8B8A8_UNorm, textureDimension);
+		resultRenderTarget = GfxTexturePool::Get(size.x, size.y, viewCount, TextureUsageFlags::RenderTarget, 1, 1, colorOutput->GetFormat(), textureDimension);
 
 		BB_PROFILE_BEGIN("Culling");
 		s_DefaultContext.Cull(scene, cameraData, s_Results);
@@ -215,12 +215,12 @@ namespace Blueberry
 			}
 		}
 
-		GfxRenderTexturePool::Release(colorMSAARenderTarget);
-		GfxRenderTexturePool::Release(depthStencilMSAARenderTarget);
+		GfxTexturePool::Release(colorMSAARenderTarget);
+		GfxTexturePool::Release(depthStencilMSAARenderTarget);
 
-		GfxRenderTexturePool::Release(colorRenderTarget);
-		GfxRenderTexturePool::Release(depthStencilRenderTarget);
-		GfxRenderTexturePool::Release(HBAORenderTarget);
-		GfxRenderTexturePool::Release(resultRenderTarget);
+		GfxTexturePool::Release(colorRenderTarget);
+		GfxTexturePool::Release(depthStencilRenderTarget);
+		GfxTexturePool::Release(HBAORenderTarget);
+		GfxTexturePool::Release(resultRenderTarget);
 	}
 }

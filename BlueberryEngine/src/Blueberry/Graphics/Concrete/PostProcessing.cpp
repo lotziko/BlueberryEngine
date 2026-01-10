@@ -9,7 +9,7 @@
 #include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\ComputeShader.h"
-#include "Blueberry\Graphics\GfxRenderTexturePool.h"
+#include "Blueberry\Graphics\GfxTexturePool.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\DefaultMaterials.h"
@@ -56,27 +56,24 @@ namespace Blueberry
 		s_BloomMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/Bloom.shader")));
 
 		BufferProperties postProcessingBufferProperties = {};
-		postProcessingBufferProperties.type = BufferType::Constant;
 		postProcessingBufferProperties.elementCount = 1;
 		postProcessingBufferProperties.elementSize = sizeof(PostProcessingData) * 1;
-		postProcessingBufferProperties.isWritable = true;
+		postProcessingBufferProperties.usageFlags = BufferUsageFlags::ConstantBuffer;
 
 		GfxDevice::CreateBuffer(postProcessingBufferProperties, s_PostProcessingData);
 		
 		BufferProperties resolveMSAABloomBufferProperties = {};
-		resolveMSAABloomBufferProperties.type = BufferType::Constant;
 		resolveMSAABloomBufferProperties.elementCount = 1;
 		resolveMSAABloomBufferProperties.elementSize = sizeof(ResolveMSAABloomData);
-		resolveMSAABloomBufferProperties.isWritable = true;
+		resolveMSAABloomBufferProperties.usageFlags = BufferUsageFlags::ConstantBuffer;
 
 		GfxDevice::CreateBuffer(resolveMSAABloomBufferProperties, s_ResolveMSAABloomData);
 
 		BufferProperties bloomBufferProperties = {};
 
-		bloomBufferProperties.type = BufferType::Constant;
 		bloomBufferProperties.elementCount = 1;
 		bloomBufferProperties.elementSize = sizeof(BloomData);
-		bloomBufferProperties.isWritable = true;
+		bloomBufferProperties.usageFlags = BufferUsageFlags::ConstantBuffer;
 
 		GfxDevice::CreateBuffer(bloomBufferProperties, s_BloomData);
 
@@ -144,34 +141,33 @@ namespace Blueberry
 			uint32_t textureWidth2 = NextPowerOfTwo(textureWidth);
 			uint32_t textureHeight2 = NextPowerOfTwo(textureHeight);
 
-			TextureProperties properties = {};
+			TextureProperties textureProperties = {};
 
-			properties.width = textureWidth;
-			properties.height = textureHeight;
-			properties.depth = 1;
-			properties.antiAliasing = 1;
-			properties.mipCount = 1;
-			properties.format = TextureFormat::R16G16B16A16_Float;
-			properties.dimension = TextureDimension::Texture2D;
-			properties.wrapMode = WrapMode::Clamp;
-			properties.filterMode = FilterMode::Bilinear;
-			properties.isRenderTarget = true;
-			properties.isUnorderedAccess = true;
+			textureProperties.width = textureWidth;
+			textureProperties.height = textureHeight;
+			textureProperties.depth = 1;
+			textureProperties.antiAliasing = 1;
+			textureProperties.mipCount = 1;
+			textureProperties.format = TextureFormat::R16G16B16A16_Float;
+			textureProperties.dimension = TextureDimension::Texture2D;
+			textureProperties.wrapMode = WrapMode::Clamp;
+			textureProperties.filterMode = FilterMode::Bilinear;
+			textureProperties.usageFlags = TextureUsageFlags::RenderTarget | TextureUsageFlags::UnorderedAccess;
 
-			GfxTexture* bloom = GfxRenderTexturePool::Get(properties);
-			properties.width = textureWidth2;
-			properties.height = textureHeight2;
-			properties.isUnorderedAccess = false;
-			GfxTexture* bloom4 = GfxRenderTexturePool::Get(properties);
-			properties.width = textureWidth2 / 2;
-			properties.height = textureHeight2 / 2;
-			GfxTexture* bloom8 = GfxRenderTexturePool::Get(properties);
-			properties.width = textureWidth2 / 4;
-			properties.height = textureHeight2 / 4;
-			GfxTexture* bloom16 = GfxRenderTexturePool::Get(properties);
-			properties.width = textureWidth2 / 8;
-			properties.height = textureHeight2 / 8;
-			GfxTexture* bloom32 = GfxRenderTexturePool::Get(properties);
+			GfxTexture* bloom = GfxTexturePool::Get(textureProperties);
+			textureProperties.width = textureWidth2;
+			textureProperties.height = textureHeight2;
+			textureProperties.usageFlags = TextureUsageFlags::RenderTarget;
+			GfxTexture* bloom4 = GfxTexturePool::Get(textureProperties);
+			textureProperties.width = textureWidth2 / 2;
+			textureProperties.height = textureHeight2 / 2;
+			GfxTexture* bloom8 = GfxTexturePool::Get(textureProperties);
+			textureProperties.width = textureWidth2 / 4;
+			textureProperties.height = textureHeight2 / 4;
+			GfxTexture* bloom16 = GfxTexturePool::Get(textureProperties);
+			textureProperties.width = textureWidth2 / 8;
+			textureProperties.height = textureHeight2 / 8;
+			GfxTexture* bloom32 = GfxTexturePool::Get(textureProperties);
 
 			GfxDevice::SetRenderTarget(bloom);
 			GfxDevice::ClearColor({});
@@ -322,11 +318,11 @@ namespace Blueberry
 			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetPostProcessing(), cameraType == CameraType::Reflection ? 1 : 0));
 			GfxDevice::SetRenderTarget(nullptr);
 
-			GfxRenderTexturePool::Release(bloom);
-			GfxRenderTexturePool::Release(bloom4);
-			GfxRenderTexturePool::Release(bloom8);
-			GfxRenderTexturePool::Release(bloom16);
-			GfxRenderTexturePool::Release(bloom32);
+			GfxTexturePool::Release(bloom);
+			GfxTexturePool::Release(bloom4);
+			GfxTexturePool::Release(bloom8);
+			GfxTexturePool::Release(bloom16);
+			GfxTexturePool::Release(bloom32);
 		}
 	}
 }

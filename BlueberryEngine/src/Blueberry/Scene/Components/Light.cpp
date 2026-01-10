@@ -4,7 +4,7 @@
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Graphics\Texture.h"
-#include "Blueberry\Graphics\GfxRenderTexturePool.h"
+#include "Blueberry\Graphics\GfxTexturePool.h"
 #include "..\..\Graphics\LightHelper.h"
 
 namespace Blueberry
@@ -131,7 +131,7 @@ namespace Blueberry
 		{
 			uint32_t size = LightHelper::GetShadowSize(m_Type);
 			uint32_t sliceCount = LightHelper::GetSliceCount(m_Type);
-			m_CachedShadow = GfxRenderTexturePool::Get(size * sliceCount, size, 1, 1, 1, TextureFormat::D32_Float, TextureDimension::Texture2D, WrapMode::Clamp, FilterMode::Point);
+			m_CachedShadow = GfxTexturePool::Get(size * sliceCount, size, 1, TextureUsageFlags::RenderTarget, 1, 1, TextureFormat::D32_Float, TextureDimension::Texture2D, WrapMode::Clamp, FilterMode::Point);
 		}
 		return m_CachedShadow;
 	}
@@ -140,7 +140,7 @@ namespace Blueberry
 	{
 		if (m_CachedShadow != nullptr)
 		{
-			GfxRenderTexturePool::Release(m_CachedShadow);
+			GfxTexturePool::Release(m_CachedShadow);
 			m_CachedShadow = nullptr;
 			memset(m_IsDirty, true, sizeof(bool) * 6);
 		}
@@ -149,11 +149,11 @@ namespace Blueberry
 	void Light::UpdateBounds()
 	{
 		Transform* transform = GetTransform();
-		size_t transformRecalculationFrame = transform->GetRecalculationFrame();
-		if (m_RecalculationFrame < transformRecalculationFrame)
+		size_t transformUpdateCount = transform->GetUpdateCount();
+		if (m_UpdateCount < transformUpdateCount)
 		{
 			memset(m_IsDirty, true, sizeof(bool) * 6);
-			m_RecalculationFrame = transformRecalculationFrame;
+			m_UpdateCount = transformUpdateCount;
 		}
 	}
 }

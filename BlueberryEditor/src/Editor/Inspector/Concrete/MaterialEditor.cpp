@@ -5,7 +5,7 @@
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\TextureCube.h"
 #include "Blueberry\Graphics\GfxTexture.h"
-#include "Blueberry\Graphics\GfxRenderTexturePool.h"
+#include "Blueberry\Graphics\GfxTexturePool.h"
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Assets\ThumbnailCache.h"
 #include "Editor\Misc\ImGuiHelper.h"
@@ -20,7 +20,7 @@ namespace Blueberry
 	{
 		if (s_RenderTexture == nullptr)
 		{
-			s_RenderTexture = GfxRenderTexturePool::Get(512, 512, 1);
+			s_RenderTexture = GfxTexturePool::Get(512, 512, 1, TextureUsageFlags::RenderTarget);
 		}
 
 		for (Object* object : m_SerializedObject->GetTargets())

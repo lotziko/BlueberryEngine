@@ -214,11 +214,11 @@ namespace Blueberry
 			}
 
 			BufferProperties properties = {};
-			properties.type = BufferType::Structured;
 			properties.elementCount = static_cast<uint32_t>(m_ChartOffsetScale.size());
 			properties.elementSize = sizeof(Vector4);
 			properties.data = m_ChartOffsetScale.data();
 			properties.dataSize = m_ChartOffsetScale.size() * sizeof(Vector4);
+			properties.usageFlags = BufferUsageFlags::StructuredBuffer | BufferUsageFlags::ShaderResource;
 
 			GfxDevice::CreateBuffer(properties, s_ScaleOffsetBuffer);
 			GfxDevice::SetGlobalBuffer(s_PerLightmapInstanceDataId, s_ScaleOffsetBuffer);

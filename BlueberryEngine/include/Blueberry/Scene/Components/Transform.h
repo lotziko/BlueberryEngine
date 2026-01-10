@@ -19,6 +19,7 @@ namespace Blueberry
 		
 		const Matrix& GetLocalToWorldMatrix();
 		const Matrix& GetWorldToLocalMatrix();
+		const Matrix& GetLocalMatrix();
 		const Vector3& GetLocalPosition();
 		const Quaternion& GetLocalRotation();
 		const Vector3& GetLocalScale();
@@ -42,12 +43,12 @@ namespace Blueberry
 
 		void SetPosition(const Vector3& position);
 		void SetRotation(const Quaternion& rotation);
+		void SetLocalTRS(const TRS& trs);
 
 		void SetParent(Transform* parent, const bool& worldPositionStays = true);
 		void SetSiblingIndex(const size_t& index);
 
-		const bool& IsDirty() const;
-		const size_t& GetRecalculationFrame();
+		const size_t& GetUpdateCount();
 
 		const bool& IsStatic() const;
 		void SetStatic(const bool& isStatic);
@@ -57,8 +58,8 @@ namespace Blueberry
 		void RecalculateHierarchy();
 
 	private:
-		bool m_IsDirty = true;
-		size_t m_RecalculationFrame = 0;
+		uint8_t m_DirtyFlags = 7;
+		size_t m_UpdateCount = 0;
 
 		ObjectPtr<Transform> m_Parent = nullptr;
 		List<ObjectPtr<Transform>> m_Children;

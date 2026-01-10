@@ -2,6 +2,20 @@
 
 namespace Blueberry
 {
+	enum class TextureUsageFlags
+	{
+		None = 0,
+		// For now create SRV for every texture
+		//ShaderResource = 1,
+		RenderTarget = 1,
+		UnorderedAccess = 2,
+		CPUReadable = 4,
+		CPUWritable = 8,
+	};
+
+	TextureUsageFlags operator|(const TextureUsageFlags& lhs, const TextureUsageFlags& rhs);
+	TextureUsageFlags operator&(const TextureUsageFlags& lhs, const TextureUsageFlags& rhs);
+
 	enum class WrapMode
 	{
 		Repeat,
@@ -47,14 +61,22 @@ namespace Blueberry
 		BC7_UNorm_SRGB = 99,
 	};
 
-	enum class BufferType
+	enum class BufferUsageFlags
 	{
-		Vertex,
-		Index,
-		Structured,
-		Raw,
-		Constant
+		None = 0,
+		VertexBuffer = 1,
+		IndexBuffer = 2,
+		StructuredBuffer = 4,
+		ByteAdressBuffer = 8,
+		ConstantBuffer = 16,
+		UnorderedAccess = 32,
+		ShaderResource = 64,
+		CPUReadable = 128,
+		CPUWritable = 256,
 	};
+
+	BufferUsageFlags operator|(const BufferUsageFlags& lhs, const BufferUsageFlags& rhs);
+	BufferUsageFlags operator&(const BufferUsageFlags& lhs, const BufferUsageFlags& rhs);
 
 	enum class BufferFormat
 	{

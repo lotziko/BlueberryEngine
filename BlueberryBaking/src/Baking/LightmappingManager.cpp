@@ -11,7 +11,7 @@
 #include "Blueberry\Graphics\Texture.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\GfxTexture.h"
-#include "Blueberry\Graphics\GfxRenderTexturePool.h"
+#include "Blueberry\Graphics\GfxTexturePool.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\DefaultMaterials.h"
 #include "Blueberry\Tools\FileHelper.h"
@@ -166,7 +166,7 @@ namespace Blueberry
 
 	void RenderTextures(Scene* scene, Dictionary<ObjectId, List<uint8_t>>& buffers)
 	{
-		GfxTexture* renderTexture = GfxRenderTexturePool::Get(MATERIAL_COLOR_SIZE, MATERIAL_COLOR_SIZE, 1, 1, 1, TextureFormat::R8G8B8A8_UNorm_SRGB, TextureDimension::Texture2D, WrapMode::Clamp, FilterMode::Bilinear, true, false);
+		GfxTexture* renderTexture = GfxTexturePool::Get(MATERIAL_COLOR_SIZE, MATERIAL_COLOR_SIZE, 1, TextureUsageFlags::RenderTarget | TextureUsageFlags::CPUReadable, 1, 1, TextureFormat::R8G8B8A8_UNorm_SRGB, TextureDimension::Texture2D, WrapMode::Clamp, FilterMode::Bilinear);
 		GfxDevice::SetRenderTarget(renderTexture);
 		GfxDevice::SetViewport(0, 0, MATERIAL_COLOR_SIZE, MATERIAL_COLOR_SIZE);
 		for (auto& component : scene->GetIterator<MeshRenderer>())
@@ -198,7 +198,7 @@ namespace Blueberry
 		for (auto& component : scene->GetIterator<SkyRenderer>())
 		{
 			SkyRenderer* skyRenderer = static_cast<SkyRenderer*>(component.second);
-			GfxTexture* skyboxRenderTexture = GfxRenderTexturePool::Get(SKY_COLOR_SIZE, SKY_COLOR_SIZE, 1, 1, 1, TextureFormat::R8G8B8A8_UNorm, TextureDimension::TextureCube, WrapMode::Clamp, FilterMode::Bilinear, true, false);
+			GfxTexture* skyboxRenderTexture = GfxTexturePool::Get(SKY_COLOR_SIZE, SKY_COLOR_SIZE, 1, TextureUsageFlags::RenderTarget | TextureUsageFlags::CPUReadable, 1, 1, TextureFormat::R8G8B8A8_UNorm, TextureDimension::TextureCube, WrapMode::Clamp, FilterMode::Bilinear);
 
 			GfxDevice::SetViewCount(6);
 			GfxDevice::SetRenderTarget(skyboxRenderTexture);
@@ -227,11 +227,11 @@ namespace Blueberry
 			}
 			buffers.insert_or_assign(0, std::move(buffer));
 
-			GfxRenderTexturePool::Release(skyboxRenderTexture);
+			GfxTexturePool::Release(skyboxRenderTexture);
 			break;
 		}
 		GfxDevice::SetRenderTarget(nullptr);
-		GfxRenderTexturePool::Release(renderTexture);
+		GfxTexturePool::Release(renderTexture);
 	}
 
 	void CreateContext(LightmapperState& state)

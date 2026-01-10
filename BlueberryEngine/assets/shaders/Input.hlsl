@@ -6,6 +6,8 @@
 #define MAX_VIEW_COUNT 2
 #define REFLECTION_LOD_COUNT 5
 
+StructuredBuffer<float4x4> _SkinningData;
+
 struct PerDrawData
 {
 	float4x4 modelMatrix;

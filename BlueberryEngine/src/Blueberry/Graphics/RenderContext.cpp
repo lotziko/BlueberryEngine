@@ -4,6 +4,7 @@
 #include "Blueberry\Core\Time.h"
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Scene\Components\MeshRenderer.h"
+#include "Blueberry\Scene\Components\SkinnedMeshRenderer.h"
 #include "Blueberry\Scene\Components\SkyRenderer.h"
 #include "Blueberry\Scene\Components\ProbeVolume.h"
 #include "Blueberry\Scene\Components\ReflectionProbe.h"
@@ -16,6 +17,7 @@
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\DefaultTextures.h"
 #include "Blueberry\Graphics\Renderer2D.h"
+#include "Blueberry\Graphics\Skinning.h"
 #include "LightHelper.h"
 #include "Blueberry\Graphics\RendererTree.h"
 #include "Blueberry\Graphics\GfxDevice.h"
@@ -29,6 +31,7 @@
 namespace Blueberry
 {
 	const uint32_t INSTANCE_BUFFER_SIZE = 8192;
+	const uint32_t SKINNING_BUFFER_SIZE = 128;
 	
 	struct DrawingOperation
 	{
@@ -41,6 +44,7 @@ namespace Blueberry
 		uint8_t instanceCount;
 		float distance;
 		uint32_t lightmapChartOffset;
+		GfxBuffer* vertexBufferOverride;
 	};
 
 	struct CullerInfo
@@ -52,7 +56,6 @@ namespace Blueberry
 	};
 	
 	static List<DrawingOperation> s_DrawingOperations = {};
-	static List<MeshRenderer*> s_MeshRenderers = {};
 	static CullerInfo s_LastCullerInfo = {};
 	static Object* s_CurrentCuller = nullptr;
 	static uint32_t s_CurrentCullerIndex = 0;
@@ -152,7 +155,17 @@ namespace Blueberry
 						Material* material = GfxDrawingOperation::GetValidMaterial(meshRenderer->GetMaterial(i));
 						if (material != nullptr)
 						{
-							s_DrawingOperations.push_back(std::move(DrawingOperation{ matrix, mesh, mesh->GetObjectId(), static_cast<uint8_t>(i), material, material->GetObjectId(), 1, distance, lightmapChartOffset }));
+							DrawingOperation operation = {};
+							operation.matrix = matrix;
+							operation.mesh = mesh;
+							operation.meshId = mesh->GetObjectId();
+							operation.submeshIndex = static_cast<uint8_t>(i);
+							operation.material = material;
+							operation.materialId = material->GetObjectId();
+							operation.instanceCount = 1;
+							operation.distance = distance;
+							operation.lightmapChartOffset = lightmapChartOffset;
+							s_DrawingOperations.push_back(std::move(operation));
 						}
 					}
 				}
@@ -161,7 +174,78 @@ namespace Blueberry
 					Material* material = GfxDrawingOperation::GetValidMaterial(meshRenderer->GetMaterial());
 					if (material != nullptr)
 					{
-						s_DrawingOperations.push_back(std::move(DrawingOperation{ matrix, mesh, mesh->GetObjectId(), 255, material, material->GetObjectId(), 1, distance, lightmapChartOffset }));
+						DrawingOperation operation = {};
+						operation.matrix = matrix;
+						operation.mesh = mesh;
+						operation.meshId = mesh->GetObjectId();
+						operation.submeshIndex = 255;
+						operation.material = material;
+						operation.materialId = material->GetObjectId();
+						operation.instanceCount = 1;
+						operation.distance = distance;
+						operation.lightmapChartOffset = lightmapChartOffset;
+						s_DrawingOperations.push_back(std::move(operation));
+					}
+				}
+			}
+			else if (renderer->GetType() == SkinnedMeshRenderer::Type)
+			{
+				SkinnedMeshRenderer* skinnedMeshRenderer = static_cast<SkinnedMeshRenderer*>(renderer);
+				Transform* transform = skinnedMeshRenderer->GetTransform();
+				if (isStatic)
+				{
+					continue;
+				}
+				Mesh* mesh = skinnedMeshRenderer->GetMesh();
+				if (mesh == nullptr)
+				{
+					continue;
+				}
+				Matrix matrix = transform->GetLocalToWorldMatrix();
+				float distance = Vector3::Transform(skinnedMeshRenderer->GetBounds().Center, cullerViewMatrix).z;
+				uint32_t subMeshCount = mesh->GetSubMeshCount();
+				GfxBuffer* vertexBuffer = Skinning::GetVertexBuffer(skinnedMeshRenderer);
+				if (vertexBuffer == nullptr)
+				{
+					vertexBuffer = mesh->GetVertexBuffer();
+				}
+				if (subMeshCount > 1)
+				{
+					for (uint32_t i = 0; i < subMeshCount; ++i)
+					{
+						Material* material = GfxDrawingOperation::GetValidMaterial(skinnedMeshRenderer->GetMaterial(i));
+						if (material != nullptr)
+						{
+							DrawingOperation operation = {};
+							operation.matrix = matrix;
+							operation.mesh = mesh;
+							operation.meshId = mesh->GetObjectId();
+							operation.submeshIndex = static_cast<uint8_t>(i);
+							operation.material = material;
+							operation.materialId = material->GetObjectId();
+							operation.instanceCount = 1;
+							operation.distance = distance;
+							operation.vertexBufferOverride = vertexBuffer;
+							s_DrawingOperations.push_back(std::move(operation));
+						}
+					}
+				}
+				else
+				{
+					Material* material = GfxDrawingOperation::GetValidMaterial(skinnedMeshRenderer->GetMaterial());
+					if (material != nullptr)
+					{
+						DrawingOperation operation = {};
+						operation.matrix = matrix;
+						operation.mesh = mesh;
+						operation.meshId = mesh->GetObjectId();
+						operation.submeshIndex = 255;
+						operation.material = material;
+						operation.materialId = material->GetObjectId();
+						operation.instanceCount = 1;
+						operation.distance = distance;
+						operation.vertexBufferOverride = vertexBuffer;
+						s_DrawingOperations.push_back(std::move(operation));
 					}
 				}
 			}
@@ -230,6 +314,11 @@ namespace Blueberry
 			{
 				auto meshRenderer = static_cast<MeshRenderer*>(component.second);
 				meshRenderer->OnPreCull();
+			}
+			for (auto component : scene->GetIterator<SkinnedMeshRenderer>())
+			{
+				auto skinnedMeshRenderer = static_cast<SkinnedMeshRenderer*>(component.second);
+				skinnedMeshRenderer->OnPreCull();
 			}
 			for (auto component : scene->GetIterator<Light>())
 			{
@@ -499,15 +588,14 @@ namespace Blueberry
 				indices[i] = i;
 			}
 
-			BufferProperties vertexBufferProperties = {};
-			vertexBufferProperties.type = BufferType::Vertex;
-			vertexBufferProperties.elementCount = INSTANCE_BUFFER_SIZE;
-			vertexBufferProperties.elementSize = sizeof(uint32_t);
-			vertexBufferProperties.data = indices;
-			vertexBufferProperties.dataSize = INSTANCE_BUFFER_SIZE * sizeof(uint32_t);
-			vertexBufferProperties.isWritable = false;
+			BufferProperties indexBufferProperties = {};
+			indexBufferProperties.elementCount = INSTANCE_BUFFER_SIZE;
+			indexBufferProperties.elementSize = sizeof(uint32_t);
+			indexBufferProperties.data = indices;
+			indexBufferProperties.dataSize = INSTANCE_BUFFER_SIZE * sizeof(uint32_t);
+			indexBufferProperties.usageFlags = BufferUsageFlags::VertexBuffer;
 
-			GfxDevice::CreateBuffer(vertexBufferProperties, s_IndexBuffer);
+			GfxDevice::CreateBuffer(indexBufferProperties, s_IndexBuffer);
 		}
 
 		GatherOperations(results, s_CurrentCuller, s_CurrentCullerIndex, drawingSettings.sortingMode, drawingSettings.objectsFilter);
@@ -519,12 +607,12 @@ namespace Blueberry
 			auto& operation = s_DrawingOperations[i];
 			if (operation.submeshIndex == 255)
 			{
-				GfxDevice::Draw(GfxDrawingOperation(operation.mesh, operation.material, passIndex, s_IndexBuffer, i, operation.instanceCount));
+				GfxDevice::Draw(GfxDrawingOperation(operation.mesh, operation.vertexBufferOverride, operation.material, passIndex, s_IndexBuffer, i, operation.instanceCount));
 			}
 			else
 			{
 				auto& subMesh = operation.mesh->GetSubMesh(operation.submeshIndex);
-				GfxDevice::Draw(GfxDrawingOperation(operation.mesh, operation.material, subMesh.GetIndexCount(), subMesh.GetIndexStart(), operation.mesh->GetVertexCount(), passIndex, s_IndexBuffer, i, operation.instanceCount));
+				GfxDevice::Draw(GfxDrawingOperation(operation.mesh, operation.vertexBufferOverride, operation.material, subMesh.GetIndexCount(), subMesh.GetIndexStart(), operation.mesh->GetVertexCount(), passIndex, s_IndexBuffer, i, operation.instanceCount));
 			}
 			i += operation.instanceCount;
 		}

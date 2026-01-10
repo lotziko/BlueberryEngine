@@ -97,42 +97,37 @@ namespace Blueberry
 		if (s_ConstantBuffer == nullptr)
 		{
 			BufferProperties constantBufferProperties = {};
-			constantBufferProperties.type = BufferType::Constant;
 			constantBufferProperties.elementCount = 1;
 			constantBufferProperties.elementSize = sizeof(PerCameraLightData) * 1;
-			constantBufferProperties.isWritable = true;
+			constantBufferProperties.usageFlags = BufferUsageFlags::ConstantBuffer;
 
 			GfxDevice::CreateBuffer(constantBufferProperties, s_ConstantBuffer);
 
 			BufferProperties pointLightsBufferProperties = {};
-			pointLightsBufferProperties.type = BufferType::Structured;
 			pointLightsBufferProperties.elementCount = MAX_REALTIME_LIGHTS;
 			pointLightsBufferProperties.elementSize = sizeof(PointLightBufferData);
-			pointLightsBufferProperties.isWritable = true;
+			pointLightsBufferProperties.usageFlags = BufferUsageFlags::StructuredBuffer | BufferUsageFlags::ShaderResource | BufferUsageFlags::CPUWritable;
 
 			GfxDevice::CreateBuffer(pointLightsBufferProperties, s_PointLightsBuffer);
 
 			BufferProperties spotLightsBufferProperties = {};
-			spotLightsBufferProperties.type = BufferType::Structured;
 			spotLightsBufferProperties.elementCount = MAX_REALTIME_LIGHTS;
 			spotLightsBufferProperties.elementSize = sizeof(SpotLightBufferData);
-			spotLightsBufferProperties.isWritable = true;
+			spotLightsBufferProperties.usageFlags = BufferUsageFlags::StructuredBuffer | BufferUsageFlags::ShaderResource | BufferUsageFlags::CPUWritable;
 
 			GfxDevice::CreateBuffer(spotLightsBufferProperties, s_SpotLightsBuffer);
 
 			BufferProperties shadowsBufferProperties = {};
-			shadowsBufferProperties.type = BufferType::Structured;
 			shadowsBufferProperties.elementCount = MAX_SHADOWS;
 			shadowsBufferProperties.elementSize = sizeof(ShadowBufferData);
-			shadowsBufferProperties.isWritable = true;
+			shadowsBufferProperties.usageFlags = BufferUsageFlags::StructuredBuffer | BufferUsageFlags::ShaderResource | BufferUsageFlags::CPUWritable;
 
 			GfxDevice::CreateBuffer(shadowsBufferProperties, s_ShadowsBuffer);
 
 			BufferProperties reflectionProbesBufferProperties = {};
-			reflectionProbesBufferProperties.type = BufferType::Structured;
 			reflectionProbesBufferProperties.elementCount = MAX_REALTIME_LIGHTS;
 			reflectionProbesBufferProperties.elementSize = sizeof(ReflectionProbeBufferData);
-			reflectionProbesBufferProperties.isWritable = true;
+			reflectionProbesBufferProperties.usageFlags = BufferUsageFlags::StructuredBuffer | BufferUsageFlags::ShaderResource | BufferUsageFlags::CPUWritable;
 
 			GfxDevice::CreateBuffer(reflectionProbesBufferProperties, s_ReflectionProbesBuffer);
 		}

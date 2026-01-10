@@ -479,6 +479,11 @@ namespace Blueberry
 		m_DeviceContext->CopyResource(m_Texture.Get(), m_StagingTexture.Get());
 	}
 
+	void GfxTextureDX11::SetName(const String& name)
+	{
+		m_Texture->SetPrivateData(WKPDID_D3DDebugObjectName, name.size(), name.data());
+	}
+
 	void GfxTextureDX11::GenerateMipMaps()
 	{
 		m_DeviceContext->GenerateMips(m_ShaderResourceView.Get());
@@ -562,6 +567,11 @@ namespace Blueberry
 		return format;
 	}
 
+	bool HasFlag(TextureUsageFlags usageFlags, TextureUsageFlags flag)
+	{
+		return (usageFlags & flag) != TextureUsageFlags::None;
+	}
+
 	bool GfxTextureDX11::Initialize(D3D11_SUBRESOURCE_DATA* subresourceData, const uint32_t& subresourceCount, const TextureProperties& properties)
 	{
 		uint32_t antiAliasing = std::max(1u, properties.antiAliasing);
@@ -573,9 +583,11 @@ namespace Blueberry
 		bool isVolume = properties.dimension == TextureDimension::Texture3D;
 		
 		bool useDSV = IsDepth(m_Format);
-		bool useRTV = !useDSV && properties.isRenderTarget;
-		bool useUAV = properties.isUnorderedAccess;
-		bool useStaging = properties.isReadable || properties.isWritable;
+		bool useRTV = !useDSV && HasFlag(properties.usageFlags, TextureUsageFlags::RenderTarget);
+		bool useUAV = HasFlag(properties.usageFlags, TextureUsageFlags::UnorderedAccess);
+		bool isReadable = HasFlag(properties.usageFlags, TextureUsageFlags::CPUReadable);
+		bool isWritable = HasFlag(properties.usageFlags, TextureUsageFlags::CPUWritable);
+		bool useStaging = isReadable || isWritable;
 		bool isResource = !useDSV && !useRTV && !useUAV && !useStaging;
 		bool useSampler = isResource || antiAliasing <= 1;
 
@@ -916,7 +928,7 @@ namespace Blueberry
 
 			textureDesc.Usage = D3D11_USAGE_STAGING;
 			textureDesc.BindFlags = 0;
-			textureDesc.CPUAccessFlags = (properties.isReadable ? D3D11_CPU_ACCESS_READ : 0) | (properties.isWritable ? D3D11_CPU_ACCESS_WRITE : 0);
+			textureDesc.CPUAccessFlags = (isReadable ? D3D11_CPU_ACCESS_READ : 0) | (isWritable ? D3D11_CPU_ACCESS_WRITE : 0);
 
 			if (isCubemap)
 			{

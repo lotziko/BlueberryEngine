@@ -25,9 +25,10 @@ namespace Blueberry
 			for (uint32_t j = 0; j < ELEMENTS_PER_CHUNK; ++j)
 			{
 				ObjectItem* item = chunk + j;
-				if (item != nullptr)
+				if (item != nullptr && item->object != nullptr)
 				{
 					delete item->object;
+					item->object = nullptr;
 				}
 			}
 			BB_FREE(chunk);
@@ -96,6 +97,14 @@ namespace Blueberry
 	{
 		ObjectId id = object->m_ObjectId;
 		ObjectItem* objectItem = IdToObjectItem(id);
+		auto guidIt = s_ObjectIdToGuid.find(id);
+		if (guidIt != s_ObjectIdToGuid.end())
+		{
+			s_ObjectIdToGuid.erase(id);
+			s_ObjectIdToFileId.erase(id);
+			auto fileIdIt = s_GuidToObjectId.find(guidIt->second.first);
+			fileIdIt->second.erase(guidIt->second.second);
+		}
 		objectItem->object = nullptr;
 	}
 

@@ -2,7 +2,7 @@
 
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\GfxTexture.h"
-#include "Blueberry\Graphics\GfxRenderTexturePool.h"
+#include "Blueberry\Graphics\GfxTexturePool.h"
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\Mesh.h"
@@ -21,9 +21,14 @@ namespace Blueberry
 
 	bool ThumbnailRenderer::Draw(unsigned char* output, const uint32_t& size, Object* asset)
 	{
+		if (asset->GetState() != ObjectState::Default)
+		{
+			return false;
+		}
+
 		if (s_ThumbnailRenderTarget == nullptr)
 		{
-			s_ThumbnailRenderTarget = GfxRenderTexturePool::Get(size, size, 1, 1, 1, TextureFormat::R8G8B8A8_UNorm, TextureDimension::Texture2D, WrapMode::Clamp, FilterMode::Bilinear, true);
+			s_ThumbnailRenderTarget = GfxTexturePool::Get(size, size, 1, TextureUsageFlags::RenderTarget | TextureUsageFlags::CPUReadable, 1, 1, TextureFormat::R8G8B8A8_UNorm, TextureDimension::Texture2D, WrapMode::Clamp, FilterMode::Bilinear);
 		}
 
 		if (asset->IsClassType(Texture2D::Type))
