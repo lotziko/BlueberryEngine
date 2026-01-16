@@ -405,6 +405,11 @@ namespace Blueberry
 			textureProperties.data = textureData.data();
 			textureProperties.dataSize = textureData.size();
 
+			if (s_ReflectionTexture != nullptr)
+			{
+				delete s_ReflectionTexture;
+				s_ReflectionTexture = nullptr;
+			}
 			GfxDevice::CreateTexture(textureProperties, s_ReflectionTexture);
 
 			GfxDevice::SetGlobalTexture(s_ReflectionTextureId, s_ReflectionTexture);

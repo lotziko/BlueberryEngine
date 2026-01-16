@@ -50,12 +50,13 @@ namespace Blueberry
 		const bool& GetGeneratePhysicsShape();
 		void SetGeneratePhysicsShape(const bool& generate);
 
+		static String GetPhysicsShapePath(const Guid& guid, const FileId& fileId);
+
 	protected:
 		virtual void ImportData() override;
 
 	private:
 		void CreateMeshEntity(Transform* parent, fbxsdk::FbxNode* node, List<fbxsdk::FbxNode*>& skeletonNodes, List<Object*>& objects);
-		std::string GetPhysicsShapePath(const size_t& fileId);
 
 	private:
 		List<ModelMaterialData> m_Materials;

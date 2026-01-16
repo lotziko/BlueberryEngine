@@ -29,6 +29,26 @@ namespace Blueberry
 		Variant m_Value;
 	};
 
+	class PrefabAddedEntityData : public Data
+	{
+		DATA_DECLARATION(PrefabAddedEntityData)
+
+	public:
+		Transform* GetParent();
+		void SetParent(Transform* parent);
+
+		Entity* GetEntity();
+		void SetEntity(Entity* entity);
+
+		const int32_t& GetIndex();
+		void SetIndex(const int32_t& index);
+
+	private:
+		ObjectPtr<Transform> m_Parent;
+		ObjectPtr<Entity> m_Entity;
+		int32_t m_Index;
+	};
+
 	class PrefabInstance : public Object
 	{
 		OBJECT_DECLARATION(PrefabInstance)
@@ -54,6 +74,7 @@ namespace Blueberry
 		ObjectPtr<Entity> m_Entity;
 		ObjectPtr<Transform> m_Parent;
 		List<PrefabModificationData> m_Modifications;
+		List<PrefabAddedEntityData> m_AddedEntities;
 
 		Dictionary<FileId, ObjectId> m_FileIdToObject;
 		Dictionary<ObjectId, ObjectId> m_PrefabToInstanceMapping;

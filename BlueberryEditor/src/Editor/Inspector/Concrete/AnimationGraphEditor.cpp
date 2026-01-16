@@ -16,6 +16,7 @@ namespace Blueberry
 				AssetDB::SetDirty(object);
 			}
 			AssetDB::SaveAssets();
+			AssetDB::Refresh();
 		}
 	}
 }

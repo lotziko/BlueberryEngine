@@ -86,6 +86,7 @@ namespace Blueberry
 		static String GetTexturePath(const Guid& guid);
 
 	protected:
+		virtual const bool IsRequiringReimport() override;
 		virtual void ImportData() override;
 
 	private:

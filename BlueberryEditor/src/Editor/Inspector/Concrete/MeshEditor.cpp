@@ -51,10 +51,12 @@ namespace Blueberry
 
 		static int previewType;
 		static List<String> previewTypes = { "Default", "UV 0", "UV 1" };
+		ImGui::BeginPaddedArea(ImVec2(10, 5), ImVec2(10, 5));
 		ImGui::Text(mesh->GetName().c_str());
 		ImGui::Text(std::to_string(mesh->GetVertexCount()).c_str());
 		ImGui::Text(std::to_string(mesh->GetIndexCount()).c_str());
 		ImGui::EnumEdit("Preview", &previewType, &previewTypes);
+		ImGui::EndPaddedArea();
 
 		ImVec2 pos = ImGui::GetCursorScreenPos();
 		ImVec2 size = ImGui::GetContentRegionAvail();

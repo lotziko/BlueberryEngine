@@ -336,6 +336,7 @@ namespace Blueberry
 			GfxDevice::CreateFragmentShader(variantsData.shaders[variantsData.fragmentShaderIndices[i]], fragmentShader);
 			m_FragmentShaders[i] = fragmentShader;
 		}
+		IncrementUpdateCount();
 	}
 
 	void Shader::Initialize(const VariantsData& variantsData, const ShaderData& data)
@@ -344,18 +345,9 @@ namespace Blueberry
 		m_Data = data;
 	}
 
-	Shader* Shader::Create(const VariantsData& variantsData, const ShaderData& shaderData, Shader* existingShader)
+	Shader* Shader::Create(const VariantsData& variantsData, const ShaderData& shaderData)
 	{
-		Shader* shader = nullptr;
-		if (existingShader != nullptr)
-		{
-			shader = existingShader;
-			shader->IncrementUpdateCount();
-		}
-		else
-		{
-			shader = Object::Create<Shader>();
-		}
+		Shader* shader = Object::Create<Shader>();
 		shader->Initialize(variantsData, shaderData);
 		return shader;
 	}

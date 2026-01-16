@@ -371,39 +371,39 @@ namespace Blueberry
 								cascadeCenter.y = std::roundf(cascadeCenter.y * cascadeGrid) / cascadeGrid;
 								cascadeCenter.z = std::roundf(cascadeCenter.z * cascadeGrid) / cascadeGrid;
 
+								Vector3 origin = cascadeCenter - forward * (zRange / 2.0f);
+								Matrix projection = Matrix::CreateOrthographicOffCenter(-radius, radius, -radius, radius, 0.001f, zRange);
+								Matrix view = Matrix::CreateLookAt(origin, cascadeCenter, up);
+								Matrix viewProjection = view * projection;
+
+								Vector3 centerLS = Vector3(0, 0, 0);
+								centerLS = Vector3::Transform(centerLS, viewProjection);
+								float texCoordX = centerLS.x * shadowSize * 0.5f;
+								float texCoordY = centerLS.y * shadowSize * 0.5f;
+
+								float texCoordRoundedX = std::round(texCoordX);
+								float texCoordRoundedY = std::round(texCoordY);
+
+								float dx = texCoordRoundedX - texCoordX;
+								float dy = texCoordRoundedY - texCoordY;
+
+								dx /= shadowSize * 0.5f;
+								dy /= shadowSize * 0.5f;
+
+								viewProjection *= Matrix::CreateTranslation(dx, dy, 0);
+
 								if (Vector3::Distance(currentCascadeCenter, cascadeCenter) > cascadeGrid * 0.5f)
 								{
-									Vector3 origin = cascadeCenter - forward * (zRange / 2.0f);
-									Matrix projection = Matrix::CreateOrthographicOffCenter(-radius, radius, -radius, radius, 0.001f, zRange);
-									Matrix view = Matrix::CreateLookAt(origin, cascadeCenter, up);
-									Matrix viewProjection = view * projection;
-
-									Vector3 centerLS = Vector3(0, 0, 0);
-									centerLS = Vector3::Transform(centerLS, viewProjection);
-									float texCoordX = centerLS.x * shadowSize * 0.5f;
-									float texCoordY = centerLS.y * shadowSize * 0.5f;
-
-									float texCoordRoundedX = std::round(texCoordX);
-									float texCoordRoundedY = std::round(texCoordY);
-
-									float dx = texCoordRoundedX - texCoordX;
-									float dy = texCoordRoundedY - texCoordY;
-
-									dx /= shadowSize * 0.5f;
-									dy /= shadowSize * 0.5f;
-
-									viewProjection *= Matrix::CreateTranslation(dx, dy, 0);
-
 									light->m_WorldToShadow[i] = viewProjection;
 									light->m_ShadowCascades[i] = Vector4(cascadeCenter.x, cascadeCenter.y, cascadeCenter.z, std::pow(radius, 2));
 									light->m_IsDirty[i] = true;
-
-									GetOrthographicPlanes(viewProjection.Invert(), &lightCullerInfo.planes[0], &lightCullerInfo.planes[1], &lightCullerInfo.planes[2], &lightCullerInfo.planes[3], &lightCullerInfo.planes[4], &lightCullerInfo.planes[5]);
-
-									lightCullerInfo.index = i;
-									lightCullerInfo.viewMatrix = view;
-									results.cullerInfos.push_back(std::move(lightCullerInfo));
 								}
+
+								GetOrthographicPlanes(viewProjection.Invert(), &lightCullerInfo.planes[0], &lightCullerInfo.planes[1], &lightCullerInfo.planes[2], &lightCullerInfo.planes[3], &lightCullerInfo.planes[4], &lightCullerInfo.planes[5]);
+
+								lightCullerInfo.index = i;
+								lightCullerInfo.viewMatrix = view;
+								results.cullerInfos.push_back(std::move(lightCullerInfo));
 							}
 						}
 						else

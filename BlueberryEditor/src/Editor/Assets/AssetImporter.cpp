@@ -2,11 +2,13 @@
 
 #include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Assets\AssetLoader.h"
+#include "Blueberry\Tools\StringConverter.h"
 
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Serialization\YamlMetaSerializer.h"
 #include "Editor\Serialization\YamlHelper.h"
 #include "Editor\Serialization\YamlSerializers.h"
+#include "Editor\Misc\PlatformHelper.h"
 
 namespace Blueberry
 {
@@ -67,6 +69,16 @@ namespace Blueberry
 		return false;
 	}
 
+	const bool AssetImporter::IsRequiringReimport()
+	{
+		Guid guid = GetGuid();
+		if (AssetDB::HasAssetWithGuidInData(guid))
+		{
+			return false;
+		}
+		return true;
+	}
+
 	const bool& AssetImporter::IsRequiringSave()
 	{
 		return m_RequireSave;
@@ -97,7 +109,16 @@ namespace Blueberry
 		}
 		if (!IsImported())
 		{
-			ImportData();
+			if (IsRequiringReimport())
+			{
+				PlatformHelper::ShowProgressBar(L"Importing assets", StringConverter::StringToWide(GetRelativeFilePath()));
+				ImportData();
+				PlatformHelper::HideProgressBar();
+			}
+			else
+			{
+				LoadData();
+			}
 		}
 	}
 
@@ -114,7 +135,16 @@ namespace Blueberry
 	{
 		Save();
 		ResetImport();
-		ImportData();
+		if (IsRequiringReimport())
+		{
+			PlatformHelper::ShowProgressBar(L"Importing assets", StringConverter::StringToWide(GetRelativeFilePath()));
+			ImportData();
+			PlatformHelper::HideProgressBar();
+		}
+		else
+		{
+			LoadData();
+		}
 	}
 
 	AssetImporter* AssetImporter::CreateNew(const size_t& type, const std::filesystem::path& relativePath, const std::filesystem::path& relativeMetaPath)
@@ -161,6 +191,12 @@ namespace Blueberry
 		auto dataPath = Path::GetAssetsPath();
 		dataPath.append(importer->GetRelativeMetaFilePath());
 		serializer.Deserialize(String(dataPath.string()));
+	}
+
+	void AssetImporter::LoadData()
+	{
+		Guid guid = GetGuid();
+		AssetDB::LoadAssetObjects(guid, ObjectDB::GetObjectsFromGuid(guid));
 	}
 
 	void AssetImporter::AddAssetObject(Object* object, const FileId& fileId)

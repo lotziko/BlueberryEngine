@@ -92,6 +92,14 @@ namespace Blueberry
 			}
 			input.close();
 		}
+		if (m_FinalizeObjectCallback != nullptr)
+		{
+			for (size_t i = 0; i < m_DeserializedObjects.size(); ++i)
+			{
+				auto& pair = m_DeserializedObjects[i];
+				m_FinalizeObjectCallback(pair.first, m_AssetGuid, pair.second);
+			}
+		}
 	}
 
 	void BinarySerializer::SerializeNode(std::stringstream& output, Context context)
@@ -169,6 +177,9 @@ namespace Blueberry
 			break;
 			case BindingType::Enum:
 				output.write(reinterpret_cast<char*>(field.Get<int>(ptr)), sizeof(int));
+				break;
+			case BindingType::Vector2:
+				output.write(reinterpret_cast<char*>(field.Get<Vector2>(ptr)), sizeof(Vector2));
 				break;
 			case BindingType::Vector3:
 				output.write(reinterpret_cast<char*>(field.Get<Vector3>(ptr)), sizeof(Vector3));
@@ -386,6 +397,9 @@ namespace Blueberry
 				break;
 				case BindingType::Enum:
 					input.read(reinterpret_cast<char*>(field.Get<int>(ptr)), sizeof(int));
+					break;
+				case BindingType::Vector2:
+					input.read(reinterpret_cast<char*>(field.Get<Vector2>(ptr)), sizeof(Vector2));
 					break;
 				case BindingType::Vector3:
 					input.read(reinterpret_cast<char*>(field.Get<Vector3>(ptr)), sizeof(Vector3));

@@ -9,6 +9,11 @@ namespace Blueberry
 		DEFINE_BASE_FIELDS(DefaultImporter, AssetImporter)
 	}
 
+	const bool DefaultImporter::IsRequiringReimport()
+	{
+		return false;
+	}
+
 	void DefaultImporter::ImportData()
 	{
 	}

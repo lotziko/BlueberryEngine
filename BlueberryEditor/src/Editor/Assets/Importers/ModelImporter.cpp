@@ -90,122 +90,80 @@ namespace Blueberry
 		m_GeneratePhysicsShape = generate;
 	}
 
+	String ModelImporter::GetPhysicsShapePath(const Guid& guid, const FileId& fileId)
+	{
+		std::filesystem::path dataPath = Path::GetPhysicsShapeCachePath();
+		if (!std::filesystem::exists(dataPath))
+		{
+			std::filesystem::create_directories(dataPath);
+		}
+		dataPath.append(guid.ToString().append(std::to_string(fileId)).append(".shape"));
+		return String(dataPath.string());
+	}
+
 	void ModelImporter::ImportData()
 	{
 		Guid guid = GetGuid();
 		
-		if (AssetDB::HasAssetWithGuidInData(guid))
+		// Based on https://www.youtube.com/watch?v=oIKnBVP2Jgg
+		fbxsdk::FbxManager* manager = fbxsdk::FbxManager::Create();
+		fbxsdk::FbxIOSettings* ios = fbxsdk::FbxIOSettings::Create(manager, IOSROOT);
+		manager->SetIOSettings(ios);
+		fbxsdk::FbxImporter* importer = fbxsdk::FbxImporter::Create(manager, "");
+		if (!importer->Initialize(GetFilePath().c_str(), -1, manager->GetIOSettings()))
 		{
-			// TODO multiple meshes in file
-			// TODO rewrite this, it makes allocateid too and add fileid serializing to yamlserializer
-			auto objects = AssetDB::LoadAssetObjects(guid, ObjectDB::GetObjectsFromGuid(guid));
-			for (auto& pair : objects)
-			{
-				Object* object = pair.first;
-				FileId id = pair.second;
-				ObjectDB::AllocateIdToGuid(object, guid, id);
-				object->SetState(ObjectState::Default);
-
-				if (object->IsClassType(Mesh::Type))
-				{
-					Mesh* mesh = static_cast<Mesh*>(object);
-					if (m_GeneratePhysicsShape)
-					{
-						std::ifstream input;
-						input.open(GetPhysicsShapePath(id), std::ofstream::binary);
-						if (input.is_open())
-						{
-							PhysicsShapeCache::Load(mesh, input);
-							input.close();
-						}
-					}
-					mesh->Apply();
-					AddAssetObject(object, id);
-					//BB_INFO("Mesh \"" << object->GetName() << "\" imported from cache.");
-				}
-				else if (object->IsClassType(Entity::Type))
-				{
-					Entity* entity = static_cast<Entity*>(object);
-					//BB_INFO("Entity \"" << object->GetName() << "\" imported from cache.");
-				}
-				else if (object->IsClassType(AnimationClip::Type))
-				{
-					AddAssetObject(object, id);
-				}
-			}
+			BB_ERROR("Failed to initialize FBX importer: " << importer->GetStatus().GetErrorString());
 			return;
+		}
+
+		fbxsdk::FbxScene* scene = fbxsdk::FbxScene::Create(manager, "scene");
+		importer->Import(scene);
+
+		FbxAxisSystem engineAxis(FbxAxisSystem::eYAxis, FbxAxisSystem::eParityOdd, FbxAxisSystem::eLeftHanded);
+		engineAxis.DeepConvertScene(scene);
+
+		FbxSystemUnit engineUnit(FbxSystemUnit::m);
+		engineUnit.ConvertScene(scene);
+
+		int meshCount = 0, meshNode = 0;
+		List<FbxNode*> skeletonNodes;
+		for (int i = 0; i < scene->GetNodeCount(); ++i)
+		{
+			FbxNode* node = scene->GetNode(i);
+			if (node->GetMesh() != nullptr)
+			{
+				++meshCount;
+				meshNode = i;
+			}
+			if (node->GetSkeleton() != nullptr)
+			{
+				skeletonNodes.push_back(node);
+			}
+		}
+
+		fbxsdk::FbxNode* rootNode = scene->GetRootNode();
+		List<Object*> objects;
+		if (meshCount == 1)
+		{
+			CreateMeshEntity(nullptr, scene->GetNode(meshNode), skeletonNodes, objects);
 		}
 		else
 		{
-			// Based on https://www.youtube.com/watch?v=oIKnBVP2Jgg
-			fbxsdk::FbxManager* manager = fbxsdk::FbxManager::Create();
-			fbxsdk::FbxIOSettings* ios = fbxsdk::FbxIOSettings::Create(manager, IOSROOT);
-			manager->SetIOSettings(ios);
-			fbxsdk::FbxImporter* importer = fbxsdk::FbxImporter::Create(manager, "");
-			if (!importer->Initialize(GetFilePath().c_str(), -1, manager->GetIOSettings()))
-			{
-				BB_ERROR("Failed to initialize FBX importer: " << importer->GetStatus().GetErrorString());
-				return;
-			}
-
-			fbxsdk::FbxScene* scene = fbxsdk::FbxScene::Create(manager, "scene");
-			importer->Import(scene);
-
-			FbxAxisSystem engineAxis(FbxAxisSystem::eYAxis, FbxAxisSystem::eParityOdd, FbxAxisSystem::eLeftHanded);
-			engineAxis.DeepConvertScene(scene);
-
-			FbxSystemUnit engineUnit(FbxSystemUnit::m);
-			engineUnit.ConvertScene(scene);
-
-			int meshCount = 0, meshNode = 0;
-			List<FbxNode*> skeletonNodes;
-			for (int i = 0; i < scene->GetNodeCount(); ++i)
-			{
-				FbxNode* node = scene->GetNode(i);
-				if (node->GetMesh() != nullptr)
-				{
-					++meshCount;
-					meshNode = i;
-				}
-				if (node->GetSkeleton() != nullptr)
-				{
-					skeletonNodes.push_back(node);
-				}
-			}
-
-			fbxsdk::FbxNode* rootNode = scene->GetRootNode();
-			List<Object*> objects;
-			if (meshCount == 1)
-			{
-				CreateMeshEntity(nullptr, scene->GetNode(meshNode), skeletonNodes, objects);
-			}
-			else
-			{
-				CreateMeshEntity(nullptr, rootNode, skeletonNodes, objects);
-			}
-
-			Entity* root = static_cast<Entity*>(ObjectDB::GetObjectFromGuid(GetGuid(), GetMainObject()));
-
-			importer->Destroy();
-			manager->Destroy();
-			
-			AssetDB::SaveAssetObjectsToCache(objects);
+			CreateMeshEntity(nullptr, rootNode, skeletonNodes, objects);
 		}
+
+		Entity* root = static_cast<Entity*>(ObjectDB::GetObjectFromGuid(GetGuid(), GetMainObject()));
+
+		importer->Destroy();
+		manager->Destroy();
+
+		AssetDB::SaveAssetObjectsToCache(objects);
 	}
 
 	Vector4 ConvertVector(FbxVector4 vector)
 	{
 		return Vector4(static_cast<float>(vector[0]), static_cast<float>(vector[1]), static_cast<float>(vector[2]), static_cast<float>(vector[3]));
 	}
-
-	/*Matrix ConvertMatrix(FbxAMatrix matrix)
-	{
-		FbxVector4 translation = matrix.GetT();
-		FbxQuaternion rotation = matrix.GetQ();
-		FbxVector4 scale = matrix.GetS();
-
-		return Matrix::CreateScale(scale[0], scale[1], scale[2]) * Matrix::CreateFromQuaternion(Quaternion(rotation[0], rotation[1], rotation[2], rotation[3])) * Matrix::CreateTranslation(translation[0], translation[1], translation[2]);
-	}*/
 
 	Matrix ConvertMatrix(FbxAMatrix matrix)
 	{
@@ -921,7 +879,7 @@ namespace Blueberry
 			if (m_GeneratePhysicsShape)
 			{
 				std::ofstream output;
-				output.open(GetPhysicsShapePath(meshFileId), std::ofstream::binary);
+				output.open(GetPhysicsShapePath(GetGuid(), meshFileId).c_str(), std::ofstream::binary);
 				PhysicsShapeCache::Bake(mesh, output);
 				output.close();
 			}
@@ -958,7 +916,6 @@ namespace Blueberry
 				meshRenderer->SetMaterials(materials);
 			}
 			
-			//BB_INFO("Mesh \"" << nodeName << "\" imported.");
 			mesh->SetName(nodeName);
 			AddAssetObject(mesh, meshFileId);
 			objects.push_back(mesh);
@@ -1072,16 +1029,5 @@ namespace Blueberry
 		{
 			GatherJoints(node->GetChild(i), outJoints);
 		}
-	}
-
-	std::string ModelImporter::GetPhysicsShapePath(const size_t& fileId)
-	{
-		std::filesystem::path dataPath = Path::GetPhysicsShapeCachePath();
-		if (!std::filesystem::exists(dataPath))
-		{
-			std::filesystem::create_directories(dataPath);
-		}
-		dataPath.append(GetGuid().ToString().append(std::to_string(fileId)).append(".shape"));
-		return dataPath.string();
 	}
 }

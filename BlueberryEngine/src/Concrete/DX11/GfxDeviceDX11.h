@@ -72,6 +72,7 @@ namespace Blueberry
 		ID3D11RasterizerState* GetRasterizerState(const CullMode& mode);
 		ID3D11BlendState* GetBlendState(const BlendMode& blendSrcColor, const BlendMode& blendSrcAlpha, const BlendMode& blendDstColor, const BlendMode& blendDstAlpha);
 		ID3D11DepthStencilState* GetDepthStencilState(const ZTest& zTest, const ZWrite& zWrite);
+		ID3D11SamplerState* GetSamplerState(const WrapMode& wrapMode, const FilterMode& filterMode);
 
 		const uint32_t& GetCRC();
 
@@ -82,9 +83,10 @@ namespace Blueberry
 		ComPtr<IDXGISwapChain> m_SwapChain;
 		ComPtr<ID3D11RenderTargetView> m_RenderTargetView;
 
-		Dictionary<size_t, ComPtr<ID3D11RasterizerState>> m_RasterizerStates;
-		Dictionary<size_t, ComPtr<ID3D11DepthStencilState>> m_DepthStencilStates;
-		Dictionary<size_t, ComPtr<ID3D11BlendState>> m_BlendStates;
+		List<std::pair<size_t, ComPtr<ID3D11RasterizerState>>> m_RasterizerStates;
+		List<std::pair<size_t, ComPtr<ID3D11DepthStencilState>>> m_DepthStencilStates;
+		List<std::pair<size_t, ComPtr<ID3D11BlendState>>> m_BlendStates;
+		List<std::pair<size_t, ComPtr<ID3D11SamplerState>>> m_SamplerStates;
 
 		GfxTextureDX11* m_BindedRenderTarget;
 		GfxTextureDX11* m_BindedDepthStencil;

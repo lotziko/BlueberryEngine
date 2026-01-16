@@ -128,9 +128,32 @@ namespace Blueberry
 
 						if (ImGui::AcceptDragDropPayload("OBJECT_ID"))
 						{
-							Transform* transform = (static_cast<Entity*>(object))->GetTransform();
-							transform->SetParent(entity->GetTransform()->GetParent());
-							transform->SetSiblingIndex(entity->GetTransform()->GetSiblingIndex() + 1);
+							Entity* selectedEntity = static_cast<Entity*>(object);
+							Transform* transform = selectedEntity->GetTransform();
+							Transform* parent = entity->GetTransform()->GetParent();
+							size_t index = entity->GetTransform()->GetSiblingIndex() + 1;
+							if (transform->GetParent() == parent)
+							{
+								size_t currentIndex = transform->GetSiblingIndex();
+								if (currentIndex < index)
+								{
+									--index;
+								}
+								transform->SetSiblingIndex(index);
+							}
+							else
+							{
+								if (PrefabManager::IsPrefabChild(selectedEntity))
+								{
+									PrefabManager::RemoveParent(selectedEntity);
+								}
+								if (PrefabManager::IsPartOfPrefabInstance(parent))
+								{
+									PrefabManager::SetParent(selectedEntity, parent);
+								}
+								transform->SetParent(parent);
+								transform->SetSiblingIndex(index);
+							}
 							Invalidate();
 						}
 					}
@@ -280,6 +303,14 @@ namespace Blueberry
 							Entity* selectedEntity = static_cast<Entity*>(object);
 							if (entity != selectedEntity)
 							{
+								if (PrefabManager::IsPrefabChild(selectedEntity))
+								{
+									PrefabManager::RemoveParent(selectedEntity);
+								}
+								if (PrefabManager::IsPartOfPrefabInstance(parent))
+								{
+									PrefabManager::SetParent(selectedEntity, parent);
+								}
 								selectedEntity->GetTransform()->SetParent(parent);
 							}
 						}

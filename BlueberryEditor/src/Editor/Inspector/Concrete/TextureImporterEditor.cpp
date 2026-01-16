@@ -27,6 +27,7 @@ namespace Blueberry
 
 	void TextureImporterEditor::OnDrawInspector()
 	{
+		ImGui::BeginPaddedArea(ImVec2(10, 5), ImVec2(10, 5));
 		ImGui::Property(&m_GenerateMipmapsProperty, "Generate mipmaps");
 		ImGui::Property(&m_IsSRGBProperty, "Is SRGB");
 		ImGui::Property(&m_WrapModeProperty, "Wrap Mode");
@@ -131,7 +132,9 @@ namespace Blueberry
 				ThumbnailCache::Refresh(ObjectDB::GetObjectFromGuid(textureImporter->GetGuid(), textureImporter->GetMainObject()));
 			}
 			AssetDB::SaveAssets();
+			AssetDB::Refresh();
 		}
+		ImGui::EndPaddedArea();
 
 		TextureImporter* textureImporter = static_cast<TextureImporter*>(m_SerializedObject->GetTarget());
 		Texture* texture = static_cast<Texture*>(ObjectDB::GetObjectFromGuid(textureImporter->GetGuid(), textureImporter->GetMainObject()));

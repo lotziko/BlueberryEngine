@@ -171,7 +171,7 @@ namespace Blueberry
 		void Initialize(const VariantsData& variantsData);
 		void Initialize(const VariantsData& variantsData, const ShaderData& data);
 
-		static Shader* Create(const VariantsData& variantsData, const ShaderData& shaderData, Shader* existingShader = nullptr);
+		static Shader* Create(const VariantsData& variantsData, const ShaderData& shaderData);
 
 		static void SetKeyword(const size_t& id, const bool& enabled);
 		static const uint32_t& GetActiveKeywordsMask();

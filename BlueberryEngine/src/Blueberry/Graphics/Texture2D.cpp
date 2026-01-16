@@ -19,6 +19,19 @@ namespace Blueberry
 		}
 	}
 
+	void Texture2D::Initialize(const uint32_t& width, const uint32_t& height, const uint32_t& mipCount, const TextureFormat& textureFormat)
+	{
+		m_Width = width;
+		m_Height = height;
+		m_MipCount = mipCount;
+		m_Format = textureFormat;
+		if (m_Texture != nullptr)
+		{
+			delete m_Texture;
+			m_Texture = nullptr;
+		}
+	}
+
 	void Texture2D::SetData(uint8_t* data, const size_t& dataSize)
 	{
 		m_RawData.resize(dataSize);
@@ -27,6 +40,12 @@ namespace Blueberry
 
 	void Texture2D::Apply()
 	{
+		if (m_Texture != nullptr)
+		{
+			delete m_Texture;
+			m_Texture = nullptr;
+		}
+
 		TextureProperties textureProperties = {};
 
 		textureProperties.width = m_Width;
@@ -40,20 +59,12 @@ namespace Blueberry
 		textureProperties.filterMode = m_FilterMode;
 		
 		GfxDevice::CreateTexture(textureProperties, m_Texture);
+		IncrementUpdateCount();
 	}
 
-	Texture2D* Texture2D::Create(const uint32_t& width, const uint32_t& height, const uint32_t& mipCount, const TextureFormat& textureFormat, const WrapMode& wrapMode, const FilterMode& filterMode, Texture2D* existingTexture)
+	Texture2D* Texture2D::Create(const uint32_t& width, const uint32_t& height, const uint32_t& mipCount, const TextureFormat& textureFormat, const WrapMode& wrapMode, const FilterMode& filterMode)
 	{
-		Texture2D* texture = nullptr;
-		if (existingTexture != nullptr)
-		{
-			texture = existingTexture;
-			texture->IncrementUpdateCount();
-		}
-		else
-		{
-			texture = Object::Create<Texture2D>();
-		}
+		Texture2D* texture = Object::Create<Texture2D>();
 		texture->m_Width = width;
 		texture->m_Height = height;
 		texture->m_MipCount = mipCount;

@@ -116,17 +116,14 @@ namespace Blueberry
 		layer->OnDetach();
 	}
 
-	void Application::AddWaitFrameCallback(void(*waitFrameCallback)())
+	void Application::AddWaitFrameCallback(const std::function<void()>& waitFrameCallback)
 	{
 		m_WaitFrameCallback = waitFrameCallback;
 	}
 
-	void Application::RemoveWaitFrameCallback(void(*waitFrameCallback)())
+	void Application::RemoveWaitFrameCallback()
 	{
-		if (m_WaitFrameCallback == waitFrameCallback)
-		{
-			m_WaitFrameCallback = nullptr;
-		}
+		m_WaitFrameCallback = nullptr;
 	}
 
 	Application* Application::GetInstance()

@@ -43,51 +43,34 @@ namespace Blueberry
 		return s_LastFilesWriteTime;
 	}
 
+	const bool ShaderImporter::IsRequiringReimport()
+	{
+		Guid guid = GetGuid();
+		if (AssetDB::HasAssetWithGuidInData(guid) && GetLastFilesWriteTime() < PathHelper::GetDirectoryLastWriteTime(GetShaderFolder(guid)))
+		{
+			return false;
+		}
+		return true;
+	}
+
 	void ShaderImporter::ImportData()
 	{
 		Guid guid = GetGuid();
-
-		Shader* object;
 		String folderPath = GetShaderFolder(guid);
-		if (AssetDB::HasAssetWithGuidInData(guid) && GetLastFilesWriteTime() < PathHelper::GetDirectoryLastWriteTime(folderPath))
+		String path = GetFilePath();
+		HLSLShaderProcessor processor;
+
+		if (processor.Compile(path))
 		{
-			HLSLShaderProcessor processor;
-			if (processor.LoadVariants(folderPath))
-			{
-				auto objects = AssetDB::LoadAssetObjects(guid, ObjectDB::GetObjectsFromGuid(guid));
-				if (objects.size() == 1 && objects[0].first->IsClassType(Shader::Type))
-				{
-					object = static_cast<Shader*>(objects[0].first);
-					ObjectDB::AllocateIdToGuid(object, guid, objects[0].second);
-					object->Initialize(processor.GetVariantsData());
-					object->SetState(ObjectState::Default);
-					BB_INFO("Shader \"" << GetName() << "\" imported from cache.");
-				}
-			}
+			processor.SaveVariants(folderPath);
+			Shader* shader = GetOrCreateAssetObject<Shader>(1);
+			shader->SetName(GetName());
+			shader->Initialize(processor.GetVariantsData(), processor.GetShaderData());
+			AssetDB::SaveAssetObjectsToCache(List<Object*> { shader });
 		}
 		else
 		{
-			String path = GetFilePath();
-			HLSLShaderProcessor processor;
-			
-			if (processor.Compile(path))
-			{
-				processor.SaveVariants(folderPath);
-
-				object = Shader::Create(processor.GetVariantsData(), processor.GetShaderData(), static_cast<Shader*>(ObjectDB::GetObjectFromGuid(guid, 1)));
-				object->SetState(ObjectState::Default);
-				ObjectDB::AllocateIdToGuid(object, guid, 1);
-				AssetDB::SaveAssetObjectsToCache(List<Object*> { object });
-				BB_INFO("Shader \"" << GetName() << "\" imported and compiled from: " + path);
-			}
-			else
-			{
-				BB_ERROR("Shader \"" << GetName() << "\" failed to compile.");
-			}
-		}
-		if (object != nullptr)
-		{
-			object->SetName(GetName());
+			BB_ERROR("Shader \"" << GetName() << "\" failed to compile.");
 		}
 		SetMainObject(1);
 	}

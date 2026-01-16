@@ -42,6 +42,34 @@ namespace Blueberry
 		return nullptr;
 	}
 
+	const WrapMode& Texture::GetWrapMode()
+	{
+		return m_WrapMode;
+	}
+
+	void Texture::SetWrapMode(const WrapMode& wrapMode)
+	{
+		m_WrapMode = wrapMode;
+		if (m_Texture != nullptr)
+		{
+			m_Texture->SetWrapMode(wrapMode);
+		}
+	}
+
+	const FilterMode& Texture::GetFilterMode()
+	{
+		return m_FilterMode;
+	}
+
+	void Texture::SetFilterMode(const FilterMode& filterMode)
+	{
+		m_FilterMode = filterMode;
+		if (m_Texture != nullptr)
+		{
+			m_Texture->SetFilterMode(filterMode);
+		}
+	}
+
 	void Texture::IncrementUpdateCount()
 	{
 		++m_UpdateCount;

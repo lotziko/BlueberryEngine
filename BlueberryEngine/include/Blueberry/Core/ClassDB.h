@@ -107,6 +107,7 @@ namespace Blueberry
 		Object*(*createInstance)() = nullptr;
 		bool isObject;
 		bool preferBinary;
+		bool executeAlways;
 		size_t offset;
 		List<FieldInfo> fields;
 		Dictionary<String, FieldInfo> fieldsMap;
@@ -144,6 +145,7 @@ namespace Blueberry
 		static void DefineField(FieldInfo info);
 		static void DefineIterator(const size_t& type);
 		static void DefinePreferBinary(); // TODO class attributes
+		static void DefineExecuteAlways();
 
 		template <class ObjectType, class BaseObjectType>
 		static void DefineBaseFields();
@@ -181,6 +183,7 @@ namespace Blueberry
 	#define DEFINE_FIELD( className, fieldName, fieldType, fieldOptions ) ClassDB::DefineField({ TO_STRING(fieldName), offsetof(className, className::fieldName), fieldType, fieldOptions, IsList(fieldType) });
 	#define DEFINE_ITERATOR( className ) ClassDB::DefineIterator(className::Type);
 	#define DEFINE_PREFER_BINARY() ClassDB::DefinePreferBinary();
+	#define DEFINE_EXECUTE_ALWAYS() ClassDB::DefinePreferBinary();
 
 	template<class ObjectType>
 	inline void ClassDB::Register()

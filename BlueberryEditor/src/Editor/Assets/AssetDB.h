@@ -9,6 +9,7 @@
 namespace Blueberry
 {
 	class AssetImporter;
+	class ObjectFinalizer;
 	class Serializer;
 
 	using AssetDBRefreshEvent = Event<>;
@@ -43,13 +44,16 @@ namespace Blueberry
 		static Serializer* GetSerializer(Object* object);
 		static AssetImporter* CreateOrGetImporter(const std::filesystem::path& path);
 		static AssetImporter* CreateImporter(const std::filesystem::path& path);
+		static void OnFinalizeObject(Object* object, Guid guid, FileId fileId);
 
 	public:
 		static void Register(const String& extension, const size_t& importerType);
+		static void Register(const size_t& objectType, ObjectFinalizer* objectFinalizer);
 
 	private:
 		static Dictionary<String, size_t> s_ImporterTypes;
 		static Dictionary<String, AssetImporter*> s_Importers;
+		static List<std::pair<size_t, ObjectFinalizer*>> s_Finalizers;
 		static Dictionary<Guid, String> s_GuidToPath;
 		static List<ObjectId> s_DirtyAssets;
 		static AssetDBRefreshEvent s_AssetDBRefreshed;
@@ -64,5 +68,6 @@ namespace Blueberry
 		return object;
 	}
 
-	#define REGISTER_ASSET_IMPORTER( fileExtension, importerType ) AssetDB::Register(fileExtension, importerType);
+	#define REGISTER_ASSET_IMPORTER( fileExtension, importerType ) AssetDB::Register(fileExtension, importerType)
+	#define REGISTER_OBJECT_FINALIZER( objectType, finalizerType ) AssetDB::Register(TO_OBJECT_TYPE(TO_STRING(objectType)), new finalizerType())
 }

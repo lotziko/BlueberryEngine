@@ -17,6 +17,7 @@ namespace Blueberry
 		static bool HasScene();
 		static bool HasPrefabScene();
 		static Scene* GetScene();
+		static const String GetRelativePath();
 		static const String& GetPath();
 		static const Guid& GetGuid();
 		static void CreateEmpty(const String& path);

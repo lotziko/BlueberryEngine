@@ -333,7 +333,7 @@ namespace Blueberry
 			xrDestroySwapchain(swapchain.handle);
 		}
 		s_XrSwapchains.clear();
-		s_Application->RemoveWaitFrameCallback(&WaitForFrame);
+		s_Application->RemoveWaitFrameCallback();
 		s_XrRunning = false;
 		s_XrSessionState = XR_SESSION_STATE_UNKNOWN;
 		s_XrSystemId = XR_NULL_SYSTEM_ID;

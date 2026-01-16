@@ -136,6 +136,11 @@ namespace Blueberry
 		return m_Children;
 	}
 
+	Transform* Transform::GetChild(const size_t& index)
+	{
+		return m_Children[index].Get();
+	}
+
 	const size_t Transform::GetChildrenCount() const
 	{
 		return m_Children.size();
@@ -307,7 +312,7 @@ namespace Blueberry
 
 	const size_t& Transform::GetUpdateCount()
 	{
-		if (m_DirtyFlags)
+		if (m_DirtyFlags & (DIRTY_LOCAL | DIRTY_WORLD))
 		{
 			RecalculateHierarchy();
 		}

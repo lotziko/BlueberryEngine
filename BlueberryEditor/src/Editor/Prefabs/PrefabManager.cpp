@@ -1,6 +1,7 @@
 #include "PrefabManager.h"
 
 #include "Blueberry\Scene\Entity.h"
+#include "Blueberry\Scene\Components\Transform.h"
 #include "Editor\Prefabs\PrefabInstance.h"
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Misc\ObjectHelper.h"
@@ -200,5 +201,44 @@ namespace Blueberry
 			}
 		}
 		return false;
+	}
+
+	void PrefabManager::SetParent(Entity* entity, Transform* parent)
+	{
+		PrefabInstance* instance = GetInstance(parent);
+
+		for (auto it = instance->m_AddedEntities.begin(); it != instance->m_AddedEntities.end(); ++it)
+		{
+			if (it->GetEntity() == entity)
+			{
+				it->SetParent(parent);
+				return;
+			}
+		}
+
+		PrefabAddedEntityData addedEntity = {};
+		addedEntity.SetParent(parent);
+		addedEntity.SetEntity(entity);
+		instance->m_AddedEntities.push_back(addedEntity);
+	}
+
+	void PrefabManager::RemoveParent(Entity* entity)
+	{
+		Transform* parent = entity->GetTransform()->GetParent();
+		PrefabInstance* instance = GetInstance(parent);
+
+		for (auto it = instance->m_AddedEntities.begin(); it != instance->m_AddedEntities.end(); ++it)
+		{
+			if (it->GetEntity() == entity && it->GetParent() == parent)
+			{
+				instance->m_AddedEntities.erase(it);
+				return;
+			}
+		}
+	}
+
+	bool PrefabManager::IsPrefabChild(Entity* entity)
+	{
+		return IsPartOfPrefabInstance(entity->GetTransform()->GetParent());
 	}
 }

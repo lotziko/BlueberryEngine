@@ -20,6 +20,16 @@ namespace Blueberry
 		m_FileIdToObject.insert({ fileId, object });
 	}
 
+	void Serializer::SetGuid(const Guid& guid)
+	{
+		m_AssetGuid = guid;
+	}
+
+	void Serializer::AddFinalizeObjectCallback(const std::function<void(Object*, Guid, FileId)>& finalizeObjectCallback)
+	{
+		m_FinalizeObjectCallback = finalizeObjectCallback;
+	}
+
 	List<std::pair<Object*, FileId>>& Serializer::GetDeserializedObjects()
 	{
 		return m_DeserializedObjects;

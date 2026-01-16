@@ -16,12 +16,20 @@ namespace Blueberry
 		DEFINE_FIELD(PrefabModificationData, m_Value, BindingType::Variant, {})
 	}
 
+	DATA_DEFINITION(PrefabAddedEntityData)
+	{
+		DEFINE_FIELD(PrefabAddedEntityData, m_Parent, BindingType::ObjectPtr, FieldOptions().SetObjectType(Transform::Type))
+		DEFINE_FIELD(PrefabAddedEntityData, m_Entity, BindingType::ObjectPtr, FieldOptions().SetObjectType(Entity::Type))
+		DEFINE_FIELD(PrefabAddedEntityData, m_Index, BindingType::Int, {})
+	}
+
 	OBJECT_DEFINITION(PrefabInstance, Object)
 	{
 		DEFINE_BASE_FIELDS(PrefabInstance, Object)
 		DEFINE_FIELD(PrefabInstance, m_Prefab, BindingType::ObjectPtr, FieldOptions().SetObjectType(Entity::Type))
 		DEFINE_FIELD(PrefabInstance, m_Parent, BindingType::ObjectPtr, FieldOptions().SetObjectType(Transform::Type))
 		DEFINE_FIELD(PrefabInstance, m_Modifications, BindingType::DataList, FieldOptions().SetObjectType(PrefabModificationData::Type))
+		DEFINE_FIELD(PrefabInstance, m_AddedEntities, BindingType::DataList, FieldOptions().SetObjectType(PrefabAddedEntityData::Type))
 	}
 
 	Object* PrefabModificationData::GetTarget()
@@ -54,6 +62,36 @@ namespace Blueberry
 		m_Value = value;
 	}
 
+	Transform* PrefabAddedEntityData::GetParent()
+	{
+		return m_Parent.Get();
+	}
+
+	void PrefabAddedEntityData::SetParent(Transform* parent)
+	{
+		m_Parent = parent;
+	}
+
+	Entity* PrefabAddedEntityData::GetEntity()
+	{
+		return m_Entity.Get();
+	}
+
+	void PrefabAddedEntityData::SetEntity(Entity* entity)
+	{
+		m_Entity = entity;
+	}
+
+	const int32_t& PrefabAddedEntityData::GetIndex()
+	{
+		return m_Index;
+	}
+
+	void PrefabAddedEntityData::SetIndex(const int32_t& index)
+	{
+		m_Index = index;
+	}
+
 	Entity* PrefabInstance::GetEntity()
 	{
 		return m_Entity.Get();
@@ -72,6 +110,21 @@ namespace Blueberry
 	void PrefabInstance::Update()
 	{
 		m_Parent = GetEntity()->GetTransform()->GetParent();
+
+		for (auto& addedEntity : m_AddedEntities)
+		{
+			Transform* parent = addedEntity.GetParent();
+			Transform* transform = addedEntity.GetEntity()->GetTransform();
+
+			for (size_t i = 0; i < parent->GetChildrenCount(); ++i)
+			{
+				if (parent->GetChild(i) == transform)
+				{
+					addedEntity.SetIndex(i);
+					break;
+				}
+			}
+		}
 	}
 
 	void PrefabInstance::AddObjectMapping(Object* prefabObject, Object* instanceObject)
@@ -134,6 +187,26 @@ namespace Blueberry
 					String path = modification.GetPath();
 					Variant& value = modification.GetValue();
 					ObjectHelper::WriteValue(object, path, value);
+				}
+			}
+		}
+		
+		for (auto& addedEntity : m_AddedEntities)
+		{
+			Transform* parent = addedEntity.GetParent();
+			Entity* entity = addedEntity.GetEntity();
+			if (parent != nullptr && entity != nullptr)
+			{
+				Transform* transform = entity->GetTransform();
+				List<ObjectPtr<Transform>>* children = classInfo->GetField("m_Children")->Get<List<ObjectPtr<Transform>>>(root);
+				int32_t index = addedEntity.GetIndex();
+				if (index == -1)
+				{
+					children->push_back(transform);
+				}
+				else
+				{
+					children->insert(children->begin() + index, transform);
 				}
 			}
 		}

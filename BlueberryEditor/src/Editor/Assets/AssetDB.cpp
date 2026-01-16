@@ -8,12 +8,14 @@
 #include "Editor\Assets\Importers\NativeAssetImporter.h"
 #include "Editor\Assets\PathModifyCache.h"
 #include "Editor\Assets\ImporterInfoCache.h"
+#include "Editor\Assets\ObjectFinalizer.h"
 #include "Editor\Misc\PathHelper.h"
 
 namespace Blueberry
 {
 	Dictionary<String, size_t> AssetDB::s_ImporterTypes = {};
 	Dictionary<String, AssetImporter*> AssetDB::s_Importers = {};
+	List<std::pair<size_t, ObjectFinalizer*>> AssetDB::s_Finalizers = {};
 	
 	Dictionary<Guid, String> AssetDB::s_GuidToPath = {};
 	List<ObjectId> AssetDB::s_DirtyAssets = {};
@@ -111,6 +113,8 @@ namespace Blueberry
 	List<std::pair<Object*, FileId>> AssetDB::LoadAssetObjects(const Guid& guid, const Dictionary<FileId, ObjectId>& existingObjects)
 	{
 		BinarySerializer serializer = {};
+		serializer.SetGuid(guid);
+		serializer.AddFinalizeObjectCallback(&OnFinalizeObject);
 		std::filesystem::path dataPath = Path::GetAssetCachePath();
 		for (auto& object : existingObjects)
 		{
@@ -128,6 +132,7 @@ namespace Blueberry
 			int i = 0;
 			for (auto& pair : deserializedObjects)
 			{
+				ObjectDB::AllocateIdToGuid(pair.first, guid, pair.second);
 				objects[i] = std::make_pair(pair.first, pair.second);
 				++i;
 			}
@@ -337,8 +342,27 @@ namespace Blueberry
 		return importer;
 	}
 
+	void AssetDB::OnFinalizeObject(Object* object, Guid guid, FileId fileId)
+	{
+		size_t type = object->GetType();
+		for (auto& pair : s_Finalizers)
+		{
+			if (type == pair.first)
+			{
+				pair.second->Finalize(object, guid, fileId);
+				break;
+			}
+		}
+		object->SetState(ObjectState::Default);
+	}
+
 	void AssetDB::Register(const String& extension, const size_t& importerType)
 	{
 		s_ImporterTypes.insert_or_assign(extension, importerType);
+	}
+
+	void AssetDB::Register(const size_t& objectType, ObjectFinalizer* objectFinalizer)
+	{
+		s_Finalizers.push_back(std::make_pair(objectType, objectFinalizer));
 	}
 }

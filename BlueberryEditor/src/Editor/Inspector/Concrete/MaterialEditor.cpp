@@ -63,6 +63,7 @@ namespace Blueberry
 
 	void MaterialEditor::OnDrawInspector()
 	{
+		ImGui::BeginPaddedArea(ImVec2(10, 5), ImVec2(10, 5));
 		ImGui::Property(&m_ShaderProperty, "Shader");
 
 		for (uint32_t i = 0; i < m_TexturesProperty.GetListSize(); ++i)
@@ -90,7 +91,9 @@ namespace Blueberry
 				ThumbnailCache::Refresh(object);
 			}
 			AssetDB::SaveAssets();
+			AssetDB::Refresh();
 		}
+		ImGui::EndPaddedArea();
 
 		static MaterialPreview preview;
 		preview.Draw(static_cast<Material*>(m_SerializedObject->GetTarget()), s_RenderTexture);

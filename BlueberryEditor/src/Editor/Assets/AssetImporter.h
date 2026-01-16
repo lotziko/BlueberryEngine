@@ -22,6 +22,7 @@ namespace Blueberry
 		const FileId& GetMainObject();
 		const Dictionary<FileId, ObjectId>& GetAssetObjects();
 		const bool IsImported();
+		virtual const bool IsRequiringReimport();
 		const bool& IsRequiringSave();
 
 		void ResetImport();
@@ -36,6 +37,7 @@ namespace Blueberry
 		
 	protected:
 		virtual void ImportData() = 0;
+		void LoadData();
 		void AddAssetObject(Object* object, const FileId& fileId);
 		void SetMainObject(const FileId& id);
 		template<class ObjectType>

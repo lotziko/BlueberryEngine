@@ -55,6 +55,11 @@ namespace Blueberry
 		s_CurrentClassInfo.preferBinary = true;
 	}
 
+	void ClassDB::DefineExecuteAlways()
+	{
+		s_CurrentClassInfo.executeAlways = true;
+	}
+
 	FieldOptions& FieldOptions::SetEnumHint(char* hintData)
 	{
 		auto names = new List<String>();

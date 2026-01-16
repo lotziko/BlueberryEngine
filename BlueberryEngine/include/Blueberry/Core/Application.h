@@ -23,8 +23,8 @@ namespace Blueberry
 		void PushLayer(Layer* layer);
 		void PopLayer(Layer* layer);
 
-		void AddWaitFrameCallback(void(*waitFrameCallback)());
-		void RemoveWaitFrameCallback(void(*waitFrameCallback)());
+		void AddWaitFrameCallback(const std::function<void()>& waitFrameCallback);
+		void RemoveWaitFrameCallback();
 
 		static Application* GetInstance();
 		
@@ -37,6 +37,6 @@ namespace Blueberry
 		static inline Application* s_Instance = nullptr;
 		Window* m_Window;
 		LayerStack* m_LayerStack;
-		void(*m_WaitFrameCallback)() = nullptr;
+		std::function<void()> m_WaitFrameCallback = nullptr;
 	};
 }

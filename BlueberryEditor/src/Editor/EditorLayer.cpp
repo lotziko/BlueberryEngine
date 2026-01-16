@@ -16,7 +16,6 @@
 #include "Editor\Panels\Game\GameView.h"
 
 #include "Editor\RegisterEditorTypes.h"
-#include "Editor\Assets\RegisterAssetImporters.h"
 #include "Editor\Assets\RegisterIcons.h"
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Assets\AssemblyManager.h"
@@ -34,7 +33,6 @@ namespace Blueberry
 	void EditorLayer::OnAttach()
 	{
 		RegisterEditorTypes();
-		RegisterAssetImporters();
 		RegisterIcons();
 
 		RegisterObjectEditors();

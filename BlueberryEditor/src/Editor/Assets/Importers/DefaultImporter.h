@@ -11,6 +11,7 @@ namespace Blueberry
 		DefaultImporter() = default;
 
 	protected:
+		virtual const bool IsRequiringReimport() override;
 		virtual void ImportData() override;
 	};
 }

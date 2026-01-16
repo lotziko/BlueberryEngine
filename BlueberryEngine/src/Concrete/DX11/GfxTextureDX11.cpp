@@ -248,6 +248,8 @@ namespace Blueberry
 		m_Width = properties.width;
 		m_Height = properties.height;
 		m_Depth = properties.depth;
+		m_FilterMode = properties.filterMode;
+		m_WrapMode = properties.wrapMode;
 
 		if (properties.data != nullptr)
 		{
@@ -479,6 +481,24 @@ namespace Blueberry
 		m_DeviceContext->CopyResource(m_Texture.Get(), m_StagingTexture.Get());
 	}
 
+	void GfxTextureDX11::SetWrapMode(const WrapMode& wrapMode)
+	{
+		if (m_WrapMode != wrapMode)
+		{
+			m_WrapMode = wrapMode;
+			m_SamplerState.Reset();
+		}
+	}
+
+	void GfxTextureDX11::SetFilterMode(const FilterMode& filterMode)
+	{
+		if (m_FilterMode != filterMode)
+		{
+			m_FilterMode = filterMode;
+			m_SamplerState.Reset();
+		}
+	}
+
 	void GfxTextureDX11::SetName(const String& name)
 	{
 		m_Texture->SetPrivateData(WKPDID_D3DDebugObjectName, name.size(), name.data());
@@ -487,54 +507,6 @@ namespace Blueberry
 	void GfxTextureDX11::GenerateMipMaps()
 	{
 		m_DeviceContext->GenerateMips(m_ShaderResourceView.Get());
-	}
-
-	D3D11_TEXTURE_ADDRESS_MODE GetAdressMode(const WrapMode& wrapMode)
-	{
-		if (wrapMode == WrapMode::Clamp)
-		{
-			return D3D11_TEXTURE_ADDRESS_CLAMP;
-		}
-		return D3D11_TEXTURE_ADDRESS_WRAP;
-	}
-
-	D3D11_FILTER GetFilter(const FilterMode& filterMode)
-	{
-		switch (filterMode)
-		{
-		case FilterMode::Point:
-			return D3D11_FILTER_MIN_MAG_MIP_POINT;
-		case FilterMode::Bilinear:
-			return D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-		case FilterMode::Trilinear:
-			return D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		case FilterMode::Anisotropic:
-			return D3D11_FILTER_ANISOTROPIC;
-		case FilterMode::CompareDepth:
-			return D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
-		default:
-			return D3D11_FILTER_MIN_MAG_MIP_POINT;
-		}
-	}
-
-	D3D11_COMPARISON_FUNC GetComparison(const FilterMode& filterMode)
-	{
-		if (filterMode == FilterMode::CompareDepth)
-		{
-			return D3D11_COMPARISON_LESS;
-		}
-		return D3D11_COMPARISON_NEVER;
-	}
-
-	uint32_t GfxTextureDX11::GetQualityLevel(const DXGI_FORMAT& format, const uint32_t& antiAliasing)
-	{
-		if (antiAliasing > 1)
-		{
-			uint32_t qualityLevels;
-			HRESULT hr = m_Device->CheckMultisampleQualityLevels(format, antiAliasing, &qualityLevels);
-			return qualityLevels - 1;
-		}
-		return 0;
 	}
 
 	DXGI_FORMAT GetTextureFormat(const DXGI_FORMAT& format)
@@ -943,33 +915,6 @@ namespace Blueberry
 			}
 		}
 
-		// Sampler
-		if (useSampler)
-		{
-			D3D11_SAMPLER_DESC samplerDesc;
-			ZeroMemory(&samplerDesc, sizeof(D3D11_SAMPLER_DESC));
-
-			D3D11_TEXTURE_ADDRESS_MODE adress = GetAdressMode(properties.wrapMode);
-			D3D11_FILTER filter = GetFilter(properties.filterMode);
-
-			samplerDesc.Filter = filter;
-			samplerDesc.AddressU = adress;
-			samplerDesc.AddressV = adress;
-			samplerDesc.AddressW = adress;
-			samplerDesc.MipLODBias = 0.0f;
-			samplerDesc.MaxAnisotropy = filter == D3D11_FILTER_ANISOTROPIC ? 8 : 1;
-			samplerDesc.ComparisonFunc = GetComparison(properties.filterMode);
-			samplerDesc.MinLOD = -FLT_MAX;
-			samplerDesc.MaxLOD = FLT_MAX;
-
-			hr = m_Device->CreateSamplerState(&samplerDesc, m_SamplerState.GetAddressOf());
-			if (FAILED(hr))
-			{
-				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create sampler state."));
-				return false;
-			}
-		}
-		
 		return true;
 	}
 }

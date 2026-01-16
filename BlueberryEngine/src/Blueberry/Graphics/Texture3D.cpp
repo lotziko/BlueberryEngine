@@ -25,6 +25,19 @@ namespace Blueberry
 		return m_Depth;
 	}
 
+	void Texture3D::Initialize(const uint32_t& width, const uint32_t& height, const uint32_t& depth, const TextureFormat& textureFormat)
+	{
+		m_Width = width;
+		m_Height = height;
+		m_Depth = depth;
+		m_Format = textureFormat;
+		if (m_Texture != nullptr)
+		{
+			delete m_Texture;
+			m_Texture = nullptr;
+		}
+	}
+
 	void Texture3D::SetData(uint8_t* data, const size_t& dataSize)
 	{
 		m_RawData.resize(dataSize);
@@ -33,6 +46,12 @@ namespace Blueberry
 
 	void Texture3D::Apply()
 	{
+		if (m_Texture != nullptr)
+		{
+			delete m_Texture;
+			m_Texture = nullptr;
+		}
+
 		TextureProperties textureProperties = {};
 
 		textureProperties.width = m_Width;
@@ -47,20 +66,12 @@ namespace Blueberry
 		textureProperties.filterMode = m_FilterMode;
 
 		GfxDevice::CreateTexture(textureProperties, m_Texture);
+		IncrementUpdateCount();
 	}
 
-	Texture3D* Texture3D::Create(const uint32_t& width, const uint32_t& height, const uint32_t& depth, const TextureFormat& textureFormat, const WrapMode& wrapMode, const FilterMode& filterMode, Texture3D* existingTexture)
+	Texture3D* Texture3D::Create(const uint32_t& width, const uint32_t& height, const uint32_t& depth, const TextureFormat& textureFormat, const WrapMode& wrapMode, const FilterMode& filterMode)
 	{
-		Texture3D* texture = nullptr;
-		if (existingTexture != nullptr)
-		{
-			texture = existingTexture;
-			texture->IncrementUpdateCount();
-		}
-		else
-		{
-			texture = Object::Create<Texture3D>();
-		}
+		Texture3D* texture = Object::Create<Texture3D>();
 		texture->m_Width = width;
 		texture->m_Height = height;
 		texture->m_Depth = depth;

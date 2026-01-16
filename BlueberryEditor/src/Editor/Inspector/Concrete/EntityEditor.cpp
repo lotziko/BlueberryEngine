@@ -3,7 +3,6 @@
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Scene\Components\Component.h"
 
-#include "imgui\imgui.h"
 #include "Blueberry\Core\ClassDB.h"
 
 #include "Editor\Inspector\ObjectEditorDB.h"
@@ -12,6 +11,8 @@
 #include "Editor\Misc\ImGuiHelper.h"
 #include "Editor\EditorObjectManager.h"
 #include "Editor\Selection.h"
+
+#include <imgui\imgui.h>
 
 namespace Blueberry
 {

@@ -3,6 +3,7 @@
 #include "Blueberry\Core\ObjectCloner.h"
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Scene\Components\Transform.h"
+#include "Blueberry\Tools\StringConverter.h"
 
 #include "Editor\Path.h"
 #include "Editor\Assets\AssetDB.h"
@@ -13,6 +14,7 @@
 #include "Editor\Prefabs\PrefabInstance.h"
 #include "Editor\Scene\SceneSettings.h"
 #include "Editor\Scene\LightingData.h"
+#include "Editor\Misc\PlatformHelper.h"
 
 namespace Blueberry
 {
@@ -50,6 +52,12 @@ namespace Blueberry
 		return s_Scene;
 	}
 
+	const String EditorSceneManager::GetRelativePath()
+	{
+		std::string path = std::filesystem::relative(s_Path, Path::GetAssetsPath()).string();
+		return String(path);
+	}
+
 	const String& EditorSceneManager::GetPath()
 	{
 		return s_Path;
@@ -74,9 +82,10 @@ namespace Blueberry
 		s_Scene->Initialize();
 
 		s_Path = path;
+		PlatformHelper::ShowProgressBar(L"Loading Scene", StringConverter::StringToWide(GetRelativePath()));
 		Deserialize(path);
-
 		UpdateScene();
+		PlatformHelper::HideProgressBar();
 		s_SceneLoaded.Invoke();
 	}
 

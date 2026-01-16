@@ -8,6 +8,7 @@
 #include "Blueberry\Tools\FileHelper.h"
 
 #include "Editor\Assets\AssetDB.h"
+#include "Editor\Assets\RegisterAssetImporters.h"
 #include "Editor\Assets\AssetImporter.h"
 #include "Editor\Assets\Importers\TextureImporter.h"
 #include "Editor\Assets\Importers\ShaderImporter.h"
@@ -21,6 +22,11 @@
 
 namespace Blueberry
 {
+	EditorAssetLoader::EditorAssetLoader()
+	{
+		RegisterAssetImporters();
+	}
+
 	void EditorAssetLoader::LoadImpl(const Guid& guid)
 	{
 		AssetImporter* importer = AssetDB::GetImporter(guid);
@@ -66,12 +72,6 @@ namespace Blueberry
 				if (objects.size() == 1 && objects[0].first->IsClassType(Texture2D::Type))
 				{
 					texture = static_cast<Texture2D*>(objects[0].first);
-					ObjectDB::AllocateIdToGuid(texture, guid, 1);
-					uint8_t* data;
-					size_t length;
-					FileHelper::Load(data, length, texturePath);
-					texture->SetData(data, length);
-					texture->Apply();
 					needImport = false;
 				}
 			}
@@ -116,8 +116,6 @@ namespace Blueberry
 				if (objects.size() == 1 && objects[0].first->IsClassType(Shader::Type))
 				{
 					shader = static_cast<Shader*>(objects[0].first);
-					ObjectDB::AllocateIdToGuid(shader, guid, 1);
-					shader->Initialize(processor.GetVariantsData());
 					needImport = false;
 				}
 			}
@@ -155,8 +153,6 @@ namespace Blueberry
 				if (objects.size() == 1 && objects[0].first->IsClassType(ComputeShader::Type))
 				{
 					shader = static_cast<ComputeShader*>(objects[0].first);
-					ObjectDB::AllocateIdToGuid(shader, guid, 1);
-					shader->Initialize(processor.GetShaders());
 					needImport = false;
 				}
 			}

@@ -31,6 +31,8 @@ namespace Blueberry
 		virtual void SetData(void* data, const size_t& size) override;
 		virtual void SetData(void* data, const size_t& size, const uint32_t& slice) override;
 
+		virtual void SetWrapMode(const WrapMode& wrapMode) override;
+		virtual void SetFilterMode(const FilterMode& filterMode) override;
 		virtual void SetName(const String& name) override;
 
 		virtual void GenerateMipMaps() override;
@@ -56,6 +58,8 @@ namespace Blueberry
 		uint32_t m_Depth = 0;
 		uint32_t m_ArraySize = 0;
 		uint32_t m_MipLevels = 1;
+		WrapMode m_WrapMode;
+		FilterMode m_FilterMode;
 
 		ID3D11Device* m_Device;
 		ID3D11DeviceContext* m_DeviceContext;

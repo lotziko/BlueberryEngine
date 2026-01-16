@@ -261,7 +261,13 @@ namespace Blueberry
 			renderState.vertexShaderResourceViews[texture.srvSlot] = dxTexture->m_ShaderResourceView.Get();
 			if (texture.samplerSlot != UINT8_MAX)
 			{
-				renderState.vertexSamplerStates[texture.samplerSlot] = dxTexture->m_SamplerState.Get();
+				ID3D11SamplerState* samplerState = dxTexture->m_SamplerState.Get();
+				if (samplerState == nullptr)
+				{
+					samplerState = m_Device->GetSamplerState(dxTexture->m_WrapMode, dxTexture->m_FilterMode);
+					dxTexture->m_SamplerState = samplerState;
+				}
+				renderState.vertexSamplerStates[texture.samplerSlot] = samplerState;
 			}
 		}
 
@@ -271,7 +277,13 @@ namespace Blueberry
 			renderState.pixelShaderResourceViews[texture.srvSlot] = dxTexture->m_ShaderResourceView.Get();
 			if (texture.samplerSlot != UINT8_MAX)
 			{
-				renderState.pixelSamplerStates[texture.samplerSlot] = dxTexture->m_SamplerState.Get();
+				ID3D11SamplerState* samplerState = dxTexture->m_SamplerState.Get();
+				if (samplerState == nullptr)
+				{
+					samplerState = m_Device->GetSamplerState(dxTexture->m_WrapMode, dxTexture->m_FilterMode);
+					dxTexture->m_SamplerState = samplerState;
+				}
+				renderState.pixelSamplerStates[texture.samplerSlot] = samplerState;
 			}
 		}
 	}

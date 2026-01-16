@@ -33,6 +33,12 @@ namespace Blueberry
 
 	void TextureCubeArray::Apply()
 	{
+		if (m_Texture != nullptr)
+		{
+			delete m_Texture;
+			m_Texture = nullptr;
+		}
+
 		TextureProperties textureProperties = {};
 
 		textureProperties.width = m_Width;
@@ -47,20 +53,12 @@ namespace Blueberry
 		textureProperties.filterMode = m_FilterMode;
 
 		GfxDevice::CreateTexture(textureProperties, m_Texture);
+		IncrementUpdateCount();
 	}
 
-	TextureCubeArray* TextureCubeArray::Create(const uint32_t& width, const uint32_t& height, const uint32_t& count, const uint32_t& mipCount, const TextureFormat& textureFormat, const WrapMode& wrapMode, const FilterMode& filterMode, TextureCubeArray* existingTexture)
+	TextureCubeArray* TextureCubeArray::Create(const uint32_t& width, const uint32_t& height, const uint32_t& count, const uint32_t& mipCount, const TextureFormat& textureFormat, const WrapMode& wrapMode, const FilterMode& filterMode)
 	{
-		TextureCubeArray* texture = nullptr;
-		if (existingTexture != nullptr)
-		{
-			texture = existingTexture;
-			texture->IncrementUpdateCount();
-		}
-		else
-		{
-			texture = Object::Create<TextureCubeArray>();
-		}
+		TextureCubeArray* texture = Object::Create<TextureCubeArray>();
 		texture->m_Width = width;
 		texture->m_Height = height;
 		texture->m_Count = count;

@@ -126,142 +126,91 @@ namespace Blueberry
 		return String(dataPath.string());
 	}
 
+	const bool TextureImporter::IsRequiringReimport()
+	{
+		Guid guid = GetGuid();
+		FileId id = static_cast<size_t>(m_TextureShape) + 1;
+		if (AssetDB::HasAssetWithGuidInData(guid) && ObjectDB::HasGuidAndFileId(guid, id))
+		{
+			return false;
+		}
+		return true;
+	}
+
 	void TextureImporter::ImportData()
 	{
 		Guid guid = GetGuid();
 		FileId id = static_cast<size_t>(m_TextureShape) + 1;
 		String texturePath = GetTexturePath(guid);
 
-		Texture* object;
-		if (AssetDB::HasAssetWithGuidInData(guid) && ObjectDB::HasGuidAndFileId(guid, id))
+		String path = GetFilePath();
+		String extension = String(std::filesystem::path(path).extension().string());
+		DirectX::ScratchImage image = {};
+		TextureHelper::Load(image, path, extension, m_IsSRGB);
+
+		if (m_TextureShape == TextureShape::Texture2D)
 		{
-			// TODO what if texture in cache does not exist
-			auto objects = AssetDB::LoadAssetObjects(guid, ObjectDB::GetObjectsFromGuid(guid));
-			if (objects.size() == 1)
+			Blueberry::TextureFormat format;
+			if (extension != ".dds")
 			{
-				object = static_cast<Texture*>(objects[0].first);
-				if (object->IsClassType(Texture2D::Type))
+				if (m_GenerateMipmaps)
 				{
-					Texture2D* texture = static_cast<Texture2D*>(objects[0].first);
-					ObjectDB::AllocateIdToGuid(object, guid, objects[0].second);
-					uint8_t* data;
-					size_t length;
-					FileHelper::Load(data, length, texturePath);
-					texture->SetData(data, length);
-					texture->Apply();
-					texture->SetState(ObjectState::Default);
-					//BB_INFO("Texture2D \"" << GetName() << "\" imported from cache.");
+					TextureHelper::GenerateMipMaps(image);
 				}
-				else if (object->IsClassType(TextureCube::Type))
-				{
-					TextureCube* texture = static_cast<TextureCube*>(objects[0].first);
-					ObjectDB::AllocateIdToGuid(object, guid, objects[0].second);
-					uint8_t* data;
-					size_t length;
-					FileHelper::Load(data, length, texturePath);
-					texture->SetData(data, length);
-					texture->Apply();
-					texture->SetState(ObjectState::Default);
-					//BB_INFO("TextureCube \"" << GetName() << "\" imported from cache.");
-				}
+				format = GetFormat();
+				TextureHelper::Compress(image, format, m_IsSRGB);
 			}
+			else
+			{
+				format = static_cast<Blueberry::TextureFormat>(image.GetMetadata().format);
+			}
+			auto metadata = image.GetMetadata();
+
+			Texture2D* texture = GetOrCreateAssetObject<Texture2D>(id);
+			texture->SetName(GetName());
+			texture->Initialize(metadata.width, metadata.height, metadata.mipLevels, format);
+			texture->SetWrapMode(m_WrapMode);
+			texture->SetFilterMode(m_FilterMode);
+			texture->SetData(image.GetPixels(), image.GetPixelsSize());
+			texture->Apply();
+
+			AssetDB::SaveAssetObjectsToCache(List<Object*> { texture });
+			FileHelper::Save(image.GetPixels(), image.GetPixelsSize(), texturePath);
 		}
-		else
+		else if (m_TextureShape == TextureShape::TextureCube)
 		{
-			String path = GetFilePath();
-			String extension = String(std::filesystem::path(path).extension().string());
-			DirectX::ScratchImage image = {};
-			TextureHelper::Load(image, path, extension, m_IsSRGB);
-			
-			const auto& objects = ObjectDB::GetObjectsFromGuid(guid);
-			auto it = objects.find(id);
-			if (m_TextureShape == TextureShape::Texture2D)
+			Blueberry::TextureFormat uncompressedFormat = static_cast<Blueberry::TextureFormat>(image.GetMetadata().format);
+			Blueberry::TextureFormat compressedFormat = (extension == ".hdr" ? Blueberry::TextureFormat::BC6H_UFloat : GetFormat());
+
+			if (m_TextureCubeType == TextureCubeType::Equirectangular)
 			{
-				Blueberry::TextureFormat format;
-				if (extension != ".dds")
-				{
-					if (m_GenerateMipmaps)
-					{
-						TextureHelper::GenerateMipMaps(image);
-					}
-					format = GetFormat();
-					TextureHelper::Compress(image, format, m_IsSRGB);
-				}
-				else
-				{
-					format = static_cast<Blueberry::TextureFormat>(image.GetMetadata().format);
-				}
-				auto metadata = image.GetMetadata();
-
-				Texture2D* texture;
-				if (it != objects.end())
-				{
-					texture = Texture2D::Create(metadata.width, metadata.height, metadata.mipLevels, format, m_WrapMode, m_FilterMode, static_cast<Texture2D*>(ObjectDB::GetObject(it->second)));
-				}
-				else
-				{
-					texture = Texture2D::Create(metadata.width, metadata.height, metadata.mipLevels, format, m_WrapMode, m_FilterMode);
-				}
-				ObjectDB::AllocateIdToGuid(texture, guid, id);
-
-				uint8_t* textureData = BB_MALLOC_ARRAY(uint8_t, image.GetPixelsSize());
-				memcpy(textureData, image.GetPixels(), image.GetPixelsSize());
-				texture->SetState(ObjectState::Default);
-				texture->SetData(textureData, image.GetPixelsSize());
-				texture->Apply();
-				object = texture;
-
-				AssetDB::SaveAssetObjectsToCache(List<Object*> { object });
-				FileHelper::Save(image.GetPixels(), image.GetPixelsSize(), texturePath);
+				TextureHelper::EquirectangularToTextureCube(image, uncompressedFormat);
 			}
-			else if (m_TextureShape == TextureShape::TextureCube)
+			else if (m_TextureCubeType == TextureCubeType::Slices)
 			{
-				Blueberry::TextureFormat uncompressedFormat = static_cast<Blueberry::TextureFormat>(image.GetMetadata().format);
-				Blueberry::TextureFormat compressedFormat = (extension == ".hdr" ? Blueberry::TextureFormat::BC6H_UFloat : GetFormat());
-
-				if (m_TextureCubeType == TextureCubeType::Equirectangular)
-				{
-					TextureHelper::EquirectangularToTextureCube(image, uncompressedFormat);
-				}
-				else if (m_TextureCubeType == TextureCubeType::Slices)
-				{
-					TextureHelper::SlicesToTextureCube(image);
-				}
-
-				if (m_TextureCubeIBLType == TextureCubeIBLType::Specular)
-				{
-					TextureHelper::ConvoluteSpecularTextureCube(image);
-				}
-
-				TextureHelper::Compress(image, compressedFormat, m_IsSRGB);
-
-				auto metadata = image.GetMetadata();
-				TextureCube* texture;
-				uint32_t size = std::min(metadata.width, metadata.height);
-				uint32_t mipCount = metadata.mipLevels;
-				if (it != objects.end())
-				{
-					texture = TextureCube::Create(size, size, mipCount, compressedFormat, m_WrapMode, m_FilterMode, static_cast<TextureCube*>(ObjectDB::GetObject(it->second)));
-				}
-				else
-				{
-					texture = TextureCube::Create(size, size, mipCount, compressedFormat, m_WrapMode, m_FilterMode);
-				}
-				ObjectDB::AllocateIdToGuid(texture, guid, id);
-
-				uint8_t* textureData = BB_MALLOC_ARRAY(uint8_t, image.GetPixelsSize());
-				memcpy(textureData, image.GetPixels(), image.GetPixelsSize());
-				texture->SetData(textureData, image.GetPixelsSize());
-				texture->Apply();
-				texture->SetState(ObjectState::Default);
-				object = texture;
-
-				AssetDB::SaveAssetObjectsToCache(List<Object*> { object });
-				FileHelper::Save(image.GetPixels(), image.GetPixelsSize(), texturePath);
+				TextureHelper::SlicesToTextureCube(image);
 			}
-			//BB_INFO("Texture \"" << GetName() << "\" imported and created from: " + path);
+
+			if (m_TextureCubeIBLType == TextureCubeIBLType::Specular)
+			{
+				TextureHelper::ConvoluteSpecularTextureCube(image);
+			}
+
+			TextureHelper::Compress(image, compressedFormat, m_IsSRGB);
+
+			auto metadata = image.GetMetadata();
+			uint32_t size = std::min(metadata.width, metadata.height);
+			TextureCube* texture = GetOrCreateAssetObject<TextureCube>(id);
+			texture->SetName(GetName());
+			texture->Initialize(size, size, metadata.mipLevels, compressedFormat);
+			texture->SetWrapMode(m_WrapMode);
+			texture->SetFilterMode(m_FilterMode);
+			texture->SetData(image.GetPixels(), image.GetPixelsSize());
+			texture->Apply();
+
+			AssetDB::SaveAssetObjectsToCache(List<Object*> { texture });
+			FileHelper::Save(image.GetPixels(), image.GetPixelsSize(), texturePath);
 		}
-		object->SetName(GetName());
 		SetMainObject(id);
 	}
 

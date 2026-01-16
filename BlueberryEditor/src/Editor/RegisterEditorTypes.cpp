@@ -20,6 +20,7 @@ namespace Blueberry
 	void RegisterEditorTypes()
 	{
 		REGISTER_DATA_CLASS(PrefabModificationData);
+		REGISTER_DATA_CLASS(PrefabAddedEntityData);
 		REGISTER_CLASS(PrefabInstance);
 		REGISTER_ABSTRACT_CLASS(EditorWindow);
 		REGISTER_CLASS(ProjectBrowser);

@@ -16,6 +16,7 @@ namespace Blueberry
 		DEFINE_FIELD(MeshRenderer, m_Materials, BindingType::ObjectPtrList, FieldOptions().SetObjectType(Material::Type))
 		DEFINE_FIELD(MeshRenderer, m_IsBakeable, BindingType::Bool, {})
 		DEFINE_ITERATOR(MeshRenderer)
+		DEFINE_EXECUTE_ALWAYS()
 	}
 
 	void MeshRenderer::OnEnable()

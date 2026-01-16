@@ -31,6 +31,7 @@ namespace Blueberry
 		Transform* GetParent() const;
 
 		const List<ObjectPtr<Transform>>& GetChildren() const;
+		Transform* GetChild(const size_t& index);
 		const size_t GetChildrenCount() const;
 
 		const size_t GetSiblingIndex();

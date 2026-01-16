@@ -29,6 +29,19 @@ namespace Blueberry
 		return m_RawData.size();
 	}
 
+	void TextureCube::Initialize(const uint32_t& width, const uint32_t& height, const uint32_t& mipCount, const TextureFormat& textureFormat)
+	{
+		m_Width = width;
+		m_Height = height;
+		m_MipCount = mipCount;
+		m_Format = textureFormat;
+		if (m_Texture != nullptr)
+		{
+			delete m_Texture;
+			m_Texture = nullptr;
+		}
+	}
+
 	void TextureCube::SetData(uint8_t* data, const size_t& dataSize)
 	{
 		m_RawData.resize(dataSize);
@@ -37,6 +50,12 @@ namespace Blueberry
 
 	void TextureCube::Apply()
 	{
+		if (m_Texture != nullptr)
+		{
+			delete m_Texture;
+			m_Texture = nullptr;
+		}
+
 		TextureProperties textureProperties = {};
 
 		textureProperties.width = m_Width;
@@ -50,20 +69,12 @@ namespace Blueberry
 		textureProperties.filterMode = m_FilterMode;
 		
 		GfxDevice::CreateTexture(textureProperties, m_Texture);
+		IncrementUpdateCount();
 	}
 
-	TextureCube* TextureCube::Create(const uint32_t& width, const uint32_t& height, const uint32_t& mipCount, const TextureFormat& textureFormat, const WrapMode& wrapMode, const FilterMode& filterMode, TextureCube* existingTexture)
+	TextureCube* TextureCube::Create(const uint32_t& width, const uint32_t& height, const uint32_t& mipCount, const TextureFormat& textureFormat, const WrapMode& wrapMode, const FilterMode& filterMode)
 	{
-		TextureCube* texture = nullptr;
-		if (existingTexture != nullptr)
-		{
-			texture = existingTexture;
-			texture->IncrementUpdateCount();
-		}
-		else
-		{
-			texture = Object::Create<TextureCube>();
-		}
+		TextureCube* texture = Object::Create<TextureCube>();
 		texture->m_Width = width;
 		texture->m_Height = height;
 		texture->m_MipCount = mipCount;

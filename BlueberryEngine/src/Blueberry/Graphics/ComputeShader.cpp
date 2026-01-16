@@ -86,17 +86,9 @@ namespace Blueberry
 		m_Data = data;
 	}
 
-	ComputeShader* ComputeShader::Create(const List<void*>& shaders, const ComputeShaderData& shaderData, ComputeShader* existingShader)
+	ComputeShader* ComputeShader::Create(const List<void*>& shaders, const ComputeShaderData& shaderData)
 	{
-		ComputeShader* shader = nullptr;
-		if (existingShader != nullptr)
-		{
-			shader = existingShader;
-		}
-		else
-		{
-			shader = Object::Create<ComputeShader>();
-		}
+		ComputeShader* shader = Object::Create<ComputeShader>();
 		shader->Initialize(shaders, shaderData);
 		return shader;
 	}

@@ -20,6 +20,7 @@ namespace Blueberry
 
 	void ModelImporterEditor::OnDrawInspector()
 	{
+		ImGui::BeginPaddedArea(ImVec2(10, 5), ImVec2(10, 5));
 		for (uint32_t i = 0; i < m_MaterialsProperty.GetListSize(); ++i)
 		{
 			SerializedProperty materialDataProperty = m_MaterialsProperty.GetListElement(i);
@@ -47,6 +48,8 @@ namespace Blueberry
 				}
 			}
 			AssetDB::SaveAssets();
+			AssetDB::Refresh();
 		}
+		ImGui::EndPaddedArea();
 	}
 }

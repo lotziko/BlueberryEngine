@@ -43,6 +43,8 @@ namespace Blueberry
 	public:
 		void AddObject(Object* object);
 		void AddObject(Object* object, const FileId& fileId);
+		void SetGuid(const Guid& guid);
+		void AddFinalizeObjectCallback(const std::function<void(Object*, Guid, FileId)>& finalizeObjectCallback);
 		virtual void Serialize(const String& path) = 0;
 		virtual void Deserialize(const String& path) = 0;
 
@@ -68,5 +70,6 @@ namespace Blueberry
 		List<std::pair<Object*, FileId>> m_DeserializedObjects;
 		Dictionary<FileId, Object*> m_FileIdToObject;
 		HashSet<FileId> m_AdditionalObjectsIds;
+		std::function<void(Object*, Guid, FileId)> m_FinalizeObjectCallback;
 	};
 }

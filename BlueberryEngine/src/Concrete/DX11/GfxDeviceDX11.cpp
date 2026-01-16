@@ -226,13 +226,13 @@ namespace Blueberry
 
 	bool GfxDeviceDX11::CreateTextureImpl(const TextureProperties& properties, GfxTexture*& texture) const
 	{
-		GfxTextureDX11* dxTexture = static_cast<GfxTextureDX11*>(texture);
-		if (texture == nullptr)
+		GfxTextureDX11* dxTexture = new GfxTextureDX11(m_Device.Get(), m_DeviceContext.Get());
+		if (!dxTexture->Initialize(properties))
 		{
-			dxTexture = new GfxTextureDX11(m_Device.Get(), m_DeviceContext.Get());
-			texture = dxTexture;
+			return false;
 		}
-		return dxTexture->Initialize(properties);
+		texture = dxTexture;
+		return true;
 	}
 
 	void GfxDeviceDX11::CopyImpl(GfxTexture* source, GfxTexture* target) const
@@ -586,7 +586,13 @@ namespace Blueberry
 				size_t slotId = dxShader->m_SamplerSlots[i];
 				if (id == slotId)
 				{
-					m_DeviceContext->CSSetSamplers(i, 1, dxTexture->m_SamplerState.GetAddressOf());
+					ID3D11SamplerState* samplerState = dxTexture->m_SamplerState.Get();
+					if (samplerState == nullptr)
+					{
+						samplerState = GetSamplerState(dxTexture->m_WrapMode, dxTexture->m_FilterMode);
+						dxTexture->m_SamplerState = samplerState;
+					}
+					m_DeviceContext->CSSetSamplers(i, 1, &samplerState);
 				}
 			}
 		}
@@ -740,33 +746,33 @@ namespace Blueberry
 	ID3D11RasterizerState* GfxDeviceDX11::GetRasterizerState(const CullMode& mode)
 	{
 		size_t key = static_cast<size_t>(mode) | static_cast<size_t>(m_DepthBias) << 8 | *(reinterpret_cast<size_t*>(&m_SlopeDepthBias)) << 16;
-		auto it = m_RasterizerStates.find(key);
-		if (it != m_RasterizerStates.end())
+		for (auto& pair : m_RasterizerStates)
 		{
-			return it->second.Get();
-		}
-		else
-		{
-			D3D11_RASTERIZER_DESC rasterizerDesc;
-			ZeroMemory(&rasterizerDesc, sizeof(D3D11_RASTERIZER_DESC));
-
-			rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
-			rasterizerDesc.CullMode = static_cast<D3D11_CULL_MODE>(static_cast<uint32_t>(mode) + 1);
-			rasterizerDesc.MultisampleEnable = true;
-			rasterizerDesc.AntialiasedLineEnable = true;
-			rasterizerDesc.DepthBias = m_DepthBias;
-			rasterizerDesc.SlopeScaledDepthBias = m_SlopeDepthBias;
-
-			ComPtr<ID3D11RasterizerState> state;
-			HRESULT hr = m_Device->CreateRasterizerState(&rasterizerDesc, state.GetAddressOf());
-			if (FAILED(hr))
+			if (pair.first == key)
 			{
-				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create cull back rasterizer state."));
-				return false;
+				return pair.second.Get();
 			}
-			m_RasterizerStates.insert_or_assign(key, state);
-			return state.Get();
 		}
+
+		D3D11_RASTERIZER_DESC rasterizerDesc;
+		ZeroMemory(&rasterizerDesc, sizeof(D3D11_RASTERIZER_DESC));
+
+		rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
+		rasterizerDesc.CullMode = static_cast<D3D11_CULL_MODE>(static_cast<uint32_t>(mode) + 1);
+		rasterizerDesc.MultisampleEnable = true;
+		rasterizerDesc.AntialiasedLineEnable = true;
+		rasterizerDesc.DepthBias = m_DepthBias;
+		rasterizerDesc.SlopeScaledDepthBias = m_SlopeDepthBias;
+
+		ComPtr<ID3D11RasterizerState> state;
+		HRESULT hr = m_Device->CreateRasterizerState(&rasterizerDesc, state.GetAddressOf());
+		if (FAILED(hr))
+		{
+			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create cull back rasterizer state."));
+			return false;
+		}
+		m_RasterizerStates.push_back(std::make_pair(key, state));
+		return state.Get();
 	}
 
 	D3D11_BLEND GetBlend(const BlendMode& blend)
@@ -784,70 +790,150 @@ namespace Blueberry
 	ID3D11BlendState* GfxDeviceDX11::GetBlendState(const BlendMode& blendSrcColor, const BlendMode& blendSrcAlpha, const BlendMode& blendDstColor, const BlendMode& blendDstAlpha)
 	{
 		size_t key = static_cast<size_t>(blendSrcColor) << 8 | static_cast<size_t>(blendSrcAlpha) << 16 | static_cast<size_t>(blendSrcColor) << 24 | static_cast<size_t>(blendSrcAlpha) << 32;
-		auto it = m_BlendStates.find(key);
-		if (it != m_BlendStates.end())
+		for (auto& pair : m_BlendStates)
 		{
-			return it->second.Get();
-		}
-		else
-		{
-			D3D11_BLEND_DESC blendDesc;
-			ZeroMemory(&blendDesc, sizeof(D3D11_BLEND_DESC));
-
-			D3D11_BLEND srcColor = GetBlend(blendSrcColor);
-			D3D11_BLEND srcAlpha = GetBlend(blendSrcAlpha);
-			D3D11_BLEND dstColor = GetBlend(blendDstAlpha);
-			D3D11_BLEND dstAlpha = GetBlend(blendDstAlpha);
-
-			blendDesc.AlphaToCoverageEnable = false;
-			blendDesc.RenderTarget[0].BlendEnable = true;
-			blendDesc.RenderTarget[0].SrcBlend = srcColor;
-			blendDesc.RenderTarget[0].DestBlend = dstColor;
-			blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-			blendDesc.RenderTarget[0].SrcBlendAlpha = srcAlpha;
-			blendDesc.RenderTarget[0].DestBlendAlpha = dstAlpha;
-			blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-			blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-
-			ComPtr<ID3D11BlendState> state;
-			HRESULT hr = m_Device->CreateBlendState(&blendDesc, state.GetAddressOf());
-			if (FAILED(hr))
+			if (pair.first == key)
 			{
-				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create blend state."));
-				return state.Get();
+				return pair.second.Get();
 			}
-			m_BlendStates.insert_or_assign(key, state);
+		}
+
+		D3D11_BLEND_DESC blendDesc;
+		ZeroMemory(&blendDesc, sizeof(D3D11_BLEND_DESC));
+
+		D3D11_BLEND srcColor = GetBlend(blendSrcColor);
+		D3D11_BLEND srcAlpha = GetBlend(blendSrcAlpha);
+		D3D11_BLEND dstColor = GetBlend(blendDstAlpha);
+		D3D11_BLEND dstAlpha = GetBlend(blendDstAlpha);
+
+		blendDesc.AlphaToCoverageEnable = false;
+		blendDesc.RenderTarget[0].BlendEnable = true;
+		blendDesc.RenderTarget[0].SrcBlend = srcColor;
+		blendDesc.RenderTarget[0].DestBlend = dstColor;
+		blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+		blendDesc.RenderTarget[0].SrcBlendAlpha = srcAlpha;
+		blendDesc.RenderTarget[0].DestBlendAlpha = dstAlpha;
+		blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+		ComPtr<ID3D11BlendState> state;
+		HRESULT hr = m_Device->CreateBlendState(&blendDesc, state.GetAddressOf());
+		if (FAILED(hr))
+		{
+			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create blend state."));
 			return state.Get();
 		}
+		m_BlendStates.push_back(std::make_pair(key, state));
+		return state.Get();
 	}
 
 	ID3D11DepthStencilState* GfxDeviceDX11::GetDepthStencilState(const ZTest& zTest, const ZWrite& zWrite)
 	{
 		size_t key = static_cast<size_t>(zTest) << 8 | static_cast<size_t>(zWrite) << 16;
-		auto it = m_DepthStencilStates.find(key);
-		if (it != m_DepthStencilStates.end())
+		for (auto& pair : m_DepthStencilStates)
 		{
-			return it->second.Get();
-		}
-		else
-		{
-			D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
-			ZeroMemory(&depthStencilDesc, sizeof(D3D11_DEPTH_STENCIL_DESC));
-
-			depthStencilDesc.DepthEnable = true;
-			depthStencilDesc.DepthWriteMask = zWrite == ZWrite::On ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
-			depthStencilDesc.DepthFunc = (D3D11_COMPARISON_FUNC)(static_cast<uint32_t>(zTest) + 1);
-
-			ComPtr<ID3D11DepthStencilState> state;
-			HRESULT hr = m_Device->CreateDepthStencilState(&depthStencilDesc, state.GetAddressOf());
-			if (FAILED(hr))
+			if (pair.first == key)
 			{
-				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create depth stencil state."));
-				return state.Get();
+				return pair.second.Get();
 			}
-			m_DepthStencilStates.insert_or_assign(key, state);
+		}
+		
+		D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
+		ZeroMemory(&depthStencilDesc, sizeof(D3D11_DEPTH_STENCIL_DESC));
+
+		depthStencilDesc.DepthEnable = true;
+		depthStencilDesc.DepthWriteMask = zWrite == ZWrite::On ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
+		depthStencilDesc.DepthFunc = (D3D11_COMPARISON_FUNC)(static_cast<uint32_t>(zTest) + 1);
+
+		ComPtr<ID3D11DepthStencilState> state;
+		HRESULT hr = m_Device->CreateDepthStencilState(&depthStencilDesc, state.GetAddressOf());
+		if (FAILED(hr))
+		{
+			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create depth stencil state."));
 			return state.Get();
 		}
+		m_DepthStencilStates.push_back(std::make_pair(key, state));
+		return state.Get();
+	}
+
+	D3D11_TEXTURE_ADDRESS_MODE GetAdressMode(const WrapMode& wrapMode)
+	{
+		if (wrapMode == WrapMode::Clamp)
+		{
+			return D3D11_TEXTURE_ADDRESS_CLAMP;
+		}
+		return D3D11_TEXTURE_ADDRESS_WRAP;
+	}
+
+	D3D11_FILTER GetFilter(const FilterMode& filterMode)
+	{
+		switch (filterMode)
+		{
+		case FilterMode::Point:	return D3D11_FILTER_MIN_MAG_MIP_POINT;
+		case FilterMode::Bilinear: return D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+		case FilterMode::Trilinear: return D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		case FilterMode::Anisotropic: return D3D11_FILTER_ANISOTROPIC;
+		case FilterMode::CompareDepth: return D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
+		default: return D3D11_FILTER_MIN_MAG_MIP_POINT;
+		}
+	}
+
+	D3D11_COMPARISON_FUNC GetComparison(const FilterMode& filterMode)
+	{
+		if (filterMode == FilterMode::CompareDepth)
+		{
+			return D3D11_COMPARISON_LESS;
+		}
+		return D3D11_COMPARISON_NEVER;
+	}
+
+	uint32_t GfxTextureDX11::GetQualityLevel(const DXGI_FORMAT& format, const uint32_t& antiAliasing)
+	{
+		if (antiAliasing > 1)
+		{
+			uint32_t qualityLevels;
+			HRESULT hr = m_Device->CheckMultisampleQualityLevels(format, antiAliasing, &qualityLevels);
+			return qualityLevels - 1;
+		}
+		return 0;
+	}
+
+	ID3D11SamplerState* GfxDeviceDX11::GetSamplerState(const WrapMode& wrapMode, const FilterMode& filterMode)
+	{
+		size_t key = static_cast<size_t>(wrapMode) << 8 | static_cast<size_t>(filterMode) << 16;
+		for (auto& pair : m_SamplerStates)
+		{
+			if (pair.first == key)
+			{
+				return pair.second.Get();
+			}
+		}
+
+		D3D11_SAMPLER_DESC samplerDesc;
+		ZeroMemory(&samplerDesc, sizeof(D3D11_SAMPLER_DESC));
+
+		D3D11_TEXTURE_ADDRESS_MODE adress = GetAdressMode(wrapMode);
+		D3D11_FILTER filter = GetFilter(filterMode);
+
+		samplerDesc.Filter = filter;
+		samplerDesc.AddressU = adress;
+		samplerDesc.AddressV = adress;
+		samplerDesc.AddressW = adress;
+		samplerDesc.MipLODBias = 0.0f;
+		samplerDesc.MaxAnisotropy = filter == D3D11_FILTER_ANISOTROPIC ? 8 : 1;
+		samplerDesc.ComparisonFunc = GetComparison(filterMode);
+		samplerDesc.MinLOD = -FLT_MAX;
+		samplerDesc.MaxLOD = FLT_MAX;
+
+		ComPtr<ID3D11SamplerState> state;
+		HRESULT hr = m_Device->CreateSamplerState(&samplerDesc, state.GetAddressOf());
+		if (FAILED(hr))
+		{
+			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create sampler state."));
+			return state.Get();
+		}
+		m_SamplerStates.push_back(std::make_pair(key, state));
+		return state.Get();
 	}
 
 	const uint32_t& GfxDeviceDX11::GetCRC()

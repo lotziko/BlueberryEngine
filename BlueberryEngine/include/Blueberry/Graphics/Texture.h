@@ -22,6 +22,12 @@ namespace Blueberry
 		GfxTexture* Get();
 		void* GetHandle();
 
+		const WrapMode& GetWrapMode();
+		void SetWrapMode(const WrapMode& wrapMode);
+
+		const FilterMode& GetFilterMode();
+		void SetFilterMode(const FilterMode& filterMode);
+
 	protected:
 		void IncrementUpdateCount();
 
