@@ -1,5 +1,6 @@
 IncludeDir = {}
 IncludeDir["imgui"] = "%{wks.location}/BlueberryEngine/vendor/imgui"
+IncludeDir["imguinode"] = "%{wks.location}/BlueberryEditor/vendor/imguinode"
 IncludeDir["jolt"] = "%{wks.location}/BlueberryEngine/vendor/jolt/src"
 IncludeDir["mikktspace"] = "%{wks.location}/BlueberryEngine/vendor/mikktspace"
 IncludeDir["hbao"] = "%{wks.location}/BlueberryEngine/vendor/hbao/include"

@@ -31,6 +31,7 @@ namespace Blueberry
 		uint32_t GetMaterialCount();
 
 		virtual const AABB& GetBounds() final;
+		virtual const Matrix& GetLocalToWorldMatrix() final;
 
 		const bool& IsBakeable();
 

@@ -58,7 +58,7 @@ namespace Blueberry
 		const uint32_t& GetCRC();
 		Texture* GetTexture(const size_t& id);
 
-		virtual void OnNotify() final;
+		virtual void OnNotify(void* args) final;
 
 	private:
 		void FillTextureMap();

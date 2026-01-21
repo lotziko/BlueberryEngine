@@ -4,6 +4,7 @@
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Scene\Entity.h"
+#include "Blueberry\Scene\Components\Transform.h"
 
 namespace Blueberry
 {
@@ -14,6 +15,16 @@ namespace Blueberry
 		DEFINE_FIELD(SpriteRenderer, m_Texture, BindingType::ObjectPtr, FieldOptions().SetObjectType(Texture::Type))
 		DEFINE_FIELD(SpriteRenderer, m_Material, BindingType::ObjectPtr, FieldOptions().SetObjectType(Material::Type))
 		DEFINE_FIELD(SpriteRenderer, m_SortingOrder, BindingType::Int, {})
+	}
+
+	const AABB& SpriteRenderer::GetBounds()
+	{
+		return m_Bounds;
+	}
+
+	const Matrix& SpriteRenderer::GetLocalToWorldMatrix()
+	{
+		return GetTransform()->GetLocalToWorldMatrix();
 	}
 
 	const Color& SpriteRenderer::GetColor()

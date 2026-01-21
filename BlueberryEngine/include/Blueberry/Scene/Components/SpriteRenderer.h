@@ -15,6 +15,9 @@ namespace Blueberry
 		SpriteRenderer() = default;
 		virtual ~SpriteRenderer() = default;
 
+		virtual const AABB& GetBounds() final;
+		virtual const Matrix& GetLocalToWorldMatrix() final;
+
 		const Color& GetColor();
 		void SetColor(const Color& color);
 
@@ -25,6 +28,7 @@ namespace Blueberry
 		void SetMaterial(Material* material);
 
 	private:
+		AABB m_Bounds = AABB(Vector3::Zero, Vector3::Zero);
 		Color m_Color = Color(1, 1, 1, 1);
 		ObjectPtr<Texture2D> m_Texture;
 		ObjectPtr<Material> m_Material;

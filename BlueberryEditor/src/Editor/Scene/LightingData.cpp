@@ -11,6 +11,7 @@
 #include "Blueberry\Graphics\TextureCubeArray.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\GfxBuffer.h"
+#include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Graphics\DefaultTextures.h"
 
 #include "Editor\Prefabs\PrefabManager.h"

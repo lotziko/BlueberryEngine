@@ -1,7 +1,9 @@
 #include "PrefabManager.h"
 
+#include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Scene\Components\Transform.h"
+#include "Blueberry\Serialization\Serializer.h"
 #include "Editor\Prefabs\PrefabInstance.h"
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Misc\ObjectHelper.h"
@@ -240,5 +242,51 @@ namespace Blueberry
 	bool PrefabManager::IsPrefabChild(Entity* entity)
 	{
 		return IsPartOfPrefabInstance(entity->GetTransform()->GetParent());
+	}
+
+	void PrefabManager::GatherScenePrefabs(Scene* scene, Serializer& serializer)
+	{
+		for (auto& rootEntity : scene->GetRootEntities())
+		{
+			GatherChildrenPrefabs(rootEntity.Get(), serializer);
+		}
+	}
+
+	void PrefabManager::GatherChildrenPrefabs(Entity* entity, Serializer& serializer)
+	{
+		if (entity == nullptr)
+		{
+			return;
+		}
+		if (PrefabManager::IsPartOfPrefabInstance(entity))
+		{
+			if (PrefabManager::IsPrefabInstanceRoot(entity))
+			{
+				PrefabInstance* instance = PrefabManager::GetInstance(entity);
+				instance->Update();
+				serializer.AddObject(instance);
+			}
+			for (size_t i = 0; i < entity->GetComponentCount(); ++i)
+			{
+				Component* component = entity->GetComponent(i);
+				if (!PrefabManager::IsPartOfPrefabInstance(component))
+				{
+					serializer.AddObject(component);
+				}
+			}
+		}
+		else
+		{
+			serializer.AddObject(entity);
+			for (size_t i = 0; i < entity->GetComponentCount(); ++i)
+			{
+				serializer.AddObject(entity->GetComponent(i));
+			}
+		}
+		Transform* transform = entity->GetTransform();
+		for (auto& child : transform->GetChildren())
+		{
+			GatherChildrenPrefabs(child.Get()->GetEntity(), serializer);
+		}
 	}
 }

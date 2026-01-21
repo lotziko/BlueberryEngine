@@ -34,32 +34,52 @@ namespace Blueberry
 		YamlHelper::Load(tree, path);
 		ryml::NodeRef root = tree.rootref();
 		List<std::pair<int, Object*>> deserializedNodes;
+		List<std::pair<int, Object*>> deserializedReferences = {};
 		for (size_t i = 0; i < root.num_children(); i++)
 		{
 			ryml::ConstNodeRef node = root[i];
 			FileId fileId;
-			if (node.has_key_tag() && ryml::from_chars(node.key_tag().trim("!"), &fileId))
+			if (node.has_key_tag())
 			{
-				auto it = m_FileIdToObject.find(fileId);
-				if (it == m_FileIdToObject.end())
+				bool isReference = false;
+				ryml::csubstr tag = node.key_tag().trim('!');
+				size_t referencePos = tag.find("reference");
+				if (referencePos != ryml::npos)
 				{
-					ryml::csubstr key = node.key();
-					String typeName(key.str, key.size());
-					const ClassInfo* info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
-					if (info == nullptr)
-					{
-						BB_ERROR("Class not exists.");
-						continue;
-					}
-					Object* instance = info->createInstance();
-					AddDeserializedObject(instance, fileId);
-					deserializedNodes.push_back({ i, instance });
+					isReference = true;
+					tag = tag.sub(0, referencePos);
 				}
-				else
+
+				if (ryml::from_chars(tag.trim("!"), &fileId))
 				{
-					Object* instance = it->second;
+					Object* instance;
+					auto it = m_FileIdToObject.find(fileId);
+					if (it == m_FileIdToObject.end())
+					{
+						ryml::csubstr key = node.key();
+						String typeName(key.str, key.size());
+						const ClassInfo* info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
+						if (info == nullptr)
+						{
+							BB_ERROR("Class not exists.");
+							continue;
+						}
+						instance = info->createInstance();
+					}
+					else
+					{
+						instance = it->second;
+					}
+
+					if (isReference)
+					{
+						deserializedReferences.push_back({ i, instance });
+					}
+					else
+					{
+						deserializedNodes.push_back({ i, instance });
+					}
 					AddDeserializedObject(instance, fileId);
-					deserializedNodes.push_back({ i, instance });
 				}
 			}
 		}

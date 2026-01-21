@@ -12,6 +12,7 @@
 #include "Editor\Panels\Picking\SearchWindow.h"
 #include "Editor\Panels\Statistics\StatisticsWindow.h"
 #include "Editor\Panels\Lightmapping\LightmappingWindow.h"
+#include "Editor\Panels\AnimationGraph\AnimationGraphWindow.h"
 #include "Editor\Scene\SceneSettings.h"
 #include "Editor\Scene\LightingData.h"
 
@@ -31,6 +32,7 @@ namespace Blueberry
 		REGISTER_CLASS(SearchWindow);
 		REGISTER_CLASS(StatisticsWindow);
 		REGISTER_CLASS(LightmappingWindow);
+		REGISTER_CLASS(AnimationGraphWindow);
 		REGISTER_CLASS(SceneSettings);
 		REGISTER_DATA_CLASS(MeshRendererData);
 		REGISTER_DATA_CLASS(ReflectionProbeData);

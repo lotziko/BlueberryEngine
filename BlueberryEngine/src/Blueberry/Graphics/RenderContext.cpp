@@ -144,7 +144,7 @@ namespace Blueberry
 				{
 					continue;
 				}
-				Matrix matrix = transform->GetLocalToWorldMatrix();
+				Matrix matrix = renderer->GetLocalToWorldMatrix();
 				float distance = Vector3::Transform(meshRenderer->GetBounds().Center, cullerViewMatrix).z;
 				uint32_t lightmapChartOffset = meshRenderer->GetLightmapChartOffset();
 				uint32_t subMeshCount = mesh->GetSubMeshCount();
@@ -191,7 +191,6 @@ namespace Blueberry
 			else if (renderer->GetType() == SkinnedMeshRenderer::Type)
 			{
 				SkinnedMeshRenderer* skinnedMeshRenderer = static_cast<SkinnedMeshRenderer*>(renderer);
-				Transform* transform = skinnedMeshRenderer->GetTransform();
 				if (isStatic)
 				{
 					continue;
@@ -201,7 +200,7 @@ namespace Blueberry
 				{
 					continue;
 				}
-				Matrix matrix = transform->GetLocalToWorldMatrix();
+				Matrix matrix = renderer->GetLocalToWorldMatrix();
 				float distance = Vector3::Transform(skinnedMeshRenderer->GetBounds().Center, cullerViewMatrix).z;
 				uint32_t subMeshCount = mesh->GetSubMeshCount();
 				GfxBuffer* vertexBuffer = Skinning::GetVertexBuffer(skinnedMeshRenderer);

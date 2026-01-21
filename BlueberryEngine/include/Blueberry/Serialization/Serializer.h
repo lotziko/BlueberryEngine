@@ -44,6 +44,7 @@ namespace Blueberry
 		void AddObject(Object* object);
 		void AddObject(Object* object, const FileId& fileId);
 		void SetGuid(const Guid& guid);
+		// chenge into OnSerialize(for prefabs mostly)/OnDeserialize
 		void AddFinalizeObjectCallback(const std::function<void(Object*, Guid, FileId)>& finalizeObjectCallback);
 		virtual void Serialize(const String& path) = 0;
 		virtual void Deserialize(const String& path) = 0;

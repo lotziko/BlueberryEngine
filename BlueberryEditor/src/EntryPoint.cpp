@@ -1,6 +1,7 @@
 #include "Blueberry\Core\Application.h"
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Core\Window.h"
+#include "Blueberry\Core\EngineLayer.h"
 #include "Blueberry\Logging\Log.h"
 
 #include "Editor\Path.h"
@@ -29,6 +30,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE	hInstance,
 	{
 		Blueberry::WString path = Blueberry::WString(argList[1]);
 		Blueberry::Path::SetProjectPath(path);
+		application.PushLayer(new Blueberry::EngineLayer());
 		application.PushLayer(new Blueberry::EditorLayer());
 	}
 	else
@@ -37,6 +39,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE	hInstance,
 		{
 			Blueberry::Path::SetProjectPath(path);
 			application.PopLayer(caller);
+			application.PushLayer(new Blueberry::EngineLayer());
 			application.PushLayer(new Blueberry::EditorLayer());
 		}));
 	}

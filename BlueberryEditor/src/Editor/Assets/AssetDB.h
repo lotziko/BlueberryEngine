@@ -2,8 +2,8 @@
 #include <filesystem>
 
 #include "Editor\Path.h"
-#include "Editor\Serialization\YamlSerializer.h"
 #include "Blueberry\Core\ObjectDB.h"
+#include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Events\Event.h"
 
 namespace Blueberry

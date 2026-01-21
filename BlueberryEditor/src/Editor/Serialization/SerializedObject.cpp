@@ -84,7 +84,9 @@ namespace Blueberry
 
 	void SerializedObject::Update()
 	{
-		ReadTree();
+		// TODO rewrite into a single method that builds not existing nodes and reads existing
+		//ReadTree();
+		BuildTree();
 	}
 
 	bool SerializedObject::ApplyModifiedProperties()

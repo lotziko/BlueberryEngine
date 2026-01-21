@@ -235,7 +235,7 @@ namespace Blueberry
 			{
 				serializer.AddObject(s_SceneSettings.Get());
 			}
-			serializer.AddSceneObjects(s_Scene);
+			PrefabManager::GatherScenePrefabs(s_Scene, serializer);
 		}
 		serializer.Serialize(path);
 	}

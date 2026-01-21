@@ -103,6 +103,11 @@ namespace Blueberry
 		return m_Bounds;
 	}
 
+	const Matrix& MeshRenderer::GetLocalToWorldMatrix()
+	{
+		return GetTransform()->GetLocalToWorldMatrix();
+	}
+
 	const bool& MeshRenderer::IsBakeable()
 	{
 		return m_IsBakeable;

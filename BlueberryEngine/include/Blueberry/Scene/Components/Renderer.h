@@ -9,7 +9,8 @@ namespace Blueberry
 		OBJECT_DECLARATION(Renderer)
 
 	public:
-		virtual const AABB& GetBounds();
+		virtual const AABB& GetBounds() = 0;
+		virtual const Matrix& GetLocalToWorldMatrix() = 0;
 
 		const int& GetSortingOrder();
 		void SetSortingOrder(const int& sortingOrder);

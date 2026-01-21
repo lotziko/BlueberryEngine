@@ -9,6 +9,8 @@ namespace Blueberry
 	class PrefabInstance;
 	class Entity;
 	class Transform;
+	class Scene;
+	class Serializer;
 
 	class PrefabManager
 	{
@@ -27,6 +29,11 @@ namespace Blueberry
 		static void SetParent(Entity* entity, Transform* parent);
 		static void RemoveParent(Entity* entity);
 		static bool IsPrefabChild(Entity* entity);
+
+		static void GatherScenePrefabs(Scene* scene, Serializer& serializer);
+
+	private:
+		static void GatherChildrenPrefabs(Entity* entity, Serializer& serializer);
 
 	private:
 		static Dictionary<ObjectId, ObjectId> s_RootToPrefabInstance;

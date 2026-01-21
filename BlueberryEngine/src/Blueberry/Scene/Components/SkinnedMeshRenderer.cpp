@@ -16,6 +16,7 @@ namespace Blueberry
 		DEFINE_FIELD(SkinnedMeshRenderer, m_Mesh, BindingType::ObjectPtr, FieldOptions().SetObjectType(Mesh::Type).SetUpdateCallback(MethodBind::Create(&SkinnedMeshRenderer::InvalidateBounds)))
 		DEFINE_FIELD(SkinnedMeshRenderer, m_Materials, BindingType::ObjectPtrList, FieldOptions().SetObjectType(Material::Type))
 		DEFINE_FIELD(SkinnedMeshRenderer, m_Root, BindingType::ObjectPtr, FieldOptions().SetObjectType(Transform::Type))
+		DEFINE_FIELD(SkinnedMeshRenderer, m_Bones, BindingType::ObjectPtrList, FieldOptions().SetObjectType(Transform::Type).SetVisibility(VisibilityType::NonExposed))
 		DEFINE_ITERATOR(SkinnedMeshRenderer)
 	}
 
@@ -28,7 +29,7 @@ namespace Blueberry
 			m_PreviousBounds = m_Bounds;
 			scene->GetRendererTree().Add(m_ObjectId, m_Bounds);
 		}
-		GatherBones();
+		UpdateBoneDatas();
 	}
 
 	void SkinnedMeshRenderer::OnDisable()
@@ -107,7 +108,16 @@ namespace Blueberry
 	void SkinnedMeshRenderer::SetRoot(Transform* root)
 	{
 		m_Root = root;
-		GatherBones();
+	}
+
+	void SkinnedMeshRenderer::SetBones(const List<Transform*>& bones)
+	{
+		m_Bones.clear();
+		for (size_t i = 0; i < bones.size(); ++i)
+		{
+			m_Bones.push_back(bones[i]);
+		}
+		UpdateBoneDatas();
 	}
 
 	const AABB& SkinnedMeshRenderer::GetBounds()
@@ -119,6 +129,11 @@ namespace Blueberry
 
 		UpdateBounds();
 		return m_Bounds;
+	}
+
+	const Matrix& SkinnedMeshRenderer::GetLocalToWorldMatrix()
+	{
+		return m_Root->GetParent()->GetLocalToWorldMatrix();
 	}
 	
 	const List<Matrix>& SkinnedMeshRenderer::GetWorldMatrices()
@@ -148,17 +163,20 @@ namespace Blueberry
 
 				for (size_t i = 0; i < boneCount; ++i)
 				{
-					Transform* transform = m_Bones[i].transform.Get();
+					Transform* transform = m_BoneDatas[i].transform.Get();
 					m_LocalMatrices[i] = transform->GetLocalMatrix();
 				}
 
-				m_WorldMatrices[0] = m_LocalMatrices[0];
-				for (size_t i = 1; i < boneCount; ++i)
+				for (size_t i = 0; i < boneCount; ++i)
 				{
-					int32_t parentIndex = m_Bones[i].parentIndex;
+					int32_t parentIndex = m_BoneDatas[i].parentIndex;
 					if (parentIndex >= 0)
 					{
 						m_WorldMatrices[i] = m_LocalMatrices[i] * m_WorldMatrices[parentIndex];
+					}
+					else
+					{
+						m_WorldMatrices[i] = m_LocalMatrices[i] * m_Root.Get()->GetLocalMatrix();
 					}
 				}
 
@@ -227,26 +245,25 @@ namespace Blueberry
 		m_UpdateCount = 0;
 	}
 
-	void SkinnedMeshRenderer::GatherBones(Transform* parent)
+	void SkinnedMeshRenderer::UpdateBoneDatas()
 	{
-		if (m_Root.IsValid())
+		m_BoneDatas.clear();
+		for (size_t i = 0; i < m_Bones.size(); ++i)
 		{
-			int32_t parentIndex = m_Bones.size() - 1;
-			if (parent == nullptr)
+			Transform* bone = m_Bones[i].Get();
+			if (bone != nullptr)
 			{
-				m_Bones.clear();
-				m_Bones.push_back({ m_Root, -1 });
-				parent = m_Root.Get();
-				parentIndex = 0;
-			}
-
-			if (parent->GetChildrenCount() > 0)
-			{
-				for (auto& child : parent->GetChildren())
+				int32_t index = -1;
+				Transform* boneParent = bone->GetParent();
+				for (size_t j = 0; j < i; ++j)
 				{
-					m_Bones.push_back({ child.Get(), parentIndex });
-					GatherBones(child.Get());
+					if (m_Bones[j].Get() == boneParent)
+					{
+						index = static_cast<int32_t>(j);
+						break;
+					}
 				}
+				m_BoneDatas.push_back({ bone, index });
 			}
 		}
 	}

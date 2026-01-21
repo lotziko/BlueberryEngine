@@ -3,17 +3,8 @@
 #include "..\Core\LayerStack.h"
 #include "Blueberry\Core\Window.h"
 #include "Blueberry\Core\Layer.h"
-#include "Blueberry\Scene\Scene.h"
-#include "..\Scene\RegisterSceneTypes.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\Renderer2D.h"
-#include "Blueberry\Graphics\Concrete\DefaultRenderer.h"
-#include "Blueberry\Input\Input.h"
-#include "Blueberry\Threading\JobSystem.h"
-#include "..\Graphics\RegisterGraphicsTypes.h"
-#include "Blueberry\Graphics\DefaultShaders.h"
-#include "Blueberry\Graphics\Skinning.h"
-#include "..\Animations\RegisterAnimationsTypes.h"
 
 #include <chrono>
 #include <thread>
@@ -26,8 +17,6 @@ namespace Blueberry
 		m_LayerStack = new LayerStack();
 		s_Instance = this;
 
-		ObjectDB::Initialize();
-
 		if (!GfxDevice::Initialize(properties.width, properties.height, m_Window->GetHandle()))
 		{
 			return false;
@@ -38,30 +27,17 @@ namespace Blueberry
 			return false;
 		}
 
-		RegisterSceneTypes();
-		RegisterGraphicsTypes();
-		RegisterAnimationsTypes();
-
-		DefaultRenderer::Initialize();
-		Input::Initialize();
-		JobSystem::Initialize();
-		DefaultShaders::Initialize();
-		Skinning::Initialize();
-
+		ObjectDB::Initialize();
 		return true;
 	}
 
 	void Application::Shutdown()
 	{
-		Renderer2D::Shutdown();
-		DefaultRenderer::Shutdown();
-		Skinning::Shutdown();
-		Input::Shutdown();
 		delete m_LayerStack;
-		delete m_Window;
-
 		ObjectDB::Shutdown();
+		Renderer2D::Shutdown();
 		GfxDevice::Shutdown();
+		delete m_Window;
 	}
 
 	void Application::Run()

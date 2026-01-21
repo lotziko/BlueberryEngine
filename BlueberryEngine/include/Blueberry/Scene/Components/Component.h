@@ -17,6 +17,8 @@ namespace Blueberry
 	public:
 		virtual ~Component() = default;
 		
+		virtual const String& GetName() override;
+
 		Entity* GetEntity();
 		Transform* GetTransform();
 		Scene* GetScene();

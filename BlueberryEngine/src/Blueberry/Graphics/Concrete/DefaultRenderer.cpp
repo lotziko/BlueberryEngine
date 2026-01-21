@@ -48,7 +48,6 @@ namespace Blueberry
 		VolumetricFog::Initialize();
 		RealtimeLights::Initialize();
 		ShadowAtlas::Initialize();
-		GfxDevice::SetGlobalTexture(TO_HASH("_LightmapTexture"), DefaultTextures::GetWhite2D()->Get());
 	}
 
 	void DefaultRenderer::Shutdown()

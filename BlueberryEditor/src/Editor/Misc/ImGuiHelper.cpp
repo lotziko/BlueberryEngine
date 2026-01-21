@@ -882,8 +882,8 @@ void ImGui::LoadDefaultEditorFonts()
 	ImFontConfig cfg = {};
 	cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags::ImGuiFreeTypeBuilderFlags_LightHinting;
 
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	ImGuiIO& io = ImGui::GetIO();
 	float fontSize = 16 * Blueberry::Screen::GetScale();
-	io.Fonts->AddFontFromFileTTF("assets/fonts/segoeui/segoeui.ttf", fontSize, &cfg, io.Fonts->GetGlyphRangesCyrillic());
+	io.Fonts->FontBuilderIO = ImGuiFreeType::GetBuilderForFreeType();
 	io.FontDefault = io.Fonts->AddFontFromFileTTF("assets/fonts/segoeui/segoeui.ttf", fontSize, &cfg, io.Fonts->GetGlyphRangesCyrillic());
 }

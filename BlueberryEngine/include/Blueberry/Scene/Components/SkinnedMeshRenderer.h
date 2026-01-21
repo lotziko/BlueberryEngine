@@ -34,7 +34,10 @@ namespace Blueberry
 		Transform* GetRoot();
 		void SetRoot(Transform* root);
 
+		void SetBones(const List<Transform*>& bones);
+
 		virtual const AABB& GetBounds() final;
+		virtual const Matrix& GetLocalToWorldMatrix() final;
 
 		const List<Matrix>& GetWorldMatrices();
 		const List<Matrix>& GetSkinningMatrices();
@@ -45,7 +48,7 @@ namespace Blueberry
 
 		void UpdateBounds();
 		void InvalidateBounds();
-		void GatherBones(Transform* parent = nullptr);
+		void UpdateBoneDatas();
 
 	private:
 		struct BoneData
@@ -57,6 +60,7 @@ namespace Blueberry
 		ObjectPtr<Mesh> m_Mesh;
 		List<ObjectPtr<Material>> m_Materials;
 		ObjectPtr<Transform> m_Root;
+		List<ObjectPtr<Transform>> m_Bones;
 		AABB m_PreviousBounds;
 		AABB m_Bounds = AABB(Vector3::Zero, Vector3::Zero);
 		size_t m_UpdateCount = 0;
@@ -64,7 +68,7 @@ namespace Blueberry
 		List<Matrix> m_LocalMatrices;
 		List<Matrix> m_WorldMatrices;
 		List<Matrix> m_SkinningMatrices;
-		List<BoneData> m_Bones;
+		List<BoneData> m_BoneDatas;
 		bool m_CullingDirty = true;
 
 		GfxBuffer* m_SkinningVertexBuffer;

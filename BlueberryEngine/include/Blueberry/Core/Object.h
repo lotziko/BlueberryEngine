@@ -79,7 +79,7 @@ void childclass::DefineFields()														\
 	public:
 		ObjectId GetObjectId() const;
 
-		const String& GetName();
+		virtual const String& GetName();
 		void SetName(const String& name);
 
 		const ObjectState& GetState();

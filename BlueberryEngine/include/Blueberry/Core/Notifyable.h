@@ -5,6 +5,6 @@ namespace Blueberry
 	class Notifyable
 	{
 	public:
-		virtual void OnNotify() = 0;
+		virtual void OnNotify(void* args) = 0;
 	};
 }

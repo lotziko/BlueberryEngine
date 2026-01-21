@@ -125,6 +125,7 @@ namespace Blueberry
 		FbxSystemUnit engineUnit(FbxSystemUnit::m);
 		engineUnit.ConvertScene(scene);
 
+		// TODO multiple skinned meshes
 		int meshCount = 0, meshNode = 0;
 		List<FbxNode*> skeletonNodes;
 		for (int i = 0; i < scene->GetNodeCount(); ++i)
@@ -163,6 +164,11 @@ namespace Blueberry
 	Vector4 ConvertVector(FbxVector4 vector)
 	{
 		return Vector4(static_cast<float>(vector[0]), static_cast<float>(vector[1]), static_cast<float>(vector[2]), static_cast<float>(vector[3]));
+	}
+
+	Matrix ConvertMatrix(FbxMatrix matrix)
+	{
+		return Matrix(ConvertVector(matrix.GetRow(0)), ConvertVector(matrix.GetRow(1)), ConvertVector(matrix.GetRow(2)), ConvertVector(matrix.GetRow(3)));
 	}
 
 	Matrix ConvertMatrix(FbxAMatrix matrix)
@@ -382,14 +388,62 @@ namespace Blueberry
 			bool isSkinned = fbxMesh->GetDeformerCount() > 0 && skeletonNodes.size() > 0;
 			MeshRenderer* meshRenderer = entity->GetComponent<MeshRenderer>();
 			SkinnedMeshRenderer* skinnedMeshRenderer = entity->GetComponent<SkinnedMeshRenderer>();
+			Transform* armatureTransform;
 			if (isSkinned)
 			{
+				FbxNode* armatureNode = skeletonNodes[0]->GetParent();
+				if (armatureNode != nullptr)
+				{
+					FbxAMatrix fbxArmatureTransform = armatureNode->EvaluateGlobalTransform();
+					
+					size_t armatureEntityFileId = TO_HASH(String(nodeName).append("_ArmatureEntity"));
+					Entity* armatureEntity = GetOrCreateAssetObject<Entity>(armatureEntityFileId);
+					armatureEntity->SetName(armatureNode->GetName());
+
+					size_t armatureTransformFileId = TO_HASH(String(nodeName).append("_ArmatureTransform"));
+					armatureTransform = GetOrCreateAssetObject<Transform>(armatureTransformFileId);
+					if (!armatureEntity->HasComponent<Transform>())
+					{
+						armatureEntity->AddComponent(armatureTransform);
+					}
+
+					fbxsdk::FbxDouble3 fbxArmatureTranslation = fbxArmatureTransform.GetT();
+					fbxsdk::FbxQuaternion fbxArmatureRotation = fbxArmatureTransform.GetQ();
+					fbxsdk::FbxDouble3 fbxArmatureScale = fbxArmatureTransform.GetS();
+
+					armatureTransform->SetParent(transform);
+					armatureTransform->SetLocalPosition(Vector3(static_cast<float>(fbxArmatureTranslation[0] / fbxArmatureScale[0]), static_cast<float>(fbxArmatureTranslation[1] / fbxArmatureScale[1]), static_cast<float>(fbxArmatureTranslation[2] / fbxArmatureScale[2])));
+					armatureTransform->SetLocalRotation(Quaternion(static_cast<float>(fbxArmatureRotation[0]), static_cast<float>(fbxArmatureRotation[1]), static_cast<float>(fbxArmatureRotation[2]), static_cast<float>(fbxArmatureRotation[3])));
+					armatureTransform->SetLocalScale(Vector3(static_cast<float>(fbxArmatureScale[0]), static_cast<float>(fbxArmatureScale[1]), static_cast<float>(fbxArmatureScale[2])));
+				}
+				else
+				{
+					armatureTransform = transform;
+				}
+				size_t skinnedMeshEntityFileId = TO_HASH(String(nodeName).append("_SkinnedMeshEntity"));
+				Entity* skinnedMeshEntity = GetOrCreateAssetObject<Entity>(skinnedMeshEntityFileId);
+				skinnedMeshEntity->SetName(GetName());
+				
+				size_t skinnedMeshTransformFileId = TO_HASH(String(nodeName).append("_SkinnedMeshTransform"));
+				Transform* skinnedMeshTransform = GetOrCreateAssetObject<Transform>(skinnedMeshTransformFileId);
+				if (!skinnedMeshEntity->HasComponent<Transform>())
+				{
+					skinnedMeshEntity->AddComponent(skinnedMeshTransform);
+				}
+				skinnedMeshTransform->SetParent(transform);
+				skinnedMeshTransform->SetLocalPosition(Vector3(static_cast<float>(fbxTranslation[0] * fbxScale[0]), static_cast<float>(fbxTranslation[1] * fbxScale[1]), static_cast<float>(fbxTranslation[2] * fbxScale[2])));
+				skinnedMeshTransform->SetLocalRotation(Quaternion(static_cast<float>(fbxRotation[0]), static_cast<float>(fbxRotation[1]), static_cast<float>(fbxRotation[2]), static_cast<float>(fbxRotation[3])));
+				skinnedMeshTransform->SetLocalScale(Vector3::One);
+
+				fbxTranslation = FbxDouble3();
+				fbxRotation = FbxQuaternion();
+
 				size_t skinnedMeshRendererFileId = TO_HASH(String(nodeName).append("_SkinnedMeshRenderer"));
 				skinnedMeshRenderer = GetOrCreateAssetObject<SkinnedMeshRenderer>(skinnedMeshRendererFileId);
 				skinnedMeshRenderer->SetMesh(mesh);
-				if (!entity->HasComponent<SkinnedMeshRenderer>())
+				if (!skinnedMeshEntity->HasComponent<SkinnedMeshRenderer>())
 				{
-					entity->AddComponent(skinnedMeshRenderer);
+					skinnedMeshEntity->AddComponent(skinnedMeshRenderer);
 				}
 				if (meshRenderer != nullptr)
 				{
@@ -717,8 +771,6 @@ namespace Blueberry
 				FbxSkin* skin = static_cast<FbxSkin*>(fbxMesh->GetDeformer(0, fbxsdk::FbxDeformer::EDeformerType::eSkin));
 				int clusterCount = skin->GetClusterCount();
 				
-				FbxVector4 globalScale = skeletonNodes[0]->EvaluateGlobalTransform().GetS();
-
 				Dictionary<const char*, size_t> boneIndexes;
 				List<Transform*> boneTransforms(skeletonNodes.size());
 				List<Matrix> bindPoses(skeletonNodes.size());
@@ -742,37 +794,31 @@ namespace Blueberry
 						boneEntity->AddComponent(boneTransform);
 					}
 
-					FbxNode* boneNodeParent = boneNode->GetParent();
-					auto it = boneIndexes.find(boneNodeParent->GetName());
-					if (it != boneIndexes.end())
-					{
-						boneTransform->SetParent(boneTransforms[it->second]);
-					}
-					else
-					{
-						boneTransform->SetParent(transform);
-					}
-
 					FbxAMatrix idleMatrix = evaluator->GetNodeLocalTransform(boneNode, time);
 
 					FbxVector4 translation = idleMatrix.GetT();
 					FbxQuaternion rotation = idleMatrix.GetQ();
 					FbxVector4 scale = idleMatrix.GetS();
 
-					if (i > 0)
+					FbxNode* boneNodeParent = boneNode->GetParent();
+					auto it = boneIndexes.find(boneNodeParent->GetName());
+					if (it != boneIndexes.end())
 					{
-						translation *= globalScale;
+						boneTransform->SetParent(boneTransforms[it->second]);
+						translation *= fbxScale;
 					}
 					else
 					{
-						scale /= globalScale;
+						boneTransform->SetParent(armatureTransform);
+						scale /= fbxScale;
 					}
 
 					boneTransform->SetLocalPosition(Vector3(static_cast<float>(translation[0]), static_cast<float>(translation[1]), static_cast<float>(translation[2])));
 					boneTransform->SetLocalRotation(Quaternion(static_cast<float>(rotation[0]), static_cast<float>(rotation[1]), static_cast<float>(rotation[2]), static_cast<float>(rotation[3])));
 					boneTransform->SetLocalScale(Vector3(static_cast<float>(scale[0]), static_cast<float>(scale[1]), static_cast<float>(scale[2])));
 				}
-				skinnedMeshRenderer->SetRoot(boneTransforms[0]);
+				skinnedMeshRenderer->SetRoot(armatureTransform);
+				skinnedMeshRenderer->SetBones(boneTransforms);
 
 				for (int i = 0; i < clusterCount; ++i)
 				{
@@ -782,23 +828,21 @@ namespace Blueberry
 					int* indices = cluster->GetControlPointIndices();
 					double* weights = cluster->GetControlPointWeights();
 					int count = cluster->GetControlPointIndicesCount();
-
+					
 					FbxAMatrix transformLinkMatrix;
 					FbxAMatrix transformMatrix;
+
 					cluster->GetTransformMatrix(transformMatrix);
 					cluster->GetTransformLinkMatrix(transformLinkMatrix);
 
 					FbxAMatrix bindPoseMatrix = transformLinkMatrix.Inverse() * transformMatrix;
-					bindPoseMatrix.SetT(bindPoseMatrix.GetT() * globalScale);
+					bindPoseMatrix.SetT(bindPoseMatrix.GetT() * fbxScale);
 
 					size_t boneIndex = 0;
-					if (i > 0)
+					auto it = boneIndexes.find(boneNode->GetName());
+					if (it != boneIndexes.end())
 					{
-						auto it = boneIndexes.find(boneNode->GetName());
-						if (it != boneIndexes.end())
-						{
-							boneIndex = it->second;
-						}
+						boneIndex = it->second;
 					}
 					bindPoses[boneIndex] = ConvertMatrix(bindPoseMatrix);
 
@@ -840,8 +884,16 @@ namespace Blueberry
 				for (int i = 0, n = fbxMesh->mPolygonVertices.GetCount(); i < n; ++i, ++verticesPtr)
 				{
 					fbxsdk::FbxVector4 vertex = fbxControlPoints[*verticesPtr];
-					boneWeights[i] = Vector4(boneWeightControlPoints[*verticesPtr].data);
-					boneIndices[i] = Vector4Uint(boneIndexControlPoints[*verticesPtr].data);
+					Vector4 weight = Vector4(boneWeightControlPoints[*verticesPtr].data);
+					float weightSum = weight.x + weight.y + weight.z + weight.w;
+					weight.x /= weightSum;
+					weight.y /= weightSum;
+					weight.z /= weightSum;
+					weight.w /= weightSum;
+					Vector4Uint indices = Vector4Uint(boneIndexControlPoints[*verticesPtr].data);
+					boneWeights[i] = weight;
+					boneIndices[i] = indices;
+
 				}
 			}
 			
@@ -921,7 +973,8 @@ namespace Blueberry
 			objects.push_back(mesh);
 		}
 		
-		transform->SetLocalPosition(Vector3(static_cast<float>(fbxTranslation[0] / fbxScale[0]), static_cast<float>(fbxTranslation[1] / fbxScale[1]), static_cast<float>(fbxTranslation[2] / fbxScale[2])));
+		transform->SetLocalPosition(Vector3(static_cast<float>(fbxTranslation[0]), static_cast<float>(fbxTranslation[1]), static_cast<float>(fbxTranslation[2])));
+		//transform->SetLocalPosition(Vector3(static_cast<float>(fbxTranslation[0] / fbxScale[0]), static_cast<float>(fbxTranslation[1] / fbxScale[1]), static_cast<float>(fbxTranslation[2] / fbxScale[2])));
 		transform->SetLocalRotation(Quaternion(static_cast<float>(fbxRotation[0]), static_cast<float>(fbxRotation[1]), static_cast<float>(fbxRotation[2]), static_cast<float>(fbxRotation[3])));
 		transform->SetLocalScale(Vector3::One);
 
@@ -964,6 +1017,7 @@ namespace Blueberry
 				{
 					FbxTime time;
 					FbxNode* skeletonNode = skeletonNodes[j];
+					bool isRoot = skeletonNode->GetParent()->GetSkeleton() == nullptr;
 					AnimationBoneData boneData = {};
 					boneData.SetName(skeletonNode->GetName());
 
@@ -980,13 +1034,13 @@ namespace Blueberry
 						FbxQuaternion rotation = clipMatrix.GetQ();
 						FbxVector4 scale = clipMatrix.GetS();
 
-						if (j > 0)
+						if (isRoot)
 						{
-							translation *= globalScale;
+							scale /= globalScale;
 						}
 						else
 						{
-							scale /= globalScale;
+							translation *= globalScale;
 						}
 
 						positions.push_back(Vector3(static_cast<float>(translation[0]), static_cast<float>(translation[1]), static_cast<float>(translation[2])));

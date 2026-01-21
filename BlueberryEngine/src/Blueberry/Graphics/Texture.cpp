@@ -78,7 +78,7 @@ namespace Blueberry
 			Object* object = ObjectDB::GetObject(dependency);
 			if (object != nullptr)
 			{
-				dynamic_cast<Notifyable*>(object)->OnNotify();
+				dynamic_cast<Notifyable*>(object)->OnNotify(static_cast<Object*>(this));
 			}
 		}
 	}

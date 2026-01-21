@@ -141,29 +141,6 @@ namespace Blueberry
 
 	void YamlSceneSerializer::GatherSceneObjects(Entity* entity)
 	{
-		if (entity == nullptr)
-		{
-			return;
-		}
-		if (PrefabManager::IsPartOfPrefabInstance(entity))
-		{
-			if (PrefabManager::IsPrefabInstanceRoot(entity))
-			{
-				PrefabInstance* instance = PrefabManager::GetInstance(entity);
-				instance->Update();
-				AddObject(instance);
-			}
-			return;
-		}
-		AddObject(entity);
-		for (size_t i = 0; i < entity->GetComponentCount(); ++i)
-		{
-			AddObject(entity->GetComponent(i));
-		}
-		Transform* transform = entity->GetTransform();
-		for (auto& child : transform->GetChildren())
-		{
-			GatherSceneObjects(child.Get()->GetEntity());
-		}
+		
 	}
 }

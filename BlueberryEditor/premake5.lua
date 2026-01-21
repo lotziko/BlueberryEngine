@@ -26,6 +26,7 @@ project "BlueberryEditor"
 		"%{wks.location}/BlueberryEngine/include",
 		"%{wks.location}/BlueberryBaking/include",
 		"%{IncludeDir.imgui}",
+		"%{IncludeDir.imguinode}",
 		"%{IncludeDir.rapidyaml}",
 		"%{IncludeDir.fbxsdk}",
 		"%{IncludeDir.directxtex}",
@@ -39,6 +40,7 @@ project "BlueberryEditor"
 		"BlueberryEngine",
 		"BlueberryBaking",
 		"%{Library.fbxsdk}",
+		"ImguiNode",
 	}
 
 	postbuildcommands

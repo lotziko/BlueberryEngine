@@ -11,6 +11,11 @@ namespace Blueberry
 		DEFINE_FIELD(Component, m_Entity, BindingType::ObjectPtr, FieldOptions().SetObjectType(Entity::Type).SetVisibility(VisibilityType::Hidden))
 	}
 
+	const String& Component::GetName()
+	{
+		return m_Entity->GetName();
+	}
+
 	Entity* Component::GetEntity()
 	{
 		return m_Entity.Get();

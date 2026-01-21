@@ -9,11 +9,6 @@ namespace Blueberry
 		DEFINE_BASE_FIELDS(Renderer, Component)
 	}
 
-	const AABB& Renderer::GetBounds()
-	{
-		return AABB();
-	}
-
 	const int& Renderer::GetSortingOrder()
 	{
 		return m_SortingOrder;

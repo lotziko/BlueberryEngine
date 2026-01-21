@@ -23,6 +23,7 @@ namespace Blueberry
 			s_RenderTexture = GfxTexturePool::Get(512, 512, 1, TextureUsageFlags::RenderTarget);
 		}
 
+		bool requireUpdate = false;
 		for (Object* object : m_SerializedObject->GetTargets())
 		{
 			Material* material = static_cast<Material*>(object);
@@ -51,10 +52,15 @@ namespace Blueberry
 							TextureData newTextureProperty = {};
 							newTextureProperty.SetName(propertyData.GetName());
 							material->AddTextureData(newTextureProperty);
+							requireUpdate = true;
 						}
 					}
 				}
 			}
+		}
+		if (requireUpdate)
+		{
+			m_SerializedObject->Update();
 		}
 
 		m_ShaderProperty = m_SerializedObject->FindProperty("m_Shader");

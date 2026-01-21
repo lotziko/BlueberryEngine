@@ -346,11 +346,9 @@ namespace Blueberry
 		ImGui::PushID(object->GetObjectId());
 		ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 1.0f));
 		
-		ImGui::Selectable(object->GetName().c_str(), Selection::IsActiveObject(object), 0, ImVec2(style.ProjectCellSize, style.ProjectCellSize));
-
-		if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+		if (ImGui::Selectable(object->GetName().c_str(), Selection::IsActiveObject(object), ImGuiSelectableFlags_SelectOnRelease | ImGuiSelectableFlags_AllowDoubleClick, ImVec2(style.ProjectCellSize, style.ProjectCellSize)))
 		{
-			if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+			if (ImGui::IsMouseDoubleClicked(0))
 			{
 				OpenAsset(asset);
 			}
@@ -367,12 +365,12 @@ namespace Blueberry
 				asset.importer->ImportDataIfNeeded();
 			}
 		}
-		
+
 		if (ImGui::IsItemHovered())
 		{
 			anyHovered = true;
 		}
-
+		
 		Object* iconObject = object;
 		if (object == asset.importer && asset.objects.size() > 0 && asset.objects[0].IsValid())
 		{
@@ -394,7 +392,6 @@ namespace Blueberry
 			icon = IconDB::GetAssetIcon(iconObject);
 		}
 		ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(icon->GetHandle()), ImVec2(screenPos.x + style.ProjectCellIconPadding, screenPos.y), ImVec2(screenPos.x + style.ProjectCellSize - style.ProjectCellIconPadding, screenPos.y + style.ProjectCellSize - style.ProjectCellIconPadding * 2));
-
 		ImGui::PopStyleVar();
 		ImGui::PopID();
 	}
