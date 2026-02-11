@@ -193,6 +193,17 @@ namespace Blueberry
 			ImGui::EndPopup();
 		}
 
+		if (m_DestroyedEntities.size() > 0)
+		{
+			for (ObjectId id : m_DestroyedEntities)
+			{
+				Entity* entity = static_cast<Entity*>(ObjectDB::GetObject(id));
+				EditorObjectManager::DestroyEntity(entity);
+			}
+			m_DestroyedEntities.clear();
+			Invalidate();
+		}
+
 		if (scene != nullptr && !m_IsValid)
 		{
 			UpdateTree();
@@ -415,8 +426,7 @@ namespace Blueberry
 			{
 				if (object->GetType() == Entity::Type)
 				{
-					Entity* entity = static_cast<Entity*>(object);
-					EditorObjectManager::DestroyEntity(entity);
+					m_DestroyedEntities.push_back(object->GetObjectId());
 				}
 			}
 			Selection::SetActiveObject(nullptr);

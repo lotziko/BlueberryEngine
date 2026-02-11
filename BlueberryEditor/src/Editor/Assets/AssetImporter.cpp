@@ -5,9 +5,7 @@
 #include "Blueberry\Tools\StringConverter.h"
 
 #include "Editor\Assets\AssetDB.h"
-#include "Editor\Serialization\YamlMetaSerializer.h"
-#include "Editor\Serialization\YamlHelper.h"
-#include "Editor\Serialization\YamlSerializers.h"
+#include "Editor\Serialization\MetaSerializer.h"
 #include "Editor\Misc\PlatformHelper.h"
 
 namespace Blueberry
@@ -124,10 +122,10 @@ namespace Blueberry
 
 	void AssetImporter::Save()
 	{
-		YamlMetaSerializer serializer = {};
+		MetaSerializer serializer = {};
 		serializer.SetGuid(m_Guid);
 		serializer.AddObject(this);
-		serializer.Serialize(GetMetaFilePath());
+		serializer.Serialize(GetMetaFilePath(), true);
 		m_RequireSave = false;
 	}
 
@@ -162,7 +160,7 @@ namespace Blueberry
 
 	AssetImporter* AssetImporter::CreateFromMeta(const std::filesystem::path& relativePath, const std::filesystem::path& relativeMetaPath)
 	{
-		YamlMetaSerializer serializer = {};
+		MetaSerializer serializer = {};
 		auto dataPath = Path::GetAssetsPath();
 		dataPath.append(relativeMetaPath.string());
 		serializer.Deserialize(String(dataPath.string()));
@@ -170,7 +168,7 @@ namespace Blueberry
 		auto& deserializedObjects = serializer.GetDeserializedObjects();
 		if (deserializedObjects.size() > 0)
 		{
-			AssetImporter* importer = static_cast<AssetImporter*>(deserializedObjects[0].first);
+			AssetImporter* importer = static_cast<AssetImporter*>(ObjectDB::GetObject(deserializedObjects[0].first));
 			Guid guid = serializer.GetGuid();
 			importer->m_Guid = guid;
 			importer->m_RelativePath = relativePath.string();
@@ -186,7 +184,7 @@ namespace Blueberry
 
 	void AssetImporter::LoadFromMeta(AssetImporter* importer)
 	{
-		YamlMetaSerializer serializer = {};
+		MetaSerializer serializer = {};
 		serializer.AddObject(importer);
 		auto dataPath = Path::GetAssetsPath();
 		dataPath.append(importer->GetRelativeMetaFilePath());

@@ -75,4 +75,9 @@ namespace Blueberry
 	{
 		s_PathModifyCache.insert_or_assign(path, writeInfo);
 	}
+
+	void PathModifyCache::Clear(const String& path)
+	{
+		s_PathModifyCache.erase(path);
+	}
 }

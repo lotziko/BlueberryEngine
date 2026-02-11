@@ -74,12 +74,13 @@ namespace Blueberry
 		SerializedObject* GetSerializedObject();
 
 	private:
-		SerializedProperty(SerializedObject* serializedObject, PropertyTreeNode* treeNode);
+		SerializedProperty(SerializedObject* serializedObject, size_t id);
+		PropertyTreeNode* Get();
 
 	private:
 		SerializedObject* m_SerializedObject;
-		PropertyTreeNode* m_TreeNode;
-		std::stack<std::pair<PropertyTreeNode*, uint32_t>> m_Stack;
+		size_t m_Id;
+		std::stack<std::pair<size_t, uint32_t>> m_Stack;
 
 		friend class SerializedObject;
 	};
@@ -87,6 +88,6 @@ namespace Blueberry
 	template<typename T>
 	inline T SerializedProperty::GetEnum()
 	{
-		return static_cast<T>(std::get<int>(m_TreeNode->values[0]));
+		return static_cast<T>(std::get<int>(Get()->values[0]));
 	}
 }

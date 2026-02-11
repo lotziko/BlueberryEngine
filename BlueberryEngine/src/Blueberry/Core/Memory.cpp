@@ -6,7 +6,11 @@ namespace Blueberry
 {
 	Allocator::Initializer::Initializer()
 	{
-		rpmalloc_initialize();
+		if (!s_IsInitialized)
+		{
+			rpmalloc_initialize();
+			s_IsInitialized = true;
+		}
 	}
 
 	Allocator::Initializer::~Initializer()

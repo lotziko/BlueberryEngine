@@ -43,6 +43,7 @@ namespace Blueberry
 		TransformTree m_TransformTree;
 		size_t m_LastClickedItem = UINT64_MAX;
 		HashSet<ObjectId> m_ExpandedNodes;
+		List<ObjectId> m_DestroyedEntities;
 		bool m_IsValid = false;
 		size_t m_ScrollRequest = UINT64_MAX;
 

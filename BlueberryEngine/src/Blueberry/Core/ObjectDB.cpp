@@ -193,6 +193,16 @@ namespace Blueberry
 		return Guid();
 	}
 
+	Guid ObjectDB::GetGuidFromObjectId(const ObjectId& id)
+	{
+		auto guidIt = s_ObjectIdToGuid.find(id);
+		if (guidIt != s_ObjectIdToGuid.end())
+		{
+			return guidIt->second.first;
+		}
+		return Guid();
+	}
+
 	FileId ObjectDB::GetFileIdFromObject(Object* object)
 	{
 		auto fileIdIt = s_ObjectIdToFileId.find(object->GetObjectId());
@@ -231,6 +241,11 @@ namespace Blueberry
 			return guidIt->second;
 		}
 		return std::pair<Guid, FileId>();
+	}
+
+	bool ObjectDB::HasFileId(const ObjectId& id)
+	{
+		return s_ObjectIdToFileId.count(id) > 0;
 	}
 
 	bool ObjectDB::HasFileId(Object* object)

@@ -17,8 +17,10 @@ namespace Blueberry
 	public:
 		static bool IsPrefabInstanceRoot(Entity* entity);
 		static bool IsPartOfPrefabInstance(Object* object);
+		static bool IsPartOfPrefabInstance(const ObjectId& objectId);
 		static PrefabInstance* GetInstance(Object* object);
-		static PrefabInstance* CreateInstance(Entity* entity);
+		static PrefabInstance* GetInstance(const ObjectId& objectId);
+		static PrefabInstance* CreateInstance(PrefabInstance* source);
 		static Object* GetCorrespondingPrefabObject(Object* object);
 
 		static void CreatePrefab(const String& path, Entity* entity);
@@ -30,10 +32,10 @@ namespace Blueberry
 		static void RemoveParent(Entity* entity);
 		static bool IsPrefabChild(Entity* entity);
 
-		static void GatherScenePrefabs(Scene* scene, Serializer& serializer);
-
 	private:
-		static void GatherChildrenPrefabs(Entity* entity, Serializer& serializer);
+		static void InitializeHierarchy(PrefabInstance* instance);
+		static void InitializeContext(PrefabInstance* instance);
+		static void InitializeChildContext(PrefabInstance* instance, Guid guid, Transform* child);
 
 	private:
 		static Dictionary<ObjectId, ObjectId> s_RootToPrefabInstance;

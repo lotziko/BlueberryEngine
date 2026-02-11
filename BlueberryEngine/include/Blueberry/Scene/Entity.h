@@ -46,11 +46,12 @@ namespace Blueberry
 		void SetActive(const bool& active);
 		bool IsActiveInHierarchy();
 
+		void UpdateHierarchy();
+
 	private:
 		void AddToCreatedComponents(Component* component);
 		void AddComponentToScene(Component* component);
 		void RemoveComponentFromScene(Component* component);
-		void UpdateHierarchy();
 		void UpdateHierarchy(const bool& active);
 		void UpdateComponents();
 		void EnableComponents();
@@ -62,7 +63,7 @@ namespace Blueberry
 
 		Transform* m_Transform;
 		Scene* m_Scene;
-		int8_t m_IsActiveInHierarchy = -1;
+		bool m_IsActiveInHierarchy = true;
 
 		friend class Scene;
 		friend class Component;
@@ -137,7 +138,7 @@ namespace Blueberry
 	{
 		for (auto& component : m_Components)
 		{
-			if (component->IsClassType(ComponentType::Type))
+			if (component.IsValid() && component->IsClassType(ComponentType::Type))
 			{
 				return static_cast<ComponentType*>(component.Get());
 			}
@@ -151,7 +152,7 @@ namespace Blueberry
 	{
 		for (auto& component : m_Components)
 		{
-			if (component->IsClassType(ComponentType::Type))
+			if (component.IsValid() && component->IsClassType(ComponentType::Type))
 			{
 				return true;
 			}

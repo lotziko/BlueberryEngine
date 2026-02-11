@@ -48,7 +48,6 @@ namespace Blueberry
 
 	Entity* Scene::CreateEntity(const String& name = "Entity")
 	{
-		//BB_INFO("Entity is created.")
 		Entity* entity = Object::Create<Entity>();
 		entity->m_Scene = this;
 		entity->m_Name = name;
@@ -66,20 +65,22 @@ namespace Blueberry
 		{
 			return;
 		}
-		//BB_INFO("Entity is added.")
-		entity->m_Scene = this;
-		m_Entities[entity->GetObjectId()] = entity;
-		if (entity->GetTransform()->GetParent() == nullptr)
+		if (entity->m_Scene != this)
 		{
-			m_RootEntities.push_back(entity);
-		}
-		if (entity->IsActiveInHierarchy())
-		{
-			entity->UpdateComponents();
-		}
-		for (uint32_t i = 0; i < entity->GetComponentCount(); ++i)
-		{
-			entity->AddToCreatedComponents(entity->GetComponent(i));
+			entity->m_Scene = this;
+			m_Entities[entity->GetObjectId()] = entity;
+			if (entity->GetTransform()->GetParent() == nullptr)
+			{
+				m_RootEntities.push_back(entity);
+			}
+			if (entity->IsActiveInHierarchy())
+			{
+				entity->UpdateComponents();
+			}
+			for (uint32_t i = 0; i < entity->GetComponentCount(); ++i)
+			{
+				entity->AddToCreatedComponents(entity->GetComponent(i));
+			}
 		}
 		for (auto& child : entity->GetTransform()->GetChildren())
 		{
@@ -113,7 +114,6 @@ namespace Blueberry
 		{
 			DestroyEntity(child.Get()->GetEntity());
 		}
-		//BB_INFO("Entity is destroyed.");
 		entity->OnDestroy();
 		if (entity->GetTransform()->GetParent() == nullptr)
 		{

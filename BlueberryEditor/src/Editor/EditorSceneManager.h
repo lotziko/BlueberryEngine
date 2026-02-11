@@ -47,10 +47,7 @@ namespace Blueberry
 		struct PrefabSceneData
 		{
 			Scene* scene;
-			Entity* prefabRoot;
 			Entity* root;
-			Dictionary<ObjectId, ObjectId> mapping;
-			Dictionary<ObjectId, ObjectId> reverseMapping;
 		};
 
 	private:

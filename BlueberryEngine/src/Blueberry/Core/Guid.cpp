@@ -27,6 +27,11 @@ namespace Blueberry
 		return (data[0] < other.data[0] || (data[0] == other.data[0] && data[1] < other.data[1]));
 	}
 
+	bool Guid::IsValid() const
+	{
+		return data[0] || data[1];
+	}
+
 	String Guid::ToString() const
 	{
 		char dst[33];

@@ -205,14 +205,16 @@ namespace Blueberry
 				Blueberry::ObjectId* id = static_cast<Blueberry::ObjectId*>(payload->Data);
 				Blueberry::Object* object = Blueberry::ObjectDB::GetObject(*id);
 
-				if (object != nullptr && object->IsClassType(Entity::Type) && ImGui::AcceptDragDropPayload("OBJECT_ID"))
+				if (object != nullptr && object->IsClassType(Entity::Type) && Blueberry::ObjectDB::HasGuid(object) && ImGui::AcceptDragDropPayload("OBJECT_ID"))
 				{
 					if (EditorSceneManager::HasScene() || EditorSceneManager::HasPrefabScene())
 					{
-						if (Blueberry::ObjectDB::HasGuid(object))
+						Guid guid = Blueberry::ObjectDB::GetGuidFromObject(object);
+						AssetLoader::Load(guid);
+						PrefabInstance* instance = static_cast<PrefabInstance*>(ObjectDB::GetObjectFromGuid(guid, PrefabInstance::Type));
+						if (instance != nullptr)
 						{
-							AssetLoader::Load(Blueberry::ObjectDB::GetGuidFromObject(object));
-							EditorObjectManager::AddEntity(PrefabManager::CreateInstance(static_cast<Entity*>(object))->GetEntity());
+							EditorObjectManager::AddEntity(PrefabManager::CreateInstance(instance)->GetEntity());
 						}
 					}
 				}

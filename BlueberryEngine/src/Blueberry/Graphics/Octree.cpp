@@ -299,11 +299,6 @@ namespace Blueberry
 			}
 		}
 
-		if (removed == false)
-		{
-			BB_INFO("cant");
-		}
-
 		return removed;
 	}
 

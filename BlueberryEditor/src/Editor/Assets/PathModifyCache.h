@@ -18,6 +18,7 @@ namespace Blueberry
 
 		static WriteInfo Get(const String& path);
 		static void Set(const String& path, const WriteInfo& writeInfo);
+		static void Clear(const String& path);
 
 	private:
 		static Dictionary<String, WriteInfo> s_PathModifyCache;

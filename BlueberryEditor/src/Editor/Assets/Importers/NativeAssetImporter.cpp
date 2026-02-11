@@ -1,9 +1,7 @@
 #include "NativeAssetImporter.h"
 
-#include "Editor\Serialization\YamlSerializer.h"
-#include "Editor\Serialization\YamlHelper.h"
 #include "Editor\Assets\AssetDB.h"
-#include "Blueberry\Serialization\BinarySerializer.h"
+#include "Editor\Serialization\EditorSerializer.h"
 #include "Blueberry\Core\ObjectDB.h"
 
 namespace Blueberry
@@ -19,22 +17,22 @@ namespace Blueberry
 		List<Object*> objects;
 		String path = GetFilePath();
 		String extension = String(std::filesystem::path(path).extension().string());
-		Serializer* serializer = YamlHelper::IsYaml(path) ? static_cast<Serializer*>(new YamlSerializer()) : static_cast<Serializer*>(new BinarySerializer());
+		EditorSerializer serializer;
 		for (auto& object : ObjectDB::GetObjectsFromGuid(guid))
 		{
 			Object* importedObject = ObjectDB::GetObject(object.second);
 			if (importedObject != nullptr)
 			{
-				serializer->AddObject(importedObject, object.first);
+				serializer.AddObject(importedObject, object.first);
 			}
 		}
-		serializer->Deserialize(path);
-		auto& deserializedObjects = serializer->GetDeserializedObjects();
+		serializer.Deserialize(path);
+		auto& deserializedObjects = serializer.GetDeserializedObjects();
 
 		bool mainObjectIsSet = false;
 		for (auto& pair : deserializedObjects)
 		{
-			Object* importedObject = pair.first;
+			Object* importedObject = ObjectDB::GetObject(pair.first);
 			objects.push_back(importedObject);
 			FileId fileId = pair.second;
 
@@ -48,6 +46,5 @@ namespace Blueberry
 			}
 		}
 		AssetDB::SaveAssetObjectsToCache(objects);
-		delete serializer;
 	}
 }

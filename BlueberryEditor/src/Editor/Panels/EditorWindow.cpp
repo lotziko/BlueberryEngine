@@ -1,9 +1,9 @@
 #include "EditorWindow.h"
 
 #include "Editor\Path.h"
-#include "Editor\Serialization\YamlSerializer.h"
 #include "Editor\Misc\PlatformHelper.h"
 #include "Blueberry\Events\WindowEvents.h"
+#include "Blueberry\Serialization\Serializer.h"
 
 #include <imgui\imgui.h>
 #include <fstream>
@@ -110,11 +110,11 @@ namespace Blueberry
 
 		if (std::filesystem::exists(layoutPath))
 		{
-			YamlSerializer serializer = {};
+			Serializer serializer = {};
 			serializer.Deserialize(layoutPath.string().data());
 			for (auto& pair : serializer.GetDeserializedObjects())
 			{
-				EditorWindow* activeWindow = static_cast<EditorWindow*>(pair.first);
+				EditorWindow* activeWindow = static_cast<EditorWindow*>(ObjectDB::GetObject(pair.first));
 				activeWindow->Show();
 
 				activeWindow->m_Focused = activeWindow->m_RawData[36];
@@ -153,7 +153,7 @@ namespace Blueberry
 		if (s_ActiveWindows.size() > 0)
 		{
 			ImGui::PrepareWindowData();
-			YamlSerializer serializer = {};
+			Serializer serializer = {};
 			for (auto& activeWindow : s_ActiveWindows)
 			{
 				const char* title = activeWindow->m_Title.c_str();
@@ -161,7 +161,7 @@ namespace Blueberry
 				activeWindow->m_RawData[36] = activeWindow->m_Focused;
 				serializer.AddObject(activeWindow.Get());
 			}
-			serializer.Serialize(layoutPath.string().data());
+			serializer.Serialize(layoutPath.string().data(), true);
 
 			ImGui::PrepareDockNodeData();
 			uint32_t nodeCount = ImGui::GetDockNodeDataCount();
@@ -170,7 +170,7 @@ namespace Blueberry
 				std::ofstream output;
 				output.open(dockPath, std::ofstream::binary);
 				output.write(reinterpret_cast<char*>(&nodeCount), sizeof(uint32_t));
-				for (int i = 0; i < nodeCount; ++i)
+				for (uint32_t i = 0; i < nodeCount; ++i)
 				{
 					char buffer[36];
 					ImGui::ReadRawDockNodeData(i, buffer);

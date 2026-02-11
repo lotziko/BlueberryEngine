@@ -59,29 +59,32 @@ namespace Blueberry
 		Entity* GetEntity();
 		Object* GetCorrespondingObject(const FileId& fileId);
 
+		bool HasSource();
+		PrefabInstance* GetSource();
+
 		virtual void OnCreate() final;
 		virtual void OnDestroy() final;
 
-		static PrefabInstance* Create(Entity* prefab);
+		void UpdateIfNeeded();
 
 	private:
-		void Update();
+		void PrepareData();
 		void AddObjectMapping(Object* prefabObject, Object* instanceObject);
-		void Resolve();
 
 	private:
-		ObjectPtr<Entity> m_Prefab;
-		ObjectPtr<Entity> m_Entity;
+		ObjectPtr<PrefabInstance> m_SourcePrefab;
 		ObjectPtr<Transform> m_Parent;
 		List<PrefabModificationData> m_Modifications;
 		List<PrefabAddedEntityData> m_AddedEntities;
+
+		ObjectPtr<Entity> m_Entity;
+		uint32_t m_UpdateCount = 0;
 
 		Dictionary<FileId, ObjectId> m_FileIdToObject;
 		Dictionary<ObjectId, ObjectId> m_PrefabToInstanceMapping;
 		Dictionary<ObjectId, ObjectId> m_InstanceToPrefabMapping;
 
 		friend class PrefabManager;
-		friend class YamlSceneSerializer;
-		friend class EditorSceneManager;
+		friend class EditorSerializer;
 	};
 }

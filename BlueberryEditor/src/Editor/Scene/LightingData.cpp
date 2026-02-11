@@ -110,8 +110,12 @@ namespace Blueberry
 		{
 			PrefabInstance* instance = PrefabManager::GetInstance(entity);
 			id.prefabInstanceFileId = ObjectDB::GetFileIdFromObject(instance);
+			id.objectFileId = ObjectDB::GetFileIdFromObject(PrefabManager::GetCorrespondingPrefabObject(entity));
 		}
-		id.objectFileId = ObjectDB::GetFileIdFromObject(entity);
+		else
+		{
+			id.objectFileId = ObjectDB::GetFileIdFromObject(entity);
+		}
 		return id;
 	}
 
@@ -173,29 +177,6 @@ namespace Blueberry
 
 	void LightingData::ApplyLightmap()
 	{
-		if (m_ChartInstanceOffset.size() > 0 && m_MeshRenderers.size() == 0)
-		{
-			uint8_t* ptr = m_ChartInstanceOffset.data();
-			size_t rendererCount = (m_ChartInstanceOffset.size()) / (sizeof(GlobalObjectId) + sizeof(uint32_t));
-
-			m_MeshRenderers.resize(rendererCount);
-			for (size_t i = 0; i < rendererCount; ++i)
-			{
-				GlobalObjectId objectId = *reinterpret_cast<GlobalObjectId*>(ptr);
-				ptr += sizeof(GlobalObjectId);
-				uint32_t offset = *reinterpret_cast<uint32_t*>(ptr);
-				ptr += sizeof(uint32_t);
-
-				MeshRendererData data = {};
-				data.SetObjectId(objectId);
-				data.SetChartInstanceOffset(offset);
-				m_MeshRenderers[i] = data;
-			}
-
-			m_ChartOffsetScale.resize(m_ChartScaleOffset.size() / 4);
-			memcpy(m_ChartOffsetScale.data(), m_ChartScaleOffset.data(), m_ChartScaleOffset.size());
-		}
-
 		if (m_Lightmap.IsValid() && m_Lightmap->GetState() == ObjectState::Default)
 		{
 			Texture2D* lightmap = m_Lightmap.Get();
@@ -250,16 +231,6 @@ namespace Blueberry
 				}
 			}
 
-			Dictionary<FileId, PrefabInstance*> prefabs = {};
-			sceneObjects.clear();
-			ObjectDB::GetObjects(PrefabInstance::Type, sceneObjects, SearchObjectType::WithoutGuid);
-
-			for (Object* object : sceneObjects)
-			{
-				PrefabInstance* instance = static_cast<PrefabInstance*>(object);
-				prefabs.insert_or_assign(ObjectDB::GetFileIdFromObject(object), instance);
-			}
-
 			uint32_t meshRendererCount = static_cast<uint32_t>(m_MeshRenderers.size());
 
 			Guid guid = EditorSceneManager::GetGuid();
@@ -271,10 +242,9 @@ namespace Blueberry
 				Entity* entity = nullptr;
 				if (id.prefabInstanceFileId != 0)
 				{
-					auto it = prefabs.find(id.prefabInstanceFileId);
-					if (it != prefabs.end())
+					PrefabInstance* instance = static_cast<PrefabInstance*>(ObjectDB::GetObjectFromGuid(Guid(), id.prefabInstanceFileId));
+					if (instance != nullptr)
 					{
-						PrefabInstance* instance = it->second;
 						entity = static_cast<Entity*>(instance->GetCorrespondingObject(id.objectFileId));
 					}
 				}

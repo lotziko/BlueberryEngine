@@ -29,26 +29,30 @@ namespace Blueberry
 		static List<std::pair<Object*, FileId>> AssetDB::LoadAssetObjects(const Guid& guid, const Dictionary<FileId, ObjectId>& existingObjects);
 
 		static const String GetRelativeAssetPath(Object* object);
+		static const String GetRelativePath(const Guid& guid);
 		static String GetAssetCachedDataPath(Object* object);
+
+		static void GetDependent(const Guid& guid, HashSet<Guid>& dependent);
+		static void SetDependencies(const Guid& guid, const HashSet<Guid>& dependencies);
 
 		static bool HasAssetWithGuidInData(const Guid& guid);
 		static void CreateAsset(Object* object, const String& relativePath);
 		static void SaveAssetObjectsToCache(const List<Object*>& objects);
 		static void SetDirty(Object* object);
 		static void DeleteAssetFromData(const Guid& guid);
+		static void MarkForReimport(const Guid& guid);
 		static void SaveAssets();
 
 		static AssetDBRefreshEvent& GetAssetDBRefreshed();
 
 	private:
-		static Serializer* GetSerializer(Object* object);
 		static AssetImporter* CreateOrGetImporter(const std::filesystem::path& path);
 		static AssetImporter* CreateImporter(const std::filesystem::path& path);
-		static void OnFinalizeObject(Object* object, Guid guid, FileId fileId);
 
 	public:
 		static void Register(const String& extension, const size_t& importerType);
 		static void Register(const size_t& objectType, ObjectFinalizer* objectFinalizer);
+		static void FinalizeObject(Object* object, Guid guid, FileId fileId);
 
 	private:
 		static Dictionary<String, size_t> s_ImporterTypes;

@@ -21,7 +21,7 @@ namespace Blueberry
 		return CloneObject(visited, mapping, object);
 	}
 
-	Object* ObjectCloner::Resolve(ObjectMapping& mapping, Object* object)
+	Object* ObjectCloner::Resolve(ObjectMapping& mapping, List<ObjectId>& removed, Object* object)
 	{
 		HashSet<ObjectId> visited;
 		Object* result = CloneObject(visited, mapping, object);
@@ -30,13 +30,12 @@ namespace Blueberry
 		{
 			if (visited.count(pair.first) == 0)
 			{
-				removedIds.push_back(pair.first);
+				removed.push_back(pair.first);
 			}
 		}
-		for (ObjectId id : removedIds)
+		for (ObjectId id : removed)
 		{
 			mapping.erase(id);
-			Object::Destroy(ObjectDB::GetObject(id));
 		}
 		return result;
 	}

@@ -1,6 +1,7 @@
 #include "ModelImporter.h"
 
 #include "Editor\Assets\AssetDB.h"
+#include "Editor\Prefabs\PrefabInstance.h"
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Components\MeshRenderer.h"
@@ -359,6 +360,8 @@ namespace Blueberry
 		}
 		else
 		{
+			PrefabInstance* instance = GetOrCreateAssetObject<PrefabInstance>(PrefabInstance::Type);
+			objects.push_back(instance);
 			SetMainObject(entityFileId);
 		}
 

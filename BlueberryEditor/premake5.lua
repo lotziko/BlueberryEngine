@@ -11,8 +11,6 @@ project "BlueberryEditor"
 	{
 		"src/**.h",
 		"src/**.cpp",
-		"vendor/rapidyaml/**.h",
-		"vendor/rapidyaml/**.cpp",
 		"vendor/fbxsdk/include/**.h",
 		"vendor/directxtex/**.h",
 		"vendor/directxtex/**.cpp",

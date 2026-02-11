@@ -51,7 +51,13 @@ namespace Blueberry
 		s_CubeTexture->SetData(s_SliceData.data(), SLICE_SIZE * 6);
 		GfxDevice::SetRenderTarget(nullptr);
 
-		LightingData* lightingData = EditorSceneManager::GetSettings()->GetLightingData();
+		SceneSettings* settings = EditorSceneManager::GetSettings();
+		LightingData* lightingData = settings->GetLightingData();
+		if (lightingData == nullptr || lightingData->GetState() != ObjectState::Default)
+		{
+			lightingData = Object::Create<LightingData>();
+			settings->SetLightingData(lightingData);
+		}
 		TextureCube* result = Save(0);
 		lightingData->SetSkyReflection(skyRenderer, result);
 		AssetDB::SetDirty(lightingData);

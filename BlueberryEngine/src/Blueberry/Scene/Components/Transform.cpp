@@ -285,7 +285,7 @@ namespace Blueberry
 			InvalidateHierarchy();
 		}
 
-		m_Entity->UpdateHierarchy(true);
+		m_Entity->UpdateHierarchy();
 	}
 
 	void Transform::SetSiblingIndex(const size_t& index)

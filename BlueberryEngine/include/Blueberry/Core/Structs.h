@@ -12,4 +12,10 @@ namespace Blueberry
 		FileId fileId;
 		Guid guid;
 	};
+
+	template <typename T>
+	struct DataWrapper
+	{
+		T& reference;
+	};
 }

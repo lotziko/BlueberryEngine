@@ -1,8 +1,10 @@
 #include "PrefabImporter.h"
 
-#include "Editor\Serialization\YamlSceneSerializer.h"
+#include "Editor\Serialization\EditorSerializer.h"
+#include "Editor\Prefabs\PrefabInstance.h"
 #include "Editor\Assets\AssetDB.h"
 #include "Blueberry\Core\ObjectDB.h"
+#include "Blueberry\Scene\Entity.h"
 
 namespace Blueberry
 {
@@ -16,7 +18,7 @@ namespace Blueberry
 		Guid guid = GetGuid();
 		List<Object*> objects;
 		String path = GetFilePath();
-		YamlSceneSerializer serializer;
+		EditorSerializer serializer;
 		for (auto& object : ObjectDB::GetObjectsFromGuid(guid))
 		{
 			Object* importedObject = ObjectDB::GetObject(object.second);
@@ -26,12 +28,18 @@ namespace Blueberry
 			}
 		}
 		serializer.Deserialize(path);
+		HashSet<Guid> dependencies;
+		serializer.GatherDependencies(dependencies);
+		AssetDB::SetDependencies(guid, dependencies);
 		auto& deserializedObjects = serializer.GetDeserializedObjects();
+
+		PrefabInstance* instance = GetOrCreateAssetObject<PrefabInstance>(PrefabInstance::Type);
+		objects.push_back(instance);
 
 		bool mainObjectIsSet = false;
 		for (auto& pair : deserializedObjects)
 		{
-			Object* importedObject = pair.first;
+			Object* importedObject = ObjectDB::GetObject(pair.first);
 			objects.push_back(importedObject);
 			FileId fileId = pair.second;
 
@@ -44,6 +52,7 @@ namespace Blueberry
 				mainObjectIsSet = true;
 			}
 		}
+		instance->OnCreate();
 		AssetDB::SaveAssetObjectsToCache(objects);
 	}
 }

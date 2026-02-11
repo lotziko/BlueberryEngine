@@ -30,6 +30,7 @@ namespace Blueberry
 
 	private:
 		static inline Initializer s_Initializer = {};
+		static inline bool s_IsInitialized = false;
 	};
 
 	// Based on Jolt STLAllocator

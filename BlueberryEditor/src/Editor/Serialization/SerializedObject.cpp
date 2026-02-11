@@ -9,6 +9,8 @@
 
 namespace Blueberry
 {
+	#define EMPTY_ID UINT64_MAX
+
 	ObjectUpdateEvent SerializedObject::s_ObjectUpdated = {};
 
 	Object* ObjectUpdateEventArgs::GetObject() const
@@ -39,11 +41,11 @@ namespace Blueberry
 
 	SerializedProperty SerializedObject::FindProperty(const String& name)
 	{
-		for (auto& child : m_Root->children)
+		for (auto& child : m_Nodes[0].children)
 		{
-			if (child->fieldInfo->name == name)
+			if (m_Nodes[child].fieldInfo->name == name)
 			{
-				return SerializedProperty(this, child.get());
+				return SerializedProperty(this, child);
 			}
 		}
 		return {};
@@ -51,8 +53,8 @@ namespace Blueberry
 
 	SerializedProperty SerializedObject::GetIterator()
 	{
-		SerializedProperty iterator = SerializedProperty(this, m_Root.get());
-		iterator.m_Stack.push(std::make_pair(iterator.m_TreeNode, 0));
+		SerializedProperty iterator = SerializedProperty(this, 0);
+		iterator.m_Stack.push(std::make_pair(0, 0));
 		return iterator;
 	}
 
@@ -228,10 +230,13 @@ namespace Blueberry
 
 	void SerializedObject::BuildTree()
 	{
-		m_Root = std::make_shared<PropertyTreeNode>();
-		m_Root->name = "Root";
-		m_Root->type = PropertyType::Root;
-		m_Root->isVisible = false;
+		m_Nodes.clear();
+		size_t root = Allocate();
+		PropertyTreeNode* rootNode = Get(root);
+		rootNode->name = "Root";
+		rootNode->parent = EMPTY_ID;
+		rootNode->type = PropertyType::Root;
+		rootNode->isVisible = false;
 
 		const ClassInfo* classInfo = m_ClassInfo;
 		List<void*> targets;
@@ -239,44 +244,11 @@ namespace Blueberry
 		{
 			targets.push_back(static_cast<void*>(target));
 		}
-		BuildProperties(m_Root, classInfo, targets);
+		BuildProperties(root, classInfo, targets);
 	}
 
-	String GetNodePath(PropertyTreeNode* node)
+	void SerializedObject::BuildProperties(size_t parent, const ClassInfo* classInfo, const List<void*>& targets)
 	{
-		List<PropertyTreeNode*> path;
-		while (node != nullptr)
-		{
-			path.push_back(node);
-			node = node->parent.lock().get();
-		}
-		String result = "";
-		for (size_t i = path.size() - 1; i--;)	// - 1 avoids adding root name
-		{
-			PropertyTreeNode* pathNode = path[i];
-			result.append(pathNode->name);
-			if (i > 0)
-			{
-				if (pathNode->type == PropertyType::List)
-				{
-					result.append("[");
-					result.append(std::to_string(path[i - 1]->index));
-					result.append("]");
-					--i;
-				}
-				else
-				{
-					result.append(".");
-				}
-			}
-		}
-		return result;
-	}
-
-	void SerializedObject::BuildProperties(std::weak_ptr<PropertyTreeNode> parent, const ClassInfo* classInfo, const List<void*>& targets)
-	{
-		std::shared_ptr<PropertyTreeNode> parentShared = parent.lock();
-
 		for (size_t i = 0; i < classInfo->fields.size(); ++i)
 		{
 			const FieldInfo& fieldInfo = classInfo->fields[i];
@@ -284,7 +256,8 @@ namespace Blueberry
 			{
 				continue;
 			}
-			std::shared_ptr<PropertyTreeNode> childNode = std::make_shared<PropertyTreeNode>();
+			size_t child = Allocate();
+			PropertyTreeNode* childNode = Get(child);
 			childNode->name = fieldInfo.name;
 			childNode->parent = parent;
 			childNode->index = i;
@@ -294,7 +267,7 @@ namespace Blueberry
 			if (fieldInfo.isList)
 			{
 				childNode->type = PropertyType::List;
-				BuildList(childNode, fieldInfo, targets);
+				BuildList(child, fieldInfo, targets);
 			}
 			else
 			{
@@ -304,30 +277,30 @@ namespace Blueberry
 					PropertyValue value = {};
 					VariantHelper::ReadValue(fieldInfo.type, static_cast<char*>(targets[j]) + fieldInfo.offset, value);
 					childNode->values.push_back(std::move(value));
-					if (m_IsPrefabInstance[j] && PrefabManager::HasModification(m_Targets[j], GetNodePath(childNode.get())))
+					if (m_IsPrefabInstance[j] && PrefabManager::HasModification(m_Targets[j], GetNodePath(child)))
 					{
 						childNode->isOverriden = true;
 					}
 				}
 			}
-			CalculateMixedMask(childNode.get());
-			parentShared->children.push_back(std::move(childNode));
+			CalculateMixedMask(Get(child));
+			Get(parent)->children.push_back(child);
 		}
 	}
 
-	void SerializedObject::BuildList(std::weak_ptr<PropertyTreeNode> parent, const FieldInfo& fieldInfo, const List<void*>& targets)
+	void SerializedObject::BuildList(size_t parent, const FieldInfo& fieldInfo, const List<void*>& targets)
 	{
-		std::shared_ptr<PropertyTreeNode> parentShared = parent.lock();
 		bool visible = fieldInfo.options.visibility == VisibilityType::Visible;
 
 		size_t elementCount = UINT32_MAX;
 		for (size_t i = 0; i < targets.size(); ++i)
 		{
+			PropertyTreeNode* parentNode = Get(parent);
 			ListBase* list = fieldInfo.Get<ListBase>(targets[i]);
 			size_t size = list->size_base();
 			if (size < UINT32_MAX && size != elementCount)
 			{
-				parentShared->mixedMask[0] = true;
+				parentNode->mixedMask[0] = true;
 			}
 			elementCount = std::min(elementCount, size);
 		}
@@ -335,17 +308,18 @@ namespace Blueberry
 		BindingType childType = VariantHelper::GetChildType(fieldInfo.type);
 		for (size_t i = 0; i < elementCount; ++i)
 		{
-			std::shared_ptr<PropertyTreeNode> listNode = std::make_shared<PropertyTreeNode>();
-			listNode->name = "Element";
-			listNode->parent = parent;
-			listNode->index = i;
-			listNode->fieldInfo = &fieldInfo;
-			listNode->bindingType = childType;
-			listNode->isVisible = visible;
-			listNode->type = PropertyType::Value;
-			parentShared->children.push_back(std::move(listNode));
+			size_t listElement = Allocate();
+			PropertyTreeNode* listElementNode = Get(listElement);
+			listElementNode->name = "Element";
+			listElementNode->parent = parent;
+			listElementNode->index = i;
+			listElementNode->fieldInfo = &fieldInfo;
+			listElementNode->bindingType = childType;
+			listElementNode->isVisible = visible;
+			listElementNode->type = PropertyType::Value;
+			Get(parent)->children.push_back(listElement);
 		}
-
+		
 		if (fieldInfo.type == BindingType::DataList)
 		{
 			const ClassInfo* info = ClassDB::GetInfo(fieldInfo.options.objectType);
@@ -366,7 +340,7 @@ namespace Blueberry
 				{
 					newTargets.push_back(lists[j]->get_base(i));
 				}
-				BuildProperties(parentShared->children[i], info, newTargets);
+				BuildProperties(Get(parent)->children[i], info, newTargets);
 				newTargets.clear();
 			}
 		}
@@ -377,9 +351,15 @@ namespace Blueberry
 				ListBase* list = fieldInfo.Get<ListBase>(targets[i]);
 				for (size_t j = 0; j < elementCount; ++j)
 				{
+					size_t listElement = Get(parent)->children[j];
+					PropertyTreeNode* listElementNode = Get(listElement);
 					PropertyValue value = {};
 					VariantHelper::ReadValue(childType, list->get_base(j), value);
-					parentShared->children[j]->values.push_back(std::move(value));
+					listElementNode->values.push_back(std::move(value));
+					if (m_IsPrefabInstance[i] && PrefabManager::HasModification(m_Targets[i], GetNodePath(listElement)))
+					{
+						listElementNode->isOverriden = true;
+					}
 				}
 			}
 		}
@@ -393,19 +373,20 @@ namespace Blueberry
 		{
 			targets.push_back(static_cast<void*>(target));
 		}
-		ReadProperties(m_Root, classInfo, targets);
+		ReadProperties(0, classInfo, targets);
 	}
 
-	void SerializedObject::ReadProperties(std::weak_ptr<PropertyTreeNode> parent, const ClassInfo* classInfo, const List<void*>& targets)
+	void SerializedObject::ReadProperties(size_t parent, const ClassInfo* classInfo, const List<void*>& targets)
 	{
-		std::shared_ptr<PropertyTreeNode> parentShared = parent.lock();
+		PropertyTreeNode* parentNode = Get(parent);
 
-		for (auto& childNode : parentShared->children)
+		for (auto& child : parentNode->children)
 		{
+			PropertyTreeNode* childNode = Get(child);
 			const FieldInfo* fieldInfo = childNode->fieldInfo;
 			if (fieldInfo->isList)
 			{
-				ReadList(childNode, *fieldInfo, targets);
+				ReadList(child, *fieldInfo, targets);
 			}
 			else
 			{
@@ -416,14 +397,14 @@ namespace Blueberry
 					childNode->values[i] = std::move(value);
 				}
 			}
-			CalculateMixedMask(childNode.get());
+			CalculateMixedMask(childNode);
 		}
 	}
 
-	void SerializedObject::ReadList(std::weak_ptr<PropertyTreeNode> parent, const FieldInfo& fieldInfo, const List<void*>& targets)
+	void SerializedObject::ReadList(size_t parent, const FieldInfo& fieldInfo, const List<void*>& targets)
 	{
-		std::shared_ptr<PropertyTreeNode> parentShared = parent.lock();
-		size_t elementCount = parentShared->children.size();
+		PropertyTreeNode* parentNode = Get(parent);
+		size_t elementCount = parentNode->children.size();
 		BindingType childType = VariantHelper::GetChildType(fieldInfo.type);
 		if (fieldInfo.type == BindingType::DataList)
 		{
@@ -445,7 +426,7 @@ namespace Blueberry
 				{
 					newTargets.push_back(lists[j]->get_base(i));
 				}
-				ReadProperties(parentShared->children[i], info, newTargets);
+				ReadProperties(parentNode->children[i], info, newTargets);
 				newTargets.clear();
 			}
 		}
@@ -458,39 +439,63 @@ namespace Blueberry
 				{
 					PropertyValue value = {};
 					VariantHelper::ReadValue(childType, list->get_base(j), value);
-					parentShared->children[j]->values[i] = std::move(value);
+					Get(parentNode->children[j])->values[i] = std::move(value);
 				}
 			}
 		}
 	}
 
-	void SerializedObject::AddModifiedProperty(PropertyTreeNode* node, const PropertyModificationType& type, const size_t& index1, const size_t& index2)
+	void SerializedObject::AddModifiedProperty(size_t id, const PropertyModificationType& type, const size_t& index1, const size_t& index2)
 	{
-		m_Modifications.push_back({ node, type, index1, index2 });
+		m_Modifications.push_back({ id, type, index1, index2 });
 	}
 
-	std::shared_ptr<PropertyTreeNode> SerializedObject::CreateChild(PropertyTreeNode* parent)
+	void SerializedObject::DeleteListElement(size_t id, size_t index)
 	{
-		if (parent->type == PropertyType::List)
-		{
-			std::shared_ptr<PropertyTreeNode> parentShared;
-			for (auto& child : parent->parent.lock()->children)
-			{
-				if (child.get() == parent)
-				{
-					parentShared = child;
-					break;
-				}
-			}
+		m_Nodes[m_Nodes[id].children[index]].isDeleted = true;
+		AddModifiedProperty(id, PropertyModificationType::Delete, index);
+	}
 
-			BindingType childType = VariantHelper::GetChildType(parent->bindingType);
-			std::shared_ptr<PropertyTreeNode> listNode = std::make_shared<PropertyTreeNode>();
-			listNode->name = "Element";
-			listNode->parent = parentShared;
-			listNode->fieldInfo = parentShared->fieldInfo;
-			listNode->bindingType = childType;
-			listNode->isVisible = parentShared->isVisible;
-			listNode->type = PropertyType::Value;
+	void SerializedObject::MoveListElement(size_t id, size_t fromIndex, size_t toIndex)
+	{
+		m_Nodes[id].children.move_element(fromIndex, toIndex);
+		for (size_t i = 0; i < m_Nodes[id].children.size(); ++i)
+		{
+			m_Nodes[m_Nodes[id].children[i]].index = i;
+		}
+		AddModifiedProperty(id, PropertyModificationType::Move, fromIndex, toIndex);
+	}
+
+	void SerializedObject::ClearList(size_t id)
+	{
+		for (auto& childNode : m_Nodes[id].children)
+		{
+			m_Nodes[childNode].isDeleted = true;
+		}
+		AddModifiedProperty(id, PropertyModificationType::Clear);
+	}
+
+	size_t SerializedObject::Allocate()
+	{
+		size_t index = m_Nodes.size();
+		m_Nodes.emplace_back();
+		return index;
+	}
+
+	size_t SerializedObject::CreateChild(size_t parent)
+	{
+		PropertyTreeNode* parentNode = Get(parent);
+		if (parentNode->type == PropertyType::List)
+		{
+			BindingType childType = VariantHelper::GetChildType(parentNode->bindingType);
+			size_t child = Allocate();
+			PropertyTreeNode* childNode = Get(child);
+			childNode->name = "Element";
+			childNode->parent = parent;
+			childNode->fieldInfo = parentNode->fieldInfo;
+			childNode->bindingType = childType;
+			childNode->isVisible = parentNode->isVisible;
+			childNode->type = PropertyType::Value;
 
 			if (childType != BindingType::Data)
 			{
@@ -498,13 +503,48 @@ namespace Blueberry
 				{
 					PropertyValue value = {};
 					VariantHelper::GetDefaultValue(childType, value);
-					listNode->values.push_back(std::move(value));
+					childNode->values.push_back(std::move(value));
 				}
 			}
-
-			return listNode;
+			return child;
 		}
-		return nullptr;
+		return EMPTY_ID;
+	}
+
+	PropertyTreeNode* SerializedObject::Get(const size_t& id)
+	{
+		return &m_Nodes[id];
+	}
+
+	String SerializedObject::GetNodePath(size_t id)
+	{
+		List<size_t> path;
+		while (id != EMPTY_ID)
+		{
+			path.push_back(id);
+			id = Get(id)->parent;
+		}
+		String result = "";
+		for (size_t i = path.size() - 1; i--;)	// - 1 avoids adding root name
+		{
+			PropertyTreeNode* pathNode = Get(path[i]);
+			result.append(pathNode->name);
+			if (i > 0)
+			{
+				if (pathNode->type == PropertyType::List)
+				{
+					result.append("[");
+					result.append(std::to_string(Get(path[i - 1])->index));
+					result.append("]");
+					--i;
+				}
+				else
+				{
+					result.append(".");
+				}
+			}
+		}
+		return result;
 	}
 
 	void SerializedObject::FindPath(PropertyTreeNode* node, List<void*>& result, size_t& offset)
@@ -516,7 +556,7 @@ namespace Blueberry
 		while (currentNode->type != PropertyType::Root)
 		{
 			path.push_back(currentNode);
-			currentNode = currentNode->parent.lock().get();
+			currentNode = Get(currentNode->parent);
 		}
 
 		for (size_t i = 0; i < size; ++i)
@@ -550,7 +590,7 @@ namespace Blueberry
 
 	void SerializedObject::ApplyModification(const PropertyModification& modification)
 	{
-		PropertyTreeNode* node = modification.node;
+		PropertyTreeNode* node = Get(modification.id);
 		size_t offset = 0;
 		switch (modification.type)
 		{
@@ -565,7 +605,7 @@ namespace Blueberry
 				if (PrefabManager::IsPartOfPrefabInstance(m_Targets[i]))
 				{
 					node->isOverriden = true;
-					PrefabManager::AddModification(m_Targets[i], GetNodePath(node), node->values[i]);
+					PrefabManager::AddModification(m_Targets[i], GetNodePath(modification.id), node->values[i]);
 				}
 				VariantHelper::WriteValue(node->bindingType, static_cast<char*>(targets[i]) + offset, node->values[i]);
 				if (callback != nullptr)
@@ -581,7 +621,7 @@ namespace Blueberry
 			const FieldInfo* fieldInfo = node->fieldInfo;
 			MethodBind* callback = fieldInfo->options.updateCallback;
 			bool anyRemoved = false;
-			String path = GetNodePath(node);
+			String path = GetNodePath(modification.id);
 			for (size_t i = 0; i < m_Targets.size(); ++i)
 			{
 				if (PrefabManager::IsPartOfPrefabInstance(m_Targets[i]))

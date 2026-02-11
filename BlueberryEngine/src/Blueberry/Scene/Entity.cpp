@@ -32,7 +32,6 @@ namespace Blueberry
 		{
 			if (componentSlot.IsValid())
 			{
-				//BB_INFO(componentSlot->GetTypeName() << " is destroyed.");
 				RemoveComponentFromScene(componentSlot.Get());
 				componentSlot->OnDisable();
 				componentSlot->OnDestroy();
@@ -85,20 +84,23 @@ namespace Blueberry
 
 	bool Entity::IsActiveInHierarchy()
 	{
-		if (m_IsActiveInHierarchy == -1)
+		return m_IsActiveInHierarchy;
+	}
+
+	void Entity::UpdateHierarchy()
+	{
+		if (m_Scene == nullptr)
 		{
-			Transform* parent = GetTransform()->GetParent();
-			if (parent == nullptr)
-			{
-				m_IsActiveInHierarchy = m_IsActive;
-				return m_IsActiveInHierarchy;
-			}
-			m_IsActiveInHierarchy = parent->GetEntity()->IsActiveInHierarchy() && m_IsActive;
-			return m_IsActiveInHierarchy;
+			return;
+		}
+		Transform* parent = GetTransform()->GetParent();
+		if (parent != nullptr)
+		{
+			UpdateHierarchy(parent->GetEntity()->m_IsActiveInHierarchy);
 		}
 		else
 		{
-			return m_IsActiveInHierarchy == 1;
+			UpdateHierarchy(true);
 		}
 	}
 
@@ -135,28 +137,20 @@ namespace Blueberry
 		}
 	}
 
-	void Entity::UpdateHierarchy()
-	{
-		if (m_Scene == nullptr)
-		{
-			return;
-		}
-		UpdateHierarchy(m_IsActive);
-	}
-
 	void Entity::UpdateHierarchy(const bool& active)
 	{
-		if (m_IsActiveInHierarchy != active)
+		bool newActive = m_IsActive & active;
+		if (m_IsActiveInHierarchy != newActive)
 		{
-			m_IsActiveInHierarchy = active;
-			if (GetTransform()->GetChildrenCount() > 0)
-			{
-				for (auto& child : GetTransform()->GetChildren())
-				{
-					child.Get()->GetEntity()->UpdateHierarchy(active);
-				}
-			}
+			m_IsActiveInHierarchy = newActive;
 			UpdateComponents();
+		}
+		if (GetTransform()->GetChildrenCount() > 0)
+		{
+			for (auto& child : GetTransform()->GetChildren())
+			{
+				child.Get()->GetEntity()->UpdateHierarchy(newActive);
+			}
 		}
 	}
 

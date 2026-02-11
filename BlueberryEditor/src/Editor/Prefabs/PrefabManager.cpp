@@ -4,9 +4,11 @@
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Serialization\Serializer.h"
+#include "Blueberry\Core\ObjectCloner.h"
 #include "Editor\Prefabs\PrefabInstance.h"
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Misc\ObjectHelper.h"
+#include "Editor\Assets\AssetImporter.h"
 
 namespace Blueberry
 {
@@ -32,6 +34,12 @@ namespace Blueberry
 		return s_ObjectToPrefabInstance.count(object->GetObjectId()) > 0;
 	}
 
+	bool PrefabManager::IsPartOfPrefabInstance(const ObjectId& objectId)
+	{
+		bool isPart = s_ObjectToPrefabInstance.count(objectId) > 0;
+		return isPart;
+	}
+
 	PrefabInstance* PrefabManager::GetInstance(Object* object)
 	{
 		if (object == nullptr)
@@ -46,19 +54,25 @@ namespace Blueberry
 		return nullptr;
 	}
 
-	PrefabInstance* PrefabManager::CreateInstance(Entity* prefabEntity)
+	PrefabInstance* PrefabManager::GetInstance(const ObjectId& objectId)
 	{
-		if (prefabEntity == nullptr)
+		auto it = s_ObjectToPrefabInstance.find(objectId);
+		if (it != s_ObjectToPrefabInstance.end())
 		{
-			return nullptr;
+			return static_cast<PrefabInstance*>(ObjectDB::GetObject(it->second));
 		}
-		// Check if entity is prefab
-		if (!ObjectDB::HasGuid(prefabEntity))
-		{
-			return nullptr;
-		}
+		return nullptr;
+	}
 
-		PrefabInstance* instance = PrefabInstance::Create(prefabEntity);
+	PrefabInstance* PrefabManager::CreateInstance(PrefabInstance* source)
+	{
+		if (source == nullptr)
+		{
+			return nullptr;
+		}
+		PrefabInstance* instance = Object::Create<PrefabInstance>();
+		instance->m_SourcePrefab = source;
+		instance->OnCreate();
 		return instance;
 	}
 
@@ -119,21 +133,12 @@ namespace Blueberry
 			return;
 		}
 		PrefabInstance* instance = GetInstance(object);
-		
-		Object* target;
-		auto it = instance->m_InstanceToPrefabMapping.find(object->GetObjectId());
-		if (it != instance->m_InstanceToPrefabMapping.end())
-		{
-			target = ObjectDB::GetObject(it->second);
-		}
-		else
-		{
-			return;
-		}
-
+		PrefabInstance* sourceInstance = instance->m_SourcePrefab.Get();
+		//String guid = ObjectDB::GetGuidFromObject().ToString();
+		Object* prefabObject = ObjectDB::GetObject(instance->m_InstanceToPrefabMapping[object->GetObjectId()]);
 		for (auto& modification : instance->m_Modifications)
 		{
-			if (modification.GetTarget() == target && modification.GetPath() == path)
+			if (modification.GetTarget() == prefabObject && modification.GetPath() == path)
 			{
 				modification.SetValue(value);
 				return;
@@ -141,7 +146,7 @@ namespace Blueberry
 		}
 
 		PrefabModificationData modification = {};
-		modification.SetTarget(target);
+		modification.SetTarget(prefabObject);
 		modification.SetPath(path);
 		modification.SetValue(value);
 		instance->m_Modifications.push_back(std::move(modification));
@@ -154,24 +159,12 @@ namespace Blueberry
 			return;
 		}
 		PrefabInstance* instance = GetInstance(object);
-
-		Object* target;
-		auto it = instance->m_InstanceToPrefabMapping.find(object->GetObjectId());
-		if (it != instance->m_InstanceToPrefabMapping.end())
-		{
-			target = ObjectDB::GetObject(it->second);
-		}
-		else
-		{
-			return;
-		}
-
+		Object* prefabObject = ObjectDB::GetObject(instance->m_InstanceToPrefabMapping[object->GetObjectId()]);
 		for (auto it = instance->m_Modifications.begin(); it != instance->m_Modifications.end(); ++it)
 		{
-			if (it->GetTarget() == target && it->GetPath() == path)
+			if (it->GetTarget() == prefabObject && it->GetPath() == path)
 			{
 				instance->m_Modifications.erase(it);
-				Object* prefabObject = ObjectDB::GetObject(instance->m_InstanceToPrefabMapping[object->GetObjectId()]);
 				Variant value;
 				ObjectHelper::ReadValue(prefabObject, path, value);
 				ObjectHelper::WriteValue(object, path, value);
@@ -183,21 +176,14 @@ namespace Blueberry
 	const bool PrefabManager::HasModification(Object* object, const String& path)
 	{
 		PrefabInstance* instance = GetInstance(object);
-
-		Object* target;
-		auto it = instance->m_InstanceToPrefabMapping.find(object->GetObjectId());
-		if (it != instance->m_InstanceToPrefabMapping.end())
-		{
-			target = ObjectDB::GetObject(it->second);
-		}
-		else
+		if (instance == nullptr)
 		{
 			return false;
 		}
-
+		Object* prefabObject = ObjectDB::GetObject(instance->m_InstanceToPrefabMapping[object->GetObjectId()]);
 		for (auto it = instance->m_Modifications.begin(); it != instance->m_Modifications.end(); ++it)
 		{
-			if (it->GetTarget() == target && it->GetPath() == path)
+			if (it->GetTarget() == prefabObject && it->GetPath() == path)
 			{
 				return true;
 			}
@@ -244,49 +230,127 @@ namespace Blueberry
 		return IsPartOfPrefabInstance(entity->GetTransform()->GetParent());
 	}
 
-	void PrefabManager::GatherScenePrefabs(Scene* scene, Serializer& serializer)
+	void PrefabManager::InitializeHierarchy(PrefabInstance* instance)
 	{
-		for (auto& rootEntity : scene->GetRootEntities())
+		ObjectId instanceObjectId = instance->GetObjectId();
+		PrefabInstance* sourcePrefab = instance->m_SourcePrefab.Get();
+		if (sourcePrefab != nullptr && sourcePrefab->GetState() == ObjectState::Default)
 		{
-			GatherChildrenPrefabs(rootEntity.Get(), serializer);
+			Guid guid = ObjectDB::GetGuidFromObject(sourcePrefab);
+			AssetImporter* importer = AssetDB::GetImporter(guid);
+			Entity* assetEntity = static_cast<Entity*>(ObjectDB::GetObjectFromGuid(guid, importer->GetMainObject()));
+			if (assetEntity != nullptr)
+			{
+				List<ObjectId> removed;
+				Entity* entity = static_cast<Entity*>(ObjectCloner::Resolve(instance->m_PrefabToInstanceMapping, removed, assetEntity));
+				Transform* transform = entity->GetTransform();
+				instance->m_Entity = entity;
+				s_RootToPrefabInstance.insert_or_assign(entity->GetObjectId(), instanceObjectId);
+				for (auto& pair : instance->m_PrefabToInstanceMapping)
+				{
+					FileId fileId = ObjectDB::GetFileIdFromObjectId(pair.first);
+					Object* object = ObjectDB::GetObject(pair.first);
+					s_ObjectToPrefabInstance.insert_or_assign(pair.second, instanceObjectId);
+					s_ObjectToPrefabObject.insert_or_assign(pair.second, pair.first);
+					instance->m_FileIdToObject.insert_or_assign(fileId, pair.second);
+				}
+				for (ObjectId id : removed)
+				{
+					Object* object = ObjectDB::GetObject(id);
+					if (object != nullptr)
+					{
+						if (object->IsClassType(Entity::Type))
+						{
+							Entity* entity = static_cast<Entity*>(object);
+							Scene* scene = entity->GetScene();
+							if (scene != nullptr)
+							{
+								scene->DestroyEntity(entity);
+							}
+						}
+						else
+						{
+							Object::Destroy(object);
+						}
+					}
+				}
+				const ClassInfo* classInfo = ClassDB::GetInfo(Transform::Type);
+				classInfo->GetField("m_Parent")->Set(transform, instance->m_Parent);
+				classInfo->GetField("m_Entity")->Set(transform, instance->m_Entity);
+
+				for (auto& pair : instance->m_PrefabToInstanceMapping)
+				{
+					instance->m_InstanceToPrefabMapping.insert_or_assign(pair.second, pair.first);
+				}
+
+				for (auto& modification : instance->m_Modifications)
+				{
+					Object* target = modification.GetTarget();
+					if (target != nullptr)
+					{
+						auto it = instance->m_PrefabToInstanceMapping.find(target->GetObjectId());
+						if (it != instance->m_PrefabToInstanceMapping.end())
+						{
+							Object* object = ObjectDB::GetObject(it->second);
+							String path = modification.GetPath();
+							Variant& value = modification.GetValue();
+							ObjectHelper::WriteValue(object, path, value);
+						}
+					}
+				}
+			}
 		}
 	}
 
-	void PrefabManager::GatherChildrenPrefabs(Entity* entity, Serializer& serializer)
+	void PrefabManager::InitializeContext(PrefabInstance* instance)
 	{
-		if (entity == nullptr)
+		if (!instance->m_SourcePrefab.IsValid())
 		{
-			return;
+			ObjectId instanceObjectId = instance->GetObjectId();
+			Guid guid = ObjectDB::GetGuidFromObject(instance);
+			AssetImporter* importer = AssetDB::GetImporter(guid);
+			Entity* entity = static_cast<Entity*>(ObjectDB::GetObjectFromGuid(guid, importer->GetMainObject()));
+			instance->m_Entity = entity;
+			s_RootToPrefabInstance.insert_or_assign(entity->GetObjectId(), instanceObjectId);
+			InitializeChildContext(instance, guid, instance->m_Entity->GetTransform());
+			++instance->m_UpdateCount;
 		}
-		if (PrefabManager::IsPartOfPrefabInstance(entity))
+	}
+
+	void PrefabManager::InitializeChildContext(PrefabInstance* instance, Guid guid, Transform* child)
+	{
+		PrefabInstance* childInstance = GetInstance(child);
+		Entity* entity = child->GetEntity();
+		if (childInstance != nullptr && childInstance != instance)
 		{
-			if (PrefabManager::IsPrefabInstanceRoot(entity))
+			FileId childInstanceFileId = ObjectDB::GetFileIdFromObject(childInstance);
+			FileId entityFileId = ObjectDB::GetFileIdFromObject(entity);
+			if (entityFileId != 0)
 			{
-				PrefabInstance* instance = PrefabManager::GetInstance(entity);
-				instance->Update();
-				serializer.AddObject(instance);
-			}
-			for (size_t i = 0; i < entity->GetComponentCount(); ++i)
-			{
-				Component* component = entity->GetComponent(i);
-				if (!PrefabManager::IsPartOfPrefabInstance(component))
+				ObjectDB::AllocateIdToGuid(entity, guid, entityFileId ^ childInstanceFileId);
+				for (size_t i = 0; i < entity->GetComponentCount(); ++i)
 				{
-					serializer.AddObject(component);
+					Component* component = entity->GetComponent(i);
+					FileId componentFileId = ObjectDB::GetFileIdFromObject(component);
+					if (componentFileId != 0)
+					{
+						ObjectDB::AllocateIdToGuid(component, guid, componentFileId ^ childInstanceFileId);
+					}
 				}
 			}
 		}
 		else
 		{
-			serializer.AddObject(entity);
+			ObjectId rootInstanceObjectId = instance->GetObjectId();
+			s_ObjectToPrefabInstance.insert_or_assign(entity->GetObjectId(), rootInstanceObjectId);
 			for (size_t i = 0; i < entity->GetComponentCount(); ++i)
 			{
-				serializer.AddObject(entity->GetComponent(i));
+				s_ObjectToPrefabInstance.insert_or_assign(entity->GetComponent(i)->GetObjectId(), rootInstanceObjectId);
 			}
 		}
-		Transform* transform = entity->GetTransform();
-		for (auto& child : transform->GetChildren())
+		for (auto& child : child->GetChildren())
 		{
-			GatherChildrenPrefabs(child.Get()->GetEntity(), serializer);
+			InitializeChildContext(instance, guid, child.Get());
 		}
 	}
 }

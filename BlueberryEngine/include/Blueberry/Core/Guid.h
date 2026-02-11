@@ -16,6 +16,7 @@ namespace Blueberry
 		bool operator!=(const Guid &other) const;
 		bool operator<(const Guid &other) const;
 
+		bool IsValid() const;
 		String ToString() const;
 
 		static Guid Create();

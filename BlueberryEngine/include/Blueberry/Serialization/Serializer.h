@@ -2,14 +2,26 @@
 
 #include "Blueberry\Core\Structs.h"
 #include "Blueberry\Core\ClassDB.h"
+#include "Blueberry\Serialization\SerializationTree.h"
 
 namespace Blueberry
 {
-	using FileId = uint64_t;
-	class Object;
+	class SerializerBackend;
 
 	class Serializer
 	{
+	public:
+		virtual void Serialize(const String& path, const bool& isText);
+		virtual void Deserialize(const String& path);
+
+		const Guid& GetGuid();
+		void SetGuid(const Guid& guid);
+
+		List<std::pair<ObjectId, FileId>>& GetDeserializedObjects();
+
+		void AddObject(Object* object);
+		void AddObject(Object* object, const FileId& fileId);
+
 	protected:
 		struct Context
 		{
@@ -40,37 +52,30 @@ namespace Blueberry
 			}
 		};
 
-	public:
-		void AddObject(Object* object);
-		void AddObject(Object* object, const FileId& fileId);
-		void SetGuid(const Guid& guid);
-		// chenge into OnSerialize(for prefabs mostly)/OnDeserialize
-		void AddFinalizeObjectCallback(const std::function<void(Object*, Guid, FileId)>& finalizeObjectCallback);
-		virtual void Serialize(const String& path) = 0;
-		virtual void Deserialize(const String& path) = 0;
-
-		List<std::pair<Object*, FileId>>& GetDeserializedObjects();
-
 	protected:
-		void AddAdditionalObject(Object* object);
-		void AddDeserializedObject(Object* object, const FileId& fileId);
-
-	protected:
-		FileId GetFileId(Object* object);
+		FileId GetFileId(const ObjectId& objectId);
 		Object* GetObjectRef(const FileId& fileId);
-
 		Object* GetNextObjectToSerialize();
+
 		Object* GetPtrObject(const ObjectPtrData& data);
 		ObjectPtrData GetPtrData(Object* object);
 		FileId GenerateFileId();
 
+		void SerializeNode(SerializationNodeRef node, Context context);
+		void DeserializeNode(SerializationNodeConstRef node, Context context);
+
+		virtual void AddAdditionalObject(const ObjectId& objectId);
+		void AddDeserializedObject(const ObjectId& objectId, const FileId& fileId);
+
 	protected:
-		Guid m_AssetGuid;
-		List<Object*> m_ObjectsToSerialize;
-		List<Object*> m_AdditionalObjectsToSerialize;
-		List<std::pair<Object*, FileId>> m_DeserializedObjects;
-		Dictionary<FileId, Object*> m_FileIdToObject;
-		HashSet<FileId> m_AdditionalObjectsIds;
-		std::function<void(Object*, Guid, FileId)> m_FinalizeObjectCallback;
+		Dictionary<FileId, ObjectId> m_FileIdToObjectId;
+		HashSet<FileId> m_AdditionalObjectsFileIds;
+		List<ObjectId> m_ObjectsToSerialize;
+		List<ObjectId> m_AdditionalObjectsToSerialize;
+		List<std::pair<ObjectId, FileId>> m_DeserializedObjects;
+		List<SerializationTree> m_Trees;
+		HashSet<ObjectId> m_References;
+		Guid m_Guid;
+		Object* m_CurrentObject;
 	};
 }

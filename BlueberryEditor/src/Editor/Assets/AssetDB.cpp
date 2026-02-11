@@ -1,13 +1,13 @@
 #include "AssetDB.h"
 
 #include "Blueberry\Core\ObjectDB.h"
-#include "Blueberry\Serialization\BinarySerializer.h"
 #include "Editor\Assets\AssetImporter.h"
-#include "Editor\Serialization\YamlSerializer.h"
+#include "Editor\Serialization\EditorSerializer.h"
 #include "Editor\Assets\Importers\DefaultImporter.h"
 #include "Editor\Assets\Importers\NativeAssetImporter.h"
 #include "Editor\Assets\PathModifyCache.h"
 #include "Editor\Assets\ImporterInfoCache.h"
+#include "Editor\Assets\DependencyCache.h"
 #include "Editor\Assets\ObjectFinalizer.h"
 #include "Editor\Misc\PathHelper.h"
 
@@ -26,6 +26,7 @@ namespace Blueberry
 	void AssetDB::Refresh()
 	{
 		List<AssetImporter*> importersToImport = {};
+		DependencyCache::Load();
 		PathModifyCache::Load();
 		ImporterInfoCache::Load();
 		
@@ -112,10 +113,11 @@ namespace Blueberry
 
 	List<std::pair<Object*, FileId>> AssetDB::LoadAssetObjects(const Guid& guid, const Dictionary<FileId, ObjectId>& existingObjects)
 	{
-		BinarySerializer serializer = {};
-		serializer.SetGuid(guid);
-		serializer.AddFinalizeObjectCallback(&OnFinalizeObject);
+		List<std::pair<Object*, FileId>> objects;
 		std::filesystem::path dataPath = Path::GetAssetCachePath();
+		String path = String(dataPath.append(guid.ToString()).string());
+		EditorSerializer serializer = {};
+		serializer.SetGuid(guid);
 		for (auto& object : existingObjects)
 		{
 			Object* existingObject = ObjectDB::GetObject(object.second);
@@ -124,17 +126,14 @@ namespace Blueberry
 				serializer.AddObject(existingObject);
 			}
 		}
-		serializer.Deserialize(String(dataPath.append(guid.ToString()).string()));
+		serializer.Deserialize(path);
 		auto& deserializedObjects = serializer.GetDeserializedObjects();
-		List<std::pair<Object*, FileId>> objects(deserializedObjects.size());
 		if (deserializedObjects.size() > 0)
 		{
-			int i = 0;
 			for (auto& pair : deserializedObjects)
 			{
 				ObjectDB::AllocateIdToGuid(pair.first, guid, pair.second);
-				objects[i] = std::make_pair(pair.first, pair.second);
-				++i;
+				objects.push_back(std::make_pair(ObjectDB::GetObject(pair.first), pair.second));
 			}
 		}
 		return objects;
@@ -166,6 +165,16 @@ namespace Blueberry
 		return "";
 	}
 
+	const String AssetDB::GetRelativePath(const Guid& guid)
+	{
+		auto it = s_GuidToPath.find(guid);
+		if (it != s_GuidToPath.end())
+		{
+			return it->second;
+		}
+		return "";
+	}
+
 	String AssetDB::GetAssetCachedDataPath(Object* object)
 	{
 		std::filesystem::path dataPath = Path::GetAssetCachePath();
@@ -174,6 +183,17 @@ namespace Blueberry
 			std::filesystem::create_directories(dataPath);
 		}
 		return String(dataPath.append(ObjectDB::GetGuidFromObject(object).ToString()).string());
+	}
+
+	void AssetDB::GetDependent(const Guid& guid, HashSet<Guid>& dependent)
+	{
+		DependencyCache::Get(guid, dependent);
+	}
+
+	void AssetDB::SetDependencies(const Guid& guid, const HashSet<Guid>& dependencies)
+	{
+		DependencyCache::Set(guid, dependencies);
+		DependencyCache::Save();
 	}
 
 	bool AssetDB::HasAssetWithGuidInData(const Guid& guid)
@@ -185,17 +205,12 @@ namespace Blueberry
 
 	void AssetDB::CreateAsset(Object* object, const String& relativePath)
 	{
-		auto relativeMetaPath = relativePath;
-		relativeMetaPath.append(".meta");
-		auto metaPath = Path::GetAssetsPath();
-		metaPath.append(relativeMetaPath);
-
-		Serializer* serializer = GetSerializer(object);
+		EditorSerializer serializer;
 		auto dataPath = Path::GetAssetsPath();
 		dataPath.append(relativePath);
-		serializer->AddObject(object);
-		serializer->Serialize(String(dataPath.string()));
-		delete serializer;
+		serializer.SetGuid(ObjectDB::GetGuidFromObject(object));
+		serializer.AddObject(object);
+		serializer.Serialize(String(dataPath.string()), !ClassDB::GetInfo(object->GetType())->preferBinary);
 		BB_INFO("Asset was saved to the path: " << relativePath);
 
 		AssetImporter* importer = CreateOrGetImporter(dataPath);
@@ -204,12 +219,16 @@ namespace Blueberry
 
 	void AssetDB::SaveAssetObjectsToCache(const List<Object*>& objects)
 	{
-		BinarySerializer serializer = {};
-		for (Object* object : objects)
+		if (objects.size() > 0)
 		{
-			serializer.AddObject(object);
+			EditorSerializer serializer = {};
+			serializer.SetGuid(ObjectDB::GetGuidFromObject(objects[0]));
+			for (Object* object : objects)
+			{
+				serializer.AddObject(object);
+			}
+			serializer.Serialize(GetAssetCachedDataPath(objects[0]), false);
 		}
-		serializer.Serialize(GetAssetCachedDataPath(objects[0]));
 	}
 
 	void AssetDB::SetDirty(Object* object)
@@ -229,6 +248,16 @@ namespace Blueberry
 		std::filesystem::remove(dataPath);
 	}
 
+	void AssetDB::MarkForReimport(const Guid& guid)
+	{
+		auto it = s_GuidToPath.find(guid);
+		if (it != s_GuidToPath.end())
+		{
+			PathModifyCache::Clear(it->second);
+			PathModifyCache::Save();
+		}
+	}
+
 	void AssetDB::SaveAssets()
 	{
 		for (auto& objectId : s_DirtyAssets)
@@ -241,12 +270,12 @@ namespace Blueberry
 				if (it != s_GuidToPath.end())
 				{
 					String relativePath = s_GuidToPath[pair.first];
-					Serializer* serializer = GetSerializer(object);
+					EditorSerializer serializer;
 					auto dataPath = Path::GetAssetsPath();
 					dataPath.append(relativePath);
-					serializer->AddObject(object);
-					serializer->Serialize(String(dataPath.string()));
-					delete serializer;
+					serializer.SetGuid(ObjectDB::GetGuidFromObject(object));
+					serializer.AddObject(object);
+					serializer.Serialize(String(dataPath.string()), !ClassDB::GetInfo(object->GetType())->preferBinary);
 					BB_INFO("Asset was saved to the path: " << relativePath);
 				}
 				else if (object->IsClassType(AssetImporter::Type))
@@ -265,16 +294,6 @@ namespace Blueberry
 	AssetDBRefreshEvent& AssetDB::GetAssetDBRefreshed()
 	{
 		return s_AssetDBRefreshed;
-	}
-
-	Serializer* AssetDB::GetSerializer(Object* object)
-	{
-		bool isBinary = ClassDB::GetInfo(object->GetType())->preferBinary;
-		if (isBinary)
-		{
-			return new BinarySerializer();
-		}
-		return new YamlSerializer();
 	}
 
 	AssetImporter* AssetDB::CreateOrGetImporter(const std::filesystem::path& path)
@@ -342,7 +361,17 @@ namespace Blueberry
 		return importer;
 	}
 
-	void AssetDB::OnFinalizeObject(Object* object, Guid guid, FileId fileId)
+	void AssetDB::Register(const String& extension, const size_t& importerType)
+	{
+		s_ImporterTypes.insert_or_assign(extension, importerType);
+	}
+
+	void AssetDB::Register(const size_t& objectType, ObjectFinalizer* objectFinalizer)
+	{
+		s_Finalizers.push_back(std::make_pair(objectType, objectFinalizer));
+	}
+
+	void AssetDB::FinalizeObject(Object* object, Guid guid, FileId fileId)
 	{
 		size_t type = object->GetType();
 		for (auto& pair : s_Finalizers)
@@ -354,15 +383,5 @@ namespace Blueberry
 			}
 		}
 		object->SetState(ObjectState::Default);
-	}
-
-	void AssetDB::Register(const String& extension, const size_t& importerType)
-	{
-		s_ImporterTypes.insert_or_assign(extension, importerType);
-	}
-
-	void AssetDB::Register(const size_t& objectType, ObjectFinalizer* objectFinalizer)
-	{
-		s_Finalizers.push_back(std::make_pair(objectType, objectFinalizer));
 	}
 }

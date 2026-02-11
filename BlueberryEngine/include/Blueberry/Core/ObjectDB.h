@@ -65,10 +65,12 @@ namespace Blueberry
 		static void AllocateIdToGuid(Object* object, const Guid& guid, const FileId& fileId);
 		static void AllocateEmptyObjectWithGuid(const Guid& guid, const FileId& fileId);
 		static Guid GetGuidFromObject(Object* object);
+		static Guid GetGuidFromObjectId(const ObjectId& id);
 		static FileId GetFileIdFromObject(Object* object);
 		static FileId GetFileIdFromObjectId(const ObjectId& id);
 		static std::pair<Guid, FileId> GetGuidAndFileIdFromObject(const ObjectId& id);
 		static std::pair<Guid, FileId> GetGuidAndFileIdFromObject(Object* object);
+		static bool HasFileId(const ObjectId& id);
 		static bool HasFileId(Object* object);
 		static bool HasGuid(Object* object);
 		static bool HasGuid(const Guid& guid);

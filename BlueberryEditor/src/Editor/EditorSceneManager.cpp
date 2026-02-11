@@ -8,8 +8,7 @@
 #include "Editor\Path.h"
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Assets\AssetImporter.h"
-#include "Editor\Serialization\YamlSceneSerializer.h"
-#include "Editor\Serialization\YamlHelper.h"
+#include "Editor\Serialization\EditorSerializer.h"
 #include "Editor\Prefabs\PrefabManager.h"
 #include "Editor\Prefabs\PrefabInstance.h"
 #include "Editor\Scene\SceneSettings.h"
@@ -103,12 +102,17 @@ namespace Blueberry
 		if (s_PrefabScenes.size() > 0)
 		{
 			EditorSceneManager::PrefabSceneData& data = s_PrefabScenes[s_PrefabScenes.size() - 1];
-			String relativePath = AssetDB::GetRelativeAssetPath(data.prefabRoot);
+			HashSet<Guid> dependent;
+			AssetDB::GetDependent(ObjectDB::GetGuidFromObject(data.root), dependent);
+			for (Guid guid : dependent)
+			{
+				AssetDB::MarkForReimport(guid);
+			}
+			String relativePath = AssetDB::GetRelativeAssetPath(data.root);
 			auto dataPath = Path::GetAssetsPath();
 			dataPath.append(relativePath);
-
-			ObjectCloner::Resolve(data.reverseMapping, data.root);
 			Serialize(String(dataPath.string()));
+
 		}
 		else if (s_Scene != nullptr)
 		{
@@ -135,14 +139,8 @@ namespace Blueberry
 
 	void EditorSceneManager::OpenPrefab(Entity*& root)
 	{
-		EditorSceneManager::PrefabSceneData data = {};
-		data.prefabRoot = root;
-
-		root = static_cast<Entity*>(ObjectCloner::Clone(data.mapping, root));
-		for (auto& pair : data.mapping)
-		{
-			data.reverseMapping.insert({ pair.second, pair.first });
-		}
+		// TODO open nested prefabs, for now close all
+		ClosePrefab(true);
 		for (size_t i = 0; i < s_PrefabScenes.size(); ++i)
 		{
 			if (s_PrefabScenes[i].root == root)
@@ -152,9 +150,40 @@ namespace Blueberry
 				return;
 			}
 		}
-		data.scene = new Scene();
+
+		EditorSceneManager::PrefabSceneData data = {};
 		data.root = root;
-		data.scene->AddEntity(root);
+		data.scene = new Scene();
+
+		String relativePath = AssetDB::GetRelativeAssetPath(root);
+		auto dataPath = Path::GetAssetsPath();
+		dataPath.append(relativePath);
+
+		EditorSerializer serializer = {};
+		serializer.Deserialize(String(dataPath.string().c_str()));
+		for (auto& pair : serializer.GetDeserializedObjects())
+		{
+			Object* object = ObjectDB::GetObject(pair.first);
+			if (object->IsClassType(Entity::Type))
+			{
+				Entity* entity = static_cast<Entity*>(object);
+				data.scene->AddEntity(entity);
+				entity->OnCreate();
+				entity->UpdateHierarchy();
+			}
+			else if (object->IsClassType(PrefabInstance::Type))
+			{
+				PrefabInstance* prefabInstance = static_cast<PrefabInstance*>(object);
+				Entity* entity = prefabInstance->GetEntity();
+				if (entity != nullptr)
+				{
+					data.scene->AddEntity(entity);
+					entity->OnCreate();
+					entity->UpdateHierarchy();
+				}
+			}
+		}
+
 		s_PrefabScenes.push_back(std::move(data));
 		UpdateScene();
 		s_SceneLoaded.Invoke();
@@ -224,62 +253,72 @@ namespace Blueberry
 	void EditorSceneManager::Serialize(const String& path)
 	{
 		bool isPrefab = s_PrefabScenes.size() > 0;
-		YamlSceneSerializer serializer = {};
+		EditorSerializer serializer = {};
 		if (isPrefab)
 		{
-			serializer.AddObject(s_PrefabScenes[s_PrefabScenes.size() - 1].prefabRoot);
+			auto& sceneData = s_PrefabScenes[s_PrefabScenes.size() - 1];
+			//serializer.SetGuid(ObjectDB::GetGuidFromObject(sceneData.root));
+			serializer.GatherPrefabs(sceneData.scene);
 		}
 		else
 		{
+			//serializer.SetGuid(AssetDB::GetImporter(GetRelativePath())->GetGuid());
 			if (s_SceneSettings.IsValid())
 			{
 				serializer.AddObject(s_SceneSettings.Get());
 			}
-			PrefabManager::GatherScenePrefabs(s_Scene, serializer);
+			serializer.GatherPrefabs(s_Scene);
 		}
-		serializer.Serialize(path);
+		serializer.Serialize(path, true);
+		AssetDB::Refresh();	// maybe skip refresh on prefabs and save straight to cache?
 	}
 
 	void EditorSceneManager::Deserialize(const String& path)
 	{
-		YamlSceneSerializer serializer = {};
+		EditorSerializer serializer = {};
 		serializer.Deserialize(path);
-		for (auto& object : serializer.GetDeserializedObjects())
+		for (auto& pair : serializer.GetDeserializedObjects())
 		{
-			if (object.first->IsClassType(Entity::Type))
+			Object* object = ObjectDB::GetObject(pair.first);
+			if (object->IsClassType(Entity::Type))
 			{
-				Entity* entity = static_cast<Entity*>(object.first);
+				Entity* entity = static_cast<Entity*>(object);
 				s_Scene->AddEntity(entity);
 				entity->OnCreate();
+				entity->UpdateHierarchy();
 			}
-			else if (object.first->IsClassType(PrefabInstance::Type))
+			else if (object->IsClassType(PrefabInstance::Type))
 			{
-				PrefabInstance* prefabInstance = static_cast<PrefabInstance*>(object.first);
-				prefabInstance->OnCreate();
+				PrefabInstance* prefabInstance = static_cast<PrefabInstance*>(object);
 				Entity* entity = prefabInstance->GetEntity();
 				if (entity != nullptr)
 				{
 					s_Scene->AddEntity(entity);
 					entity->OnCreate();
+					entity->UpdateHierarchy();
 				}
 			}
-			else if (object.first->IsClassType(SceneSettings::Type))
+			else if (object->IsClassType(SceneSettings::Type))
 			{
-				s_SceneSettings = static_cast<SceneSettings*>(object.first);
+				s_SceneSettings = static_cast<SceneSettings*>(object);
 			}
 		}
 	}
 
 	void EditorSceneManager::UpdateScene()
 	{
-		if (s_PrefabScenes.size() == 0 && s_Scene != nullptr)
+		Scene* scene = GetScene();
+		if (scene != nullptr)
 		{
-			for (auto& pair : s_Scene->GetEntities())
+			for (auto& pair : scene->GetEntities())
 			{
 				Entity* entity = pair.second.Get();
 				if (PrefabManager::IsPrefabInstanceRoot(entity))
 				{
-					PrefabManager::GetInstance(entity)->Resolve();
+					PrefabInstance* instance = PrefabManager::GetInstance(entity);
+					instance->UpdateIfNeeded();
+					entity->UpdateHierarchy();
+					scene->AddEntity(instance->GetEntity());
 				}
 			}
 		}

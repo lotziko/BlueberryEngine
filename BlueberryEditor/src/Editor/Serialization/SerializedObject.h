@@ -46,13 +46,13 @@ namespace Blueberry
 		bool mixedMask[4];
 		List<PropertyValue> values;
 
-		std::weak_ptr<PropertyTreeNode> parent;
-		List<std::shared_ptr<PropertyTreeNode>> children;
+		size_t parent;
+		List<size_t> children;
 	};
 
 	struct PropertyModification
 	{
-		PropertyTreeNode* node;
+		size_t id;
 		PropertyModificationType type;
 		size_t index1;
 		size_t index2;
@@ -97,15 +97,22 @@ namespace Blueberry
 
 	private:
 		void BuildTree();
-		void BuildProperties(std::weak_ptr<PropertyTreeNode> parent, const ClassInfo* classInfo, const List<void*>& targets);
-		void BuildList(std::weak_ptr<PropertyTreeNode> parent, const FieldInfo& fieldInfo, const List<void*>& targets);
+		void BuildProperties(size_t parent, const ClassInfo* classInfo, const List<void*>& targets);
+		void BuildList(size_t parent, const FieldInfo& fieldInfo, const List<void*>& targets);
 		void ReadTree();
-		void ReadProperties(std::weak_ptr<PropertyTreeNode> parent, const ClassInfo* classInfo, const List<void*>& targets);
-		void ReadList(std::weak_ptr<PropertyTreeNode> parent, const FieldInfo& fieldInfo, const List<void*>& targets);
-		void AddModifiedProperty(PropertyTreeNode* node, const PropertyModificationType& type = PropertyModificationType::Value, const size_t& index1 = 0, const size_t& index2 = 0);
+		void ReadProperties(size_t parent, const ClassInfo* classInfo, const List<void*>& targets);
+		void ReadList(size_t parent, const FieldInfo& fieldInfo, const List<void*>& targets);
+		void AddModifiedProperty(size_t id, const PropertyModificationType& type = PropertyModificationType::Value, const size_t& index1 = 0, const size_t& index2 = 0);
 		
-		std::shared_ptr<PropertyTreeNode> CreateChild(PropertyTreeNode* parent);
+		void DeleteListElement(size_t id, size_t index);
+		void MoveListElement(size_t id, size_t fromIndex, size_t toIndex);
+		void ClearList(size_t id);
 
+		size_t Allocate();
+		size_t CreateChild(size_t parent);
+		PropertyTreeNode* Get(const size_t& id);
+
+		String GetNodePath(size_t id);
 		void FindPath(PropertyTreeNode* node, List<void*>& result, size_t& offset);
 		void ApplyModification(const PropertyModification& modification);
 
@@ -114,7 +121,7 @@ namespace Blueberry
 		List<Object*> m_Targets = {};
 		List<ObjectPtr<Object>> m_TargetPtrs = {};
 		List<PropertyModification> m_Modifications = {};
-		std::shared_ptr<PropertyTreeNode> m_Root;
+		List<PropertyTreeNode> m_Nodes;
 		List<bool> m_IsPrefabInstance = {};
 
 		static ObjectUpdateEvent s_ObjectUpdated;
