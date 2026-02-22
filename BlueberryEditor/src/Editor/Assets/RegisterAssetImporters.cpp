@@ -28,6 +28,7 @@ namespace Blueberry
 		REGISTER_CLASS(NativeAssetImporter);
 		REGISTER_CLASS(PrefabImporter);
 		REGISTER_DATA_CLASS(ModelMaterialData);
+		REGISTER_DATA_CLASS(ModelAnimationClipData);
 		REGISTER_CLASS(ModelImporter);
 		REGISTER_CLASS(FolderImporter);
 

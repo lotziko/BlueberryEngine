@@ -1,5 +1,6 @@
 #include "EditorSceneManager.h"
 
+#include "Blueberry\Core\Application.h"
 #include "Blueberry\Core\ObjectCloner.h"
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Scene\Components\Transform.h"
@@ -21,7 +22,6 @@ namespace Blueberry
 	List<EditorSceneManager::PrefabSceneData> EditorSceneManager::s_PrefabScenes = {};
 	String EditorSceneManager::s_Path = "";
 	SceneLoadEvent EditorSceneManager::s_SceneLoaded = {};
-	bool EditorSceneManager::s_IsRunning = false;
 
 	void EditorSceneManager::CreateEmpty(const String& path)
 	{
@@ -90,7 +90,7 @@ namespace Blueberry
 
 	void EditorSceneManager::Reload()
 	{
-		if (s_Scene == nullptr)
+		if (s_Scene == nullptr && s_Path.empty())
 		{
 			return;
 		}
@@ -124,15 +124,16 @@ namespace Blueberry
 	{
 		if (s_Scene != nullptr)
 		{
-			for (auto& rootEntity : s_Scene->GetRootEntities())
+			for (auto& pair : s_Scene->GetEntities())
 			{
-				Entity* entity = rootEntity.Get();
-				if (PrefabManager::IsPartOfPrefabInstance(entity))
+				Entity* entity = pair.second.Get();
+				if (PrefabManager::IsPrefabInstanceRoot(entity))
 				{
 					Object::Destroy(PrefabManager::GetInstance(entity));
 				}
 			}
 			s_Scene->Destroy();
+			s_Scene = nullptr;
 			UpdateScene();
 		}
 	}
@@ -164,12 +165,10 @@ namespace Blueberry
 		for (auto& pair : serializer.GetDeserializedObjects())
 		{
 			Object* object = ObjectDB::GetObject(pair.first);
-			if (object->IsClassType(Entity::Type))
+			if (object->IsClassType(Entity::Type) && !PrefabManager::IsPartOfPrefabInstance(object))
 			{
 				Entity* entity = static_cast<Entity*>(object);
 				data.scene->AddEntity(entity);
-				entity->OnCreate();
-				entity->UpdateHierarchy();
 			}
 			else if (object->IsClassType(PrefabInstance::Type))
 			{
@@ -178,8 +177,6 @@ namespace Blueberry
 				if (entity != nullptr)
 				{
 					data.scene->AddEntity(entity);
-					entity->OnCreate();
-					entity->UpdateHierarchy();
 				}
 			}
 		}
@@ -209,26 +206,24 @@ namespace Blueberry
 
 	void EditorSceneManager::Run()
 	{
-		if (s_IsRunning)
+		if (Application::IsRunning())
 		{
 			return;
 		}
-		s_IsRunning = true;
+		Unload();
+		Application::SetRunning(true);
+		Reload();
 	}
 
 	void EditorSceneManager::Stop()
 	{
-		if (s_Scene == nullptr || !s_IsRunning)
+		if (s_Scene == nullptr || !Application::IsRunning())
 		{
 			return;
 		}
-		Load(s_Path);
-		s_IsRunning = false;
-	}
-
-	const bool& EditorSceneManager::IsRunning()
-	{
-		return s_IsRunning;
+		Unload();
+		Application::SetRunning(false);
+		Reload();
 	}
 
 	SceneLoadEvent& EditorSceneManager::GetSceneLoaded()
@@ -257,12 +252,10 @@ namespace Blueberry
 		if (isPrefab)
 		{
 			auto& sceneData = s_PrefabScenes[s_PrefabScenes.size() - 1];
-			//serializer.SetGuid(ObjectDB::GetGuidFromObject(sceneData.root));
 			serializer.GatherPrefabs(sceneData.scene);
 		}
 		else
 		{
-			//serializer.SetGuid(AssetDB::GetImporter(GetRelativePath())->GetGuid());
 			if (s_SceneSettings.IsValid())
 			{
 				serializer.AddObject(s_SceneSettings.Get());
@@ -284,8 +277,6 @@ namespace Blueberry
 			{
 				Entity* entity = static_cast<Entity*>(object);
 				s_Scene->AddEntity(entity);
-				entity->OnCreate();
-				entity->UpdateHierarchy();
 			}
 			else if (object->IsClassType(PrefabInstance::Type))
 			{
@@ -294,8 +285,6 @@ namespace Blueberry
 				if (entity != nullptr)
 				{
 					s_Scene->AddEntity(entity);
-					entity->OnCreate();
-					entity->UpdateHierarchy();
 				}
 			}
 			else if (object->IsClassType(SceneSettings::Type))
@@ -317,8 +306,6 @@ namespace Blueberry
 				{
 					PrefabInstance* instance = PrefabManager::GetInstance(entity);
 					instance->UpdateIfNeeded();
-					entity->UpdateHierarchy();
-					scene->AddEntity(instance->GetEntity());
 				}
 			}
 		}

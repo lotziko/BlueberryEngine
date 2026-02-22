@@ -16,6 +16,7 @@ namespace Blueberry
 	{
 		m_GenerateMipmapsProperty = m_SerializedObject->FindProperty("m_GenerateMipmaps");
 		m_IsSRGBProperty = m_SerializedObject->FindProperty("m_IsSRGB");
+		m_IsReadableProperty = m_SerializedObject->FindProperty("m_IsReadable");
 		m_WrapModeProperty = m_SerializedObject->FindProperty("m_WrapMode");
 		m_FilterModeProperty = m_SerializedObject->FindProperty("m_FilterMode");
 		m_TextureShapeProperty = m_SerializedObject->FindProperty("m_TextureShape");
@@ -30,6 +31,7 @@ namespace Blueberry
 		ImGui::BeginPaddedArea(ImVec2(10, 5), ImVec2(10, 5));
 		ImGui::Property(&m_GenerateMipmapsProperty, "Generate mipmaps");
 		ImGui::Property(&m_IsSRGBProperty, "Is SRGB");
+		ImGui::Property(&m_IsReadableProperty, "Is Readable");
 		ImGui::Property(&m_WrapModeProperty, "Wrap Mode");
 		ImGui::Property(&m_FilterModeProperty, "Filter Mode");
 		ImGui::Property(&m_TextureShapeProperty, "Shape");

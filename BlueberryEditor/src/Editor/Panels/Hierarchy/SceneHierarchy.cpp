@@ -83,7 +83,7 @@ namespace Blueberry
 			ObjectId id = entity->GetObjectId();
 			bool hasChildren = (i < size - 1 && nodes[i + 1].depth > node.depth);
 			bool isActive = Selection::IsActiveObject(entity);
-			ImGuiTreeNodeFlags flags = (isActive ? ImGuiTreeNodeFlags_Selected : 0) | (hasChildren ? ImGuiTreeNodeFlags_OpenOnArrow : (ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen));
+			ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_AllowOverlap | (isActive ? ImGuiTreeNodeFlags_Selected : 0) | (hasChildren ? ImGuiTreeNodeFlags_OpenOnArrow : (ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen));
 			flags |= ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
 			
 			ImGui::SetNextItemOpen(m_ExpandedNodes.count(id));
@@ -389,7 +389,7 @@ namespace Blueberry
 
 	void SceneHierarchy::DrawCreateEntity()
 	{
-		if (ImGui::MenuItem("Create Empty Entity"))
+		if (ImGui::MenuItem("Create Empty"))
 		{
 			Entity* entity = EditorObjectManager::CreateEntity("Empty Entity");
 			m_RenamingEntity = entity;
@@ -400,6 +400,20 @@ namespace Blueberry
 				Entity* selectedEntity = static_cast<Entity*>(selectedObject);
 				entity->GetTransform()->SetParent(selectedEntity->GetTransform());
 				m_ExpandedNodes.insert(selectedEntity->GetObjectId());
+			}
+		}
+		if (ImGui::MenuItem("Create Empty Parent"))
+		{
+			Entity* entity = EditorObjectManager::CreateEntity("Empty Entity");
+			m_RenamingEntity = entity;
+
+			Object* selectedObject = Selection::GetActiveObject();
+			if (selectedObject != nullptr && selectedObject->IsClassType(Entity::Type))
+			{
+				Entity* selectedEntity = static_cast<Entity*>(selectedObject);
+				entity->GetTransform()->SetSiblingIndex(selectedEntity->GetTransform()->GetSiblingIndex());
+				selectedEntity->GetTransform()->SetParent(entity->GetTransform());
+				m_ExpandedNodes.insert(entity->GetObjectId());
 			}
 		}
 	}
@@ -413,7 +427,12 @@ namespace Blueberry
 			{
 				Entity* entity = static_cast<Entity*>(selectedObject);
 				Entity* newEntity = EditorObjectManager::CloneEntity(entity);
-				newEntity->GetTransform()->SetParent(entity->GetTransform()->GetParent());
+				Transform* newTransform = newEntity->GetTransform();
+				Transform* transform = entity->GetTransform();
+				newTransform->SetParent(transform->GetParent());
+				newTransform->SetSiblingIndex(transform->GetSiblingIndex() + 1);
+				newTransform->SetLocalTRS({ transform->GetLocalPosition(), transform->GetLocalRotation(), transform->GetLocalScale() });
+				Selection::SetActiveObject(newEntity);
 			}
 		}
 	}

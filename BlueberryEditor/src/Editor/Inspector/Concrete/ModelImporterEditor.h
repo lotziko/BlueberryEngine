@@ -12,6 +12,7 @@ namespace Blueberry
 
 	private:
 		SerializedProperty m_MaterialsProperty;
+		SerializedProperty m_AnimationClipsProperty;
 		SerializedProperty m_ScaleProperty;
 		SerializedProperty m_GenerateLightmapUVProperty;
 		SerializedProperty m_GeneratePhysicsShapeProperty;

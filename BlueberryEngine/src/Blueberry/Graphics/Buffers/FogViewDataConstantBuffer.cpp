@@ -47,7 +47,7 @@ namespace Blueberry
 		float fogFarClipPlane = 128;
 
 		Matrix inverseView = camera->GetInverseViewMatrix();
-		Matrix projection = Matrix::CreatePerspectiveFieldOfView(ToRadians(camera->GetFieldOfView()), camera->GetAspectRatio(), fogNearClipPlane, fogFarClipPlane);
+		Matrix projection = Matrix::CreatePerspectiveFieldOfView(Math::ToRadians(camera->GetFieldOfView()), camera->GetAspectRatio(), fogNearClipPlane, fogFarClipPlane);
 		Transform* transform = camera->GetTransform();
 		Vector4 position = transform->GetPosition();
 

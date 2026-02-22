@@ -55,7 +55,7 @@ namespace Blueberry
 				uint32_t vertexCount = mesh->GetVertexCount();
 				uint32_t sourceStride = layout.GetSize() / sizeof(float);
 				uint32_t resultStride = sourceStride - (layout.GetSize(VertexAttribute::BoneWeight) + layout.GetSize(VertexAttribute::BoneIndex)) / sizeof(float);
-				uint32_t threadCount = NextDivisableBy(vertexCount, 64) / 64;
+				uint32_t threadCount = Math::NextDivisableBy(vertexCount, 64) / 64;
 
 				SkinningData skinningConstants = {};
 				skinningConstants.sourceStride = sourceStride;

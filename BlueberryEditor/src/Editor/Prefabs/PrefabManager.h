@@ -21,6 +21,7 @@ namespace Blueberry
 		static PrefabInstance* GetInstance(Object* object);
 		static PrefabInstance* GetInstance(const ObjectId& objectId);
 		static PrefabInstance* CreateInstance(PrefabInstance* source);
+		static PrefabInstance* CloneInstance(PrefabInstance* source);
 		static Object* GetCorrespondingPrefabObject(Object* object);
 
 		static void CreatePrefab(const String& path, Entity* entity);
@@ -31,6 +32,7 @@ namespace Blueberry
 		static void SetParent(Entity* entity, Transform* parent);
 		static void RemoveParent(Entity* entity);
 		static bool IsPrefabChild(Entity* entity);
+		static bool IsOverridable(Object* object);
 
 	private:
 		static void InitializeHierarchy(PrefabInstance* instance);

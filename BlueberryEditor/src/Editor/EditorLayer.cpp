@@ -1,5 +1,6 @@
 #include "EditorLayer.h"
 
+#include "Blueberry\Core\Application.h"
 #include "Blueberry\Core\Time.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\ImGuiRenderer.h"
@@ -7,6 +8,7 @@
 #include "Blueberry\Math\Math.h"
 #include "Blueberry\Events\WindowEvents.h"
 #include "Blueberry\Physics\Physics.h"
+#include "Blueberry\Physics\PhysicsShapeCache.h"
 #include "Blueberry\Scene\Scene.h"
 
 #include "Editor\EditorSceneManager.h"
@@ -14,6 +16,7 @@
 #include "Editor\Inspector\RegisterObjectEditors.h"
 #include "Editor\Panels\Scene\SceneArea.h"
 #include "Editor\Panels\Game\GameView.h"
+#include "Editor\Physics\EditorPhysicsShapeCache.h"
 
 #include "Editor\RegisterEditorTypes.h"
 #include "Editor\Assets\RegisterIcons.h"
@@ -22,6 +25,7 @@
 #include "Editor\Gizmos\Gizmos.h"
 #include "Editor\Gizmos\IconRenderer.h"
 #include "Editor\Menu\EditorMenuManager.h"
+#include "Editor\Serialization\AssemblySerializer.h"
 
 //#include "Blueberry\Graphics\OpenXRRenderer.h"
 
@@ -51,6 +55,7 @@ namespace Blueberry
 		Gizmos::Initialize();
 		IconRenderer::Initialize();
 		Physics::Initialize();
+		PhysicsShapeCache::Initialize(new EditorPhysicsShapeCache());
 		EditorWindow::Initialize();
 
 		AssetDB::Refresh();
@@ -85,13 +90,13 @@ namespace Blueberry
 	{
 		if (m_Focused)
 		{
-			if (EditorSceneManager::IsRunning())
+			if (Application::IsRunning())
 			{
 				Scene* scene = EditorSceneManager::GetScene();
 				if (scene != nullptr)
 				{
-					Physics::Update(1.0f / 60.0f);
-					scene->Update(1.0f / 60.0f);
+					Physics::Update(Time::GetFixedDeltaTime());
+					scene->FixedUpdate();
 				}
 			}
 		}
@@ -101,8 +106,14 @@ namespace Blueberry
 	{
 		if (m_Focused)
 		{
-			if (EditorSceneManager::IsRunning())
+			if (Application::IsRunning())
 			{
+				Scene* scene = EditorSceneManager::GetScene();
+				if (scene != nullptr)
+				{
+					scene->Update();
+				}
+
 				SceneArea::RequestRedrawAll();
 			}
 
@@ -120,7 +131,7 @@ namespace Blueberry
 
 			if (s_FrameUpdateRequested)
 			{
-				Time::IncrementFrameCount();
+				Time::EndFrame();
 				GfxTexturePool::Update();
 				s_FrameUpdateRequested = false;
 			}
@@ -134,17 +145,17 @@ namespace Blueberry
 
 	void EditorLayer::OnWindowFocus()
 	{
-		if (!EditorSceneManager::IsRunning())
+		if (!Application::IsRunning())
 		{
 			AssetDB::Refresh();
 
 			if (AssemblyManager::Build())
 			{
-				EditorSceneManager::Save();
-				EditorSceneManager::Unload();
+				AssemblySerializer serializer;
+				serializer.Serialize();
 				AssemblyManager::Unload();
 				AssemblyManager::Load();
-				EditorSceneManager::Reload();
+				serializer.Deserialize();
 			}
 		}
 
@@ -188,7 +199,7 @@ namespace Blueberry
 			if (EditorSceneManager::GetScene() != nullptr)
 			{
 				static bool isStartingFromScene = false;
-				if (EditorSceneManager::IsRunning())
+				if (Application::IsRunning())
 				{
 					if (ImGui::Button("Stop"))
 					{
@@ -230,7 +241,7 @@ namespace Blueberry
 			{
 				if (EditorSceneManager::GetScene() != nullptr)
 				{
-					if (EditorSceneManager::IsRunning())
+					if (Application::IsRunning())
 					{
 						if (ImGui::Button("Stop"))
 						{

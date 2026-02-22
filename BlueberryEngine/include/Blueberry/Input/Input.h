@@ -21,9 +21,9 @@ namespace Blueberry
 		static void OnMouseMove(const MouseMoveEventArgs& args);
 
 	private:
-		static inline bool s_State[256] = {};
-		static inline Vector2 s_MousePosition = Vector2::Zero;
-		static inline Vector2 s_MouseDelta = Vector2::Zero;
-		static inline size_t s_DeltaFrame;
+		static bool s_State[256];
+		static Vector2 s_MousePosition;
+		static Vector2 s_MouseDelta;
+		static size_t s_DeltaFrame;
 	};
 }

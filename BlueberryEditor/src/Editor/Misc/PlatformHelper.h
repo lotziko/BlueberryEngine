@@ -20,5 +20,6 @@ namespace Blueberry
 		static void ShowProgressBar(const WString& title, const WString& info);
 		static void HideProgressBar();
 		static String GetEditorDataFolder();
+		static void MoveToRecycleBin(const WString& path);
 	};
 }

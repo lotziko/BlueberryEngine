@@ -76,6 +76,16 @@ namespace Blueberry
 		return instance;
 	}
 
+	PrefabInstance* PrefabManager::CloneInstance(PrefabInstance* source)
+	{
+		PrefabInstance* instance = Object::Create<PrefabInstance>();
+		instance->m_SourcePrefab = source->m_SourcePrefab;
+		instance->m_Modifications = source->m_Modifications;
+		// TODO added instances and components
+		InitializeHierarchy(instance);
+		return instance;
+	}
+
 	Object* PrefabManager::GetCorrespondingPrefabObject(Object* object)
 	{
 		if (object == nullptr)
@@ -96,13 +106,20 @@ namespace Blueberry
 		{
 			return;
 		}
-		String prefabName(entity->GetName());
+		if (IsPartOfPrefabInstance(entity))
+		{
+			return;
+		}
+
+		Entity* prefabEntity = static_cast<Entity*>(Object::Clone(entity));
+		ClassDB::GetInfo(Transform::Type)->GetField("m_Parent")->Set(prefabEntity->GetTransform(), ObjectPtr<Transform>());
+		String prefabName(prefabEntity->GetName());
 		prefabName.append(".prefab");
 
 		auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
 		relativePath.append(prefabName);
 
-		AssetDB::CreateAsset(entity, relativePath.string().data());
+		AssetDB::CreateAsset(prefabEntity, relativePath.string().data());
 		AssetDB::SaveAssets();
 		AssetDB::Refresh();
 	}
@@ -230,6 +247,16 @@ namespace Blueberry
 		return IsPartOfPrefabInstance(entity->GetTransform()->GetParent());
 	}
 
+	bool PrefabManager::IsOverridable(Object* object)
+	{
+		PrefabInstance* instance = GetInstance(object);
+		if (instance != nullptr && instance->m_SourcePrefab.IsValid())
+		{
+			return true;
+		}
+		return false;
+	}
+
 	void PrefabManager::InitializeHierarchy(PrefabInstance* instance)
 	{
 		ObjectId instanceObjectId = instance->GetObjectId();
@@ -310,6 +337,11 @@ namespace Blueberry
 			Guid guid = ObjectDB::GetGuidFromObject(instance);
 			AssetImporter* importer = AssetDB::GetImporter(guid);
 			Entity* entity = static_cast<Entity*>(ObjectDB::GetObjectFromGuid(guid, importer->GetMainObject()));
+			if (entity == nullptr)
+			{
+				BB_ERROR("Can't initialize prefab context.");
+				return;
+			}
 			instance->m_Entity = entity;
 			s_RootToPrefabInstance.insert_or_assign(entity->GetObjectId(), instanceObjectId);
 			InitializeChildContext(instance, guid, instance->m_Entity->GetTransform());
@@ -319,6 +351,11 @@ namespace Blueberry
 
 	void PrefabManager::InitializeChildContext(PrefabInstance* instance, Guid guid, Transform* child)
 	{
+		if (child == nullptr)
+		{
+			BB_ERROR("Can't initialize prefab");
+			return;
+		}
 		PrefabInstance* childInstance = GetInstance(child);
 		Entity* entity = child->GetEntity();
 		if (childInstance != nullptr && childInstance != instance)

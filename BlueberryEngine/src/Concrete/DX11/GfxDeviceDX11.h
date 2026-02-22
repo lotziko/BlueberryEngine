@@ -69,7 +69,7 @@ namespace Blueberry
 
 		void Clear();
 
-		ID3D11RasterizerState* GetRasterizerState(const CullMode& mode);
+		ID3D11RasterizerState* GetRasterizerState(const CullMode& mode, const bool& isCounterClockwise);
 		ID3D11BlendState* GetBlendState(const BlendMode& blendSrcColor, const BlendMode& blendSrcAlpha, const BlendMode& blendDstColor, const BlendMode& blendDstAlpha);
 		ID3D11DepthStencilState* GetDepthStencilState(const ZTest& zTest, const ZWrite& zWrite);
 		ID3D11SamplerState* GetSamplerState(const WrapMode& wrapMode, const FilterMode& filterMode);

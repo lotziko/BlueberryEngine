@@ -16,6 +16,7 @@ namespace Blueberry
 		DEFINE_FIELD(Texture, m_Format, BindingType::Enum, {})
 		DEFINE_FIELD(Texture, m_WrapMode, BindingType::Enum, FieldOptions().SetEnumHint("Repeat,Clamp"))
 		DEFINE_FIELD(Texture, m_FilterMode, BindingType::Enum, FieldOptions().SetEnumHint("Linear,Point"))
+		DEFINE_FIELD(Texture, m_IsReadable, BindingType::Bool, {})
 	}
 
 	const uint32_t& Texture::GetWidth()
@@ -68,6 +69,16 @@ namespace Blueberry
 		{
 			m_Texture->SetFilterMode(filterMode);
 		}
+	}
+
+	const bool& Texture::IsReadable()
+	{
+		return m_IsReadable;
+	}
+
+	void Texture::SetReadable(const bool& readable)
+	{
+		m_IsReadable = readable;
 	}
 
 	void Texture::IncrementUpdateCount()

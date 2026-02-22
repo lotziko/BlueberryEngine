@@ -138,8 +138,8 @@ namespace Blueberry
 
 			uint32_t textureWidth = color->GetWidth() / 4;
 			uint32_t textureHeight = color->GetHeight() / 4;
-			uint32_t textureWidth2 = NextPowerOfTwo(textureWidth);
-			uint32_t textureHeight2 = NextPowerOfTwo(textureHeight);
+			uint32_t textureWidth2 = Math::NextPowerOfTwo(textureWidth);
+			uint32_t textureHeight2 = Math::NextPowerOfTwo(textureHeight);
 
 			TextureProperties textureProperties = {};
 

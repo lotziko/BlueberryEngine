@@ -20,6 +20,19 @@ namespace Blueberry
 		std::ofstream stream(path.data(), std::ios::out | std::ofstream::binary);
 		if (stream.is_open())
 		{
+			for (ObjectId id : m_ObjectsToSerialize)
+			{
+				Object* object = ObjectDB::GetObject(id);
+				if (object->IsClassType(PrefabInstance::Type))
+				{
+					if (!static_cast<PrefabInstance*>(object)->HasSource())
+					{
+						m_IsPrefabAsset = true;
+						break;
+					}
+				}
+			}
+
 			while ((m_CurrentObject = GetNextObjectToSerialize()) != nullptr)
 			{
 				SerializationTree tree = {};
@@ -88,7 +101,7 @@ namespace Blueberry
 						BB_ERROR("Class not exists.");
 						continue;
 					}
-					instance = info->createInstance();
+					instance = info->Create();
 				}
 				else
 				{
@@ -132,7 +145,7 @@ namespace Blueberry
 
 	void EditorSerializer::AddAdditionalObject(const ObjectId& objectId)
 	{
-		if (PrefabManager::IsPartOfPrefabInstance(objectId) && (PrefabManager::IsPartOfPrefabInstance(m_CurrentObject) || m_CurrentObject->GetType() == PrefabInstance::Type))
+		if (!m_IsPrefabAsset && PrefabManager::IsPartOfPrefabInstance(objectId) && (PrefabManager::IsPartOfPrefabInstance(m_CurrentObject) || m_CurrentObject->GetType() == PrefabInstance::Type))
 		{
 			return;
 		}

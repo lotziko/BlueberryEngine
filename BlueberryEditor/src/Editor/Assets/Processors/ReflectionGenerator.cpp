@@ -126,12 +126,12 @@ namespace Blueberry
 			s_Camera->SetAspectRatio(1.0f);
 			cameraEntity->OnCreate();
 
-			s_Rotation[0] = Quaternion::CreateFromAxisAngle(Vector3::Up, ToRadians(90));
-			s_Rotation[1] = Quaternion::CreateFromAxisAngle(Vector3::Up, ToRadians(-90));
-			s_Rotation[2] = Quaternion::CreateFromAxisAngle(Vector3::Right, ToRadians(-90));
-			s_Rotation[3] = Quaternion::CreateFromAxisAngle(Vector3::Right, ToRadians(90));
+			s_Rotation[0] = Quaternion::CreateFromAxisAngle(Vector3::Up, Math::Math::ToRadians(90));
+			s_Rotation[1] = Quaternion::CreateFromAxisAngle(Vector3::Up, Math::Math::ToRadians(-90));
+			s_Rotation[2] = Quaternion::CreateFromAxisAngle(Vector3::Right, Math::Math::ToRadians(-90));
+			s_Rotation[3] = Quaternion::CreateFromAxisAngle(Vector3::Right, Math::Math::ToRadians(90));
 			s_Rotation[4] = Quaternion::Identity;
-			s_Rotation[5] = Quaternion::CreateFromAxisAngle(Vector3::Up, ToRadians(180));
+			s_Rotation[5] = Quaternion::CreateFromAxisAngle(Vector3::Up, Math::Math::ToRadians(180));
 
 			s_SliceData.resize(SLICE_SIZE * 6);
 		}
@@ -159,6 +159,7 @@ namespace Blueberry
 		AssetDB::Refresh();
 		auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
 		TextureImporter* importer = static_cast<TextureImporter*>(AssetDB::GetImporter(relativePath.string().data()));
+		importer->SetReadable(true);
 		importer->SetTextureShape(TextureImporter::TextureShape::TextureCube);
 		importer->SetTextureFormat(TextureImporter::TextureFormat::BC6H);
 		importer->SetTextureCubeType(TextureImporter::TextureCubeType::Slices);

@@ -11,6 +11,7 @@ namespace Blueberry
 		uint64_t keywordsMask; // global + material
 		ObjectId materialId;
 		uint8_t passIndex;
+		bool isCounterClockwise;
 
 		bool operator==(const GfxRenderStateKeyDX11& other) const;
 		bool operator!=(const GfxRenderStateKeyDX11& other) const;
@@ -92,7 +93,7 @@ namespace Blueberry
 		GfxRenderStateCacheDX11() = default;
 		GfxRenderStateCacheDX11(GfxDeviceDX11* device);
 
-		const GfxRenderStateDX11 GetState(Material* material, const uint8_t& passIndex);
+		const GfxRenderStateDX11 GetState(Material* material, const uint8_t& passIndex, const bool& isCounterClockwise);
 		
 	private:
 		void FillRenderState(Material* material, GfxRenderStateDX11& renderState, const GfxBindingStateDX11& bindingState);

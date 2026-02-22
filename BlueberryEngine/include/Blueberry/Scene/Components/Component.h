@@ -22,15 +22,21 @@ namespace Blueberry
 		Entity* GetEntity();
 		Transform* GetTransform();
 		Scene* GetScene();
+
+		const bool& IsActive();
+		bool CanExecute();
 		
-		virtual void OnBeginPlay() { };
+		virtual void OnCreate() { };
+		virtual void OnDestroy() { };
 		virtual void OnEnable() { };
 		virtual void OnDisable() { };
+		virtual void OnFixedUpdate() { };
 		virtual void OnUpdate() { };
 
 	protected:
 		ObjectPtr<Entity> m_Entity;
 
+		bool m_IsCreated = false;
 		bool m_IsActive = false;
 
 		friend class Entity;

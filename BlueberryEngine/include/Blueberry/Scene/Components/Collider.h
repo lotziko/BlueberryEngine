@@ -14,13 +14,22 @@ namespace Blueberry
 		OBJECT_DECLARATION(Collider)
 
 	public:
-		Collider() = default;
+		Collider();
 		virtual ~Collider() = default;
 
 	private:
 		virtual JPH::Shape* GetShape() = 0;
 
-		virtual void OnBeginPlay() final;
+		virtual void OnCreate() final;
+		virtual void OnDestroy() final;
+		virtual void OnEnable() final;
+		virtual void OnDisable() final;
+
+	private:
+		struct PrivateData;
+
+		PrivateData* m_PrivateData;
+		alignas(8) char m_PrivateStorage[4];
 
 		friend class PhysicsBody;
 	};

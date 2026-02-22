@@ -23,19 +23,20 @@ namespace Blueberry
 		PhysicsBody();
 		virtual ~PhysicsBody() = default;
 
+		virtual void OnCreate() final;
+		virtual void OnDestroy() final;
 		virtual void OnEnable() final;
 		virtual void OnDisable() final;
 		virtual void OnUpdate() final;
 
 	private:
-		BodyType m_BodyType = BodyType::Dynamic;
+		bool m_IsKinematic = false;
 
 		struct PrivateData;
 
 		Transform* m_Transform;
 		PrivateData* m_PrivateData;
 		alignas(8) char m_PrivateStorage[4];
-		bool m_IsInitialized = false;
 		List<ObjectPtr<Collider>> m_Colliders;
 
 		friend class Collider;

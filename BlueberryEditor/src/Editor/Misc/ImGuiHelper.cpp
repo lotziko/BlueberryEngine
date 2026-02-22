@@ -123,6 +123,16 @@ bool ImGui::Property(Blueberry::SerializedProperty* property, const char* label)
 		}
 	}
 	break;
+	case Blueberry::BindingType::Uint:
+	{
+		uint32_t value = property->GetUint();
+		if (ImGui::UintEdit(label, &value))
+		{
+			property->SetUint(value);
+			result = true;
+		}
+	}
+	break;
 	case Blueberry::BindingType::Float:
 	{
 		float value = property->GetFloat();
@@ -145,8 +155,8 @@ bool ImGui::Property(Blueberry::SerializedProperty* property, const char* label)
 	break;
 	case Blueberry::BindingType::String:
 	{
-		std::string value(property->GetString().data());
-		if (ImGui::InputText(label, &value)) // TODO mixed
+		std::string value = std::string(property->GetString().data());
+		if (ImGui::StringEdit(label, &value)) // TODO mixed
 		{
 			property->SetString(Blueberry::String(value.data()));
 			result = true;
@@ -576,6 +586,25 @@ bool ImGui::IntEdit(const char* label, int* v)
 	return result;
 }
 
+bool ImGui::UintEdit(const char* label, uint32_t* v)
+{
+	PROPERTY_LABEL(label)
+	PROPERTY_BEGIN_VALUE()
+
+	bool result = false;
+	if (ImGui::DragScalar("##uint", ImGuiDataType_U32, v))
+	{
+		result = true;
+	}
+
+	PROPERTY_END_VALUE()
+	if (result)
+	{
+		TriggerChange();
+	}
+	return result;
+}
+
 bool ImGui::FloatEdit(const char* label, float* v, float min, float max)
 {
 	PROPERTY_LABEL(label)
@@ -616,6 +645,25 @@ bool ImGui::ColorEdit(const char* label, Blueberry::Color* v)
 	{
 		TriggerChange();
 	}
+	return result;
+}
+
+bool ImGui::StringEdit(const char* label, std::string* v)
+{
+	PROPERTY_LABEL(label)
+	PROPERTY_BEGIN_VALUE()
+	
+	bool result = false;
+	if (ImGui::InputText("##string", v))
+	{
+		result = true;
+	}
+
+	PROPERTY_END_VALUE()
+		if (result)
+		{
+			TriggerChange();
+		}
 	return result;
 }
 

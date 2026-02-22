@@ -45,6 +45,7 @@ namespace Blueberry
 		float distance;
 		uint32_t lightmapChartOffset;
 		GfxBuffer* vertexBufferOverride;
+		bool isCounterClockwise;
 	};
 
 	struct CullerInfo
@@ -148,6 +149,8 @@ namespace Blueberry
 				float distance = Vector3::Transform(meshRenderer->GetBounds().Center, cullerViewMatrix).z;
 				uint32_t lightmapChartOffset = meshRenderer->GetLightmapChartOffset();
 				uint32_t subMeshCount = mesh->GetSubMeshCount();
+				Vector3 scale = transform->GetScale();
+				bool isCounterClockwise = (scale.x * scale.y * scale.z) < 0.0f;
 				if (subMeshCount > 1)
 				{
 					for (uint32_t i = 0; i < subMeshCount; ++i)
@@ -165,6 +168,7 @@ namespace Blueberry
 							operation.instanceCount = 1;
 							operation.distance = distance;
 							operation.lightmapChartOffset = lightmapChartOffset;
+							operation.isCounterClockwise = isCounterClockwise;
 							s_DrawingOperations.push_back(std::move(operation));
 						}
 					}
@@ -184,6 +188,7 @@ namespace Blueberry
 						operation.instanceCount = 1;
 						operation.distance = distance;
 						operation.lightmapChartOffset = lightmapChartOffset;
+						operation.isCounterClockwise = isCounterClockwise;
 						s_DrawingOperations.push_back(std::move(operation));
 					}
 				}
@@ -200,10 +205,13 @@ namespace Blueberry
 				{
 					continue;
 				}
+				Transform* transform = skinnedMeshRenderer->GetTransform();
 				Matrix matrix = renderer->GetLocalToWorldMatrix();
 				float distance = Vector3::Transform(skinnedMeshRenderer->GetBounds().Center, cullerViewMatrix).z;
 				uint32_t subMeshCount = mesh->GetSubMeshCount();
 				GfxBuffer* vertexBuffer = Skinning::GetVertexBuffer(skinnedMeshRenderer);
+				Vector3 scale = transform->GetScale();
+				bool isCounterClockwise = (scale.x * scale.y * scale.z) < 0.0f;
 				if (vertexBuffer == nullptr)
 				{
 					vertexBuffer = mesh->GetVertexBuffer();
@@ -225,6 +233,7 @@ namespace Blueberry
 							operation.instanceCount = 1;
 							operation.distance = distance;
 							operation.vertexBufferOverride = vertexBuffer;
+							operation.isCounterClockwise = isCounterClockwise;
 							s_DrawingOperations.push_back(std::move(operation));
 						}
 					}
@@ -244,6 +253,7 @@ namespace Blueberry
 						operation.instanceCount = 1;
 						operation.distance = distance;
 						operation.vertexBufferOverride = vertexBuffer;
+						operation.isCounterClockwise = isCounterClockwise;
 						s_DrawingOperations.push_back(std::move(operation));
 					}
 				}
@@ -398,7 +408,7 @@ namespace Blueberry
 									light->m_IsDirty[i] = true;
 								}
 
-								GetOrthographicPlanes(viewProjection.Invert(), &lightCullerInfo.planes[0], &lightCullerInfo.planes[1], &lightCullerInfo.planes[2], &lightCullerInfo.planes[3], &lightCullerInfo.planes[4], &lightCullerInfo.planes[5]);
+								Math::GetOrthographicPlanes(viewProjection.Invert(), &lightCullerInfo.planes[0], &lightCullerInfo.planes[1], &lightCullerInfo.planes[2], &lightCullerInfo.planes[3], &lightCullerInfo.planes[4], &lightCullerInfo.planes[5]);
 
 								lightCullerInfo.index = i;
 								lightCullerInfo.viewMatrix = view;
@@ -415,7 +425,7 @@ namespace Blueberry
 								float farPlane = planes[i + 1];
 
 								Frustum cameraSliceFrustum;
-								cameraSliceFrustum.CreateFromMatrix(cameraSliceFrustum, Matrix::CreatePerspectiveFieldOfView(ToRadians(camera->GetFieldOfView()), camera->GetAspectRatio(), nearPlane, farPlane), false);
+								cameraSliceFrustum.CreateFromMatrix(cameraSliceFrustum, Matrix::CreatePerspectiveFieldOfView(Math::ToRadians(camera->GetFieldOfView()), camera->GetAspectRatio(), nearPlane, farPlane), false);
 								cameraSliceFrustum.Transform(cameraSliceFrustum, view);
 
 								// Find near and far planes
@@ -486,7 +496,7 @@ namespace Blueberry
 								light->m_WorldToShadow[i] = viewProjection;
 								light->m_ShadowCascades[i] = Vector4(center.x, center.y, center.z, std::pow(radius, 2));
 
-								GetOrthographicPlanes(viewProjection.Invert(), &lightCullerInfo.planes[0], &lightCullerInfo.planes[1], &lightCullerInfo.planes[2], &lightCullerInfo.planes[3], &lightCullerInfo.planes[4], &lightCullerInfo.planes[5]);
+								Math::GetOrthographicPlanes(viewProjection.Invert(), &lightCullerInfo.planes[0], &lightCullerInfo.planes[1], &lightCullerInfo.planes[2], &lightCullerInfo.planes[3], &lightCullerInfo.planes[4], &lightCullerInfo.planes[5]);
 
 								lightCullerInfo.index = i;
 								lightCullerInfo.viewMatrix = view;
@@ -606,12 +616,12 @@ namespace Blueberry
 			auto& operation = s_DrawingOperations[i];
 			if (operation.submeshIndex == 255)
 			{
-				GfxDevice::Draw(GfxDrawingOperation(operation.mesh, operation.vertexBufferOverride, operation.material, passIndex, s_IndexBuffer, i, operation.instanceCount));
+				GfxDevice::Draw(GfxDrawingOperation(operation.mesh, operation.vertexBufferOverride, operation.material, passIndex, s_IndexBuffer, i, operation.instanceCount, operation.isCounterClockwise));
 			}
 			else
 			{
 				auto& subMesh = operation.mesh->GetSubMesh(operation.submeshIndex);
-				GfxDevice::Draw(GfxDrawingOperation(operation.mesh, operation.vertexBufferOverride, operation.material, subMesh.GetIndexCount(), subMesh.GetIndexStart(), operation.mesh->GetVertexCount(), passIndex, s_IndexBuffer, i, operation.instanceCount));
+				GfxDevice::Draw(GfxDrawingOperation(operation.mesh, operation.vertexBufferOverride, operation.material, subMesh.GetIndexCount(), subMesh.GetIndexStart(), operation.mesh->GetVertexCount(), passIndex, s_IndexBuffer, i, operation.instanceCount, operation.isCounterClockwise));
 			}
 			i += operation.instanceCount;
 		}

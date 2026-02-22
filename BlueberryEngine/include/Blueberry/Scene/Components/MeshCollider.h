@@ -18,5 +18,6 @@ namespace Blueberry
 
 	private:
 		ObjectPtr<Mesh> m_Mesh;
+		bool m_IsConvex = false;
 	};
 }

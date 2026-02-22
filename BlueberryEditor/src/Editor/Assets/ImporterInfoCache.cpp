@@ -85,7 +85,7 @@ namespace Blueberry
 						BB_ERROR("Class not exists.");
 						return false;
 					}
-					Object* importedObject = static_cast<Object*>(classInfo->createInstance());
+					Object* importedObject = static_cast<Object*>(classInfo->Create());
 					importedObject->SetName(name);
 					importedObject->SetState(ObjectState::AwaitingLoading);
 

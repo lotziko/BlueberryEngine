@@ -27,6 +27,9 @@ namespace Blueberry
 		void RemoveWaitFrameCallback();
 
 		static Application* GetInstance();
+
+		static bool IsRunning();
+		static void SetRunning(const bool& isRunning);
 		
 	private:
 		bool ProcessMessages();
@@ -35,6 +38,7 @@ namespace Blueberry
 
 	private:
 		static inline Application* s_Instance = nullptr;
+		static inline bool s_IsRunning = false;
 		Window* m_Window;
 		LayerStack* m_LayerStack;
 		std::function<void()> m_WaitFrameCallback = nullptr;

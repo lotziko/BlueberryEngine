@@ -98,17 +98,17 @@ namespace Blueberry
 
 			if (type == LightType::Point)
 			{
-				Gizmos::SetMatrix(CreateTRS(transform->GetPosition(), Quaternion::Identity, Vector3::One));
+				Gizmos::SetMatrix(Math::CreateTRS(transform->GetPosition(), Quaternion::Identity, Vector3::One));
 				Gizmos::DrawSphere(Vector3::Zero, range);
 			}
 			else if (type == LightType::Spot)
 			{
-				Gizmos::SetMatrix(CreateTRS(transform->GetPosition(), transform->GetRotation(), Vector3::One));
+				Gizmos::SetMatrix(Math::CreateTRS(transform->GetPosition(), transform->GetRotation(), Vector3::One));
 
 				float outerAngle = light->GetOuterSpotAngle();
 				float innerAngle = light->GetInnerSpotAngle();
-				float radianHalfOuterAngle = ToRadians(outerAngle) * 0.5f;
-				float radianHalfInnerAngle = ToRadians(innerAngle) * 0.5f;
+				float radianHalfOuterAngle = Math::Math::ToRadians(outerAngle) * 0.5f;
+				float radianHalfInnerAngle = Math::Math::ToRadians(innerAngle) * 0.5f;
 
 				float outerDiscRadius = range * sin(radianHalfOuterAngle);
 				float outerDiscDistance = range * cos(radianHalfOuterAngle);
@@ -140,14 +140,14 @@ namespace Blueberry
 			else if (type == LightType::Directional)
 			{
 				float radius = 0.5f;
-				Gizmos::SetMatrix(CreateTRS(transform->GetPosition(), transform->GetRotation(), Vector3::One));
+				Gizmos::SetMatrix(Math::CreateTRS(transform->GetPosition(), transform->GetRotation(), Vector3::One));
 				Gizmos::SetColor(Color(1, 1, 1, 1));
 				Gizmos::DrawDisc(Vector3::Zero, Vector3::Forward, radius);
 
 				uint32_t lineCount = 8;
 				for (uint32_t i = 0; i < lineCount; ++i)
 				{
-					float angle = 2 * Pi * static_cast<float>(i) / lineCount;
+					float angle = 2 * Math::Pi * static_cast<float>(i) / lineCount;
 					Vector3 position = Vector3(std::cos(angle) * radius, std::sin(angle) * radius, 0);
 					Gizmos::DrawLine(position, position + Vector3(0.0f, 0.0f, 0.75f));
 				}

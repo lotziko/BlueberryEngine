@@ -14,25 +14,27 @@ namespace Blueberry
 		CharacterController();
 		virtual ~CharacterController() = default;
 
+		virtual void OnCreate() final;
+		virtual void OnDestroy() final;
 		virtual void OnEnable() final;
 		virtual void OnDisable() final;
+		virtual void OnFixedUpdate() final;
 		virtual void OnUpdate() final;
 
 		const float& GetHeight();
 		const float& GetRadius();
 
+		void SetVelocity(const Vector3& velocity);
+
 	private:
-		ObjectPtr<Transform> m_CameraTransform;
 		float m_Height = 2.0f;
 		float m_Radius = 0.3f;
 
 		struct PrivateData;
 
-		Transform* m_Transform;
 		PrivateData* m_PrivateData;
 		alignas(8) char m_PrivateStorage[24];
-		bool m_IsInitialized = false;
-		Vector2 m_Rotation;
+		Transform* m_Transform;
 		Vector3 m_Velocity;
 	};
 }

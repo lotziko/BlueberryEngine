@@ -10,16 +10,6 @@ namespace Blueberry
 	const size_t Object::ParentType = 0;
 	const String Object::TypeName = "Object";
 	
-	Object::Object()
-	{
-		ObjectDB::AllocateId(this);
-	}
-
-	Object::~Object()
-	{
-		ObjectDB::FreeId(this);
-	}
-
 	bool Object::IsClassType(const size_t classType) const
 	{
 		return classType == Type;
@@ -77,6 +67,7 @@ namespace Blueberry
 
 	void Object::Destroy(Object* object)
 	{
+		ObjectDB::FreeId(object);
 		delete object;
 	}
 }

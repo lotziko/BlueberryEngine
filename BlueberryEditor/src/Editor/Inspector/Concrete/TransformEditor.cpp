@@ -36,7 +36,7 @@ namespace Blueberry
 		if (ImGui::Property(&m_LocalRotationEulerHintProperty, "Rotation"))
 		{
 			Vector3 euler = m_LocalRotationEulerHintProperty.GetVector3();
-			m_LocalRotationProperty.SetQuaternion(Quaternion::CreateFromYawPitchRoll(ToRadians(euler.y), ToRadians(euler.x), ToRadians(euler.z)));
+			m_LocalRotationProperty.SetQuaternion(Quaternion::CreateFromYawPitchRoll(Math::Math::ToRadians(euler.y), Math::Math::ToRadians(euler.x), Math::Math::ToRadians(euler.z)));
 		}
 		ImGui::Property(&m_LocalScaleProperty, "Scale");
 		ImGui::Property(&m_IsStaticProperty, "Is Static");
@@ -47,11 +47,11 @@ namespace Blueberry
 	// Based on https://discussions.unity.com/t/quaternion-to-three-hinge-joints/714182/10
 	Vector3 CorrectEuler(Vector3 oldValue, Vector3 newValue)
 	{
-		float hint[3] = { ToRadians(oldValue.x), ToRadians(oldValue.y), ToRadians(oldValue.z) };
-		float eul[3] = { ToRadians(newValue.x), ToRadians(newValue.y), ToRadians(newValue.z) };
+		float hint[3] = { Math::ToRadians(oldValue.x), Math::ToRadians(oldValue.y), Math::ToRadians(oldValue.z) };
+		float eul[3] = { Math::ToRadians(newValue.x), Math::ToRadians(newValue.y), Math::ToRadians(newValue.z) };
 
 		const float pi_thresh = 5.1f;
-		const float pi_x2 = 2.0f * Pi;
+		const float pi_x2 = 2.0f * Math::Pi;
 
 		float dif[3] = {};
 
@@ -106,7 +106,7 @@ namespace Blueberry
 			}
 		}
 
-		return ToDegrees(Vector3(eul[0], eul[1], eul[2]));
+		return Math::ToDegrees(Vector3(eul[0], eul[1], eul[2]));
 	}
 
 	void TransformEditor::OnDrawSceneSelected()
@@ -157,16 +157,16 @@ namespace Blueberry
 				}
 				
 				transformMatrix.Decompose(scale, rotation, translation);
-				if (!Approximately(RoundToN(translation, 4), RoundToN(m_LocalPositionProperty.GetVector3(), 4)))
+				if (!Math::Approximately(Math::RoundToN(translation, 4), Math::RoundToN(m_LocalPositionProperty.GetVector3(), 4)))
 				{
 					m_LocalPositionProperty.SetVector3(translation);
 				}
-				if (!Approximately(RoundToN(rotation, 4), RoundToN(m_LocalRotationProperty.GetQuaternion(), 4)))
+				if (!Math::Approximately(Math::RoundToN(rotation, 4), Math::RoundToN(m_LocalRotationProperty.GetQuaternion(), 4)))
 				{
 					m_LocalRotationProperty.SetQuaternion(rotation);
 
 					Vector3 previousEuler = m_LocalRotationEulerHintProperty.GetVector3();
-					Vector3 euler = CorrectEuler(previousEuler, ToDegrees(rotation.ToEuler()));
+					Vector3 euler = CorrectEuler(previousEuler, Math::ToDegrees(rotation.ToEuler()));
 
 					if (snapping[1] > 0)
 					{
@@ -189,7 +189,7 @@ namespace Blueberry
 					}
 					m_LocalRotationEulerHintProperty.SetVector3(euler);
 				}
-				if (!Approximately(RoundToN(scale, 4), RoundToN(m_LocalScaleProperty.GetVector3(), 4)))
+				if (!Math::Approximately(Math::RoundToN(scale, 4), Math::RoundToN(m_LocalScaleProperty.GetVector3(), 4)))
 				{
 					m_LocalScaleProperty.SetVector3(scale);
 				}

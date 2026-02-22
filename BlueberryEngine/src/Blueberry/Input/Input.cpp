@@ -5,6 +5,11 @@
 
 namespace Blueberry
 {
+	bool Input::s_State[256] = {};
+	Vector2 Input::s_MousePosition = Vector2::Zero;
+	Vector2 Input::s_MouseDelta = Vector2::Zero;
+	size_t Input::s_DeltaFrame = 0;
+
 	void Input::Initialize()
 	{
 		InputEvents::GetKeyDown().AddCallback<&Input::OnKeyDown>();

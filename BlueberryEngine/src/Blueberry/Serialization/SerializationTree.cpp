@@ -258,10 +258,21 @@ namespace Blueberry
 
 	void ReadValue(SerializationNodeConstRef& ref, Color& value)
 	{
-		ref["r"] >> value.x;
-		ref["g"] >> value.y;
-		ref["b"] >> value.z;
-		ref["a"] >> value.w;
+		bool isOld = ref["x"].IsValid();
+		if (isOld)
+		{
+			ref["x"] >> value.x;
+			ref["y"] >> value.y;
+			ref["z"] >> value.z;
+			ref["w"] >> value.w;
+		}
+		else
+		{
+			ref["r"] >> value.x;
+			ref["g"] >> value.y;
+			ref["b"] >> value.z;
+			ref["a"] >> value.w;
+		}
 	}
 
 	void ReadValue(SerializationNodeConstRef& ref, AABB& value)
@@ -583,7 +594,7 @@ namespace Blueberry
 		SerializationNode& node = ref.Get();
 		if (ref.tree->isText)
 		{
-			node.value.resize(sizeof(Matrix) + 1, '\0');
+			node.value.resize(sizeof(Matrix) * 2 + 1, '\0');
 			ByteConverter::BytesToHexString(value.m, node.value.data(), sizeof(Matrix));
 		}
 		else
@@ -598,7 +609,7 @@ namespace Blueberry
 		SerializationNode& node = ref.Get();
 		if (ref.tree->isText)
 		{
-			node.value.resize(33, '\0');
+			node.value.resize(16 * 2 + 1, '\0');
 			ByteConverter::BytesToHexString(value.data, node.value.data(), sizeof(value.data));
 		}
 		else

@@ -32,6 +32,32 @@ namespace Blueberry
 		ObjectPtr<Material> m_Material;
 	};
 
+	class ModelAnimationClipData : public Data
+	{
+		DATA_DECLARATION(ModelAnimationClipData)
+
+	public:
+		ModelAnimationClipData() = default;
+		virtual ~ModelAnimationClipData() = default;
+
+		const String& GetName();
+		void SetName(const String& name);
+
+		const String& GetReplaceName();
+		void SetReplaceName(const String& replaceName);
+
+		const uint32_t& GetFirstFrame();
+		void SetFirstFrame(const uint32_t& firstFrame);
+
+		const uint32_t& GetLastFrame();
+		void SetLastFrame(const uint32_t& lastFrame);
+
+		String m_Name;
+		String m_ReplaceName;
+		uint32_t m_FirstFrame;
+		uint32_t m_LastFrame;
+	};
+
 	class ModelImporter : public AssetImporter
 	{
 		OBJECT_DECLARATION(ModelImporter)
@@ -50,16 +76,15 @@ namespace Blueberry
 		const bool& GetGeneratePhysicsShape();
 		void SetGeneratePhysicsShape(const bool& generate);
 
-		static String GetPhysicsShapePath(const Guid& guid, const FileId& fileId);
-
 	protected:
 		virtual void ImportData() override;
 
 	private:
-		void CreateMeshEntity(Transform* parent, fbxsdk::FbxNode* node, List<fbxsdk::FbxNode*>& skeletonNodes, List<Object*>& objects);
+		void CreateMeshEntity(Transform* parent, fbxsdk::FbxNode* node, List<fbxsdk::FbxNode*>& skeletonNodes, List<Object*>& objects, bool& mainIsSet);
 
 	private:
 		List<ModelMaterialData> m_Materials;
+		List<ModelAnimationClipData> m_AnimationClips;
 		float m_Scale = 1.0f;
 		bool m_GenerateLightmapUV = false;
 		bool m_GeneratePhysicsShape = true;

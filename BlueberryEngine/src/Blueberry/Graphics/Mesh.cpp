@@ -476,6 +476,11 @@ namespace Blueberry
 
 	void Mesh::Apply()
 	{
+		if (m_VertexCount == 0)
+		{
+			return;
+		}
+
 		if (m_SubMeshes.size() == 0)
 		{
 			SubMeshData subMesh = {};

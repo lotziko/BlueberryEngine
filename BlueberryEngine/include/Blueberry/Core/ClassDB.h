@@ -2,12 +2,13 @@
 
 #include "Blueberry\Core\Base.h"
 #include "Blueberry\Core\Object.h"
+#include "Blueberry\Core\ObjectDB.h"
 #include "Blueberry\Core\MethodBind.h"
 #include "Blueberry\Tools\StringHelper.h"
 
 namespace Blueberry
 {
-	enum class BindingType
+	enum class BB_API BindingType
 	{
 		None = 0,
 
@@ -63,14 +64,14 @@ namespace Blueberry
 		return (type == BindingType::ObjectPtrList || type == BindingType::DataList || type == BindingType::StringList || type == BindingType::IntList || type == BindingType::FloatList);
 	}
 
-	enum class VisibilityType
+	enum class BB_API VisibilityType
 	{
 		Visible,
 		Hidden,
 		NonExposed
 	};
 
-	struct FieldOptions
+	struct BB_API FieldOptions
 	{
 		FieldOptions& SetEnumHint(char* hintData);
 		FieldOptions& SetObjectType(const size_t& type);
@@ -85,7 +86,7 @@ namespace Blueberry
 		MethodBind* updateCallback;
 	};
 
-	struct FieldInfo
+	struct BB_API FieldInfo
 	{
 		String name;
 		uint32_t offset;
@@ -100,12 +101,13 @@ namespace Blueberry
 		void Set(void* target, Type value) const;
 	};
 
-	struct ClassInfo
+	struct BB_API ClassInfo
 	{
 		String name;
 		size_t parentId;
 		Object*(*createInstance)() = nullptr;
 		bool isObject;
+		bool isDll;
 		bool preferBinary;
 		bool executeAlways;
 		size_t offset;
@@ -123,6 +125,20 @@ namespace Blueberry
 				}
 			}
 			return nullptr;
+		}
+
+		Object* Create() const
+		{
+			Object* object = createInstance();
+			ObjectDB::AllocateId(object);
+			return object;
+		}
+
+		Object* Create(const ObjectId& id) const
+		{
+			Object* object = createInstance();
+			object->m_ObjectId = id;
+			return object;
 		}
 	};
 
@@ -154,12 +170,6 @@ namespace Blueberry
 		template<class ObjectType>
 		static Object* CreateObject()
 		{
-			return Object::Create<ObjectType>();
-		}
-
-		template<class ObjectType>
-		static Data* CreateData()
-		{
 			return new ObjectType();
 		}
 
@@ -183,7 +193,7 @@ namespace Blueberry
 	#define DEFINE_FIELD( className, fieldName, fieldType, fieldOptions ) ClassDB::DefineField({ TO_STRING(fieldName), offsetof(className, className::fieldName), fieldType, fieldOptions, IsList(fieldType) });
 	#define DEFINE_ITERATOR( className ) ClassDB::DefineIterator(className::Type);
 	#define DEFINE_PREFER_BINARY() ClassDB::DefinePreferBinary();
-	#define DEFINE_EXECUTE_ALWAYS() ClassDB::DefinePreferBinary();
+	#define DEFINE_EXECUTE_ALWAYS() ClassDB::DefineExecuteAlways();
 
 	template<class ObjectType>
 	inline void ClassDB::Register()
@@ -191,14 +201,16 @@ namespace Blueberry
 		size_t id = ObjectType::Type;
 		size_t parentId = ObjectType::ParentType;
 		String name = ObjectType::TypeName;
-		Object*(*createFunction)() = &ClassDB::CreateObject<ObjectType>;
 		size_t offset = reinterpret_cast<char*>(static_cast<Object*>(reinterpret_cast<ObjectType*>(0x10000000))) - reinterpret_cast<char*>(0x10000000);
 
 		ClassInfo info = {};
 		info.name = name;
 		info.parentId = parentId;
-		info.createInstance = createFunction;
+		info.createInstance = &ClassDB::CreateObject<ObjectType>;
 		info.isObject = true;
+#if BUILD_DLL
+		info.isDll = true;
+#endif
 		info.offset = offset;
 		s_CurrentClassInfo = info;
 
@@ -219,6 +231,9 @@ namespace Blueberry
 		info.parentId = parentId;
 		info.createInstance = nullptr;
 		info.isObject = true;
+#if BUILD_DLL
+		info.isDll = true;
+#endif
 		info.offset = offset;
 		s_CurrentClassInfo = info;
 
@@ -238,6 +253,9 @@ namespace Blueberry
 		info.parentId = parentId;
 		info.createInstance = nullptr;
 		info.isObject = false;
+#if BUILD_DLL
+		info.isDll = true;
+#endif
 		info.offset = offset;
 		s_CurrentClassInfo = info;
 

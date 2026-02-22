@@ -17,7 +17,12 @@ namespace Blueberry
 
 	void GatherBones(Dictionary<String, Transform*>& bones, Transform* parent)
 	{
-		bones.insert_or_assign(parent->GetEntity()->GetName().c_str(), parent);
+		Entity* entity = parent->GetEntity();
+		if (entity == nullptr)
+		{
+			return;
+		}
+		bones.insert_or_assign(entity->GetName().c_str(), parent);
 		if (parent->GetChildrenCount() > 0)
 		{
 			for (auto& child : parent->GetChildren())
@@ -27,7 +32,7 @@ namespace Blueberry
 		}
 	}
 
-	void Animator::OnBeginPlay()
+	void Animator::OnEnable()
 	{
 		RefreshState();
 	}

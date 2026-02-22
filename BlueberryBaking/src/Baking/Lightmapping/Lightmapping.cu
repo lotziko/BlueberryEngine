@@ -642,7 +642,7 @@ namespace Blueberry
 
 	extern "C" __global__ void __miss__radiance()
 	{
-		float3 radiance = sampleSky(optixGetWorldRayDirection()) * 10;  // TODO exposure property
+		float3 radiance = sampleSky(optixGetWorldRayDirection());  // TODO exposure property
 		optixSetPayload_1(__float_as_uint(radiance.x));
 		optixSetPayload_2(__float_as_uint(radiance.y));
 		optixSetPayload_3(__float_as_uint(radiance.z));

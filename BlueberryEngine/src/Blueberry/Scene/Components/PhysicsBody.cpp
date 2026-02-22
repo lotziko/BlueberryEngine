@@ -17,7 +17,7 @@ namespace Blueberry
 	OBJECT_DEFINITION(PhysicsBody, Component)
 	{
 		DEFINE_BASE_FIELDS(PhysicsBody, Component)
-		DEFINE_FIELD(PhysicsBody, m_BodyType, BindingType::Enum, FieldOptions().SetEnumHint("Static,Kinematic,Dynamic"))
+		DEFINE_FIELD(PhysicsBody, m_IsKinematic, BindingType::Bool, {})
 		DEFINE_ITERATOR(UpdatableComponent)
 	}
 
@@ -34,73 +34,85 @@ namespace Blueberry
 
 	// ModelImporter will generate prefabs with static PhysicsBodies with mesh shape if it is choosed to
 
+	void PhysicsBody::OnCreate()
+	{
+		m_Transform = GetTransform();
+	}
+
+	void PhysicsBody::OnDestroy()
+	{
+		JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
+		if (bodyInterface.IsAdded(m_PrivateData->bodyId))
+		{
+			bodyInterface.DestroyBody(m_PrivateData->bodyId);
+		}
+	}
+
 	void PhysicsBody::OnEnable()
 	{
-		if (m_IsInitialized)
+		JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
+		if (!bodyInterface.IsAdded(m_PrivateData->bodyId))
 		{
-			JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
-			if (!bodyInterface.IsAdded(m_PrivateData->bodyId))
-			{
-				bodyInterface.AddBody(m_PrivateData->bodyId, JPH::EActivation::Activate);
-			}
+			bodyInterface.AddBody(m_PrivateData->bodyId, JPH::EActivation::Activate);
 		}
 	}
 
 	void PhysicsBody::OnDisable()
 	{
-		if (m_IsInitialized)
+		JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
+		if (bodyInterface.IsAdded(m_PrivateData->bodyId))
 		{
-			JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
-			if (bodyInterface.IsAdded(m_PrivateData->bodyId))
-			{
-				bodyInterface.RemoveBody(m_PrivateData->bodyId);
-			}
+			bodyInterface.RemoveBody(m_PrivateData->bodyId);
 		}
 	}
 
 	void PhysicsBody::OnUpdate()
 	{
 		JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
-
-		if (!m_IsInitialized)
+		if (m_PrivateData->bodyId.GetIndex() == 0)
 		{
-			m_Transform = GetTransform();
-			Vector3 position = m_Transform->GetLocalPosition();
-			Quaternion rotation = m_Transform->GetLocalRotation();
 			size_t collidersCount = m_Colliders.size();
 			if (collidersCount == 1)
 			{
-				JPH::Shape* shape;
-				shape = m_Colliders[0]->GetShape();
-				JPH::EMotionType motionType = static_cast<JPH::EMotionType>(m_BodyType);
-				JPH::BodyCreationSettings settings(shape, JPH::RVec3(position.x, position.y, position.z), JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w), motionType, 1);
-				m_PrivateData->bodyId = bodyInterface.CreateAndAddBody(settings, JPH::EActivation::Activate);
+				JPH::Shape* shape = m_Colliders[0]->GetShape();
+				if (shape != nullptr)
+				{
+					Vector3 position = m_Transform->GetPosition();
+					Quaternion rotation = m_Transform->GetRotation();
+					JPH::EMotionType motionType = m_IsKinematic ? JPH::EMotionType::Kinematic : JPH::EMotionType::Dynamic;
+					JPH::BodyCreationSettings settings(shape, JPH::RVec3(position.x, position.y, position.z), JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w), motionType, 1);
+					m_PrivateData->bodyId = bodyInterface.CreateAndAddBody(settings, JPH::EActivation::Activate);
+				}
 			}
 			else if (collidersCount > 1)
 			{
 				JPH::StaticCompoundShapeSettings* shapeSettings = new JPH::StaticCompoundShapeSettings();
-				Transform* bodyTransform = GetTransform();
 				for (auto& collider : m_Colliders)
 				{
 					Transform* colliderTransform = collider->GetTransform();
-					if (bodyTransform == colliderTransform)
+					if (m_Transform == colliderTransform)
 					{
 						shapeSettings->AddShape(JPH::Vec3::sZero(), JPH::Quat::sIdentity(), collider->GetShape());
 					}
-					else if (colliderTransform->GetParent() == bodyTransform)
+					else if (colliderTransform->GetParent() == m_Transform)
 					{
-						Vector3 position = colliderTransform->GetLocalPosition();
-						Quaternion rotation = colliderTransform->GetLocalRotation();
-						shapeSettings->AddShape(JPH::Vec3(position.x, position.y, position.z), JPH::QuatArg(rotation.x, rotation.y, rotation.z, rotation.w), collider->GetShape());
+						JPH::Shape* shape = collider->GetShape();
+						if (shape != nullptr)
+						{
+							Vector3 position = colliderTransform->GetLocalPosition();
+							Quaternion rotation = colliderTransform->GetLocalRotation();
+							shapeSettings->AddShape(JPH::Vec3(position.x, position.y, position.z), JPH::QuatArg(rotation.x, rotation.y, rotation.z, rotation.w), shape);
+						}
 					}
 				}
-				JPH::EMotionType motionType = static_cast<JPH::EMotionType>(m_BodyType);
+				Vector3 position = m_Transform->GetPosition();
+				Quaternion rotation = m_Transform->GetRotation();
+				JPH::EMotionType motionType = m_IsKinematic ? JPH::EMotionType::Kinematic : JPH::EMotionType::Dynamic;
 				JPH::BodyCreationSettings settings(shapeSettings, JPH::RVec3(position.x, position.y, position.z), JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w), motionType, 1);
 				m_PrivateData->bodyId = bodyInterface.CreateAndAddBody(settings, JPH::EActivation::Activate);
 			}
-			m_IsInitialized = true;
 		}
-		else if (!m_PrivateData->bodyId.IsInvalid())
+		else
 		{
 			JPH::RVec3 position;
 			JPH::Quat rotation;

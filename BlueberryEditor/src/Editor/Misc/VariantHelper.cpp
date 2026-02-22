@@ -37,6 +37,9 @@ namespace Blueberry
 		case BindingType::Int:
 			value = 0;
 			break;
+		case BindingType::Uint:
+			value = 0u;
+			break;
 		case BindingType::Float:
 			value = 0.0f;
 			break;
@@ -44,7 +47,7 @@ namespace Blueberry
 			value = 0;
 			break;
 		case BindingType::String:
-			value = "";
+			value = String();
 			break;
 		case BindingType::Vector2:
 			value = Vector2::Zero;
@@ -76,6 +79,9 @@ namespace Blueberry
 			break;
 		case BindingType::Int:
 			value = *static_cast<int*>(ptr);
+			break;
+		case BindingType::Uint:
+			value = *static_cast<uint32_t*>(ptr);
 			break;
 		case BindingType::Float:
 			value = *static_cast<float*>(ptr);
@@ -116,6 +122,9 @@ namespace Blueberry
 			break;
 		case BindingType::Int:
 			*static_cast<int*>(ptr) = std::get<int>(value);
+			break;
+		case BindingType::Uint:
+			*static_cast<uint32_t*>(ptr) = std::get<uint32_t>(value);
 			break;
 		case BindingType::Float:
 			*static_cast<float*>(ptr) = std::get<float>(value);

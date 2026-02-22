@@ -72,6 +72,13 @@ namespace Blueberry
 			BB_ERROR(WindowsHelper::GetStringLastError() + "CreateWindowEX Failed for window: " + m_WindowTitle);
 		}
 
+		RAWINPUTDEVICE rid{};
+		rid.usUsagePage = 0x01;
+		rid.usUsage = 0x02;	// Mouse
+		rid.dwFlags = 0;
+		rid.hwndTarget = m_Handle;
+		RegisterRawInputDevices(&rid, 1, sizeof(rid));
+
 		if (properties.canDropFiles)
 		{
 			DragAcceptFiles(m_Handle, TRUE);
@@ -218,33 +225,47 @@ namespace Blueberry
 			InputEvents::GetKeyTyped().Invoke(args);
 			return 0;
 		}
-		case WM_MOUSEMOVE:
+		case WM_INPUT:
 		{
-			int xPos = static_cast<int>(LOWORD(lParam));
-			int yPos = static_cast<int>(HIWORD(lParam));
-			int xDelta = 0;
-			int yDelta = 0;
-			if (Screen::IsAllowCursorLock() && Cursor::IsLocked())
+			UINT size;
+			GetRawInputData((HRAWINPUT)lParam, RID_INPUT, nullptr, &size, sizeof(RAWINPUTHEADER));
+			List<BYTE> buffer(size);
+
+			if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, buffer.data(), &size, sizeof(RAWINPUTHEADER)) == size)
 			{
-				Rectangle viewport = Screen::GetGameViewport();
-				if (viewport.width > 0)
+				RAWINPUT* raw = (RAWINPUT*)buffer.data();
+				if (raw->header.dwType == RIM_TYPEMOUSE)
 				{
-					RECT rect;
-					if (GetClientRect(hwnd, &rect))
+					LONG xDelta = 0;
+					LONG yDelta = 0;
+
+					if (Screen::IsAllowCursorLock() && Cursor::IsLocked())
 					{
-						Vector2 viewportCenter = viewport.Center();
-						POINT point;
-						point.x = rect.left + static_cast<int>(viewportCenter.x);
-						point.y = rect.top + static_cast<int>(viewportCenter.y);
-						xDelta = xPos - point.x;
-						yDelta = yPos - point.y;
-						ClientToScreen(hwnd, &point);
-						SetCursorPos(point.x, point.y);
+						Rectangle viewport = Screen::GetGameViewport();
+						if (viewport.width > 0)
+						{
+							RECT rect;
+							if (GetClientRect(hwnd, &rect))
+							{
+								Vector2 viewportCenter = viewport.Center();
+								POINT point;
+								point.x = rect.left + static_cast<int>(viewportCenter.x);
+								point.y = rect.top + static_cast<int>(viewportCenter.y);
+								xDelta = raw->data.mouse.lLastX;
+								yDelta = raw->data.mouse.lLastY;
+								ClientToScreen(hwnd, &point);
+								SetCursorPos(point.x, point.y);
+							}
+						}
 					}
+
+					POINT p;
+					GetCursorPos(&p);
+					MouseMoveEventArgs args(static_cast<float>(p.x), static_cast<float>(p.y), static_cast<float>(xDelta), static_cast<float>(yDelta));
+					InputEvents::GetMouseMoved().Invoke(args);
 				}
 			}
-			MouseMoveEventArgs args(static_cast<float>(xPos), static_cast<float>(yPos), static_cast<float>(xDelta), static_cast<float>(yDelta));
-			InputEvents::GetMouseMoved().Invoke(args);
+
 			return 0;
 		}
 		case WM_SIZE:

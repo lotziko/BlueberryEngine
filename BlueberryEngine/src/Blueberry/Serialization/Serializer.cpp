@@ -69,7 +69,7 @@ namespace Blueberry
 						BB_ERROR("Class not exists.");
 						continue;
 					}
-					instance = info->createInstance();
+					instance = info->Create();
 				}
 				else
 				{

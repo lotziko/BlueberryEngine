@@ -54,6 +54,10 @@ namespace Blueberry
 		std::filesystem::path m_CurrentDirectory;
 		List<AssetInfo> m_CurrentDirectoryAssets;
 		Object* m_ScrollRequest = nullptr;
+		Object* m_RenamingObject = nullptr;
+
+		Object* m_CreatingObject = nullptr;
+		String m_CreatingObjectName;
 
 		FolderTree m_FolderTree;
 		const char* m_OpenedModalPopupId = nullptr;

@@ -31,7 +31,6 @@ namespace Blueberry
 
 		static void Run();
 		static void Stop();
-		static const bool& IsRunning();
 
 		static SceneLoadEvent& GetSceneLoaded();
 
@@ -55,7 +54,6 @@ namespace Blueberry
 		static List<PrefabSceneData> s_PrefabScenes;
 		static String s_Path;
 		static SceneLoadEvent s_SceneLoaded;
-		static bool s_IsRunning;
 
 		static inline ObjectPtr<SceneSettings> s_SceneSettings = {};
 	};

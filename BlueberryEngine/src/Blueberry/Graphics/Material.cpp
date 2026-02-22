@@ -48,7 +48,6 @@ namespace Blueberry
 	{
 		Material* material = Object::Create<Material>();
 		material->SetShader(shader);
-		material->OnCreate();
 		return material;
 	}
 

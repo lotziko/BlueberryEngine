@@ -6,6 +6,7 @@
 
 #include "Editor\Misc\VariantHelper.h"
 #include "Editor\Prefabs\PrefabManager.h"
+#include "Editor\Prefabs\PrefabInstance.h"
 
 namespace Blueberry
 {
@@ -23,7 +24,7 @@ namespace Blueberry
 		m_ClassInfo = ClassDB::GetInfo(target->GetType());
 		m_Targets.push_back(target);
 		m_TargetPtrs.push_back(target);
-		m_IsPrefabInstance.push_back(PrefabManager::IsPartOfPrefabInstance(target));
+		m_IsPrefabInstance.push_back(PrefabManager::IsOverridable(target));
 		BuildTree();
 	}
 
@@ -34,7 +35,7 @@ namespace Blueberry
 		{
 			m_Targets.push_back(target);
 			m_TargetPtrs.push_back(target);
-			m_IsPrefabInstance.push_back(PrefabManager::IsPartOfPrefabInstance(target));
+			m_IsPrefabInstance.push_back(PrefabManager::IsOverridable(target));
 		}
 		BuildTree();
 	}
@@ -604,8 +605,12 @@ namespace Blueberry
 			{
 				if (PrefabManager::IsPartOfPrefabInstance(m_Targets[i]))
 				{
-					node->isOverriden = true;
-					PrefabManager::AddModification(m_Targets[i], GetNodePath(modification.id), node->values[i]);
+					PrefabInstance* instance = PrefabManager::GetInstance(m_Targets[i]);
+					if (instance->HasSource())
+					{
+						node->isOverriden = true;
+						PrefabManager::AddModification(m_Targets[i], GetNodePath(modification.id), node->values[i]);
+					}
 				}
 				VariantHelper::WriteValue(node->bindingType, static_cast<char*>(targets[i]) + offset, node->values[i]);
 				if (callback != nullptr)
@@ -626,12 +631,16 @@ namespace Blueberry
 			{
 				if (PrefabManager::IsPartOfPrefabInstance(m_Targets[i]))
 				{
-					PrefabManager::RemoveModification(m_Targets[i], path);
-					if (callback != nullptr)
+					PrefabInstance* instance = PrefabManager::GetInstance(m_Targets[i]);
+					if (instance->HasSource())
 					{
-						callback->Invoke(m_Targets[i]);
+						PrefabManager::RemoveModification(m_Targets[i], path);
+						if (callback != nullptr)
+						{
+							callback->Invoke(m_Targets[i]);
+						}
+						anyRemoved = true;
 					}
-					anyRemoved = true;
 				}
 			}
 			if (anyRemoved)

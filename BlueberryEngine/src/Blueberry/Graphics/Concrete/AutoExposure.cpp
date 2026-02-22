@@ -90,7 +90,7 @@ namespace Blueberry
 		float adaptationSpeed = 1.0f;
 		float deltaTime = 1.0f / 60.0f;
 		float t = 1.0f - std::expf(-adaptationSpeed * deltaTime);
-		s_CurrentExposure = Lerp(s_CurrentExposure, s_TargetExposure, t);
+		s_CurrentExposure = Math::Lerp(s_CurrentExposure, s_TargetExposure, t);
 	}
 
 	float AutoExposure::GetExposure()

@@ -43,7 +43,7 @@ namespace Blueberry
 		EditorObjectManager::GetEntityCreated().RemoveCallback<&IconRenderer::ClearCache>();
 		EditorObjectManager::GetEntityDestroyed().RemoveCallback<&IconRenderer::ClearCache>();
 		EditorObjectManager::GetEntityUpdated().RemoveCallback<&IconRenderer::ClearCache>();
-		delete s_IconMaterial;
+		Material::Destroy(s_IconMaterial);
 	}
 
 	bool CompareOperations(const IconRenderer::IconInfo& i1, const IconRenderer::IconInfo& i2)

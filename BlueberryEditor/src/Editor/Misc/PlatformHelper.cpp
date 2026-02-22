@@ -321,4 +321,19 @@ namespace Blueberry
 		const char* adddataPath = getenv("APPDATA");
 		return String(adddataPath).append("\\Blueberry\\");
 	}
+
+	void PlatformHelper::MoveToRecycleBin(const WString& path)
+	{
+		SHFILEOPSTRUCTW fileOp = { 0 };
+		fileOp.hwnd = NULL;
+		fileOp.wFunc = FO_DELETE;
+		fileOp.pFrom = path.c_str();
+		fileOp.pTo = NULL;
+		fileOp.fFlags = FOF_ALLOWUNDO | FOF_NOERRORUI | FOF_NOCONFIRMATION | FOF_SILENT;
+		int result = SHFileOperationW(&fileOp);
+		if (result != 0)
+		{
+			BB_ERROR("Failed to delete file " << path.c_str());
+		}
+	}
 }

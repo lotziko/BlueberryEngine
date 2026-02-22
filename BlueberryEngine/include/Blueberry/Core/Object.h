@@ -69,8 +69,8 @@ void childclass::DefineFields()														\
 		static const String TypeName;
 
 	public:
-		Object();
-		virtual ~Object();
+		Object() = default;
+		virtual ~Object() = default;
 
 		virtual bool IsClassType(const size_t classType) const;
 		virtual size_t GetType() const;
@@ -94,9 +94,6 @@ void childclass::DefineFields()														\
 		static Object* Clone(Object* object);
 		static void Destroy(Object* object);
 
-		virtual void OnCreate() { };
-		virtual void OnDestroy() { };
-
 	protected:
 		ObjectId m_ObjectId;
 		String m_Name;
@@ -104,6 +101,7 @@ void childclass::DefineFields()														\
 
 		friend class ObjectDB;
 		friend class ClassDB;
+		friend struct ClassInfo;
 		friend class Serializer;
 	};
 
@@ -134,6 +132,7 @@ void classname::DefineFields()													\
 	inline ObjectType* Object::Create()
 	{
 		ObjectType* object = new ObjectType();
+		ObjectDB::AllocateId(object);
 		return object;
 	}
 }

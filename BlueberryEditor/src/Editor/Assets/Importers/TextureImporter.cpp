@@ -16,6 +16,7 @@ namespace Blueberry
 		DEFINE_BASE_FIELDS(TextureImporter, AssetImporter)
 		DEFINE_FIELD(TextureImporter, m_GenerateMipmaps, BindingType::Bool, {})
 		DEFINE_FIELD(TextureImporter, m_IsSRGB, BindingType::Bool, {})
+		DEFINE_FIELD(TextureImporter, m_IsReadable, BindingType::Bool, {})
 		DEFINE_FIELD(TextureImporter, m_WrapMode, BindingType::Enum, FieldOptions().SetEnumHint("Repeat,Clamp"))
 		DEFINE_FIELD(TextureImporter, m_FilterMode, BindingType::Enum, FieldOptions().SetEnumHint("Point,Bilinear,Trilinear,Anisotropic"))
 		DEFINE_FIELD(TextureImporter, m_TextureShape, BindingType::Enum, FieldOptions().SetEnumHint("Texture2D,Texture2DArray,TextureCube,Texture3D"))
@@ -95,6 +96,16 @@ namespace Blueberry
 		m_IsSRGB = srgb;
 	}
 
+	const bool& TextureImporter::IsReadable()
+	{
+		return m_IsReadable;
+	}
+
+	void TextureImporter::SetReadable(const bool& readable)
+	{
+		m_IsReadable = readable;
+	}
+
 	const WrapMode& TextureImporter::GetWrapMode()
 	{
 		return m_WrapMode;
@@ -171,6 +182,7 @@ namespace Blueberry
 			texture->Initialize(metadata.width, metadata.height, metadata.mipLevels, format);
 			texture->SetWrapMode(m_WrapMode);
 			texture->SetFilterMode(m_FilterMode);
+			texture->SetReadable(m_IsReadable);
 			texture->SetData(image.GetPixels(), image.GetPixelsSize());
 			texture->Apply();
 
@@ -205,6 +217,7 @@ namespace Blueberry
 			texture->Initialize(size, size, metadata.mipLevels, compressedFormat);
 			texture->SetWrapMode(m_WrapMode);
 			texture->SetFilterMode(m_FilterMode);
+			texture->SetReadable(m_IsReadable);
 			texture->SetData(image.GetPixels(), image.GetPixelsSize());
 			texture->Apply();
 

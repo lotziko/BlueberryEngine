@@ -13,6 +13,7 @@ namespace Blueberry
 	private:
 		SerializedProperty m_GenerateMipmapsProperty;
 		SerializedProperty m_IsSRGBProperty;
+		SerializedProperty m_IsReadableProperty;
 		SerializedProperty m_WrapModeProperty;
 		SerializedProperty m_FilterModeProperty;
 		SerializedProperty m_TextureShapeProperty;

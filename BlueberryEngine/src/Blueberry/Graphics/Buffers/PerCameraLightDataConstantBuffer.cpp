@@ -228,7 +228,7 @@ namespace Blueberry
 				data.directionWS = Vector3::Transform(Vector3::Backward, transform->GetRotation());
 				data.range = light->GetRange();
 				data.directionVS = static_cast<Vector3>(Vector4::Transform(Vector4(data.directionWS.x, data.directionWS.y, data.directionWS.z, 0.0f), view));
-				data.coneOuterAngle = ToRadians(light->GetOuterSpotAngle());
+				data.coneOuterAngle = Math::ToRadians(light->GetOuterSpotAngle());
 				data.worldToCookie = hasCookie ? GfxDevice::GetGPUMatrix(light->m_WorldToCookie) : Matrix::Identity;
 				data.flags = (hasShadow ? 1 : 0) | (hasFog ? 2 : 0) | (hasCookie ? 4 : 0);
 				
@@ -263,7 +263,7 @@ namespace Blueberry
 					data.positionMinWS = Vector3(radius, 0, 0);
 					data.positionMinVS = Vector3::Transform(positionWS, view);
 					data.squareRange = radius * radius;
-					data.weight = 1.0f / ((4.0f * Pi * radius * radius * radius) / 3.0f);
+					data.weight = 1.0f / ((4.0f * Math::Pi * radius * radius * radius) / 3.0f);
 					data.type = 0;
 				}
 				else

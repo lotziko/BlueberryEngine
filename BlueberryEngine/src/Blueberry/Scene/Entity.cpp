@@ -20,10 +20,6 @@ namespace Blueberry
 
 	void Entity::OnCreate()
 	{
-		for (auto&& componentSlot : m_Components)
-		{
-			componentSlot->OnCreate();
-		}
 	}
 
 	void Entity::OnDestroy()
@@ -32,10 +28,18 @@ namespace Blueberry
 		{
 			if (componentSlot.IsValid())
 			{
-				RemoveComponentFromScene(componentSlot.Get());
-				componentSlot->OnDisable();
-				componentSlot->OnDestroy();
-				Object::Destroy(componentSlot.Get());
+				Component* component = componentSlot.Get();
+				RemoveComponentFromScene(component);
+				if (component->CanExecute())
+				{
+					if (component->m_IsActive)
+					{
+						component->OnDisable();
+						component->m_IsActive = false;
+					}
+					component->OnDestroy();
+				}
+				Object::Destroy(component);
 			}
 		}
 	}
@@ -104,15 +108,6 @@ namespace Blueberry
 		}
 	}
 
-	void Entity::AddToCreatedComponents(Component* component)
-	{
-		if (m_Scene == nullptr)
-		{
-			return;
-		}
-		m_Scene->m_CreatedComponents.push_back(component);
-	}
-
 	void Entity::AddComponentToScene(Component* component)
 	{
 		if (m_Scene == nullptr)
@@ -171,11 +166,19 @@ namespace Blueberry
 		for (auto&& componentSlot : m_Components)
 		{
 			Component* component = componentSlot.Get();
-			if (!component->m_IsActive)
+			AddComponentToScene(component);
+			if (component->CanExecute())
 			{
-				AddComponentToScene(component);
-				component->m_IsActive = true;
-				component->OnEnable();
+				if (!component->m_IsCreated)
+				{
+					component->OnCreate();
+					component->m_IsCreated = true;
+				}
+				if (!component->m_IsActive)
+				{
+					component->OnEnable();
+					component->m_IsActive = true;
+				}
 			}
 		}
 	}
@@ -185,11 +188,11 @@ namespace Blueberry
 		for (auto&& componentSlot : m_Components)
 		{
 			Component* component = componentSlot.Get();
-			if (component->m_IsActive)
+			RemoveComponentFromScene(component);
+			if (component->m_IsActive && component->CanExecute())
 			{
-				RemoveComponentFromScene(component);
-				component->m_IsActive = false;
 				component->OnDisable();
+				component->m_IsActive = false;
 			}
 		}
 	}

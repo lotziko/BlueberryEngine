@@ -63,7 +63,7 @@ namespace Blueberry
 		}
 		else
 		{
-			clone = info->createInstance();
+			clone = info->Create();
 			mapping.insert_or_assign(object->GetObjectId(), clone->GetObjectId());
 		}
 		visited.insert(object->GetObjectId());
@@ -154,7 +154,6 @@ namespace Blueberry
 				callback->Invoke(clone);
 			}
 		}
-		clone->OnCreate();
 		return clone;
 	}
 }

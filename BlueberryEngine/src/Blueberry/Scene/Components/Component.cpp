@@ -1,5 +1,6 @@
 #include "Blueberry\Scene\Components\Component.h"
 
+#include "Blueberry\Core\Application.h"
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Core\ClassDB.h"
 
@@ -29,6 +30,16 @@ namespace Blueberry
 	Scene* Component::GetScene()
 	{
 		return m_Entity.Get()->GetScene();
+	}
+
+	const bool& Component::IsActive()
+	{
+		return m_IsActive;
+	}
+
+	bool Component::CanExecute()
+	{
+		return Application::IsRunning() || ClassDB::GetInfo(GetType())->executeAlways;
 	}
 
 	const size_t UpdatableComponent::Type = TO_OBJECT_TYPE(TO_STRING(UpdatableComponent));

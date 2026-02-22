@@ -38,7 +38,7 @@ namespace Blueberry
 
 			Entity* cameraEntity = m_Scene->CreateEntity("Camera");
 			cameraEntity->GetTransform()->SetPosition(cameraPosition);
-			cameraEntity->GetTransform()->SetRotation(LookRotation(forward, Vector3::Down));
+			cameraEntity->GetTransform()->SetRotation(Math::LookRotation(forward, Vector3::Down));
 			m_Camera = cameraEntity->AddComponent<Camera>();
 			m_Camera->SetOrthographic(false);
 			m_Camera->SetAspectRatio(1.0f);

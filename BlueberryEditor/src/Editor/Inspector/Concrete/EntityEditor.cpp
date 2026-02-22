@@ -57,7 +57,7 @@ namespace Blueberry
 				ObjectEditor* editor = ObjectEditor::GetEditor(list);
 				if (editor != nullptr)
 				{
-					m_ComponentsEditors.push_back(std::make_pair(list[0], editor));
+					m_ComponentsEditors.push_back(std::make_pair(list[0]->GetObjectId(), editor));
 				}
 			}
 		}
@@ -87,7 +87,7 @@ namespace Blueberry
 
 		for (auto& pair : m_ComponentsEditors)
 		{
-			String name = pair.first->GetTypeName();
+			String name = ObjectDB::GetObject(pair.first)->GetTypeName();
 			const char* headerId = name.c_str();
 
 			ImGui::PushID(headerId);
@@ -144,7 +144,7 @@ namespace Blueberry
 				{
 					for (Object* target : m_SerializedObject->GetTargets())
 					{
-						m_AddedComponents.push_back(std::make_pair(static_cast<Entity*>(target), static_cast<Component*>(info.second.createInstance())));
+						m_AddedComponents.push_back(std::make_pair(static_cast<Entity*>(target), static_cast<Component*>(info.second.Create())));
 					}
 				}
 			}

@@ -3,6 +3,8 @@
 #include "EditorSceneManager.h"
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Core\ObjectCloner.h"
+#include "Editor\Prefabs\PrefabManager.h"
+#include "Editor\Prefabs\PrefabInstance.h"
 
 namespace Blueberry
 {
@@ -19,7 +21,19 @@ namespace Blueberry
 
 	Entity* EditorObjectManager::CloneEntity(Entity* entity)
 	{
-		Entity* newEntity = static_cast<Entity*>(ObjectCloner::Clone(entity));
+		Entity* newEntity = nullptr;
+		if (PrefabManager::IsPartOfPrefabInstance(entity))
+		{
+			if (PrefabManager::IsPrefabInstanceRoot(entity))
+			{
+				PrefabInstance* newInstance = PrefabManager::CloneInstance(PrefabManager::GetInstance(entity));
+				newEntity = newInstance->GetEntity();
+			}
+		}
+		else
+		{
+			newEntity = static_cast<Entity*>(ObjectCloner::Clone(entity));
+		}
 		EditorSceneManager::GetScene()->AddEntity(newEntity);
 		s_EntityCreated.Invoke();
 		return newEntity;
@@ -34,6 +48,11 @@ namespace Blueberry
 	void EditorObjectManager::DestroyEntity(Entity* entity)
 	{
 		EditorSceneManager::GetScene()->DestroyEntity(entity);
+		if (PrefabManager::IsPrefabInstanceRoot(entity))
+		{
+			PrefabInstance* instance = PrefabManager::GetInstance(entity);
+			Object::Destroy(instance);
+		}
 		s_EntityDestroyed.Invoke();
 	}
 

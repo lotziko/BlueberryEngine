@@ -28,6 +28,9 @@ namespace Blueberry
 		const FilterMode& GetFilterMode();
 		void SetFilterMode(const FilterMode& filterMode);
 
+		const bool& IsReadable();
+		void SetReadable(const bool& readable);
+
 	protected:
 		void IncrementUpdateCount();
 
@@ -40,6 +43,7 @@ namespace Blueberry
 		TextureDimension m_Dimension = TextureDimension::Texture2D;
 		WrapMode m_WrapMode = WrapMode::Clamp;
 		FilterMode m_FilterMode = FilterMode::Bilinear;
+		bool m_IsReadable = true;
 		ByteData m_RawData = {};
 
 		uint32_t m_UpdateCount = 0;

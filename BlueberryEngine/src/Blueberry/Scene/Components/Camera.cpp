@@ -305,7 +305,7 @@ namespace Blueberry
 		}
 		else
 		{
-			m_ProjectionMatrix = Matrix::CreatePerspectiveFieldOfView(ToRadians(m_FieldOfView), m_AspectRatio, m_ZNearPlane, m_ZFarPlane);
+			m_ProjectionMatrix = Matrix::CreatePerspectiveFieldOfView(Math::ToRadians(m_FieldOfView), m_AspectRatio, m_ZNearPlane, m_ZFarPlane);
 		}
 		m_InverseProjectionMatrix = m_ProjectionMatrix.Invert();
 		m_ViewProjectionMatrix = m_ViewMatrix * m_ProjectionMatrix;

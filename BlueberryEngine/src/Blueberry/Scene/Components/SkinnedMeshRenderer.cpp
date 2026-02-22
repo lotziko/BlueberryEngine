@@ -18,6 +18,7 @@ namespace Blueberry
 		DEFINE_FIELD(SkinnedMeshRenderer, m_Root, BindingType::ObjectPtr, FieldOptions().SetObjectType(Transform::Type))
 		DEFINE_FIELD(SkinnedMeshRenderer, m_Bones, BindingType::ObjectPtrList, FieldOptions().SetObjectType(Transform::Type).SetVisibility(VisibilityType::NonExposed))
 		DEFINE_ITERATOR(SkinnedMeshRenderer)
+		DEFINE_EXECUTE_ALWAYS()
 	}
 
 	void SkinnedMeshRenderer::OnEnable()

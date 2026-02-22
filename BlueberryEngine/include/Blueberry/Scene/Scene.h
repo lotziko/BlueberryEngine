@@ -29,7 +29,8 @@ namespace Blueberry
 		template<class ComponentType>
 		ComponentMap& GetComponents();
 
-		void Update(const float& deltaTime);
+		void FixedUpdate();
+		void Update();
 
 		void Destroy();
 
@@ -49,10 +50,12 @@ namespace Blueberry
 		const size_t GetRootIndex(Entity* entity);
 		void SetRootIndex(Entity* entity, const size_t& index);
 
+		void AddChildEntity(Entity* entity);
+
 	private:
 		Dictionary<ObjectId, ObjectPtr<Entity>> m_Entities;
 		List<ObjectPtr<Entity>> m_RootEntities;
-		List<Component*> m_CreatedComponents;
+
 		// Stores only components with iterators
 		ComponentManager m_ComponentManager;
 		RendererTree m_RendererTree;

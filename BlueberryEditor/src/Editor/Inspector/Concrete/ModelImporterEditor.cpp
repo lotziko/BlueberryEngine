@@ -13,6 +13,7 @@ namespace Blueberry
 	void ModelImporterEditor::OnEnable()
 	{
 		m_MaterialsProperty = m_SerializedObject->FindProperty("m_Materials");
+		m_AnimationClipsProperty = m_SerializedObject->FindProperty("m_AnimationClips");
 		m_ScaleProperty = m_SerializedObject->FindProperty("m_Scale");
 		m_GenerateLightmapUVProperty = m_SerializedObject->FindProperty("m_GenerateLightmapUV");
 		m_GeneratePhysicsShapeProperty = m_SerializedObject->FindProperty("m_GeneratePhysicsShape");
@@ -27,6 +28,19 @@ namespace Blueberry
 			SerializedProperty nameProperty = materialDataProperty.FindProperty("m_Name");
 			SerializedProperty materialProperty = materialDataProperty.FindProperty("m_Material");
 			ImGui::Property(&materialProperty, nameProperty.GetString().c_str());
+		}
+
+		for (uint32_t i = 0; i < m_AnimationClipsProperty.GetListSize(); ++i)
+		{
+			SerializedProperty animationClipDataProperty = m_AnimationClipsProperty.GetListElement(i);
+			SerializedProperty nameProperty = animationClipDataProperty.FindProperty("m_Name");
+			SerializedProperty replaceNameProperty = animationClipDataProperty.FindProperty("m_ReplaceName");
+			SerializedProperty firstFrameProperty = animationClipDataProperty.FindProperty("m_FirstFrame");
+			SerializedProperty lastFrameProperty = animationClipDataProperty.FindProperty("m_LastFrame");
+			ImGui::Text(nameProperty.GetString().c_str());
+			ImGui::Property(&replaceNameProperty, "Replace name");
+			ImGui::Property(&firstFrameProperty, "First frame");
+			ImGui::Property(&lastFrameProperty, "Last frame");
 		}
 
 		ImGui::Property(&m_ScaleProperty, "Scale");

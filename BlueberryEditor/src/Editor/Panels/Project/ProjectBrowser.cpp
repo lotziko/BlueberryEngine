@@ -201,7 +201,7 @@ namespace Blueberry
 					for (uint32_t i = 0, n = asset.expanded ? static_cast<uint32_t>(asset.objects.size()) : 1; i < n; ++i)
 					{
 						Object* object;
-						if (i == 0)
+						if (i == 0 && asset.importer != nullptr)
 						{
 							object = asset.importer;
 						}
@@ -256,16 +256,9 @@ namespace Blueberry
 			}
 			if (ImGui::MenuItem("Material"))
 			{
-				std::string materialName("New Material");
-				materialName.append(".material");
-
-				auto relativePath = std::filesystem::relative(m_CurrentDirectory, Path::GetAssetsPath());
-				relativePath.append(materialName);
-
-				Material* material = Object::Create<Material>();
-				AssetDB::CreateAsset(material, relativePath.string().data());
-				AssetDB::SaveAssets();
-				AssetDB::Refresh();
+				m_CreatingObject = Object::Create<Material>();
+				m_CreatingObjectName = "New Material.material";
+				UpdateFiles();
 			}
 			if (ImGui::MenuItem("Animation Graph"))
 			{
@@ -301,6 +294,15 @@ namespace Blueberry
 				if (path.size() > 0)
 				{
 					PlatformHelper::RevealInExplorer(StringConverter::StringToWide(path));
+				}
+			}
+			if (ImGui::MenuItem("Delete"))
+			{
+				Object* selectedObject = Selection::GetActiveObject();
+				if (selectedObject != nullptr)
+				{
+					AssetDB::DeleteAsset(selectedObject);
+					Selection::SetActiveObject(nullptr);
 				}
 			}
 
@@ -346,44 +348,42 @@ namespace Blueberry
 		ImGui::PushID(object->GetObjectId());
 		ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 1.0f));
 		
-		if (ImGui::Selectable(object->GetName().c_str(), Selection::IsActiveObject(object), ImGuiSelectableFlags_SelectOnRelease | ImGuiSelectableFlags_AllowDoubleClick, ImVec2(style.ProjectCellSize, style.ProjectCellSize)))
+		if (m_RenamingObject == object || asset.importer == nullptr)
 		{
-			if (ImGui::IsMouseDoubleClicked(0))
+			ImGui::Dummy(ImVec2(style.ProjectCellSize, style.ProjectCellSize));
+		}
+		else
+		{
+			if (ImGui::Selectable(object->GetName().c_str(), Selection::IsActiveObject(object), ImGuiSelectableFlags_SelectOnRelease | ImGuiSelectableFlags_AllowDoubleClick, ImVec2(style.ProjectCellSize, style.ProjectCellSize)))
 			{
-				OpenAsset(asset);
-			}
-			else
-			{
-				if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
+				if (ImGui::IsMouseDoubleClicked(0))
 				{
-					Selection::AddActiveObject(object);
+					OpenAsset(asset);
 				}
 				else
 				{
-					Selection::SetActiveObject(object);
+					if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
+					{
+						Selection::AddActiveObject(object);
+					}
+					else
+					{
+						Selection::SetActiveObject(object);
+					}
+					asset.importer->ImportDataIfNeeded();
 				}
-				asset.importer->ImportDataIfNeeded();
+			}
+
+			if (ImGui::IsItemHovered())
+			{
+				anyHovered = true;
 			}
 		}
 
-		if (ImGui::IsItemHovered())
-		{
-			anyHovered = true;
-		}
-		
 		Object* iconObject = object;
 		if (object == asset.importer && asset.objects.size() > 0 && asset.objects[0].IsValid())
 		{
 			iconObject = asset.objects[0].Get();
-		}
-
-		// Dragging
-		if (ImGui::BeginDragDropSource())
-		{
-			ObjectId objectId = iconObject->GetObjectId();
-			ImGui::SetDragDropPayload("OBJECT_ID", &objectId, sizeof(ObjectId));
-			ImGui::Text("%s", iconObject->GetName().c_str());
-			ImGui::EndDragDropSource();
 		}
 
 		Texture* icon = ThumbnailCache::GetThumbnail(iconObject);
@@ -392,6 +392,54 @@ namespace Blueberry
 			icon = IconDB::GetAssetIcon(iconObject);
 		}
 		ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(icon->GetHandle()), ImVec2(screenPos.x + style.ProjectCellIconPadding, screenPos.y), ImVec2(screenPos.x + style.ProjectCellSize - style.ProjectCellIconPadding, screenPos.y + style.ProjectCellSize - style.ProjectCellIconPadding * 2));
+
+		if (m_RenamingObject == object)
+		{
+			static char buf[256];
+			static bool isRenaming = false;
+			if (!isRenaming)
+			{
+				String name = object->GetName();
+				strncpy(buf, name.c_str(), sizeof(buf) - 1);
+				ImGui::SetKeyboardFocusHere();
+				isRenaming = true;
+			}
+
+			ImVec2 nextScreenPos = ImGui::GetCursorScreenPos();
+			ImGui::SetCursorScreenPos(screenPos + ImVec2(0, style.ProjectCellSize - ImGui::GetTextLineHeightWithSpacing()));
+			ImGui::PushItemWidth(style.ProjectCellSize);
+			ImGui::InputText("###rename", buf, 256, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+			ImGui::SetCursorScreenPos(nextScreenPos);
+
+			if (ImGui::IsItemDeactivated())
+			{
+				m_RenamingObject->SetName(buf);
+				if (m_CreatingObject == m_RenamingObject)
+				{
+					String name = m_RenamingObject->GetName();
+					name.append(m_CreatingObjectName.substr(m_CreatingObjectName.find('.')));
+					auto relativePath = std::filesystem::relative(m_CurrentDirectory, Path::GetAssetsPath());
+					relativePath.append(name);
+					AssetDB::CreateAsset(m_CreatingObject, relativePath.string().data());
+					m_CreatingObject = nullptr;
+					AssetDB::SaveAssets();
+					AssetDB::Refresh();
+				}
+				m_RenamingObject = nullptr;
+				isRenaming = false;
+			}
+		}
+		else
+		{
+			// Dragging
+			if (ImGui::BeginDragDropSource())
+			{
+				ObjectId objectId = iconObject->GetObjectId();
+				ImGui::SetDragDropPayload("OBJECT_ID", &objectId, sizeof(ObjectId));
+				ImGui::Text("%s", iconObject->GetName().c_str());
+				ImGui::EndDragDropSource();
+			}
+		}
 		ImGui::PopStyleVar();
 		ImGui::PopID();
 	}
@@ -508,6 +556,19 @@ namespace Blueberry
 					m_CurrentDirectoryAssets.push_back(info);
 				}
 			}
+		}
+		if (m_CreatingObject != nullptr)
+		{
+			AssetInfo info = {};
+			info.path = "";
+			info.pathString = "";
+			info.importer = nullptr;
+			info.objects.push_back(m_CreatingObject);
+			info.positions.resize(1);
+			info.isDirectory = false;
+			m_CurrentDirectoryAssets.push_back(info);
+			m_RenamingObject = m_CreatingObject;
+			m_RenamingObject->SetName(m_CreatingObjectName.substr(0, m_CreatingObjectName.find('.')));
 		}
 	}
 

@@ -4,7 +4,7 @@
 
 namespace Blueberry
 {
-	class Screen
+	class BB_API Screen
 	{
 	public:
 		static const uint32_t& GetWidth();

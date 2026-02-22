@@ -1,8 +1,10 @@
 #pragma once
 
+#include "Blueberry\Core\Base.h"
+
 namespace Blueberry
 {
-	class Cursor
+	class BB_API Cursor
 	{
 	public:
 		static const bool& IsLocked();

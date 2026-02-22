@@ -121,7 +121,7 @@ namespace Blueberry
 	void TextureHelper::GenerateMipMaps(DirectX::ScratchImage& scratchImage)
 	{
 		DirectX::ScratchImage mipmappedScratchImage;
-		HRESULT hr = DirectX::GenerateMipMaps(*scratchImage.GetImages(), DirectX::TEX_FILTER_FANT, GetMipCount(static_cast<uint32_t>(scratchImage.GetMetadata().width), static_cast<uint32_t>(scratchImage.GetMetadata().height), true), mipmappedScratchImage);
+		HRESULT hr = DirectX::GenerateMipMaps(*scratchImage.GetImages(), DirectX::TEX_FILTER_FANT, Math::GetMipCount(static_cast<uint32_t>(scratchImage.GetMetadata().width), static_cast<uint32_t>(scratchImage.GetMetadata().height), true), mipmappedScratchImage);
 		if (mipmappedScratchImage.GetImageCount() > 0)
 		{
 			scratchImage = std::move(mipmappedScratchImage);

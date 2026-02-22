@@ -38,7 +38,7 @@ namespace Blueberry
 		float distance = std::max(bounds.Extents.x, std::max(bounds.Extents.y, bounds.Extents.z)) * 2;
 		Vector3 targetPosition = bounds.Center;
 		Vector3 cameraPosition = targetPosition + Vector3(-distance, distance / 3, -distance);
-		m_Camera->GetTransform()->SetRotation(Quaternion::CreateFromYawPitchRoll(ToRadians(45), ToRadians(15), 0));
+		m_Camera->GetTransform()->SetRotation(Quaternion::CreateFromYawPitchRoll(Math::ToRadians(45), Math::ToRadians(15), 0));
 		m_Camera->GetTransform()->SetPosition(cameraPosition);
 
 		DefaultRenderer::Draw(m_Scene, m_Camera, Rectangle(0, 0, target->GetWidth(), target->GetHeight()), Color(0, 0, 0, 1), target, nullptr);

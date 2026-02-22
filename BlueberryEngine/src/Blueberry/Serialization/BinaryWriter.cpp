@@ -10,8 +10,8 @@ namespace Blueberry
 	struct Context
 	{
 		Dictionary<std::string_view, uint32_t> keyToOffset;
-		std::stringstream keyStream;
-		std::stringstream dataStream;
+		std::stringstream& keyStream;
+		std::stringstream& dataStream;
 		size_t streamSize = 0;
 	};
 
@@ -82,16 +82,19 @@ namespace Blueberry
 		uint32_t version = 0;
 		stream << 'B';
 		stream.write(reinterpret_cast<char*>(&version), sizeof(uint32_t));
-		Context context;
+		std::stringstream keyStream;
+		std::stringstream dataStream;
+		Context context = { {}, keyStream, dataStream, 0 };
 		for (SerializationTree& tree : trees)
 		{
 			WriteObject(tree, context);
 		}
 		uint32_t keyBufferSize = static_cast<uint32_t>(context.streamSize);
 		stream.write(reinterpret_cast<char*>(&keyBufferSize), sizeof(uint32_t));
-		stream << context.keyStream.rdbuf();
+		stream << keyStream.rdbuf();
 		uint32_t objectCount = static_cast<uint32_t>(trees.size());
 		stream.write(reinterpret_cast<char*>(&objectCount), sizeof(uint32_t));
-		stream << context.dataStream.rdbuf();
+		stream << dataStream.rdbuf();
+		context.keyToOffset = {};
 	}
 }

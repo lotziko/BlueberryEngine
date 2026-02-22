@@ -14,8 +14,8 @@ namespace Blueberry
 		Transform() = default;
 		~Transform() = default;
 
-		virtual void OnEnable() override;
-		virtual void OnDestroy() override;
+		virtual void OnEnable() final;
+		virtual void OnDestroy() final;
 		
 		const Matrix& GetLocalToWorldMatrix();
 		const Matrix& GetWorldToLocalMatrix();
@@ -27,6 +27,7 @@ namespace Blueberry
 		const Vector3 GetLocalEulerRotationHint() const;
 		const Vector3 GetPosition();
 		const Quaternion GetRotation();
+		const Vector3 GetScale();
 
 		Transform* GetParent() const;
 

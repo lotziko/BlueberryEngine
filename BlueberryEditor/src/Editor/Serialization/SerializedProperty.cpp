@@ -120,6 +120,21 @@ namespace Blueberry
 		m_SerializedObject->AddModifiedProperty(m_Id);
 	}
 
+	const uint32_t& SerializedProperty::GetUint()
+	{
+		return std::get<uint32_t>(Get()->values[0]);
+	}
+
+	void SerializedProperty::SetUint(const uint32_t& value)
+	{
+		PropertyTreeNode* node = Get();
+		for (size_t i = 0; i < node->values.size(); ++i)
+		{
+			node->values[i] = value;
+		}
+		m_SerializedObject->AddModifiedProperty(m_Id);
+	}
+
 	const float& SerializedProperty::GetFloat()
 	{
 		return std::get<float>(Get()->values[0]);

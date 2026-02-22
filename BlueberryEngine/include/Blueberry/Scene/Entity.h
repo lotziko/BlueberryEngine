@@ -17,8 +17,8 @@ namespace Blueberry
 		Entity() = default;
 		Entity(const String& name);
 
-		virtual void OnCreate() override;
-		virtual void OnDestroy() override;
+		void OnCreate();
+		void OnDestroy();
 
 		template<class ComponentType>
 		ComponentType* AddComponent();
@@ -49,7 +49,6 @@ namespace Blueberry
 		void UpdateHierarchy();
 
 	private:
-		void AddToCreatedComponents(Component* component);
 		void AddComponentToScene(Component* component);
 		void RemoveComponentFromScene(Component* component);
 		void UpdateHierarchy(const bool& active);
@@ -63,7 +62,7 @@ namespace Blueberry
 
 		Transform* m_Transform;
 		Scene* m_Scene;
-		bool m_IsActiveInHierarchy = true;
+		bool m_IsActiveInHierarchy = false;
 
 		friend class Scene;
 		friend class Component;
@@ -89,16 +88,20 @@ namespace Blueberry
 		}
 
 		componentToAdd->m_Entity = ObjectPtr<Entity>(this);
-		AddToCreatedComponents(componentToAdd);
 		if (index >= m_Components.size())
 		{
 			m_Components.push_back(componentToAdd);
 		}
-		componentToAdd->OnCreate();
 		if (IsActiveInHierarchy())
 		{
 			AddComponentToScene(componentToAdd);
-			componentToAdd->OnEnable();
+			if (componentToAdd->CanExecute())
+			{
+				componentToAdd->OnCreate();
+				componentToAdd->m_IsCreated = true;
+				componentToAdd->OnEnable();
+				componentToAdd->m_IsActive = true;
+			}
 		}
 		return componentToAdd;
 	}
@@ -120,16 +123,26 @@ namespace Blueberry
 		}
 
 		component->m_Entity = ObjectPtr<Entity>(this);
-		AddToCreatedComponents(component);
 		if (index >= m_Components.size())
 		{
 			m_Components.push_back(component);
 		}
-		component->OnCreate();
 		if (IsActiveInHierarchy())
 		{
 			AddComponentToScene(component);
-			component->OnEnable();
+			if (component->CanExecute())
+			{
+				if (!component->m_IsCreated)
+				{
+					component->OnCreate();
+					component->m_IsCreated = true;
+				}
+				if (!component->m_IsActive)
+				{
+					component->OnEnable();
+					component->m_IsActive = true;
+				}
+			}
 		}
 	}
 
@@ -164,8 +177,11 @@ namespace Blueberry
 	inline void Entity::RemoveComponent(ComponentType* component)
 	{
 		RemoveComponentFromScene(component);
-		component->OnDisable();
-		component->OnDestroy();
+		if (component->CanExecute())
+		{
+			component->OnDisable();
+			component->OnDestroy();
+		}
 		auto& index = std::find(m_Components.begin(), m_Components.end(), component);
 		m_Components.erase(index);
 		Object::Destroy(component);

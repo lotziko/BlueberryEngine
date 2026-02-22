@@ -27,10 +27,19 @@ namespace Blueberry
 		DEFINE_FIELD(ModelMaterialData, m_Material, BindingType::ObjectPtr, FieldOptions().SetObjectType(Material::Type))
 	}
 
+	DATA_DEFINITION(ModelAnimationClipData)
+	{
+		DEFINE_FIELD(ModelAnimationClipData, m_Name, BindingType::String, {})
+		DEFINE_FIELD(ModelAnimationClipData, m_ReplaceName, BindingType::String, {})
+		DEFINE_FIELD(ModelAnimationClipData, m_FirstFrame, BindingType::Uint, {})
+		DEFINE_FIELD(ModelAnimationClipData, m_LastFrame, BindingType::Uint, {})
+	}
+
 	OBJECT_DEFINITION(ModelImporter, AssetImporter)
 	{
 		DEFINE_BASE_FIELDS(ModelImporter, AssetImporter)
 		DEFINE_FIELD(ModelImporter, m_Materials, BindingType::DataList, FieldOptions().SetObjectType(ModelMaterialData::Type))
+		DEFINE_FIELD(ModelImporter, m_AnimationClips, BindingType::DataList, FieldOptions().SetObjectType(ModelAnimationClipData::Type))
 		DEFINE_FIELD(ModelImporter, m_Scale, BindingType::Float, {})
 		DEFINE_FIELD(ModelImporter, m_GenerateLightmapUV, BindingType::Bool, {})
 		DEFINE_FIELD(ModelImporter, m_GeneratePhysicsShape, BindingType::Bool, {})
@@ -61,6 +70,46 @@ namespace Blueberry
 		return m_Materials;
 	}
 
+	const String& ModelAnimationClipData::GetName()
+	{
+		return m_Name;
+	}
+
+	void ModelAnimationClipData::SetName(const String& name)
+	{
+		m_Name = name;
+	}
+
+	const String& ModelAnimationClipData::GetReplaceName()
+	{
+		return m_ReplaceName;
+	}
+
+	void ModelAnimationClipData::SetReplaceName(const String& replaceName)
+	{
+		m_ReplaceName = replaceName;
+	}
+
+	const uint32_t& ModelAnimationClipData::GetFirstFrame()
+	{
+		return m_FirstFrame;
+	}
+
+	void ModelAnimationClipData::SetFirstFrame(const uint32_t& firstFrame)
+	{
+		m_FirstFrame = firstFrame;
+	}
+
+	const uint32_t& ModelAnimationClipData::GetLastFrame()
+	{
+		return m_LastFrame;
+	}
+
+	void ModelAnimationClipData::SetLastFrame(const uint32_t& lastFrame)
+	{
+		m_LastFrame = lastFrame;
+	}
+
 	const float& ModelImporter::GetScale()
 	{
 		return m_Scale;
@@ -89,17 +138,6 @@ namespace Blueberry
 	void ModelImporter::SetGeneratePhysicsShape(const bool& generate)
 	{
 		m_GeneratePhysicsShape = generate;
-	}
-
-	String ModelImporter::GetPhysicsShapePath(const Guid& guid, const FileId& fileId)
-	{
-		std::filesystem::path dataPath = Path::GetPhysicsShapeCachePath();
-		if (!std::filesystem::exists(dataPath))
-		{
-			std::filesystem::create_directories(dataPath);
-		}
-		dataPath.append(guid.ToString().append(std::to_string(fileId)).append(".shape"));
-		return String(dataPath.string());
 	}
 
 	void ModelImporter::ImportData()
@@ -145,13 +183,16 @@ namespace Blueberry
 
 		fbxsdk::FbxNode* rootNode = scene->GetRootNode();
 		List<Object*> objects;
+		PrefabInstance* instance = GetOrCreateAssetObject<PrefabInstance>(PrefabInstance::Type);
+		objects.push_back(instance);
+		bool mainIsSet = false;
 		if (meshCount == 1)
 		{
-			CreateMeshEntity(nullptr, scene->GetNode(meshNode), skeletonNodes, objects);
+			CreateMeshEntity(nullptr, scene->GetNode(meshNode), skeletonNodes, objects, mainIsSet);
 		}
 		else
 		{
-			CreateMeshEntity(nullptr, rootNode, skeletonNodes, objects);
+			CreateMeshEntity(nullptr, rootNode, skeletonNodes, objects, mainIsSet);
 		}
 
 		Entity* root = static_cast<Entity*>(ObjectDB::GetObjectFromGuid(GetGuid(), GetMainObject()));
@@ -159,6 +200,7 @@ namespace Blueberry
 		importer->Destroy();
 		manager->Destroy();
 
+		instance->OnCreate();
 		AssetDB::SaveAssetObjectsToCache(objects);
 	}
 
@@ -320,7 +362,7 @@ namespace Blueberry
 		verticesCount = newVerticesCount;
 	}
 
-	void ModelImporter::CreateMeshEntity(Transform* parent, fbxsdk::FbxNode* node, List<FbxNode*>& skeletonNodes, List<Object*>& objects)
+	void ModelImporter::CreateMeshEntity(Transform* parent, fbxsdk::FbxNode* node, List<FbxNode*>& skeletonNodes, List<Object*>& objects, bool& mainIsSet)
 	{
 		if (node->GetLodGroup())
 		{
@@ -358,11 +400,10 @@ namespace Blueberry
 		{
 			transform->SetParent(parent, false);
 		}
-		else
+		else if (!mainIsSet)
 		{
-			PrefabInstance* instance = GetOrCreateAssetObject<PrefabInstance>(PrefabInstance::Type);
-			objects.push_back(instance);
 			SetMainObject(entityFileId);
+			mainIsSet = true;
 		}
 
 		FbxScene* scene = node->GetScene();
@@ -727,26 +768,76 @@ namespace Blueberry
 						decl.vertexUvData = uvs0.data();
 						decl.vertexUvStride = sizeof(Vector2);
 					}
-					decl.indexCount = indicesCount;
-					decl.indexData = indices.data();
 					decl.indexFormat = xatlas::IndexFormat::UInt32;
-					xatlas::AddMeshError error = xatlas::AddMesh(atlas, decl, 1);
-					if (error != xatlas::AddMeshError::Success)
+					bool isValid = true;
+					for (auto& submesh : submeshes)
 					{
-						xatlas::Destroy(atlas);
-						BB_ERROR("Failed to generate lightmap uv.");
-					}
-					else
-					{
-						xatlas::Generate(atlas);
-						xatlas::Mesh& atlasMesh = atlas->meshes[0];
-						uvs1.resize(atlasMesh.vertexCount);
-						for (uint32_t i = 0; i < atlasMesh.vertexCount; i++)
+						decl.indexCount = submesh.GetIndexCount();
+						decl.indexData = indices.data() + submesh.GetIndexStart();
+						xatlas::AddMeshError error = xatlas::AddMesh(atlas, decl, 1);
+						if (error != xatlas::AddMeshError::Success)
 						{
-							xatlas::Vertex &vertex = atlasMesh.vertexArray[i];
-							uvs1[vertex.xref] = Vector3(vertex.uv[0] / atlas->width, vertex.uv[1] / atlas->height, static_cast<float>(vertex.chartIndex));
+							xatlas::Destroy(atlas);
+							BB_ERROR("Failed to generate lightmap uv.");
+							isValid = false;
+							break;
 						}
+					}
+
+					if (isValid)
+					{
+						List<Vector3> oldVertices = vertices;
+						List<Vector3> oldNormals = normals;
+						List<Vector2> oldUvs0 = uvs0;
+
+						xatlas::Generate(atlas);
+						uvs1.reserve(uvs0.size());
+						vertices.clear();
+						normals.clear();
+						uvs0.clear();
+						indices.clear();
+						uint32_t vertexOffset = 0;
+						uint32_t indexOffset = 0;
+						uint32_t chartOffset = 0;
+						for (uint32_t i = 0; i < atlas->meshCount; ++i)
+						{
+							xatlas::Mesh& atlasMesh = atlas->meshes[i];
+							auto& submesh = submeshes[i];
+							submesh.SetIndexStart(indexOffset);
+							submesh.SetIndexCount(atlasMesh.indexCount);
+							for (uint32_t j = 0; j < atlasMesh.vertexCount; ++j)
+							{
+								xatlas::Vertex& vertex = atlasMesh.vertexArray[j];
+								uint32_t index = vertex.xref;
+								vertices.push_back(oldVertices[index]);
+								normals.push_back(oldNormals[index]);
+								uvs0.push_back(oldUvs0[index]);
+								uvs1.push_back(Vector3(vertex.uv[0] / atlas->width, vertex.uv[1] / atlas->height, static_cast<float>(chartOffset + vertex.chartIndex)));
+							}
+							for (uint32_t j = 0; j < atlasMesh.indexCount; ++j)
+							{
+								indices.push_back(vertexOffset + atlasMesh.indexArray[j]);
+							}
+							vertexOffset += atlasMesh.vertexCount;
+							indexOffset += atlasMesh.indexCount;
+							chartOffset += atlasMesh.chartCount;
+						}
+						verticesCount = static_cast<uint32_t>(vertices.size());
+						indicesCount = static_cast<uint32_t>(indices.size());
 						xatlas::Destroy(atlas);
+
+						Dictionary<uint32_t, uint32_t> chartRemap;
+						uint32_t nextChartIndex = 0;
+
+						for (auto& uv : uvs1)
+						{
+							uint32_t oldIndex = static_cast<uint32_t>(uv.z);
+							if (chartRemap.find(oldIndex) == chartRemap.end())
+							{
+								chartRemap[oldIndex] = nextChartIndex++;
+							}
+							uv.z = static_cast<float>(chartRemap[oldIndex]);
+						}
 					}
 				}
 			}
@@ -933,10 +1024,8 @@ namespace Blueberry
 
 			if (m_GeneratePhysicsShape)
 			{
-				std::ofstream output;
-				output.open(GetPhysicsShapePath(GetGuid(), meshFileId).c_str(), std::ofstream::binary);
-				PhysicsShapeCache::Bake(mesh, output);
-				output.close();
+				PhysicsShapeCache::Clear(mesh);
+				// TODO rename to m_GenerateColliders and put colliders on meshes
 			}
 
 			List<Material*> materials;
@@ -977,7 +1066,6 @@ namespace Blueberry
 		}
 		
 		transform->SetLocalPosition(Vector3(static_cast<float>(fbxTranslation[0]), static_cast<float>(fbxTranslation[1]), static_cast<float>(fbxTranslation[2])));
-		//transform->SetLocalPosition(Vector3(static_cast<float>(fbxTranslation[0] / fbxScale[0]), static_cast<float>(fbxTranslation[1] / fbxScale[1]), static_cast<float>(fbxTranslation[2] / fbxScale[2])));
 		transform->SetLocalRotation(Quaternion(static_cast<float>(fbxRotation[0]), static_cast<float>(fbxRotation[1]), static_cast<float>(fbxRotation[2]), static_cast<float>(fbxRotation[3])));
 		transform->SetLocalScale(Vector3::One);
 
@@ -1015,6 +1103,35 @@ namespace Blueberry
 				FbxTime::EMode timeMode = scene->GetGlobalSettings().GetTimeMode();
 				double fps = FbxTime::GetFrameRate(timeMode);
 				double dt = 1.0 / fps;
+
+				auto index = std::find_if(m_AnimationClips.begin(), m_AnimationClips.end(), [name](ModelAnimationClipData& d) { return d.GetName() == name; });
+				if (index == m_AnimationClips.end())
+				{
+					ModelAnimationClipData data = {};
+					data.SetName(name);
+					data.SetReplaceName(name);
+					data.SetFirstFrame(0);
+					data.SetLastFrame(static_cast<uint32_t>(std::floor(endSec * fps)));
+					m_AnimationClips.push_back(data);
+				}
+				else
+				{
+					String replaceName = index->GetReplaceName();
+					if (name != replaceName)
+					{
+						name = replaceName;
+					}
+					double firstFrame = static_cast<double>(index->GetFirstFrame()) * dt;
+					if (firstFrame > 0)
+					{
+						startSec = firstFrame;
+					}
+					double lastFrame = static_cast<double>(index->GetLastFrame()) * dt;
+					if (lastFrame < endSec)
+					{
+						endSec = lastFrame;
+					}
+				}
 
 				for (size_t j = 0; j < skeletonNodes.size(); ++j)
 				{
@@ -1071,7 +1188,7 @@ namespace Blueberry
 			fbxsdk::FbxNode* childNode = node->GetChild(i);
 			if (childNode->GetSkeleton() == nullptr)
 			{
-				CreateMeshEntity(transform, childNode, skeletonNodes, objects);
+				CreateMeshEntity(transform, childNode, skeletonNodes, objects, mainIsSet);
 			}
 		}
 	}

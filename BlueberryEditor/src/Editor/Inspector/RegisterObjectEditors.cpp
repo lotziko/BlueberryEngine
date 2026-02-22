@@ -7,6 +7,7 @@
 #include "Concrete\CameraEditor.h"
 #include "Concrete\SpriteRendererEditor.h"
 #include "Concrete\MeshRendererEditor.h"
+#include "Concrete\SkinnedMeshRendererEditor.h"
 #include "Concrete\SkyRendererEditor.h"
 #include "Concrete\LightEditor.h"
 #include "Concrete\ProbeVolumeEditor.h"
@@ -30,6 +31,7 @@ namespace Blueberry
 		REGISTER_OBJECT_EDITOR(CameraEditor, Camera);
 		REGISTER_OBJECT_EDITOR(SpriteRendererEditor, SpriteRenderer);
 		REGISTER_OBJECT_EDITOR(MeshRendererEditor, MeshRenderer);
+		REGISTER_OBJECT_EDITOR(SkinnedMeshRendererEditor, SkinnedMeshRenderer);
 		REGISTER_OBJECT_EDITOR(SkyRendererEditor, SkyRenderer);
 		REGISTER_OBJECT_EDITOR(LightEditor, Light);
 		REGISTER_OBJECT_EDITOR(ProbeVolumeEditor, ProbeVolume);

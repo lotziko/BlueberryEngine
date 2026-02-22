@@ -830,7 +830,15 @@ namespace Blueberry
 						chartBounds.w = std::max(uv.y, chartBounds.w);
 					}
 				}
-				charts.push_back(chartBounds);
+				if (chartBounds.x != FLT_MAX)
+				{
+					charts.push_back(chartBounds);
+				}
+				else
+				{
+					BB_ERROR(mesh->GetName() << " has invalid chart.");
+					charts.push_back(Vector4(0, 0, 0, 0));
+				}
 			}
 			
 			float texelPerUnit = state.params.texelPerUnit;
@@ -896,8 +904,8 @@ namespace Blueberry
 					const float epsilon = 0.5 + s_Padding;
 					Vector4Int roundedAtlasChartBounds = Vector4Int(static_cast<int>(std::floorf(atlasChartBounds.x - epsilon)), static_cast<int>(std::floorf(atlasChartBounds.y - epsilon)), static_cast<int>(std::ceilf(atlasChartBounds.z + epsilon)), static_cast<int>(std::ceilf(atlasChartBounds.w + epsilon)));
 					Vector2Int roundedSize = Vector2Int(roundedAtlasChartBounds.z - roundedAtlasChartBounds.x, roundedAtlasChartBounds.w - roundedAtlasChartBounds.y);
-					roundedSize.x = NextDivisableBy(roundedSize.x, 4);
-					roundedSize.y = NextDivisableBy(roundedSize.y, 4);
+					roundedSize.x = Math::NextDivisableBy(roundedSize.x, 4);
+					roundedSize.y = Math::NextDivisableBy(roundedSize.y, 4);
 					roundedAtlasChartBounds = Vector4Int(-roundedSize.x / 2, -roundedSize.y / 2, roundedSize.x / 2, roundedSize.y / 2);
 
 					chartData.meshBounds = meshChartBounds;
@@ -951,6 +959,11 @@ namespace Blueberry
 		state.result.chartOffsetScale.resize(atlasCharts.size() + 1);
 		for (auto& chart : atlasCharts)
 		{
+			if (chart.size.x <= 0)
+			{
+				BB_ERROR("Skipping invalid chart.");
+				continue;
+			}
 			// Reset to top if chart is smaller
 			if (lastChartSize > chart.size.x + chart.size.y)
 			{
@@ -1102,7 +1115,7 @@ namespace Blueberry
 			{
 				for (uint32_t i = 0; i < size.x; ++i)
 				{
-					*ptr = make_float3(Lerp(minPosition.x, maxPosition.x, i * invSize.x), Lerp(minPosition.y, maxPosition.y, j * invSize.y), Lerp(minPosition.z, maxPosition.z, k * invSize.z));
+					*ptr = make_float3(Math::Lerp(minPosition.x, maxPosition.x, i * invSize.x), Math::Lerp(minPosition.y, maxPosition.y, j * invSize.y), Math::Lerp(minPosition.z, maxPosition.z, k * invSize.z));
 					++ptr;
 				}
 			}

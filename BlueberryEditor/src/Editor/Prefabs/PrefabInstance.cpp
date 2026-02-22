@@ -142,7 +142,7 @@ namespace Blueberry
 		if (m_Entity.IsValid())
 		{
 			PrefabManager::s_RootToPrefabInstance.erase(m_Entity->GetObjectId());
-			Object::Destroy(m_Entity.Get());
+			//Object::Destroy(m_Entity.Get());
 		}
 	}
 

@@ -105,13 +105,13 @@ namespace Blueberry
 			uint32_t offset = 0;
 			for (int lat = 0; lat <= latitudeSegments; ++lat)
 			{
-				float theta = lat * Pi / latitudeSegments;
+				float theta = lat * Math::Pi / latitudeSegments;
 				float sinTheta = sin(theta);
 				float cosTheta = cos(theta);
 
 				for (int lon = 0; lon <= longitudeSegments; ++lon)
 				{
-					float phi = lon * 2 * Pi / longitudeSegments;
+					float phi = lon * 2 * Math::Pi / longitudeSegments;
 					float sinPhi = sin(phi);
 					float cosPhi = cos(phi);
 

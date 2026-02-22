@@ -25,5 +25,6 @@ namespace Blueberry
 
 	private:
 		List<PrefabInstance*> m_PrefabInstances;
+		bool m_IsPrefabAsset = false;
 	};
 }

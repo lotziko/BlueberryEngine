@@ -39,6 +39,7 @@ namespace Blueberry
 		static void CreateAsset(Object* object, const String& relativePath);
 		static void SaveAssetObjectsToCache(const List<Object*>& objects);
 		static void SetDirty(Object* object);
+		static void DeleteAsset(Object* object);
 		static void DeleteAssetFromData(const Guid& guid);
 		static void MarkForReimport(const Guid& guid);
 		static void SaveAssets();

@@ -2,27 +2,39 @@
 
 namespace Blueberry
 {
-	size_t Time::m_FrameCount = 0;
-	double Time::m_Time = 0;
+	size_t Time::s_FrameCount = 0;
+	double Time::s_Time = 0;
+	float Time::s_DeltaTime = 0;
+	float Time::s_FixedDeltaTime = 1.0f / 60.0f;
 
 	const size_t Time::GetFrameCount()
 	{
-		return m_FrameCount;
+		return s_FrameCount;
 	}
 
 	const float Time::GetTime()
 	{
-		return static_cast<float>(m_Time);
+		return static_cast<float>(s_Time);
 	}
 
 	const float Time::GetDeltaTime()
 	{
-		return 1.0f / 60.0f; // TODO
+		return s_DeltaTime;
 	}
 
-	void Time::IncrementFrameCount()
+	void Time::SetDeltaTime(float deltaTime)
 	{
-		++m_FrameCount;
-		m_Time += 1.0 / 60.0; // TODO delta time instead
+		s_DeltaTime = deltaTime;
+	}
+
+	const float Time::GetFixedDeltaTime()
+	{
+		return s_FixedDeltaTime;
+	}
+
+	void Time::EndFrame()
+	{
+		++s_FrameCount;
+		s_Time += s_DeltaTime;
 	}
 }

@@ -176,10 +176,9 @@ namespace Blueberry
 	void ObjectDB::AllocateEmptyObjectWithGuid(const Guid& guid, const FileId& fileId)
 	{
 		// TODO do something better
-		Object* object = new Object();
+		Object* object = Object::Create<Object>();
 		object->m_Name = "Missing";
 		object->m_State = ObjectState::Missing;
-		ObjectDB::AllocateId(object);
 		AllocateIdToGuid(object->GetObjectId(), guid, fileId);
 	}
 

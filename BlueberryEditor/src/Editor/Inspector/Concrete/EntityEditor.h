@@ -22,7 +22,7 @@ namespace Blueberry
 	private:
 		SerializedProperty m_IsActiveProperty;
 		SerializedProperty m_ComponentsProperty;
-		List<std::pair<Object*, ObjectEditor*>> m_ComponentsEditors;
+		List<std::pair<ObjectId, ObjectEditor*>> m_ComponentsEditors;
 		List<std::pair<Entity*, Component*>> m_AddedComponents;
 		List<Component*> m_RemovedComponents;
 	};

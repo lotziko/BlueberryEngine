@@ -13,29 +13,26 @@ namespace Blueberry
 		return true;
 	}
 
-	void Scene::Update(const float& deltaTime)
+	void Scene::FixedUpdate()
 	{
-		if (m_CreatedComponents.size() > 0)
+		for (auto& component : m_ComponentManager.GetIterator(UpdatableComponent::Type))
 		{
-			for (auto& component : m_CreatedComponents)
-			{
-				component->OnBeginPlay();
-			}
-			m_CreatedComponents.clear();
+			component.second->OnFixedUpdate();
 		}
+	}
 
-		// Update
+	void Scene::Update()
+	{
+		for (auto& component : m_ComponentManager.GetIterator(UpdatableComponent::Type))
 		{
-			for (auto& component : m_ComponentManager.GetIterator(UpdatableComponent::Type))
-			{
-				component.second->OnUpdate();
-			}
+			component.second->OnUpdate();
 		}
 	}
 
 	void Scene::Destroy()
 	{
-		for (auto& rootEntity : m_RootEntities)
+		auto snapshot = m_RootEntities;
+		for (auto& rootEntity : snapshot)
 		{
 			if (rootEntity.IsValid())
 			{
@@ -55,7 +52,7 @@ namespace Blueberry
 		AddToRoot(entity);
 
 		entity->AddComponent<Transform>();
-		entity->OnCreate();
+		entity->UpdateHierarchy();
 		return entity;
 	}
 
@@ -73,19 +70,12 @@ namespace Blueberry
 			{
 				m_RootEntities.push_back(entity);
 			}
-			if (entity->IsActiveInHierarchy())
-			{
-				entity->UpdateComponents();
-			}
-			for (uint32_t i = 0; i < entity->GetComponentCount(); ++i)
-			{
-				entity->AddToCreatedComponents(entity->GetComponent(i));
-			}
 		}
 		for (auto& child : entity->GetTransform()->GetChildren())
 		{
-			AddEntity(child.Get()->GetEntity());
+			AddChildEntity(child.Get()->GetEntity());
 		}
+		entity->UpdateHierarchy();
 	}
 
 	void Scene::RemoveEntity(Entity* entity)
@@ -179,5 +169,19 @@ namespace Blueberry
 			}
 		}
 		m_RootEntities.move_element(oldIndex, index);
+	}
+
+	void Scene::AddChildEntity(Entity* entity)
+	{
+		if (entity->m_Scene != this)
+		{
+			entity->m_Scene = this;
+			m_Entities[entity->GetObjectId()] = entity;
+		}
+
+		for (auto& child : entity->GetTransform()->GetChildren())
+		{
+			AddChildEntity(child.Get()->GetEntity());
+		}
 	}
 }

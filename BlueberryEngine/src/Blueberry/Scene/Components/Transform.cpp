@@ -20,6 +20,7 @@ namespace Blueberry
 		DEFINE_FIELD(Transform, m_LocalRotationEulerHint, BindingType::Vector3, FieldOptions().SetVisibility(VisibilityType::Hidden))
 		DEFINE_FIELD(Transform, m_Parent, BindingType::ObjectPtr, FieldOptions().SetObjectType(Transform::Type).SetVisibility(VisibilityType::Hidden))
 		DEFINE_FIELD(Transform, m_Children, BindingType::ObjectPtrList, FieldOptions().SetObjectType(Transform::Type).SetVisibility(VisibilityType::Hidden))
+		DEFINE_EXECUTE_ALWAYS()
 	}
 
 	void Transform::OnEnable()
@@ -73,7 +74,7 @@ namespace Blueberry
 	{
 		if (m_DirtyFlags & DIRTY_LOCAL)
 		{
-			m_LocalMatrix = CreateTRS(m_LocalPosition, m_LocalRotation, m_LocalScale);
+			m_LocalMatrix = Math::CreateTRS(m_LocalPosition, m_LocalRotation, m_LocalScale);
 			m_DirtyFlags &= ~DIRTY_LOCAL;
 			++m_UpdateCount;
 		}
@@ -126,6 +127,16 @@ namespace Blueberry
 		return m_Rotation;
 	}
 
+	const Vector3 Transform::GetScale()
+	{
+		if (m_DirtyFlags & DIRTY_WORLD)
+		{
+			RecalculateHierarchy();
+		}
+
+		return m_Scale;
+	}
+
 	Transform* Transform::GetParent() const
 	{
 		return m_Parent.Get();
@@ -175,7 +186,7 @@ namespace Blueberry
 	void Transform::SetLocalRotation(const Quaternion& rotation)
 	{
 		m_LocalRotation = rotation;
-		m_LocalRotationEulerHint = ToDegrees(m_LocalRotation.ToEuler());
+		m_LocalRotationEulerHint = Math::ToDegrees(m_LocalRotation.ToEuler());
 		InvalidateHierarchy();
 	}
 
@@ -188,7 +199,7 @@ namespace Blueberry
 	void Transform::SetLocalEulerRotationHint(const Vector3& euler)
 	{
 		m_LocalRotationEulerHint = euler;
-		m_LocalRotation = Quaternion::CreateFromYawPitchRoll(ToRadians(m_LocalRotationEulerHint.y), ToRadians(m_LocalRotationEulerHint.x), ToRadians(m_LocalRotationEulerHint.z));
+		m_LocalRotation = Quaternion::CreateFromYawPitchRoll(Math::ToRadians(m_LocalRotationEulerHint.y), Math::ToRadians(m_LocalRotationEulerHint.x), Math::ToRadians(m_LocalRotationEulerHint.z));
 		m_LocalRotation.Normalize();
 		InvalidateHierarchy();
 	}
@@ -222,7 +233,7 @@ namespace Blueberry
 		{
 			m_LocalRotation = Quaternion::CreateFromRotationMatrix(Matrix::Transform(m_Parent->GetWorldToLocalMatrix(), rotation));
 		}
-		m_LocalRotationEulerHint = ToDegrees(m_LocalRotation.ToEuler());
+		m_LocalRotationEulerHint = Math::ToDegrees(m_LocalRotation.ToEuler());
 		InvalidateHierarchy();
 	}
 
@@ -347,7 +358,7 @@ namespace Blueberry
 	{
 		if (m_DirtyFlags & DIRTY_LOCAL)
 		{
-			m_LocalMatrix = CreateTRS(m_LocalPosition, m_LocalRotation, m_LocalScale);
+			m_LocalMatrix = Math::CreateTRS(m_LocalPosition, m_LocalRotation, m_LocalScale);
 			m_DirtyFlags &= ~DIRTY_LOCAL;
 		}
 		if (m_DirtyFlags & DIRTY_WORLD)
@@ -359,7 +370,9 @@ namespace Blueberry
 					m_Parent.Get()->RecalculateHierarchy();
 				}
 				m_LocalToWorldMatrix = m_LocalMatrix * (m_Parent->m_LocalToWorldMatrix);
-				m_LocalToWorldMatrix.Decompose(m_Scale, m_Rotation, m_Position);
+				m_Position = m_Parent->m_Position + Vector3::Transform(m_Parent->m_Scale * m_LocalPosition, m_Parent->m_Rotation);
+				m_Rotation = m_LocalRotation * m_Parent->m_Rotation;
+				m_Scale = m_Parent->m_Scale * m_LocalScale;
 			}
 			else
 			{

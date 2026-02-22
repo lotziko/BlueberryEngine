@@ -39,6 +39,9 @@ namespace Blueberry
 		const int& GetInt();
 		void SetInt(const int& value);
 
+		const uint32_t& GetUint();
+		void SetUint(const uint32_t& value);
+
 		const float& GetFloat();
 		void SetFloat(const float& value);
 

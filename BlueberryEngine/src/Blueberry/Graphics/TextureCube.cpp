@@ -70,6 +70,11 @@ namespace Blueberry
 		
 		GfxDevice::CreateTexture(textureProperties, m_Texture);
 		IncrementUpdateCount();
+		if (!m_IsReadable)
+		{
+			m_RawData.clear();
+			m_RawData.shrink_to_fit();
+		}
 	}
 
 	TextureCube* TextureCube::Create(const uint32_t& width, const uint32_t& height, const uint32_t& mipCount, const TextureFormat& textureFormat, const WrapMode& wrapMode, const FilterMode& filterMode)

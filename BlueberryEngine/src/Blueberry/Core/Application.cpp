@@ -5,6 +5,7 @@
 #include "Blueberry\Core\Layer.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\Renderer2D.h"
+#include "Blueberry\Core\Time.h"
 
 #include <chrono>
 #include <thread>
@@ -43,11 +44,10 @@ namespace Blueberry
 	void Application::Run()
 	{
 		// Based on https://stackoverflow.com/questions/63429337/limit-fps-in-loop-c
-		using framerate = std::chrono::duration<int, std::ratio<1, 60>>;
-		auto prev = std::chrono::system_clock::now();
-		auto next = prev + framerate{ 1 };
-		int N = 0;
-		std::chrono::system_clock::duration sum{ 0 };
+		auto targetFrameRate = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<double>(1.0 / 60.0));
+		auto prev = std::chrono::steady_clock::now();
+		auto next = prev + targetFrameRate;
+		std::chrono::steady_clock::duration sum{ 0 };
 
 		while (ProcessMessages())
 		{
@@ -59,19 +59,23 @@ namespace Blueberry
 			else
 			{
 				std::this_thread::sleep_until(next);
-				next += framerate{ 1 };
+				next += targetFrameRate;
 			}
 
-			Update();
-			Draw();
+			auto targetUpdateRate = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<float>(Time::GetFixedDeltaTime()));
 
-			if (!hasCallbacks)
+			auto now = std::chrono::steady_clock::now();
+			auto delta = now - prev;
+			Time::SetDeltaTime(std::chrono::duration<float>(delta).count());
+
+			sum += delta;
+			prev = now;
+			while (sum >= targetUpdateRate)
 			{
-				auto now = std::chrono::system_clock::now();
-				sum += now - prev;
-				++N;
-				prev = now;
+				Update();
+				sum -= targetUpdateRate;
 			}
+			Draw();
 		}
 	}
 
@@ -105,6 +109,16 @@ namespace Blueberry
 	Application* Application::GetInstance()
 	{
 		return s_Instance;
+	}
+
+	bool Application::IsRunning()
+	{
+		return s_IsRunning;
+	}
+
+	void Application::SetRunning(const bool& isRunning)
+	{
+		s_IsRunning = isRunning;
 	}
 
 	bool Application::ProcessMessages()

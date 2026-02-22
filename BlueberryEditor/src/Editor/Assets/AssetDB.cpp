@@ -1,6 +1,7 @@
 #include "AssetDB.h"
 
 #include "Blueberry\Core\ObjectDB.h"
+#include "Blueberry\Tools\StringConverter.h"
 #include "Editor\Assets\AssetImporter.h"
 #include "Editor\Serialization\EditorSerializer.h"
 #include "Editor\Assets\Importers\DefaultImporter.h"
@@ -10,6 +11,7 @@
 #include "Editor\Assets\DependencyCache.h"
 #include "Editor\Assets\ObjectFinalizer.h"
 #include "Editor\Misc\PathHelper.h"
+#include "Editor\Misc\PlatformHelper.h"
 
 namespace Blueberry
 {
@@ -239,6 +241,46 @@ namespace Blueberry
 		}
 
 		s_DirtyAssets.push_back(object->GetObjectId());
+	}
+
+	void AssetDB::DeleteAsset(Object* object)
+	{
+		Guid guid;
+		AssetImporter* importer;
+		if (object->IsClassType(AssetImporter::Type))
+		{
+			importer = static_cast<AssetImporter*>(object);
+			guid = importer->GetGuid();
+		}
+		else
+		{
+			guid = ObjectDB::GetGuidFromObject(object);
+			auto it = s_GuidToPath.find(guid);
+			if (it != s_GuidToPath.end())
+			{
+				importer = s_Importers[it->second];
+			}
+			else
+			{
+				return;
+			}
+		}
+		
+		PlatformHelper::MoveToRecycleBin(StringConverter::StringToWide(importer->GetFilePath()) + L'\0');
+		PlatformHelper::MoveToRecycleBin(StringConverter::StringToWide(importer->GetMetaFilePath()) + L'\0');
+		FileId mainObject = importer->GetMainObject();
+		if (mainObject != 0)
+		{
+			Object::Destroy(ObjectDB::GetObjectFromGuid(guid, mainObject));
+		}
+		for (auto& pair : importer->GetAssetObjects())
+		{
+			Object::Destroy(ObjectDB::GetObject(pair.second));
+		}
+		Object::Destroy(importer);
+		s_GuidToPath.erase(guid);
+		s_Importers.erase(importer->GetRelativeFilePath());
+		s_AssetDBRefreshed.Invoke();
 	}
 
 	void AssetDB::DeleteAssetFromData(const Guid& guid)

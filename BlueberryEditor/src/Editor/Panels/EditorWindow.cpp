@@ -288,7 +288,7 @@ namespace Blueberry
 			BB_ERROR("Class not exists.");
 			return nullptr;
 		}
-		EditorWindow* window = (EditorWindow*)info->createInstance();
+		EditorWindow* window = static_cast<EditorWindow*>(info->Create());
 		return window;
 	}
 

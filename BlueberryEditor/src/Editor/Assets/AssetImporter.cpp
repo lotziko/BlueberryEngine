@@ -148,7 +148,7 @@ namespace Blueberry
 	AssetImporter* AssetImporter::CreateNew(const size_t& type, const std::filesystem::path& relativePath, const std::filesystem::path& relativeMetaPath)
 	{
 		const ClassInfo* info = ClassDB::GetInfo(type);
-		AssetImporter* importer = static_cast<AssetImporter*>(info->createInstance());
+		AssetImporter* importer = static_cast<AssetImporter*>(info->Create());
 		importer->m_Guid = Guid::Create();
 		importer->m_RelativePath = relativePath.string();
 		importer->m_RelativeMetaPath = relativeMetaPath.string();

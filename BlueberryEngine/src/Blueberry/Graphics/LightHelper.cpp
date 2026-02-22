@@ -83,9 +83,9 @@ namespace Blueberry
 		switch (light->GetType())
 		{
 		case LightType::Spot:
-			return Matrix::CreatePerspectiveFieldOfView(ToRadians(light->GetOuterSpotAngle()), 1, 0.01f, light->GetRange());
+			return Matrix::CreatePerspectiveFieldOfView(Math::ToRadians(light->GetOuterSpotAngle()), 1, 0.01f, light->GetRange());
 		case LightType::Point:
-			return Matrix::CreatePerspectiveFieldOfView(ToRadians(90 + guardAngle), 1, 0.01f, light->GetRange());
+			return Matrix::CreatePerspectiveFieldOfView(Math::ToRadians(90 + guardAngle), 1, 0.01f, light->GetRange());
 		default:
 			return Matrix::Identity;
 		}
@@ -109,8 +109,8 @@ namespace Blueberry
 
 		if (type == LightType::Spot)
 		{
-			float cosOuterAngle = cos(ToRadians(spotOuterAngle) * 0.5f);
-			float cosInnerAngle = cos(ToRadians(spotInnerAngle) * 0.5f);
+			float cosOuterAngle = cos(Math::ToRadians(spotOuterAngle) * 0.5f);
+			float cosInnerAngle = cos(Math::ToRadians(spotInnerAngle) * 0.5f);
 			float smoothAngleRange = std::max(0.001f, cosInnerAngle - cosOuterAngle);
 			float invAngleRange = 1.0f / smoothAngleRange;
 			float add = -cosOuterAngle * invAngleRange;

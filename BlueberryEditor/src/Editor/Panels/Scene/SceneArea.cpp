@@ -18,6 +18,8 @@
 #include "Editor\Menu\EditorMenuManager.h"
 #include "Editor\Serialization\SerializedObject.h"
 
+#include "Blueberry\Core\Application.h"
+#include "Blueberry\Core\Time.h"
 #include "Blueberry\Core\Screen.h"
 #include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Scene\Scene.h"
@@ -48,7 +50,7 @@ namespace Blueberry
 
 		// TODO save to config instead
 		m_Position = Vector3(0, 10, 0);
-		m_Rotation = Quaternion::CreateFromYawPitchRoll(ToRadians(180), ToRadians(45), 0);
+		m_Rotation = Quaternion::CreateFromYawPitchRoll(Math::ToRadians(180), Math::ToRadians(45), 0);
 
 		Entity* cameraEntity = Object::Create<Entity>();
 		cameraEntity->AddComponent<Transform>();
@@ -85,6 +87,8 @@ namespace Blueberry
 
 	Vector3 GetMotion(const Quaternion& rotation)
 	{
+		float flySpeed = 9.0f;
+
 		Vector3 motion = Vector3::Zero;
 		if (ImGui::IsKeyDown(ImGuiKey_D))
 		{
@@ -112,14 +116,12 @@ namespace Blueberry
 		}
 		motion.Normalize();
 
+		motion *= flySpeed;
 		if (ImGui::IsKeyDown(ImGuiKey_LeftShift))
 		{
-			motion *= 1;
+			motion *= 5.0f;
 		}
-		else
-		{
-			motion *= 0.25;
-		}
+		motion *= Time::GetDeltaTime();
 		return motion;
 	}
 
@@ -302,7 +304,7 @@ namespace Blueberry
 
 	float SceneArea::GetPerspectiveDistance(const float objectSize, const float fov)
 	{
-		return objectSize / sin(ToRadians(fov * 0.5f));
+		return objectSize / sin(Math::ToRadians(fov * 0.5f));
 	}
 
 	float SceneArea::GetCameraDistance()
@@ -458,7 +460,7 @@ namespace Blueberry
 
 		ImGui::BeginGroup();
 
-		if (EditorSceneManager::GetScene() != nullptr && !EditorSceneManager::IsRunning())
+		if (EditorSceneManager::GetScene() != nullptr && !Application::IsRunning())
 		{
 			if (ImGui::Button("Save"))
 			{
@@ -592,7 +594,7 @@ namespace Blueberry
 
 	void SceneArea::OnEntityUpdate()
 	{
-		if (!EditorSceneManager::IsRunning())
+		if (!Application::IsRunning())
 		{
 			SetHasUnsavedChanges(true);
 			RequestRedrawAll();
@@ -601,7 +603,7 @@ namespace Blueberry
 
 	void SceneArea::OnObjectUpdate(const ObjectUpdateEventArgs& args)
 	{
-		if (!EditorSceneManager::IsRunning())
+		if (!Application::IsRunning())
 		{
 			Scene* scene = EditorSceneManager::GetScene();
 			Object* target = args.GetObject();

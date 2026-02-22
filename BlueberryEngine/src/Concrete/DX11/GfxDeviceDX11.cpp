@@ -371,7 +371,7 @@ namespace Blueberry
 			return;
 		}
 
-		const GfxRenderStateDX11 renderState = m_StateCache.GetState(operation.material, operation.passIndex);
+		const GfxRenderStateDX11 renderState = m_StateCache.GetState(operation.material, operation.passIndex, operation.isCounterClockwise);
 		
 		if (!renderState.isValid)
 		{
@@ -743,9 +743,9 @@ namespace Blueberry
 		}
 	}
 
-	ID3D11RasterizerState* GfxDeviceDX11::GetRasterizerState(const CullMode& mode)
+	ID3D11RasterizerState* GfxDeviceDX11::GetRasterizerState(const CullMode& mode, const bool& isCounterClockwise)
 	{
-		size_t key = static_cast<size_t>(mode) | static_cast<size_t>(m_DepthBias) << 8 | *(reinterpret_cast<size_t*>(&m_SlopeDepthBias)) << 16;
+		size_t key = static_cast<size_t>(mode) | static_cast<size_t>(m_DepthBias) << 8 | *(reinterpret_cast<size_t*>(&m_SlopeDepthBias)) << 16 | (isCounterClockwise ? 1ull : 0ull) << 24;
 		for (auto& pair : m_RasterizerStates)
 		{
 			if (pair.first == key)
@@ -759,6 +759,7 @@ namespace Blueberry
 
 		rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
 		rasterizerDesc.CullMode = static_cast<D3D11_CULL_MODE>(static_cast<uint32_t>(mode) + 1);
+		rasterizerDesc.FrontCounterClockwise = isCounterClockwise;
 		rasterizerDesc.MultisampleEnable = true;
 		rasterizerDesc.AntialiasedLineEnable = true;
 		rasterizerDesc.DepthBias = m_DepthBias;
