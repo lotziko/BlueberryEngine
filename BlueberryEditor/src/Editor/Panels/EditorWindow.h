@@ -20,9 +20,8 @@ namespace Blueberry
 		void Close();
 		void Focus();
 
-		void DrawUI();
-
 		void SetTitle(const String& title);
+		void SetMaximized(const bool& maximized);
 
 		const bool& HasUnsavedChanges();
 		void SetHasUnsavedChanges(const bool& hasChanges);
@@ -44,6 +43,10 @@ namespace Blueberry
 		virtual void OnSaveChanges();
 		virtual void OnDiscardChanges();
 		virtual WString GetSaveChangesMessage();
+
+	private:
+		void DrawUI();
+		void DrawMaximizedUI();
 
 	protected:
 		String m_Title;

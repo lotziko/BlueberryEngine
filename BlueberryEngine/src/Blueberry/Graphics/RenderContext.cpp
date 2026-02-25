@@ -200,6 +200,10 @@ namespace Blueberry
 				{
 					continue;
 				}
+				if (!skinnedMeshRenderer->HasRoot())
+				{
+					continue;
+				}
 				Mesh* mesh = skinnedMeshRenderer->GetMesh();
 				if (mesh == nullptr)
 				{

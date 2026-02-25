@@ -656,7 +656,7 @@ namespace Blueberry
 			NULL,
 			D3D_DRIVER_TYPE_HARDWARE, //hardware driver
 			NULL, //software driver
-			D3D11_CREATE_DEVICE_DEBUG, //no flags
+			0, //no flags
 			NULL, //feature levels
 			0, //no feature levels
 			D3D11_SDK_VERSION,

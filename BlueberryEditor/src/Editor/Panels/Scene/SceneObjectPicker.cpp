@@ -247,12 +247,15 @@ namespace Blueberry
 			if (Selection::IsActiveObject(entity) && entity->IsActiveInHierarchy())
 			{
 				SkinnedMeshRenderer* skinnedMeshRenderer = static_cast<SkinnedMeshRenderer*>(pair.second);
-				Mesh* mesh = skinnedMeshRenderer->GetMesh();
-				if (mesh != nullptr)
+				if (skinnedMeshRenderer->HasRoot())
 				{
-					PerDrawDataConstantBuffer::BindData(skinnedMeshRenderer->GetLocalToWorldMatrix());
-					PerObjectDataConstantBuffer::BindData(ConvertIndexToColor(10000));
-					GfxDevice::Draw(GfxDrawingOperation(mesh, Skinning::GetVertexBuffer(skinnedMeshRenderer), m_MeshObjectPickerMaterial));
+					Mesh* mesh = skinnedMeshRenderer->GetMesh();
+					if (mesh != nullptr)
+					{
+						PerDrawDataConstantBuffer::BindData(skinnedMeshRenderer->GetLocalToWorldMatrix());
+						PerObjectDataConstantBuffer::BindData(ConvertIndexToColor(10000));
+						GfxDevice::Draw(GfxDrawingOperation(mesh, Skinning::GetVertexBuffer(skinnedMeshRenderer), m_MeshObjectPickerMaterial));
+					}
 				}
 			}
 		}

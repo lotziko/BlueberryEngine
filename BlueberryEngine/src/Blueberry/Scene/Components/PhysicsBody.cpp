@@ -120,7 +120,7 @@ namespace Blueberry
 			{
 				bodyInterface.GetPositionAndRotation(m_PrivateData->bodyId, position, rotation);
 				m_Transform->SetPosition(Vector3(position[0], position[1], position[2]));
-				m_Transform->SetRotation(Quaternion(rotation.GetX(), rotation.GetY(), rotation.GetZ(), rotation.GetW()));
+				m_Transform->SetRotation(Quaternion(-rotation.GetX(), rotation.GetY(), -rotation.GetZ(), rotation.GetW()));
 			}
 		}
 	}

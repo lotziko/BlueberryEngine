@@ -161,41 +161,30 @@ namespace Blueberry
 		FbxAxisSystem engineAxis(FbxAxisSystem::eYAxis, FbxAxisSystem::eParityOdd, FbxAxisSystem::eLeftHanded);
 		engineAxis.DeepConvertScene(scene);
 
-		FbxSystemUnit engineUnit(FbxSystemUnit::m);
-		engineUnit.ConvertScene(scene);
-
-		// TODO multiple skinned meshes
-		int meshCount = 0, meshNode = 0;
-		List<FbxNode*> skeletonNodes;
-		for (int i = 0; i < scene->GetNodeCount(); ++i)
-		{
-			FbxNode* node = scene->GetNode(i);
-			if (node->GetMesh() != nullptr)
-			{
-				++meshCount;
-				meshNode = i;
-			}
-			if (node->GetSkeleton() != nullptr)
-			{
-				skeletonNodes.push_back(node);
-			}
-		}
+		FbxSystemUnit systemUnit = scene->GetGlobalSettings().GetSystemUnit();
+		float globalScale = m_Scale * static_cast<float>(systemUnit.GetScaleFactor()) / 100.0f;
 
 		fbxsdk::FbxNode* rootNode = scene->GetRootNode();
 		List<Object*> objects;
+		Dictionary<fbxsdk::FbxNode*, NodeData> nodeToData;
 		PrefabInstance* instance = GetOrCreateAssetObject<PrefabInstance>(PrefabInstance::Type);
 		objects.push_back(instance);
-		bool mainIsSet = false;
-		if (meshCount == 1)
+
+		// Collapse root
+		if (rootNode->GetChildCount() == 1)
 		{
-			CreateMeshEntity(nullptr, scene->GetNode(meshNode), skeletonNodes, objects, mainIsSet);
-		}
-		else
-		{
-			CreateMeshEntity(nullptr, rootNode, skeletonNodes, objects, mainIsSet);
+			rootNode = rootNode->GetChild(0);
 		}
 
-		Entity* root = static_cast<Entity*>(ObjectDB::GetObjectFromGuid(GetGuid(), GetMainObject()));
+		CreateHierarchy(nullptr, rootNode, objects, nodeToData, globalScale);
+		for (auto& pair : nodeToData)
+		{
+			if (pair.first->GetMesh() != nullptr)
+			{
+				CreateMesh(pair.first, objects, nodeToData, globalScale);
+			}
+		}
+		CreateAnimationClips(scene, objects, globalScale);
 
 		importer->Destroy();
 		manager->Destroy();
@@ -362,229 +351,203 @@ namespace Blueberry
 		verticesCount = newVerticesCount;
 	}
 
-	void ModelImporter::CreateMeshEntity(Transform* parent, fbxsdk::FbxNode* node, List<FbxNode*>& skeletonNodes, List<Object*>& objects, bool& mainIsSet)
+	void ModelImporter::CreateHierarchy(Transform* parent, fbxsdk::FbxNode* node, List<Object*>& objects, Dictionary<fbxsdk::FbxNode*, NodeData>& nodeToData, const float& globalScale)
 	{
-		if (node->GetLodGroup())
-		{
-			return;
-		}
-
 		String nodeName = node->GetName();
-		size_t entityFileId = TO_HASH(String(nodeName).append("_Entity"));
+		String entityName = nodeName;
+		size_t entityFileId = TO_HASH(String(entityName).append("_Entity"));
 		Entity* entity = GetOrCreateAssetObject<Entity>(entityFileId);
-		objects.push_back(entity);
 
-		if (nodeName == "RootNode")
-		{
-			entity->SetName(GetName());
-		}
-		else
-		{
-			entity->SetName(nodeName);
-		}
-
-		size_t transformFileId = TO_HASH(String(nodeName).append("_Transform"));
+		size_t transformFileId = TO_HASH(String(entityName).append("_Transform"));
 		Transform* transform = GetOrCreateAssetObject<Transform>(transformFileId);
 		if (!entity->HasComponent<Transform>())
 		{
 			entity->AddComponent(transform);
 		}
-
-		FbxAMatrix fbxTransform = node->EvaluateGlobalTransform();
-		
-		fbxsdk::FbxDouble3 fbxTranslation = fbxTransform.GetT();
-		fbxsdk::FbxQuaternion fbxRotation = fbxTransform.GetQ();
-		fbxsdk::FbxDouble3 fbxScale = fbxTransform.GetS();
-
 		if (parent != nullptr)
 		{
 			transform->SetParent(parent, false);
 		}
-		else if (!mainIsSet)
+
+		bool isRoot = false;
+		if (objects.size() <= 1)
 		{
+			nodeName = "RootNode";
+			entityName = GetName();
 			SetMainObject(entityFileId);
-			mainIsSet = true;
+			objects.push_back(entity);
+			isRoot = true;
+		}
+		entity->SetName(entityName);
+
+		NodeData data = {};
+		data.entity = entity;
+		data.transform = transform;
+		data.nodeName = nodeName;
+		data.entityName = entityName;
+		nodeToData.insert_or_assign(node, data);
+
+		FbxAMatrix fbxTransform = node->EvaluateLocalTransform();
+
+		fbxsdk::FbxDouble3 fbxTranslation = fbxTransform.GetT();
+		fbxsdk::FbxQuaternion fbxRotation = fbxTransform.GetQ();
+		fbxsdk::FbxDouble3 fbxScale = fbxTransform.GetS();
+
+		transform->SetLocalPosition(Vector3(static_cast<float>(fbxTranslation[0]) * globalScale, static_cast<float>(fbxTranslation[1]) * globalScale, static_cast<float>(fbxTranslation[2]) * globalScale));
+		transform->SetLocalRotation(Quaternion(static_cast<float>(fbxRotation[0]), static_cast<float>(fbxRotation[1]), static_cast<float>(fbxRotation[2]), static_cast<float>(fbxRotation[3])));
+		transform->SetLocalScale(Vector3(static_cast<float>(fbxScale[0]), static_cast<float>(fbxScale[1]), static_cast<float>(fbxScale[2])));
+
+		for (int i = 0; i < node->GetChildCount(); ++i)
+		{
+			fbxsdk::FbxNode* childNode = node->GetChild(i);
+			CreateHierarchy(transform, childNode, objects, nodeToData, globalScale);
+		}
+	}
+
+	void ModelImporter::CreateMesh(fbxsdk::FbxNode* node, List<Object*>& objects, Dictionary<fbxsdk::FbxNode*, NodeData>& nodeToData, const float& globalScale)
+	{
+		FbxScene* scene = node->GetScene();
+		fbxsdk::FbxMesh* fbxMesh = node->GetMesh();
+		
+		if (fbxMesh->RemoveBadPolygons() < 0)
+		{
+			return;
 		}
 
-		FbxScene* scene = node->GetScene();
-		
-		if (fbxsdk::FbxMesh* fbxMesh = node->GetMesh())
+		if (fbxMesh == nullptr || fbxMesh->RemoveBadPolygons() < 0)
 		{
-			if (fbxMesh->RemoveBadPolygons() < 0)
+			return;
+		}
+
+		uint32_t polygonCount = static_cast<uint32_t>(fbxMesh->GetPolygonCount());
+		if (polygonCount == 0)
+		{
+			return;
+		}
+
+		NodeData& data = nodeToData[node];
+		Entity* entity = data.entity;
+		String entityName = data.entityName;
+		String nodeName = data.nodeName;
+		
+		size_t meshFileId = TO_HASH(entityName);
+		Mesh* mesh = GetOrCreateAssetObject<Mesh>(meshFileId);
+
+		bool isSkinned = fbxMesh->GetDeformerCount() > 0;
+		MeshRenderer* meshRenderer = entity->GetComponent<MeshRenderer>();
+		SkinnedMeshRenderer* skinnedMeshRenderer = entity->GetComponent<SkinnedMeshRenderer>();
+
+		if (isSkinned)
+		{
+			size_t skinnedMeshRendererFileId = TO_HASH(String(nodeName).append("_SkinnedMeshRenderer"));
+			skinnedMeshRenderer = GetOrCreateAssetObject<SkinnedMeshRenderer>(skinnedMeshRendererFileId);
+			skinnedMeshRenderer->SetMesh(mesh);
+			if (!entity->HasComponent<SkinnedMeshRenderer>())
 			{
-				return;
+				entity->AddComponent(skinnedMeshRenderer);
 			}
-
-			if (fbxMesh == nullptr || fbxMesh->RemoveBadPolygons() < 0)
+			if (meshRenderer != nullptr)
 			{
-				return;
+				entity->RemoveComponent(meshRenderer);
 			}
-
-			uint32_t polygonCount = static_cast<uint32_t>(fbxMesh->GetPolygonCount());
-			if (polygonCount == 0)
+		}
+		else
+		{
+			size_t meshRendererFileId = TO_HASH(String(nodeName).append("_MeshRenderer"));
+			meshRenderer = GetOrCreateAssetObject<MeshRenderer>(meshRendererFileId);
+			meshRenderer->SetMesh(mesh);
+			if (!entity->HasComponent<MeshRenderer>())
 			{
-				return;
+				entity->AddComponent(meshRenderer);
 			}
-
-			size_t meshFileId = TO_HASH(nodeName);
-			Mesh* mesh = GetOrCreateAssetObject<Mesh>(meshFileId);
-
-			bool isSkinned = fbxMesh->GetDeformerCount() > 0 && skeletonNodes.size() > 0;
-			MeshRenderer* meshRenderer = entity->GetComponent<MeshRenderer>();
-			SkinnedMeshRenderer* skinnedMeshRenderer = entity->GetComponent<SkinnedMeshRenderer>();
-			Transform* armatureTransform;
-			if (isSkinned)
+			if (skinnedMeshRenderer != nullptr)
 			{
-				FbxNode* armatureNode = skeletonNodes[0]->GetParent();
-				if (armatureNode != nullptr)
-				{
-					FbxAMatrix fbxArmatureTransform = armatureNode->EvaluateGlobalTransform();
-					
-					size_t armatureEntityFileId = TO_HASH(String(nodeName).append("_ArmatureEntity"));
-					Entity* armatureEntity = GetOrCreateAssetObject<Entity>(armatureEntityFileId);
-					armatureEntity->SetName(armatureNode->GetName());
+				entity->RemoveComponent(skinnedMeshRenderer);
+			}
+		}
 
-					size_t armatureTransformFileId = TO_HASH(String(nodeName).append("_ArmatureTransform"));
-					armatureTransform = GetOrCreateAssetObject<Transform>(armatureTransformFileId);
-					if (!armatureEntity->HasComponent<Transform>())
-					{
-						armatureEntity->AddComponent(armatureTransform);
-					}
+		int fbxControlPointsCount = fbxMesh->GetControlPointsCount();
+		fbxsdk::FbxVector4* fbxControlPoints = fbxMesh->GetControlPoints();
 
-					fbxsdk::FbxDouble3 fbxArmatureTranslation = fbxArmatureTransform.GetT();
-					fbxsdk::FbxQuaternion fbxArmatureRotation = fbxArmatureTransform.GetQ();
-					fbxsdk::FbxDouble3 fbxArmatureScale = fbxArmatureTransform.GetS();
+		fbxsdk::FbxArray<fbxsdk::FbxVector4> fbxNormals;
+		fbxMesh->GetPolygonVertexNormals(fbxNormals);
 
-					armatureTransform->SetParent(transform);
-					armatureTransform->SetLocalPosition(Vector3(static_cast<float>(fbxArmatureTranslation[0] / fbxArmatureScale[0]), static_cast<float>(fbxArmatureTranslation[1] / fbxArmatureScale[1]), static_cast<float>(fbxArmatureTranslation[2] / fbxArmatureScale[2])));
-					armatureTransform->SetLocalRotation(Quaternion(static_cast<float>(fbxArmatureRotation[0]), static_cast<float>(fbxArmatureRotation[1]), static_cast<float>(fbxArmatureRotation[2]), static_cast<float>(fbxArmatureRotation[3])));
-					armatureTransform->SetLocalScale(Vector3(static_cast<float>(fbxArmatureScale[0]), static_cast<float>(fbxArmatureScale[1]), static_cast<float>(fbxArmatureScale[2])));
-				}
-				else
-				{
-					armatureTransform = transform;
-				}
-				size_t skinnedMeshEntityFileId = TO_HASH(String(nodeName).append("_SkinnedMeshEntity"));
-				Entity* skinnedMeshEntity = GetOrCreateAssetObject<Entity>(skinnedMeshEntityFileId);
-				skinnedMeshEntity->SetName(GetName());
-				
-				size_t skinnedMeshTransformFileId = TO_HASH(String(nodeName).append("_SkinnedMeshTransform"));
-				Transform* skinnedMeshTransform = GetOrCreateAssetObject<Transform>(skinnedMeshTransformFileId);
-				if (!skinnedMeshEntity->HasComponent<Transform>())
-				{
-					skinnedMeshEntity->AddComponent(skinnedMeshTransform);
-				}
-				skinnedMeshTransform->SetParent(transform);
-				skinnedMeshTransform->SetLocalPosition(Vector3(static_cast<float>(fbxTranslation[0] * fbxScale[0]), static_cast<float>(fbxTranslation[1] * fbxScale[1]), static_cast<float>(fbxTranslation[2] * fbxScale[2])));
-				skinnedMeshTransform->SetLocalRotation(Quaternion(static_cast<float>(fbxRotation[0]), static_cast<float>(fbxRotation[1]), static_cast<float>(fbxRotation[2]), static_cast<float>(fbxRotation[3])));
-				skinnedMeshTransform->SetLocalScale(Vector3::One);
+		fbxsdk::FbxStringList fbxUvNames;
+		fbxMesh->GetUVSetNames(fbxUvNames);
+		fbxsdk::FbxArray<fbxsdk::FbxVector2> fbxUvs0;
+		fbxsdk::FbxArray<fbxsdk::FbxVector2> fbxUvs1;
+		if (fbxUvNames.GetCount() > 0)
+		{
+			std::string str = fbxUvNames[0];
+			fbxMesh->GetPolygonVertexUVs(fbxUvNames[0], fbxUvs0);
+		}
+		if (fbxUvNames.GetCount() > 1)
+		{
+			std::string str = fbxUvNames[1];
+			fbxMesh->GetPolygonVertexUVs(fbxUvNames[1], fbxUvs1);
+		}
 
-				fbxTranslation = FbxDouble3();
-				fbxRotation = FbxQuaternion();
+		List<Vector3> vertices;
+		List<Vector3> normals;
+		List<Vector2> uvs0;
+		List<Vector3> uvs1;
+		List<Vector4> boneWeights;
+		List<Vector4Uint> boneIndices;
+		List<uint32_t> indices;
+		List<SubMeshData> submeshes;
 
-				size_t skinnedMeshRendererFileId = TO_HASH(String(nodeName).append("_SkinnedMeshRenderer"));
-				skinnedMeshRenderer = GetOrCreateAssetObject<SkinnedMeshRenderer>(skinnedMeshRendererFileId);
-				skinnedMeshRenderer->SetMesh(mesh);
-				if (!skinnedMeshEntity->HasComponent<SkinnedMeshRenderer>())
-				{
-					skinnedMeshEntity->AddComponent(skinnedMeshRenderer);
-				}
-				if (meshRenderer != nullptr)
-				{
-					entity->RemoveComponent(meshRenderer);
-				}
+		uint32_t verticesCount = static_cast<uint32_t>(fbxMesh->GetPolygonVertexCount());
+
+		// Vertices
+		vertices.resize(verticesCount);
+		int* verticesPtr = fbxMesh->mPolygonVertices;
+		for (int i = 0, n = fbxMesh->mPolygonVertices.GetCount(); i < n; ++i, ++verticesPtr)
+		{
+			fbxsdk::FbxVector4 vertex = fbxControlPoints[*verticesPtr];
+			vertices[i] = Vector3(static_cast<float>(vertex[0]) * globalScale, static_cast<float>(vertex[1]) * globalScale, static_cast<float>(vertex[2]) * globalScale);
+		}
+
+		// Indices
+		int indicesCount = 0;
+		for (uint32_t i = 0; i < polygonCount; ++i)
+		{
+			fbxsdk::FbxMesh::PolygonDef polygon = fbxMesh->mPolygons[i];
+			if (polygon.mSize == 3)
+			{
+				indicesCount += 3;
+			}
+			else if (polygon.mSize == 4)
+			{
+				indicesCount += 6;
 			}
 			else
 			{
-				size_t meshRendererFileId = TO_HASH(String(nodeName).append("_MeshRenderer"));
-				meshRenderer = GetOrCreateAssetObject<MeshRenderer>(meshRendererFileId);
-				meshRenderer->SetMesh(mesh);
-				if (!entity->HasComponent<MeshRenderer>())
-				{
-					entity->AddComponent(meshRenderer);
-				}
-				if (skinnedMeshRenderer != nullptr)
-				{
-					entity->RemoveComponent(skinnedMeshRenderer);
-				}
+				indicesCount += (polygon.mSize - 2) * 3;
 			}
-			
-			int fbxControlPointsCount = fbxMesh->GetControlPointsCount();
-			fbxsdk::FbxVector4* fbxControlPoints = fbxMesh->GetControlPoints();
+		}
+		indices.resize(indicesCount);
 
-			fbxsdk::FbxArray<fbxsdk::FbxVector4> fbxNormals;
-			fbxMesh->GetPolygonVertexNormals(fbxNormals);
+		List<uint32_t> sortedPolygonIndexes;
 
-			fbxsdk::FbxStringList fbxUvNames;
-			fbxMesh->GetUVSetNames(fbxUvNames);
-			fbxsdk::FbxArray<fbxsdk::FbxVector2> fbxUvs0;
-			fbxsdk::FbxArray<fbxsdk::FbxVector2> fbxUvs1;
-			if (fbxUvNames.GetCount() > 0)
-			{
-				std::string str = fbxUvNames[0];
-				fbxMesh->GetPolygonVertexUVs(fbxUvNames[0], fbxUvs0);
-			}
-			if (fbxUvNames.GetCount() > 1)
-			{
-				std::string str = fbxUvNames[1];
-				fbxMesh->GetPolygonVertexUVs(fbxUvNames[1], fbxUvs1);
-			}
-
-			List<Vector3> vertices;
-			List<Vector3> normals;
-			List<Vector2> uvs0;
-			List<Vector3> uvs1;
-			List<Vector4> boneWeights;
-			List<Vector4Uint> boneIndices;
-			List<uint32_t> indices;
-			List<SubMeshData> submeshes;
-
-			uint32_t verticesCount = static_cast<uint32_t>(fbxMesh->GetPolygonVertexCount());
-
-			// Vertices
-			vertices.resize(verticesCount);
-			int* verticesPtr = fbxMesh->mPolygonVertices;
-			for (int i = 0, n = fbxMesh->mPolygonVertices.GetCount(); i < n; ++i, ++verticesPtr)
-			{
-				fbxsdk::FbxVector4 vertex = fbxControlPoints[*verticesPtr];
-				vertices[i] = Vector3(static_cast<float>(vertex[0] * fbxScale[0]), static_cast<float>(vertex[1] * fbxScale[1]), static_cast<float>(vertex[2] * fbxScale[2]));
-			}
-
-			// Indices
-			int indicesCount = 0;
+		// Submeshes
+		List<uint32_t> materialIndexes;
+		fbxsdk::FbxLayerElementArrayTemplate<int>* materialIndices;
+		if (fbxMesh->GetMaterialIndices(&materialIndices))
+		{
+			HashSet<uint32_t> presentMaterialIndexes;
 			for (uint32_t i = 0; i < polygonCount; ++i)
 			{
-				fbxsdk::FbxMesh::PolygonDef polygon = fbxMesh->mPolygons[i];
-				if (polygon.mSize == 3)
-				{
-					indicesCount += 3;
-				}
-				else if (polygon.mSize == 4)
-				{
-					indicesCount += 6;
-				}
-				else
-				{
-					indicesCount += (polygon.mSize - 2) * 3;
-				}
+				presentMaterialIndexes.insert(materialIndices->GetAt(i));
 			}
-			indices.resize(indicesCount);
-
-			List<uint32_t> sortedPolygonIndexes;
-
-			// Submeshes
-			uint32_t materialCount = node->GetMaterialCount();
-			List<uint32_t> subMeshPolygonCounts;
-			fbxsdk::FbxLayerElementArrayTemplate<int>* materialIndices;
-			if (fbxMesh->GetMaterialIndices(&materialIndices))
+			if (presentMaterialIndexes.size() > 0)
 			{
 				uint32_t subMeshStart = 0;
-				for (uint32_t i = 0; i < materialCount; ++i)
+				for (uint32_t materialIndex : presentMaterialIndexes)
 				{
 					uint32_t subMeshSize = 0;
 					for (uint32_t j = 0; j < polygonCount; ++j)
 					{
-						if (materialIndices->GetAt(j) == i)
+						if (materialIndices->GetAt(j) == materialIndex)
 						{
 							sortedPolygonIndexes.push_back(j);
 							fbxsdk::FbxMesh::PolygonDef polygon = fbxMesh->mPolygons[j];
@@ -607,6 +570,7 @@ namespace Blueberry
 					subMesh.SetIndexCount(subMeshSize);
 					submeshes.push_back(subMesh);
 					subMeshStart += subMeshSize;
+					materialIndexes.push_back(materialIndex);
 				}
 			}
 			else
@@ -616,471 +580,459 @@ namespace Blueberry
 					sortedPolygonIndexes.push_back(i);
 				}
 			}
-
-			uint32_t* indicesPtr = indices.data();
-			for (uint32_t i = 0; i < polygonCount; ++i)
+		}
+		
+		uint32_t* indicesPtr = indices.data();
+		for (uint32_t i = 0; i < polygonCount; ++i)
+		{
+			fbxsdk::FbxMesh::PolygonDef polygon = fbxMesh->mPolygons[sortedPolygonIndexes[i]];
+			if (polygon.mSize == 3)
 			{
-				fbxsdk::FbxMesh::PolygonDef polygon = fbxMesh->mPolygons[sortedPolygonIndexes[i]];
-				if (polygon.mSize == 3)
+				*indicesPtr++ = polygon.mIndex;
+				*indicesPtr++ = polygon.mIndex + 1;
+				*indicesPtr++ = polygon.mIndex + 2;
+			}
+			else if (polygon.mSize == 4)
+			{
+				*indicesPtr++ = polygon.mIndex;
+				*indicesPtr++ = polygon.mIndex + 1;
+				*indicesPtr++ = polygon.mIndex + 2;
+				*indicesPtr++ = polygon.mIndex;
+				*indicesPtr++ = polygon.mIndex + 2;
+				*indicesPtr++ = polygon.mIndex + 3;
+			}
+			else
+			{
+				for (int i = 1; i < polygon.mSize - 1; ++i)
 				{
 					*indicesPtr++ = polygon.mIndex;
-					*indicesPtr++ = polygon.mIndex + 1;
-					*indicesPtr++ = polygon.mIndex + 2;
-				}
-				else if (polygon.mSize == 4)
-				{
-					*indicesPtr++ = polygon.mIndex;
-					*indicesPtr++ = polygon.mIndex + 1;
-					*indicesPtr++ = polygon.mIndex + 2;
-					*indicesPtr++ = polygon.mIndex;
-					*indicesPtr++ = polygon.mIndex + 2;
-					*indicesPtr++ = polygon.mIndex + 3;
-				}
-				else
-				{
-					for (int i = 1; i < polygon.mSize - 1; ++i)
-					{
-						*indicesPtr++ = polygon.mIndex;
-						*indicesPtr++ = polygon.mIndex + i;
-						*indicesPtr++ = polygon.mIndex + i + 1;
-					}
+					*indicesPtr++ = polygon.mIndex + i;
+					*indicesPtr++ = polygon.mIndex + i + 1;
 				}
 			}
+		}
 
-			// Normals
-			if (fbxNormals.Size() > 0)
+		// Normals
+		if (fbxNormals.Size() > 0)
+		{
+			normals.resize(verticesCount);
+			for (uint32_t i = 0; i < verticesCount; ++i)
 			{
-				normals.resize(verticesCount);
+				fbxsdk::FbxVector4 fbxNormal = fbxNormals[i];
+				normals[i] = Vector3(static_cast<float>(fbxNormal[0]), static_cast<float>(fbxNormal[1]), static_cast<float>(fbxNormal[2])); // Vector3(fbxNormal[0], fbxNormal[2], -fbxNormal[1]);
+			}
+		}
+
+		// Uvs
+		if (fbxUvs0.Size() > 0)
+		{
+			uvs0.resize(verticesCount);
+			for (uint32_t i = 0; i < verticesCount; ++i)
+			{
+				fbxsdk::FbxVector2 fbxUv = fbxUvs0[i];
+				uvs0[i] = Vector2(static_cast<float>(fbxUv[0]), 1.0f - static_cast<float>(fbxUv[1])); // Flip vertically
+			}
+		}
+
+		if (m_GenerateLightmapUV)
+		{
+			if (fbxUvs1.Size() > 0)
+			{
+				const uint32_t triangleCount = indicesCount / 3;
+				constexpr float uvEps = 0.0001f;
+				constexpr float invUvEps = 1.0f / uvEps;
+				uvs1.resize(verticesCount);
+
 				for (uint32_t i = 0; i < verticesCount; ++i)
 				{
-					fbxsdk::FbxVector4 fbxNormal = fbxNormals[i];
-					normals[i] = Vector3(static_cast<float>(fbxNormal[0]), static_cast<float>(fbxNormal[1]), static_cast<float>(fbxNormal[2])); // Vector3(fbxNormal[0], fbxNormal[2], -fbxNormal[1]);
+					fbxsdk::FbxVector2 fbxUv = fbxUvs1[i];
+					uvs1[i] = Vector3(static_cast<float>(fbxUv[0]), static_cast<float>(fbxUv[1]), 0);
 				}
-			}
 
-			// Uvs
-			if (fbxUvs0.Size() > 0)
-			{
-				uvs0.resize(verticesCount);
-				for (uint32_t i = 0; i < verticesCount; ++i)
+				Dictionary<Vector2Int, List<uint32_t>> uvToTriangle;
+				uvToTriangle.reserve(verticesCount);
+
+				for (uint32_t t = 0; t < triangleCount; ++t)
 				{
-					fbxsdk::FbxVector2 fbxUv = fbxUvs0[i];
-					uvs0[i] = Vector2(static_cast<float>(fbxUv[0]), 1.0f - static_cast<float>(fbxUv[1])); // Flip vertically
-				}
-			}
-
-			if (m_GenerateLightmapUV)
-			{
-				if (fbxUvs1.Size() > 0)
-				{
-					const uint32_t triangleCount = indicesCount / 3;
-					constexpr float uvEps = 0.0001f;
-					constexpr float invUvEps = 1.0f / uvEps;
-					uvs1.resize(verticesCount);
-
-					for (uint32_t i = 0; i < verticesCount; ++i)
+					for (uint32_t i = 0; i < 3; ++i)
 					{
-						fbxsdk::FbxVector2 fbxUv = fbxUvs1[i];
-						uvs1[i] = Vector3(static_cast<float>(fbxUv[0]), static_cast<float>(fbxUv[1]), 0);
+						uint32_t v = indices[t * 3 + i];
+						const Vector3& uv = uvs1[v];
+						Vector2Int key(static_cast<int32_t>(std::floor(uv.x * invUvEps)), static_cast<int32_t>(std::floor(uv.y * invUvEps)));
+						uvToTriangle[key].push_back(t);
+					}
+				}
+
+				int32_t chartIndex = 0;
+				List<uint32_t> stack;
+				List<int32_t> triangleCharts(triangleCount, -1);
+
+				for (uint32_t i = 0; i < triangleCount; ++i)
+				{
+					if (triangleCharts[i] != -1)
+					{
+						continue;
 					}
 
-					Dictionary<Vector2Int, List<uint32_t>> uvToTriangle;
-					uvToTriangle.reserve(verticesCount);
+					triangleCharts[i] = chartIndex;
+					stack.push_back(i);
 
-					for (uint32_t t = 0; t < triangleCount; ++t)
+					while (!stack.empty())
 					{
-						for (uint32_t i = 0; i < 3; ++i)
+						uint32_t cur = stack[stack.size() - 1];
+						stack.pop_back();
+
+						for (uint32_t j = 0; j < 3; ++j)
 						{
-							uint32_t v = indices[t * 3 + i];
+							uint32_t v = indices[cur * 3 + j];
 							const Vector3& uv = uvs1[v];
 							Vector2Int key(static_cast<int32_t>(std::floor(uv.x * invUvEps)), static_cast<int32_t>(std::floor(uv.y * invUvEps)));
-							uvToTriangle[key].push_back(t);
-						}
-					}
 
-					int32_t chartIndex = 0;
-					List<uint32_t> stack;
-					List<int32_t> triangleCharts(triangleCount, -1);
-
-					for (uint32_t i = 0; i < triangleCount; ++i)
-					{
-						if (triangleCharts[i] != -1)
-						{
-							continue;
-						}
-
-						triangleCharts[i] = chartIndex;
-						stack.push_back(i);
-
-						while (!stack.empty())
-						{
-							uint32_t cur = stack[stack.size() - 1];
-							stack.pop_back();
-							
-							for (uint32_t j = 0; j < 3; ++j)
+							auto it = uvToTriangle.find(key);
+							if (it == uvToTriangle.end())
 							{
-								uint32_t v = indices[cur * 3 + j];
-								const Vector3& uv = uvs1[v];
-								Vector2Int key(static_cast<int32_t>(std::floor(uv.x * invUvEps)), static_cast<int32_t>(std::floor(uv.y * invUvEps)));
+								continue;
+							}
 
-								auto it = uvToTriangle.find(key);
-								if (it == uvToTriangle.end())
+							for (uint32_t n : it->second)
+							{
+								if (triangleCharts[n] == -1)
 								{
-									continue;
-								}
-
-								for (uint32_t n : it->second)
-								{
-									if (triangleCharts[n] == -1)
-									{
-										triangleCharts[n] = chartIndex;
-										stack.push_back(n);
-									}
+									triangleCharts[n] = chartIndex;
+									stack.push_back(n);
 								}
 							}
 						}
-						++chartIndex;
 					}
+					++chartIndex;
+				}
 
-					for (uint32_t i = 0; i < triangleCount; ++i)
+				for (uint32_t i = 0; i < triangleCount; ++i)
+				{
+					uint32_t index = i * 3;
+					float triangleChart = static_cast<float>(triangleCharts[i]);
+					uvs1[indices[index]].z = triangleChart;
+					uvs1[indices[index + 1]].z = triangleChart;
+					uvs1[indices[index + 2]].z = triangleChart;
+				}
+			}
+			else
+			{
+				xatlas::Atlas* atlas = xatlas::Create();
+				xatlas::MeshDecl decl = {};
+				decl.vertexCount = verticesCount;
+				decl.vertexPositionData = vertices.data();
+				decl.vertexPositionStride = sizeof(Vector3);
+				if (normals.size() > 0)
+				{
+					decl.vertexNormalData = normals.data();
+					decl.vertexNormalStride = sizeof(Vector3);
+				}
+				if (uvs0.size() > 0)
+				{
+					decl.vertexUvData = uvs0.data();
+					decl.vertexUvStride = sizeof(Vector2);
+				}
+				decl.indexFormat = xatlas::IndexFormat::UInt32;
+				bool isValid = true;
+				for (auto& submesh : submeshes)
+				{
+					decl.indexCount = submesh.GetIndexCount();
+					decl.indexData = indices.data() + submesh.GetIndexStart();
+					xatlas::AddMeshError error = xatlas::AddMesh(atlas, decl, 1);
+					if (error != xatlas::AddMeshError::Success)
 					{
-						uint32_t index = i * 3;
-						float triangleChart = static_cast<float>(triangleCharts[i]);
-						uvs1[indices[index]].z = triangleChart;
-						uvs1[indices[index + 1]].z = triangleChart;
-						uvs1[indices[index + 2]].z = triangleChart;
+						xatlas::Destroy(atlas);
+						BB_ERROR("Failed to generate lightmap uv.");
+						isValid = false;
+						break;
 					}
 				}
-				else
+
+				if (isValid)
 				{
-					xatlas::Atlas* atlas = xatlas::Create();
-					xatlas::MeshDecl decl = {};
-					decl.vertexCount = verticesCount;
-					decl.vertexPositionData = vertices.data();
-					decl.vertexPositionStride = sizeof(Vector3);
-					if (normals.size() > 0)
+					List<Vector3> oldVertices = vertices;
+					List<Vector3> oldNormals = normals;
+					List<Vector2> oldUvs0 = uvs0;
+
+					xatlas::Generate(atlas);
+					uvs1.reserve(uvs0.size());
+					vertices.clear();
+					normals.clear();
+					uvs0.clear();
+					indices.clear();
+					uint32_t vertexOffset = 0;
+					uint32_t indexOffset = 0;
+					uint32_t chartOffset = 0;
+					for (uint32_t i = 0; i < atlas->meshCount; ++i)
 					{
-						decl.vertexNormalData = normals.data();
-						decl.vertexNormalStride = sizeof(Vector3);
-					}
-					if (uvs0.size() > 0)
-					{
-						decl.vertexUvData = uvs0.data();
-						decl.vertexUvStride = sizeof(Vector2);
-					}
-					decl.indexFormat = xatlas::IndexFormat::UInt32;
-					bool isValid = true;
-					for (auto& submesh : submeshes)
-					{
-						decl.indexCount = submesh.GetIndexCount();
-						decl.indexData = indices.data() + submesh.GetIndexStart();
-						xatlas::AddMeshError error = xatlas::AddMesh(atlas, decl, 1);
-						if (error != xatlas::AddMeshError::Success)
+						xatlas::Mesh& atlasMesh = atlas->meshes[i];
+						auto& submesh = submeshes[i];
+						submesh.SetIndexStart(indexOffset);
+						submesh.SetIndexCount(atlasMesh.indexCount);
+						for (uint32_t j = 0; j < atlasMesh.vertexCount; ++j)
 						{
-							xatlas::Destroy(atlas);
-							BB_ERROR("Failed to generate lightmap uv.");
-							isValid = false;
-							break;
+							xatlas::Vertex& vertex = atlasMesh.vertexArray[j];
+							uint32_t index = vertex.xref;
+							vertices.push_back(oldVertices[index]);
+							normals.push_back(oldNormals[index]);
+							uvs0.push_back(oldUvs0[index]);
+							uvs1.push_back(Vector3(vertex.uv[0] / atlas->width, vertex.uv[1] / atlas->height, static_cast<float>(chartOffset + vertex.chartIndex)));
 						}
+						for (uint32_t j = 0; j < atlasMesh.indexCount; ++j)
+						{
+							indices.push_back(vertexOffset + atlasMesh.indexArray[j]);
+						}
+						vertexOffset += atlasMesh.vertexCount;
+						indexOffset += atlasMesh.indexCount;
+						chartOffset += atlasMesh.chartCount;
 					}
+					verticesCount = static_cast<uint32_t>(vertices.size());
+					indicesCount = static_cast<uint32_t>(indices.size());
+					xatlas::Destroy(atlas);
 
-					if (isValid)
+					Dictionary<uint32_t, uint32_t> chartRemap;
+					uint32_t nextChartIndex = 0;
+
+					for (auto& uv : uvs1)
 					{
-						List<Vector3> oldVertices = vertices;
-						List<Vector3> oldNormals = normals;
-						List<Vector2> oldUvs0 = uvs0;
-
-						xatlas::Generate(atlas);
-						uvs1.reserve(uvs0.size());
-						vertices.clear();
-						normals.clear();
-						uvs0.clear();
-						indices.clear();
-						uint32_t vertexOffset = 0;
-						uint32_t indexOffset = 0;
-						uint32_t chartOffset = 0;
-						for (uint32_t i = 0; i < atlas->meshCount; ++i)
+						uint32_t oldIndex = static_cast<uint32_t>(uv.z);
+						if (chartRemap.find(oldIndex) == chartRemap.end())
 						{
-							xatlas::Mesh& atlasMesh = atlas->meshes[i];
-							auto& submesh = submeshes[i];
-							submesh.SetIndexStart(indexOffset);
-							submesh.SetIndexCount(atlasMesh.indexCount);
-							for (uint32_t j = 0; j < atlasMesh.vertexCount; ++j)
-							{
-								xatlas::Vertex& vertex = atlasMesh.vertexArray[j];
-								uint32_t index = vertex.xref;
-								vertices.push_back(oldVertices[index]);
-								normals.push_back(oldNormals[index]);
-								uvs0.push_back(oldUvs0[index]);
-								uvs1.push_back(Vector3(vertex.uv[0] / atlas->width, vertex.uv[1] / atlas->height, static_cast<float>(chartOffset + vertex.chartIndex)));
-							}
-							for (uint32_t j = 0; j < atlasMesh.indexCount; ++j)
-							{
-								indices.push_back(vertexOffset + atlasMesh.indexArray[j]);
-							}
-							vertexOffset += atlasMesh.vertexCount;
-							indexOffset += atlasMesh.indexCount;
-							chartOffset += atlasMesh.chartCount;
+							chartRemap[oldIndex] = nextChartIndex++;
 						}
-						verticesCount = static_cast<uint32_t>(vertices.size());
-						indicesCount = static_cast<uint32_t>(indices.size());
-						xatlas::Destroy(atlas);
-
-						Dictionary<uint32_t, uint32_t> chartRemap;
-						uint32_t nextChartIndex = 0;
-
-						for (auto& uv : uvs1)
-						{
-							uint32_t oldIndex = static_cast<uint32_t>(uv.z);
-							if (chartRemap.find(oldIndex) == chartRemap.end())
-							{
-								chartRemap[oldIndex] = nextChartIndex++;
-							}
-							uv.z = static_cast<float>(chartRemap[oldIndex]);
-						}
+						uv.z = static_cast<float>(chartRemap[oldIndex]);
 					}
 				}
 			}
-			if (isSkinned)
+		}
+
+		if (isSkinned)
+		{
+			// Skinning
+			struct BoneWeight
 			{
-				// Skinning
-				struct BoneWeight
+				float data[4];
+			};
+
+			struct BoneIndex
+			{
+				unsigned int data[4];
+			};
+
+			List<BoneWeight> boneWeightControlPoints(fbxControlPointsCount);
+			List<BoneIndex> boneIndexControlPoints(fbxControlPointsCount);
+
+			boneWeights.resize(verticesCount);
+			boneIndices.resize(verticesCount);
+
+			FbxTime time(0);
+			FbxAnimEvaluator* evaluator = scene->GetAnimationEvaluator();
+			FbxSkin* skin = static_cast<FbxSkin*>(fbxMesh->GetDeformer(0, fbxsdk::FbxDeformer::EDeformerType::eSkin));
+			FbxNode* rootNode = skin->GetCluster(0)->GetLink();
+			while (rootNode->GetSkeleton() != nullptr)
+			{
+				FbxNode* parentNode = rootNode->GetParent();
+				if (parentNode == scene->GetRootNode())
 				{
-					float data[4];
-				};
-
-				struct BoneIndex
-				{
-					unsigned int data[4];
-				};
-
-				List<BoneWeight> boneWeightControlPoints(fbxControlPointsCount);
-				List<BoneIndex> boneIndexControlPoints(fbxControlPointsCount);
-
-				boneWeights.resize(verticesCount);
-				boneIndices.resize(verticesCount);
-
-				FbxTime time(0);
-				FbxAnimEvaluator* evaluator = scene->GetAnimationEvaluator();
-				FbxSkin* skin = static_cast<FbxSkin*>(fbxMesh->GetDeformer(0, fbxsdk::FbxDeformer::EDeformerType::eSkin));
-				int clusterCount = skin->GetClusterCount();
-				
-				Dictionary<const char*, size_t> boneIndexes;
-				List<Transform*> boneTransforms(skeletonNodes.size());
-				List<Matrix> bindPoses(skeletonNodes.size());
-
-				for (size_t i = 0; i < skeletonNodes.size(); ++i)
-				{
-					boneIndexes.insert_or_assign(skeletonNodes[i]->GetName(), i);
-					bindPoses[i] = Matrix::Identity;
-
-					FbxNode* boneNode = skeletonNodes[i];
-					String boneNodeName = boneNode->GetName();
-					size_t boneEntityFileId = TO_HASH(String(boneNodeName).append("_Entity"));
-					Entity* boneEntity = GetOrCreateAssetObject<Entity>(boneEntityFileId);
-					boneEntity->SetName(boneNodeName);
-
-					size_t boneTransformFileId = TO_HASH(String(boneNodeName).append("_Transform"));
-					Transform* boneTransform = GetOrCreateAssetObject<Transform>(boneTransformFileId);
-					boneTransforms[i] = boneTransform;
-					if (!boneEntity->HasComponent<Transform>())
-					{
-						boneEntity->AddComponent(boneTransform);
-					}
-
-					FbxAMatrix idleMatrix = evaluator->GetNodeLocalTransform(boneNode, time);
-
-					FbxVector4 translation = idleMatrix.GetT();
-					FbxQuaternion rotation = idleMatrix.GetQ();
-					FbxVector4 scale = idleMatrix.GetS();
-
-					FbxNode* boneNodeParent = boneNode->GetParent();
-					auto it = boneIndexes.find(boneNodeParent->GetName());
-					if (it != boneIndexes.end())
-					{
-						boneTransform->SetParent(boneTransforms[it->second]);
-						translation *= fbxScale;
-					}
-					else
-					{
-						boneTransform->SetParent(armatureTransform);
-						scale /= fbxScale;
-					}
-
-					boneTransform->SetLocalPosition(Vector3(static_cast<float>(translation[0]), static_cast<float>(translation[1]), static_cast<float>(translation[2])));
-					boneTransform->SetLocalRotation(Quaternion(static_cast<float>(rotation[0]), static_cast<float>(rotation[1]), static_cast<float>(rotation[2]), static_cast<float>(rotation[3])));
-					boneTransform->SetLocalScale(Vector3(static_cast<float>(scale[0]), static_cast<float>(scale[1]), static_cast<float>(scale[2])));
+					break;
 				}
-				skinnedMeshRenderer->SetRoot(armatureTransform);
-				skinnedMeshRenderer->SetBones(boneTransforms);
+				rootNode = parentNode;
+			}
 
+			int clusterCount = skin->GetClusterCount();
+			Dictionary<FbxNode*, uint32_t> nodeToIndex;
+			{
 				for (int i = 0; i < clusterCount; ++i)
 				{
 					FbxCluster* cluster = skin->GetCluster(i);
 					FbxNode* boneNode = cluster->GetLink();
+					nodeToIndex.insert_or_assign(boneNode, 0);
+				}
 
-					int* indices = cluster->GetControlPointIndices();
-					double* weights = cluster->GetControlPointWeights();
-					int count = cluster->GetControlPointIndicesCount();
-					
-					FbxAMatrix transformLinkMatrix;
-					FbxAMatrix transformMatrix;
-
-					cluster->GetTransformMatrix(transformMatrix);
-					cluster->GetTransformLinkMatrix(transformLinkMatrix);
-
-					FbxAMatrix bindPoseMatrix = transformLinkMatrix.Inverse() * transformMatrix;
-					bindPoseMatrix.SetT(bindPoseMatrix.GetT() * fbxScale);
-
-					size_t boneIndex = 0;
-					auto it = boneIndexes.find(boneNode->GetName());
-					if (it != boneIndexes.end())
+				uint32_t offset = 0;
+				std::stack<FbxNode*> nodeStack;
+				nodeStack.push(rootNode);
+				while (nodeStack.size() > 0)
+				{
+					FbxNode* node = nodeStack.top();
+					nodeStack.pop();
+					auto it = nodeToIndex.find(node);
+					if (it != nodeToIndex.end())
 					{
-						boneIndex = it->second;
+						nodeToIndex.insert_or_assign(node, offset);
+						++offset;
 					}
-					bindPoses[boneIndex] = ConvertMatrix(bindPoseMatrix);
-
-					for (int j = 0; j < count; ++j)
+					for (int i = 0; i < node->GetChildCount(); ++i)
 					{
-						int vertexIndex = indices[j];
-						float weight = static_cast<float>(weights[j]);
+						nodeStack.push(node->GetChild(i));
+					}
+				}
+			}
 
-						auto& indexData = boneIndexControlPoints[vertexIndex].data;
-						auto& weightData = boneWeightControlPoints[vertexIndex].data;
+			Transform* rootTransform = nodeToData[rootNode].transform;
+			List<Transform*> boneTransforms(clusterCount);
+			List<Matrix> bindPoses(clusterCount);
+			for (int i = 0; i < clusterCount; ++i)
+			{
+				FbxCluster* cluster = skin->GetCluster(i);
+				FbxNode* boneNode = cluster->GetLink();
+				Transform* boneTransform = nodeToData[boneNode].transform;
+				uint32_t boneIndex = nodeToIndex[boneNode];
 
-						if (weightData[0] == 0.0f)
+				int* indices = cluster->GetControlPointIndices();
+				double* weights = cluster->GetControlPointWeights();
+				int count = cluster->GetControlPointIndicesCount();
+
+				FbxAMatrix transformLinkMatrix;
+				FbxAMatrix transformMatrix;
+
+				cluster->GetTransformMatrix(transformMatrix);
+				cluster->GetTransformLinkMatrix(transformLinkMatrix);
+
+				FbxAMatrix bindPoseMatrix = transformLinkMatrix.Inverse() * transformMatrix;
+				bindPoseMatrix.SetT(bindPoseMatrix.GetT() * globalScale);
+				boneTransforms[boneIndex] = boneTransform;
+				bindPoses[boneIndex] = ConvertMatrix(bindPoseMatrix);
+
+				for (int j = 0; j < count; ++j)
+				{
+					int vertexIndex = indices[j];
+					float weight = static_cast<float>(weights[j]);
+
+					auto& indexData = boneIndexControlPoints[vertexIndex].data;
+					auto& weightData = boneWeightControlPoints[vertexIndex].data;
+
+					if (weightData[0] == 0.0f)
+					{
+						weightData[0] = weight;
+						indexData[0] = boneIndex;
+					}
+					else
+					{
+						for (int k = 0; k < 4; ++k)
 						{
-							weightData[0] = weight;
-							indexData[0] = boneIndex;
-						}
-						else
-						{
-							for (int k = 0; k < 4; ++k)
+							if (weight > weightData[k])
 							{
-								if (weight > weightData[k])
+								for (int o = 2; o >= k; --o)
 								{
-									for (int o = 2; o >= k; --o)
-									{
-										weightData[o + 1] = weightData[o];
-										indexData[o + 1] = indexData[o];
-									}
-									weightData[k] = weight;
-									indexData[k] = boneIndex;
-									break;
+									weightData[o + 1] = weightData[o];
+									indexData[o + 1] = indexData[o];
 								}
+								weightData[k] = weight;
+								indexData[k] = boneIndex;
+								break;
 							}
 						}
 					}
 				}
-				mesh->SetBindPoses(bindPoses);
+			}
+			mesh->SetBindPoses(bindPoses);
 
-				int* verticesPtr = fbxMesh->mPolygonVertices;
-				for (int i = 0, n = fbxMesh->mPolygonVertices.GetCount(); i < n; ++i, ++verticesPtr)
-				{
-					fbxsdk::FbxVector4 vertex = fbxControlPoints[*verticesPtr];
-					Vector4 weight = Vector4(boneWeightControlPoints[*verticesPtr].data);
-					float weightSum = weight.x + weight.y + weight.z + weight.w;
-					weight.x /= weightSum;
-					weight.y /= weightSum;
-					weight.z /= weightSum;
-					weight.w /= weightSum;
-					Vector4Uint indices = Vector4Uint(boneIndexControlPoints[*verticesPtr].data);
-					boneWeights[i] = weight;
-					boneIndices[i] = indices;
-
-				}
-			}
-			
-			OptimizeMesh(verticesCount, indicesCount, vertices, normals, uvs0, uvs1, boneWeights, boneIndices, indices);
-			
-			mesh->SetVertices(vertices.data(), verticesCount);
-			if (normals.size() > 0)
+			int* verticesPtr = fbxMesh->mPolygonVertices;
+			for (int i = 0, n = fbxMesh->mPolygonVertices.GetCount(); i < n; ++i, ++verticesPtr)
 			{
-				mesh->SetNormals(normals.data(), verticesCount);
-			}
-			if (uvs0.size() > 0)
-			{
-				mesh->SetUVs(0, uvs0.data(), verticesCount);
-			}
-			if (uvs1.size() > 0)
-			{
-				mesh->SetUVs(1, uvs1.data(), verticesCount);
-			}
-			if (boneWeights.size() > 0 && boneIndices.size() > 0)
-			{
-				mesh->SetBoneWeights(boneWeights.data(), verticesCount);
-				mesh->SetBoneIndices(boneIndices.data(), verticesCount);
-			}
-			mesh->SetIndices(indices.data(), indicesCount);
-			if (uvs0.size() > 0)
-			{
-				mesh->GenerateTangents();
-			}
-			for (size_t i = 0; i < submeshes.size(); ++i)
-			{
-				mesh->SetSubMesh(static_cast<uint32_t>(i), submeshes[i]);
-			}
-			mesh->Apply();
-
-			if (m_GeneratePhysicsShape)
-			{
-				PhysicsShapeCache::Clear(mesh);
-				// TODO rename to m_GenerateColliders and put colliders on meshes
+				fbxsdk::FbxVector4 vertex = fbxControlPoints[*verticesPtr];
+				Vector4 weight = Vector4(boneWeightControlPoints[*verticesPtr].data);
+				float weightSum = weight.x + weight.y + weight.z + weight.w;
+				weight.x /= weightSum;
+				weight.y /= weightSum;
+				weight.z /= weightSum;
+				weight.w /= weightSum;
+				Vector4Uint indices = Vector4Uint(boneIndexControlPoints[*verticesPtr].data);
+				boneWeights[i] = weight;
+				boneIndices[i] = indices;
 			}
 
-			List<Material*> materials;
-			materials.resize(materialCount);
-			for (uint32_t i = 0; i < materialCount; ++i)
-			{
-				fbxsdk::FbxSurfaceMaterial* fbxMaterial = node->GetMaterial(i);
-				String name = fbxMaterial->GetName();
+			skinnedMeshRenderer->SetRoot(rootTransform);
+			skinnedMeshRenderer->SetBones(boneTransforms);
+		}
 
-				auto index = std::find_if(m_Materials.begin(), m_Materials.end(), [name](ModelMaterialData& d) { return d.GetName() == name; });
-				if (index == m_Materials.end())
-				{
-					ModelMaterialData data = {};
-					data.SetName(name);
-					m_Materials.push_back(data);
-				}
-				else
-				{
-					Material* material = index->GetMaterial();
-					if (material != nullptr)
-					{
-						materials[i] = material;
-					}
-				}
-			}
-			if (isSkinned)
+		OptimizeMesh(verticesCount, indicesCount, vertices, normals, uvs0, uvs1, boneWeights, boneIndices, indices);
+
+		mesh->SetVertices(vertices.data(), verticesCount);
+		if (normals.size() > 0)
+		{
+			mesh->SetNormals(normals.data(), verticesCount);
+		}
+		if (uvs0.size() > 0)
+		{
+			mesh->SetUVs(0, uvs0.data(), verticesCount);
+		}
+		if (uvs1.size() > 0)
+		{
+			mesh->SetUVs(1, uvs1.data(), verticesCount);
+		}
+		if (boneWeights.size() > 0 && boneIndices.size() > 0)
+		{
+			mesh->SetBoneWeights(boneWeights.data(), verticesCount);
+			mesh->SetBoneIndices(boneIndices.data(), verticesCount);
+		}
+		mesh->SetIndices(indices.data(), indicesCount);
+		if (uvs0.size() > 0)
+		{
+			mesh->GenerateTangents();
+		}
+		for (size_t i = 0; i < submeshes.size(); ++i)
+		{
+			mesh->SetSubMesh(static_cast<uint32_t>(i), submeshes[i]);
+		}
+		mesh->Apply();
+
+		if (m_GeneratePhysicsShape)
+		{
+			PhysicsShapeCache::Clear(mesh);
+			// TODO rename to m_GenerateColliders and put colliders on meshes
+		}
+
+		uint32_t materialOffset = 0;
+		List<Material*> materials;
+		materials.resize(materialIndexes.size());
+		for (uint32_t materialIndex : materialIndexes)
+		{
+			fbxsdk::FbxSurfaceMaterial* fbxMaterial = node->GetMaterial(materialIndex);
+			String name = fbxMaterial->GetName();
+
+			auto index = std::find_if(m_Materials.begin(), m_Materials.end(), [name](ModelMaterialData& d) { return d.GetName() == name; });
+			if (index == m_Materials.end())
 			{
-				skinnedMeshRenderer->SetMaterials(materials);
+				ModelMaterialData data = {};
+				data.SetName(name);
+				m_Materials.push_back(data);
 			}
 			else
 			{
-				meshRenderer->SetMaterials(materials);
+				Material* material = index->GetMaterial();
+				if (material != nullptr)
+				{
+					materials[materialOffset] = material;
+				}
 			}
-			
-			mesh->SetName(nodeName);
-			AddAssetObject(mesh, meshFileId);
-			objects.push_back(mesh);
+			++materialOffset;
 		}
-		
-		transform->SetLocalPosition(Vector3(static_cast<float>(fbxTranslation[0]), static_cast<float>(fbxTranslation[1]), static_cast<float>(fbxTranslation[2])));
-		transform->SetLocalRotation(Quaternion(static_cast<float>(fbxRotation[0]), static_cast<float>(fbxRotation[1]), static_cast<float>(fbxRotation[2]), static_cast<float>(fbxRotation[3])));
-		transform->SetLocalScale(Vector3::One);
+		if (isSkinned)
+		{
+			skinnedMeshRenderer->SetMaterials(materials);
+		}
+		else
+		{
+			meshRenderer->SetMaterials(materials);
+		}
 
+		mesh->SetName(entityName);
+		AddAssetObject(mesh, meshFileId);
+		objects.push_back(mesh);
+	}
+
+	void ModelImporter::CreateAnimationClips(fbxsdk::FbxScene* scene, List<Object*>& objects, const float& globalScale)
+	{
 		// Animation clips
 		int stackCount = scene->GetSrcObjectCount<FbxAnimStack>();
-		if (stackCount > 0 && skeletonNodes.size() > 0)
+		if (stackCount > 0)
 		{
 			scene->SetCurrentAnimationStack(nullptr);
 			FbxAnimEvaluator* evaluator = scene->GetAnimationEvaluator();
-			FbxVector4 globalScale = skeletonNodes[0]->EvaluateGlobalTransform().GetS();
-
-			List<Vector3> positions;
-			List<Quaternion> rotations;
-			List<Vector3> scales;
-
+			
 			for (int i = 0; i < stackCount; ++i)
 			{
 				FbxAnimStack* animStack = scene->GetSrcObject<FbxAnimStack>(i);
@@ -1089,6 +1041,40 @@ namespace Blueberry
 				{
 					continue;
 				}
+
+				// Find nodes
+				List<FbxNode*> skeletonNodes;
+				{
+					FbxAnimLayer* layer = animStack->GetMember<FbxAnimLayer>(0);
+					if (layer != nullptr)
+					{
+						for (int i = 0; i < scene->GetNodeCount(); ++i)
+						{
+							FbxNode* node = scene->GetNode(i);
+							if (node->GetSkeleton() != nullptr)
+							{
+								if (node->LclTranslation.GetCurveNode(layer) || node->LclRotation.GetCurveNode(layer) || node->LclScaling.GetCurveNode(layer))
+								{
+									skeletonNodes.push_back(node);
+								}
+							}
+						}
+					}
+					if (skeletonNodes.size() > 0)
+					{
+						FbxNode* rootNode = skeletonNodes[0];
+						while (rootNode->GetSkeleton() != nullptr)
+						{
+							FbxNode* parentNode = rootNode->GetParent();
+							if (parentNode == scene->GetRootNode())
+							{
+								break;
+							}
+							rootNode = parentNode;
+						}
+					}
+				}
+
 				size_t clipFileId = TO_HASH(name);
 				AnimationClip* clip = GetOrCreateAssetObject<AnimationClip>(clipFileId);
 				clip->ClearAnimationBones();
@@ -1133,11 +1119,14 @@ namespace Blueberry
 					}
 				}
 
+				List<Vector3> positions;
+				List<Quaternion> rotations;
+				List<Vector3> scales;
+
 				for (size_t j = 0; j < skeletonNodes.size(); ++j)
 				{
 					FbxTime time;
 					FbxNode* skeletonNode = skeletonNodes[j];
-					bool isRoot = skeletonNode->GetParent()->GetSkeleton() == nullptr;
 					AnimationBoneData boneData = {};
 					boneData.SetName(skeletonNode->GetName());
 
@@ -1154,16 +1143,7 @@ namespace Blueberry
 						FbxQuaternion rotation = clipMatrix.GetQ();
 						FbxVector4 scale = clipMatrix.GetS();
 
-						if (isRoot)
-						{
-							scale /= globalScale;
-						}
-						else
-						{
-							translation *= globalScale;
-						}
-
-						positions.push_back(Vector3(static_cast<float>(translation[0]), static_cast<float>(translation[1]), static_cast<float>(translation[2])));
+						positions.push_back(Vector3(static_cast<float>(translation[0]) * globalScale, static_cast<float>(translation[1]) * globalScale, static_cast<float>(translation[2]) * globalScale));
 						rotations.push_back(Quaternion(static_cast<float>(rotation[0]), static_cast<float>(rotation[1]), static_cast<float>(rotation[2]), static_cast<float>(rotation[3])));
 						scales.push_back(Vector3(static_cast<float>(scale[0]), static_cast<float>(scale[1]), static_cast<float>(scale[2])));
 					}
@@ -1181,27 +1161,6 @@ namespace Blueberry
 				AddAssetObject(clip, clipFileId);
 				objects.push_back(clip);
 			}
-		}
-		
-		for (int i = 0; i < node->GetChildCount(); ++i)
-		{
-			fbxsdk::FbxNode* childNode = node->GetChild(i);
-			if (childNode->GetSkeleton() == nullptr)
-			{
-				CreateMeshEntity(transform, childNode, skeletonNodes, objects, mainIsSet);
-			}
-		}
-	}
-
-	void GatherJoints(FbxNode *node, List<FbxNode*>& outJoints)
-	{
-		if (node->GetNodeAttribute() && node->GetNodeAttribute()->GetAttributeType() && node->GetNodeAttribute()->GetAttributeType() == FbxNodeAttribute::eSkeleton)
-		{
-			outJoints.push_back(node);
-		}
-		for (int i = 0; i < node->GetChildCount(); ++i)
-		{
-			GatherJoints(node->GetChild(i), outJoints);
 		}
 	}
 }

@@ -21,6 +21,11 @@ namespace Blueberry
 	List<ObjectPtr<EditorWindow>> EditorWindow::s_ActiveWindows = {};
 
 	static bool s_IsInit = false;
+	struct MaximizedWindowData
+	{
+		ObjectPtr<EditorWindow> window;
+		String title;
+	} s_MaximizedWindow;
 
 	void EditorWindow::Show()
 	{
@@ -51,35 +56,24 @@ namespace Blueberry
 		ImGui::SetWindowFocus(m_Title.c_str());
 	}
 
-	void EditorWindow::DrawUI()
-	{
-		bool opened = true;
-		bool focused = false;
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(100, 100));
-		if (ImGui::Begin(m_Title.c_str(), &opened, m_Flags))
-		{
-			OnDrawUI();
-			if (!opened)
-			{
-				Close();
-			}
-			focused = true;
-		}
-		else
-		{
-			focused = false;
-		}
-		ImGui::End();
-		ImGui::PopStyleVar();
-		if (s_IsInit)
-		{
-			m_Focused = focused;
-		}
-	}
-
 	void EditorWindow::SetTitle(const String& title)
 	{
 		m_Title = title;
+	}
+
+	void EditorWindow::SetMaximized(const bool& maximized)
+	{
+		const char* name = m_Title.c_str();
+		if (maximized)
+		{
+			s_MaximizedWindow.window = this;
+			s_MaximizedWindow.title = m_Title;
+			s_MaximizedWindow.title.append("##Maximized");
+		}
+		else
+		{
+			s_MaximizedWindow.window = nullptr;
+		}
 	}
 
 	const bool& EditorWindow::HasUnsavedChanges()
@@ -255,9 +249,16 @@ namespace Blueberry
 			s_ToRemoveWindows.clear();
 		}
 
+		bool show_demo_window = true;
+
 		for (auto& window : s_ActiveWindows)
 		{
 			window->DrawUI();
+		}
+
+		if (s_MaximizedWindow.window.IsValid())
+		{
+			s_MaximizedWindow.window->DrawMaximizedUI();
 		}
 
 		if (!s_IsInit)
@@ -308,5 +309,65 @@ namespace Blueberry
 	WString EditorWindow::GetSaveChangesMessage()
 	{
 		return L"Window has unsaved changes.";
+	}
+
+	void EditorWindow::DrawUI()
+	{
+		bool opened = true;
+		bool focused = false;
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(100, 100));
+
+		if (ImGui::Begin(m_Title.c_str(), &opened, m_Flags))
+		{
+			if (!s_MaximizedWindow.window.IsValid())
+			{
+				OnDrawUI();
+				if (!opened)
+				{
+					Close();
+				}
+				focused = true;
+
+				if (ImGui::IsWindowHovered() && ImGui::IsKeyPressed(ImGuiKey_F1))
+				{
+					SetMaximized(true);
+				}
+			}
+		}
+		else
+		{
+			focused = false;
+		}
+		ImGui::End();
+		ImGui::PopStyleVar();
+		if (s_IsInit)
+		{
+			m_Focused = focused;
+		}
+	}
+
+	void EditorWindow::DrawMaximizedUI()
+	{
+		const ImGuiViewport* viewport = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(viewport->WorkPos);
+		ImGui::SetNextWindowSize(viewport->WorkSize);
+		ImGui::SetNextWindowViewport(viewport->ID);
+
+		bool opened = true;
+		if (ImGui::Begin(s_MaximizedWindow.title.c_str(), &opened, m_Flags | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse))
+		{
+			OnDrawUI();
+			if (!opened)
+			{
+				Close();
+				SetMaximized(false);
+			}
+
+			if (ImGui::IsWindowHovered() && ImGui::IsKeyPressed(ImGuiKey_F1))
+			{
+				SetMaximized(false);
+			}
+		}
+		ImGui::End();
 	}
 }

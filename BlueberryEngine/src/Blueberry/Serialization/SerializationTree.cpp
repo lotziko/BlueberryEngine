@@ -331,9 +331,12 @@ namespace Blueberry
 		SerializationNode& node = ref.Get();
 		if (ref.tree->isText)
 		{
-			size_t size = node.value.size() - 1;
-			value.reference.resize(size / (2 * sizeof(uint8_t)));
-			ByteConverter::HexStringToBytes(node.value.data(), value.reference.data(), size);
+			if (node.value.size() > 0)
+			{
+				size_t size = node.value.size() - 1;
+				value.reference.resize(size / (2 * sizeof(uint8_t)));
+				ByteConverter::HexStringToBytes(node.value.data(), value.reference.data(), size);
+			}
 		}
 		else
 		{
@@ -347,9 +350,12 @@ namespace Blueberry
 		SerializationNode& node = ref.Get();
 		if (ref.tree->isText)
 		{
-			size_t size = node.value.size() - 1;
-			value.reference.resize(size / (2 * sizeof(int)));
-			ByteConverter::HexStringToBytes(node.value.data(), value.reference.data(), size);
+			if (node.value.size() > 0)
+			{
+				size_t size = node.value.size() - 1;
+				value.reference.resize(size / (2 * sizeof(int)));
+				ByteConverter::HexStringToBytes(node.value.data(), value.reference.data(), size);
+			}
 		}
 		else
 		{
@@ -363,9 +369,12 @@ namespace Blueberry
 		SerializationNode& node = ref.Get();
 		if (ref.tree->isText)
 		{
-			size_t size = node.value.size() - 1;
-			value.reference.resize(size / (2 * sizeof(float)));
-			ByteConverter::HexStringToBytes(node.value.data(), value.reference.data(), size);
+			if (node.value.size() > 0)
+			{
+				size_t size = node.value.size() - 1;
+				value.reference.resize(size / (2 * sizeof(float)));
+				ByteConverter::HexStringToBytes(node.value.data(), value.reference.data(), size);
+			}
 		}
 		else
 		{

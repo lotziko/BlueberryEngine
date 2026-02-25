@@ -358,6 +358,11 @@ namespace Blueberry
 		}
 		PrefabInstance* childInstance = GetInstance(child);
 		Entity* entity = child->GetEntity();
+		if (entity == nullptr)
+		{
+			BB_ERROR("Can't initialize prefab");
+			return;
+		}
 		if (childInstance != nullptr && childInstance != instance)
 		{
 			FileId childInstanceFileId = ObjectDB::GetFileIdFromObject(childInstance);

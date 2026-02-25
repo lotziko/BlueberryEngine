@@ -101,6 +101,11 @@ namespace Blueberry
 		return static_cast<uint32_t>(m_Materials.size());
 	}
 
+	const bool SkinnedMeshRenderer::HasRoot()
+	{
+		return m_Root.IsValid() && m_Root->GetParent() != nullptr;
+	}
+
 	Transform* SkinnedMeshRenderer::GetRoot()
 	{
 		return m_Root.Get();
@@ -177,7 +182,14 @@ namespace Blueberry
 					}
 					else
 					{
-						m_WorldMatrices[i] = m_LocalMatrices[i] * m_Root.Get()->GetLocalMatrix();
+						if (parentIndex == -1)
+						{
+							m_WorldMatrices[i] = m_LocalMatrices[i] * m_Root.Get()->GetLocalMatrix();
+						}
+						else
+						{
+							m_WorldMatrices[i] = m_LocalMatrices[i];
+						}
 					}
 				}
 
@@ -213,12 +225,13 @@ namespace Blueberry
 	{
 		if (m_Mesh.IsValid())
 		{
-			Transform* transform = GetTransform();
+			Transform* transform = GetRoot();
 			size_t transformUpdateCount = transform->GetUpdateCount();
-			if (m_UpdateCount != transformUpdateCount)
+			if (m_UpdateCount != transformUpdateCount && m_Bones.size() > 0)
 			{
-				AABB bounds = m_Mesh->GetBounds();
-				Matrix matrix = transform->GetLocalToWorldMatrix();
+				AABB meshBounds = m_Mesh->GetBounds();
+				AABB bounds(Vector3::Zero, Vector3(meshBounds.Extents.x * 2, meshBounds.Extents.y * 2, meshBounds.Extents.z * 2));
+				Matrix matrix = m_Bones[0]->GetLocalToWorldMatrix();
 
 				Vector3 corners[8];
 				bounds.GetCorners(corners);
@@ -249,12 +262,19 @@ namespace Blueberry
 	void SkinnedMeshRenderer::UpdateBoneDatas()
 	{
 		m_BoneDatas.clear();
+		Transform* rootBone = m_Root.Get();
 		for (size_t i = 0; i < m_Bones.size(); ++i)
 		{
 			Transform* bone = m_Bones[i].Get();
 			if (bone != nullptr)
 			{
 				int32_t index = -1;
+				if (bone == rootBone)
+				{
+					index = -2;
+					m_BoneDatas.push_back({ bone, index });
+					continue;
+				}
 				Transform* boneParent = bone->GetParent();
 				for (size_t j = 0; j < i; ++j)
 				{

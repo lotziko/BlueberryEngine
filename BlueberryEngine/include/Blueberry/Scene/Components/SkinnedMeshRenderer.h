@@ -31,6 +31,7 @@ namespace Blueberry
 
 		uint32_t GetMaterialCount();
 
+		const bool HasRoot();
 		Transform* GetRoot();
 		void SetRoot(Transform* root);
 

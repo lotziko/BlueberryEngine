@@ -6,12 +6,14 @@
 namespace fbxsdk
 {
 	class FbxNode;
+	class FbxScene;
 }
 
 namespace Blueberry
 {
 	class Material;
 	class Transform;
+	class Entity;
 
 	class ModelMaterialData : public Data
 	{
@@ -80,8 +82,18 @@ namespace Blueberry
 		virtual void ImportData() override;
 
 	private:
-		void CreateMeshEntity(Transform* parent, fbxsdk::FbxNode* node, List<fbxsdk::FbxNode*>& skeletonNodes, List<Object*>& objects, bool& mainIsSet);
+		struct NodeData
+		{
+			Entity* entity;
+			Transform* transform;
+			String nodeName;
+			String entityName;
+		};
 
+		void CreateHierarchy(Transform* parent, fbxsdk::FbxNode* node, List<Object*>& objects, Dictionary<fbxsdk::FbxNode*, NodeData>& nodeToData, const float& globalScale);
+		void CreateMesh(fbxsdk::FbxNode* node, List<Object*>& objects, Dictionary<fbxsdk::FbxNode*, NodeData>& nodeToData, const float& globalScale);
+		void CreateAnimationClips(fbxsdk::FbxScene* scene, List<Object*>& objects, const float& globalScale);
+		
 	private:
 		List<ModelMaterialData> m_Materials;
 		List<ModelAnimationClipData> m_AnimationClips;
