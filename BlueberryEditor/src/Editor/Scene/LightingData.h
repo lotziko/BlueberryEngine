@@ -64,18 +64,22 @@ namespace Blueberry
 		Texture2D* GetLightmap();
 		void SetLightmapData(Texture2D* lightmap, const List<Vector4>& scaleOffset, const Dictionary<ObjectId, uint32_t>& instanceOffset);
 
+		void SetProbeVolumeData(Texture3D* probeVolume);
+
 		const size_t GetReflectionProbeCount();
 		void SetSkyReflection(SkyRenderer* skyRenderer, TextureCube* textureCube);
 		void SetReflectionProbe(const uint32_t& index, ReflectionProbe* reflectionProbe, TextureCube* textureCube);
 		
 		void Apply();
 		void ApplyLightmap();
+		void ApplyProbeVolume();
 		void ApplyReflections();
 
 		void Clear();
 
 	private:
 		ObjectPtr<Texture2D> m_Lightmap;
+		ObjectPtr<Texture3D> m_ProbeVolume;
 		List<MeshRendererData> m_MeshRenderers;
 		List<ReflectionProbeData> m_ReflectionProbes;
 		List<Vector4> m_ChartOffsetScale;

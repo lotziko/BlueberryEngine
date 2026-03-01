@@ -22,6 +22,6 @@ namespace Blueberry
 		virtual void DrawImpl(GfxTexture* depthStencil, GfxTexture* normals, const Matrix& view, const Matrix& projection, const Rectangle& viewport, GfxTexture* output) = 0;
 	
 	private:
-		static inline HBAORenderer* s_Instance = nullptr;
+		static HBAORenderer* s_Instance;
 	};
 }

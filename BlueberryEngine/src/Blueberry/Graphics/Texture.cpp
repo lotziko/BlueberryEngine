@@ -15,7 +15,8 @@ namespace Blueberry
 		DEFINE_FIELD(Texture, m_MipCount, BindingType::Int, {})
 		DEFINE_FIELD(Texture, m_Format, BindingType::Enum, {})
 		DEFINE_FIELD(Texture, m_WrapMode, BindingType::Enum, FieldOptions().SetEnumHint("Repeat,Clamp"))
-		DEFINE_FIELD(Texture, m_FilterMode, BindingType::Enum, FieldOptions().SetEnumHint("Linear,Point"))
+		DEFINE_FIELD(Texture, m_FilterMode, BindingType::Enum, FieldOptions().SetEnumHint("Linear,Point,Trilinear"))
+		DEFINE_FIELD(Texture, m_RawData, BindingType::ByteData, {})
 		DEFINE_FIELD(Texture, m_IsReadable, BindingType::Bool, {})
 	}
 

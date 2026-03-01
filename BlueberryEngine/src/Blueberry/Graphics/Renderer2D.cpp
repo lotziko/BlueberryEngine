@@ -9,6 +9,15 @@
 
 namespace Blueberry
 {
+	GfxBuffer* Renderer2D::s_VertexBuffer = nullptr;
+	GfxBuffer* Renderer2D::s_IndexBuffer = nullptr;
+
+	float* Renderer2D::s_VertexData = nullptr;
+	float* Renderer2D::s_VertexDataPtr = nullptr;
+	Renderer2D::DrawingData* Renderer2D::s_DrawingDatas = nullptr;
+	uint32_t Renderer2D::s_QuadIndexCount = 0;
+	uint32_t Renderer2D::s_DrawingDataCount = 0;
+
 	static Vector4 s_QuadVertexPositons[4];
 	static Vector2 s_QuadTextureCoords[4];
 

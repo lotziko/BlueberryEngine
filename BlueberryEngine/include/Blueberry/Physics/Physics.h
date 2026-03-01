@@ -20,8 +20,8 @@ namespace Blueberry
 		static void Update(const float& deltaTime);
 
 	private:
-		static inline JPH::TempAllocatorImpl* s_TempAllocator;
-		static inline JPH::PhysicsSystem* s_PhysicsSystem = nullptr;
+		static JPH::TempAllocatorImpl* s_TempAllocator;
+		static JPH::PhysicsSystem* s_PhysicsSystem;
 
 		friend class PhysicsBody;
 		friend class Collider;

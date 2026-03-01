@@ -8,6 +8,8 @@
 
 namespace Blueberry
 {
+	GfxDevice* GfxDevice::s_Instance = nullptr;
+
 	bool GfxDevice::Initialize(int width, int height, void* data)
 	{
 		switch (GraphicsAPI::GetAPI())

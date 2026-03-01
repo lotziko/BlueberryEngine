@@ -17,8 +17,8 @@ namespace Blueberry
 		static GfxBuffer* GetVertexBuffer(SkinnedMeshRenderer* renderer);
 
 	private:
-		static inline ComputeShader* s_SkinningShader = nullptr;
-		static inline GfxBuffer* s_ConstantBuffer = nullptr;
-		static inline GfxBuffer* s_BoneTransformBuffer = nullptr;
+		static ComputeShader* s_SkinningShader;
+		static GfxBuffer* s_ConstantBuffer;
+		static GfxBuffer* s_BoneTransformBuffer;
 	};
 }

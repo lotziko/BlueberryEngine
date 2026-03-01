@@ -23,8 +23,8 @@ namespace Blueberry
 		static TextureCube* Save(const uint32_t& index);
 
 	private:
-		static inline GfxTexture* s_RenderTargetTexture = nullptr;
-		static inline GfxTexture* s_CubeTexture = nullptr;
-		static inline Camera* s_Camera = nullptr;
+		static GfxTexture* s_RenderTargetTexture;
+		static GfxTexture* s_CubeTexture;
+		static Camera* s_Camera;
 	};
 }

@@ -13,6 +13,12 @@
 
 namespace Blueberry
 {
+	GfxBuffer* PerCameraLightDataConstantBuffer::s_ConstantBuffer = nullptr;
+	GfxBuffer* PerCameraLightDataConstantBuffer::s_PointLightsBuffer = nullptr;
+	GfxBuffer* PerCameraLightDataConstantBuffer::s_SpotLightsBuffer = nullptr;
+	GfxBuffer* PerCameraLightDataConstantBuffer::s_ShadowsBuffer = nullptr;
+	GfxBuffer* PerCameraLightDataConstantBuffer::s_ReflectionProbesBuffer = nullptr;
+
 	#define MAIN_LIGHT_CASCADES 3
 	#define MAX_REALTIME_LIGHTS 256
 	#define MAX_SHADOWS 1024

@@ -19,6 +19,7 @@
 
 namespace Blueberry
 {
+	Material* IconRenderer::s_IconMaterial = nullptr;
 	List<IconRenderer::IconInfo> IconRenderer::s_IconsCache = {};
 
 	bool IconRenderer::Initialize()

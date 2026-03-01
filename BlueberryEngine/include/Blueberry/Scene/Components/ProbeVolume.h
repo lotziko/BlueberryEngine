@@ -13,7 +13,10 @@ namespace Blueberry
 		virtual ~ProbeVolume() = default;
 
 		const AABB& GetBounds();
+		void SetBounds(const AABB& bounds);
+
 		const Vector3Int& GetSize();
+		void SetSize(const Vector3Int& size);
 
 	private:
 		AABB m_Bounds;

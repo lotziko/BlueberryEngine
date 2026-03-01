@@ -309,11 +309,20 @@ namespace Blueberry
 			case BindingType::Vector2:
 				fieldNode << *field.Get<Vector2>(ptr);
 				break;
+			case BindingType::Vector2Int:
+				fieldNode << *field.Get<Vector2Int>(ptr);
+				break;
 			case BindingType::Vector3:
 				fieldNode << *field.Get<Vector3>(ptr);
 				break;
+			case BindingType::Vector3Int:
+				fieldNode << *field.Get<Vector3Int>(ptr);
+				break;
 			case BindingType::Vector4:
 				fieldNode << *field.Get<Vector4>(ptr);
+				break;
+			case BindingType::Vector4Int:
+				fieldNode << *field.Get<Vector4Int>(ptr);
 				break;
 			case BindingType::Quaternion:
 				fieldNode << *field.Get<Quaternion>(ptr);
@@ -592,11 +601,20 @@ namespace Blueberry
 				case BindingType::Vector2:
 					fieldNode >> *field->Get<Vector2>(ptr);
 					break;
+				case BindingType::Vector2Int:
+					fieldNode >> *field->Get<Vector2Int>(ptr);
+					break;
 				case BindingType::Vector3:
 					fieldNode >> *field->Get<Vector3>(ptr);
 					break;
+				case BindingType::Vector3Int:
+					fieldNode >> *field->Get<Vector3Int>(ptr);
+					break;
 				case BindingType::Vector4:
 					fieldNode >> *field->Get<Vector4>(ptr);
+					break;
+				case BindingType::Vector4Int:
+					fieldNode >> *field->Get<Vector4Int>(ptr);
 					break;
 				case BindingType::Quaternion:
 					fieldNode >> *field->Get<Quaternion>(ptr);

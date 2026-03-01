@@ -17,6 +17,7 @@ namespace Blueberry
 		int maxSize;
 		float distanceBetweenProbes;
 		bool denoise;
+		bool generateLightmap;
 		bool generateProbes;
 	};
 

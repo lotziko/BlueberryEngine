@@ -109,6 +109,9 @@ namespace Blueberry
 	ObjectVsBroadPhaseLayerFilterImpl object_vs_broadphase_layer_filter;
 	ObjectLayerPairFilterImpl object_vs_object_layer_filter;
 
+	JPH::TempAllocatorImpl* Physics::s_TempAllocator;
+	JPH::PhysicsSystem* Physics::s_PhysicsSystem = nullptr;
+
 	bool Physics::Initialize()
 	{
 		RegisterDefaultAllocator();

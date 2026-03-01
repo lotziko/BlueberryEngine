@@ -1,15 +1,15 @@
-#include "TextureCubeFinalizer.h"
+#include "Texture3DFinalizer.h"
 
-#include "Blueberry\Graphics\TextureCube.h"
+#include "Blueberry\Graphics\Texture3D.h"
 #include "Blueberry\Tools\FileHelper.h"
 
 #include "Editor\Assets\Importers\TextureImporter.h"
 
 namespace Blueberry
 {
-	void TextureCubeFinalizer::Finalize(Object* object, const Guid& guid, const FileId& fileId)
+	void Texture3DFinalizer::Finalize(Object* object, const Guid& guid, const FileId& fileId)
 	{
-		TextureCube* texture = static_cast<TextureCube*>(object);
+		Texture3D* texture = static_cast<Texture3D*>(object);
 		String texturePath = TextureImporter::GetTexturePath(guid);
 		if (std::filesystem::exists(texturePath))
 		{

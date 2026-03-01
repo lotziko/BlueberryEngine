@@ -83,7 +83,7 @@ namespace Blueberry
 		void DrawRenderers(CullingResults& results, DrawingSettings& drawingSettings);
 
 	private:
-		static inline GfxBuffer* s_IndexBuffer = nullptr;
-		static inline size_t s_LastCullingFrame = 0;
+		static GfxBuffer* s_IndexBuffer;
+		static size_t s_LastCullingFrame;
 	};
 }

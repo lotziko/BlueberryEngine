@@ -16,6 +16,8 @@
 
 namespace Blueberry
 {
+	GfxTexture* MaterialEditor::s_RenderTexture = nullptr;
+
 	void MaterialEditor::OnEnable()
 	{
 		if (s_RenderTexture == nullptr)

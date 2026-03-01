@@ -179,7 +179,7 @@ namespace Blueberry
 
 			Texture2D* texture = GetOrCreateAssetObject<Texture2D>(id);
 			texture->SetName(GetName());
-			texture->Initialize(metadata.width, metadata.height, metadata.mipLevels, format);
+			texture->Initialize(static_cast<uint32_t>(metadata.width), static_cast<uint32_t>(metadata.height), static_cast<uint32_t>(metadata.mipLevels), format);
 			texture->SetWrapMode(m_WrapMode);
 			texture->SetFilterMode(m_FilterMode);
 			texture->SetReadable(m_IsReadable);
@@ -211,10 +211,10 @@ namespace Blueberry
 			TextureHelper::Compress(image, compressedFormat, m_IsSRGB);
 
 			auto metadata = image.GetMetadata();
-			uint32_t size = std::min(metadata.width, metadata.height);
+			uint32_t size = static_cast<uint32_t>(std::min(metadata.width, metadata.height));
 			TextureCube* texture = GetOrCreateAssetObject<TextureCube>(id);
 			texture->SetName(GetName());
-			texture->Initialize(size, size, metadata.mipLevels, compressedFormat);
+			texture->Initialize(size, size, static_cast<uint32_t>(metadata.mipLevels), compressedFormat);
 			texture->SetWrapMode(m_WrapMode);
 			texture->SetFilterMode(m_FilterMode);
 			texture->SetReadable(m_IsReadable);

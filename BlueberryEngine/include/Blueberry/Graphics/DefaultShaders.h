@@ -12,6 +12,6 @@ namespace Blueberry
 		static Shader* GetSkybox();
 
 	private:
-		static inline Shader* s_SkyboxShader = nullptr;
+		static Shader* s_SkyboxShader;
 	};
 }

@@ -20,7 +20,7 @@ namespace Blueberry
 	{
 		Vector3* vertices = input.vertices;
 		uint32_t* indices = input.indices;
-		uint32_t instanceIndex = s_Instances.size();
+		uint32_t instanceIndex = static_cast<uint32_t>(s_Instances.size());
 
 		for (size_t i = 0; i < input.indexCount; i += 3)
 		{
@@ -28,7 +28,7 @@ namespace Blueberry
 			Vector3 p2 = vertices[indices[i + 1]];
 			Vector3 p3 = vertices[indices[i + 2]];
 
-			BVHTriangle triangle = { make_float2(p1.x, p1.y), make_float2(p2.x, p2.y), make_float2(p3.x, p3.y), make_uint2(instanceIndex, i) };
+			BVHTriangle triangle = { make_float2(p1.x, p1.y), make_float2(p2.x, p2.y), make_float2(p3.x, p3.y), make_uint2(instanceIndex, static_cast<uint32_t>(i)) };
 			s_Triangles.push_back(std::move(triangle));
 		}
 
@@ -144,7 +144,7 @@ namespace Blueberry
 	{
 		if (triangleCount <= 1)
 		{
-			return std::make_tuple(0, 0, FLT_MAX);
+			return std::make_tuple(0u, 0.0f, FLT_MAX);
 		}
 		
 		float bestSplitPos = 0;

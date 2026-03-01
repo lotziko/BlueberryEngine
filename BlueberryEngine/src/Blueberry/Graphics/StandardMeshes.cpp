@@ -4,6 +4,12 @@
 
 namespace Blueberry
 {
+	Mesh* StandardMeshes::s_FullscreenMesh = nullptr;
+	Mesh* StandardMeshes::s_BlitMesh = nullptr;
+	Mesh* StandardMeshes::s_PlaneMesh = nullptr;
+	Mesh* StandardMeshes::s_SphereMesh = nullptr;
+	Mesh* StandardMeshes::s_CubeMesh = nullptr;
+
 	Mesh* StandardMeshes::GetFullscreen()
 	{
 		if (s_FullscreenMesh == nullptr)

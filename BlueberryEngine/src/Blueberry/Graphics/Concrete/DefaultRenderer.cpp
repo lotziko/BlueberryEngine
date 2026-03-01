@@ -186,7 +186,7 @@ namespace Blueberry
 		s_DefaultContext.DrawRenderers(s_Results, drawingSettings);
 		BB_PROFILE_END();
 		
-		PostProcessing::Draw(colorMSAARenderTarget, colorRenderTarget, resultRenderTarget, viewport, size, cameraType);
+		PostProcessing::Draw(camera, colorMSAARenderTarget, colorRenderTarget, resultRenderTarget, viewport, size, cameraType);
 
 		if (isVr)
 		{

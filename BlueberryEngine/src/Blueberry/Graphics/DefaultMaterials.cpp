@@ -6,6 +6,12 @@
 
 namespace Blueberry
 {
+	Material* DefaultMaterials::s_ErrorMaterial = nullptr;
+	Material* DefaultMaterials::s_BlitMaterial = nullptr;
+	Material* DefaultMaterials::s_ResolveMSAAMaterial = nullptr;
+	Material* DefaultMaterials::s_PostProcessingMaterial = nullptr;
+	Material* DefaultMaterials::s_VRMirrorViewMaterial = nullptr;
+
 	Material* DefaultMaterials::GetError()
 	{
 		if (s_ErrorMaterial == nullptr)

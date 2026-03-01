@@ -75,7 +75,7 @@ namespace Blueberry
 		if (index < m_AnimationBones.size())
 		{
 			auto& bone = m_AnimationBones[index];
-			float frame = std::fmodf(time * m_FrameRate, bone.m_Positions.size());
+			float frame = std::fmodf(time * m_FrameRate, static_cast<float>(bone.m_Positions.size()));
 			size_t frameIndex = static_cast<size_t>(std::floorf(frame));
 			size_t nextIndex = std::min(bone.m_Positions.size() - 1, frameIndex + 1);
 			float t = frame - frameIndex;

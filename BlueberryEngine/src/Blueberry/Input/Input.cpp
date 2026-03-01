@@ -5,7 +5,7 @@
 
 namespace Blueberry
 {
-	bool Input::s_State[256] = {};
+	bool Input::s_State[static_cast<uint8_t>(KeyCode::KeyCount)] = {};
 	Vector2 Input::s_MousePosition = Vector2::Zero;
 	Vector2 Input::s_MouseDelta = Vector2::Zero;
 	size_t Input::s_DeltaFrame = 0;
@@ -26,17 +26,20 @@ namespace Blueberry
 
 	bool Input::IsKeyDown(const KeyCode& key)
 	{
-		return s_State[key];
+		return s_State[static_cast<uint8_t>(key)];
 	}
 
 	void Input::OnKeyDown(const KeyEventArgs& args)
 	{
-		s_State[args.GetKeyCode()] = true;
+		if (Screen::IsAllowCursorLock())
+		{
+			s_State[static_cast<uint8_t>(args.GetKeyCode())] = true;
+		}
 	}
 
 	void Input::OnKeyUp(const KeyEventArgs& args)
 	{
-		s_State[args.GetKeyCode()] = false;
+		s_State[static_cast<uint8_t>(args.GetKeyCode())] = false;
 	}
 
 	void Input::OnMouseMove(const MouseMoveEventArgs& args)

@@ -32,6 +32,6 @@ namespace Blueberry
 		virtual void EndFrameImpl() = 0;
 
 	private:
-		static inline OpenXRRenderer* s_Instance = nullptr;
+		static OpenXRRenderer* s_Instance;
 	};
 }

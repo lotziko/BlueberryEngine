@@ -100,6 +100,6 @@ namespace Blueberry
 		virtual Matrix GetGPUMatrixImpl(const Matrix& viewProjection) const = 0;
 
 	private:
-		static inline GfxDevice* s_Instance = nullptr;
+		static GfxDevice* s_Instance;
 	};
 }

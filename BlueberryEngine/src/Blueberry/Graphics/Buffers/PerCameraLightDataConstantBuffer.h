@@ -19,10 +19,10 @@ namespace Blueberry
 		static void BindData(Camera* camera, Light* mainLight, SkyRenderer* skyRenderer, ProbeVolume* probeVolume, const List<Light*>& lights, const List<ReflectionProbe*>& reflectionProbes, const Vector2Int& shadowAtlasSize);
 
 	private:
-		static inline GfxBuffer* s_ConstantBuffer = nullptr;
-		static inline GfxBuffer* s_PointLightsBuffer = nullptr;
-		static inline GfxBuffer* s_SpotLightsBuffer = nullptr;
-		static inline GfxBuffer* s_ShadowsBuffer = nullptr;
-		static inline GfxBuffer* s_ReflectionProbesBuffer = nullptr;
+		static GfxBuffer* s_ConstantBuffer;
+		static GfxBuffer* s_PointLightsBuffer;
+		static GfxBuffer* s_SpotLightsBuffer;
+		static GfxBuffer* s_ShadowsBuffer;
+		static GfxBuffer* s_ReflectionProbesBuffer;
 	};
 }

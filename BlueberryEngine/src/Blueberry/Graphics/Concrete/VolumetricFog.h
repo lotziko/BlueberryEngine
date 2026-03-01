@@ -16,8 +16,8 @@ namespace Blueberry
 		static GfxTexture* GetFrustumTexture();
 
 	private:
-		static inline ComputeShader* s_VolumetricFogShader = nullptr;
-		static inline GfxTexture* s_FrustumVolume0 = nullptr;
-		static inline GfxTexture* s_FrustumVolume1 = nullptr;
+		static ComputeShader* s_VolumetricFogShader;
+		static GfxTexture* s_FrustumVolume0;
+		static GfxTexture* s_FrustumVolume1;
 	};
 }

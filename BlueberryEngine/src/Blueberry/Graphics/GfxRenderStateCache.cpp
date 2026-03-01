@@ -39,18 +39,28 @@ namespace Blueberry
 			}
 			if (Shader::s_ActiveKeywords.size() > 0)
 			{
-				for (int i = 0; i < vertexKeywords.size(); ++i)
+				for (size_t i = 0; i < vertexKeywords.size(); ++i)
 				{
-					if (Shader::s_ActiveKeywords.find(TO_HASH(vertexKeywords[i])) != Shader::s_ActiveKeywords.end())
+					size_t id = TO_HASH(vertexKeywords[i]);
+					for (size_t j = 0; j < Shader::s_ActiveKeywords.size(); ++j)
 					{
-						vertexFlags |= 1 << i;
+						if (Shader::s_ActiveKeywords[j] == id)
+						{
+							vertexFlags |= 1 << i;
+							break;
+						}
 					}
 				}
-				for (int i = 0; i < fragmentKeywords.size(); ++i)
+				for (size_t i = 0; i < fragmentKeywords.size(); ++i)
 				{
-					if (Shader::s_ActiveKeywords.find(TO_HASH(fragmentKeywords[i])) != Shader::s_ActiveKeywords.end())
+					size_t id = TO_HASH(fragmentKeywords[i]);
+					for (size_t j = 0; j < Shader::s_ActiveKeywords.size(); ++j)
 					{
-						fragmentFlags |= 1 << i;
+						if (Shader::s_ActiveKeywords[j] == id)
+						{
+							fragmentFlags |= 1 << i;
+							break;
+						}
 					}
 				}
 			}

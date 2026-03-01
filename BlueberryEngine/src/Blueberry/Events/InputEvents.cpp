@@ -2,14 +2,19 @@
 
 namespace Blueberry
 {
-	KeyUpEvent InputEvents::s_KeyDown = {};
+	KeyDownEvent InputEvents::s_KeyDown = {};
 	KeyUpEvent InputEvents::s_KeyUp = {};
-	KeyUpEvent InputEvents::s_KeyTyped = {};
+	KeyTypeEvent InputEvents::s_KeyTyped = {};
 	MouseMoveEvent InputEvents::s_MouseMoved = {};
 
 	const KeyCode& KeyEventArgs::GetKeyCode() const
 	{
 		return m_KeyCode;
+	}
+
+	const wchar_t& KeyTypeEventArgs::GetKey() const
+	{
+		return m_Key;
 	}
 
 	const Vector2& MouseMoveEventArgs::GetPosition() const

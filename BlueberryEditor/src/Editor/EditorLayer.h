@@ -40,6 +40,6 @@ namespace Blueberry
 		Scene* m_Scene = nullptr;
 		bool m_Focused = true;
 
-		static inline bool s_FrameUpdateRequested = true;
+		static bool s_FrameUpdateRequested;
 	};
 }

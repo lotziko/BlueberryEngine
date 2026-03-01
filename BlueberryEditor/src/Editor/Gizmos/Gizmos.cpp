@@ -10,6 +10,22 @@
 
 namespace Blueberry
 {
+	Material* Gizmos::s_LineMaterial = nullptr;
+	Material* Gizmos::s_ArcMaterial = nullptr;
+	Color Gizmos::s_CurrentColor = Color();
+
+	GfxBuffer* Gizmos::s_LineVertexBuffer = nullptr;
+	GfxBuffer* Gizmos::s_ArcVertexBuffer = nullptr;
+
+	float* Gizmos::s_LineVertexData = nullptr;
+	float* Gizmos::s_LineVertexDataPtr = nullptr;
+	Gizmos::Line* Gizmos::s_Lines = nullptr;
+	float* Gizmos::s_ArcVertexData = nullptr;
+	float* Gizmos::s_ArcVertexDataPtr = nullptr;
+	Gizmos::Arc* Gizmos::s_Arcs = nullptr;
+	uint32_t Gizmos::s_LineCount = 0;
+	uint32_t Gizmos::s_ArcCount = 0;
+
 	static const uint32_t MAX_LINES = 16384;
 	static const uint32_t MAX_VERTICES = MAX_LINES * 2;
 	static const uint32_t MAX_INDICES = MAX_LINES * 2;

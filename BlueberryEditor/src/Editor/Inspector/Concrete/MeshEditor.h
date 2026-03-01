@@ -15,6 +15,6 @@ namespace Blueberry
 		virtual void OnDrawInspector() override;
 
 	private:
-		static inline GfxTexture* s_RenderTexture = nullptr;
+		static GfxTexture* s_RenderTexture;
 	};
 }

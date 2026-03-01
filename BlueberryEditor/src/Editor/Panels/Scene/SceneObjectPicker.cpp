@@ -14,12 +14,12 @@
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\GfxTexture.h"
-#include "Blueberry\Graphics\GfxBuffer.h"
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Graphics\Buffers\PerCameraDataConstantBuffer.h"
 #include "Blueberry\Graphics\Buffers\PerDrawDataConstantBuffer.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\Skinning.h"
+#include "PerObjectDataConstantBuffer.h"
 
 namespace Blueberry
 {
@@ -30,41 +30,6 @@ namespace Blueberry
 		memcpy(&result, packedIndex, sizeof(float) * 2);
 		return result;
 	}
-
-	class PerObjectDataConstantBuffer
-	{
-	public:
-		struct CONSTANTS
-		{
-			Color objectId;
-		};
-
-		static void BindData(Color indexColor)
-		{
-			static size_t objectDataId = TO_HASH("PerObjectData");
-
-			if (s_ConstantBuffer == nullptr)
-			{
-				BufferProperties constantBufferProperties = {};
-				constantBufferProperties.elementCount = 1;
-				constantBufferProperties.elementSize = sizeof(CONSTANTS) * 1;
-				constantBufferProperties.usageFlags = BufferUsageFlags::ConstantBuffer;
-
-				GfxDevice::CreateBuffer(constantBufferProperties, s_ConstantBuffer);
-			}
-
-			CONSTANTS constants
-			{
-				indexColor
-			};
-
-			s_ConstantBuffer->SetData(reinterpret_cast<char*>(&constants), sizeof(constants));
-			GfxDevice::SetGlobalBuffer(objectDataId, s_ConstantBuffer);
-		}
-
-	private:
-		static inline GfxBuffer* s_ConstantBuffer = nullptr;
-	};
 
 	SceneObjectPicker::SceneObjectPicker()
 	{

@@ -2,6 +2,8 @@
 
 namespace Blueberry
 {
+	AssetLoader* AssetLoader::s_Instance = nullptr;
+
 	void AssetLoader::Initialize(AssetLoader* loader)
 	{
 		s_Instance = loader;

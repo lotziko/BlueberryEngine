@@ -12,6 +12,7 @@
 namespace Blueberry
 {
 	static uint32_t s_MaxCookies = 16;
+	GfxTexture* CookieAtlas::s_AtlasTexture = nullptr;
 	List<ObjectId> CookieAtlas::s_Cookies = {};
 
 	void CookieAtlas::Initialize()

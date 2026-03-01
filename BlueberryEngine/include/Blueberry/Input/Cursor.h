@@ -14,7 +14,7 @@ namespace Blueberry
 		static void SetHidden(const bool& hidden);
 
 	private:
-		static inline bool s_Locked = false;
-		static inline bool s_Hidden = false;
+		static bool s_Locked;
+		static bool s_Hidden;
 	};
 }

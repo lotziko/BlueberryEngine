@@ -9,6 +9,10 @@
 
 namespace Blueberry
 {
+	ComputeShader* Skinning::s_SkinningShader = nullptr;
+	GfxBuffer* Skinning::s_ConstantBuffer = nullptr;
+	GfxBuffer* Skinning::s_BoneTransformBuffer = nullptr;
+
 	static size_t s_VertexSourceId = TO_HASH("_VertexSource");
 	static size_t s_VertexResultId = TO_HASH("_VertexResult");
 	static size_t s_SkinningDataId = TO_HASH("SkinningData");

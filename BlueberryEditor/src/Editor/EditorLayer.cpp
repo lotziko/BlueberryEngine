@@ -34,6 +34,8 @@
 
 namespace Blueberry
 {
+	bool EditorLayer::s_FrameUpdateRequested = true;
+
 	void EditorLayer::OnAttach()
 	{
 		RegisterEditorTypes();

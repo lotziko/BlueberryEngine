@@ -9,8 +9,7 @@ namespace Blueberry
 	void AssemblySerializer::Serialize()
 	{
 		List<Object*> objects;
-		ObjectDB::GetObjects(Object::Type, objects);
-		for (Object* object : objects)
+		for (Object* object : ObjectDB::GetObjects(Object::Type))
 		{
 			const ClassInfo* info = ClassDB::GetInfo(object->GetType());
 			if (info->isDll)

@@ -20,7 +20,7 @@ namespace Blueberry
 		const uint32_t GetMask(const size_t& id);
 
 	private:
-		Dictionary<size_t, uint32_t> m_KeywordMask = {};
+		List<std::pair<size_t, uint32_t>> m_KeywordMask = {};
 		uint32_t m_MaxMask = 1;
 	};
 
@@ -191,7 +191,7 @@ namespace Blueberry
 		uint32_t m_UpdateCount = 0;
 		HashSet<ObjectId> m_Dependencies;
 
-		static HashSet<size_t> s_ActiveKeywords;
+		static List<size_t> s_ActiveKeywords;
 		static uint32_t s_ActiveKeywordsMask;
 		static KeywordDB s_GlobalKeywords;
 

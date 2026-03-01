@@ -85,7 +85,7 @@ namespace Blueberry
 		Vector3 m_PreviousPosition;
 		Quaternion m_PreviousRotation;
 
-		static inline uint32_t s_SceneRedrawRequestsCount = 0;
+		static uint32_t s_SceneRedrawRequestsCount;
 
 		Viewport m_Viewport;
 	};

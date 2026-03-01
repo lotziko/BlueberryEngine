@@ -1,14 +1,17 @@
 #pragma once
 
-class Preferences
+namespace Blueberry
 {
-public:
-	static float* GetGizmoSnapping();
+	class Preferences
+	{
+	public:
+		static float* GetGizmoSnapping();
 
-	static const int& GetGizmoOperation();
-	static void SetGizmoOperation(const int& operation);
+		static const int& GetGizmoOperation();
+		static void SetGizmoOperation(const int& operation);
 
-private:
-	static inline float s_GizmoSnapping[3] = { 0.1f, 5.0f, 1.0f };
-	static inline int s_GizmoOperation = 7;
-};
+	private:
+		static float s_GizmoSnapping[3];
+		static int s_GizmoOperation;
+	};
+}

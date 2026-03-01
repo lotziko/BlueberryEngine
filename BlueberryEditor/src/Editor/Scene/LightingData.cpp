@@ -9,6 +9,7 @@
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\TextureCube.h"
 #include "Blueberry\Graphics\TextureCubeArray.h"
+#include "Blueberry\Graphics\Texture3D.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\GfxBuffer.h"
 #include "Blueberry\Graphics\GfxTexture.h"
@@ -24,9 +25,9 @@ namespace Blueberry
 	static GfxTexture* s_ReflectionTexture = nullptr;
 
 	static size_t s_LightmapTextureId = TO_HASH("_LightmapTexture");
+	static size_t s_ProbeVolumeTextureId = TO_HASH("_ProbeVolumeTexture");
 	static size_t s_ReflectionTextureId = TO_HASH("_ReflectionTexture");
 	static size_t s_PerLightmapInstanceDataId = TO_HASH("_PerLightmapInstanceData");
-	static size_t s_LightmapId = TO_HASH("LIGHTMAP");
 
 	#define REFLECTION_SIZE 128
 	
@@ -46,6 +47,7 @@ namespace Blueberry
 	{
 		DEFINE_PREFER_BINARY()
 		DEFINE_FIELD(LightingData, m_Lightmap, BindingType::ObjectPtr, FieldOptions().SetObjectType(Texture2D::Type))
+		DEFINE_FIELD(LightingData, m_ProbeVolume, BindingType::ObjectPtr, FieldOptions().SetObjectType(Texture3D::Type))
 		DEFINE_FIELD(LightingData, m_ChartScaleOffset, BindingType::ByteData, {})
 		DEFINE_FIELD(LightingData, m_ChartInstanceOffset, BindingType::ByteData, {})
 		DEFINE_FIELD(LightingData, m_MeshRenderers, BindingType::DataList, FieldOptions().SetObjectType(MeshRendererData::Type))
@@ -136,6 +138,11 @@ namespace Blueberry
 		}
 	}
 
+	void LightingData::SetProbeVolumeData(Texture3D* probeVolume)
+	{
+		m_ProbeVolume = probeVolume;
+	}
+
 	const size_t LightingData::GetReflectionProbeCount()
 	{
 		return m_ReflectionProbes.size();
@@ -172,6 +179,7 @@ namespace Blueberry
 	void LightingData::Apply()
 	{
 		ApplyLightmap();
+		ApplyProbeVolume();
 		ApplyReflections();
 	}
 
@@ -184,7 +192,6 @@ namespace Blueberry
 		}
 		else
 		{
-			Shader::SetKeyword(s_LightmapId, false);
 			return;
 		}
 
@@ -207,17 +214,14 @@ namespace Blueberry
 		}
 		else
 		{
-			Shader::SetKeyword(s_LightmapId, false);
 			return;
 		}
 
 		if (m_MeshRenderers.size() > 0)
 		{
 			Dictionary<FileId, Entity*> entities = {};
-			List<Object*> sceneObjects;
-			ObjectDB::GetObjects(Entity::Type, sceneObjects, SearchObjectType::WithoutGuid);
-
-			for (Object* object : sceneObjects)
+			
+			for (Object* object : ObjectDB::GetObjects(Entity::Type, SearchObjectType::WithoutGuid))
 			{
 				Entity* entity = static_cast<Entity*>(object);
 				if (PrefabManager::IsPartOfPrefabInstance(entity))
@@ -266,13 +270,14 @@ namespace Blueberry
 				}
 			}
 		}
-		else
-		{
-			Shader::SetKeyword(s_LightmapId, false);
-			return;
-		}
+	}
 
-		Shader::SetKeyword(s_LightmapId, true);
+	void LightingData::ApplyProbeVolume()
+	{
+		if (m_ProbeVolume.IsValid() && m_ProbeVolume->GetState() == ObjectState::Default)
+		{
+			GfxDevice::SetGlobalTexture(s_ProbeVolumeTextureId, m_ProbeVolume->Get());
+		}
 	}
 
 	void LightingData::ApplyReflections()
@@ -284,10 +289,8 @@ namespace Blueberry
 		if (probeCount > 0)
 		{
 			Dictionary<FileId, Entity*> entities = {};
-			List<Object*> sceneObjects;
-			ObjectDB::GetObjects(Entity::Type, sceneObjects, SearchObjectType::WithoutGuid);
-
-			for (Object* object : sceneObjects)
+			
+			for (Object* object : ObjectDB::GetObjects(Entity::Type, SearchObjectType::WithoutGuid))
 			{
 				Entity* entity = static_cast<Entity*>(object);
 				if (PrefabManager::IsPartOfPrefabInstance(entity))
@@ -302,10 +305,8 @@ namespace Blueberry
 			}
 
 			Dictionary<FileId, PrefabInstance*> prefabs = {};
-			sceneObjects.clear();
-			ObjectDB::GetObjects(PrefabInstance::Type, sceneObjects, SearchObjectType::WithoutGuid);
-
-			for (Object* object : sceneObjects)
+			
+			for (Object* object : ObjectDB::GetObjects(PrefabInstance::Type, SearchObjectType::WithoutGuid))
 			{
 				PrefabInstance* instance = static_cast<PrefabInstance*>(object);
 				prefabs.insert_or_assign(ObjectDB::GetFileIdFromObject(object), instance);
@@ -393,6 +394,6 @@ namespace Blueberry
 
 	void LightingData::Clear()
 	{
-		Shader::SetKeyword(s_LightmapId, false);
+		// need to set textures to null  Shader::SetKeyword(s_LightmapId, false);
 	}
 }

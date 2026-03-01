@@ -29,7 +29,10 @@ namespace Blueberry
 		s_AllObjects.clear();
 		s_Objects.clear();
 		s_AllObjects.push_back(nullptr);
-		ObjectDB::GetObjects(type, s_AllObjects, SearchObjectType::WithGuid);
+		for (Object* guidObject : ObjectDB::GetObjects(type, SearchObjectType::WithGuid))
+		{
+			s_AllObjects.push_back(guidObject);
+		}
 		Object* objectValue = *object;
 		for (auto it = s_AllObjects.begin(); it < s_AllObjects.end(); ++it)
 		{

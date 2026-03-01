@@ -25,13 +25,13 @@ namespace Blueberry
 		static Texture3D* GetBlack3D();
 
 	private:
-		static inline Texture2D* s_WhiteTexture2D = nullptr;
-		static inline Texture2D* s_BlackTexture2D = nullptr;
-		static inline Texture2D* s_NormalTexture2D = nullptr;
-		static inline TextureCube* s_WhiteTextureCube = nullptr;
-		static inline TextureCube* s_BlackTextureCube = nullptr;
-		static inline TextureCubeArray* s_BlackTextureCubeArray = nullptr;
-		static inline Texture3D* s_WhiteTexture3D = nullptr;
-		static inline Texture3D* s_BlackTexture3D = nullptr;
+		static Texture2D* s_WhiteTexture2D;
+		static Texture2D* s_BlackTexture2D;
+		static Texture2D* s_NormalTexture2D;
+		static TextureCube* s_WhiteTextureCube;
+		static TextureCube* s_BlackTextureCube;
+		static TextureCubeArray* s_BlackTextureCubeArray;
+		static Texture3D* s_WhiteTexture3D;
+		static Texture3D* s_BlackTexture3D;
 	};
 }

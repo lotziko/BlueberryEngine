@@ -11,6 +11,7 @@
 #include "Editor\Assets\Importers\FolderImporter.h"
 #include "Editor\Assets\Finalizers\Texture2DFinalizer.h"
 #include "Editor\Assets\Finalizers\TextureCubeFinalizer.h"
+#include "Editor\Assets\Finalizers\Texture3DFinalizer.h"
 #include "Editor\Assets\Finalizers\MeshFinalizer.h"
 #include "Editor\Assets\Finalizers\ShaderFinalizer.h"
 #include "Editor\Assets\Finalizers\ComputeShaderFinalizer.h"
@@ -49,6 +50,7 @@ namespace Blueberry
 
 		REGISTER_OBJECT_FINALIZER(Texture2D, Texture2DFinalizer);
 		REGISTER_OBJECT_FINALIZER(TextureCube, TextureCubeFinalizer);
+		REGISTER_OBJECT_FINALIZER(Texture3D, Texture3DFinalizer);
 		REGISTER_OBJECT_FINALIZER(Mesh, MeshFinalizer);
 		REGISTER_OBJECT_FINALIZER(Shader, ShaderFinalizer);
 		REGISTER_OBJECT_FINALIZER(ComputeShader, ComputeShaderFinalizer);

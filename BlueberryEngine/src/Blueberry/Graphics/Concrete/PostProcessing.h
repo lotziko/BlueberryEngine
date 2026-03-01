@@ -9,6 +9,7 @@ namespace Blueberry
 	class GfxTexture;
 	class Texture2D;
 	class Material;
+	class Camera;
 	enum class CameraType;
 
 	class PostProcessing
@@ -16,15 +17,15 @@ namespace Blueberry
 	public:
 		static void Initialize();
 		static void Shutdown();
-		static void Draw(GfxTexture* msaaColor, GfxTexture* color, GfxTexture* output, const Rectangle& viewport, const Vector2Int& size, const CameraType& cameraType);
+		static void Draw(Camera* camera, GfxTexture* msaaColor, GfxTexture* color, GfxTexture* output, const Rectangle& viewport, const Vector2Int& size, const CameraType& cameraType);
 
 	private:
-		static inline ComputeShader* s_ResolveMSAABloomShader = nullptr;
-		static inline Material* s_BloomMaterial = nullptr;
-		static inline GfxBuffer* s_ResolveMSAABloomData = nullptr;
-		static inline GfxBuffer* s_PostProcessingData = nullptr;
-		static inline GfxBuffer* s_BloomData = nullptr;
-		static inline Texture2D* s_BlueNoiseLUT = nullptr;
-		static inline Texture2D* s_BRDFIntegrationLUT = nullptr;
+		static ComputeShader* s_ResolveMSAABloomShader;
+		static Material* s_BloomMaterial;
+		static GfxBuffer* s_ResolveMSAABloomData;
+		static GfxBuffer* s_PostProcessingData;
+		static GfxBuffer* s_BloomData;
+		static Texture2D* s_BlueNoiseLUT;
+		static Texture2D* s_BRDFIntegrationLUT;
 	};
 }

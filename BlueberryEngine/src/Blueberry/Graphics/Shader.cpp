@@ -45,20 +45,23 @@ namespace Blueberry
 		DEFINE_FIELD(Shader, m_Data, BindingType::Data, FieldOptions().SetObjectType(ShaderData::Type))
 	}
 
-	HashSet<size_t> Shader::s_ActiveKeywords = {};
+	List<size_t> Shader::s_ActiveKeywords = {};
 	uint32_t Shader::s_ActiveKeywordsMask = 0;
 	KeywordDB Shader::s_GlobalKeywords = {};
 
 	const uint32_t KeywordDB::GetMask(const size_t& id)
 	{
-		auto it = m_KeywordMask.find(id);
-		if (it != m_KeywordMask.end())
+		for (size_t i = 0; i < m_KeywordMask.size(); ++i)
 		{
-			return it->second;
+			auto& pair = m_KeywordMask[i];
+			if (pair.first == id)
+			{
+				return pair.second;
+			}
 		}
 		uint32_t mask = m_MaxMask;
 		m_MaxMask = m_MaxMask << 1;
-		m_KeywordMask.insert({ id, mask });
+		m_KeywordMask.push_back({ id, mask });
 		return mask;
 	}
 
@@ -356,11 +359,30 @@ namespace Blueberry
 	{
 		if (enabled)
 		{
-			s_ActiveKeywords.insert(id);
+			bool isActive = false;
+			for (size_t i = 0; i < s_ActiveKeywords.size(); ++i)
+			{
+				if (s_ActiveKeywords[i] == id)
+				{
+					isActive = true;
+					break;
+				}
+			}
+			if (!isActive)
+			{
+				s_ActiveKeywords.push_back(id);
+			}
 		}
 		else
 		{
-			s_ActiveKeywords.erase(id);
+			for (size_t i = 0; i < s_ActiveKeywords.size(); ++i)
+			{
+				if (s_ActiveKeywords[i] == id)
+				{
+					s_ActiveKeywords.erase(s_ActiveKeywords.begin() + i);
+					break;
+				}
+			}
 		}
 		s_ActiveKeywordsMask = 0;
 		for (auto keyword : s_ActiveKeywords)

@@ -59,7 +59,7 @@ static __forceinline__ __device__ float RadicalInverse_VdC(unsigned int bits)
 	bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
 	bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
 	bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
-	return float(bits) * 2.3283064365386963e-10; // / 0x100000000
+	return float(bits) * 2.3283064365386963e-10f; // / 0x100000000
 }
 
 static __forceinline__ __device__ float2 Hammersley(unsigned int i, unsigned int N)

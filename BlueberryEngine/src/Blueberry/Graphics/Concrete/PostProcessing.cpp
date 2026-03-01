@@ -17,6 +17,14 @@
 
 namespace Blueberry
 {
+	ComputeShader* PostProcessing::s_ResolveMSAABloomShader = nullptr;
+	Material* PostProcessing::s_BloomMaterial = nullptr;
+	GfxBuffer* PostProcessing::s_ResolveMSAABloomData = nullptr;
+	GfxBuffer* PostProcessing::s_PostProcessingData = nullptr;
+	GfxBuffer* PostProcessing::s_BloomData = nullptr;
+	Texture2D* PostProcessing::s_BlueNoiseLUT = nullptr;
+	Texture2D* PostProcessing::s_BRDFIntegrationLUT = nullptr;
+
 	struct PostProcessingData
 	{
 		Vector4 exposureTime;
@@ -98,7 +106,7 @@ namespace Blueberry
 		AutoExposure::Shutdown();
 	}
 
-	void PostProcessing::Draw(GfxTexture* msaaColor, GfxTexture* color, GfxTexture* output, const Rectangle& viewport, const Vector2Int& size, const CameraType& cameraType)
+	void PostProcessing::Draw(Camera* camera, GfxTexture* msaaColor, GfxTexture* color, GfxTexture* output, const Rectangle& viewport, const Vector2Int& size, const CameraType& cameraType)
 	{
 		if (cameraType == CameraType::Preview)
 		{
@@ -118,7 +126,7 @@ namespace Blueberry
 		}
 		else
 		{
-			float exposure = 0.2f / AutoExposure::GetExposure();
+			float exposure = 0.2f / AutoExposure::GetExposure(camera);
 			PostProcessingData postProcessingConstants = {};
 			postProcessingConstants.exposureTime = Vector4(exposure, Time::GetFrameCount() / 60.0f / 10, 0, 0);
 
@@ -177,7 +185,7 @@ namespace Blueberry
 			GfxDevice::SetGlobalTexture(s_ColorOutputTextureId, color);
 			GfxDevice::SetGlobalTexture(s_BloomOutputTextureId, bloom);
 			GfxDevice::Dispatch(s_ResolveMSAABloomShader->GetKernel(0), threadWidth, threadHeight, 1);
-			AutoExposure::Calculate(color, viewport);
+			AutoExposure::Calculate(camera, color, viewport);
 
 			BloomData bloomConstants = {};
 			bloomConstants.texelSize = Vector2(1.0f / textureWidth, 1.0f / textureHeight);
@@ -218,20 +226,20 @@ namespace Blueberry
 			bloomConstants.texelSize = Vector2(1.0f / (textureWidth2 / 2), 1.0f / (textureHeight2 / 2));
 			s_BloomData->SetData(reinterpret_cast<char*>(&bloomConstants), sizeof(BloomData));
 
-			// Horizontal blur
+			// Vertical blur
 			GfxDevice::SetRenderTarget(bloom);
 			GfxDevice::SetViewport(0, 0, textureWidth2 / 2, textureHeight2 / 2);
 			GfxDevice::SetGlobalTexture(s_SourceTextureId, bloom8);
-			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_BloomMaterial, 2));
+			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_BloomMaterial, 3));
 
 			bloomConstants.texelSize = Vector2(1.0f / textureWidth, 1.0f / textureHeight);
 			s_BloomData->SetData(reinterpret_cast<char*>(&bloomConstants), sizeof(BloomData));
 
-			// Vertical blur
+			// Horizontal blur
 			GfxDevice::SetRenderTarget(bloom8);
 			GfxDevice::SetViewport(0, 0, textureWidth, textureHeight);
 			GfxDevice::SetGlobalTexture(s_SourceTextureId, bloom);
-			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_BloomMaterial, 3));
+			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_BloomMaterial, 2));
 
 			// Downscale 2
 			GfxDevice::SetRenderTarget(bloom16);
@@ -241,21 +249,21 @@ namespace Blueberry
 
 			bloomConstants.texelSize = Vector2(1.0f / (textureWidth2 / 4), 1.0f / (textureHeight2 / 4));
 			s_BloomData->SetData(reinterpret_cast<char*>(&bloomConstants), sizeof(BloomData));
-
-			// Horizontal blur
+			
+			// Vertical blur
 			GfxDevice::SetRenderTarget(bloom);
 			GfxDevice::SetViewport(0, 0, textureWidth2 / 4, textureHeight2 / 4);
 			GfxDevice::SetGlobalTexture(s_SourceTextureId, bloom16);
-			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_BloomMaterial, 2));
+			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_BloomMaterial, 3));
 
 			bloomConstants.texelSize = Vector2(1.0f / textureWidth, 1.0f / textureHeight);
 			s_BloomData->SetData(reinterpret_cast<char*>(&bloomConstants), sizeof(BloomData));
 
-			// Vertical blur
+			// Horizontal blur
 			GfxDevice::SetRenderTarget(bloom16);
 			GfxDevice::SetViewport(0, 0, textureWidth, textureHeight);
 			GfxDevice::SetGlobalTexture(s_SourceTextureId, bloom);
-			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_BloomMaterial, 3));
+			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_BloomMaterial, 2));
 
 			// Downscale 3
 			GfxDevice::SetRenderTarget(bloom32);
@@ -266,20 +274,20 @@ namespace Blueberry
 			bloomConstants.texelSize = Vector2(1.0f / (textureWidth2 / 8), 1.0f / (textureHeight2 / 8));
 			s_BloomData->SetData(reinterpret_cast<char*>(&bloomConstants), sizeof(BloomData));
 
-			// Horizontal blur
+			// Vertical blur
 			GfxDevice::SetRenderTarget(bloom);
 			GfxDevice::SetViewport(0, 0, textureWidth2 / 8, textureHeight2 / 8);
 			GfxDevice::SetGlobalTexture(s_SourceTextureId, bloom32);
-			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_BloomMaterial, 2));
+			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_BloomMaterial, 3));
 
 			bloomConstants.texelSize = Vector2(1.0f / textureWidth, 1.0f / textureHeight);
 			s_BloomData->SetData(reinterpret_cast<char*>(&bloomConstants), sizeof(BloomData));
 
-			// Vertical blur
+			// Horizontal blur
 			GfxDevice::SetRenderTarget(bloom32);
 			GfxDevice::SetViewport(0, 0, textureWidth, textureHeight);
 			GfxDevice::SetGlobalTexture(s_SourceTextureId, bloom);
-			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_BloomMaterial, 3));
+			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_BloomMaterial, 2));
 
 			bloomConstants.texelSize = Vector2(1.0f / (textureWidth2 / 8), 1.0f / (textureHeight2 / 8));
 			s_BloomData->SetData(reinterpret_cast<char*>(&bloomConstants), sizeof(BloomData));

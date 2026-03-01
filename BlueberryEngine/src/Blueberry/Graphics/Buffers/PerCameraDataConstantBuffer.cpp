@@ -9,6 +9,8 @@
 
 namespace Blueberry
 {
+	GfxBuffer* PerCameraDataConstantBuffer::s_ConstantBuffer = nullptr;
+
 	#define MAX_VIEW_COUNT 2
 
 	struct PerCameraData

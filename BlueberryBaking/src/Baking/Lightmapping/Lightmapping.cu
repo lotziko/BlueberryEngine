@@ -458,7 +458,7 @@ namespace Blueberry
 	{
 		while (true)
 		{
-			unsigned int texelIndex = atomicAdd(params.completeCounter, 1);
+			unsigned int texelIndex = atomicAdd(params.completeTexelCounter, 1);
 
 			if (texelIndex >= params.validTexelsCount)
 			{
@@ -592,14 +592,11 @@ namespace Blueberry
 			params.normal[imageIndex] = normalResult / max(sampleData.validPositionCount, 1u);
 			params.position[imageIndex] = make_float4(positionResult / max(sampleData.validPositionCount, 1u), sampleData.radius);
 		}
-	}
 
-	extern "C" __global__ void __raygen__probepass()
-	{
 		while (true)
 		{
-			unsigned int probeIndex = atomicAdd(params.completeCounter, 1);
-			
+			unsigned int probeIndex = atomicAdd(params.completeProbeCounter, 1);
+
 			if (probeIndex >= params.probeCount)
 			{
 				break;
@@ -625,7 +622,7 @@ namespace Blueberry
 					colorResult += radiance;
 				}
 			}
-			
+
 			colorResult = colorResult / max(validSampleCount, 1);
 			params.probeColor[probeIndex] = convertFloatToR11G11B10(colorResult.x, colorResult.y, colorResult.z);
 		}

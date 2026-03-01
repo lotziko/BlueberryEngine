@@ -20,6 +20,47 @@ namespace Blueberry
 		WithoutGuid
 	};
 
+	class ChunkedObjectArray;
+
+	struct ObjectIterator
+	{
+		ObjectIterator(size_t type, SearchObjectType searchType, ChunkedObjectArray* objectArray, int32_t index) : type(type), searchType(searchType), objectArray(objectArray), index(index)
+		{
+		}
+
+		ObjectIterator& operator++();
+		ObjectIterator& operator--();
+
+		Object* operator*() const;
+		Object* operator->() const;
+
+		void FindNext();
+
+		bool operator!= (ObjectIterator other) const;
+		bool operator== (ObjectIterator other) const;
+
+		size_t type;
+		SearchObjectType searchType;
+		ChunkedObjectArray* objectArray;
+		int32_t index;
+		Object* object;
+	};
+
+	struct ObjectView
+	{
+		ObjectView(size_t type, SearchObjectType searchType, ChunkedObjectArray* objectArray, int32_t index) : type(type), searchType(searchType), objectArray(objectArray), index(index)
+		{
+		}
+
+		ObjectIterator begin() const;
+		ObjectIterator end() const;
+
+		size_t type;
+		SearchObjectType searchType;
+		ChunkedObjectArray* objectArray;
+		int32_t index;
+	};
+
 	class ChunkedObjectArray
 	{
 	public:
@@ -57,7 +98,7 @@ namespace Blueberry
 		static bool IsValid(Object* object);
 		static ObjectItem* IdToObjectItem(const ObjectId& id);
 		static Object* GetObject(const ObjectId& id);
-		static void GetObjects(const size_t& type, List<Object*>& result, SearchObjectType searchType = SearchObjectType::Any);
+		static ObjectView GetObjects(const size_t& type, SearchObjectType searchType = SearchObjectType::Any);
 
 		static void AllocateIdToFileId(const ObjectId& id, const FileId& fileId);
 		static void AllocateIdToFileId(Object* object, const FileId& fileId);

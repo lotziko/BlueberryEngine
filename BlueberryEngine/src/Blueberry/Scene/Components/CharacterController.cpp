@@ -31,26 +31,18 @@ namespace Blueberry
 		DEFINE_ITERATOR(UpdatableComponent)
 	}
 
-	static inline JPH::EBackFaceMode sBackFaceMode = JPH::EBackFaceMode::CollideWithBackFaces;
-	static inline float		sUpRotationX = 0;
-	static inline float		sUpRotationZ = 0;
-	static inline float		sMaxSlopeAngle = JPH::DegreesToRadians(45.0f);
-	static inline float		sMaxStrength = 100.0f;
-	static inline float		sCharacterPadding = 0.02f;
-	static inline float		sPenetrationRecoverySpeed = 1.0f;
-	static inline float		sPredictiveContactDistance = 0.1f;
-	static inline bool		sEnableWalkStairs = true;
-	static inline bool		sEnableStickToFloor = true;
-	static inline bool		sEnhancedInternalEdgeRemoval = false;
-	static inline bool		sCreateInnerBody = false;
-	static inline bool		sPlayerCanPushOtherCharacters = true;
-	static inline bool		sOtherCharactersCanPushPlayer = true;
+	static JPH::EBackFaceMode s_BackFaceMode = JPH::EBackFaceMode::CollideWithBackFaces;
+	static float s_MaxSlopeAngle = JPH::DegreesToRadians(45.0f);
+	static float s_MaxStrength = 100.0f;
+	static float s_CharacterPadding = 0.02f;
+	static float s_PenetrationRecoverySpeed = 1.0f;
+	static float s_PredictiveContactDistance = 0.1f;
 
-	static constexpr float	cCharacterHeightStanding = 1.35f;
-	static constexpr float	cCharacterRadiusStanding = 0.3f;
-	static constexpr float	cCharacterHeightCrouching = 0.8f;
-	static constexpr float	cCharacterRadiusCrouching = 0.3f;
-	static constexpr float	cInnerShapeFraction = 0.9f;
+	static constexpr float s_CharacterHeightStanding = 1.35f;
+	static constexpr float s_CharacterRadiusStanding = 0.3f;
+	static constexpr float s_CharacterHeightCrouching = 0.8f;
+	static constexpr float s_CharacterRadiusCrouching = 0.3f;
+	static constexpr float s_InnerShapeFraction = 0.9f;
 
 	struct CharacterController::PrivateData
 	{
@@ -74,15 +66,15 @@ namespace Blueberry
 		m_PrivateData->shape = JPH::RotatedTranslatedShapeSettings(JPH::Vec3(0, 0.5f * m_Height + m_Radius, 0), JPH::Quat::sIdentity(), new JPH::CapsuleShape(0.5f * m_Height, m_Radius)).Create().Get();
 
 		JPH::CharacterVirtualSettings settings;
-		settings.mMaxSlopeAngle = sMaxSlopeAngle;
-		settings.mMaxStrength = sMaxStrength;
+		settings.mMaxSlopeAngle = s_MaxSlopeAngle;
+		settings.mMaxStrength = s_MaxStrength;
 		settings.mShape = m_PrivateData->shape;
 		settings.mMass = 100.0f;
-		settings.mBackFaceMode = sBackFaceMode;
-		settings.mCharacterPadding = sCharacterPadding;
-		settings.mPenetrationRecoverySpeed = sPenetrationRecoverySpeed;
-		settings.mPredictiveContactDistance = sPredictiveContactDistance;
-		settings.mSupportingVolume = JPH::Plane(JPH::Vec3::sAxisY(), -cCharacterRadiusStanding); // Accept contacts that touch the lower sphere of the capsule
+		settings.mBackFaceMode = s_BackFaceMode;
+		settings.mCharacterPadding = s_CharacterPadding;
+		settings.mPenetrationRecoverySpeed = s_PenetrationRecoverySpeed;
+		settings.mPredictiveContactDistance = s_PredictiveContactDistance;
+		settings.mSupportingVolume = JPH::Plane(JPH::Vec3::sAxisY(), -s_CharacterRadiusStanding); // Accept contacts that touch the lower sphere of the capsule
 
 		m_PrivateData->character = new JPH::CharacterVirtual(&settings, JPH::RVec3(position.x, position.y, position.z), JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w), 0, Physics::s_PhysicsSystem);
 	}

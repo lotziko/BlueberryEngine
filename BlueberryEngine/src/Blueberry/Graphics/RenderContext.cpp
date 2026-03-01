@@ -30,6 +30,9 @@
 
 namespace Blueberry
 {
+	GfxBuffer* RenderContext::s_IndexBuffer = nullptr;
+	size_t RenderContext::s_LastCullingFrame = 0;
+
 	const uint32_t INSTANCE_BUFFER_SIZE = 8192;
 	const uint32_t SKINNING_BUFFER_SIZE = 128;
 	
@@ -55,12 +58,23 @@ namespace Blueberry
 		SortingMode sortingMode;
 		ObjectsFilter objectsFilter;
 	};
+
+	enum class Keyword
+	{
+		None,
+		Lightmap,
+		Probes
+	};
 	
 	static List<DrawingOperation> s_DrawingOperations = {};
 	static CullerInfo s_LastCullerInfo = {};
 	static Object* s_CurrentCuller = nullptr;
 	static uint32_t s_CurrentCullerIndex = 0;
+	static Keyword s_CurrentKeyword = Keyword::None;
 	static List<std::pair<Matrix, Vector4>> s_PerDrawData = {};
+
+	static size_t s_LightmapId = TO_HASH("LIGHTMAP");
+	static size_t s_ProbesId = TO_HASH("PROBES");
 
 	bool CompareOperationsDefault(const DrawingOperation& o1, const DrawingOperation& o2)
 	{
@@ -376,7 +390,7 @@ namespace Blueberry
 							for (int i = 0; i < 3; ++i)
 							{
 								float radius = planes[i];
-								Vector3 currentCascadeCenter = light->m_ShadowCascades[i];
+								Vector3 currentCascadeCenter = camera->m_ShadowCascades[i];
 								Vector3 cascadeCenter = center;
 								float cascadeGrid = grid[i];
 
@@ -618,6 +632,21 @@ namespace Blueberry
 		for (uint32_t i = 0; i < operationCount;)
 		{
 			auto& operation = s_DrawingOperations[i];
+			Keyword keyword = operation.lightmapChartOffset > 0 ? Keyword::Lightmap : Keyword::Probes;
+			if (keyword != s_CurrentKeyword)
+			{
+				s_CurrentKeyword = keyword;
+				if (keyword == Keyword::Lightmap)
+				{
+					Shader::SetKeyword(s_LightmapId, true);
+					Shader::SetKeyword(s_ProbesId, false);
+				}
+				else
+				{
+					Shader::SetKeyword(s_LightmapId, false);
+					Shader::SetKeyword(s_ProbesId, true);
+				}
+			}
 			if (operation.submeshIndex == 255)
 			{
 				GfxDevice::Draw(GfxDrawingOperation(operation.mesh, operation.vertexBufferOverride, operation.material, passIndex, s_IndexBuffer, i, operation.instanceCount, operation.isCounterClockwise));

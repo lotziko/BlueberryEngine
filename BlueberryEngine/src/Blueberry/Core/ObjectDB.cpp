@@ -11,6 +11,73 @@ namespace Blueberry
 	Dictionary<Guid, Dictionary<FileId, ObjectId>> ObjectDB::s_GuidToObjectId = {};
 	Dictionary<ObjectId, FileId> ObjectDB::s_ObjectIdToFileId = {};
 
+	ObjectIterator& ObjectIterator::operator++()
+	{
+		FindNext();
+		return *this;
+	}
+
+	ObjectIterator& ObjectIterator::operator--()
+	{
+		return *this;
+	}
+
+	Object* ObjectIterator::operator*() const
+	{
+		return object;
+	}
+
+	Object* ObjectIterator::operator->() const
+	{
+		return object;
+	}
+
+	void ObjectIterator::FindNext()
+	{
+		bool notAny = searchType != SearchObjectType::Any;
+		bool needGuid = searchType == SearchObjectType::WithGuid;
+		int32_t n = static_cast<int32_t>(objectArray->GetElementsCount());
+		for (int32_t i = index + 1; i < n; ++i)
+		{
+			index = i;
+			ObjectItem* item = objectArray->GetObjectItem(i);
+			object = item->object;
+			if (object != nullptr && object->IsClassType(type))
+			{
+				if (notAny)
+				{
+					if (ObjectDB::HasGuid(object) != needGuid)
+					{
+						continue;
+					}
+				}
+				break;
+			}
+		}
+	}
+
+	bool ObjectIterator::operator!=(ObjectIterator other) const
+	{
+		return index != other.index;
+	}
+
+	bool ObjectIterator::operator==(ObjectIterator other) const
+	{
+		return index == other.index;
+	}
+
+	ObjectIterator ObjectView::begin() const
+	{
+		ObjectIterator iterator = ObjectIterator(type, searchType, objectArray, index);
+		iterator.FindNext();
+		return iterator;
+	}
+
+	ObjectIterator ObjectView::end() const
+	{
+		return ObjectIterator(type, searchType, objectArray, std::max(objectArray->GetElementsCount(), 1u) - 1u);
+	}
+
 	void ChunkedObjectArray::Initialize()
 	{
 		m_MaxChunksCount = MAX_OBJECTS / ELEMENTS_PER_CHUNK + 1;
@@ -125,29 +192,9 @@ namespace Blueberry
 		return item == nullptr ? nullptr : item->object;
 	}
 
-	void ObjectDB::GetObjects(const size_t& type, List<Object*>& result, SearchObjectType searchType)
+	ObjectView ObjectDB::GetObjects(const size_t& type, SearchObjectType searchType)
 	{
-		bool notAny = searchType != SearchObjectType::Any;
-		bool needGuid = searchType == SearchObjectType::WithGuid;
-		for (uint32_t i = 0, n = s_Array.GetElementsCount(); i < n; ++i)
-		{
-			ObjectItem* item = s_Array.GetObjectItem(i);
-			if (item != nullptr)
-			{
-				Object* object = item->object;
-				if (object != nullptr && object->IsClassType(type))
-				{
-					if (notAny)
-					{
-						if (HasGuid(object) != needGuid)
-						{
-							continue;
-						}
-					}
-					result.push_back(object);
-				}
-			}
-		}
+		return ObjectView(type, searchType, &s_Array, 0);
 	}
 
 	void ObjectDB::AllocateIdToFileId(const ObjectId& id, const FileId& fileId)

@@ -15,6 +15,6 @@ namespace Blueberry
 		static bool Draw(unsigned char* output, const uint32_t& size, Object* asset);
 
 	private:
-		static inline GfxTexture* s_ThumbnailRenderTarget = nullptr;
+		static GfxTexture* s_ThumbnailRenderTarget;
 	};
 }

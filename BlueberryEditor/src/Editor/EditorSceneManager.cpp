@@ -23,6 +23,8 @@ namespace Blueberry
 	String EditorSceneManager::s_Path = "";
 	SceneLoadEvent EditorSceneManager::s_SceneLoaded = {};
 
+	ObjectPtr<SceneSettings> EditorSceneManager::s_SceneSettings = nullptr;
+
 	void EditorSceneManager::CreateEmpty(const String& path)
 	{
 		s_Scene = new Scene();

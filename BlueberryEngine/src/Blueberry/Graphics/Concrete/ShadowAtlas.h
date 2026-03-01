@@ -44,9 +44,9 @@ namespace Blueberry
 		static void PackRequests();
 
 	private:
-		static inline Material* s_ShadowAtlasMaterial = nullptr;
-		static inline GfxTexture* s_AtlasTexture = nullptr;
-		static inline GfxBuffer* s_DepthBlitData = nullptr;
+		static Material* s_ShadowAtlasMaterial;
+		static GfxTexture* s_AtlasTexture;
+		static GfxBuffer* s_DepthBlitData;
 		static List<ShadowRequest> s_Requests;
 	};
 }

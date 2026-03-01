@@ -10,6 +10,15 @@
 
 namespace Blueberry
 {
+	Texture2D* DefaultTextures::s_WhiteTexture2D = nullptr;
+	Texture2D* DefaultTextures::s_BlackTexture2D = nullptr;
+	Texture2D* DefaultTextures::s_NormalTexture2D = nullptr;
+	TextureCube* DefaultTextures::s_WhiteTextureCube = nullptr;
+	TextureCube* DefaultTextures::s_BlackTextureCube = nullptr;
+	TextureCubeArray* DefaultTextures::s_BlackTextureCubeArray = nullptr;
+	Texture3D* DefaultTextures::s_WhiteTexture3D = nullptr;
+	Texture3D* DefaultTextures::s_BlackTexture3D = nullptr;
+
 	Texture* DefaultTextures::GetTexture(const String& name, const TextureDimension& dimension)
 	{
 		if (dimension == TextureDimension::Texture2D)

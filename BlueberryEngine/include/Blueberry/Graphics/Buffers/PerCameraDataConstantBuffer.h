@@ -17,6 +17,6 @@ namespace Blueberry
 		static void BindData(const Matrix& viewProjection);
 
 	private:
-		static inline GfxBuffer* s_ConstantBuffer = nullptr;
+		static GfxBuffer* s_ConstantBuffer;
 	};
 }

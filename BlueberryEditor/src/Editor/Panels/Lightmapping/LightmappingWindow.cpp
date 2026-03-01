@@ -6,7 +6,9 @@
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\Mesh.h"
 #include "Blueberry\Graphics\Texture2D.h"
+#include "Blueberry\Graphics\Texture3D.h"
 #include "Blueberry\Scene\Components\MeshRenderer.h"
+#include "Blueberry\Scene\Components\ProbeVolume.h"
 #include "Blueberry\Scene\Scene.h"
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Assets\Importers\TextureImporter.h"
@@ -33,6 +35,7 @@ namespace Blueberry
 		DEFINE_FIELD(LightmappingWindow, m_PreferredSize, BindingType::Int, {})
 		DEFINE_FIELD(LightmappingWindow, m_DistanceBetweenProbes, BindingType::Float, {})
 		DEFINE_FIELD(LightmappingWindow, m_Denoise, BindingType::Bool, {})
+		DEFINE_FIELD(LightmappingWindow, m_GenerateLightmap, BindingType::Bool, {})
 		DEFINE_FIELD(LightmappingWindow, m_GenerateProbes, BindingType::Bool, {})
 		EditorMenuManager::AddItem("Window/Lightmapping", &LightmappingWindow::Open);
 	}
@@ -57,6 +60,7 @@ namespace Blueberry
 			ImGui::IntEdit("Preferred size", &m_PreferredSize);
 			ImGui::FloatEdit("Distance between probes", &m_DistanceBetweenProbes);
 			ImGui::BoolEdit("Denoise", &m_Denoise);
+			ImGui::BoolEdit("Generate lightmap", &m_GenerateLightmap);
 			ImGui::BoolEdit("Generate probes", &m_GenerateProbes);
 
 			SceneSettings* settings = EditorSceneManager::GetSettings();
@@ -84,6 +88,7 @@ namespace Blueberry
 							params.maxSize = m_PreferredSize;
 							params.distanceBetweenProbes = m_DistanceBetweenProbes;
 							params.denoise = m_Denoise;
+							params.generateLightmap = m_GenerateLightmap;
 							params.generateProbes = m_GenerateProbes;
 
 							LightmappingManager::Calculate(EditorSceneManager::GetScene(), params);
@@ -178,44 +183,70 @@ namespace Blueberry
 				{
 					CalculationResult& result = LightmappingManager::GetCalculationResult();
 					
-					if (result.output.size() > 0)
+					if (m_GenerateLightmap)
 					{
-						DirectX::ScratchImage image = {};
-						image.Initialize2D(DXGI_FORMAT_R32G32B32A32_FLOAT, result.outputSize.x, result.outputSize.y, 1, 1);
-						memcpy(image.GetPixels(), result.output.data(), result.outputSize.x * result.outputSize.y * sizeof(Vector4));
-						
-						String path = EditorSceneManager::GetPath();
-						path.replace(path.find(".scene"), 6, "\\Lightmap.hdr");
-
-						std::filesystem::create_directories(std::filesystem::path(path).parent_path());
-						HRESULT hr = DirectX::SaveToHDRFile(*image.GetImages(), WString(path.begin(), path.end()).c_str());
-						if (FAILED(hr))
+						if (result.output.size() > 0)
 						{
-							BB_ERROR("Failed to save texture.");
+							DirectX::ScratchImage image = {};
+							image.Initialize2D(DXGI_FORMAT_R32G32B32A32_FLOAT, result.outputSize.x, result.outputSize.y, 1, 1);
+							memcpy(image.GetPixels(), result.output.data(), result.outputSize.x * result.outputSize.y * sizeof(Vector4));
+
+							String lightmapPath = EditorSceneManager::GetPath();
+							lightmapPath.replace(lightmapPath.find(".scene"), 6, "\\Lightmap.hdr");
+
+							std::filesystem::create_directories(std::filesystem::path(lightmapPath).parent_path());
+							HRESULT hr = DirectX::SaveToHDRFile(*image.GetImages(), WString(lightmapPath.begin(), lightmapPath.end()).c_str());
+							if (FAILED(hr))
+							{
+								BB_ERROR("Failed to save texture.");
+							}
+
+							auto relativePath = std::filesystem::relative(lightmapPath, Path::GetAssetsPath());
+							TextureImporter* importer = static_cast<TextureImporter*>(AssetDB::GetImporter(relativePath.string().data()));
+							importer->SetTextureShape(TextureImporter::TextureShape::Texture2D);
+							importer->SetTextureFormat(TextureImporter::TextureFormat::BC6H);
+							importer->SetFilterMode(FilterMode::Bilinear);
+							importer->SetGenerateMipMaps(false);
+							importer->SaveAndReimport();
+							AssetDB::Refresh();
+							Texture2D* lightmap = static_cast<Texture2D*>(ObjectDB::GetObjectFromGuid(importer->GetGuid(), importer->GetMainObject()));
+
+							lightingData->SetLightmapData(lightmap, result.chartOffsetScale, result.chartInstanceOffset);
+							lightingData->ApplyLightmap();
 						}
-
-						auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
-						TextureImporter* importer = static_cast<TextureImporter*>(AssetDB::GetImporter(relativePath.string().data()));
-						importer->SetTextureShape(TextureImporter::TextureShape::Texture2D);
-						importer->SetTextureFormat(TextureImporter::TextureFormat::BC6H);
-						importer->SetFilterMode(FilterMode::Bilinear);
-						importer->SetGenerateMipMaps(false);
-						importer->SaveAndReimport();
-						AssetDB::Refresh();
-						Texture2D* lightmap = static_cast<Texture2D*>(ObjectDB::GetObjectFromGuid(importer->GetGuid(), importer->GetMainObject()));
-					
-						lightingData->SetLightmapData(lightmap, result.chartOffsetScale, result.chartInstanceOffset);
-						lightingData->ApplyLightmap();
-
-						path = EditorSceneManager::GetPath();
-						path.replace(path.find(".scene"), 6, "\\LightingData.asset");
-						relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
-						AssetDB::CreateAsset(lightingData, relativePath.string().data());
 					}
-					else if (result.probeOutput.size() > 0)
+					if (m_GenerateProbes)
 					{
-						// TODO
+						if (result.probeOutput.size() > 0)
+						{
+							String probeVolumePath = EditorSceneManager::GetPath();
+							probeVolumePath.replace(probeVolumePath.find(".scene"), 6, "\\ProbeVolume.asset");
+
+							std::filesystem::create_directories(std::filesystem::path(probeVolumePath).parent_path());
+
+							Texture3D* probeVolume = Texture3D::Create(result.probeOutputSize.x, result.probeOutputSize.y, result.probeOutputSize.z, TextureFormat::R11G11B10_Float, WrapMode::Clamp, FilterMode::Trilinear);
+							probeVolume->SetData(result.probeOutput.data(), result.probeOutput.size());
+							lightingData->SetProbeVolumeData(probeVolume);
+
+							auto relativePath = std::filesystem::relative(probeVolumePath, Path::GetAssetsPath());
+							AssetDB::CreateAsset(probeVolume, relativePath.string().data());
+							AssetDB::Refresh();
+							lightingData->ApplyProbeVolume();
+
+							for (auto& component : scene->GetIterator<ProbeVolume>())
+							{
+								ProbeVolume* probeVolume = static_cast<ProbeVolume*>(component.second);
+								probeVolume->SetBounds(result.probeBounds);
+								probeVolume->SetSize(result.probeOutputSize);
+							}
+						}
 					}
+
+					String lightingDataPath = EditorSceneManager::GetPath();
+					lightingDataPath.replace(lightingDataPath.find(".scene"), 6, "\\LightingData.asset");
+					auto relativeLightingDataPath = std::filesystem::relative(lightingDataPath, Path::GetAssetsPath());
+					AssetDB::CreateAsset(lightingData, relativeLightingDataPath.string().data());
+
 					EditorSceneManager::Save();
 					LightmappingManager::Shutdown();
 				}

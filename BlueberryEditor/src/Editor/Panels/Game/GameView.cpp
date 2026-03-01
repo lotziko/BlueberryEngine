@@ -4,6 +4,7 @@
 #include "Editor\EditorSceneManager.h"
 #include "Editor\Menu\EditorMenuManager.h"
 
+#include "Blueberry\Core\Application.h"
 #include "Blueberry\Core\Screen.h"
 #include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Graphics\Concrete\DefaultRenderer.h"
@@ -35,19 +36,22 @@ namespace Blueberry
 		ImVec2 pos = ImGui::GetCursorScreenPos();
 		ImVec2 size = ImGui::GetContentRegionAvail();
 
-		if (ImGui::IsWindowFocused())
+		if (Application::IsRunning())
 		{
-			Screen::SetAllowCursorLock(true);
-			Screen::SetGameViewport(Rectangle(0, 0, size.x, size.y));
-			if (Cursor::IsHidden())
+			if (ImGui::IsWindowFocused())
 			{
-				ImGui::SetMouseCursor(ImGuiMouseCursor_None);
+				Screen::SetAllowCursorLock(true);
+				Screen::SetGameViewport(Rectangle(0, 0, size.x, size.y));
+				if (Cursor::IsHidden())
+				{
+					ImGui::SetMouseCursor(ImGuiMouseCursor_None);
+				}
 			}
-		}
-		if (ImGui::IsKeyDown(ImGuiKey_Escape))
-		{
-			Screen::SetAllowCursorLock(false);
-			ImGui::SetWindowFocus(nullptr);
+			if (ImGui::IsKeyDown(ImGuiKey_Escape))
+			{
+				Screen::SetAllowCursorLock(false);
+				ImGui::SetWindowFocus(nullptr);
+			}
 		}
 
 		Scene* scene = EditorSceneManager::GetScene();

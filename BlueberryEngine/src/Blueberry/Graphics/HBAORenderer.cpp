@@ -5,6 +5,8 @@
 
 namespace Blueberry
 {
+	HBAORenderer* HBAORenderer::s_Instance = nullptr;
+
 	bool HBAORenderer::Initialize()
 	{
 		switch (GraphicsAPI::GetAPI())

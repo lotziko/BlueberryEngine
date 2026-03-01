@@ -12,6 +12,9 @@
 
 namespace Blueberry
 {
+	Application* Application::s_Instance = nullptr;
+	bool Application::s_IsRunning = false;
+
 	bool Application::Initialize(const WindowProperties& properties)
 	{
 		m_Window = Window::Create(properties);

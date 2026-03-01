@@ -27,6 +27,10 @@
 
 namespace Blueberry
 {
+	GfxTexture* ReflectionGenerator::s_RenderTargetTexture = nullptr;
+	GfxTexture* ReflectionGenerator::s_CubeTexture = nullptr;
+	Camera* ReflectionGenerator::s_Camera = nullptr;
+
 	#define SIZE 128
 	#define SLICE_SIZE SIZE * SIZE * 8
 

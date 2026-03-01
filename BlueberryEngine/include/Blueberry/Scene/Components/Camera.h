@@ -92,5 +92,10 @@ namespace Blueberry
 		float m_ZFarPlane = 1000.0f;
 
 		CameraType m_CameraType = CameraType::Game;
+
+	private:
+		Vector4 m_ShadowCascades[6];
+
+		friend class RenderContext;
 	};
 }

@@ -5,6 +5,10 @@
 
 namespace Blueberry
 {
+	GfxBuffer* PerDrawDataConstantBuffer::s_StructuredBuffer = nullptr;
+	GfxBuffer* PerDrawDataConstantBuffer::s_ConstantBuffer = nullptr;
+	GfxBuffer* PerDrawDataConstantBuffer::s_ConstantBufferInstanced = nullptr;
+
 	struct PerDrawData
 	{
 		Matrix modelMatrix;

@@ -4,13 +4,17 @@
 
 namespace Blueberry
 {
-	struct CameraData;
 	class GfxBuffer;
 
-	class FogViewDataConstantBuffer
+	class PerObjectDataConstantBuffer
 	{
 	public:
-		static void BindData(const CameraData& data, const Vector3Int& frustumVolumeSize);
+		struct CONSTANTS
+		{
+			Color objectId;
+		};
+
+		static void BindData(const Color& indexColor);
 
 	private:
 		static GfxBuffer* s_ConstantBuffer;

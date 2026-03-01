@@ -12,6 +12,10 @@
 
 namespace Blueberry
 {
+	ComputeShader* VolumetricFog::s_VolumetricFogShader = nullptr;
+	GfxTexture* VolumetricFog::s_FrustumVolume0 = nullptr;
+	GfxTexture* VolumetricFog::s_FrustumVolume1 = nullptr;
+
 	static Vector3Int s_FrustumVolumeSize = Vector3Int(128, 96, 128);
 	static size_t s_InjectFogVolumeId = TO_HASH("_InjectFogVolume");
 	static size_t s_InjectedFogVolumeId = TO_HASH("_InjectedFogVolume");

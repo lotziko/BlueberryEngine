@@ -14,10 +14,10 @@ namespace Blueberry
 		static Material* GetVRMirrorView();
 
 	private:
-		static inline Material* s_ErrorMaterial = nullptr;
-		static inline Material* s_BlitMaterial = nullptr;
-		static inline Material* s_ResolveMSAAMaterial = nullptr;
-		static inline Material* s_PostProcessingMaterial = nullptr;
-		static inline Material* s_VRMirrorViewMaterial = nullptr;
+		static Material* s_ErrorMaterial;
+		static Material* s_BlitMaterial;
+		static Material* s_ResolveMSAAMaterial;
+		static Material* s_PostProcessingMaterial;
+		static Material* s_VRMirrorViewMaterial;
 	};
 }

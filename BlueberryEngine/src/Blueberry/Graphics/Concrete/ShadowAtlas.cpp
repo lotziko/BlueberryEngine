@@ -18,6 +18,9 @@ namespace Blueberry
 {
 	#define SIZE 4096
 
+	Material* ShadowAtlas::s_ShadowAtlasMaterial = nullptr;
+	GfxTexture* ShadowAtlas::s_AtlasTexture = nullptr;
+	GfxBuffer* ShadowAtlas::s_DepthBlitData = nullptr;
 	List<ShadowAtlas::ShadowRequest> ShadowAtlas::s_Requests = {};
 
 	static size_t s_DepthBlitDataId = TO_HASH("DepthBlitData");

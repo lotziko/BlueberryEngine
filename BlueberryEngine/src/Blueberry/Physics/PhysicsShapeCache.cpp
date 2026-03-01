@@ -12,6 +12,7 @@
 
 namespace Blueberry
 {
+	PhysicsShapeCache* PhysicsShapeCache::s_Instance = nullptr;
 	static Dictionary<size_t, JPH::Ref<JPH::Shape>> s_Shapes = {};
 
 	class JoltStreamOut : public JPH::StreamOut
@@ -65,84 +66,6 @@ namespace Blueberry
 		size_t m_Position = 0;
 	};
 
-	/*
-
-	void* PhysicsShapeCache::GetMeshShape(Mesh* mesh, const Vector3& scale)
-	{
-		size_t key = GetKey(mesh, false, scale);
-		auto it = s_ShapeResults.find(key);
-		if (it != s_ShapeResults.end())
-		{
-			return it->second.GetPtr();
-		}
-		Bake(mesh, scale);
-		return s_ShapeResults[key].GetPtr();
-	}
-
-	void* PhysicsShapeCache::GetConvexShape(Mesh* mesh)
-	{
-		return nullptr;
-	}
-
-	void PhysicsShapeCache::Bake(Mesh* mesh, std::ofstream& stream)
-	{
-		JPH::TriangleList triangles = {};
-		Vector3* vertices = mesh->GetVertices();
-		uint32_t* indices = mesh->GetIndices();
-		triangles.resize(mesh->GetIndexCount() / 3);
-		JPH::Triangle* trianglePtr = triangles.data();
-
-		for (uint32_t i = 0; i < mesh->GetIndexCount(); i += 3)
-		{
-			Vector3 vertex1 = vertices[indices[i]];
-			Vector3 vertex2 = vertices[indices[i + 1]];
-			Vector3 vertex3 = vertices[indices[i + 2]];
-			*trianglePtr = JPH::Triangle(JPH::Vec3(vertex1.x, vertex1.y, vertex1.z), JPH::Vec3(vertex2.x, vertex2.y, vertex2.z), JPH::Vec3(vertex3.x, vertex3.y, vertex3.z));
-			++trianglePtr;
-		}
-
-		JoltStreamOut joltStream(stream);
-		JPH::MeshShapeSettings settings(triangles);
-		JPH::Shape::ShapeResult result = settings.Create();
-		if (result.IsValid())
-		{
-			s_ShapeResults.insert_or_assign(GetKey(mesh, false, Vector3::One), result.Get());
-			result.Get()->SaveBinaryState(joltStream);
-		}
-		else
-		{
-			BB_ERROR("Failed to generate a physics shape.");
-		}
-	}
-
-	void PhysicsShapeCache::Bake(Mesh* mesh, const Vector3& scale)
-	{
-		JPH::TriangleList triangles = {};
-		Vector3* vertices = mesh->GetVertices();
-		uint32_t* indices = mesh->GetIndices();
-		triangles.resize(mesh->GetIndexCount() / 3);
-		JPH::Triangle* trianglePtr = triangles.data();
-
-		for (uint32_t i = 0; i < mesh->GetIndexCount(); i += 3)
-		{
-			Vector3 vertex1 = vertices[indices[i]] * scale;
-			Vector3 vertex2 = vertices[indices[i + 1]] * scale;
-			Vector3 vertex3 = vertices[indices[i + 2]] * scale;
-			*trianglePtr = JPH::Triangle(JPH::Vec3(vertex1.x, vertex1.y, vertex1.z), JPH::Vec3(vertex2.x, vertex2.y, vertex2.z), JPH::Vec3(vertex3.x, vertex3.y, vertex3.z));
-			++trianglePtr;
-		}
-
-		JPH::MeshShapeSettings settings(triangles);
-		JPH::Shape::ShapeResult result = settings.Create();
-		s_ShapeResults.insert_or_assign(GetKey(mesh, false, scale), result.Get());
-	}
-
-	void PhysicsShapeCache::Load(Mesh* mesh, std::ifstream& stream)
-	{
-		JoltStreamIn joltStream(stream);
-		s_ShapeResults.insert_or_assign(GetKey(mesh, false, Vector3::One), JPH::Shape::sRestoreFromBinaryState(joltStream).Get());
-	}*/
-	
 	size_t GetKey(Mesh* mesh, const bool& isConvex, const Vector3& scale)
 	{
 		size_t mask = (scale.x > 0 ? 1 : 0) | (scale.y > 0 ? 2 : 0) | (scale.z > 0 ? 4 : 0);

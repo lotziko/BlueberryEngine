@@ -55,6 +55,6 @@ namespace Blueberry
 		static String s_Path;
 		static SceneLoadEvent s_SceneLoaded;
 
-		static inline ObjectPtr<SceneSettings> s_SceneSettings = {};
+		static ObjectPtr<SceneSettings> s_SceneSettings;
 	};
 }

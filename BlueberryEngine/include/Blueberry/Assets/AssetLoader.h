@@ -20,6 +20,6 @@ namespace Blueberry
 		virtual Object* LoadImpl(const String& path, void* args) = 0;
 
 	private:
-		static inline AssetLoader* s_Instance = nullptr;
+		static AssetLoader* s_Instance;
 	};
 }

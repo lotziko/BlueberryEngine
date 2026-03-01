@@ -37,8 +37,8 @@ namespace Blueberry
 		void Draw();
 
 	private:
-		static inline Application* s_Instance = nullptr;
-		static inline bool s_IsRunning = false;
+		static Application* s_Instance;
+		static bool s_IsRunning;
 		Window* m_Window;
 		LayerStack* m_LayerStack;
 		std::function<void()> m_WaitFrameCallback = nullptr;

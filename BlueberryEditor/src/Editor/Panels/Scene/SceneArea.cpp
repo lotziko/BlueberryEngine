@@ -37,6 +37,8 @@
 
 namespace Blueberry
 {
+	uint32_t SceneArea::s_SceneRedrawRequestsCount = 0;
+
 	OBJECT_DEFINITION(SceneArea, EditorWindow)
 	{
 		DEFINE_BASE_FIELDS(SceneArea, EditorWindow)

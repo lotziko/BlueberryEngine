@@ -6,6 +6,8 @@
 
 namespace Blueberry
 {
+	Shader* DefaultShaders::s_SkyboxShader = nullptr;
+
 	void DefaultShaders::Initialize()
 	{
 		GetSkybox();

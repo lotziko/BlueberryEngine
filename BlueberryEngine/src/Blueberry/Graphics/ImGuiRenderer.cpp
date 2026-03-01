@@ -5,6 +5,8 @@
 
 namespace Blueberry
 {
+	ImGuiRenderer* ImGuiRenderer::s_Instance = nullptr;
+
 	bool ImGuiRenderer::Initialize()
 	{
 		if (s_Instance != nullptr)

@@ -16,7 +16,7 @@ namespace Blueberry
 		static void CalculateClusters();
 
 	private:
-		static inline ComputeShader* s_ClusteringShader = nullptr;
-		static inline GfxTexture* s_LightIndexTexture = nullptr;
+		static ComputeShader* s_ClusteringShader;
+		static GfxTexture* s_LightIndexTexture;
 	};
 }

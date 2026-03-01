@@ -24,6 +24,7 @@ namespace Blueberry
 		int m_PreferredSize = 1024;
 		float m_DistanceBetweenProbes = 0.25f;
 		bool m_Denoise = true;
+		bool m_GenerateLightmap = true;
 		bool m_GenerateProbes = true;
 	};
 }

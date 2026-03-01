@@ -8,6 +8,8 @@
 
 namespace Blueberry
 {
+	GfxBuffer* FogViewDataConstantBuffer::s_ConstantBuffer = nullptr;
+
 	struct FogViewData
 	{
 		Vector4 viewInvCount;

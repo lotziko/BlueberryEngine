@@ -11,6 +11,9 @@
 
 namespace Blueberry
 {
+	ComputeShader* RealtimeLights::s_ClusteringShader = nullptr;
+	GfxTexture* RealtimeLights::s_LightIndexTexture = nullptr;
+
 	#define CLUSTERS_X 30
 	#define CLUSTERS_Y 17
 	#define CLUSTERS_Z 16

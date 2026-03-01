@@ -573,13 +573,18 @@ namespace Blueberry
 					materialIndexes.push_back(materialIndex);
 				}
 			}
-			else
+		}
+		
+		if (sortedPolygonIndexes.size() == 0)
+		{
+			for (uint32_t i = 0; i < polygonCount; ++i)
 			{
-				for (uint32_t i = 0; i < polygonCount; ++i)
-				{
-					sortedPolygonIndexes.push_back(i);
-				}
+				sortedPolygonIndexes.push_back(i);
 			}
+			SubMeshData subMesh = {};
+			subMesh.SetIndexStart(0);
+			subMesh.SetIndexCount(indices.size());
+			submeshes.push_back(subMesh);
 		}
 		
 		uint32_t* indicesPtr = indices.data();
@@ -985,30 +990,37 @@ namespace Blueberry
 			// TODO rename to m_GenerateColliders and put colliders on meshes
 		}
 
-		uint32_t materialOffset = 0;
 		List<Material*> materials;
-		materials.resize(materialIndexes.size());
-		for (uint32_t materialIndex : materialIndexes)
+		if (materialIndexes.size() > 0)
 		{
-			fbxsdk::FbxSurfaceMaterial* fbxMaterial = node->GetMaterial(materialIndex);
-			String name = fbxMaterial->GetName();
+			uint32_t materialOffset = 0;
+			materials.resize(materialIndexes.size());
+			for (uint32_t materialIndex : materialIndexes)
+			{
+				fbxsdk::FbxSurfaceMaterial* fbxMaterial = node->GetMaterial(materialIndex);
+				String name = fbxMaterial->GetName();
 
-			auto index = std::find_if(m_Materials.begin(), m_Materials.end(), [name](ModelMaterialData& d) { return d.GetName() == name; });
-			if (index == m_Materials.end())
-			{
-				ModelMaterialData data = {};
-				data.SetName(name);
-				m_Materials.push_back(data);
-			}
-			else
-			{
-				Material* material = index->GetMaterial();
-				if (material != nullptr)
+				auto index = std::find_if(m_Materials.begin(), m_Materials.end(), [name](ModelMaterialData& d) { return d.GetName() == name; });
+				if (index == m_Materials.end())
 				{
-					materials[materialOffset] = material;
+					ModelMaterialData data = {};
+					data.SetName(name);
+					m_Materials.push_back(data);
 				}
+				else
+				{
+					Material* material = index->GetMaterial();
+					if (material != nullptr)
+					{
+						materials[materialOffset] = material;
+					}
+				}
+				++materialOffset;
 			}
-			++materialOffset;
+		}
+		else
+		{
+			materials.push_back(nullptr);
 		}
 		if (isSkinned)
 		{
