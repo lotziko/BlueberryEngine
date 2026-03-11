@@ -16,7 +16,7 @@ namespace Blueberry
 {
 	GfxTexture* ThumbnailRenderer::s_ThumbnailRenderTarget = nullptr;
 
-	bool ThumbnailRenderer::CanDraw(const size_t& type)
+	bool ThumbnailRenderer::CanDraw(const TypeId& type)
 	{
 		return type == Texture2D::Type || type == Material::Type || type == Mesh::Type;
 	}

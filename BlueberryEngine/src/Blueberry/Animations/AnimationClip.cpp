@@ -15,7 +15,7 @@ namespace Blueberry
 	OBJECT_DEFINITION(AnimationClip, Object)
 	{
 		DEFINE_BASE_FIELDS(AnimationClip, Object)
-		DEFINE_FIELD(AnimationClip, m_AnimationBones, BindingType::DataList, FieldOptions().SetObjectType(AnimationBoneData::Type).SetVisibility(VisibilityType::NonExposed))
+		DEFINE_FIELD(AnimationClip, m_AnimationBones, BindingType::DataList, FieldOptions().SetObjectType(&AnimationBoneData::Type).SetVisibility(VisibilityType::NonExposed))
 		DEFINE_FIELD(AnimationClip, m_FrameRate, BindingType::Float, {})
 		DEFINE_FIELD(AnimationClip, m_Length, BindingType::Float, {})
 	}

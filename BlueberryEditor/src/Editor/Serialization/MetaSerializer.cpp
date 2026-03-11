@@ -46,7 +46,7 @@ namespace Blueberry
 				guidNode >> m_Guid;
 
 				String typeName = importerNode.Get().key;
-				const ClassInfo* info = ClassDB::GetInfo(TO_OBJECT_TYPE(typeName));
+				const ClassInfo* info = ClassDB::GetInfo(typeName);
 				if (info == nullptr)
 				{
 					BB_ERROR("Class not exists.");

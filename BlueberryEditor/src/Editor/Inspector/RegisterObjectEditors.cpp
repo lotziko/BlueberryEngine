@@ -19,6 +19,8 @@
 #include "Concrete\AssetImporterEditor.h"
 #include "Concrete\TextureImporterEditor.h"
 #include "Concrete\ModelImporterEditor.h"
+#include "Concrete\NativeAssetImporterEditor.h"
+#include "Concrete\PrefabImporterEditor.h"
 #include "Concrete\MeshEditor.h"
 #include "Concrete\AnimationGraphEditor.h"
 
@@ -43,6 +45,8 @@ namespace Blueberry
 		REGISTER_OBJECT_EDITOR(AssetImporterEditor, AssetImporter);
 		REGISTER_OBJECT_EDITOR(TextureImporterEditor, TextureImporter);
 		REGISTER_OBJECT_EDITOR(ModelImporterEditor, ModelImporter);
+		REGISTER_OBJECT_EDITOR(NativeAssetImporterEditor, NativeAssetImporter);
+		REGISTER_OBJECT_EDITOR(PrefabImporterEditor, PrefabImporter);
 		REGISTER_OBJECT_EDITOR(MeshEditor, Mesh);
 		REGISTER_OBJECT_EDITOR(AnimationGraphEditor, AnimationGraph);
 		REGISTER_OBJECT_EDITOR(ObjectEditor, Object);

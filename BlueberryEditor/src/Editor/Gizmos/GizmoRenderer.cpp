@@ -67,7 +67,7 @@ namespace Blueberry
 				{
 					for (uint32_t i = 0; i < entity->GetComponentCount(); ++i)
 					{
-						ObjectEditor* editor = ObjectEditor::GetEditor(entity->GetComponent(i));
+						ObjectEditor* editor = ObjectEditor::GetEditor(entity->GetComponentAt(i));
 						if (editor != nullptr)
 						{
 							Gizmos::SetColor(Color(1, 1, 1, 1));

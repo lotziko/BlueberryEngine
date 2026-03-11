@@ -8,6 +8,7 @@
 #include "Blueberry\Serialization\BinaryWriter.h"
 
 #include "Editor\Assets\AssetDB.h"
+#include "Editor\Assets\AssetFinalizer.h"
 #include "Editor\Prefabs\PrefabInstance.h"
 #include "Editor\Prefabs\PrefabManager.h"
 
@@ -36,7 +37,7 @@ namespace Blueberry
 			while ((m_CurrentObject = GetNextObjectToSerialize()) != nullptr)
 			{
 				SerializationTree tree = {};
- 				tree.type = m_CurrentObject->GetType();
+ 				tree.typeId = m_CurrentObject->GetType();
 				tree.fileId = GetFileId(m_CurrentObject->GetObjectId());
 				tree.objectId = m_CurrentObject->GetObjectId();
 				tree.isText = isText;
@@ -95,7 +96,7 @@ namespace Blueberry
 				auto it = m_FileIdToObjectId.find(tree.fileId);
 				if (it == m_FileIdToObjectId.end())
 				{
-					const ClassInfo* info = ClassDB::GetInfo(tree.type);
+					const ClassInfo* info = ClassDB::GetInfo(tree.typeId);
 					if (info == nullptr)
 					{
 						BB_ERROR("Class not exists.");
@@ -184,7 +185,7 @@ namespace Blueberry
 			for (auto& tree : m_Trees)
 			{
 				Object* object = ObjectDB::GetObject(tree.objectId);
-				AssetDB::FinalizeObject(object, m_Guid, tree.fileId);
+				AssetFinalizer::Finalize(object, m_Guid, tree.fileId);
 			}
 		}
 		if (m_PrefabInstances.size() > 0)
@@ -242,7 +243,7 @@ namespace Blueberry
 			}
 			for (size_t i = 0; i < entity->GetComponentCount(); ++i)
 			{
-				Component* component = entity->GetComponent(i);
+				Component* component = entity->GetComponentAt(i);
 				if (!PrefabManager::IsPartOfPrefabInstance(component))
 				{
 					AddObject(component);
@@ -254,7 +255,7 @@ namespace Blueberry
 			AddObject(entity);
 			for (size_t i = 0; i < entity->GetComponentCount(); ++i)
 			{
-				AddObject(entity->GetComponent(i));
+				AddObject(entity->GetComponentAt(i));
 			}
 		}
 		Transform* transform = entity->GetTransform();

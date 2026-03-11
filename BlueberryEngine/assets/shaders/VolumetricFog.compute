@@ -302,12 +302,17 @@ void CSBlurHorizontal(uint3 id : SV_DispatchThreadID)
 {
 	uint2 size = (uint2)_FrustumVolumeSize.xy - 1;
 	float4 result = 0;
+	float weight = 0;
 	for (int i = 0; i < 5; i++)
 	{
-		uint3 pos = uint3(min(max(id.xy + kBlurOffsets[i], uint2(0, 0)), size), id.z);
-		result += _ScatterNoBlurFogVolume[pos] * 0.2;
+		uint3 pos = uint3(id.xy + kBlurOffsets[i], id.z);
+		if (pos.x >= 0 && pos.y >= 0 && pos.x <= size.x && pos.y <= size.y)
+		{
+			result += _ScatterNoBlurFogVolume[pos];
+			weight += 1;
+		}
 	}
-	_ScatterBlurFogVolume[id] = result;
+	_ScatterBlurFogVolume[id] = result / weight;
 }
 
 [numthreads(8, 8, 8)]
@@ -315,10 +320,15 @@ void CSBlurVertical(uint3 id : SV_DispatchThreadID)
 {
 	uint2 size = (uint2)_FrustumVolumeSize.xy - 1;
 	float4 result = 0;
+	float weight = 0;
 	for (int i = 0; i < 5; i++)
 	{
-		uint3 pos = uint3(min(max(id.xy + kBlurOffsets[i].yx, uint2(0, 0)), size), id.z);
-		result += _ScatterNoBlurFogVolume[pos] * 0.2;
+		uint3 pos = uint3(id.xy + kBlurOffsets[i].yx, id.z);
+		if (pos.x >= 0 && pos.y >= 0 && pos.x <= size.x && pos.y <= size.y)
+		{
+			result += _ScatterNoBlurFogVolume[pos];
+			weight += 1;
+		}
 	}
-	_ScatterBlurFogVolume[id] = result;
+	_ScatterBlurFogVolume[id] = result / weight;
 }

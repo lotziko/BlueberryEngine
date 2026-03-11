@@ -31,6 +31,7 @@ namespace Blueberry
 		REGISTER_ABSTRACT_CLASS(Object);
 		REGISTER_CLASS(Entity);
 		REGISTER_ABSTRACT_CLASS(Component);
+		REGISTER_ITERATOR(UpdatableComponent);
 		REGISTER_CLASS(Transform);
 		REGISTER_ABSTRACT_CLASS(Renderer);
 		REGISTER_CLASS(SpriteRenderer);

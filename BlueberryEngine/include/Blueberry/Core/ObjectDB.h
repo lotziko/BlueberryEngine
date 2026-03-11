@@ -24,7 +24,7 @@ namespace Blueberry
 
 	struct ObjectIterator
 	{
-		ObjectIterator(size_t type, SearchObjectType searchType, ChunkedObjectArray* objectArray, int32_t index) : type(type), searchType(searchType), objectArray(objectArray), index(index)
+		ObjectIterator(TypeId type, SearchObjectType searchType, ChunkedObjectArray* objectArray, int32_t index) : type(type), searchType(searchType), objectArray(objectArray), index(index)
 		{
 		}
 
@@ -39,7 +39,7 @@ namespace Blueberry
 		bool operator!= (ObjectIterator other) const;
 		bool operator== (ObjectIterator other) const;
 
-		size_t type;
+		TypeId type;
 		SearchObjectType searchType;
 		ChunkedObjectArray* objectArray;
 		int32_t index;
@@ -48,14 +48,14 @@ namespace Blueberry
 
 	struct ObjectView
 	{
-		ObjectView(size_t type, SearchObjectType searchType, ChunkedObjectArray* objectArray, int32_t index) : type(type), searchType(searchType), objectArray(objectArray), index(index)
+		ObjectView(TypeId type, SearchObjectType searchType, ChunkedObjectArray* objectArray, int32_t index) : type(type), searchType(searchType), objectArray(objectArray), index(index)
 		{
 		}
 
 		ObjectIterator begin() const;
 		ObjectIterator end() const;
 
-		size_t type;
+		TypeId type;
 		SearchObjectType searchType;
 		ChunkedObjectArray* objectArray;
 		int32_t index;
@@ -98,7 +98,7 @@ namespace Blueberry
 		static bool IsValid(Object* object);
 		static ObjectItem* IdToObjectItem(const ObjectId& id);
 		static Object* GetObject(const ObjectId& id);
-		static ObjectView GetObjects(const size_t& type, SearchObjectType searchType = SearchObjectType::Any);
+		static ObjectView GetObjects(const TypeId& type, SearchObjectType searchType = SearchObjectType::Any);
 
 		static void AllocateIdToFileId(const ObjectId& id, const FileId& fileId);
 		static void AllocateIdToFileId(Object* object, const FileId& fileId);

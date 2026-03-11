@@ -12,7 +12,7 @@ namespace Blueberry
 	OBJECT_DEFINITION(SkyRenderer, Component)
 	{
 		DEFINE_BASE_FIELDS(SkyRenderer, Component)
-		DEFINE_FIELD(SkyRenderer, m_Material, BindingType::ObjectPtr, FieldOptions().SetObjectType(Material::Type))
+		DEFINE_FIELD(SkyRenderer, m_Material, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Material::Type))
 		DEFINE_FIELD(SkyRenderer, m_AmbientColor, BindingType::Color, {})
 		DEFINE_ITERATOR(SkyRenderer)
 	}

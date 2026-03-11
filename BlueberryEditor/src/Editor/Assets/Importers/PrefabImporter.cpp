@@ -33,7 +33,8 @@ namespace Blueberry
 		AssetDB::SetDependencies(guid, dependencies);
 		auto& deserializedObjects = serializer.GetDeserializedObjects();
 
-		PrefabInstance* instance = GetOrCreateAssetObject<PrefabInstance>(PrefabInstance::Type);
+		size_t prefabInstanceFileId = TO_HASH("PrefabInstance");
+		PrefabInstance* instance = GetOrCreateAssetObject<PrefabInstance>(prefabInstanceFileId);
 		objects.push_back(instance);
 
 		bool mainObjectIsSet = false;

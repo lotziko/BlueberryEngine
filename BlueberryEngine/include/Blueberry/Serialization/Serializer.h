@@ -28,19 +28,19 @@ namespace Blueberry
 			void* ptr;
 			const ClassInfo* info;
 
-			static Context Create(Object* object, const size_t& type)
+			static Context Create(Object* object, const TypeId& type)
 			{
 				const ClassInfo* info = ClassDB::GetInfo(type);
 				return { object - info->offset, info };
 			}
 
-			static Context CreateNoOffset(Data* data, const size_t& type)
+			static Context CreateNoOffset(Data* data, const TypeId& type)
 			{
 				const ClassInfo* info = ClassDB::GetInfo(type);
 				return { data, info };
 			}
 
-			static Context CreateNoOffset(void* data, const size_t& type)
+			static Context CreateNoOffset(void* data, const TypeId& type)
 			{
 				const ClassInfo* info = ClassDB::GetInfo(type);
 				return { data, info };

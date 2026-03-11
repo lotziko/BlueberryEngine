@@ -1,5 +1,6 @@
 #include "Blueberry\Serialization\BinaryReader.h"
 
+#include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Serialization\SerializationTree.h"
 
 #include <fstream>
@@ -8,6 +9,7 @@ namespace Blueberry
 {
 	struct Context
 	{
+		uint32_t version;
 		std::ifstream& stream;
 		List<char> keyBuffer;
 	};
@@ -40,7 +42,19 @@ namespace Blueberry
 	void ReadObject(SerializationTree& tree, Context& context)
 	{
 		uint32_t rootNodeCount;
-		context.stream.read(reinterpret_cast<char*>(&tree.type), sizeof(size_t));
+		if (context.version == 1)
+		{
+			uint32_t keyOffset;
+			context.stream.read(reinterpret_cast<char*>(&keyOffset), sizeof(uint32_t));
+			tree.typeName = String(context.keyBuffer.data() + keyOffset);
+			tree.typeId = ClassDB::GetTypeId(tree.typeName);
+		}
+		else
+		{
+			size_t typeHash;
+			context.stream.read(reinterpret_cast<char*>(&typeHash), sizeof(size_t));
+			tree.typeId = ClassDB::GetInfo(typeHash)->id;
+		}
 		context.stream.read(reinterpret_cast<char*>(&tree.fileId), sizeof(FileId));
 		context.stream.read(reinterpret_cast<char*>(&tree.isReference), sizeof(bool));
 		context.stream.read(reinterpret_cast<char*>(&rootNodeCount), sizeof(uint32_t));
@@ -54,11 +68,11 @@ namespace Blueberry
 
 	void BinaryReader::Read(List<SerializationTree>& trees, std::ifstream& stream)
 	{
-		Context context = { stream, {} };
+		Context context = { 0, stream, {} };
 		char header;
-		uint32_t version, keyBufferSize, objectCount;
+		uint32_t keyBufferSize, objectCount;
 		stream.read(&header, sizeof(char));
-		stream.read(reinterpret_cast<char*>(&version), sizeof(uint32_t));
+		stream.read(reinterpret_cast<char*>(&context.version), sizeof(uint32_t));
 		stream.read(reinterpret_cast<char*>(&keyBufferSize), sizeof(uint32_t));
 		context.keyBuffer.resize(keyBufferSize);
 		stream.read(context.keyBuffer.data(), keyBufferSize);

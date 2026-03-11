@@ -76,12 +76,6 @@ namespace Blueberry
 	}
 
 	template<class ObjectType>
-	inline const size_t& ObjectPtr<ObjectType>::GetType() const
-	{
-		return m_Type;
-	}
-
-	template<class ObjectType>
 	inline bool ObjectPtr<ObjectType>::IsValid() const
 	{
 		return m_Item != nullptr && m_Item->object != nullptr;

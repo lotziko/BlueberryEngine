@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Blueberry\Core\Guid.h"
+#include "Blueberry\Core\Object.h"
 
 namespace Blueberry
 {
@@ -11,53 +12,11 @@ namespace Blueberry
 	private:
 		struct ImporterInfo
 		{
-			void Read(std::istream& is)
-			{
-				is.read((char*)&mainObject, sizeof(FileId));
-				size_t objectCount;
-				is.read((char*)&objectCount, sizeof(size_t));
-
-				for (size_t i = 0; i < objectCount; ++i)
-				{
-					FileId objectFileId;
-					is.read((char*)&objectFileId, sizeof(FileId));
-
-					size_t type;
-					is.read((char*)&type, sizeof(size_t));
-
-					size_t nameSize;
-					is.read((char*)&nameSize, sizeof(size_t));
-					String name(nameSize, ' ');
-					is.read(name.data(), nameSize);
-
-					objects.push_back(std::make_tuple(objectFileId, type, name));
-				}
-			}
-
-			void Write(std::ostream& os) const
-			{
-				os.write((char*)&mainObject, sizeof(FileId));
-
-				size_t objectCount = objects.size();
-				os.write((char*)&objectCount, sizeof(size_t));
-
-				for (auto& tuple : objects)
-				{
-					FileId objectFileId = std::get<0>(tuple);
-					os.write((char*)&objectFileId, sizeof(FileId));
-
-					size_t type = std::get<1>(tuple);
-					os.write((char*)&type, sizeof(size_t));
-
-					String name = std::get<2>(tuple);
-					size_t nameSize = name.size();
-					os.write((char*)&nameSize, sizeof(size_t));
-					os.write(name.data(), nameSize);
-				}
-			}
+			void Read(std::istream& is);
+			void Write(std::ostream& os) const;
 
 			FileId mainObject;
-			List<std::tuple<FileId, size_t, String>> objects;
+			List<std::tuple<FileId, TypeId, String>> objects;
 		};
 
 	public:

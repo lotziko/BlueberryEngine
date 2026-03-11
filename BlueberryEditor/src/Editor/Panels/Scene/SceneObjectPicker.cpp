@@ -46,6 +46,7 @@ namespace Blueberry
 
 		m_SpriteObjectPickerMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/SpriteObjectPicker.shader")));
 		m_MeshObjectPickerMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/MeshObjectPicker.shader")));
+		m_IconObjectPickerMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/IconObjectPicker.shader")));
 		m_ObjectPickerOutlineMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/ObjectPickerOutline.shader")));
 	}
 
@@ -53,6 +54,10 @@ namespace Blueberry
 	{
 		delete m_SceneRenderTarget;
 		delete m_SceneDepthStencil;
+		Object::Destroy(m_SpriteObjectPickerMaterial);
+		Object::Destroy(m_MeshObjectPickerMaterial);
+		Object::Destroy(m_IconObjectPickerMaterial);
+		Object::Destroy(m_ObjectPickerOutlineMaterial);
 	}
 
 	Object* SceneObjectPicker::Pick(Scene* scene, Camera* camera, const int& positionX, const int& positionY)
@@ -128,15 +133,17 @@ namespace Blueberry
 			{
 				for (uint32_t i = 0; i < entity->GetComponentCount(); ++i)
 				{
-					Component* component = entity->GetComponent(i);
+					Component* component = entity->GetComponentAt(i);
 					ObjectEditor* editor = ObjectEditor::GetDefaultEditor(component);
-					if (editor->GetIcon(component) != nullptr)
+					Texture* icon;
+					if ((icon = editor->GetIcon(component)) != nullptr)
 					{
+						m_IconObjectPickerMaterial->SetTexture("_BaseMap", icon);
 						Vector3 position = entity->GetTransform()->GetPosition();
-						Matrix modelMatrix = Matrix::CreateScale(0.75f) * Matrix::CreateBillboard(position, position + cameraDirection, Vector3(0, -1, 0));
+						Matrix modelMatrix = Matrix::CreateScale(-0.75f, 0.75f, 0.75f) * Matrix::CreateBillboard(position, position + cameraDirection, Vector3(0, 1, 0));
 						PerDrawDataConstantBuffer::BindData(modelMatrix);
 						PerObjectDataConstantBuffer::BindData(ConvertIndexToColor(index));
-						GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_MeshObjectPickerMaterial));
+						GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_IconObjectPickerMaterial));
 						validObjects[index] = entity->GetObjectId();
 						++index;
 						break;

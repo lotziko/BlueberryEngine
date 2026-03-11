@@ -12,8 +12,8 @@ namespace Blueberry
 	OBJECT_DEFINITION(MeshRenderer, Renderer)
 	{
 		DEFINE_BASE_FIELDS(MeshRenderer, Renderer)
-		DEFINE_FIELD(MeshRenderer, m_Mesh, BindingType::ObjectPtr, FieldOptions().SetObjectType(Mesh::Type).SetUpdateCallback(MethodBind::Create(&MeshRenderer::InvalidateBounds)))
-		DEFINE_FIELD(MeshRenderer, m_Materials, BindingType::ObjectPtrList, FieldOptions().SetObjectType(Material::Type))
+		DEFINE_FIELD(MeshRenderer, m_Mesh, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Mesh::Type).SetUpdateCallback(MethodBind::Create(&MeshRenderer::InvalidateBounds)))
+		DEFINE_FIELD(MeshRenderer, m_Materials, BindingType::ObjectPtrList, FieldOptions().SetObjectType(&Material::Type))
 		DEFINE_FIELD(MeshRenderer, m_IsBakeable, BindingType::Bool, {})
 		DEFINE_ITERATOR(MeshRenderer)
 		DEFINE_EXECUTE_ALWAYS()

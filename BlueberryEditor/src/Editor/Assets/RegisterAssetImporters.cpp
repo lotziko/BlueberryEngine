@@ -9,12 +9,6 @@
 #include "Editor\Assets\Importers\PrefabImporter.h"
 #include "Editor\Assets\Importers\ModelImporter.h"
 #include "Editor\Assets\Importers\FolderImporter.h"
-#include "Editor\Assets\Finalizers\Texture2DFinalizer.h"
-#include "Editor\Assets\Finalizers\TextureCubeFinalizer.h"
-#include "Editor\Assets\Finalizers\Texture3DFinalizer.h"
-#include "Editor\Assets\Finalizers\MeshFinalizer.h"
-#include "Editor\Assets\Finalizers\ShaderFinalizer.h"
-#include "Editor\Assets\Finalizers\ComputeShaderFinalizer.h"
 #include "Blueberry\Core\ClassDB.h"
 
 namespace Blueberry
@@ -47,12 +41,5 @@ namespace Blueberry
 		REGISTER_ASSET_IMPORTER(".asset", NativeAssetImporter::Type);
 		REGISTER_ASSET_IMPORTER(".fbx", ModelImporter::Type);
 		REGISTER_ASSET_IMPORTER("", FolderImporter::Type);
-
-		REGISTER_OBJECT_FINALIZER(Texture2D, Texture2DFinalizer);
-		REGISTER_OBJECT_FINALIZER(TextureCube, TextureCubeFinalizer);
-		REGISTER_OBJECT_FINALIZER(Texture3D, Texture3DFinalizer);
-		REGISTER_OBJECT_FINALIZER(Mesh, MeshFinalizer);
-		REGISTER_OBJECT_FINALIZER(Shader, ShaderFinalizer);
-		REGISTER_OBJECT_FINALIZER(ComputeShader, ComputeShaderFinalizer);
 	}
 }

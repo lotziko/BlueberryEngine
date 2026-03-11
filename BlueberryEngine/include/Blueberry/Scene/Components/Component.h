@@ -45,6 +45,7 @@ namespace Blueberry
 	class BB_API UpdatableComponent
 	{
 	public:
-		static const size_t Type;
+		static TypeId Type;
+		static const String TypeName;
 	};
 }

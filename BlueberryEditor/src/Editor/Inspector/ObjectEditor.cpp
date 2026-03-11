@@ -16,6 +16,11 @@ namespace Blueberry
 	Dictionary<ObjectId, ObjectEditor*> ObjectEditor::s_Editors = {};
 	Dictionary<size_t, ObjectEditor*> ObjectEditor::s_DefaultEditors = {};
 
+	bool ObjectEditor::IsInspectorPadded()
+	{
+		return true;
+	}
+
 	Texture* ObjectEditor::GetIcon(Object* object)
 	{
 		return nullptr;
@@ -71,7 +76,7 @@ namespace Blueberry
 				m_SerializedObject->ApplyModifiedProperties();
 				AssetDB::SetDirty(m_SerializedObject->GetTarget());
 			}
-		} 
+		}
 	}
 
 	void ObjectEditor::OnDrawScene()
@@ -90,7 +95,7 @@ namespace Blueberry
 		{
 			return it->second;
 		}
-		size_t type = object->GetType();
+		TypeId type = object->GetType();
 		const ObjectEditorInfo* info = ObjectEditorDB::GetInfo(type);
 		if (info != nullptr)
 		{
@@ -116,7 +121,7 @@ namespace Blueberry
 		{
 			return it->second;
 		}
-		size_t type = objects[0]->GetType();
+		TypeId type = objects[0]->GetType();
 		const ObjectEditorInfo* info = ObjectEditorDB::GetInfo(type);
 		if (info != nullptr)
 		{
@@ -132,7 +137,7 @@ namespace Blueberry
 
 	ObjectEditor* ObjectEditor::GetDefaultEditor(Object* object)
 	{
-		size_t type = object->GetType();
+		TypeId type = object->GetType();
 		auto it = s_DefaultEditors.find(type);
 		if (it != s_DefaultEditors.end())
 		{

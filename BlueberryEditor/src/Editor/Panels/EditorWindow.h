@@ -28,14 +28,14 @@ namespace Blueberry
 
 		static void Initialize();
 		static void Shutdown();
-		static bool Save(const size_t& type);
+		static bool Save(const TypeId& type);
 		static bool Save();
-		static bool IsFocused(const size_t& type);
+		static bool IsFocused(const TypeId& type);
 
 		static void OnWindowClosing(WindowClosingEventArgs& args);
 
 		static void Draw();
-		static EditorWindow* GetWindow(const size_t& type);
+		static EditorWindow* GetWindow(const TypeId& type);
 		static List<ObjectPtr<EditorWindow>>& GetWindows();
 
 	protected:

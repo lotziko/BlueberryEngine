@@ -255,6 +255,7 @@ namespace Blueberry
 		{
 			auto& sceneData = s_PrefabScenes[s_PrefabScenes.size() - 1];
 			serializer.GatherPrefabs(sceneData.scene);
+			serializer.SetGuid(ObjectDB::GetGuidFromObject(sceneData.root));
 		}
 		else
 		{
@@ -312,17 +313,15 @@ namespace Blueberry
 			}
 		}
 
+		bool hasLighting = false;
 		if (s_SceneSettings.IsValid())
 		{
 			LightingData* lightingData = s_SceneSettings->GetLightingData();
 			if (lightingData != nullptr)
 			{
-				if (s_PrefabScenes.size() > 0)
+				if (s_PrefabScenes.size() == 0 && s_Scene != nullptr)
 				{
-					lightingData->Clear();
-				}
-				else if (s_Scene != nullptr)
-				{
+					hasLighting = true;
 					lightingData->Apply();
 				}
 			}
@@ -331,6 +330,10 @@ namespace Blueberry
 				Object::Destroy(s_SceneSettings.Get());
 				s_SceneSettings = nullptr;
 			}
+		}
+		if (!hasLighting)
+		{
+			LightingData::Clear();
 		}
 	}
 }

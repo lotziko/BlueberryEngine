@@ -23,7 +23,7 @@ namespace Blueberry
 		DEFINE_FIELD(Mesh, m_BindPoses, BindingType::MatrixList, FieldOptions().SetVisibility(VisibilityType::NonExposed))
 		DEFINE_FIELD(Mesh, m_VertexCount, BindingType::Int, {})
 		DEFINE_FIELD(Mesh, m_IndexCount, BindingType::Int, {})
-		DEFINE_FIELD(Mesh, m_SubMeshes, BindingType::DataList, FieldOptions().SetObjectType(SubMeshData::Type).SetVisibility(VisibilityType::NonExposed))
+		DEFINE_FIELD(Mesh, m_SubMeshes, BindingType::DataList, FieldOptions().SetObjectType(&SubMeshData::Type).SetVisibility(VisibilityType::NonExposed))
 		DEFINE_FIELD(Mesh, m_Layout, BindingType::Raw, FieldOptions().SetSize(sizeof(VertexLayout)).SetVisibility(VisibilityType::NonExposed))
 		DEFINE_FIELD(Mesh, m_Bounds, BindingType::AABB, FieldOptions().SetVisibility(VisibilityType::NonExposed))
 	}

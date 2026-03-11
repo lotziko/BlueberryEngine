@@ -14,6 +14,7 @@
 #include "Editor\EditorSceneManager.h"
 #include "Editor\Misc\ImGuiHelper.h"
 #include "Editor\Inspector\RegisterObjectEditors.h"
+#include "Editor\Assets\RegisterAssetImporters.h"
 #include "Editor\Panels\Scene\SceneArea.h"
 #include "Editor\Panels\Game\GameView.h"
 #include "Editor\Physics\EditorPhysicsShapeCache.h"
@@ -39,9 +40,9 @@ namespace Blueberry
 	void EditorLayer::OnAttach()
 	{
 		RegisterEditorTypes();
-		RegisterIcons();
-
+		RegisterAssetImporters();
 		RegisterObjectEditors();
+		RegisterIcons();
 		AssemblyManager::Build(false);
 		AssemblyManager::Load();
 
@@ -179,10 +180,15 @@ namespace Blueberry
 		if (ImGui::BeginMainMenuBar())
 		{
 			auto& root = EditorMenuManager::GetRoot();
-			/*if (ImGui::BeginMenu("Blueberry Editor"))
+			if (ImGui::BeginMenu("File"))
 			{
+				if (ImGui::MenuItem("Save"))
+				{
+					AssetDB::SaveAssets();
+					AssetDB::Refresh();
+				}
 				ImGui::EndMenu();
-			}*/
+			}
 			for (auto it = root.children.begin(); it < root.children.end(); ++it)
 			{
 				if (ImGui::BeginMenu(it->name.c_str()))

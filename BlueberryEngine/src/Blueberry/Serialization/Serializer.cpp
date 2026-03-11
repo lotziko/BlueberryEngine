@@ -23,7 +23,7 @@ namespace Blueberry
 			while ((m_CurrentObject = GetNextObjectToSerialize()) != nullptr)
 			{
 				SerializationTree tree = {};
-				tree.type = m_CurrentObject->GetType();
+				tree.typeId = m_CurrentObject->GetType();
 				tree.fileId = GetFileId(m_CurrentObject->GetObjectId());
 				tree.objectId = m_CurrentObject->GetObjectId();
 				tree.isText = isText;
@@ -63,7 +63,7 @@ namespace Blueberry
 				auto it = m_FileIdToObjectId.find(tree.fileId);
 				if (it == m_FileIdToObjectId.end())
 				{
-					const ClassInfo* info = ClassDB::GetInfo(tree.type);
+					const ClassInfo* info = ClassDB::GetInfo(tree.typeId);
 					if (info == nullptr)
 					{
 						BB_ERROR("Class not exists.");
@@ -442,7 +442,7 @@ namespace Blueberry
 			{
 				fieldNode |= SerializationFlags::MAP;
 				Data* data = field.Get<Data>(ptr);
-				Context context = Context::CreateNoOffset(data, field.options.objectType);
+				Context context = Context::CreateNoOffset(data, *field.options.objectType);
 				SerializeNode(fieldNode, context);
 			}
 			break;
@@ -454,7 +454,7 @@ namespace Blueberry
 				for (size_t i = 0; i < dataSize; ++i)
 				{
 					void* data = dataArrayPointer->get_base(i);
-					Context context = Context::CreateNoOffset(data, field.options.objectType);
+					Context context = Context::CreateNoOffset(data, *field.options.objectType);
 					SerializationNodeRef dataNode = fieldNode.AppendChild();
 					dataNode |= SerializationFlags::MAP;
 					SerializeNode(dataNode, context);
@@ -719,7 +719,7 @@ namespace Blueberry
 				case BindingType::Data:
 				{
 					Data* data = field->Get<Data>(ptr);
-					Context context = Context::CreateNoOffset(data, field->options.objectType);
+					Context context = Context::CreateNoOffset(data, *field->options.objectType);
 					DeserializeNode(fieldNode, context);
 				}
 				break;
@@ -730,7 +730,7 @@ namespace Blueberry
 					for (auto& child : fieldNode.GetChildren())
 					{
 						void* data = dataArrayPointer->emplace_back_base();
-						Context context = Context::CreateNoOffset(data, field->options.objectType);
+						Context context = Context::CreateNoOffset(data, *field->options.objectType);
 						DeserializeNode(child, context);
 					}
 				}

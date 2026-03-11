@@ -19,6 +19,7 @@ namespace Blueberry
 		ObjectEditor() = default;
 		virtual ~ObjectEditor() = default;
 
+		virtual bool IsInspectorPadded();
 		virtual Texture* GetIcon(Object* object);
 		void DrawScene(Object* object);
 

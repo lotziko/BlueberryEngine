@@ -270,6 +270,22 @@ namespace Blueberry
 				childNode->type = PropertyType::List;
 				BuildList(child, fieldInfo, targets);
 			}
+			else if (fieldInfo.type == BindingType::Data)
+			{
+				childNode->type = PropertyType::Data;
+				const ClassInfo* info = ClassDB::GetInfo(*fieldInfo.options.objectType);
+				if (info == nullptr)
+				{
+					BB_ERROR("Class not exists.");
+					return;
+				}
+				List<void*> newTargets = {};
+				for (size_t j = 0; j < targets.size(); ++j)
+				{
+					newTargets.push_back(static_cast<char*>(targets[j]) + fieldInfo.offset);
+				}
+				BuildProperties(child, info, newTargets);
+			}
 			else
 			{
 				childNode->type = PropertyType::Value;
@@ -323,7 +339,7 @@ namespace Blueberry
 		
 		if (fieldInfo.type == BindingType::DataList)
 		{
-			const ClassInfo* info = ClassDB::GetInfo(fieldInfo.options.objectType);
+			const ClassInfo* info = ClassDB::GetInfo(*fieldInfo.options.objectType);
 			if (info == nullptr)
 			{
 				BB_ERROR("Class not exists.");
@@ -389,6 +405,21 @@ namespace Blueberry
 			{
 				ReadList(child, *fieldInfo, targets);
 			}
+			else if (fieldInfo->type == BindingType::Data)
+			{
+				const ClassInfo* info = ClassDB::GetInfo(*fieldInfo->options.objectType);
+				if (info == nullptr)
+				{
+					BB_ERROR("Class not exists.");
+					return;
+				}
+				List<void*> newTargets = {};
+				for (size_t j = 0; j < targets.size(); ++j)
+				{
+					newTargets.push_back(static_cast<char*>(targets[j]) + fieldInfo->offset);
+				}
+				ReadProperties(child, info, newTargets);
+			}
 			else
 			{
 				for (size_t i = 0; i < targets.size(); ++i)
@@ -409,7 +440,7 @@ namespace Blueberry
 		BindingType childType = VariantHelper::GetChildType(fieldInfo.type);
 		if (fieldInfo.type == BindingType::DataList)
 		{
-			const ClassInfo* info = ClassDB::GetInfo(fieldInfo.options.objectType);
+			const ClassInfo* info = ClassDB::GetInfo(*fieldInfo.options.objectType);
 			if (info == nullptr)
 			{
 				BB_ERROR("Class not exists.");

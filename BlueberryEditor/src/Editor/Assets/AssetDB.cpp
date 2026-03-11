@@ -9,15 +9,14 @@
 #include "Editor\Assets\PathModifyCache.h"
 #include "Editor\Assets\ImporterInfoCache.h"
 #include "Editor\Assets\DependencyCache.h"
-#include "Editor\Assets\ObjectFinalizer.h"
 #include "Editor\Misc\PathHelper.h"
 #include "Editor\Misc\PlatformHelper.h"
 
 namespace Blueberry
 {
-	Dictionary<String, size_t> AssetDB::s_ImporterTypes = {};
+	Dictionary<String, TypeId> AssetDB::s_ImporterTypes = {};
 	Dictionary<String, AssetImporter*> AssetDB::s_Importers = {};
-	List<std::pair<size_t, ObjectFinalizer*>> AssetDB::s_Finalizers = {};
+	List<std::pair<TypeId, ObjectFinalizer*>> AssetDB::s_Finalizers = {};
 	
 	Dictionary<Guid, String> AssetDB::s_GuidToPath = {};
 	List<ObjectId> AssetDB::s_DirtyAssets = {};
@@ -80,7 +79,15 @@ namespace Blueberry
 		
 		for (AssetImporter* importer : importersToImport)
 		{
-			importer->ImportDataIfNeeded();
+			try
+			{
+				importer->ImportDataIfNeeded();
+			}
+			catch (...)
+			{
+				BB_ERROR("Failed to import asset.");
+				break;
+			}
 			ImporterInfoCache::Set(importer);
 			if (importer->IsRequiringSave())
 			{
@@ -403,27 +410,8 @@ namespace Blueberry
 		return importer;
 	}
 
-	void AssetDB::Register(const String& extension, const size_t& importerType)
+	void AssetDB::Register(const String& extension, const TypeId& importerType)
 	{
 		s_ImporterTypes.insert_or_assign(extension, importerType);
-	}
-
-	void AssetDB::Register(const size_t& objectType, ObjectFinalizer* objectFinalizer)
-	{
-		s_Finalizers.push_back(std::make_pair(objectType, objectFinalizer));
-	}
-
-	void AssetDB::FinalizeObject(Object* object, Guid guid, FileId fileId)
-	{
-		size_t type = object->GetType();
-		for (auto& pair : s_Finalizers)
-		{
-			if (type == pair.first)
-			{
-				pair.second->Finalize(object, guid, fileId);
-				break;
-			}
-		}
-		object->SetState(ObjectState::Default);
 	}
 }

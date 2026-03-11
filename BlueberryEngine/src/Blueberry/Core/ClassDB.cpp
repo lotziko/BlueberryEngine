@@ -2,40 +2,82 @@
 
 namespace Blueberry
 {
-	Dictionary<size_t, ClassInfo> ClassDB::s_Classes = {};
+	List<ClassInfo> ClassDB::s_Classes = {};
+	Dictionary<size_t, TypeId> ClassDB::s_NameToTypeId = {};
 	List<FieldInfo> ClassDB::s_CurrentFieldInfos = {};
 	ClassInfo ClassDB::s_CurrentClassInfo = {};
 	uint32_t ClassDB::s_CurrentOffset = 0;
 
-	const ClassInfo* ClassDB::GetInfo(const size_t& id)
+	const TypeId ClassDB::GetTypeId(const String& name)
 	{
-		auto it = s_Classes.find(id);
-		if (it != s_Classes.end())
+		auto it = s_NameToTypeId.find(TO_HASH(name));
+		if (it != s_NameToTypeId.end())
 		{
-			return &it->second;
+			return it->second;
+		}
+		return 0;
+	}
+
+	const TypeId ClassDB::GetTypeId(const size_t& nameHash)
+	{
+		auto it = s_NameToTypeId.find(nameHash);
+		if (it != s_NameToTypeId.end())
+		{
+			return it->second;
+		}
+		return 0;
+	}
+
+	const ClassInfo* ClassDB::GetInfo(const String& name)
+	{
+		auto it = s_NameToTypeId.find(TO_HASH(name));
+		if (it != s_NameToTypeId.end())
+		{
+			return &s_Classes[it->second];
 		}
 		return nullptr;
 	}
 
-	Dictionary<size_t, ClassInfo>& ClassDB::GetInfos()
+	const ClassInfo* ClassDB::GetInfo(const size_t& nameHash)
+	{
+		auto it = s_NameToTypeId.find(nameHash);
+		if (it != s_NameToTypeId.end())
+		{
+			return &s_Classes[it->second];
+		}
+		return nullptr;
+	}
+
+	const ClassInfo* ClassDB::GetInfo(const TypeId& id)
+	{
+		if (id > 0 && id < s_Classes.size())
+		{
+			return &s_Classes[id];
+		}
+		return nullptr;
+	}
+
+	List<ClassInfo>& ClassDB::GetInfos()
 	{
 		return s_Classes;
 	}
 
-	bool ClassDB::IsParent(const size_t& id, const size_t& parentId)
+	bool ClassDB::IsParent(const TypeId& id, const TypeId& parentId)
 	{
-		size_t inheritsId = id;
-			
-		while (s_Classes.count(inheritsId) > 0)
+		TypeId inheritsId = id;
+		while (true)
 		{
 			if (inheritsId == parentId)
 			{
 				return true;
 			}
-
-			inheritsId = s_Classes.find(inheritsId)->second.parentId;
+			ClassInfo& info = s_Classes[inheritsId];
+			if (info.parentId == 0)
+			{
+				return false;
+			}
+			inheritsId = info.parentId;
 		}
-
 		return false;
 	}
 
@@ -45,7 +87,7 @@ namespace Blueberry
 		s_CurrentFieldInfos.push_back(std::move(info));
 	}
 
-	void ClassDB::DefineIterator(const size_t& type)
+	void ClassDB::DefineIterator(const TypeId& type)
 	{
 		s_CurrentClassInfo.iterators.push_back(type);
 	}
@@ -60,6 +102,16 @@ namespace Blueberry
 		s_CurrentClassInfo.executeAlways = true;
 	}
 
+	TypeId ClassDB::GetOrCreateTypeId(const String& name)
+	{
+		auto it = s_NameToTypeId.find(TO_HASH(name));
+		if (it != s_NameToTypeId.end())
+		{
+			return it->second;
+		}
+		return GenerateTypeId();
+	}
+
 	FieldOptions& FieldOptions::SetEnumHint(char* hintData)
 	{
 		auto names = new List<String>();
@@ -68,7 +120,7 @@ namespace Blueberry
 		return *this;
 	}
 
-	FieldOptions& FieldOptions::SetObjectType(const size_t& type)
+	FieldOptions& FieldOptions::SetObjectType(TypeId* type)
 	{
 		this->objectType = type;
 		return *this;

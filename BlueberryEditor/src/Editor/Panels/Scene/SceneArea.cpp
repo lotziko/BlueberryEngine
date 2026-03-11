@@ -215,10 +215,12 @@ namespace Blueberry
 					{
 						Guid guid = Blueberry::ObjectDB::GetGuidFromObject(object);
 						AssetLoader::Load(guid);
-						PrefabInstance* instance = static_cast<PrefabInstance*>(ObjectDB::GetObjectFromGuid(guid, PrefabInstance::Type));
+						PrefabInstance* instance = static_cast<PrefabInstance*>(ObjectDB::GetObjectFromGuid(guid, TO_HASH("PrefabInstance")));
 						if (instance != nullptr)
 						{
-							EditorObjectManager::AddEntity(PrefabManager::CreateInstance(instance)->GetEntity());
+							Entity* entity = PrefabManager::CreateInstance(instance)->GetEntity();
+							EditorObjectManager::AddEntity(entity);
+							Selection::SetActiveObject(entity);
 						}
 					}
 				}
@@ -608,24 +610,27 @@ namespace Blueberry
 		if (!Application::IsRunning())
 		{
 			Scene* scene = EditorSceneManager::GetScene();
-			Object* target = args.GetObject();
-			if (target->IsClassType(Entity::Type))
+			if (scene != nullptr)
 			{
-				Entity* entity = static_cast<Entity*>(target);
-				if (entity->GetScene() == scene)
+				Object* target = args.GetObject();
+				if (target->IsClassType(Entity::Type))
 				{
-					SetHasUnsavedChanges(true);
+					Entity* entity = static_cast<Entity*>(target);
+					if (entity->GetScene() == scene)
+					{
+						SetHasUnsavedChanges(true);
+					}
 				}
-			}
-			else if (target->IsClassType(Component::Type))
-			{
-				Component* component = static_cast<Component*>(target);
-				if (component->GetScene() == scene)
+				else if (target->IsClassType(Component::Type))
 				{
-					SetHasUnsavedChanges(true);
+					Component* component = static_cast<Component*>(target);
+					if (component->GetScene() == scene)
+					{
+						SetHasUnsavedChanges(true);
+					}
 				}
+				RequestRedrawAll();
 			}
-			RequestRedrawAll();
 		}
 	}
 }

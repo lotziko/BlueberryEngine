@@ -23,21 +23,24 @@ namespace Blueberry
 		template<class ComponentType>
 		ComponentType* AddComponent();
 
-		template<class ComponentType>
-		void AddComponent(ComponentType* component);
+		void AddComponent(Component* component);
 
 		template<class ComponentType>
 		ComponentType* GetComponent();
 
-		Component* GetComponent(const size_t& index);
+		Component* GetComponentAt(const size_t& index);
+
+		template<class ComponentType>
+		ComponentType* GetComponentInParent();
+		template<class ComponentType>
+		ComponentType* GetComponentInChildren();
 
 		const size_t GetComponentCount();
 
 		template<class ComponentType>
 		bool HasComponent();
 
-		template<class ComponentType>
-		void RemoveComponent(ComponentType* component);
+		void RemoveComponent(Component* component);
 
 		Transform* GetTransform();
 		Scene* GetScene();
@@ -47,6 +50,12 @@ namespace Blueberry
 		bool IsActiveInHierarchy();
 
 		void UpdateHierarchy();
+
+	private:
+		bool HasComponent(const TypeId& type);
+		Component* GetComponent(const TypeId& type);
+		Component* GetComponentInParent(const TypeId& type);
+		Component* GetComponentInChildren(const TypeId& type);
 
 	private:
 		void AddComponentToScene(Component* component);
@@ -73,117 +82,36 @@ namespace Blueberry
 	inline ComponentType* Entity::AddComponent()
 	{
 		static_assert(std::is_base_of<Component, ComponentType>::value, "Type is not derived from Component.");
-
-		ComponentType* componentToAdd = Object::Create<ComponentType>();
-
-		int index = 0;
-		for (auto& componentSlot : m_Components)
-		{
-			if (!componentSlot.IsValid())
-			{
-				componentSlot = componentToAdd;
-				break;
-			}
-			++index;
-		}
-
-		componentToAdd->m_Entity = ObjectPtr<Entity>(this);
-		if (index >= m_Components.size())
-		{
-			m_Components.push_back(componentToAdd);
-		}
-		if (IsActiveInHierarchy())
-		{
-			AddComponentToScene(componentToAdd);
-			if (componentToAdd->CanExecute())
-			{
-				componentToAdd->OnCreate();
-				componentToAdd->m_IsCreated = true;
-				componentToAdd->OnEnable();
-				componentToAdd->m_IsActive = true;
-			}
-		}
-		return componentToAdd;
-	}
-
-	template<class ComponentType>
-	inline void Entity::AddComponent(ComponentType* component)
-	{
-		static_assert(std::is_base_of<Component, ComponentType>::value, "Type is not derived from Component.");
-
-		int index = 0;
-		for (auto& componentSlot : m_Components)
-		{
-			if (!componentSlot.IsValid())
-			{
-				componentSlot = component;
-				break;
-			}
-			++index;
-		}
-
-		component->m_Entity = ObjectPtr<Entity>(this);
-		if (index >= m_Components.size())
-		{
-			m_Components.push_back(component);
-		}
-		if (IsActiveInHierarchy())
-		{
-			AddComponentToScene(component);
-			if (component->CanExecute())
-			{
-				if (!component->m_IsCreated)
-				{
-					component->OnCreate();
-					component->m_IsCreated = true;
-				}
-				if (!component->m_IsActive)
-				{
-					component->OnEnable();
-					component->m_IsActive = true;
-				}
-			}
-		}
+		ComponentType* component = Object::Create<ComponentType>();
+		AddComponent(component);
+		return component;
 	}
 
 	template<class ComponentType>
 	inline ComponentType* Entity::GetComponent()
 	{
-		for (auto& component : m_Components)
-		{
-			if (component.IsValid() && component->IsClassType(ComponentType::Type))
-			{
-				return static_cast<ComponentType*>(component.Get());
-			}
-		}
+		static_assert(std::is_base_of<Component, ComponentType>::value, "Type is not derived from Component.");
+		return static_cast<ComponentType*>(GetComponent(ComponentType::Type));
+	}
 
-		return nullptr;
+	template<class ComponentType>
+	inline ComponentType* Entity::GetComponentInParent()
+	{
+		static_assert(std::is_base_of<Component, ComponentType>::value, "Type is not derived from Component.");
+		return static_cast<ComponentType*>(GetComponentInParent(ComponentType::Type));
+	}
+
+	template<class ComponentType>
+	inline ComponentType* Entity::GetComponentInChildren()
+	{
+		static_assert(std::is_base_of<Component, ComponentType>::value, "Type is not derived from Component.");
+		return static_cast<ComponentType*>(GetComponentInChildren(ComponentType::Type));
 	}
 
 	template<class ComponentType>
 	inline bool Entity::HasComponent()
 	{
-		for (auto& component : m_Components)
-		{
-			if (component.IsValid() && component->IsClassType(ComponentType::Type))
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-
-	template<class ComponentType>
-	inline void Entity::RemoveComponent(ComponentType* component)
-	{
-		RemoveComponentFromScene(component);
-		if (component->CanExecute())
-		{
-			component->OnDisable();
-			component->OnDestroy();
-		}
-		auto& index = std::find(m_Components.begin(), m_Components.end(), component);
-		m_Components.erase(index);
-		Object::Destroy(component);
+		static_assert(std::is_base_of<Component, ComponentType>::value, "Type is not derived from Component.");
+		return HasComponent(ComponentType::Type);
 	}
 }

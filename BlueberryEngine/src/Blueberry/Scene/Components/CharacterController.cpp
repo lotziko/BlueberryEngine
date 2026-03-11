@@ -49,6 +49,7 @@ namespace Blueberry
 		JPH::Ref<JPH::CharacterVirtual> character;
 		JPH::RefConst<JPH::Shape> shape;
 		JPH::BodyID bodyId;
+		JPH::RVec3 previousPosition;
 	};
 
 	CharacterController::CharacterController()
@@ -77,6 +78,7 @@ namespace Blueberry
 		settings.mSupportingVolume = JPH::Plane(JPH::Vec3::sAxisY(), -s_CharacterRadiusStanding); // Accept contacts that touch the lower sphere of the capsule
 
 		m_PrivateData->character = new JPH::CharacterVirtual(&settings, JPH::RVec3(position.x, position.y, position.z), JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w), 0, Physics::s_PhysicsSystem);
+		m_PrivateData->previousPosition = JPH::RVec3(position.x, position.y, position.z);
 	}
 
 	void CharacterController::OnDestroy()
@@ -131,17 +133,21 @@ namespace Blueberry
 		}
 		newVelocity += (Physics::s_PhysicsSystem->GetGravity()) * deltaTime;
 
-		JPH::Vec3 currentVelocity = character->GetUp() * character->GetLinearVelocity() + JPH::Vec3Arg(m_Velocity.x, m_Velocity.y, m_Velocity.z);
+		JPH::Vec3 currentVelocity = character->GetUp() * character->GetLinearVelocity() + JPH::Vec3Arg(m_DesiredVelocity.x, m_DesiredVelocity.y, m_DesiredVelocity.z);
 		newVelocity += currentVelocity - currentVerticalVelocity;
 		character->SetLinearVelocity(newVelocity);
+
+		JPH::RVec3 position = character->GetPosition();
+		JPH::RVec3 realVelocity = (position - m_PrivateData->previousPosition) / deltaTime;
+		m_RealVelocity = Vector3(realVelocity[0], realVelocity[1], realVelocity[2]);
+		m_PrivateData->previousPosition = position;
 	}
 
 	void CharacterController::OnUpdate()
 	{
 		auto& character = m_PrivateData->character;
 
-		JPH::RVec3 position;
-		position = character->GetPosition();
+		JPH::RVec3 position = character->GetPosition();
 		m_Transform->SetPosition(Vector3(position[0], position[1], position[2]));
 	}
 
@@ -155,8 +161,13 @@ namespace Blueberry
 		return m_Radius;
 	}
 
-	void CharacterController::SetVelocity(const Vector3& velocity)
+	void CharacterController::SetDesiredVelocity(const Vector3& velocity)
 	{
-		m_Velocity = velocity;
+		m_DesiredVelocity = velocity;
+	}
+
+	const Vector3& CharacterController::GetRealVelocity()
+	{
+		return m_RealVelocity;
 	}
 }

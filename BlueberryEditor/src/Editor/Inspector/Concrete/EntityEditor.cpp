@@ -16,18 +16,23 @@
 
 namespace Blueberry
 {
-	bool ShouldHideType(const size_t type, const ClassInfo& info)
+	bool ShouldHideType(const ClassInfo& info)
 	{
 		if (info.createInstance == nullptr)
 		{
 			return true;
 		}
 
-		if (!ClassDB::IsParent(type, Component::Type))
+		if (!ClassDB::IsParent(info.id, Component::Type))
 		{
 			return true;
 		}
 
+		return false;
+	}
+
+	bool EntityEditor::IsInspectorPadded()
+	{
 		return false;
 	}
 
@@ -37,15 +42,31 @@ namespace Blueberry
 		m_ComponentsProperty = m_SerializedObject->FindProperty("m_Components");
 		
 		auto& targets = m_SerializedObject->GetTargets();
-		Dictionary<size_t, List<Object*>> components;
+		List<std::pair<size_t, List<Object*>>> components;
 		for (Object* target : targets)
 		{
 			Entity* entity = static_cast<Entity*>(target);
-			for (uint32_t i = 0; i < entity->GetComponentCount(); ++i)
+			for (size_t i = 0; i < entity->GetComponentCount(); ++i)
 			{
-				Component* component = entity->GetComponent(i);
-				size_t type = component->GetType();
-				components[type].push_back(component);
+				Component* component = entity->GetComponentAt(i);
+				TypeId type = component->GetType();
+				bool foundPlace = false;
+				for (size_t j = 0; j < components.size(); ++j)
+				{
+					auto& pair = components[i];
+					if (pair.first == type)
+					{
+						pair.second.push_back(component);
+						foundPlace = true;
+						break;
+					}
+				}
+				if (!foundPlace)
+				{
+					List<Object*> list;
+					list.push_back(component);
+					components.push_back(std::make_pair(type, std::move(list)));
+				}
 			}
 		}
 		
@@ -131,20 +152,20 @@ namespace Blueberry
 
 		if (ImGui::BeginPopup("addComponent"))
 		{
-			auto infos = ClassDB::GetInfos();
+			auto& infos = ClassDB::GetInfos();
 
-			for (auto info : infos)
+			for (auto& info : infos)
 			{
-				if (ShouldHideType(info.first, info.second))
+				if (ShouldHideType(info))
 				{
 					continue;
 				}
 
-				if (ImGui::Selectable(info.second.name.c_str()))
+				if (ImGui::Selectable(info.name.c_str()))
 				{
 					for (Object* target : m_SerializedObject->GetTargets())
 					{
-						m_AddedComponents.push_back(std::make_pair(static_cast<Entity*>(target), static_cast<Component*>(info.second.Create())));
+						m_AddedComponents.push_back(std::make_pair(static_cast<Entity*>(target), static_cast<Component*>(info.Create())));
 					}
 				}
 			}

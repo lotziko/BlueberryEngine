@@ -31,7 +31,7 @@ namespace Blueberry
 		void SaveAndReimport();
 		// TODO need a way to determine count of not imported assets in this importer
 		
-		static AssetImporter* CreateNew(const size_t& type, const std::filesystem::path& relativePath, const std::filesystem::path& relativeMetaPath);
+		static AssetImporter* CreateNew(const TypeId& type, const std::filesystem::path& relativePath, const std::filesystem::path& relativeMetaPath);
 		static AssetImporter* CreateFromMeta(const std::filesystem::path& relativePath, const std::filesystem::path& relativeMetaPath);
 		static void LoadFromMeta(AssetImporter* importer);
 		

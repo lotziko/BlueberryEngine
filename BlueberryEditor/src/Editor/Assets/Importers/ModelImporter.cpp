@@ -24,7 +24,7 @@ namespace Blueberry
 	DATA_DEFINITION(ModelMaterialData)
 	{
 		DEFINE_FIELD(ModelMaterialData, m_Name, BindingType::String, {})
-		DEFINE_FIELD(ModelMaterialData, m_Material, BindingType::ObjectPtr, FieldOptions().SetObjectType(Material::Type))
+		DEFINE_FIELD(ModelMaterialData, m_Material, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Material::Type))
 	}
 
 	DATA_DEFINITION(ModelAnimationClipData)
@@ -38,8 +38,8 @@ namespace Blueberry
 	OBJECT_DEFINITION(ModelImporter, AssetImporter)
 	{
 		DEFINE_BASE_FIELDS(ModelImporter, AssetImporter)
-		DEFINE_FIELD(ModelImporter, m_Materials, BindingType::DataList, FieldOptions().SetObjectType(ModelMaterialData::Type))
-		DEFINE_FIELD(ModelImporter, m_AnimationClips, BindingType::DataList, FieldOptions().SetObjectType(ModelAnimationClipData::Type))
+		DEFINE_FIELD(ModelImporter, m_Materials, BindingType::DataList, FieldOptions().SetObjectType(&ModelMaterialData::Type))
+		DEFINE_FIELD(ModelImporter, m_AnimationClips, BindingType::DataList, FieldOptions().SetObjectType(&ModelAnimationClipData::Type))
 		DEFINE_FIELD(ModelImporter, m_Scale, BindingType::Float, {})
 		DEFINE_FIELD(ModelImporter, m_GenerateLightmapUV, BindingType::Bool, {})
 		DEFINE_FIELD(ModelImporter, m_GeneratePhysicsShape, BindingType::Bool, {})
@@ -167,7 +167,8 @@ namespace Blueberry
 		fbxsdk::FbxNode* rootNode = scene->GetRootNode();
 		List<Object*> objects;
 		Dictionary<fbxsdk::FbxNode*, NodeData> nodeToData;
-		PrefabInstance* instance = GetOrCreateAssetObject<PrefabInstance>(PrefabInstance::Type);
+		size_t prefabInstanceFileId = TO_HASH("PrefabInstance");
+		PrefabInstance* instance = GetOrCreateAssetObject<PrefabInstance>(prefabInstanceFileId);
 		objects.push_back(instance);
 
 		// Collapse root
@@ -583,7 +584,7 @@ namespace Blueberry
 			}
 			SubMeshData subMesh = {};
 			subMesh.SetIndexStart(0);
-			subMesh.SetIndexCount(indices.size());
+			subMesh.SetIndexCount(static_cast<uint32_t>(indices.size()));
 			submeshes.push_back(subMesh);
 		}
 		

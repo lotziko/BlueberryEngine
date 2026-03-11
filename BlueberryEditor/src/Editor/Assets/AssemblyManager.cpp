@@ -246,6 +246,7 @@ namespace Blueberry
 		ss << "{\n";
 		ss << "    .CompilerInputPath	= 'src\\'\n";
 		ss << "    .CompilerOutputPath	= 'bin-int\\" << GetDebugReleaseFolder() << "\\GameAssembly\\'\n";
+		ss << "    .CompilerOptions + \' /Isrc\'";
 		ss << "}\n";
 		ss << "\n";
 		ss << "DLL( 'GameAssembly' )\n";

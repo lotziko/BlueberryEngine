@@ -17,7 +17,7 @@ namespace Blueberry
 	{
 		PathData result = {};
 		result.context = reinterpret_cast<char*>(object);
-		size_t type = object->GetType();
+		TypeId type = object->GetType();
 
 		size_t offset = 0;
 		for (size_t i = 0; i < path.size(); ++i)

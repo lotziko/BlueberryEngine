@@ -40,18 +40,18 @@ namespace Blueberry
 	DATA_DEFINITION(ReflectionProbeData)
 	{
 		DEFINE_FIELD(ReflectionProbeData, m_ObjectId, BindingType::Raw, FieldOptions().SetSize(sizeof(GlobalObjectId)))
-		DEFINE_FIELD(ReflectionProbeData, m_TextureCube, BindingType::ObjectPtr, FieldOptions().SetObjectType(TextureCube::Type))
+		DEFINE_FIELD(ReflectionProbeData, m_TextureCube, BindingType::ObjectPtr, FieldOptions().SetObjectType(&TextureCube::Type))
 	}
 
 	OBJECT_DEFINITION(LightingData, Object)
 	{
 		DEFINE_PREFER_BINARY()
-		DEFINE_FIELD(LightingData, m_Lightmap, BindingType::ObjectPtr, FieldOptions().SetObjectType(Texture2D::Type))
-		DEFINE_FIELD(LightingData, m_ProbeVolume, BindingType::ObjectPtr, FieldOptions().SetObjectType(Texture3D::Type))
+		DEFINE_FIELD(LightingData, m_Lightmap, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Texture2D::Type))
+		DEFINE_FIELD(LightingData, m_ProbeVolume, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Texture3D::Type))
 		DEFINE_FIELD(LightingData, m_ChartScaleOffset, BindingType::ByteData, {})
 		DEFINE_FIELD(LightingData, m_ChartInstanceOffset, BindingType::ByteData, {})
-		DEFINE_FIELD(LightingData, m_MeshRenderers, BindingType::DataList, FieldOptions().SetObjectType(MeshRendererData::Type))
-		DEFINE_FIELD(LightingData, m_ReflectionProbes, BindingType::DataList, FieldOptions().SetObjectType(ReflectionProbeData::Type))
+		DEFINE_FIELD(LightingData, m_MeshRenderers, BindingType::DataList, FieldOptions().SetObjectType(&MeshRendererData::Type))
+		DEFINE_FIELD(LightingData, m_ReflectionProbes, BindingType::DataList, FieldOptions().SetObjectType(&ReflectionProbeData::Type))
 		DEFINE_FIELD(LightingData, m_ChartOffsetScale, BindingType::Vector4List, {})
 	}
 
@@ -192,6 +192,7 @@ namespace Blueberry
 		}
 		else
 		{
+			GfxDevice::SetGlobalTexture(s_LightmapTextureId, DefaultTextures::GetWhite2D()->Get());
 			return;
 		}
 
@@ -277,6 +278,10 @@ namespace Blueberry
 		if (m_ProbeVolume.IsValid() && m_ProbeVolume->GetState() == ObjectState::Default)
 		{
 			GfxDevice::SetGlobalTexture(s_ProbeVolumeTextureId, m_ProbeVolume->Get());
+		}
+		else
+		{
+			GfxDevice::SetGlobalTexture(s_ProbeVolumeTextureId, DefaultTextures::GetWhite3D()->Get());
 		}
 	}
 
@@ -394,6 +399,8 @@ namespace Blueberry
 
 	void LightingData::Clear()
 	{
-		// need to set textures to null  Shader::SetKeyword(s_LightmapId, false);
+		GfxDevice::SetGlobalTexture(s_LightmapTextureId, DefaultTextures::GetWhite2D()->Get());
+		GfxDevice::SetGlobalTexture(s_ProbeVolumeTextureId, DefaultTextures::GetWhite3D()->Get());
+		GfxDevice::SetGlobalTexture(s_ReflectionTextureId, DefaultTextures::GetBlackCubeArray()->Get());
 	}
 }

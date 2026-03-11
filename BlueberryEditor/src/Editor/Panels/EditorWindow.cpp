@@ -177,7 +177,7 @@ namespace Blueberry
 		WindowEvents::GetWindowClosing().RemoveCallback<&EditorWindow::OnWindowClosing>();
 	}
 
-	bool EditorWindow::Save(const size_t& type)
+	bool EditorWindow::Save(const TypeId& type)
 	{
 		bool result = true;
 		for (auto& window : s_ActiveWindows)
@@ -210,7 +210,7 @@ namespace Blueberry
 		return Save(EditorWindow::Type);
 	}
 
-	bool EditorWindow::IsFocused(const size_t& type)
+	bool EditorWindow::IsFocused(const TypeId& type)
 	{
 		for (auto& window : s_ActiveWindows)
 		{
@@ -249,8 +249,6 @@ namespace Blueberry
 			s_ToRemoveWindows.clear();
 		}
 
-		bool show_demo_window = true;
-
 		for (auto& window : s_ActiveWindows)
 		{
 			window->DrawUI();
@@ -274,7 +272,7 @@ namespace Blueberry
 		}
 	}
 
-	EditorWindow* EditorWindow::GetWindow(const size_t& type)
+	EditorWindow* EditorWindow::GetWindow(const TypeId& type)
 	{
 		for (auto& window : s_ActiveWindows)
 		{

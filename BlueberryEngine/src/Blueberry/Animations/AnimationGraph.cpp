@@ -8,7 +8,7 @@ namespace Blueberry
 	OBJECT_DEFINITION(AnimationGraph, Object)
 	{
 		DEFINE_BASE_FIELDS(AnimationGraph, Object)
-		DEFINE_FIELD(AnimationGraph, m_AnimationClip, BindingType::ObjectPtr, FieldOptions().SetObjectType(AnimationClip::Type))
+		DEFINE_FIELD(AnimationGraph, m_AnimationClip, BindingType::ObjectPtr, FieldOptions().SetObjectType(&AnimationClip::Type))
 	}
 
 	uint32_t AnimationGraph::GetBoneIndex(const String& name)

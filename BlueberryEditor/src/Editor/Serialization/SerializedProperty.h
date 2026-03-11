@@ -69,7 +69,7 @@ namespace Blueberry
 		const ObjectPtr<Object>& GetObjectPtr();
 		void SetObjectPtr(const ObjectPtr<Object>& value);
 
-		const size_t& GetObjectPtrType();
+		const TypeId& GetObjectPtrType();
 
 		bool Next(const bool& enterChildren = true);
 		SerializedProperty FindProperty(const String& name);

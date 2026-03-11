@@ -5,16 +5,16 @@
 
 namespace Blueberry
 {
-	Dictionary<size_t, ObjectEditorInfo> ObjectEditorDB::s_ObjectEditors = {};
+	Dictionary<TypeId, ObjectEditorInfo> ObjectEditorDB::s_ObjectEditors = {};
 
-	Dictionary<size_t, ObjectEditorInfo>& Blueberry::ObjectEditorDB::GetInfos()
+	Dictionary<TypeId, ObjectEditorInfo>& Blueberry::ObjectEditorDB::GetInfos()
 	{
 		return s_ObjectEditors;
 	}
 
-	const ObjectEditorInfo* ObjectEditorDB::GetInfo(const size_t& id)
+	const ObjectEditorInfo* ObjectEditorDB::GetInfo(const TypeId& id)
 	{
-		size_t inheritsId = id;
+		TypeId inheritsId = id;
 		while (true)
 		{
 			auto objectEditorIt = s_ObjectEditors.find(inheritsId);

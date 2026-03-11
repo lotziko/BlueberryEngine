@@ -11,7 +11,7 @@ namespace Blueberry
 	OBJECT_DEFINITION(Animator, Component)
 	{
 		DEFINE_BASE_FIELDS(Animator, Component)
-		DEFINE_FIELD(Animator, m_AnimationGraph, BindingType::ObjectPtr, FieldOptions().SetObjectType(AnimationGraph::Type).SetUpdateCallback(MethodBind::Create(&Animator::RefreshState)))
+		DEFINE_FIELD(Animator, m_AnimationGraph, BindingType::ObjectPtr, FieldOptions().SetObjectType(&AnimationGraph::Type).SetUpdateCallback(MethodBind::Create(&Animator::RefreshState)))
 		DEFINE_ITERATOR(UpdatableComponent)
 	}
 

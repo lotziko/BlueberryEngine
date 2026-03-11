@@ -22,3 +22,9 @@
 #define INVALID_ID -1
 #define TO_STRING( x ) #x
 #define TO_HASH( x ) std::hash<String>()(x)
+
+namespace Blueberry
+{
+	using TypeId = uint32_t;
+	using ObjectId = int32_t;
+}

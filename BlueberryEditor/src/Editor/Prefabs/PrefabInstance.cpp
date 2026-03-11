@@ -11,25 +11,25 @@ namespace Blueberry
 {
 	DATA_DEFINITION(PrefabModificationData)
 	{
-		DEFINE_FIELD(PrefabModificationData, m_Target, BindingType::ObjectPtr, FieldOptions().SetObjectType(Object::Type))
+		DEFINE_FIELD(PrefabModificationData, m_Target, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Object::Type))
 		DEFINE_FIELD(PrefabModificationData, m_Path, BindingType::String, {})
 		DEFINE_FIELD(PrefabModificationData, m_Value, BindingType::Variant, {})
 	}
 
 	DATA_DEFINITION(PrefabAddedEntityData)
 	{
-		DEFINE_FIELD(PrefabAddedEntityData, m_Parent, BindingType::ObjectPtr, FieldOptions().SetObjectType(Transform::Type))
-		DEFINE_FIELD(PrefabAddedEntityData, m_Entity, BindingType::ObjectPtr, FieldOptions().SetObjectType(Entity::Type))
+		DEFINE_FIELD(PrefabAddedEntityData, m_Parent, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Transform::Type))
+		DEFINE_FIELD(PrefabAddedEntityData, m_Entity, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Entity::Type))
 		DEFINE_FIELD(PrefabAddedEntityData, m_Index, BindingType::Int, {})
 	}
 
 	OBJECT_DEFINITION(PrefabInstance, Object)
 	{
 		DEFINE_BASE_FIELDS(PrefabInstance, Object)
-		DEFINE_FIELD(PrefabInstance, m_SourcePrefab, BindingType::ObjectPtr, FieldOptions().SetObjectType(PrefabInstance::Type))
-		DEFINE_FIELD(PrefabInstance, m_Parent, BindingType::ObjectPtr, FieldOptions().SetObjectType(Transform::Type))
-		DEFINE_FIELD(PrefabInstance, m_Modifications, BindingType::DataList, FieldOptions().SetObjectType(PrefabModificationData::Type))
-		DEFINE_FIELD(PrefabInstance, m_AddedEntities, BindingType::DataList, FieldOptions().SetObjectType(PrefabAddedEntityData::Type))
+		DEFINE_FIELD(PrefabInstance, m_SourcePrefab, BindingType::ObjectPtr, FieldOptions().SetObjectType(&PrefabInstance::Type))
+		DEFINE_FIELD(PrefabInstance, m_Parent, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Transform::Type))
+		DEFINE_FIELD(PrefabInstance, m_Modifications, BindingType::DataList, FieldOptions().SetObjectType(&PrefabModificationData::Type))
+		DEFINE_FIELD(PrefabInstance, m_AddedEntities, BindingType::DataList, FieldOptions().SetObjectType(&PrefabAddedEntityData::Type))
 	}
 
 	Object* PrefabModificationData::GetTarget()

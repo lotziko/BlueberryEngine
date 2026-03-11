@@ -5,22 +5,23 @@
 
 namespace Blueberry
 {
-#define TO_OBJECT_TYPE( classname ) TO_HASH( classname )
+	TypeId GenerateTypeId();
 
-	//********************************************************************************
-	// OBJECT_DECLARATION
-	// This macro must be included in the declaration of any subclass of Object.
-	// It declares variables used in type checking.
-	//********************************************************************************
+//********************************************************************************
+// OBJECT_DECLARATION
+// This macro must be included in the declaration of any subclass of Object.
+// It declares variables used in type checking.
+//********************************************************************************
 #define OBJECT_DECLARATION( classname )											\
 public:																			\
-    static const size_t Type;													\
-    static const size_t ParentType;												\
+    static TypeId Type;															\
+    static TypeId ParentType;													\
 	static const String TypeName;												\
+	static const String ParentTypeName;											\
 	static void DefineFields();													\
 public:																			\
-    virtual bool IsClassType( const size_t classType ) const override;			\
-	virtual size_t GetType() const override;									\
+    virtual bool IsClassType( const TypeId classType ) const override;			\
+	virtual TypeId GetType() const override;									\
 	virtual String GetTypeName() const override;								\
 
 //********************************************************************************
@@ -30,16 +31,17 @@ public:																			\
 // proper parentclass is indicated or the run-time type information will be incorrect.
 //********************************************************************************
 #define OBJECT_DEFINITION( childclass, parentclass )								\
-const size_t childclass::Type = TO_OBJECT_TYPE(TO_STRING(childclass));				\
-const size_t childclass::ParentType = TO_OBJECT_TYPE(TO_STRING(parentclass));		\
+TypeId childclass::Type = 0;														\
+TypeId childclass::ParentType = 0;													\
 const String childclass::TypeName = TO_STRING(childclass);							\
-bool childclass::IsClassType( const size_t classType ) const						\
+const String childclass::ParentTypeName = TO_STRING(parentclass);					\
+bool childclass::IsClassType( const TypeId classType ) const						\
 {																					\
     if ( classType == childclass::Type )											\
         return true;																\
     return parentclass::IsClassType( classType );									\
 }																					\
-size_t childclass::GetType() const													\
+TypeId childclass::GetType() const													\
 {																					\
 	return childclass::Type;														\
 }																					\
@@ -48,8 +50,6 @@ String childclass::GetTypeName() const												\
 	return childclass::TypeName;													\
 }																					\
 void childclass::DefineFields()														\
-
-	using ObjectId = int32_t;
 
 	enum class ObjectState
 	{
@@ -64,16 +64,17 @@ void childclass::DefineFields()														\
 	public:
 		BB_OVERRIDE_NEW_DELETE
 
-		static const size_t Type;
-		static const size_t ParentType;
+		static TypeId Type;
+		static TypeId ParentType;
 		static const String TypeName;
+		static const String ParentTypeName;
 
 	public:
 		Object() = default;
 		virtual ~Object() = default;
 
-		virtual bool IsClassType(const size_t classType) const;
-		virtual size_t GetType() const;
+		virtual bool IsClassType(const TypeId classType) const;
+		virtual TypeId GetType() const;
 		virtual String GetTypeName() const;
 
 	public:
@@ -107,12 +108,12 @@ void childclass::DefineFields()														\
 
 #define DATA_DECLARATION( classname )											\
 public:																			\
-    static const size_t Type;													\
+    static TypeId Type;															\
 	static const String TypeName;												\
 	static void DefineFields();													\
 
 #define DATA_DEFINITION( classname )											\
-const size_t classname::Type = TO_OBJECT_TYPE(TO_STRING(classname));			\
+TypeId classname::Type = 0;										\
 const String classname::TypeName = TO_STRING(classname);						\
 void classname::DefineFields()													\
 
@@ -124,7 +125,7 @@ void classname::DefineFields()													\
 		Data() = default;
 		~Data() = default;
 
-		static const size_t Type;
+		static const TypeId Type;
 		static const String TypeName;
 	};
 

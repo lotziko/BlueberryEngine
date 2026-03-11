@@ -15,15 +15,20 @@ namespace Blueberry
 			if (info->isDll)
 			{
 				SerializationTree tree = {};
-				tree.type = object->GetType();
+				tree.typeId = object->GetType();
+				tree.typeName = ClassDB::GetInfo(tree.typeId)->name;
 				tree.fileId = GetFileId(object->GetObjectId());
 				tree.objectId = object->GetObjectId();
 				tree.isText = false;
 				SerializeNode(tree.GetRoot(), Context::Create(object, object->GetType()));
 				// TODO handle components OnDisable()/OnDestroy() for now just ignore them because DEFINE_EXECUTE_ALWAYS() is rare
-				delete object;
+				objects.push_back(object);
 				m_Trees.push_back(tree);
 			}
+		}
+		for (Object* object : objects)
+		{
+			delete object;
 		}
 	}
 
@@ -31,7 +36,7 @@ namespace Blueberry
 	{
 		for (auto& tree : m_Trees)
 		{
-			const ClassInfo* info = ClassDB::GetInfo(tree.type);
+			const ClassInfo* info = ClassDB::GetInfo(tree.typeName);
 			Object* object = info->Create(tree.objectId);
 			ObjectDB::IdToObjectItem(tree.objectId)->object = object;
 			DeserializeNode(tree.GetConstRoot(), Context::Create(object, object->GetType()));

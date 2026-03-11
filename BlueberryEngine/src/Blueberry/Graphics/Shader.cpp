@@ -35,14 +35,14 @@ namespace Blueberry
 
 	DATA_DEFINITION(ShaderData)
 	{
-		DEFINE_FIELD(ShaderData, m_Passes, BindingType::DataList, FieldOptions().SetObjectType(PassData::Type))
-		DEFINE_FIELD(ShaderData, m_Properties, BindingType::DataList, FieldOptions().SetObjectType(PropertyData::Type))
+		DEFINE_FIELD(ShaderData, m_Passes, BindingType::DataList, FieldOptions().SetObjectType(&PassData::Type))
+		DEFINE_FIELD(ShaderData, m_Properties, BindingType::DataList, FieldOptions().SetObjectType(&PropertyData::Type))
 	}
 
 	OBJECT_DEFINITION(Shader, Object)
 	{
 		DEFINE_BASE_FIELDS(Shader, Object)
-		DEFINE_FIELD(Shader, m_Data, BindingType::Data, FieldOptions().SetObjectType(ShaderData::Type))
+		DEFINE_FIELD(Shader, m_Data, BindingType::Data, FieldOptions().SetObjectType(&ShaderData::Type))
 	}
 
 	List<size_t> Shader::s_ActiveKeywords = {};

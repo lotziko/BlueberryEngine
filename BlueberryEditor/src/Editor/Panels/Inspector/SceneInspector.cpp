@@ -9,6 +9,7 @@
 #include "Editor\Selection.h"
 #include "Editor\Menu\EditorMenuManager.h"
 #include "Editor\Serialization\SerializedObject.h"
+#include "Editor\Misc\ImGuiHelper.h"
 
 #include <imgui\imgui.h>
 
@@ -51,7 +52,16 @@ namespace Blueberry
 			{
 				if (m_Editor->GetSerializedObject()->IsValid())
 				{
+					bool isPadded = m_Editor->IsInspectorPadded();
+					if (isPadded)
+					{
+						ImGui::BeginPaddedArea(ImVec2(10, 5), ImVec2(10, 5));
+					}
 					m_Editor->DrawInspector();
+					if (isPadded)
+					{
+						ImGui::EndPaddedArea();
+					}
 				}
 				else
 				{
@@ -70,7 +80,7 @@ namespace Blueberry
 		List<Object*> selectedObjects = Selection::GetActiveObjects();
 		if (selectedObjects.size() > 0)
 		{
-			size_t type = selectedObjects[0]->GetType();
+			TypeId type = selectedObjects[0]->GetType();
 			for (size_t i = 1; i < selectedObjects.size(); ++i)
 			{
 				if (selectedObjects[i]->GetType() != type)

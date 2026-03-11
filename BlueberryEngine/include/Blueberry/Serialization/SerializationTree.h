@@ -151,7 +151,8 @@ namespace Blueberry
 
 		void SetHierarchy(size_t childId, size_t parentId, size_t previousSiblingId);
 
-		size_t type;
+		TypeId typeId;
+		String typeName;
 		FileId fileId;
 		ObjectId objectId;
 		List<SerializationNode> nodes;

@@ -24,7 +24,9 @@ namespace Blueberry
 		const float& GetHeight();
 		const float& GetRadius();
 
-		void SetVelocity(const Vector3& velocity);
+		void SetDesiredVelocity(const Vector3& velocity);
+
+		const Vector3& GetRealVelocity();
 
 	private:
 		float m_Height = 2.0f;
@@ -33,8 +35,9 @@ namespace Blueberry
 		struct PrivateData;
 
 		PrivateData* m_PrivateData;
-		alignas(8) char m_PrivateStorage[24];
+		alignas(8) char m_PrivateStorage[48];
 		Transform* m_Transform;
-		Vector3 m_Velocity;
+		Vector3 m_DesiredVelocity;
+		Vector3 m_RealVelocity;
 	};
 }

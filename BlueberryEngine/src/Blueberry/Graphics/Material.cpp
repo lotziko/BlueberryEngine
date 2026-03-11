@@ -13,14 +13,14 @@ namespace Blueberry
 	DATA_DEFINITION(TextureData)
 	{
 		DEFINE_FIELD(TextureData, m_Name, BindingType::String, {})
-		DEFINE_FIELD(TextureData, m_Texture, BindingType::ObjectPtr, FieldOptions().SetObjectType(Texture::Type))
+		DEFINE_FIELD(TextureData, m_Texture, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Texture::Type))
 	}
 
 	OBJECT_DEFINITION(Material, Object)
 	{
 		DEFINE_BASE_FIELDS(Material, Object)
-		DEFINE_FIELD(Material, m_Shader, BindingType::ObjectPtr, FieldOptions().SetObjectType(Shader::Type))
-		DEFINE_FIELD(Material, m_Textures, BindingType::DataList, FieldOptions().SetObjectType(TextureData::Type))
+		DEFINE_FIELD(Material, m_Shader, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Shader::Type))
+		DEFINE_FIELD(Material, m_Textures, BindingType::DataList, FieldOptions().SetObjectType(&TextureData::Type))
 		DEFINE_FIELD(Material, m_ActiveKeywords, BindingType::StringList, {})
 	}
 

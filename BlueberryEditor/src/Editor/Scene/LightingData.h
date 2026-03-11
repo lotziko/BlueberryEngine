@@ -75,7 +75,7 @@ namespace Blueberry
 		void ApplyProbeVolume();
 		void ApplyReflections();
 
-		void Clear();
+		static void Clear();
 
 	private:
 		ObjectPtr<Texture2D> m_Lightmap;

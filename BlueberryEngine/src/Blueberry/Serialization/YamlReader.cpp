@@ -1,5 +1,6 @@
 #include "Blueberry\Serialization\YamlReader.h"
 
+#include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Serialization\SerializationTree.h"
 
 #include <fstream>
@@ -97,7 +98,8 @@ namespace Blueberry
 			++p;
 		}
 
-		tree.type = TO_OBJECT_TYPE(String(start, size_t(p - start)));
+		tree.typeName = String(start, size_t(p - start));
+		tree.typeId = ClassDB::GetTypeId(tree.typeName);
 
 		SkipWhitespace(p);
 

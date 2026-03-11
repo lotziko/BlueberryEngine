@@ -104,12 +104,12 @@ namespace Blueberry
 		{
 			DestroyEntity(child.Get()->GetEntity());
 		}
-		entity->OnDestroy();
 		if (entity->GetTransform()->GetParent() == nullptr)
 		{
 			RemoveFromRoot(entity);
 		}
 		m_Entities.erase(entity->GetObjectId());
+		entity->OnDestroy();
 		Object::Destroy(entity);
 	}
 

@@ -21,7 +21,7 @@ namespace Blueberry
 	static List<Object*> s_Objects = {};
 	static Object* s_SelectedObject = nullptr;
 
-	void ObjectPicker::Open(Object** object, const size_t& type)
+	void ObjectPicker::Open(Object** object, const TypeId& type)
 	{
 		s_IdPtr = object;
 		s_Label = Blueberry::ClassDB::GetInfo(type)->name.c_str();

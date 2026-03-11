@@ -21,7 +21,7 @@ namespace Blueberry
 		DEFINE_FIELD(Light, m_IsCastingShadows, BindingType::Bool, {})
 		DEFINE_FIELD(Light, m_IsCastingFog, BindingType::Bool, {})
 		DEFINE_FIELD(Light, m_IsCached, BindingType::Bool, {})
-		DEFINE_FIELD(Light, m_Cookie, BindingType::ObjectPtr, FieldOptions().SetObjectType(Texture::Type))
+		DEFINE_FIELD(Light, m_Cookie, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Texture::Type))
 		DEFINE_ITERATOR(Light)
 		DEFINE_EXECUTE_ALWAYS()
 	}

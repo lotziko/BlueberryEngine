@@ -69,7 +69,7 @@ namespace Blueberry
 	size_t GetKey(Mesh* mesh, const bool& isConvex, const Vector3& scale)
 	{
 		size_t mask = (scale.x > 0 ? 1 : 0) | (scale.y > 0 ? 2 : 0) | (scale.z > 0 ? 4 : 0);
-		return static_cast<size_t>(mesh->GetObjectId()) | (isConvex ? 1 << 32 : 0) | mask << 33;
+		return static_cast<size_t>(mesh->GetObjectId()) | (isConvex ? 1ull << 32 : 0) | mask << 33;
 	}
 
 	void PhysicsShapeCache::Initialize(PhysicsShapeCache* shapeCache)

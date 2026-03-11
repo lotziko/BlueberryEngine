@@ -389,7 +389,7 @@ namespace Blueberry
 			float xf0 = Lerp(GradCoord(seed, x0, y0, xd0, yd0), GradCoord(seed, x1, y0, xd1, yd0), xs);
 			float xf1 = Lerp(GradCoord(seed, x0, y1, xd0, yd1), GradCoord(seed, x1, y1, xd1, yd1), xs);
 
-			return Lerp(xf0, xf1, ys) * 1.4247691104677813f;
+			return (Lerp(xf0, xf1, ys) * 1.4247691104677813f) * 0.5f + 0.5f;
 		}
 
 		static inline float Pi = 3.1415926535f;

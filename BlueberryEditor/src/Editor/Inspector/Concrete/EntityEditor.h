@@ -12,6 +12,7 @@ namespace Blueberry
 	public:
 		virtual ~EntityEditor() = default;
 
+		virtual bool IsInspectorPadded() override;
 		virtual void OnEnable() override;
 		virtual void OnDisable() override;
 		virtual void OnDrawInspector() override;

@@ -323,9 +323,9 @@ namespace Blueberry
 		m_SerializedObject->AddModifiedProperty(m_Id);
 	}
 
-	const size_t& SerializedProperty::GetObjectPtrType()
+	const TypeId& SerializedProperty::GetObjectPtrType()
 	{
-		return Get()->fieldInfo->options.objectType;
+		return *Get()->fieldInfo->options.objectType;
 	}
 
 	SerializedProperty::SerializedProperty(SerializedObject* serializedObject, size_t id)

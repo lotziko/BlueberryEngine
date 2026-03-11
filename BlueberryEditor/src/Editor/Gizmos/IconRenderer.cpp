@@ -98,7 +98,7 @@ namespace Blueberry
 			Entity* entity = pair.second.Get();
 			for (uint32_t i = 0; i < entity->GetComponentCount(); ++i)
 			{
-				Component* component = entity->GetComponent(i);
+				Component* component = entity->GetComponentAt(i);
 				ObjectEditor* editor = ObjectEditor::GetDefaultEditor(component);
 				if (editor != nullptr)
 				{

@@ -18,8 +18,8 @@ namespace Blueberry
 		DEFINE_FIELD(Transform, m_LocalScale, BindingType::Vector3, FieldOptions().SetUpdateCallback(MethodBind::Create(&Transform::InvalidateHierarchy)))
 		DEFINE_FIELD(Transform, m_IsStatic, BindingType::Bool, FieldOptions().SetUpdateCallback(MethodBind::Create(&Transform::InvalidateHierarchy)))
 		DEFINE_FIELD(Transform, m_LocalRotationEulerHint, BindingType::Vector3, FieldOptions().SetVisibility(VisibilityType::Hidden))
-		DEFINE_FIELD(Transform, m_Parent, BindingType::ObjectPtr, FieldOptions().SetObjectType(Transform::Type).SetVisibility(VisibilityType::Hidden))
-		DEFINE_FIELD(Transform, m_Children, BindingType::ObjectPtrList, FieldOptions().SetObjectType(Transform::Type).SetVisibility(VisibilityType::Hidden))
+		DEFINE_FIELD(Transform, m_Parent, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Transform::Type).SetVisibility(VisibilityType::Hidden))
+		DEFINE_FIELD(Transform, m_Children, BindingType::ObjectPtrList, FieldOptions().SetObjectType(&Transform::Type).SetVisibility(VisibilityType::Hidden))
 		DEFINE_EXECUTE_ALWAYS()
 	}
 

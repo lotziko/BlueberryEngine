@@ -6,16 +6,24 @@
 
 namespace Blueberry
 {
-	const size_t Object::Type = TO_OBJECT_TYPE(TO_STRING(Object));
-	const size_t Object::ParentType = 0;
+	TypeId Object::Type = 0;
+	TypeId Object::ParentType = 0;
 	const String Object::TypeName = "Object";
+	const String Object::ParentTypeName = "";
 	
-	bool Object::IsClassType(const size_t classType) const
+	TypeId GenerateTypeId()
+	{
+		static TypeId maxId = 0;
+		maxId += 1;
+		return maxId;
+	}
+
+	bool Object::IsClassType(const TypeId classType) const
 	{
 		return classType == Type;
 	}
 
-	size_t Object::GetType() const
+	TypeId Object::GetType() const
 	{
 		return Type;
 	}

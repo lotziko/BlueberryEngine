@@ -1,5 +1,6 @@
 #include "Blueberry\Serialization\BinaryWriter.h"
 
+#include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Serialization\SerializationTree.h"
 
 #include <fstream>
@@ -65,7 +66,21 @@ namespace Blueberry
 		{
 			rootNodeCount++;
 		}
-		context.dataStream.write(reinterpret_cast<char*>(&tree.type), sizeof(size_t));
+		const String& typeName = ClassDB::GetInfo(tree.typeId)->name;
+		uint32_t keyOffset = 0;
+		auto it = context.keyToOffset.find(typeName.c_str());
+		if (it != context.keyToOffset.end())
+		{
+			keyOffset = it->second;
+		}
+		else
+		{
+			keyOffset = static_cast<uint32_t>(context.streamSize);
+			context.keyToOffset[typeName] = keyOffset;
+			context.keyStream << typeName << '\0';
+			context.streamSize += typeName.size() + 1;
+		}
+		context.dataStream.write(reinterpret_cast<char*>(&keyOffset), sizeof(uint32_t));
 		context.dataStream.write(reinterpret_cast<char*>(&tree.fileId), sizeof(FileId));
 		context.dataStream.write(reinterpret_cast<char*>(&tree.isReference), sizeof(bool));
 		context.dataStream.write(reinterpret_cast<char*>(&rootNodeCount), sizeof(uint32_t));
@@ -79,7 +94,7 @@ namespace Blueberry
 
 	void BinaryWriter::Write(List<SerializationTree>& trees, std::ofstream& stream)
 	{
-		uint32_t version = 0;
+		uint32_t version = 1;
 		stream << 'B';
 		stream.write(reinterpret_cast<char*>(&version), sizeof(uint32_t));
 		std::stringstream keyStream;

@@ -13,10 +13,10 @@ namespace Blueberry
 	OBJECT_DEFINITION(SkinnedMeshRenderer, Renderer)
 	{
 		DEFINE_BASE_FIELDS(SkinnedMeshRenderer, Renderer)
-		DEFINE_FIELD(SkinnedMeshRenderer, m_Mesh, BindingType::ObjectPtr, FieldOptions().SetObjectType(Mesh::Type).SetUpdateCallback(MethodBind::Create(&SkinnedMeshRenderer::InvalidateBounds)))
-		DEFINE_FIELD(SkinnedMeshRenderer, m_Materials, BindingType::ObjectPtrList, FieldOptions().SetObjectType(Material::Type))
-		DEFINE_FIELD(SkinnedMeshRenderer, m_Root, BindingType::ObjectPtr, FieldOptions().SetObjectType(Transform::Type))
-		DEFINE_FIELD(SkinnedMeshRenderer, m_Bones, BindingType::ObjectPtrList, FieldOptions().SetObjectType(Transform::Type).SetVisibility(VisibilityType::NonExposed))
+		DEFINE_FIELD(SkinnedMeshRenderer, m_Mesh, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Mesh::Type).SetUpdateCallback(MethodBind::Create(&SkinnedMeshRenderer::InvalidateBounds)))
+		DEFINE_FIELD(SkinnedMeshRenderer, m_Materials, BindingType::ObjectPtrList, FieldOptions().SetObjectType(&Material::Type))
+		DEFINE_FIELD(SkinnedMeshRenderer, m_Root, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Transform::Type))
+		DEFINE_FIELD(SkinnedMeshRenderer, m_Bones, BindingType::ObjectPtrList, FieldOptions().SetObjectType(&Transform::Type).SetVisibility(VisibilityType::NonExposed))
 		DEFINE_ITERATOR(SkinnedMeshRenderer)
 		DEFINE_EXECUTE_ALWAYS()
 	}

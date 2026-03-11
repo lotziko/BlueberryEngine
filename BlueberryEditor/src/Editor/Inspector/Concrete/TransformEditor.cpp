@@ -32,6 +32,7 @@ namespace Blueberry
 
 	void TransformEditor::OnDrawInspector()
 	{
+		m_SerializedObject->Update();
 		ImGui::Property(&m_LocalPositionProperty, "Position");
 		if (ImGui::Property(&m_LocalRotationEulerHintProperty, "Rotation"))
 		{

@@ -1,7 +1,6 @@
 #include "SceneHierarchy.h"
 
 #include "Blueberry\Core\Base.h"
-#include "Blueberry\Core\Object.h"
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Scene.h"

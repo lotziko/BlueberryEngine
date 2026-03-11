@@ -56,7 +56,7 @@ namespace Blueberry
 	};
 
 	template<typename... Args>
-	class Delegate
+	class BB_API Delegate
 	{
 	public:
 		template<class OwnerObject, void(OwnerObject::*methodPtr)(Args...)>

@@ -51,9 +51,10 @@ namespace Blueberry
 						continue;
 					}
 				}
-				break;
+				return;
 			}
 		}
+		index = INVALID_ID;
 	}
 
 	bool ObjectIterator::operator!=(ObjectIterator other) const
@@ -75,7 +76,7 @@ namespace Blueberry
 
 	ObjectIterator ObjectView::end() const
 	{
-		return ObjectIterator(type, searchType, objectArray, std::max(objectArray->GetElementsCount(), 1u) - 1u);
+		return ObjectIterator(type, searchType, objectArray, INVALID_ID);
 	}
 
 	void ChunkedObjectArray::Initialize()
@@ -167,10 +168,13 @@ namespace Blueberry
 		auto guidIt = s_ObjectIdToGuid.find(id);
 		if (guidIt != s_ObjectIdToGuid.end())
 		{
+			auto fileIdIt = s_GuidToObjectId.find(guidIt->second.first);
+			if (fileIdIt != s_GuidToObjectId.end())
+			{
+				fileIdIt->second.erase(guidIt->second.second);
+			}
 			s_ObjectIdToGuid.erase(id);
 			s_ObjectIdToFileId.erase(id);
-			auto fileIdIt = s_GuidToObjectId.find(guidIt->second.first);
-			fileIdIt->second.erase(guidIt->second.second);
 		}
 		objectItem->object = nullptr;
 	}
@@ -192,7 +196,7 @@ namespace Blueberry
 		return item == nullptr ? nullptr : item->object;
 	}
 
-	ObjectView ObjectDB::GetObjects(const size_t& type, SearchObjectType searchType)
+	ObjectView ObjectDB::GetObjects(const TypeId& type, SearchObjectType searchType)
 	{
 		return ObjectView(type, searchType, &s_Array, 0);
 	}

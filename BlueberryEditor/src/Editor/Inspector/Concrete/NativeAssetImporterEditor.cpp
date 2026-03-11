@@ -1,4 +1,4 @@
-#include "AnimationGraphEditor.h"
+#include "NativeAssetImporterEditor.h"
 
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Misc\ImGuiHelper.h"
@@ -7,17 +7,16 @@
 
 namespace Blueberry
 {
-	void AnimationGraphEditor::OnDrawInspector()
+	void NativeAssetImporterEditor::OnDrawInspector()
 	{
-		ObjectEditor::OnDrawInspector();
-		if (ImGui::Button("Save"))
+		ImGui::BeginChangeCheck();
+		AssetImporterEditor::OnDrawInspector();
+		if (ImGui::EndChangeCheck())
 		{
 			for (Object* object : m_SerializedObject->GetTargets())
 			{
 				AssetDB::SetDirty(object);
 			}
-			AssetDB::SaveAssets();
-			AssetDB::Refresh();
 		}
 	}
 }

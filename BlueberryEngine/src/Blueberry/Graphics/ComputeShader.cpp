@@ -14,13 +14,13 @@ namespace Blueberry
 
 	DATA_DEFINITION(ComputeShaderData)
 	{
-		DEFINE_FIELD(ComputeShaderData, m_Kernels, BindingType::DataList, FieldOptions().SetObjectType(KernelData::Type))
+		DEFINE_FIELD(ComputeShaderData, m_Kernels, BindingType::DataList, FieldOptions().SetObjectType(&KernelData::Type))
 	}
 
 	OBJECT_DEFINITION(ComputeShader, Object)
 	{
 		DEFINE_BASE_FIELDS(ComputeShader, Object)
-		DEFINE_FIELD(ComputeShader, m_Data, BindingType::Data, FieldOptions().SetObjectType(ComputeShaderData::Type))
+		DEFINE_FIELD(ComputeShader, m_Data, BindingType::Data, FieldOptions().SetObjectType(&ComputeShaderData::Type))
 	}
 
 	void KernelData::SetName(const String& name)

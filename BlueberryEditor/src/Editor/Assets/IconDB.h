@@ -11,10 +11,10 @@ namespace Blueberry
 	{
 	public:
 		static Texture* GetAssetIcon(Object* asset);
-		static void Register(const size_t& type, const String& path);
+		static void Register(const TypeId& type, const String& path);
 
 	private:
-		static Dictionary<size_t, Texture*> s_AssetIcons;
+		static Dictionary<TypeId, Texture*> s_AssetIcons;
 	};
 
 #define REGISTER_ICON( objectType, path ) IconDB::Register(objectType, path);

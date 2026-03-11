@@ -9,7 +9,7 @@ namespace Blueberry
 	OBJECT_DEFINITION(Component, Object)
 	{
 		DEFINE_BASE_FIELDS(Component, Object)
-		DEFINE_FIELD(Component, m_Entity, BindingType::ObjectPtr, FieldOptions().SetObjectType(Entity::Type).SetVisibility(VisibilityType::Hidden))
+		DEFINE_FIELD(Component, m_Entity, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Entity::Type).SetVisibility(VisibilityType::Hidden))
 	}
 
 	const String& Component::GetName()
@@ -42,5 +42,6 @@ namespace Blueberry
 		return Application::IsRunning() || ClassDB::GetInfo(GetType())->executeAlways;
 	}
 
-	const size_t UpdatableComponent::Type = TO_OBJECT_TYPE(TO_STRING(UpdatableComponent));
+	TypeId UpdatableComponent::Type = 0;
+	const String UpdatableComponent::TypeName = "UpdatableComponent";
 }

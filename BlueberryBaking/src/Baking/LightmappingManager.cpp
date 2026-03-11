@@ -43,7 +43,8 @@ namespace Blueberry
 	// Maybe make a list of valid per chart texels instead of texture tiles?
 	struct ChartData
 	{
-		List<bool> mask;
+		List<uint64_t> mask;
+		Vector2Int maskSize;
 		Vector4 meshBounds;
 		Vector4 maskBounds;
 		Vector2Int position;
@@ -128,7 +129,8 @@ namespace Blueberry
 
 		uint32_t launchSize;
 		List<uint2> validTexels = {};
-		List<uint32_t> atlasMask = {};
+		List<uint64_t> atlasMask = {};
+		List<uint32_t> chartIndexMask = {};
 		CalculationResult result = {};
 		CUDABuffer pointLights = {};
 		CUDABVH bvh = {};
@@ -801,6 +803,122 @@ namespace Blueberry
 	{
 		return c1.size.x + c1.size.y > c2.size.x + c2.size.y;
 	}
+
+	bool IsChartFits(int i, int j, ChartData& chartData, List<uint64_t>& atlasMask, int blocksPerRow)
+	{
+		int startBlock = i / 64;
+		int bitOffset = i % 64;
+		Vector2Int maskSize = chartData.maskSize;
+
+		if (bitOffset == 0)
+		{
+			for (int y = 0; y < maskSize.y; y++)
+			{
+				for (int x = 0; x < maskSize.x; ++x)
+				{
+					uint64_t chartValue = chartData.mask[y * maskSize.x + x];
+					uint64_t atlasValue = atlasMask[(j + y) * blocksPerRow + startBlock + x];
+					if (atlasValue & chartValue)
+					{
+						return false;
+					}
+				}
+			}
+		}
+		else
+		{
+			for (int y = 0; y < maskSize.y; y++)
+			{
+				for (int x = 0; x < maskSize.x + 1; ++x)
+				{
+					/*int atlasBlockIndex = (j + y) * blocksPerRow + startBlock + x;
+					uint64_t chartValue = chartData.mask[y * maskSize.x + x];
+					uint64_t atlasValue = atlasMask[atlasBlockIndex] >> bitOffset;
+					if ((startBlock + x) < blocksPerRow - 1)
+					{
+						atlasValue |= atlasMask[atlasBlockIndex + 1] >> (64 - bitOffset);
+					}*/
+
+					int atlasBlockIndex = (j + y) * blocksPerRow + startBlock + x;
+					uint64_t chartValue = 0;
+					if (x < maskSize.x)
+					{
+						chartValue = chartData.mask[y * maskSize.x + x] << bitOffset;
+					}
+					if (x > 0)
+					{
+						chartValue |= chartData.mask[y * maskSize.x + x - 1] >> (64 - bitOffset);
+					}
+					uint64_t atlasValue = atlasMask[atlasBlockIndex];
+					if (atlasValue & chartValue)
+					{
+						return false;
+					}
+				}
+			}
+		}
+		return true;
+	}
+
+	void WriteChart(int i, int j, ChartData& chartData, List<uint64_t>& atlasMask, List<uint32_t>& chartIndexMask, List<uint2>& validTexels, int blocksPerRow, uint32_t maskChartOffset)
+	{
+		int size = blocksPerRow * 64;
+		int startBlock = i / 64;
+		int bitOffset = i % 64;
+		Vector2Int chartSize = chartData.size;
+		Vector2Int maskSize = chartData.maskSize;
+
+		if (bitOffset == 0)
+		{
+			for (int y = 0; y < maskSize.y; y++)
+			{
+				for (int x = 0; x < maskSize.x; ++x)
+				{
+					uint64_t chartValue = chartData.mask[y * maskSize.x + x];
+					atlasMask[(j + y) * blocksPerRow + startBlock + x] |= chartValue;
+
+					for (int z = 0; z < 64; ++z)
+					{
+						if (chartValue & (1ull << z))
+						{
+							int32_t index = (j + y) * size + (i + (x * 64 + z));
+							chartIndexMask[index] = maskChartOffset;
+							validTexels.push_back(make_uint2(i + (x * 64 + z), j + y));
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			for (int y = 0; y < maskSize.y; y++)
+			{
+				for (int x = 0; x < maskSize.x + 1; ++x)
+				{
+					uint64_t chartValue = 0;
+					if (x < maskSize.x)
+					{
+						chartValue = chartData.mask[y * maskSize.x + x] << bitOffset;
+					}
+					if (x > 0)
+					{
+						chartValue |= chartData.mask[y * maskSize.x + (x - 1)] >> (64 - bitOffset);
+					}
+					atlasMask[(j + y) * blocksPerRow + startBlock + x] |= chartValue;
+
+					for (int z = 0; z < 64; ++z)
+					{
+						if (chartValue & (1ull << z))
+						{
+							int32_t index = (j + y) * size + (i + (x * 64 + z - bitOffset));
+							chartIndexMask[index] = maskChartOffset;
+							validTexels.push_back(make_uint2(i + (x * 64 + z - bitOffset), j + y));
+						}
+					}
+				}
+			}
+		}
+	}
 	
 	void InitializeChartsAndBVH(LightmapperState& state)
 	{
@@ -923,7 +1041,8 @@ namespace Blueberry
 					chartData.meshBounds = meshChartBounds;
 					chartData.maskBounds = atlasChartBounds;
 					chartData.size = Vector2Int(roundedAtlasChartBounds.z - roundedAtlasChartBounds.x, roundedAtlasChartBounds.w - roundedAtlasChartBounds.y);
-					chartData.mask.resize(chartData.size.x * chartData.size.y);
+					chartData.maskSize = Vector2Int(chartData.size.x / 64 + (chartData.size.x % 64 > 0 ? 1 : 0), chartData.size.y);
+					chartData.mask.resize(chartData.maskSize.x * chartData.maskSize.y);
 					chartData.index = static_cast<uint32_t>(atlasCharts.size() + 1);
 					Vector2Int halfSize = Vector2Int(chartData.size.x / 2, chartData.size.y / 2);
 					uint32_t chartVertexCount = static_cast<uint32_t>(atlasVertices.size());
@@ -942,11 +1061,13 @@ namespace Blueberry
 									break;
 								}
 							}
-							for (int x1 = 0; x1 < 4; ++x1)
+							if (intersects)
 							{
+								int block = x / 64;
+								int bit = x % 64;
 								for (int y1 = 0; y1 < 4; ++y1)
 								{
-									chartData.mask[(x + x1) + (y + y1) * chartData.size.x] = intersects;
+									chartData.mask[(y + y1) * chartData.maskSize.x + block] |= 15ull << bit;
 								}
 							}
 						}
@@ -961,8 +1082,10 @@ namespace Blueberry
 		List<Vector3> uvs = {};
 
 		int32_t size = state.params.maxSize;
+		int32_t blocksPerRow = size / 64;
 		std::sort(atlasCharts.begin(), atlasCharts.end(), CompareCharts);
-		state.atlasMask.resize(size * size);
+		state.atlasMask.resize(size * blocksPerRow);
+		state.chartIndexMask.resize(size * size);
 
 		uint32_t maskChartOffset = 1;
 		uint32_t row = 0;
@@ -988,26 +1111,10 @@ namespace Blueberry
 				uint32_t columns = size - chart.size.x;
 				for (uint32_t i = 0; i < columns; i += 4)
 				{
-					if (state.atlasMask[j * size + i] == 0)
+					if (state.chartIndexMask[j * size + i] == 0)
 					{
 						// Check chart
-						bool canFit = true;
-						for (int32_t y = 0; y < chart.size.y; ++y)
-						{
-							for (int32_t x = 0; x < chart.size.x; ++x)
-							{
-								if (chart.mask[y * chart.size.x + x] && state.atlasMask[(j + y) * size + (i + x)] > 0)
-								{
-									canFit = false;
-									break;
-								}
-							}
-							if (!canFit)
-							{
-								break;
-							}
-						}
-						if (canFit)
+						if (IsChartFits(i, j, chart, state.atlasMask, blocksPerRow))
 						{
 							row = j;
 							placeFound = true;
@@ -1033,18 +1140,7 @@ namespace Blueberry
 								scale.x,
 								scale.y
 							);
-							for (int32_t y = 0; y < chart.size.y; ++y)
-							{
-								for (int32_t x = 0; x < chart.size.x; ++x)
-								{
-									int32_t index = (j + y) * size + (i + x);
-									if (state.atlasMask[index] == 0 && chart.mask[y * chart.size.x + x])
-									{
-										state.atlasMask[index] = maskChartOffset;
-										state.validTexels.push_back(make_uint2(i + x, j + y));
-									}
-								}
-							}
+							WriteChart(i, j, chart, state.atlasMask, state.chartIndexMask, state.validTexels, blocksPerRow, maskChartOffset);
 							break;
 						}
 					}
@@ -1096,7 +1192,7 @@ namespace Blueberry
 		state.validTexelsBuffer.upload(state.validTexels.data(), state.validTexels.size());
 		state.lightmappingParams.validTexels = reinterpret_cast<uint2*>(state.validTexelsBuffer.data);
 		state.lightmappingParams.validTexelsCount = static_cast<uint32_t>(state.validTexels.size());
-		state.chartIndexBuffer.upload(state.atlasMask.data(), state.atlasMask.size());
+		state.chartIndexBuffer.upload(state.chartIndexMask.data(), state.chartIndexMask.size());
 	}
 
 	void InitializeProbes(LightmapperState& state, Scene* scene)
@@ -1300,28 +1396,14 @@ namespace Blueberry
 
 	void FixCharts(Vector4* temp, Vector4* result, const Vector2Int& resultSize)
 	{
-		int atlasSize = static_cast<int>(s_State.atlasMask.size());
-		/*for (int j = 0; j < resultSize.y; ++j)
-		{
-			for (int i = 0; i < resultSize.x; ++i)
-			{
-				int index = j * resultSize.x + i;
-				Vector4 center = *(temp + index);
-				uint32_t centerChartIndex = s_State.atlasMask[index];
-
-				if (center.w > 0.5)
-				{
-					*(result + index) = Vector4(0, 1, 0, 1);
-				}
-			}
-		}*/
+		int atlasSize = static_cast<int>(s_State.chartIndexMask.size());
 		for (int j = 0; j < resultSize.y; ++j)
 		{
 			for (int i = 0; i < resultSize.x; ++i)
 			{
 				int index = j * resultSize.x + i;
 				Vector4 center = *(temp + index);
-				uint32_t centerChartIndex = s_State.atlasMask[index];
+				uint32_t centerChartIndex = s_State.chartIndexMask[index];
 
 				if (center.w > 0.5)
 				{
@@ -1337,7 +1419,7 @@ namespace Blueberry
 						if (nearbyIndex > 0 && nearbyIndex < atlasSize)
 						{
 							Vector4 nearby = *(temp + nearbyIndex);
-							uint32_t nearbyChartIndex = s_State.atlasMask[nearbyIndex];
+							uint32_t nearbyChartIndex = s_State.chartIndexMask[nearbyIndex];
 							if (nearby.w > 0.5 && nearbyChartIndex == centerChartIndex)
 							{
 								*(result + index) = nearby;

@@ -6,7 +6,7 @@ namespace Blueberry
 	class EditorAssetLoader final : public AssetLoader
 	{
 	public:
-		EditorAssetLoader();
+		EditorAssetLoader() = default;
 
 	protected:
 		virtual void LoadImpl(const Guid& guid) override;

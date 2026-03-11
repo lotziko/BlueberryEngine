@@ -667,7 +667,7 @@ bool ImGui::StringEdit(const char* label, std::string* v)
 	return result;
 }
 
-bool ImGui::ObjectEdit(const char* label, Blueberry::Object** v, const size_t& type)
+bool ImGui::ObjectEdit(const char* label, Blueberry::Object** v, const Blueberry::TypeId& type)
 {
 	PROPERTY_LABEL(label)
 	PROPERTY_BEGIN_VALUE()
@@ -736,7 +736,7 @@ bool ImGui::ObjectEdit(const char* label, Blueberry::Object** v, const size_t& t
 	return result;
 }
 
-bool ImGui::ObjectEdit(const char* label, Blueberry::ObjectPtr<Blueberry::Object>* v, const size_t& type)
+bool ImGui::ObjectEdit(const char* label, Blueberry::ObjectPtr<Blueberry::Object>* v, const Blueberry::TypeId& type)
 {
 	Blueberry::Object* object = v->Get();
 	if (ObjectEdit(label, &object, type))
@@ -747,7 +747,7 @@ bool ImGui::ObjectEdit(const char* label, Blueberry::ObjectPtr<Blueberry::Object
 	return false;
 }
 
-bool ImGui::ObjectArrayEdit(const char* label, Blueberry::List<Blueberry::ObjectPtr<Blueberry::Object>>* v, const size_t& type)
+bool ImGui::ObjectArrayEdit(const char* label, Blueberry::List<Blueberry::ObjectPtr<Blueberry::Object>>* v, const Blueberry::TypeId& type)
 {
 	ImGui::Text(label);
 	for (int i = 0; i < v->size(); ++i)

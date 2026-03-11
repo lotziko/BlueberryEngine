@@ -14,7 +14,7 @@ namespace Blueberry
 		{
 			stream << " reference";
 		}
-		stream << "\n" << ClassDB::GetInfo(tree.type)->name << ":\n";
+		stream << "\n" << ClassDB::GetInfo(tree.typeId)->name << ":\n";
 	}
 
 	void Indent(std::ofstream& stream, uint32_t value)
@@ -60,13 +60,16 @@ namespace Blueberry
 
 	void WriteNode(std::ofstream& stream, SerializationNode& node, SerializationTree& tree, uint32_t indent, bool& isSequenceElement)
 	{
-		if (indent > 0 && (node.flags & SerializationFlags::MAP) == 0)
+		if (indent > 0)
 		{
 			if (isSequenceElement)
 			{
-				Indent(stream, indent - 2);
-				stream << "- ";
-				isSequenceElement = false;
+				if ((node.flags & SerializationFlags::MAP) == 0)
+				{
+					Indent(stream, indent - 2);
+					stream << "- ";
+					isSequenceElement = false;
+				}
 			}
 			else
 			{

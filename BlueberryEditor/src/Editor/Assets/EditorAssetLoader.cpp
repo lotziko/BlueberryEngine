@@ -8,7 +8,6 @@
 #include "Blueberry\Tools\FileHelper.h"
 
 #include "Editor\Assets\AssetDB.h"
-#include "Editor\Assets\RegisterAssetImporters.h"
 #include "Editor\Assets\AssetImporter.h"
 #include "Editor\Assets\Importers\TextureImporter.h"
 #include "Editor\Assets\Importers\ShaderImporter.h"
@@ -22,11 +21,6 @@
 
 namespace Blueberry
 {
-	EditorAssetLoader::EditorAssetLoader()
-	{
-		RegisterAssetImporters();
-	}
-
 	void EditorAssetLoader::LoadImpl(const Guid& guid)
 	{
 		AssetImporter* importer = AssetDB::GetImporter(guid);
@@ -86,7 +80,7 @@ namespace Blueberry
 				DirectX::ScratchImage image = {};
 				TextureHelper::Load(image, path, ".png", parameters.first);
 				auto metadata = image.GetMetadata();
-				texture = Texture2D::Create(metadata.width, metadata.height, metadata.mipLevels, static_cast<TextureFormat>(metadata.format), parameters.second);
+				texture = Texture2D::Create(static_cast<uint32_t>(metadata.width), static_cast<uint32_t>(metadata.height), static_cast<uint32_t>(metadata.mipLevels), static_cast<TextureFormat>(metadata.format), parameters.second);
 				ObjectDB::AllocateIdToGuid(texture, guid, 1);
 				texture->SetData(static_cast<uint8_t*>(image.GetPixels()), image.GetPixelsSize());
 				texture->Apply();

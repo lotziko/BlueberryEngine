@@ -81,6 +81,7 @@ namespace Blueberry
 		PrefabInstance* instance = Object::Create<PrefabInstance>();
 		instance->m_SourcePrefab = source->m_SourcePrefab;
 		instance->m_Modifications = source->m_Modifications;
+		instance->m_UpdateCount = source->m_UpdateCount;
 		// TODO added instances and components
 		InitializeHierarchy(instance);
 		return instance;
@@ -326,6 +327,7 @@ namespace Blueberry
 					}
 				}
 			}
+			instance->m_UpdateCount = sourcePrefab->m_UpdateCount;
 		}
 	}
 
@@ -372,7 +374,7 @@ namespace Blueberry
 				ObjectDB::AllocateIdToGuid(entity, guid, entityFileId ^ childInstanceFileId);
 				for (size_t i = 0; i < entity->GetComponentCount(); ++i)
 				{
-					Component* component = entity->GetComponent(i);
+					Component* component = entity->GetComponentAt(i);
 					FileId componentFileId = ObjectDB::GetFileIdFromObject(component);
 					if (componentFileId != 0)
 					{
@@ -387,7 +389,7 @@ namespace Blueberry
 			s_ObjectToPrefabInstance.insert_or_assign(entity->GetObjectId(), rootInstanceObjectId);
 			for (size_t i = 0; i < entity->GetComponentCount(); ++i)
 			{
-				s_ObjectToPrefabInstance.insert_or_assign(entity->GetComponent(i)->GetObjectId(), rootInstanceObjectId);
+				s_ObjectToPrefabInstance.insert_or_assign(entity->GetComponentAt(i)->GetObjectId(), rootInstanceObjectId);
 			}
 		}
 		for (auto& child : child->GetChildren())

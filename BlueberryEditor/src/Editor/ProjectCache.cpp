@@ -4,6 +4,7 @@
 
 #include <fstream>
 #include <filesystem>
+#include <codecvt>
 
 namespace Blueberry
 {

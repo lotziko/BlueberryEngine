@@ -21,6 +21,7 @@ namespace Blueberry
 		GfxTexture* m_SceneDepthStencil = nullptr;
 		Material* m_SpriteObjectPickerMaterial = nullptr;
 		Material* m_MeshObjectPickerMaterial = nullptr;
+		Material* m_IconObjectPickerMaterial = nullptr;
 		Material* m_ObjectPickerOutlineMaterial = nullptr;
 	};
 }

@@ -51,14 +51,12 @@ namespace Blueberry
 		static AssetImporter* CreateImporter(const std::filesystem::path& path);
 
 	public:
-		static void Register(const String& extension, const size_t& importerType);
-		static void Register(const size_t& objectType, ObjectFinalizer* objectFinalizer);
-		static void FinalizeObject(Object* object, Guid guid, FileId fileId);
+		static void Register(const String& extension, const TypeId& importerType);
 
 	private:
-		static Dictionary<String, size_t> s_ImporterTypes;
+		static Dictionary<String, TypeId> s_ImporterTypes;
 		static Dictionary<String, AssetImporter*> s_Importers;
-		static List<std::pair<size_t, ObjectFinalizer*>> s_Finalizers;
+		static List<std::pair<TypeId, ObjectFinalizer*>> s_Finalizers;
 		static Dictionary<Guid, String> s_GuidToPath;
 		static List<ObjectId> s_DirtyAssets;
 		static AssetDBRefreshEvent s_AssetDBRefreshed;
@@ -74,5 +72,4 @@ namespace Blueberry
 	}
 
 	#define REGISTER_ASSET_IMPORTER( fileExtension, importerType ) AssetDB::Register(fileExtension, importerType)
-	#define REGISTER_OBJECT_FINALIZER( objectType, finalizerType ) AssetDB::Register(TO_OBJECT_TYPE(TO_STRING(objectType)), new finalizerType())
 }

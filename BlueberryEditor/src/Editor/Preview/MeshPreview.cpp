@@ -30,7 +30,7 @@ namespace Blueberry
 			m_Camera->SetOrthographic(false);
 			m_Camera->SetAspectRatio(1.0f);
 			m_Camera->SetFieldOfView(60.0f);
-			m_Camera->SetPixelSize(Vector2(target->GetWidth(), target->GetHeight()));
+			m_Camera->SetPixelSize(Vector2(static_cast<float>(target->GetWidth()), static_cast<float>(target->GetHeight())));
 			m_Camera->SetCameraType(CameraType::Preview);
 		}
 		m_Renderer->SetMesh(mesh);

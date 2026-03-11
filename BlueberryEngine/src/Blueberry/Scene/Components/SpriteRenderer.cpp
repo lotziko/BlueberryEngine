@@ -12,8 +12,8 @@ namespace Blueberry
 	{
 		DEFINE_BASE_FIELDS(SpriteRenderer, Renderer)
 		DEFINE_FIELD(SpriteRenderer, m_Color, BindingType::Color, {})
-		DEFINE_FIELD(SpriteRenderer, m_Texture, BindingType::ObjectPtr, FieldOptions().SetObjectType(Texture::Type))
-		DEFINE_FIELD(SpriteRenderer, m_Material, BindingType::ObjectPtr, FieldOptions().SetObjectType(Material::Type))
+		DEFINE_FIELD(SpriteRenderer, m_Texture, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Texture::Type))
+		DEFINE_FIELD(SpriteRenderer, m_Material, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Material::Type))
 		DEFINE_FIELD(SpriteRenderer, m_SortingOrder, BindingType::Int, {})
 	}
 

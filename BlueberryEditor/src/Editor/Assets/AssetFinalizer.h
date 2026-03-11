@@ -7,11 +7,9 @@ namespace Blueberry
 {
 	class Object;
 
-	class ObjectFinalizer
+	class AssetFinalizer
 	{
 	public:
-		BB_OVERRIDE_NEW_DELETE
-
-		virtual void Finalize(Object* object, const Guid& guid, const FileId& fileId) = 0;
+		static void Finalize(Object* object, const Guid& guid, const FileId& fileId);
 	};
 }
