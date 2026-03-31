@@ -87,7 +87,7 @@ namespace Blueberry
 		s_CurrentFieldInfos.push_back(std::move(info));
 	}
 
-	void ClassDB::DefineIterator(const TypeId& type)
+	void ClassDB::DefineIterator(TypeId* type)
 	{
 		s_CurrentClassInfo.iterators.push_back(type);
 	}
@@ -104,12 +104,14 @@ namespace Blueberry
 
 	TypeId ClassDB::GetOrCreateTypeId(const String& name)
 	{
+		static TypeId maxId = 0;
 		auto it = s_NameToTypeId.find(TO_HASH(name));
 		if (it != s_NameToTypeId.end())
 		{
 			return it->second;
 		}
-		return GenerateTypeId();
+		maxId += 1;
+		return maxId;
 	}
 
 	FieldOptions& FieldOptions::SetEnumHint(char* hintData)

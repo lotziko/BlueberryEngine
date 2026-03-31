@@ -7,12 +7,12 @@ namespace Blueberry
 	KeyTypeEvent InputEvents::s_KeyTyped = {};
 	MouseMoveEvent InputEvents::s_MouseMoved = {};
 
-	const KeyCode& KeyEventArgs::GetKeyCode() const
+	KeyCode KeyEventArgs::GetKeyCode() const
 	{
 		return m_KeyCode;
 	}
 
-	const wchar_t& KeyTypeEventArgs::GetKey() const
+	wchar_t KeyTypeEventArgs::GetKey() const
 	{
 		return m_Key;
 	}

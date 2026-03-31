@@ -13,7 +13,7 @@ namespace Blueberry
 		{
 		}
 
-		const KeyCode& GetKeyCode() const;
+		KeyCode GetKeyCode() const;
 
 	private:
 		KeyCode m_KeyCode;
@@ -26,7 +26,7 @@ namespace Blueberry
 		{
 		}
 
-		const wchar_t& GetKey() const;
+		wchar_t GetKey() const;
 
 	private:
 		wchar_t m_Key;

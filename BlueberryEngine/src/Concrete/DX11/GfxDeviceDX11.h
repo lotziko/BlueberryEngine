@@ -26,16 +26,16 @@ namespace Blueberry
 		virtual bool InitializeImpl(int width, int height, void* data) final;
 
 		virtual void ClearColorImpl(const Color& color) const final;
-		virtual void ClearDepthImpl(const float& depth) const final;
+		virtual void ClearDepthImpl(float depth) const final;
 		virtual void SwapBuffersImpl() final;
 
 		virtual void SetViewportImpl(int x, int y, int width, int height) final;
 		virtual void SetScissorRectImpl(int x, int y, int width, int height) final;
 		virtual void ResizeBackbufferImpl(int width, int height) final;
 
-		virtual const uint32_t& GetViewCountImpl() final;
-		virtual void SetViewCountImpl(const uint32_t& count) final;
-		virtual void SetDepthBiasImpl(const uint32_t& bias, const float& slopeBias) final;
+		virtual uint32_t GetViewCountImpl() final;
+		virtual void SetViewCountImpl(uint32_t count) final;
+		virtual void SetDepthBiasImpl(uint32_t bias, float slopeBias) final;
 
 		virtual bool CreateVertexShaderImpl(void* vertexData, GfxVertexShader*& shader) final;
 		virtual bool CreateGeometryShaderImpl(void* geometryData, GfxGeometryShader*& shader) final;
@@ -47,15 +47,15 @@ namespace Blueberry
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target) const final;
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Rectangle& area) const final;
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Vector2Int& offset, const Rectangle& area) const final;
-		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const uint32_t& sourceSlice, const uint32_t& targetSlice, const uint32_t& mipLevel) const final;
+		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, uint32_t sourceSlice, uint32_t targetSlice, uint32_t mipLevel) const final;
 
 		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture) final;
-		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, const uint32_t& slice) final;
-		virtual void SetGlobalBufferImpl(const size_t& id, GfxBuffer* buffer) final;
-		virtual void SetGlobalTextureImpl(const size_t& id, GfxTexture* texture) final;
+		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, uint32_t slice) final;
+		virtual void SetGlobalBufferImpl(size_t id, GfxBuffer* buffer) final;
+		virtual void SetGlobalTextureImpl(size_t id, GfxTexture* texture) final;
 		virtual void DrawImpl(const GfxDrawingOperation& operation) final;
 
-		virtual void DispatchImpl(GfxComputeShader* shader, const uint32_t& threadGroupsX, const uint32_t& threadGroupsY, const uint32_t& threadGroupsZ) final;
+		virtual void DispatchImpl(GfxComputeShader* shader, uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ) final;
 
 		virtual Matrix GetGPUMatrixImpl(const Matrix& viewProjection) const final;
 
@@ -69,12 +69,12 @@ namespace Blueberry
 
 		void Clear();
 
-		ID3D11RasterizerState* GetRasterizerState(const CullMode& mode, const bool& isCounterClockwise);
-		ID3D11BlendState* GetBlendState(const BlendMode& blendSrcColor, const BlendMode& blendSrcAlpha, const BlendMode& blendDstColor, const BlendMode& blendDstAlpha);
-		ID3D11DepthStencilState* GetDepthStencilState(const ZTest& zTest, const ZWrite& zWrite);
-		ID3D11SamplerState* GetSamplerState(const WrapMode& wrapMode, const FilterMode& filterMode);
+		ID3D11RasterizerState* GetRasterizerState(CullMode mode, bool isCounterClockwise);
+		ID3D11BlendState* GetBlendState(BlendMode blendSrcColor, BlendMode blendSrcAlpha, BlendMode blendDstColor, BlendMode blendDstAlpha);
+		ID3D11DepthStencilState* GetDepthStencilState(ZTest zTest, ZWrite zWrite);
+		ID3D11SamplerState* GetSamplerState(WrapMode wrapMode, FilterMode filterMode);
 
-		const uint32_t& GetCRC();
+		uint32_t GetCRC();
 
 		HWND m_Hwnd;
 

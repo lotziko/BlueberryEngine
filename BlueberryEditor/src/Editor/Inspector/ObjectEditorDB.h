@@ -16,10 +16,10 @@ namespace Blueberry
 	{
 	public:
 		static Dictionary<TypeId, ObjectEditorInfo>& GetInfos();
-		static const ObjectEditorInfo* GetInfo(const TypeId& type);
+		static const ObjectEditorInfo* GetInfo(TypeId type);
 
 		template<class ObjectEditorType>
-		static void Register(const size_t& typeHash);
+		static void Register(size_t typeHash);
 
 	private:
 		template<class ObjectEditorType>
@@ -33,7 +33,7 @@ namespace Blueberry
 	};
 
 	template<class ObjectEditorType>
-	inline void ObjectEditorDB::Register(const size_t& typeHash)
+	inline void ObjectEditorDB::Register(size_t typeHash)
 	{
 		ObjectEditorInfo info;
 		info.createInstance = &ObjectEditorDB::CreateObjectEditor<ObjectEditorType>;

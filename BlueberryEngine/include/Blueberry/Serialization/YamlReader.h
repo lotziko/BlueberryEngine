@@ -11,6 +11,6 @@ namespace Blueberry
 	class YamlReader
 	{
 	public:
-		static void Read(List<SerializationTree>& trees, std::ifstream& stream, const bool& hasHeaders);
+		static void Read(List<SerializationTree>& trees, std::ifstream& stream, bool hasHeaders);
 	};
 }

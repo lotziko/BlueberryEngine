@@ -4,8 +4,6 @@
 
 namespace Blueberry
 {
-	class GfxTexture;
-
 	class AnimationGraphEditor : public ObjectEditor
 	{
 	public:

@@ -49,7 +49,7 @@ namespace Blueberry
 		}
 	}
 
-	void GfxDeviceDX11::ClearDepthImpl(const float& depth) const
+	void GfxDeviceDX11::ClearDepthImpl(float depth) const
 	{
 		if (m_BindedDepthStencil != nullptr)
 		{
@@ -153,17 +153,17 @@ namespace Blueberry
 		m_DeviceContext->RSSetViewports(1, &viewport);
 	}
 
-	const uint32_t& GfxDeviceDX11::GetViewCountImpl()
+	uint32_t GfxDeviceDX11::GetViewCountImpl()
 	{
 		return m_ViewCount;
 	}
 
-	void GfxDeviceDX11::SetViewCountImpl(const uint32_t& count)
+	void GfxDeviceDX11::SetViewCountImpl(uint32_t count)
 	{
 		m_ViewCount = count;
 	}
 
-	void GfxDeviceDX11::SetDepthBiasImpl(const uint32_t& bias, const float& slopeBias)
+	void GfxDeviceDX11::SetDepthBiasImpl(uint32_t bias, float slopeBias)
 	{
 		m_DepthBias = bias;
 		m_SlopeDepthBias = slopeBias;
@@ -266,7 +266,7 @@ namespace Blueberry
 		m_DeviceContext->CopySubresourceRegion(static_cast<GfxTextureDX11*>(target)->m_Texture.Get(), static_cast<UINT>(offset.x), static_cast<UINT>(offset.y), 0, 0, static_cast<GfxTextureDX11*>(source)->m_Texture.Get(), 0, &src);
 	}
 
-	void GfxDeviceDX11::CopyImpl(GfxTexture* source, GfxTexture* target, const uint32_t& sourceSlice, const uint32_t& targetSlice, const uint32_t& mipLevel) const
+	void GfxDeviceDX11::CopyImpl(GfxTexture* source, GfxTexture* target, uint32_t sourceSlice, uint32_t targetSlice, uint32_t mipLevel) const
 	{
 		GfxTextureDX11* dxSource = static_cast<GfxTextureDX11*>(source);
 		GfxTextureDX11* dxTarget = static_cast<GfxTextureDX11*>(target);
@@ -282,7 +282,7 @@ namespace Blueberry
 		SetRenderTargetImpl(renderTexture, depthStencilTexture, UINT32_MAX);
 	}
 
-	void GfxDeviceDX11::SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, const uint32_t& slice)
+	void GfxDeviceDX11::SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, uint32_t slice)
 	{
 		Clear();
 
@@ -319,7 +319,7 @@ namespace Blueberry
 		}
 	}
 
-	void GfxDeviceDX11::SetGlobalBufferImpl(const size_t& id, GfxBuffer* buffer)
+	void GfxDeviceDX11::SetGlobalBufferImpl(size_t id, GfxBuffer* buffer)
 	{
 		auto dxBuffer = static_cast<GfxBufferDX11*>(buffer);
 		for (auto& pair : m_BindedBuffers)
@@ -335,7 +335,7 @@ namespace Blueberry
 		m_CurrentCrc = UINT32_MAX;
 	}
 
-	void GfxDeviceDX11::SetGlobalTextureImpl(const size_t& id, GfxTexture* texture)
+	void GfxDeviceDX11::SetGlobalTextureImpl(size_t id, GfxTexture* texture)
 	{
 		auto dxTexture = static_cast<GfxTextureDX11*>(texture);
 		for (auto& pair : m_BindedTextures)
@@ -507,7 +507,7 @@ namespace Blueberry
 		m_RenderState = renderState;
 	}
 
-	void GfxDeviceDX11::DispatchImpl(GfxComputeShader* shader, const uint32_t& threadGroupsX, const uint32_t& threadGroupsY, const uint32_t& threadGroupsZ)
+	void GfxDeviceDX11::DispatchImpl(GfxComputeShader* shader, uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ)
 	{
 		auto dxShader = static_cast<GfxComputeShaderDX11*>(shader);
 		if (dxShader == nullptr)
@@ -743,7 +743,7 @@ namespace Blueberry
 		}
 	}
 
-	ID3D11RasterizerState* GfxDeviceDX11::GetRasterizerState(const CullMode& mode, const bool& isCounterClockwise)
+	ID3D11RasterizerState* GfxDeviceDX11::GetRasterizerState(CullMode mode, bool isCounterClockwise)
 	{
 		size_t key = static_cast<size_t>(mode) | static_cast<size_t>(m_DepthBias) << 8 | *(reinterpret_cast<size_t*>(&m_SlopeDepthBias)) << 16 | (isCounterClockwise ? 1ull : 0ull) << 24;
 		for (auto& pair : m_RasterizerStates)
@@ -776,7 +776,7 @@ namespace Blueberry
 		return state.Get();
 	}
 
-	D3D11_BLEND GetBlend(const BlendMode& blend)
+	D3D11_BLEND GetBlend(BlendMode blend)
 	{
 		switch (blend)
 		{
@@ -788,7 +788,7 @@ namespace Blueberry
 		}
 	}
 
-	ID3D11BlendState* GfxDeviceDX11::GetBlendState(const BlendMode& blendSrcColor, const BlendMode& blendSrcAlpha, const BlendMode& blendDstColor, const BlendMode& blendDstAlpha)
+	ID3D11BlendState* GfxDeviceDX11::GetBlendState(BlendMode blendSrcColor, BlendMode blendSrcAlpha, BlendMode blendDstColor, BlendMode blendDstAlpha)
 	{
 		size_t key = static_cast<size_t>(blendSrcColor) << 8 | static_cast<size_t>(blendSrcAlpha) << 16 | static_cast<size_t>(blendSrcColor) << 24 | static_cast<size_t>(blendSrcAlpha) << 32;
 		for (auto& pair : m_BlendStates)
@@ -828,7 +828,7 @@ namespace Blueberry
 		return state.Get();
 	}
 
-	ID3D11DepthStencilState* GfxDeviceDX11::GetDepthStencilState(const ZTest& zTest, const ZWrite& zWrite)
+	ID3D11DepthStencilState* GfxDeviceDX11::GetDepthStencilState(ZTest zTest, ZWrite zWrite)
 	{
 		size_t key = static_cast<size_t>(zTest) << 8 | static_cast<size_t>(zWrite) << 16;
 		for (auto& pair : m_DepthStencilStates)
@@ -888,7 +888,7 @@ namespace Blueberry
 		return D3D11_COMPARISON_NEVER;
 	}
 
-	uint32_t GfxTextureDX11::GetQualityLevel(const DXGI_FORMAT& format, const uint32_t& antiAliasing)
+	uint32_t GfxTextureDX11::GetQualityLevel(const DXGI_FORMAT& format, uint32_t antiAliasing)
 	{
 		if (antiAliasing > 1)
 		{
@@ -899,7 +899,7 @@ namespace Blueberry
 		return 0;
 	}
 
-	ID3D11SamplerState* GfxDeviceDX11::GetSamplerState(const WrapMode& wrapMode, const FilterMode& filterMode)
+	ID3D11SamplerState* GfxDeviceDX11::GetSamplerState(WrapMode wrapMode, FilterMode filterMode)
 	{
 		size_t key = static_cast<size_t>(wrapMode) << 8 | static_cast<size_t>(filterMode) << 16;
 		for (auto& pair : m_SamplerStates)
@@ -937,7 +937,7 @@ namespace Blueberry
 		return state.Get();
 	}
 
-	const uint32_t& GfxDeviceDX11::GetCRC()
+	uint32_t GfxDeviceDX11::GetCRC()
 	{
 		if (m_CurrentCrc == UINT32_MAX)
 		{

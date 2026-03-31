@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Blueberry\Core\Base.h"
+#include "Blueberry\Core\Variant.h"
 #include "Blueberry\Core\ObjectPtr.h"
 
 namespace Blueberry
@@ -18,32 +19,32 @@ namespace Blueberry
 
 		size_t GetId();
 		const String& GetName();
-		const BindingType GetType();
-		const bool IsMixedValue();
-		const bool* GetMixedMask();
+		BindingType GetType();
+		bool IsMixedValue();
+		bool* GetMixedMask();
 		void* GetHintData();
 
-		const size_t GetListSize();
-		SerializedProperty GetListElement(const size_t& index);
-		void InsertListElement(const size_t& index);
-		void DeleteListElement(const size_t& index);
-		void MoveListElement(const size_t& fromIndex, const size_t& toIndex);
+		size_t GetListSize();
+		SerializedProperty GetListElement(size_t index);
+		void InsertListElement(size_t index);
+		void DeleteListElement(size_t index);
+		void MoveListElement(size_t fromIndex, size_t toIndex);
 		void ClearList();
 
-		const bool IsOverriden();
+		bool IsOverriden();
 		void ClearOverride();
 
-		const bool& GetBool();
-		void SetBool(const bool& value);
+		bool GetBool();
+		void SetBool(bool value);
 
-		const int& GetInt();
-		void SetInt(const int& value);
+		int GetInt();
+		void SetInt(int value);
 
-		const uint32_t& GetUint();
-		void SetUint(const uint32_t& value);
+		uint32_t GetUint();
+		void SetUint(uint32_t value);
 
-		const float& GetFloat();
-		void SetFloat(const float& value);
+		float GetFloat();
+		void SetFloat(float value);
 
 		template<typename T>
 		T GetEnum();
@@ -69,7 +70,9 @@ namespace Blueberry
 		const ObjectPtr<Object>& GetObjectPtr();
 		void SetObjectPtr(const ObjectPtr<Object>& value);
 
-		const TypeId& GetObjectPtrType();
+		TypeId GetObjectPtrType();
+
+		size_t GetDepth();
 
 		bool Next(const bool& enterChildren = true);
 		SerializedProperty FindProperty(const String& name);

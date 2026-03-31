@@ -7,8 +7,8 @@ namespace Blueberry
 	OBJECT_DEFINITION(ProbeVolume, Component)
 	{
 		DEFINE_BASE_FIELDS(ProbeVolume, Component)
-		DEFINE_FIELD(ProbeVolume, m_Bounds, BindingType::AABB, {})
-		DEFINE_FIELD(ProbeVolume, m_Size, BindingType::Vector3Int, {})
+		DEFINE_FIELD(ProbeVolume, m_Bounds, BindingType::AABB, FieldOptions())
+		DEFINE_FIELD(ProbeVolume, m_Size, BindingType::Vector3Int, FieldOptions())
 		DEFINE_ITERATOR(ProbeVolume)
 	}
 

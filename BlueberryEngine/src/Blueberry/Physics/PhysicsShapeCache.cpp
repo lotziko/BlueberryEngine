@@ -66,7 +66,7 @@ namespace Blueberry
 		size_t m_Position = 0;
 	};
 
-	size_t GetKey(Mesh* mesh, const bool& isConvex, const Vector3& scale)
+	size_t GetKey(Mesh* mesh, bool isConvex, const Vector3& scale)
 	{
 		size_t mask = (scale.x > 0 ? 1 : 0) | (scale.y > 0 ? 2 : 0) | (scale.z > 0 ? 4 : 0);
 		return static_cast<size_t>(mesh->GetObjectId()) | (isConvex ? 1ull << 32 : 0) | mask << 33;
@@ -95,7 +95,7 @@ namespace Blueberry
 		}
 	}
 
-	void* PhysicsShapeCache::GetShape(Mesh* mesh, const bool& isConvex, const Vector3& scale)
+	void* PhysicsShapeCache::GetShape(Mesh* mesh, bool isConvex, const Vector3& scale)
 	{
 		size_t key = GetKey(mesh, isConvex, scale);
 		auto it = s_Shapes.find(key);

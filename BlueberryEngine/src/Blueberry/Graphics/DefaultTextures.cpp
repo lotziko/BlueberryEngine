@@ -19,7 +19,7 @@ namespace Blueberry
 	Texture3D* DefaultTextures::s_WhiteTexture3D = nullptr;
 	Texture3D* DefaultTextures::s_BlackTexture3D = nullptr;
 
-	Texture* DefaultTextures::GetTexture(const String& name, const TextureDimension& dimension)
+	Texture* DefaultTextures::GetTexture(const String& name, TextureDimension dimension)
 	{
 		if (dimension == TextureDimension::Texture2D)
 		{

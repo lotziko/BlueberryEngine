@@ -13,7 +13,7 @@ namespace Blueberry
 {
 	GfxTexture* MeshEditor::s_RenderTexture = nullptr;
 
-	void DrawUVChannel(Mesh* mesh, const uint32_t& channel, const ImVec2& pos, const ImVec2& size)
+	void DrawUVChannel(Mesh* mesh, uint32_t channel, const ImVec2& pos, const ImVec2& size)
 	{
 		ImDrawList* list = ImGui::GetWindowDrawList();
 		ImColor backgroundColor = ImColor(0, 0, 0);

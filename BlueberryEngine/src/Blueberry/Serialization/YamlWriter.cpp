@@ -127,7 +127,7 @@ namespace Blueberry
 		}
 	}
 
-	void WriteObject(std::ofstream& stream, SerializationTree& tree, const bool& hasHeaders)
+	void WriteObject(std::ofstream& stream, SerializationTree& tree, bool hasHeaders)
 	{
 		uint32_t indent = hasHeaders ? 2 : 0;
 		bool isSequenceElement = false;
@@ -139,7 +139,7 @@ namespace Blueberry
 		}
 	}
 
-	void YamlWriter::Write(List<SerializationTree>& trees, std::ofstream& stream, const bool& hasHeaders)
+	void YamlWriter::Write(List<SerializationTree>& trees, std::ofstream& stream, bool hasHeaders)
 	{
 		if (hasHeaders)
 		{

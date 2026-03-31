@@ -12,7 +12,7 @@ namespace Blueberry
 	OBJECT_DEFINITION(BoxCollider, Collider)
 	{
 		DEFINE_BASE_FIELDS(BoxCollider, Collider)
-		DEFINE_FIELD(BoxCollider, m_Size, BindingType::Vector3, {})
+		DEFINE_FIELD(BoxCollider, m_Size, BindingType::Vector3, FieldOptions())
 	}
 
 	const Vector3& BoxCollider::GetSize()

@@ -16,18 +16,18 @@ namespace Blueberry
 		return Get()->name;
 	}
 
-	const BindingType SerializedProperty::GetType()
+	BindingType SerializedProperty::GetType()
 	{
 		return Get()->bindingType;
 	}
 
-	const bool SerializedProperty::IsMixedValue()
+	bool SerializedProperty::IsMixedValue()
 	{
 		PropertyTreeNode* node = Get();
 		return (node->mixedMask[0] || node->mixedMask[1] || node->mixedMask[2] || node->mixedMask[3]);
 	}
 
-	const bool* SerializedProperty::GetMixedMask()
+	bool* SerializedProperty::GetMixedMask()
 	{
 		return Get()->mixedMask;
 	}
@@ -37,7 +37,7 @@ namespace Blueberry
 		return Get()->fieldInfo->options.hintData;
 	}
 
-	const size_t SerializedProperty::GetListSize()
+	size_t SerializedProperty::GetListSize()
 	{
 		PropertyTreeNode* node = Get();
 		if (node->type == PropertyType::List)
@@ -47,30 +47,27 @@ namespace Blueberry
 		return 0;
 	}
 
-	SerializedProperty SerializedProperty::GetListElement(const size_t& index)
+	SerializedProperty SerializedProperty::GetListElement(size_t index)
 	{
-		return SerializedProperty(m_SerializedObject, m_SerializedObject->Get(m_Id)->children[index]);
+		size_t id = m_SerializedObject->Get(m_Id)->children[index];
+		SerializedProperty elementProperty = SerializedProperty(m_SerializedObject, id);
+		std::stack<std::pair<size_t, uint32_t>> stack = m_Stack;
+		stack.push(std::make_pair(id, 0));
+		elementProperty.m_Stack = std::move(stack);
+		return elementProperty;
 	}
 
-	void SerializedProperty::InsertListElement(const size_t& index)
+	void SerializedProperty::InsertListElement(size_t index)
 	{
-		// TODO move into SerializedObject and use id instead of PropertyTreeNode*
-		PropertyTreeNode* node = Get();
-		size_t child = m_SerializedObject->CreateChild(m_Id);
-		node->children.insert(node->children.begin() + index, child);
-		for (size_t i = index; i < node->children.size(); ++i)
-		{
-			m_SerializedObject->Get(node->children[i])->index = i;
-		}
-		m_SerializedObject->AddModifiedProperty(m_Id, PropertyModificationType::Insert, index);
+		m_SerializedObject->InsertListElement(m_Id, index);
 	}
 
-	void SerializedProperty::DeleteListElement(const size_t& index)
+	void SerializedProperty::DeleteListElement(size_t index)
 	{
 		m_SerializedObject->DeleteListElement(m_Id, index);
 	}
 
-	void SerializedProperty::MoveListElement(const size_t& fromIndex, const size_t& toIndex)
+	void SerializedProperty::MoveListElement(size_t fromIndex, size_t toIndex)
 	{
 		m_SerializedObject->MoveListElement(m_Id, fromIndex, toIndex);
 	}
@@ -80,7 +77,7 @@ namespace Blueberry
 		m_SerializedObject->ClearList(m_Id);
 	}
 
-	const bool SerializedProperty::IsOverriden()
+	bool SerializedProperty::IsOverriden()
 	{
 		return m_SerializedObject->Get(m_Id)->isOverriden;
 	}
@@ -90,12 +87,12 @@ namespace Blueberry
 		m_SerializedObject->AddModifiedProperty(m_Id, PropertyModificationType::ClearOverride);
 	}
 
-	const bool& SerializedProperty::GetBool()
+	bool SerializedProperty::GetBool()
 	{
 		return std::get<bool>(Get()->values[0]);
 	}
 
-	void SerializedProperty::SetBool(const bool& value)
+	void SerializedProperty::SetBool(bool value)
 	{
 		PropertyTreeNode* node = Get();
 		for (size_t i = 0; i < node->values.size(); ++i)
@@ -105,12 +102,12 @@ namespace Blueberry
 		m_SerializedObject->AddModifiedProperty(m_Id);
 	}
 
-	const int& SerializedProperty::GetInt()
+	int SerializedProperty::GetInt()
 	{
 		return std::get<int>(Get()->values[0]);
 	}
 
-	void SerializedProperty::SetInt(const int& value)
+	void SerializedProperty::SetInt(int value)
 	{
 		PropertyTreeNode* node = Get();
 		for (size_t i = 0; i < node->values.size(); ++i)
@@ -120,12 +117,12 @@ namespace Blueberry
 		m_SerializedObject->AddModifiedProperty(m_Id);
 	}
 
-	const uint32_t& SerializedProperty::GetUint()
+	uint32_t SerializedProperty::GetUint()
 	{
 		return std::get<uint32_t>(Get()->values[0]);
 	}
 
-	void SerializedProperty::SetUint(const uint32_t& value)
+	void SerializedProperty::SetUint(uint32_t value)
 	{
 		PropertyTreeNode* node = Get();
 		for (size_t i = 0; i < node->values.size(); ++i)
@@ -135,12 +132,12 @@ namespace Blueberry
 		m_SerializedObject->AddModifiedProperty(m_Id);
 	}
 
-	const float& SerializedProperty::GetFloat()
+	float SerializedProperty::GetFloat()
 	{
 		return std::get<float>(Get()->values[0]);
 	}
 
-	void SerializedProperty::SetFloat(const float& value)
+	void SerializedProperty::SetFloat(float value)
 	{
 		PropertyTreeNode* node = Get();
 		for (size_t i = 0; i < node->values.size(); ++i)
@@ -323,9 +320,14 @@ namespace Blueberry
 		m_SerializedObject->AddModifiedProperty(m_Id);
 	}
 
-	const TypeId& SerializedProperty::GetObjectPtrType()
+	TypeId SerializedProperty::GetObjectPtrType()
 	{
 		return *Get()->fieldInfo->options.objectType;
+	}
+
+	size_t SerializedProperty::GetDepth()
+	{
+		return m_Stack.size();
 	}
 
 	SerializedProperty::SerializedProperty(SerializedObject* serializedObject, size_t id)

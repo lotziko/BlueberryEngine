@@ -72,7 +72,7 @@ namespace Blueberry
 		}
 		PrefabInstance* instance = Object::Create<PrefabInstance>();
 		instance->m_SourcePrefab = source;
-		instance->OnCreate();
+		instance->Initialize();
 		return instance;
 	}
 
@@ -137,7 +137,6 @@ namespace Blueberry
 			Object* object = ObjectDB::GetObject(it->second);
 			PrefabInstance* instance = static_cast<PrefabInstance*>(object);
 			instance->m_Entity = nullptr;
-			instance->OnDestroy();
 			Object::Destroy(instance);
 			s_RootToPrefabInstance.erase(it->first);
 		}
@@ -262,7 +261,7 @@ namespace Blueberry
 	{
 		ObjectId instanceObjectId = instance->GetObjectId();
 		PrefabInstance* sourcePrefab = instance->m_SourcePrefab.Get();
-		if (sourcePrefab != nullptr && sourcePrefab->GetState() == ObjectState::Default)
+		if (sourcePrefab != nullptr)
 		{
 			Guid guid = ObjectDB::GetGuidFromObject(sourcePrefab);
 			AssetImporter* importer = AssetDB::GetImporter(guid);
@@ -368,7 +367,7 @@ namespace Blueberry
 		if (childInstance != nullptr && childInstance != instance)
 		{
 			FileId childInstanceFileId = ObjectDB::GetFileIdFromObject(childInstance);
-			FileId entityFileId = ObjectDB::GetFileIdFromObject(entity);
+			FileId entityFileId = ObjectDB::GetFileIdFromObjectId(childInstance->m_InstanceToPrefabMapping[entity->GetObjectId()]);
 			if (entityFileId != 0)
 			{
 				ObjectDB::AllocateIdToGuid(entity, guid, entityFileId ^ childInstanceFileId);

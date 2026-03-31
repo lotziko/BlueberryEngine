@@ -4,6 +4,17 @@
 
 namespace Blueberry
 {
+	void StringHelper::Replace(String& str, const String& from, const String& to)
+	{
+		// Based on https://medium.com/@nerudaj/tuesday-coding-tip-53-replace-all-occurrences-of-substring-in-std-string-99a4181cbb24
+		size_t pos = str.find(from, 0);
+		while (pos != std::string::npos)
+		{
+			str.replace(pos, from.length(), to);
+			pos = str.find(from, pos + to.length());
+		}
+	}
+
 	void StringHelper::Split(const char* data, const char symbol, List<String>& result)
 	{
 		String str(data);

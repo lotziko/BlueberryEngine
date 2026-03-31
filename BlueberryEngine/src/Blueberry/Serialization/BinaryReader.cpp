@@ -11,7 +11,7 @@ namespace Blueberry
 	{
 		uint32_t version;
 		std::ifstream& stream;
-		List<char> keyBuffer;
+		List<char>& keyBuffer;
 	};
 
 	void ReadNode(SerializationNodeRef ref, SerializationTree& tree, Context& context)
@@ -68,7 +68,8 @@ namespace Blueberry
 
 	void BinaryReader::Read(List<SerializationTree>& trees, std::ifstream& stream)
 	{
-		Context context = { 0, stream, {} };
+		List<char> keyBuffer;
+		Context context = { 0, stream, keyBuffer };
 		char header;
 		uint32_t keyBufferSize, objectCount;
 		stream.read(&header, sizeof(char));

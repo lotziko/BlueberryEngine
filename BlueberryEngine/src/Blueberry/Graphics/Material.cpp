@@ -12,7 +12,7 @@ namespace Blueberry
 {
 	DATA_DEFINITION(TextureData)
 	{
-		DEFINE_FIELD(TextureData, m_Name, BindingType::String, {})
+		DEFINE_FIELD(TextureData, m_Name, BindingType::String, FieldOptions())
 		DEFINE_FIELD(TextureData, m_Texture, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Texture::Type))
 	}
 
@@ -21,7 +21,7 @@ namespace Blueberry
 		DEFINE_BASE_FIELDS(Material, Object)
 		DEFINE_FIELD(Material, m_Shader, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Shader::Type))
 		DEFINE_FIELD(Material, m_Textures, BindingType::DataList, FieldOptions().SetObjectType(&TextureData::Type))
-		DEFINE_FIELD(Material, m_ActiveKeywords, BindingType::StringList, {})
+		DEFINE_FIELD(Material, m_ActiveKeywords, BindingType::StringList, FieldOptions())
 	}
 
 	const String& TextureData::GetName()
@@ -74,12 +74,12 @@ namespace Blueberry
 
 	void Material::SetShader(Shader* shader)
 	{
-		if (m_Shader.IsValid() && m_Shader->GetState() == ObjectState::Default)
+		if (m_Shader.IsValid())
 		{
 			m_Shader->m_Dependencies.erase(m_ObjectId);
 		}
 		m_Shader = shader;
-		if (m_Shader.IsValid() && m_Shader->GetState() == ObjectState::Default)
+		if (m_Shader.IsValid())
 		{
 			m_Shader->m_Dependencies.emplace(m_ObjectId);
 		}
@@ -87,7 +87,7 @@ namespace Blueberry
 
 	void Material::ApplyProperties()
 	{
-		if (m_Shader.IsValid() && m_Shader->GetState() == ObjectState::Default)
+		if (m_Shader.IsValid())
 		{
 			m_Shader->m_Dependencies.emplace(m_ObjectId);
 		}
@@ -97,7 +97,7 @@ namespace Blueberry
 
 	const ShaderData* Material::GetShaderData()
 	{
-		if (m_Shader.IsValid() && m_Shader->GetState() == ObjectState::Default)
+		if (m_Shader.IsValid())
 		{
 			return &m_Shader.Get()->GetData();
 		}
@@ -115,7 +115,7 @@ namespace Blueberry
 		FillTextureMap();
 	}
 
-	void Material::SetKeyword(const String& keyword, const bool& enabled)
+	void Material::SetKeyword(const String& keyword, bool enabled)
 	{
 		// TODO use an unordered_map
 		auto it = std::find(m_ActiveKeywords.begin(), m_ActiveKeywords.end(), keyword);
@@ -134,12 +134,12 @@ namespace Blueberry
 		}
 	}
 
-	const uint32_t& Material::GetActiveKeywordsMask()
+	uint32_t Material::GetActiveKeywordsMask() const
 	{
 		return m_ActiveKeywordsMask;
 	}
 
-	const uint32_t& Material::GetCRC()
+	uint32_t Material::GetCRC()
 	{
 		if (m_Crc == UINT32_MAX)
 		{
@@ -150,7 +150,7 @@ namespace Blueberry
 		return m_Crc;
 	}
 
-	Texture* Material::GetTexture(const size_t& id)
+	Texture* Material::GetTexture(size_t id)
 	{
 		if (m_BindedTextures.size() < m_Textures.size())
 		{
@@ -191,7 +191,7 @@ namespace Blueberry
 
 	void Material::FillTextureMap()
 	{
-		if (m_Shader.IsValid() && m_Shader->GetState() == ObjectState::Default)
+		if (m_Shader.IsValid())
 		{
 			for (auto& property : m_Shader->GetData().GetProperties())
 			{
@@ -221,7 +221,7 @@ namespace Blueberry
 		}
 	}
 
-	void Material::ApplyTextureBinding(const size_t& id, Texture* texture)
+	void Material::ApplyTextureBinding(size_t id, Texture* texture)
 	{
 		for (size_t i = 0; i < m_BindedTextures.size(); ++i)
 		{

@@ -76,6 +76,8 @@ namespace ImGui
 	bool DragVector3(const char* label, Blueberry::Vector3* v);
 	bool DragVector4(const char* label, Blueberry::Vector4* v);
 	bool DragVectorN(const char* label, ImGuiDataType dataType, int components, void* data);
+	bool InputEnum(const char* label, int* v, const Blueberry::List<Blueberry::String>* names);
+	bool InputEnum(const char* label, int* v, const Blueberry::List<std::pair<Blueberry::String, int>>* nameValues);
 	bool EnumEdit(const char* label, int* v, const Blueberry::List<Blueberry::String>* names);
 	bool EnumEdit(const char* label, int* v, const Blueberry::List<std::pair<Blueberry::String, int>>* nameValues);
 	bool BoolEdit(const char* label, bool* v);
@@ -83,12 +85,15 @@ namespace ImGui
 	bool UintEdit(const char* label, uint32_t* v);
 	bool FloatEdit(const char* label, float* v, float min = 0, float max = 0);
 	bool ColorEdit(const char* label, Blueberry::Color* v);
-	bool StringEdit(const char* label, std::string* v);
+	bool StringEdit(const char* label, Blueberry::String* v);
 	bool ObjectEdit(const char* label, Blueberry::Object** v, const Blueberry::TypeId& type);
 	bool ObjectEdit(const char* label, Blueberry::ObjectPtr<Blueberry::Object>* v, const Blueberry::TypeId& type);
 	bool ObjectArrayEdit(const char* label, Blueberry::List<Blueberry::ObjectPtr<Blueberry::Object>>* v, const Blueberry::TypeId& type);
 	
-	bool SearchInputText(const char* hint, std::string* text);
+	bool InputText(const char* label, Blueberry::String* str, ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = nullptr, void* user_data = nullptr);
+	bool InputTextMultiline(const char* label, Blueberry::String* str, const ImVec2& size = ImVec2(0, 0), ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = nullptr, void* user_data = nullptr);
+	bool InputTextWithHint(const char* label, const char* hint, Blueberry::String* str, ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = nullptr, void* user_data = nullptr);
+	bool SearchInputText(const char* hint, Blueberry::String* text);
 
 	void HorizontalSplitter(const char* strId, float* size, float minSize);
 

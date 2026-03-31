@@ -185,52 +185,49 @@ namespace Blueberry
 		return s_Array.GetObjectItem(id)->object != nullptr;
 	}
 
-	ObjectItem* ObjectDB::IdToObjectItem(const ObjectId& id)
+	ObjectItem* ObjectDB::IdToObjectItem(ObjectId id)
 	{
 		return s_Array.GetObjectItem(id);
 	}
 
-	Object* ObjectDB::GetObject(const ObjectId& id)
+	Object* ObjectDB::GetObject(ObjectId id)
 	{
 		ObjectItem* item = s_Array.GetObjectItem(id);
 		return item == nullptr ? nullptr : item->object;
 	}
 
-	ObjectView ObjectDB::GetObjects(const TypeId& type, SearchObjectType searchType)
+	ObjectView ObjectDB::GetObjects(TypeId type, SearchObjectType searchType)
 	{
 		return ObjectView(type, searchType, &s_Array, 0);
 	}
 
-	void ObjectDB::AllocateIdToFileId(const ObjectId& id, const FileId& fileId)
+	void ObjectDB::AllocateIdToFileId(ObjectId id, FileId fileId)
 	{
 		s_ObjectIdToFileId.insert_or_assign(id, fileId);
 	}
 
-	void ObjectDB::AllocateIdToFileId(Object* object, const FileId& fileId)
+	void ObjectDB::AllocateIdToFileId(Object* object, FileId fileId)
 	{
 		s_ObjectIdToFileId.insert_or_assign(object->GetObjectId(), fileId);
 	}
 
-	void ObjectDB::AllocateIdToGuid(const ObjectId& id, const Guid& guid, const FileId& fileId)
+	void ObjectDB::AllocateIdToGuid(ObjectId id, const Guid& guid, FileId fileId)
 	{
 		s_ObjectIdToGuid.insert_or_assign(id, std::make_pair(guid, fileId));
 		s_GuidToObjectId[guid].insert_or_assign(fileId, id);
 		s_ObjectIdToFileId.insert_or_assign(id, fileId);
 	}
 
-	void ObjectDB::AllocateIdToGuid(Object* object, const Guid& guid, const FileId& fileId)
+	void ObjectDB::AllocateIdToGuid(Object* object, const Guid& guid, FileId fileId)
 	{
 		ObjectId objectId = object->GetObjectId();
 		AllocateIdToGuid(objectId, guid, fileId);
 	}
 
-	void ObjectDB::AllocateEmptyObjectWithGuid(const Guid& guid, const FileId& fileId)
+	void ObjectDB::AllocateEmptyObjectWithGuid(const Guid& guid, FileId fileId)
 	{
-		// TODO do something better
-		Object* object = Object::Create<Object>();
-		object->m_Name = "Missing";
-		object->m_State = ObjectState::Missing;
-		AllocateIdToGuid(object->GetObjectId(), guid, fileId);
+		ObjectId id = s_Array.AddSingle();
+		AllocateIdToGuid(id, guid, fileId);
 	}
 
 	Guid ObjectDB::GetGuidFromObject(Object* object)
@@ -243,7 +240,7 @@ namespace Blueberry
 		return Guid();
 	}
 
-	Guid ObjectDB::GetGuidFromObjectId(const ObjectId& id)
+	Guid ObjectDB::GetGuidFromObjectId(ObjectId id)
 	{
 		auto guidIt = s_ObjectIdToGuid.find(id);
 		if (guidIt != s_ObjectIdToGuid.end())
@@ -263,7 +260,7 @@ namespace Blueberry
 		return 0;
 	}
 
-	FileId ObjectDB::GetFileIdFromObjectId(const ObjectId& id)
+	FileId ObjectDB::GetFileIdFromObjectId(ObjectId id)
 	{
 		auto fileIdIt = s_ObjectIdToFileId.find(id);
 		if (fileIdIt != s_ObjectIdToFileId.end())
@@ -273,7 +270,7 @@ namespace Blueberry
 		return 0;
 	}
 
-	std::pair<Guid, FileId> ObjectDB::GetGuidAndFileIdFromObject(const ObjectId& id)
+	std::pair<Guid, FileId> ObjectDB::GetGuidAndFileIdFromObject(ObjectId id)
 	{
 		auto guidIt = s_ObjectIdToGuid.find(id);
 		if (guidIt != s_ObjectIdToGuid.end())
@@ -293,7 +290,7 @@ namespace Blueberry
 		return std::pair<Guid, FileId>();
 	}
 
-	bool ObjectDB::HasFileId(const ObjectId& id)
+	bool ObjectDB::HasFileId(ObjectId id)
 	{
 		return s_ObjectIdToFileId.count(id) > 0;
 	}
@@ -313,7 +310,7 @@ namespace Blueberry
 		return s_GuidToObjectId.count(guid) > 0;
 	}
 
-	bool ObjectDB::HasGuidAndFileId(const Guid& guid, const FileId& fileId)
+	bool ObjectDB::HasGuidAndFileId(const Guid& guid, FileId fileId)
 	{
 		auto fileIdIt = s_GuidToObjectId.find(guid);
 		if (fileIdIt != s_GuidToObjectId.end())
@@ -323,7 +320,7 @@ namespace Blueberry
 		return false;
 	}
 
-	Object* ObjectDB::GetObjectFromGuid(const Guid& guid, const FileId& fileId)
+	Object* ObjectDB::GetObjectFromGuid(const Guid& guid, FileId fileId)
 	{
 		auto fileIdIt = s_GuidToObjectId.find(guid);
 		if (fileIdIt != s_GuidToObjectId.end())

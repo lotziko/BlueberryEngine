@@ -40,7 +40,7 @@ namespace Blueberry
 		}
 	}
 
-	void TransformTree::Populate(Transform* parent, const int& depth)
+	void TransformTree::Populate(Transform* parent, int depth)
 	{
 		for (auto& child : parent->GetChildren())
 		{

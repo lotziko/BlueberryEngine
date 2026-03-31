@@ -60,7 +60,7 @@ namespace Blueberry
 		Object::Destroy(m_ObjectPickerOutlineMaterial);
 	}
 
-	Object* SceneObjectPicker::Pick(Scene* scene, Camera* camera, const int& positionX, const int& positionY)
+	Object* SceneObjectPicker::Pick(Scene* scene, Camera* camera, int positionX, int positionY)
 	{
 		if (scene == nullptr)
 		{

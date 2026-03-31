@@ -196,7 +196,7 @@ namespace Blueberry
 				ObjectDB::AllocateIdToGuid(instance, m_Guid, ObjectDB::GetFileIdFromObject(instance));
 				if (instance->HasSource())
 				{
-					instance->OnCreate();
+					instance->Initialize();
 				}
 			}
 			// Components added to prefab
@@ -221,7 +221,7 @@ namespace Blueberry
 			{
 				if (!instance->HasSource())
 				{
-					instance->OnCreate();
+					instance->Initialize();
 				}
 			}
 		}

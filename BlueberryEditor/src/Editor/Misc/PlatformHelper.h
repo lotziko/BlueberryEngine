@@ -2,9 +2,11 @@
 
 #include "Blueberry\Core\Base.h"
 
+#include <filesystem>
+
 namespace Blueberry
 {
-	enum DialogResult
+	enum class DialogResult
 	{
 		Yes,
 		No,
@@ -14,12 +16,12 @@ namespace Blueberry
 	class PlatformHelper
 	{
 	public:
-		static WString OpenFileDialog();
-		static DialogResult OpenDialog(const WString& titleText, const WString& contentText, const WString& yesText, const WString& noText, const WString& cancelText);
-		static void RevealInExplorer(const WString& path);
-		static void ShowProgressBar(const WString& title, const WString& info);
+		static String OpenFileDialog();
+		static DialogResult OpenDialog(const String& titleText, const String& contentText, const String& yesText, const String& noText, const String& cancelText);
+		static void RevealInExplorer(const String& path);
+		static void ShowProgressBar(const String& title, const String& info);
 		static void HideProgressBar();
 		static String GetEditorDataFolder();
-		static void MoveToRecycleBin(const WString& path);
+		static void MoveToRecycleBin(const String& path);
 	};
 }

@@ -49,7 +49,7 @@ namespace Blueberry
 		m_DeviceContext->Unmap(m_StagingBuffer.Get(), 0);
 	}
 
-	void GfxBufferDX11::SetData(const void* data, const size_t& size)
+	void GfxBufferDX11::SetData(const void* data, size_t size)
 	{
 		D3D11_MAPPED_SUBRESOURCE mappedBuffer;
 		ZeroMemory(&mappedBuffer, sizeof(D3D11_MAPPED_SUBRESOURCE));
@@ -64,12 +64,12 @@ namespace Blueberry
 		m_DeviceContext->Unmap(m_Buffer.Get(), 0);
 	}
 
-	const uint32_t& GfxBufferDX11::GetElementSize()
+	uint32_t GfxBufferDX11::GetElementSize() const
 	{
 		return m_ElementSize;
 	}
 
-	const uint32_t& GfxBufferDX11::GetElementCount()
+	uint32_t GfxBufferDX11::GetElementCount() const
 	{
 		return m_ElementCount;
 	}

@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <set>
+#include <sstream>
 
 namespace Blueberry
 {
@@ -25,7 +26,7 @@ namespace Blueberry
 		static void InitializeThread();
 		static void ShutdownThread();
 
-		static void* Allocate(const size_t& size);
+		static void* Allocate(size_t size);
 		static void Free(void* ptr);
 
 	private:
@@ -90,12 +91,12 @@ namespace Blueberry
 	{
 	public:
 		virtual size_t size_base() = 0;
-		virtual void insert_base(const size_t& index) = 0;
-		virtual void erase_base(const size_t& index) = 0;
-		virtual void move_element_base(const size_t& from, const size_t& to) = 0;
+		virtual void insert_base(size_t index) = 0;
+		virtual void erase_base(size_t index) = 0;
+		virtual void move_element_base(size_t from, size_t to) = 0;
 		virtual void clear_base() = 0;
 		virtual void* emplace_back_base() = 0;
-		virtual void* get_base(const size_t& index) = 0;
+		virtual void* get_base(size_t index) = 0;
 	};
 
 	template <class T>
@@ -103,18 +104,18 @@ namespace Blueberry
 	{
 	public:
 		using std::vector<T, STLAllocator<T>>::vector;
-		void move_element(const size_t& from, const size_t& to);
+		void move_element(size_t from, size_t to);
 		virtual size_t size_base() final;
-		virtual void insert_base(const size_t& index) final;
-		virtual void erase_base(const size_t& index) final;
-		virtual void move_element_base(const size_t& from, const size_t& to) final;
+		virtual void insert_base(size_t index) final;
+		virtual void erase_base(size_t index) final;
+		virtual void move_element_base(size_t from, size_t to) final;
 		virtual void clear_base() final;
 		virtual void* emplace_back_base() final;
-		virtual void* get_base(const size_t& index) final;
+		virtual void* get_base(size_t index) final;
 	};
 
 	template<class T>
-	inline void List<T>::move_element(const size_t& from, const size_t& to)
+	inline void List<T>::move_element(size_t from, size_t to)
 	{
 		if (from < to)
 		{
@@ -134,19 +135,19 @@ namespace Blueberry
 	}
 
 	template<class T>
-	inline void List<T>::insert_base(const size_t& index)
+	inline void List<T>::insert_base(size_t index)
 	{
 		insert(this->begin() + index, T());
 	}
 
 	template<class T>
-	inline void List<T>::erase_base(const size_t& index)
+	inline void List<T>::erase_base(size_t index)
 	{
 		erase(this->begin() + index);
 	}
 
 	template<class T>
-	inline void List<T>::move_element_base(const size_t& from, const size_t& to)
+	inline void List<T>::move_element_base(size_t from, size_t to)
 	{
 		move_element(from, to);
 	}
@@ -169,7 +170,7 @@ namespace Blueberry
 	}
 
 	template<class T>
-	inline void* List<T>::get_base(const size_t& index)
+	inline void* List<T>::get_base(size_t index)
 	{
 		if constexpr (!std::is_same_v<T, bool>)
 		{
@@ -179,15 +180,16 @@ namespace Blueberry
 	}
 
 	template <class T> using Stack = std::stack<T, STLAllocator<T>>;
-	template <class Key, class T, class Hash = std::hash<Key>, class KeyEqual = std::equal_to<Key>> using Dictionary = std::unordered_map<Key, T, Hash, KeyEqual>;//, STLAllocator<std::pair<const Key, T>>>;
-	template <class T, class Hash = std::hash<T>, class KeyEqual = std::equal_to<T>> using HashSet = std::unordered_set<T, Hash, KeyEqual>;//, STLAllocator<T>>;
+	template <class Key, class T, class Hash = std::hash<Key>, class KeyEqual = std::equal_to<Key>> using Dictionary = std::unordered_map<Key, T, Hash, KeyEqual, STLAllocator<std::pair<const Key, T>>>;
+	template <class T, class Hash = std::hash<T>, class KeyEqual = std::equal_to<T>> using HashSet = std::unordered_set<T, Hash, KeyEqual, STLAllocator<T>>;
 	using String = std::basic_string<char, std::char_traits<char>, STLAllocator<char>>;
 	using WString = std::basic_string<wchar_t, std::char_traits<wchar_t>, STLAllocator<wchar_t>>;
+	using StringStream = std::basic_stringstream<char, std::char_traits<char>, STLAllocator<char>>;
 }
 
 #define BB_OVERRIDE_NEW_DELETE													\
-inline void* operator new(std::size_t size) { return BB_MALLOC(size); }			\
-inline void* operator new[](std::size_t size) { return BB_MALLOC(size); }		\
+inline void* operator new(size_t size) { return BB_MALLOC(size); }				\
+inline void* operator new[](size_t size) { return BB_MALLOC(size); }			\
 inline void operator delete(void* ptr) { BB_FREE(ptr); }						\
 inline void operator delete[](void* ptr) { BB_FREE(ptr); }						\
 

@@ -19,7 +19,7 @@ namespace Blueberry
 		}
 	}
 
-	void Texture2D::Initialize(const uint32_t& width, const uint32_t& height, const uint32_t& mipCount, const TextureFormat& textureFormat)
+	void Texture2D::Initialize(uint32_t width, uint32_t height, uint32_t mipCount, TextureFormat textureFormat)
 	{
 		m_Width = width;
 		m_Height = height;
@@ -32,7 +32,7 @@ namespace Blueberry
 		}
 	}
 
-	void Texture2D::SetData(uint8_t* data, const size_t& dataSize)
+	void Texture2D::SetData(uint8_t* data, size_t dataSize)
 	{
 		m_RawData.resize(dataSize);
 		memcpy(m_RawData.data(), data, dataSize);
@@ -67,7 +67,7 @@ namespace Blueberry
 		}
 	}
 
-	Texture2D* Texture2D::Create(const uint32_t& width, const uint32_t& height, const uint32_t& mipCount, const TextureFormat& textureFormat, const WrapMode& wrapMode, const FilterMode& filterMode)
+	Texture2D* Texture2D::Create(uint32_t width, uint32_t height, uint32_t mipCount, TextureFormat textureFormat, WrapMode wrapMode, FilterMode filterMode)
 	{
 		Texture2D* texture = Object::Create<Texture2D>();
 		texture->m_Width = width;

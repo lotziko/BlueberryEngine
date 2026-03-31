@@ -914,16 +914,23 @@ void ed::Link::Draw(ImDrawList* drawList, ImU32 color, float extraThickness) con
     if (!m_IsLive)
         return;
 
+    const Config& config = Editor->GetConfig();
+    if (config.LinkDrawCallback)
+    {
+        config.LinkDrawCallback(drawList, m_Start, m_End, color, m_Thickness + extraThickness);
+        return;
+    }
+
     const auto curve = GetCurve();
 
     ImDrawList_AddBezierWithArrows(drawList, curve, m_Thickness + extraThickness,
-        m_StartPin && m_StartPin->m_ArrowSize  > 0.0f ? m_StartPin->m_ArrowSize  + extraThickness : 0.0f,
+        m_StartPin && m_StartPin->m_ArrowSize > 0.0f ? m_StartPin->m_ArrowSize + extraThickness : 0.0f,
         m_StartPin && m_StartPin->m_ArrowWidth > 0.0f ? m_StartPin->m_ArrowWidth + extraThickness : 0.0f,
-          m_EndPin &&   m_EndPin->m_ArrowSize  > 0.0f ?   m_EndPin->m_ArrowSize  + extraThickness : 0.0f,
-          m_EndPin &&   m_EndPin->m_ArrowWidth > 0.0f ?   m_EndPin->m_ArrowWidth + extraThickness : 0.0f,
+        m_EndPin && m_EndPin->m_ArrowSize > 0.0f ? m_EndPin->m_ArrowSize + extraThickness : 0.0f,
+        m_EndPin && m_EndPin->m_ArrowWidth > 0.0f ? m_EndPin->m_ArrowWidth + extraThickness : 0.0f,
         true, color, 1.0f,
         m_StartPin && m_StartPin->m_SnapLinkToDir ? &m_StartPin->m_Dir : nullptr,
-        m_EndPin   &&   m_EndPin->m_SnapLinkToDir ?   &m_EndPin->m_Dir : nullptr);
+        m_EndPin && m_EndPin->m_SnapLinkToDir ? &m_EndPin->m_Dir : nullptr);
 }
 
 void ed::Link::UpdateEndpoints()
@@ -931,6 +938,11 @@ void ed::Link::UpdateEndpoints()
     const auto line = m_StartPin->GetClosestLine(m_EndPin);
     m_Start = line.A;
     m_End   = line.B;
+    const Config& config = Editor->GetConfig();
+    if (config.LinkUpdateEndpointsCallback)
+    {
+        config.LinkUpdateEndpointsCallback(m_Start, m_End, m_StartPin->m_Node == nullptr || m_EndPin->m_Node == nullptr);
+    }
 }
 
 ImCubicBezierPoints ed::Link::GetCurve() const
@@ -973,6 +985,12 @@ bool ed::Link::TestHit(const ImVec2& point, float extraThickness) const
 
     if (!bounds.Contains(point))
         return false;
+
+    const Config& config = Editor->GetConfig();
+    if (config.LinkTestHitCallback)
+    {
+        return config.LinkTestHitCallback(point, m_Start, m_End, m_Thickness + extraThickness);
+    }
 
     const auto bezier = GetCurve();
     const auto result = ImProjectOnCubicBezier(point, bezier.P0, bezier.P1, bezier.P2, bezier.P3, 50);
@@ -1485,8 +1503,8 @@ void ed::EditorContext::End()
 
         ImVec2 offset    = m_Canvas.ViewOrigin() * (1.0f / m_Canvas.ViewScale());
         ImU32 GRID_COLOR = GetColor(StyleColor_Grid, ImClamp(m_Canvas.ViewScale() * m_Canvas.ViewScale(), 0.0f, 1.0f));
-        float GRID_SX    = 32.0f;// * m_Canvas.ViewScale();
-        float GRID_SY    = 32.0f;// * m_Canvas.ViewScale();
+        float GRID_SX    = m_Config.GridSize;// * m_Canvas.ViewScale();
+        float GRID_SY    = m_Config.GridSize;// * m_Canvas.ViewScale();
         ImVec2 VIEW_POS  = m_Canvas.ViewRect().Min;
         ImVec2 VIEW_SIZE = m_Canvas.ViewRect().GetSize();
 

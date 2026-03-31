@@ -27,7 +27,7 @@ namespace Blueberry
 		static HierarchyUpdateEvent& GetHierarchyUpdated();
 
 	private:
-		void DrawNode(List<TransformTreeNode>& nodes, const size_t& index);
+		void DrawNode(List<TransformTreeNode>& nodes, size_t index);
 		void DrawCreateEntity();
 		void DrawCloneEntity();
 		void DrawDestroyEntity();

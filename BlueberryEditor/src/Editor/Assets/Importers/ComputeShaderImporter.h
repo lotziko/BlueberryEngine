@@ -14,7 +14,7 @@ namespace Blueberry
 		static String GetShaderFolder(const Guid& guid);
 
 	protected:
-		virtual const bool IsRequiringReimport() override;
-		virtual void ImportData() override;
+		virtual bool IsRequiringReimport() const final;
+		virtual void ImportData() final;
 	};
 }

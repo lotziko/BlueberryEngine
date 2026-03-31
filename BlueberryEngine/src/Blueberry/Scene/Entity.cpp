@@ -3,6 +3,7 @@
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Scene\Scene.h"
+#include "Blueberry\Scene\SceneEvents.h"
 
 namespace Blueberry
 {
@@ -34,12 +35,15 @@ namespace Blueberry
 				{
 					if (component->m_IsActive)
 					{
-						component->OnDisable();
+						SceneEvents::s_DisabledComponents.push_back(component);
 						component->m_IsActive = false;
 					}
-					component->OnDestroy();
+					if (!component->m_IsDestroyed)
+					{
+						SceneEvents::s_DestroyedComponents.push_back(component);
+						component->m_IsDestroyed = true;
+					}
 				}
-				Object::Destroy(component);
 			}
 		}
 		m_Components.clear();
@@ -70,19 +74,19 @@ namespace Blueberry
 			{
 				if (!component->m_IsCreated)
 				{
-					component->OnCreate();
+					SceneEvents::s_CreatedComponents.push_back(component);
 					component->m_IsCreated = true;
 				}
 				if (!component->m_IsActive)
 				{
-					component->OnEnable();
+					SceneEvents::s_EnabledComponents.push_back(component);
 					component->m_IsActive = true;
 				}
 			}
 		}
 	}
 
-	Component* Entity::GetComponentAt(const size_t& index)
+	Component* Entity::GetComponentAt(size_t index) const
 	{
 		if (index >= 0 && index < m_Components.size())
 		{
@@ -103,12 +107,19 @@ namespace Blueberry
 			RemoveComponentFromScene(component);
 			if (component->CanExecute())
 			{
-				component->OnDisable();
-				component->OnDestroy();
+				if (component->m_IsActive)
+				{
+					SceneEvents::s_DisabledComponents.push_back(component);
+					component->m_IsActive = false;
+				}
+				if (!component->m_IsDestroyed)
+				{
+					SceneEvents::s_DestroyedComponents.push_back(component);
+					component->m_IsDestroyed = true;
+				}
 			}
 			auto& index = std::find(m_Components.begin(), m_Components.end(), component);
 			m_Components.erase(index);
-			Object::Destroy(component);
 		}
 	}
 
@@ -121,17 +132,17 @@ namespace Blueberry
 		return m_Transform;
 	}
 
-	Scene* Entity::GetScene()
+	Scene* Entity::GetScene() const
 	{
 		return m_Scene;
 	}
 
-	const bool& Entity::IsActive()
+	bool Entity::IsActive() const
 	{
 		return m_IsActive;
 	}
 
-	void Entity::SetActive(const bool& active)
+	void Entity::SetActive(bool active)
 	{
 		if (active != m_IsActive)
 		{
@@ -162,7 +173,7 @@ namespace Blueberry
 		}
 	}
 
-	bool Entity::HasComponent(const TypeId& type)
+	bool Entity::HasComponent(TypeId type)
 	{
 		for (auto& component : m_Components)
 		{
@@ -174,7 +185,7 @@ namespace Blueberry
 		return false;
 	}
 
-	Component* Entity::GetComponent(const TypeId& type)
+	Component* Entity::GetComponent(TypeId type)
 	{
 		for (auto& component : m_Components)
 		{
@@ -186,7 +197,7 @@ namespace Blueberry
 		return nullptr;
 	}
 
-	Component* Entity::GetComponentInParent(const TypeId& type)
+	Component* Entity::GetComponentInParent(TypeId type)
 	{
 		Entity* entity = this;
 		while (entity != nullptr)
@@ -208,7 +219,7 @@ namespace Blueberry
 		return nullptr;
 	}
 
-	Component* Entity::GetComponentInChildren(const TypeId& type)
+	Component* Entity::GetComponentInChildren(TypeId type)
 	{
 		List<Entity*> stack;
 		stack.push_back(this);
@@ -235,9 +246,9 @@ namespace Blueberry
 		{
 			return;
 		}
-		for (TypeId type : ClassDB::GetInfo(component->GetType())->iterators)
+		for (TypeId* type : ClassDB::GetInfo(component->GetType())->iterators)
 		{
-			m_Scene->m_ComponentManager.AddComponent(component, type);
+			m_Scene->m_ComponentManager.AddComponent(component, *type);
 		}
 	}
 
@@ -247,15 +258,15 @@ namespace Blueberry
 		{
 			return;
 		}
-		for (TypeId type : ClassDB::GetInfo(component->GetType())->iterators)
+		for (TypeId* type : ClassDB::GetInfo(component->GetType())->iterators)
 		{
-			m_Scene->m_ComponentManager.RemoveComponent(component, type);
+			m_Scene->m_ComponentManager.RemoveComponent(component, *type);
 		}
 	}
 
-	void Entity::UpdateHierarchy(const bool& active)
+	void Entity::UpdateHierarchy(bool active)
 	{
-		bool newActive = m_IsActive & active;
+		bool newActive = m_IsActive && active;
 		if (m_IsActiveInHierarchy != newActive)
 		{
 			m_IsActiveInHierarchy = newActive;
@@ -292,12 +303,12 @@ namespace Blueberry
 			{
 				if (!component->m_IsCreated)
 				{
-					component->OnCreate();
+					SceneEvents::s_CreatedComponents.push_back(component);
 					component->m_IsCreated = true;
 				}
 				if (!component->m_IsActive)
 				{
-					component->OnEnable();
+					SceneEvents::s_EnabledComponents.push_back(component);
 					component->m_IsActive = true;
 				}
 			}
@@ -312,7 +323,7 @@ namespace Blueberry
 			RemoveComponentFromScene(component);
 			if (component->m_IsActive && component->CanExecute())
 			{
-				component->OnDisable();
+				SceneEvents::s_DisabledComponents.push_back(component);
 				component->m_IsActive = false;
 			}
 		}

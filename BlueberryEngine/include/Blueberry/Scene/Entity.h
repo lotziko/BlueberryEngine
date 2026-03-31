@@ -28,7 +28,7 @@ namespace Blueberry
 		template<class ComponentType>
 		ComponentType* GetComponent();
 
-		Component* GetComponentAt(const size_t& index);
+		Component* GetComponentAt(size_t index) const;
 
 		template<class ComponentType>
 		ComponentType* GetComponentInParent();
@@ -43,24 +43,24 @@ namespace Blueberry
 		void RemoveComponent(Component* component);
 
 		Transform* GetTransform();
-		Scene* GetScene();
+		Scene* GetScene() const;
 		
-		const bool& IsActive();
-		void SetActive(const bool& active);
+		bool IsActive() const;
+		void SetActive(bool active);
 		bool IsActiveInHierarchy();
 
 		void UpdateHierarchy();
 
 	private:
-		bool HasComponent(const TypeId& type);
-		Component* GetComponent(const TypeId& type);
-		Component* GetComponentInParent(const TypeId& type);
-		Component* GetComponentInChildren(const TypeId& type);
+		bool HasComponent(TypeId type);
+		Component* GetComponent(TypeId type);
+		Component* GetComponentInParent(TypeId type);
+		Component* GetComponentInChildren(TypeId type);
 
 	private:
 		void AddComponentToScene(Component* component);
 		void RemoveComponentFromScene(Component* component);
-		void UpdateHierarchy(const bool& active);
+		void UpdateHierarchy(bool active);
 		void UpdateComponents();
 		void EnableComponents();
 		void DisableComponents();
@@ -69,8 +69,8 @@ namespace Blueberry
 		List<ObjectPtr<Component>> m_Components;
 		bool m_IsActive = true;
 
-		Transform* m_Transform;
-		Scene* m_Scene;
+		Transform* m_Transform = nullptr;
+		Scene* m_Scene = nullptr;
 		bool m_IsActiveInHierarchy = false;
 
 		friend class Scene;

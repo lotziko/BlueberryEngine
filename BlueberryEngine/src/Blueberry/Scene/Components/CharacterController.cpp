@@ -26,8 +26,8 @@ namespace Blueberry
 	OBJECT_DEFINITION(CharacterController, Component)
 	{
 		DEFINE_BASE_FIELDS(CharacterController, Component)
-		DEFINE_FIELD(CharacterController, m_Height, BindingType::Float, {})
-		DEFINE_FIELD(CharacterController, m_Radius, BindingType::Float, {})
+		DEFINE_FIELD(CharacterController, m_Height, BindingType::Float, FieldOptions())
+		DEFINE_FIELD(CharacterController, m_Radius, BindingType::Float, FieldOptions())
 		DEFINE_ITERATOR(UpdatableComponent)
 	}
 
@@ -108,16 +108,28 @@ namespace Blueberry
 		}
 	}
 
-	void CharacterController::OnFixedUpdate()
+	void CharacterController::OnUpdate()
+	{
+		auto& character = m_PrivateData->character;
+
+		JPH::RVec3 position = character->GetPosition();
+		m_Transform->SetPosition(Vector3(position[0], position[1], position[2]));
+	}
+
+	float CharacterController::GetHeight() const
+	{
+		return m_Height;
+	}
+
+	float CharacterController::GetRadius() const
+	{
+		return m_Radius;
+	}
+
+	void CharacterController::Move(const Vector3& velocity)
 	{
 		auto& character = m_PrivateData->character;
 		float deltaTime = Time::GetFixedDeltaTime();
-
-		JPH::CharacterVirtual::ExtendedUpdateSettings updateSettings;
-		updateSettings.mStickToFloorStepDown = -character->GetUp() * updateSettings.mStickToFloorStepDown.Length();
-		updateSettings.mWalkStairsStepUp = character->GetUp() * updateSettings.mWalkStairsStepUp.Length();
-		character->ExtendedUpdate(deltaTime, -character->GetUp() * Physics::s_PhysicsSystem->GetGravity().Length(), updateSettings, Physics::s_PhysicsSystem->GetDefaultBroadPhaseLayerFilter(Layers::MOVING), Physics::s_PhysicsSystem->GetDefaultLayerFilter(Layers::MOVING), {}, {}, *Physics::s_TempAllocator);
-		character->UpdateGroundVelocity();
 
 		JPH::Vec3 currentVerticalVelocity = character->GetLinearVelocity().Dot(character->GetUp()) * character->GetUp();
 		JPH::Vec3 groundVelocity = character->GetGroundVelocity();
@@ -133,41 +145,38 @@ namespace Blueberry
 		}
 		newVelocity += (Physics::s_PhysicsSystem->GetGravity()) * deltaTime;
 
-		JPH::Vec3 currentVelocity = character->GetUp() * character->GetLinearVelocity() + JPH::Vec3Arg(m_DesiredVelocity.x, m_DesiredVelocity.y, m_DesiredVelocity.z);
+		JPH::Vec3 currentVelocity = character->GetUp() * character->GetLinearVelocity() + JPH::Vec3Arg(velocity.x, velocity.y, velocity.z);
 		newVelocity += currentVelocity - currentVerticalVelocity;
 		character->SetLinearVelocity(newVelocity);
 
+		JPH::CharacterVirtual::ExtendedUpdateSettings updateSettings;
+		updateSettings.mStickToFloorStepDown = -character->GetUp() * updateSettings.mStickToFloorStepDown.Length();
+		updateSettings.mWalkStairsStepUp = character->GetUp() * updateSettings.mWalkStairsStepUp.Length();
+		character->ExtendedUpdate(deltaTime, -character->GetUp() * Physics::s_PhysicsSystem->GetGravity().Length(), updateSettings, Physics::s_PhysicsSystem->GetDefaultBroadPhaseLayerFilter(Layers::MOVING), Physics::s_PhysicsSystem->GetDefaultLayerFilter(Layers::MOVING), {}, {}, *Physics::s_TempAllocator);
+		character->UpdateGroundVelocity();
+
 		JPH::RVec3 position = character->GetPosition();
 		JPH::RVec3 realVelocity = (position - m_PrivateData->previousPosition) / deltaTime;
-		m_RealVelocity = Vector3(realVelocity[0], realVelocity[1], realVelocity[2]);
+		m_Velocity = Vector3(realVelocity[0], realVelocity[1], realVelocity[2]);
 		m_PrivateData->previousPosition = position;
+		JPH::CharacterBase::EGroundState groundState = character->GetGroundState();
+		m_IsGrounded = groundState == JPH::CharacterBase::EGroundState::OnGround || groundState == JPH::CharacterBase::EGroundState::OnSteepGround;
+		JPH::RVec3 groundNormal = character->GetGroundNormal();
+		m_GroundNormal = Vector3(groundNormal[0], groundNormal[1], groundNormal[2]);
 	}
 
-	void CharacterController::OnUpdate()
+	const Vector3& CharacterController::GetVelocity() const
 	{
-		auto& character = m_PrivateData->character;
-
-		JPH::RVec3 position = character->GetPosition();
-		m_Transform->SetPosition(Vector3(position[0], position[1], position[2]));
+		return m_Velocity;
 	}
 
-	const float& CharacterController::GetHeight()
+	bool CharacterController::IsGrounded() const
 	{
-		return m_Height;
+		return m_IsGrounded;
 	}
 
-	const float& CharacterController::GetRadius()
+	const Vector3& CharacterController::GetGroundNormal() const
 	{
-		return m_Radius;
-	}
-
-	void CharacterController::SetDesiredVelocity(const Vector3& velocity)
-	{
-		m_DesiredVelocity = velocity;
-	}
-
-	const Vector3& CharacterController::GetRealVelocity()
-	{
-		return m_RealVelocity;
+		return m_GroundNormal;
 	}
 }

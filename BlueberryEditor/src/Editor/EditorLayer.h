@@ -33,13 +33,14 @@ namespace Blueberry
 
 	private:
 		void DrawMenuBar();
-		void DrawTopBar();
 		void DrawDockSpace();
+		void Refresh();
 
 	private:
 		Scene* m_Scene = nullptr;
 		bool m_Focused = true;
 
 		static bool s_FrameUpdateRequested;
+		static bool s_AssetsRefreshRequested;
 	};
 }

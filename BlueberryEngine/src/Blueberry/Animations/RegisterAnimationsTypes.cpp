@@ -11,6 +11,11 @@ namespace Blueberry
 	{
 		REGISTER_DATA_CLASS(AnimationBoneData);
 		REGISTER_CLASS(AnimationClip);
+		REGISTER_DATA_CLASS(AnimationGraphConditionData);
+		REGISTER_DATA_CLASS(AnimationGraphParameterData);
+		REGISTER_CLASS(AnimationState);
+		REGISTER_CLASS(AnimationTransition);
+		REGISTER_CLASS(AnimationStateMachine);
 		REGISTER_CLASS(AnimationGraph);
 	}
 }

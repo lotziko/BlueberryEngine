@@ -24,12 +24,12 @@ namespace Blueberry
 		return m_RawData.data();
 	}
 
-	const size_t TextureCube::GetDataSize()
+	size_t TextureCube::GetDataSize() const
 	{
 		return m_RawData.size();
 	}
 
-	void TextureCube::Initialize(const uint32_t& width, const uint32_t& height, const uint32_t& mipCount, const TextureFormat& textureFormat)
+	void TextureCube::Initialize(uint32_t width, uint32_t height, uint32_t mipCount, TextureFormat textureFormat)
 	{
 		m_Width = width;
 		m_Height = height;
@@ -42,7 +42,7 @@ namespace Blueberry
 		}
 	}
 
-	void TextureCube::SetData(uint8_t* data, const size_t& dataSize)
+	void TextureCube::SetData(uint8_t* data, size_t dataSize)
 	{
 		m_RawData.resize(dataSize);
 		memcpy(m_RawData.data(), data, dataSize);
@@ -77,7 +77,7 @@ namespace Blueberry
 		}
 	}
 
-	TextureCube* TextureCube::Create(const uint32_t& width, const uint32_t& height, const uint32_t& mipCount, const TextureFormat& textureFormat, const WrapMode& wrapMode, const FilterMode& filterMode)
+	TextureCube* TextureCube::Create(uint32_t width, uint32_t height, uint32_t mipCount, TextureFormat textureFormat, WrapMode wrapMode, FilterMode filterMode)
 	{
 		TextureCube* texture = Object::Create<TextureCube>();
 		texture->m_Width = width;

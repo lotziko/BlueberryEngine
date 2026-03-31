@@ -3,8 +3,8 @@
 #include "Blueberry\Core\Application.h"
 #include "Blueberry\Core\ObjectCloner.h"
 #include "Blueberry\Scene\Scene.h"
+#include "Blueberry\Scene\SceneEvents.h"
 #include "Blueberry\Scene\Components\Transform.h"
-#include "Blueberry\Tools\StringConverter.h"
 
 #include "Editor\Path.h"
 #include "Editor\Assets\AssetDB.h"
@@ -83,7 +83,7 @@ namespace Blueberry
 		s_Scene->Initialize();
 
 		s_Path = path;
-		PlatformHelper::ShowProgressBar(L"Loading Scene", StringConverter::StringToWide(GetRelativePath()));
+		PlatformHelper::ShowProgressBar("Loading Scene", GetRelativePath());
 		Deserialize(path);
 		UpdateScene();
 		PlatformHelper::HideProgressBar();
@@ -104,17 +104,18 @@ namespace Blueberry
 		if (s_PrefabScenes.size() > 0)
 		{
 			EditorSceneManager::PrefabSceneData& data = s_PrefabScenes[s_PrefabScenes.size() - 1];
+			String relativePath = AssetDB::GetRelativeAssetPath(data.root);
+			std::filesystem::path dataPath = Path::GetAssetsPath();
+			dataPath.append(relativePath);
+			Serialize(String(dataPath.string()));
+
+			// TODO recursive dependencies
 			HashSet<Guid> dependent;
 			AssetDB::GetDependent(ObjectDB::GetGuidFromObject(data.root), dependent);
 			for (Guid guid : dependent)
 			{
-				AssetDB::MarkForReimport(guid);
+				AssetDB::ImportAsset(AssetDB::GetRelativePath(guid));
 			}
-			String relativePath = AssetDB::GetRelativeAssetPath(data.root);
-			auto dataPath = Path::GetAssetsPath();
-			dataPath.append(relativePath);
-			Serialize(String(dataPath.string()));
-
 		}
 		else if (s_Scene != nullptr)
 		{
@@ -159,7 +160,7 @@ namespace Blueberry
 		data.scene = new Scene();
 
 		String relativePath = AssetDB::GetRelativeAssetPath(root);
-		auto dataPath = Path::GetAssetsPath();
+		std::filesystem::path dataPath = Path::GetAssetsPath();
 		dataPath.append(relativePath);
 
 		EditorSerializer serializer = {};
@@ -186,6 +187,7 @@ namespace Blueberry
 		s_PrefabScenes.push_back(std::move(data));
 		UpdateScene();
 		s_SceneLoaded.Invoke();
+		SceneEvents::Poll();
 	}
 
 	void EditorSceneManager::ClosePrefab(const bool& all)
@@ -255,7 +257,8 @@ namespace Blueberry
 		{
 			auto& sceneData = s_PrefabScenes[s_PrefabScenes.size() - 1];
 			serializer.GatherPrefabs(sceneData.scene);
-			serializer.SetGuid(ObjectDB::GetGuidFromObject(sceneData.root));
+			// This breaks prefabs by cloning PrefabInstance and some components on save
+			//serializer.SetGuid(ObjectDB::GetGuidFromObject(sceneData.root));
 		}
 		else
 		{
@@ -295,6 +298,7 @@ namespace Blueberry
 				s_SceneSettings = static_cast<SceneSettings*>(object);
 			}
 		}
+		SceneEvents::Poll();
 	}
 
 	void EditorSceneManager::UpdateScene()

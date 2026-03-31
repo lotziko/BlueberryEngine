@@ -147,17 +147,17 @@ namespace Blueberry
 		return m_Children;
 	}
 
-	Transform* Transform::GetChild(const size_t& index)
+	Transform* Transform::GetChild(size_t index)
 	{
 		return m_Children[index].Get();
 	}
 
-	const size_t Transform::GetChildrenCount() const
+	size_t Transform::GetChildrenCount() const
 	{
 		return m_Children.size();
 	}
 
-	const size_t Transform::GetSiblingIndex()
+	size_t Transform::GetSiblingIndex()
 	{
 		if (m_Parent.IsValid())
 		{
@@ -242,10 +242,11 @@ namespace Blueberry
 		m_LocalPosition = trs.position;
 		m_LocalRotation = trs.rotation;
 		m_LocalScale = trs.scale;
+		m_LocalRotationEulerHint = Math::ToDegrees(m_LocalRotation.ToEuler());
 		InvalidateHierarchy();
 	}
 
-	void Transform::SetParent(Transform* parent, const bool& worldPositionStays)
+	void Transform::SetParent(Transform* parent, bool worldPositionStays)
 	{
 		if (m_Parent == parent)
 		{
@@ -295,11 +296,10 @@ namespace Blueberry
 		{
 			InvalidateHierarchy();
 		}
-
 		m_Entity->UpdateHierarchy();
 	}
 
-	void Transform::SetSiblingIndex(const size_t& index)
+	void Transform::SetSiblingIndex(size_t index)
 	{
 		if (m_Parent.IsValid())
 		{
@@ -331,12 +331,12 @@ namespace Blueberry
 		return m_UpdateCount;
 	}
 
-	const bool& Transform::IsStatic() const
+	bool Transform::IsStatic() const
 	{
 		return m_IsStatic;
 	}
 
-	void Transform::SetStatic(const bool& isStatic)
+	void Transform::SetStatic(bool isStatic)
 	{
 		m_IsStatic = isStatic;
 		InvalidateHierarchy();

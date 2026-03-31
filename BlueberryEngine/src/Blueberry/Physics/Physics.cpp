@@ -151,7 +151,7 @@ namespace Blueberry
 	{
 	}
 
-	void Physics::Update(const float& deltaTime)
+	void Physics::Update(float deltaTime)
 	{
 		const int cCollisionSteps = 1;
 		s_PhysicsSystem->Update(deltaTime, cCollisionSteps, s_TempAllocator, job_system);

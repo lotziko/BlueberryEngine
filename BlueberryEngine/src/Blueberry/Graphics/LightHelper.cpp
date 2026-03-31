@@ -25,7 +25,7 @@ namespace Blueberry
 		Vector3::Up, Vector3::Up, Vector3::Backward, Vector3::Forward, Vector3::Up, Vector3::Up
 	};
 
-	uint32_t LightHelper::GetShadowSize(const LightType& type)
+	uint32_t LightHelper::GetShadowSize(LightType type)
 	{
 		if (type == LightType::Spot)
 			return 512;
@@ -36,7 +36,7 @@ namespace Blueberry
 		return 0;
 	}
 
-	uint32_t LightHelper::GetSliceCount(const LightType& type)
+	uint32_t LightHelper::GetSliceCount(LightType type)
 	{
 		if (type == LightType::Spot)
 			return 1;
@@ -47,7 +47,7 @@ namespace Blueberry
 		return 0;
 	}
 
-	Matrix LightHelper::GetViewMatrix(Light* light, Transform* transform, const uint8_t& slice)
+	Matrix LightHelper::GetViewMatrix(Light* light, Transform* transform, uint8_t slice)
 	{
 		switch (light->GetType())
 		{
@@ -64,7 +64,7 @@ namespace Blueberry
 		}
 	}
 
-	Matrix LightHelper::GetInverseViewMatrix(Light* light, Transform* transform, const uint8_t& slice)
+	Matrix LightHelper::GetInverseViewMatrix(Light* light, Transform* transform, uint8_t slice)
 	{
 		switch (light->GetType())
 		{
@@ -78,7 +78,7 @@ namespace Blueberry
 		}
 	}
 
-	Matrix LightHelper::GetProjectionMatrix(Light* light, const float& guardAngle)
+	Matrix LightHelper::GetProjectionMatrix(Light* light, float guardAngle)
 	{
 		switch (light->GetType())
 		{

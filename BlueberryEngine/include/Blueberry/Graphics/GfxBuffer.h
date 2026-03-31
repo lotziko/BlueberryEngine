@@ -12,10 +12,10 @@ namespace Blueberry
 		virtual ~GfxBuffer() = default;
 
 		virtual void GetData(void* data) = 0;
-		virtual void SetData(const void* data, const size_t& size) = 0;
+		virtual void SetData(const void* data, size_t size) = 0;
 
-		virtual const uint32_t& GetElementSize() = 0;
-		virtual const uint32_t& GetElementCount() = 0;
+		virtual uint32_t GetElementSize() const = 0;
+		virtual uint32_t GetElementCount() const = 0;
 
 	protected:
 		uint32_t m_Index;

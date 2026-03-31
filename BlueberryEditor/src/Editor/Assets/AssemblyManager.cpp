@@ -5,7 +5,6 @@
 #include "Editor\Path.h"
 #include "Editor\Misc\PathHelper.h"
 
-#include <sstream>
 #include <fstream>
 
 namespace Blueberry
@@ -211,7 +210,7 @@ namespace Blueberry
 		String windowsSDKLibPath = GetWindowsSDKLibPath();
 		String editorPath = GetEditorPath();
 
-		std::stringstream ss;
+		StringStream ss;
 		ss << ".VSBasePath				= '" << msvcPath << "'\n";
 		ss << ".WindowsSDKIncludePath	= '" << windowsSDKIncludePath << "'\n";
 		ss << ".WindowsSDKLibPath		= '" << windowsSDKLibPath << "'\n";

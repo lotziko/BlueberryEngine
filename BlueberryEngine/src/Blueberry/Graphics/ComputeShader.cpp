@@ -9,7 +9,7 @@ namespace Blueberry
 {
 	DATA_DEFINITION(KernelData)
 	{
-		DEFINE_FIELD(KernelData, m_Name, BindingType::String, {})
+		DEFINE_FIELD(KernelData, m_Name, BindingType::String, FieldOptions())
 	}
 
 	DATA_DEFINITION(ComputeShaderData)
@@ -28,12 +28,12 @@ namespace Blueberry
 		m_Name = name;
 	}
 
-	const KernelData& ComputeShaderData::GetKernel(const uint32_t& index) const
+	const KernelData& ComputeShaderData::GetKernel(uint32_t index) const
 	{
 		return m_Kernels[index];
 	}
 
-	const size_t ComputeShaderData::GetKernelCount() const
+	size_t ComputeShaderData::GetKernelCount() const
 	{
 		return m_Kernels.size();
 	}
@@ -93,7 +93,7 @@ namespace Blueberry
 		return shader;
 	}
 
-	GfxComputeShader* ComputeShader::GetKernel(const uint8_t& index)
+	GfxComputeShader* ComputeShader::GetKernel(uint8_t index) const
 	{
 		if (index >= static_cast<uint8_t>(m_ComputeShaders.size()))
 		{

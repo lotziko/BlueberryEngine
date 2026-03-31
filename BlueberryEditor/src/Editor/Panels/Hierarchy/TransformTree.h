@@ -25,7 +25,7 @@ namespace Blueberry
 		void Update(const List<ObjectPtr<Entity>>& roots);
 
 	private:
-		void Populate(Transform* parent, const int& depth);
+		void Populate(Transform* parent, int depth);
 
 	private:
 		List<TransformTreeNode> m_Nodes;

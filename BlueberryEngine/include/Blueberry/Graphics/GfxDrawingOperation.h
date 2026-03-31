@@ -12,11 +12,11 @@ namespace Blueberry
 
 	struct GfxDrawingOperation
 	{
-		GfxDrawingOperation(GfxBuffer* vertexBuffer, GfxBuffer* indexBuffer, Material* material, VertexLayout* layout, const uint32_t& indexCount, const uint32_t& indexOffset, const uint32_t& vertexCount, const Topology& topology, const uint8_t& passIndex = 0, GfxBuffer* instanceBuffer = nullptr, const uint32_t& instanceOffset = 0, const uint32_t& instanceCount = 1, const bool& isCounterClockwise = false);
-		GfxDrawingOperation(Mesh* mesh, Material* material, const uint32_t& indexCount, const uint32_t& indexOffset, const uint32_t& vertexCount, const uint8_t& passIndex = 0, GfxBuffer* instanceBuffer = nullptr, const uint32_t& instanceOffset = 0, const uint32_t& instanceCount = 1, const bool& isCounterClockwise = false);
-		GfxDrawingOperation(Mesh* mesh, GfxBuffer* vertexBufferOverride, Material* material, const uint32_t& indexCount, const uint32_t& indexOffset, const uint32_t& vertexCount, const uint8_t& passIndex = 0, GfxBuffer* instanceBuffer = nullptr, const uint32_t& instanceOffset = 0, const uint32_t& instanceCount = 1, const bool& isCounterClockwise = false);
-		GfxDrawingOperation(Mesh* mesh, Material* material, const uint8_t& passIndex = 0, GfxBuffer* instanceBuffer = nullptr, const uint32_t& instanceOffset = 0, const uint32_t& instanceCount = 1, const bool& isCounterClockwise = false);
-		GfxDrawingOperation(Mesh* mesh, GfxBuffer* vertexBufferOverride, Material* material, const uint8_t& passIndex = 0, GfxBuffer* instanceBuffer = nullptr, const uint32_t& instanceOffset = 0, const uint32_t& instanceCount = 1, const bool& isCounterClockwise = false);
+		GfxDrawingOperation(GfxBuffer* vertexBuffer, GfxBuffer* indexBuffer, Material* material, VertexLayout* layout, uint32_t indexCount, uint32_t indexOffset, uint32_t vertexCount, Topology topology, uint8_t passIndex = 0, GfxBuffer* instanceBuffer = nullptr, uint32_t instanceOffset = 0, uint32_t instanceCount = 1, bool isCounterClockwise = false);
+		GfxDrawingOperation(Mesh* mesh, Material* material, uint32_t indexCount, uint32_t indexOffset, uint32_t vertexCount, uint8_t passIndex = 0, GfxBuffer* instanceBuffer = nullptr, uint32_t instanceOffset = 0, uint32_t instanceCount = 1, bool isCounterClockwise = false);
+		GfxDrawingOperation(Mesh* mesh, GfxBuffer* vertexBufferOverride, Material* material, uint32_t indexCount, uint32_t indexOffset, uint32_t vertexCount, uint8_t passIndex = 0, GfxBuffer* instanceBuffer = nullptr, uint32_t instanceOffset = 0, uint32_t instanceCount = 1, bool isCounterClockwise = false);
+		GfxDrawingOperation(Mesh* mesh, Material* material, uint8_t passIndex = 0, GfxBuffer* instanceBuffer = nullptr, uint32_t instanceOffset = 0, uint32_t instanceCount = 1, bool isCounterClockwise = false);
+		GfxDrawingOperation(Mesh* mesh, GfxBuffer* vertexBufferOverride, Material* material, uint8_t passIndex = 0, GfxBuffer* instanceBuffer = nullptr, uint32_t instanceOffset = 0, uint32_t instanceCount = 1, bool isCounterClockwise = false);
 
 		static Material* GetValidMaterial(Material* material);
 

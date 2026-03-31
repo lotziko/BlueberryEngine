@@ -6,7 +6,7 @@
 
 namespace Blueberry
 {
-	Guid::Guid(const uint64_t& data1, const uint64_t& data2)
+	Guid::Guid(uint64_t data1, uint64_t data2)
 	{
 		data[0] = data1;
 		data[1] = data2;

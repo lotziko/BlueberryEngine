@@ -32,10 +32,10 @@ namespace Blueberry
 		Transform* GetParent() const;
 
 		const List<ObjectPtr<Transform>>& GetChildren() const;
-		Transform* GetChild(const size_t& index);
-		const size_t GetChildrenCount() const;
+		Transform* GetChild(size_t index);
+		size_t GetChildrenCount() const;
 
-		const size_t GetSiblingIndex();
+		size_t GetSiblingIndex();
 
 		void SetLocalPosition(const Vector3& position);
 		void SetLocalRotation(const Quaternion& rotation);
@@ -47,13 +47,13 @@ namespace Blueberry
 		void SetRotation(const Quaternion& rotation);
 		void SetLocalTRS(const TRS& trs);
 
-		void SetParent(Transform* parent, const bool& worldPositionStays = true);
-		void SetSiblingIndex(const size_t& index);
+		void SetParent(Transform* parent, bool worldPositionStays = true);
+		void SetSiblingIndex(size_t index);
 
 		const size_t& GetUpdateCount();
 
-		const bool& IsStatic() const;
-		void SetStatic(const bool& isStatic);
+		bool IsStatic() const;
+		void SetStatic(bool isStatic);
 
 	private:
 		void InvalidateHierarchy();

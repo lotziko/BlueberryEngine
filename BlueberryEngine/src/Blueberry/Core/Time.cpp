@@ -7,17 +7,17 @@ namespace Blueberry
 	float Time::s_DeltaTime = 0;
 	float Time::s_FixedDeltaTime = 1.0f / 60.0f;
 
-	const size_t Time::GetFrameCount()
+	size_t Time::GetFrameCount()
 	{
 		return s_FrameCount;
 	}
 
-	const float Time::GetTime()
+	float Time::GetTime()
 	{
 		return static_cast<float>(s_Time);
 	}
 
-	const float Time::GetDeltaTime()
+	float Time::GetDeltaTime()
 	{
 		return s_DeltaTime;
 	}
@@ -27,7 +27,7 @@ namespace Blueberry
 		s_DeltaTime = deltaTime;
 	}
 
-	const float Time::GetFixedDeltaTime()
+	float Time::GetFixedDeltaTime()
 	{
 		return s_FixedDeltaTime;
 	}

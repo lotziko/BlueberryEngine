@@ -7,11 +7,11 @@ namespace Blueberry
 	class BB_API Cursor
 	{
 	public:
-		static const bool& IsLocked();
-		static void SetLocked(const bool& locked);
+		static bool IsLocked();
+		static void SetLocked(bool locked);
 
-		static const bool& IsHidden();
-		static void SetHidden(const bool& hidden);
+		static bool IsHidden();
+		static void SetHidden(bool hidden);
 
 	private:
 		static bool s_Locked;

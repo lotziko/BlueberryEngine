@@ -23,6 +23,7 @@
 #include "Concrete\PrefabImporterEditor.h"
 #include "Concrete\MeshEditor.h"
 #include "Concrete\AnimationGraphEditor.h"
+#include "Concrete\AnimationTransitionEditor.h"
 
 namespace Blueberry
 {
@@ -49,6 +50,7 @@ namespace Blueberry
 		REGISTER_OBJECT_EDITOR(PrefabImporterEditor, PrefabImporter);
 		REGISTER_OBJECT_EDITOR(MeshEditor, Mesh);
 		REGISTER_OBJECT_EDITOR(AnimationGraphEditor, AnimationGraph);
+		REGISTER_OBJECT_EDITOR(AnimationTransitionEditor, AnimationTransition);
 		REGISTER_OBJECT_EDITOR(ObjectEditor, Object);
 	}
 }

@@ -119,7 +119,7 @@ namespace Blueberry
 		return s_IsRunning;
 	}
 
-	void Application::SetRunning(const bool& isRunning)
+	void Application::SetRunning(bool isRunning)
 	{
 		s_IsRunning = isRunning;
 	}

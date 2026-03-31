@@ -109,7 +109,7 @@ namespace Blueberry
 		Flush();
 	}
 
-	void Renderer2D::Draw(const Matrix& transform, Texture2D* texture, Material* material, const Color& color, const int& sortingOrder)
+	void Renderer2D::Draw(const Matrix& transform, Texture2D* texture, Material* material, const Color& color, int sortingOrder)
 	{
 		if (s_DrawingDataCount >= MAX_SPRITES)
 			Flush();
@@ -175,7 +175,7 @@ namespace Blueberry
 			s_QuadIndexCount += 6;
 		}
 
-		s_VertexBuffer->SetData(s_VertexData, (s_QuadIndexCount / 6 * 4) * s_VertexBuffer->GetElementSize());
+		s_VertexBuffer->SetData(s_VertexData, (static_cast<size_t>(s_QuadIndexCount / 6) * 4) * s_VertexBuffer->GetElementSize());
 
 		// Draw quads
 		Material* currentMaterial = s_DrawingDatas->material;

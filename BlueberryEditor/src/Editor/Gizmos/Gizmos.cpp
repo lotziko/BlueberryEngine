@@ -147,7 +147,7 @@ namespace Blueberry
 		++s_LineCount;
 	}
 
-	void Gizmos::DrawArc(const Vector3& center, const Vector3& normal, const Vector3& from, const float& angle, const float& radius)
+	void Gizmos::DrawArc(const Vector3& center, const Vector3& normal, const Vector3& from, float angle, float radius)
 	{
 		if (s_ArcCount + 1 >= MAX_LINES)
 			FlushArcs();
@@ -190,7 +190,7 @@ namespace Blueberry
 		s_Lines[s_LineCount++] = { center + c3, center + c7, s_CurrentColor };
 	}
 
-	void Gizmos::DrawCapsule(const Vector3& center, const float& height, const float& radius)
+	void Gizmos::DrawCapsule(const Vector3& center, float height, float radius)
 	{
 		float halfHeight = height / 2;
 		float topHeight = center.y + halfHeight;
@@ -210,7 +210,7 @@ namespace Blueberry
 		DrawDisc(Vector3(center.x, bottomHeight, center.z), Vector3::UnitY, radius);
 	}
 
-	void Gizmos::DrawSphere(const Vector3& center, const float& radius)
+	void Gizmos::DrawSphere(const Vector3& center, float radius)
 	{
 		if (s_ArcCount + 3 >= MAX_LINES)
 			FlushArcs();
@@ -220,7 +220,7 @@ namespace Blueberry
 		s_Arcs[s_ArcCount++] = { center, Vector3(1, 0, 0), Vector3::UnitZ, radius, 360, s_CurrentColor };
 	}
 
-	void Gizmos::DrawDisc(const Vector3& center, const Vector3& normal, const float& radius)
+	void Gizmos::DrawDisc(const Vector3& center, const Vector3& normal, float radius)
 	{
 		if (s_ArcCount + 1 >= MAX_LINES)
 			FlushArcs();

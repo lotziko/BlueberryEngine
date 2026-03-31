@@ -41,7 +41,7 @@ namespace Blueberry
 			if (ImGui::IsWindowFocused())
 			{
 				Screen::SetAllowCursorLock(true);
-				Screen::SetGameViewport(Rectangle(0, 0, size.x, size.y));
+				Screen::SetGameViewport(Rectangle(0, 0, static_cast<long>(size.x), static_cast<long>(size.y)));
 				if (Cursor::IsHidden())
 				{
 					ImGui::SetMouseCursor(ImGuiMouseCursor_None);
@@ -100,12 +100,12 @@ namespace Blueberry
 					{
 						GfxTexturePool::Release(m_RenderTarget);
 					}
-					m_RenderTarget = GfxTexturePool::Get(viewport.x, viewport.y, 1, TextureUsageFlags::RenderTarget, 1, 1, TextureFormat::R8G8B8A8_UNorm);
+					m_RenderTarget = GfxTexturePool::Get(static_cast<uint32_t>(viewport.x), static_cast<uint32_t>(viewport.y), 1, TextureUsageFlags::RenderTarget, 1, 1, TextureFormat::R8G8B8A8_UNorm);
 					camera->SetPixelSize(Vector2(width, height));
 				}
 
-				DefaultRenderer::Draw(scene, camera, Rectangle(0, 0, viewport.x, viewport.y), Color(0, 0, 0, 1), m_RenderTarget);
-				ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(m_RenderTarget->GetHandle()), ImVec2(x, y), ImVec2(x + width, y + height), ImVec2(0, 0), ImVec2(viewport.x / m_RenderTarget->GetWidth(), viewport.y / m_RenderTarget->GetHeight()));
+				DefaultRenderer::Draw(scene, camera, Rectangle(0, 0, static_cast<long>(viewport.x), static_cast<long>(viewport.y)), Color(0.0f, 0.0f, 0.0f, 1.0f), m_RenderTarget);
+				ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(m_RenderTarget->GetHandle()), ImVec2(x, y), ImVec2(x + width, y + height), ImVec2(0.0f, 0.0f), ImVec2(viewport.x / m_RenderTarget->GetWidth(), viewport.y / m_RenderTarget->GetHeight()));
 			}
 		}
 	}

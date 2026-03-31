@@ -7,8 +7,8 @@ namespace Blueberry
 	public:
 		static float* GetGizmoSnapping();
 
-		static const int& GetGizmoOperation();
-		static void SetGizmoOperation(const int& operation);
+		static int GetGizmoOperation();
+		static void SetGizmoOperation(int operation);
 
 	private:
 		static float s_GizmoSnapping[3];

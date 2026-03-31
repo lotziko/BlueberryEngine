@@ -11,13 +11,13 @@ namespace Blueberry
 	public:
 		~Texture3D();
 
-		const uint32_t& GetDepth();
+		uint32_t GetDepth() const;
 
-		void Initialize(const uint32_t& width, const uint32_t& height, const uint32_t& depth, const TextureFormat& textureFormat = TextureFormat::R8G8B8A8_UNorm);
-		void SetData(uint8_t* data, const size_t& dataSize);
+		void Initialize(uint32_t width, uint32_t height, uint32_t depth, TextureFormat textureFormat = TextureFormat::R8G8B8A8_UNorm);
+		void SetData(uint8_t* data, size_t dataSize);
 		void Apply();
 
-		static Texture3D* Create(const uint32_t& width, const uint32_t& height, const uint32_t& depth, const TextureFormat& textureFormat = TextureFormat::R8G8B8A8_UNorm, const WrapMode& wrapMode = WrapMode::Clamp, const FilterMode& filterMode = FilterMode::Bilinear);
+		static Texture3D* Create(uint32_t width, uint32_t height, uint32_t depth, TextureFormat textureFormat = TextureFormat::R8G8B8A8_UNorm, WrapMode wrapMode = WrapMode::Clamp, FilterMode filterMode = FilterMode::Bilinear);
 	
 	private:
 		uint32_t m_Depth = 0;

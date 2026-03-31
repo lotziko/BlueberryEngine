@@ -4,15 +4,14 @@
 #include "Blueberry\Serialization\SerializationTree.h"
 
 #include <fstream>
-#include <sstream>
 
 namespace Blueberry
 {
 	struct Context
 	{
-		Dictionary<std::string_view, uint32_t> keyToOffset;
-		std::stringstream& keyStream;
-		std::stringstream& dataStream;
+		Dictionary<std::string_view, uint32_t>& keyToOffset;
+		StringStream& keyStream;
+		StringStream& dataStream;
 		size_t streamSize = 0;
 	};
 
@@ -97,9 +96,10 @@ namespace Blueberry
 		uint32_t version = 1;
 		stream << 'B';
 		stream.write(reinterpret_cast<char*>(&version), sizeof(uint32_t));
-		std::stringstream keyStream;
-		std::stringstream dataStream;
-		Context context = { {}, keyStream, dataStream, 0 };
+		Dictionary<std::string_view, uint32_t> keyToOffset;
+		StringStream keyStream;
+		StringStream dataStream;
+		Context context = { keyToOffset, keyStream, dataStream, 0 };
 		for (SerializationTree& tree : trees)
 		{
 			WriteObject(tree, context);
@@ -110,6 +110,5 @@ namespace Blueberry
 		uint32_t objectCount = static_cast<uint32_t>(trees.size());
 		stream.write(reinterpret_cast<char*>(&objectCount), sizeof(uint32_t));
 		stream << dataStream.rdbuf();
-		context.keyToOffset = {};
 	}
 }

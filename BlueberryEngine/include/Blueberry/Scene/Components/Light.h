@@ -26,31 +26,31 @@ namespace Blueberry
 
 		void OnPreCull();
 
-		const LightType& GetType();
-		void SetType(const LightType& type);
+		LightType GetType();
+		void SetType(LightType type);
 
-		const Color& GetColor();
+		const Color& GetColor() const;
 		void SetColor(const Color& color);
 
-		const float& GetIntensity();
-		void SetIntensity(const float& intensity);
+		float GetIntensity() const;
+		void SetIntensity(float intensity);
 
-		const float& GetRange();
-		void SetRange(const float& range);
+		float GetRange() const;
+		void SetRange(float range);
 
-		const float& GetOuterSpotAngle();
-		const float& GetInnerSpotAngle();
+		float GetOuterSpotAngle() const;
+		float GetInnerSpotAngle() const;
 
-		const bool& IsCastingShadows();
-		void SetCastingShadows(const bool& castingShadows);
+		bool IsCastingShadows() const;
+		void SetCastingShadows(bool castingShadows);
 
-		const bool& IsCastingFog();
-		void SetCastingFog(const bool& castingFog);
+		bool IsCastingFog() const;
+		void SetCastingFog(bool castingFog);
 
-		const bool& IsCached();
-		void SetCached(const bool& cached);
+		bool IsCached() const;
+		void SetCached(bool cached);
 
-		Texture* GetCookie();
+		Texture* GetCookie() const;
 		void SetCookie(Texture* cookie);
 
 	private:
@@ -72,7 +72,7 @@ namespace Blueberry
 		ObjectPtr<Texture> m_Cookie;
 
 	private:
-		GfxTexture* m_CachedShadow;
+		GfxTexture* m_CachedShadow = nullptr;
 		size_t m_UpdateCount = 0;
 		bool m_IsDirty[6] = { true, true, true, true, true, true };
 		Matrix m_WorldToShadow[6];

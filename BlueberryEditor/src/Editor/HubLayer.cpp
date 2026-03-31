@@ -67,7 +67,7 @@ namespace Blueberry
 		ImGui::SameLine(ImGui::GetWindowWidth() - 120);
 		if (ImGui::Button("Open Project", ImVec2(110, 32)))
 		{
-			WString path = PlatformHelper::OpenFileDialog();
+			String path = PlatformHelper::OpenFileDialog();
 			if (path.size() > 0)
 			{
 				ProjectCache::Add(path);
@@ -92,7 +92,7 @@ namespace Blueberry
 			{
 				if (ImGui::MenuItem("Remove"))
 				{
-					ProjectCache::Remove(info.wpath);
+					ProjectCache::Remove(info.path);
 					ProjectCache::Save();
 				}
 				ImGui::EndPopup();

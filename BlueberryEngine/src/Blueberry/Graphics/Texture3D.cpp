@@ -9,7 +9,7 @@ namespace Blueberry
 	OBJECT_DEFINITION(Texture3D, Texture)
 	{
 		DEFINE_BASE_FIELDS(Texture3D, Texture)
-		DEFINE_FIELD(Texture3D, m_Depth, BindingType::Int, {})
+		DEFINE_FIELD(Texture3D, m_Depth, BindingType::Int, FieldOptions())
 	}
 
 	Texture3D::~Texture3D()
@@ -20,12 +20,12 @@ namespace Blueberry
 		}
 	}
 
-	const uint32_t& Texture3D::GetDepth()
+	uint32_t Texture3D::GetDepth() const
 	{
 		return m_Depth;
 	}
 
-	void Texture3D::Initialize(const uint32_t& width, const uint32_t& height, const uint32_t& depth, const TextureFormat& textureFormat)
+	void Texture3D::Initialize(uint32_t width, uint32_t height, uint32_t depth, TextureFormat textureFormat)
 	{
 		m_Width = width;
 		m_Height = height;
@@ -38,7 +38,7 @@ namespace Blueberry
 		}
 	}
 
-	void Texture3D::SetData(uint8_t* data, const size_t& dataSize)
+	void Texture3D::SetData(uint8_t* data, size_t dataSize)
 	{
 		m_RawData.resize(dataSize);
 		memcpy(m_RawData.data(), data, dataSize);
@@ -74,7 +74,7 @@ namespace Blueberry
 		}
 	}
 
-	Texture3D* Texture3D::Create(const uint32_t& width, const uint32_t& height, const uint32_t& depth, const TextureFormat& textureFormat, const WrapMode& wrapMode, const FilterMode& filterMode)
+	Texture3D* Texture3D::Create(uint32_t width, uint32_t height, uint32_t depth, TextureFormat textureFormat, WrapMode wrapMode, FilterMode filterMode)
 	{
 		Texture3D* texture = Object::Create<Texture3D>();
 		texture->m_Width = width;

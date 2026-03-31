@@ -70,6 +70,7 @@ namespace Blueberry
 		if (m_Handle == NULL)
 		{
 			BB_ERROR(WindowsHelper::GetStringLastError() + "CreateWindowEX Failed for window: " + m_WindowTitle);
+			return;
 		}
 
 		RAWINPUTDEVICE rid{};
@@ -462,11 +463,50 @@ namespace Blueberry
 
 		switch (uMsg)
 		{
+		case WM_LBUTTONDOWN:
+		{
+			KeyEventArgs args(KeyCode::MouseLeft);
+			InputEvents::GetKeyDown().Invoke(args);
+			return 0;
+		}
+		case WM_LBUTTONUP:
+		{
+			KeyEventArgs args(KeyCode::MouseLeft);
+			InputEvents::GetKeyUp().Invoke(args);
+			return 0;
+		}
+		case WM_MBUTTONDOWN:
+		{
+			KeyEventArgs args(KeyCode::MouseMiddle);
+			InputEvents::GetKeyDown().Invoke(args);
+			return 0;
+		}
+		case WM_MBUTTONUP:
+		{
+			KeyEventArgs args(KeyCode::MouseMiddle);
+			InputEvents::GetKeyUp().Invoke(args);
+			return 0;
+		}
+		case WM_RBUTTONDOWN:
+		{
+			KeyEventArgs args(KeyCode::MouseRight);
+			InputEvents::GetKeyDown().Invoke(args);
+			return 0;
+		}
+		case WM_RBUTTONUP:
+		{
+			KeyEventArgs args(KeyCode::MouseRight);
+			InputEvents::GetKeyUp().Invoke(args);
+			return 0;
+		}
 		case WM_KEYDOWN:
 		{
-			unsigned char key = static_cast<unsigned char>(wParam);
-			KeyEventArgs args(s_KeyMapping[key]);
-			InputEvents::GetKeyDown().Invoke(args);
+			if ((lParam & (1 << 30)) == 0)
+			{
+				unsigned char key = static_cast<unsigned char>(wParam);
+				KeyEventArgs args(s_KeyMapping[key]);
+				InputEvents::GetKeyDown().Invoke(args);
+			}
 			return 0;
 		}
 		case WM_KEYUP:
@@ -548,6 +588,9 @@ namespace Blueberry
 		case WM_KILLFOCUS:
 		{
 			WindowEvents::GetWindowUnfocused().Invoke();
+			ImGuiIO& io = ImGui::GetIO();
+			io.ClearInputKeys();
+			io.ClearInputMouse();
 			return 0;
 		}
 		case WM_DROPFILES:

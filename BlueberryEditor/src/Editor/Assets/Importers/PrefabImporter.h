@@ -11,6 +11,6 @@ namespace Blueberry
 		PrefabImporter() = default;
 
 	protected:
-		virtual void ImportData() override;
+		virtual void ImportData() final;
 	};
 }

@@ -96,7 +96,7 @@ namespace Blueberry
 	{
 		if (m_Modifications.size() > 0)
 		{
-			for (PropertyModification modification : m_Modifications)
+			for (const PropertyModification& modification : m_Modifications)
 			{
 				ApplyModification(modification);
 			}
@@ -245,10 +245,10 @@ namespace Blueberry
 		{
 			targets.push_back(static_cast<void*>(target));
 		}
-		BuildProperties(root, classInfo, targets);
+		BuildProperties(root, classInfo, targets, true);
 	}
 
-	void SerializedObject::BuildProperties(size_t parent, const ClassInfo* classInfo, const List<void*>& targets)
+	void SerializedObject::BuildProperties(size_t parent, const ClassInfo* classInfo, const List<void*>& targets, const bool& read)
 	{
 		for (size_t i = 0; i < classInfo->fields.size(); ++i)
 		{
@@ -268,7 +268,7 @@ namespace Blueberry
 			if (fieldInfo.isList)
 			{
 				childNode->type = PropertyType::List;
-				BuildList(child, fieldInfo, targets);
+				BuildList(child, fieldInfo, targets, read);
 			}
 			else if (fieldInfo.type == BindingType::Data)
 			{
@@ -284,7 +284,7 @@ namespace Blueberry
 				{
 					newTargets.push_back(static_cast<char*>(targets[j]) + fieldInfo.offset);
 				}
-				BuildProperties(child, info, newTargets);
+				BuildProperties(child, info, newTargets, read);
 			}
 			else
 			{
@@ -292,7 +292,14 @@ namespace Blueberry
 				for (size_t j = 0; j < targets.size(); ++j)
 				{
 					PropertyValue value = {};
-					VariantHelper::ReadValue(fieldInfo.type, static_cast<char*>(targets[j]) + fieldInfo.offset, value);
+					if (read)
+					{
+						VariantHelper::ReadValue(fieldInfo.type, static_cast<char*>(targets[j]) + fieldInfo.offset, value);
+					}
+					else
+					{
+						VariantHelper::GetDefaultValue(fieldInfo.type, value);
+					}
 					childNode->values.push_back(std::move(value));
 					if (m_IsPrefabInstance[j] && PrefabManager::HasModification(m_Targets[j], GetNodePath(child)))
 					{
@@ -305,7 +312,7 @@ namespace Blueberry
 		}
 	}
 
-	void SerializedObject::BuildList(size_t parent, const FieldInfo& fieldInfo, const List<void*>& targets)
+	void SerializedObject::BuildList(size_t parent, const FieldInfo& fieldInfo, const List<void*>& targets, const bool& read)
 	{
 		bool visible = fieldInfo.options.visibility == VisibilityType::Visible;
 
@@ -357,7 +364,7 @@ namespace Blueberry
 				{
 					newTargets.push_back(lists[j]->get_base(i));
 				}
-				BuildProperties(Get(parent)->children[i], info, newTargets);
+				BuildProperties(Get(parent)->children[i], info, newTargets, read);
 				newTargets.clear();
 			}
 		}
@@ -371,7 +378,14 @@ namespace Blueberry
 					size_t listElement = Get(parent)->children[j];
 					PropertyTreeNode* listElementNode = Get(listElement);
 					PropertyValue value = {};
-					VariantHelper::ReadValue(childType, list->get_base(j), value);
+					if (read)
+					{
+						VariantHelper::ReadValue(childType, list->get_base(j), value);
+					}
+					else
+					{
+						VariantHelper::GetDefaultValue(fieldInfo.type, value);
+					}
 					listElementNode->values.push_back(std::move(value));
 					if (m_IsPrefabInstance[i] && PrefabManager::HasModification(m_Targets[i], GetNodePath(listElement)))
 					{
@@ -477,9 +491,28 @@ namespace Blueberry
 		}
 	}
 
-	void SerializedObject::AddModifiedProperty(size_t id, const PropertyModificationType& type, const size_t& index1, const size_t& index2)
+	void SerializedObject::AddModifiedProperty(size_t id, const PropertyModificationType& type, size_t index1, size_t index2)
 	{
 		m_Modifications.push_back({ id, type, index1, index2 });
+	}
+
+	void SerializedObject::InsertListElement(size_t id, size_t index)
+	{
+		size_t child = CreateChild(id);
+		PropertyTreeNode& node = m_Nodes[id];
+		node.children.insert(node.children.begin() + index, child);
+		for (size_t i = index; i < node.children.size(); ++i)
+		{
+			m_Nodes[node.children[i]].index = i;
+		}
+		if (node.bindingType == BindingType::DataList)
+		{
+			List<void*> targets;
+			size_t offset;
+			FindPath(&m_Nodes[child], targets, offset);
+			BuildProperties(child, ClassDB::GetInfo(*node.fieldInfo->options.objectType), targets, false);
+		}
+		AddModifiedProperty(id, PropertyModificationType::Insert, index);
 	}
 
 	void SerializedObject::DeleteListElement(size_t id, size_t index)
@@ -543,7 +576,7 @@ namespace Blueberry
 		return EMPTY_ID;
 	}
 
-	PropertyTreeNode* SerializedObject::Get(const size_t& id)
+	PropertyTreeNode* SerializedObject::Get(size_t id)
 	{
 		return &m_Nodes[id];
 	}

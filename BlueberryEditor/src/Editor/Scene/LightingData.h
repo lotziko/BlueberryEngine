@@ -27,8 +27,8 @@ namespace Blueberry
 		const GlobalObjectId& GetObjectId();
 		void SetObjectId(const GlobalObjectId& objectId);
 
-		const uint32_t& GetChartInstanceOffset();
-		void SetChartInstanceOffset(const uint32_t& chartInstanceOffset);
+		uint32_t GetChartInstanceOffset();
+		void SetChartInstanceOffset(uint32_t chartInstanceOffset);
 
 	private:
 		GlobalObjectId m_ObjectId;
@@ -66,9 +66,9 @@ namespace Blueberry
 
 		void SetProbeVolumeData(Texture3D* probeVolume);
 
-		const size_t GetReflectionProbeCount();
+		size_t GetReflectionProbeCount();
 		void SetSkyReflection(SkyRenderer* skyRenderer, TextureCube* textureCube);
-		void SetReflectionProbe(const uint32_t& index, ReflectionProbe* reflectionProbe, TextureCube* textureCube);
+		void SetReflectionProbe(uint32_t index, ReflectionProbe* reflectionProbe, TextureCube* textureCube);
 		
 		void Apply();
 		void ApplyLightmap();

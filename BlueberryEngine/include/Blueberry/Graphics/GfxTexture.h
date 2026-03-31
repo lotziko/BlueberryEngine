@@ -22,11 +22,11 @@ namespace Blueberry
 
 		virtual void GetData(void* target, const Rectangle& area) = 0;
 		virtual void GetData(void* target) = 0;
-		virtual void SetData(void* data, const size_t& size) = 0;
-		virtual void SetData(void* data, const size_t& size, const uint32_t& slice) = 0;
+		virtual void SetData(void* data, size_t size) = 0;
+		virtual void SetData(void* data, size_t size, uint32_t slice) = 0;
 
-		virtual void SetWrapMode(const WrapMode& wrapMode) = 0;
-		virtual void SetFilterMode(const FilterMode& filterMode) = 0;
+		virtual void SetWrapMode(WrapMode wrapMode) = 0;
+		virtual void SetFilterMode(FilterMode filterMode) = 0;
 		virtual void SetName(const String& name) = 0;
 
 		virtual void GenerateMipMaps() = 0;

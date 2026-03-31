@@ -11,13 +11,6 @@ namespace Blueberry
 	const String Object::TypeName = "Object";
 	const String Object::ParentTypeName = "";
 	
-	TypeId GenerateTypeId()
-	{
-		static TypeId maxId = 0;
-		maxId += 1;
-		return maxId;
-	}
-
 	bool Object::IsClassType(const TypeId classType) const
 	{
 		return classType == Type;
@@ -28,7 +21,7 @@ namespace Blueberry
 		return Type;
 	}
 
-	String Object::GetTypeName() const
+	const String& Object::GetTypeName() const
 	{
 		return TypeName;
 	}
@@ -58,7 +51,7 @@ namespace Blueberry
 		return m_State == ObjectState::Default;
 	}
 
-	void Object::SetState(const ObjectState& state)
+	void Object::SetState(ObjectState state)
 	{
 		m_State = state;
 	}

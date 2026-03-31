@@ -7,11 +7,11 @@ namespace Blueberry
 	class BB_API Time
 	{
 	public:
-		static const size_t GetFrameCount();
-		static const float GetTime();
-		static const float GetDeltaTime();
+		static size_t GetFrameCount();
+		static float GetTime();
+		static float GetDeltaTime();
 		static void SetDeltaTime(float deltaTime);
-		static const float GetFixedDeltaTime();
+		static float GetFixedDeltaTime();
 		static void EndFrame();
 
 	private:

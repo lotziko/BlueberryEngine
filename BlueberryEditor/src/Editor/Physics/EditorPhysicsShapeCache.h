@@ -8,7 +8,7 @@ namespace Blueberry
 	{
 	protected:
 		virtual void ClearImpl(Mesh* mesh) final;
-		virtual bool TryLoadImpl(Mesh* mesh, const bool& isConvex, const Vector3& scale, List<uint8_t>& data) final;
-		virtual void SaveImpl(Mesh* mesh, const bool& isConvex, const Vector3& scale, List<uint8_t>& data) final;
+		virtual bool TryLoadImpl(Mesh* mesh, bool isConvex, const Vector3& scale, List<uint8_t>& data) final;
+		virtual void SaveImpl(Mesh* mesh, bool isConvex, const Vector3& scale, List<uint8_t>& data) final;
 	};
 }

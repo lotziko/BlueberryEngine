@@ -32,7 +32,7 @@ namespace Blueberry
 		return m_Entity.Get()->GetScene();
 	}
 
-	const bool& Component::IsActive()
+	bool Component::IsActive() const
 	{
 		return m_IsActive;
 	}

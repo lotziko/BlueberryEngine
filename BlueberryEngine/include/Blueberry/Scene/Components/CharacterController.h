@@ -18,15 +18,16 @@ namespace Blueberry
 		virtual void OnDestroy() final;
 		virtual void OnEnable() final;
 		virtual void OnDisable() final;
-		virtual void OnFixedUpdate() final;
 		virtual void OnUpdate() final;
 
-		const float& GetHeight();
-		const float& GetRadius();
+		float GetHeight() const;
+		float GetRadius() const;
 
-		void SetDesiredVelocity(const Vector3& velocity);
+		void Move(const Vector3& velocity);
 
-		const Vector3& GetRealVelocity();
+		const Vector3& GetVelocity() const;
+		bool IsGrounded() const;
+		const Vector3& GetGroundNormal() const;
 
 	private:
 		float m_Height = 2.0f;
@@ -36,8 +37,9 @@ namespace Blueberry
 
 		PrivateData* m_PrivateData;
 		alignas(8) char m_PrivateStorage[48];
-		Transform* m_Transform;
-		Vector3 m_DesiredVelocity;
-		Vector3 m_RealVelocity;
+		Transform* m_Transform = nullptr;
+		Vector3 m_Velocity;
+		bool m_IsGrounded = false;
+		Vector3 m_GroundNormal;
 	};
 }

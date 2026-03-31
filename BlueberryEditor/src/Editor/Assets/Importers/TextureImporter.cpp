@@ -14,14 +14,14 @@ namespace Blueberry
 	OBJECT_DEFINITION(TextureImporter, AssetImporter)
 	{
 		DEFINE_BASE_FIELDS(TextureImporter, AssetImporter)
-		DEFINE_FIELD(TextureImporter, m_GenerateMipmaps, BindingType::Bool, {})
-		DEFINE_FIELD(TextureImporter, m_IsSRGB, BindingType::Bool, {})
-		DEFINE_FIELD(TextureImporter, m_IsReadable, BindingType::Bool, {})
+		DEFINE_FIELD(TextureImporter, m_GenerateMipmaps, BindingType::Bool, FieldOptions())
+		DEFINE_FIELD(TextureImporter, m_IsSRGB, BindingType::Bool, FieldOptions())
+		DEFINE_FIELD(TextureImporter, m_IsReadable, BindingType::Bool, FieldOptions())
 		DEFINE_FIELD(TextureImporter, m_WrapMode, BindingType::Enum, FieldOptions().SetEnumHint("Repeat,Clamp"))
 		DEFINE_FIELD(TextureImporter, m_FilterMode, BindingType::Enum, FieldOptions().SetEnumHint("Point,Bilinear,Trilinear,Anisotropic"))
 		DEFINE_FIELD(TextureImporter, m_TextureShape, BindingType::Enum, FieldOptions().SetEnumHint("Texture2D,Texture2DArray,TextureCube,Texture3D"))
 		DEFINE_FIELD(TextureImporter, m_TextureType, BindingType::Enum, FieldOptions().SetEnumHint("Default,BaseMap,NormalMap,Mask,Cookie"))
-		DEFINE_FIELD(TextureImporter, m_TextureFormat, BindingType::Enum, {})
+		DEFINE_FIELD(TextureImporter, m_TextureFormat, BindingType::Enum, FieldOptions())
 		DEFINE_FIELD(TextureImporter, m_TextureCubeType, BindingType::Enum, FieldOptions().SetEnumHint("Equirectangular,Slices"))
 		DEFINE_FIELD(TextureImporter, m_TextureCubeIBLType, BindingType::Enum, FieldOptions().SetEnumHint("None,Specular"))
 	}
@@ -137,7 +137,7 @@ namespace Blueberry
 		return String(dataPath.string());
 	}
 
-	const bool TextureImporter::IsRequiringReimport()
+	bool TextureImporter::IsRequiringReimport() const
 	{
 		Guid guid = GetGuid();
 		FileId id = static_cast<size_t>(m_TextureShape) + 1;
@@ -159,11 +159,21 @@ namespace Blueberry
 		DirectX::ScratchImage image = {};
 		TextureHelper::Load(image, path, extension, m_IsSRGB);
 
+		if (image.GetPixelsSize() == 0)
+		{
+			BB_ERROR("Failed to load texture.");
+			return;
+		}
+
 		if (m_TextureShape == TextureShape::Texture2D)
 		{
 			Blueberry::TextureFormat format;
 			if (extension != ".dds")
 			{
+				if (m_TextureType == TextureType::NormalMap)
+				{
+					TextureHelper::CompressNormals(image);
+				}
 				if (m_GenerateMipmaps)
 				{
 					TextureHelper::GenerateMipMaps(image);
@@ -175,7 +185,7 @@ namespace Blueberry
 			{
 				format = static_cast<Blueberry::TextureFormat>(image.GetMetadata().format);
 			}
-			auto metadata = image.GetMetadata();
+			auto& metadata = image.GetMetadata();
 
 			Texture2D* texture = GetOrCreateAssetObject<Texture2D>(id);
 			texture->SetName(GetName());
@@ -210,7 +220,7 @@ namespace Blueberry
 
 			TextureHelper::Compress(image, compressedFormat, m_IsSRGB);
 
-			auto metadata = image.GetMetadata();
+			auto& metadata = image.GetMetadata();
 			uint32_t size = static_cast<uint32_t>(std::min(metadata.width, metadata.height));
 			TextureCube* texture = GetOrCreateAssetObject<TextureCube>(id);
 			texture->SetName(GetName());

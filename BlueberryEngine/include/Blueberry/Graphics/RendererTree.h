@@ -10,9 +10,9 @@ namespace Blueberry
 	class RendererTree
 	{
 	public:
-		void Add(const ObjectId& id, const AABB& bounds);
-		void Remove(const ObjectId& id, const AABB& bounds);
-		void Update(const ObjectId& id, const AABB& previousBounds, const AABB& newBounds);
+		void Add(ObjectId id, const AABB& bounds);
+		void Remove(ObjectId id, const AABB& bounds);
+		void Update(ObjectId id, const AABB& previousBounds, const AABB& newBounds);
 		void Cull(DirectX::XMVECTOR* planes, List<ObjectId>& result);
 		void GatherBounds(List<AABB>& result);
 

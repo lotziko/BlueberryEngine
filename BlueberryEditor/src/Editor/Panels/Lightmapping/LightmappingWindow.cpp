@@ -29,14 +29,14 @@ namespace Blueberry
 	OBJECT_DEFINITION(LightmappingWindow, EditorWindow)
 	{
 		DEFINE_BASE_FIELDS(LightmappingWindow, EditorWindow)
-		DEFINE_FIELD(LightmappingWindow, m_TileSize, BindingType::Int, {})
-		DEFINE_FIELD(LightmappingWindow, m_TexelPerUnit, BindingType::Float, {})
-		DEFINE_FIELD(LightmappingWindow, m_SamplePerTexel, BindingType::Int, {})
-		DEFINE_FIELD(LightmappingWindow, m_PreferredSize, BindingType::Int, {})
-		DEFINE_FIELD(LightmappingWindow, m_DistanceBetweenProbes, BindingType::Float, {})
-		DEFINE_FIELD(LightmappingWindow, m_Denoise, BindingType::Bool, {})
-		DEFINE_FIELD(LightmappingWindow, m_GenerateLightmap, BindingType::Bool, {})
-		DEFINE_FIELD(LightmappingWindow, m_GenerateProbes, BindingType::Bool, {})
+		DEFINE_FIELD(LightmappingWindow, m_TileSize, BindingType::Int, FieldOptions())
+		DEFINE_FIELD(LightmappingWindow, m_TexelPerUnit, BindingType::Float, FieldOptions())
+		DEFINE_FIELD(LightmappingWindow, m_SamplePerTexel, BindingType::Int, FieldOptions())
+		DEFINE_FIELD(LightmappingWindow, m_PreferredSize, BindingType::Int, FieldOptions())
+		DEFINE_FIELD(LightmappingWindow, m_DistanceBetweenProbes, BindingType::Float, FieldOptions())
+		DEFINE_FIELD(LightmappingWindow, m_Denoise, BindingType::Bool, FieldOptions())
+		DEFINE_FIELD(LightmappingWindow, m_GenerateLightmap, BindingType::Bool, FieldOptions())
+		DEFINE_FIELD(LightmappingWindow, m_GenerateProbes, BindingType::Bool, FieldOptions())
 		EditorMenuManager::AddItem("Window/Lightmapping", &LightmappingWindow::Open);
 	}
 
@@ -117,10 +117,10 @@ namespace Blueberry
 					size.y *= zoom;
 					ImDrawList* list = ImGui::GetWindowDrawList();
 
-					if (lightingData != nullptr && lightingData->GetState() == ObjectState::Default)
+					if (lightingData != nullptr)
 					{
 						Texture2D* lightmap = lightingData->GetLightmap();
-						if (lightmap != nullptr && lightmap->GetState() == ObjectState::Default)
+						if (lightmap != nullptr)
 						{
 							list->AddImage(reinterpret_cast<ImTextureID>(lightmap->GetHandle()), pos, pos + size);
 						}

@@ -114,7 +114,7 @@ namespace Blueberry
 		size_t offset;
 		List<FieldInfo> fields;
 		Dictionary<String, FieldInfo> fieldsMap;
-		List<TypeId> iterators;
+		List<TypeId*> iterators;
 
 		const FieldInfo* GetField(const String& name) const
 		{
@@ -166,7 +166,7 @@ namespace Blueberry
 		static void Bind();
 
 		static void DefineField(FieldInfo info);
-		static void DefineIterator(const TypeId& type);
+		static void DefineIterator(TypeId* type);
 		static void DefinePreferBinary(); // TODO class attributes
 		static void DefineExecuteAlways();
 
@@ -201,7 +201,7 @@ namespace Blueberry
 
 	#define DEFINE_BASE_FIELDS( className, baseClassName ) ClassDB::DefineBaseFields<className, baseClassName>();
 	#define DEFINE_FIELD( className, fieldName, fieldType, fieldOptions ) ClassDB::DefineField({ TO_STRING(fieldName), offsetof(className, className::fieldName), fieldType, fieldOptions, IsList(fieldType) });
-	#define DEFINE_ITERATOR( className ) ClassDB::DefineIterator(className::Type);
+	#define DEFINE_ITERATOR( className ) ClassDB::DefineIterator(&className::Type);
 	#define DEFINE_PREFER_BINARY() ClassDB::DefinePreferBinary();
 	#define DEFINE_EXECUTE_ALWAYS() ClassDB::DefineExecuteAlways();
 

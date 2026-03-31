@@ -43,7 +43,7 @@ namespace Blueberry
 		return s_LastFilesWriteTime;
 	}
 
-	const bool ShaderImporter::IsRequiringReimport()
+	bool ShaderImporter::IsRequiringReimport() const
 	{
 		Guid guid = GetGuid();
 		if (AssetDB::HasAssetWithGuidInData(guid) && GetLastFilesWriteTime() < PathHelper::GetDirectoryLastWriteTime(GetShaderFolder(guid)))

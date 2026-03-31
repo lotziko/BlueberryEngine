@@ -11,7 +11,7 @@ namespace Blueberry
 	class Serializer
 	{
 	public:
-		virtual void Serialize(const String& path, const bool& isText);
+		virtual void Serialize(const String& path, bool isText);
 		virtual void Deserialize(const String& path);
 
 		const Guid& GetGuid();
@@ -20,7 +20,7 @@ namespace Blueberry
 		List<std::pair<ObjectId, FileId>>& GetDeserializedObjects();
 
 		void AddObject(Object* object);
-		void AddObject(Object* object, const FileId& fileId);
+		void AddObject(Object* object, FileId fileId);
 
 	protected:
 		struct Context
@@ -28,19 +28,19 @@ namespace Blueberry
 			void* ptr;
 			const ClassInfo* info;
 
-			static Context Create(Object* object, const TypeId& type)
+			static Context Create(Object* object, TypeId type)
 			{
 				const ClassInfo* info = ClassDB::GetInfo(type);
 				return { object - info->offset, info };
 			}
 
-			static Context CreateNoOffset(Data* data, const TypeId& type)
+			static Context CreateNoOffset(Data* data, TypeId type)
 			{
 				const ClassInfo* info = ClassDB::GetInfo(type);
 				return { data, info };
 			}
 
-			static Context CreateNoOffset(void* data, const TypeId& type)
+			static Context CreateNoOffset(void* data, TypeId type)
 			{
 				const ClassInfo* info = ClassDB::GetInfo(type);
 				return { data, info };
@@ -53,8 +53,8 @@ namespace Blueberry
 		};
 
 	protected:
-		FileId GetFileId(const ObjectId& objectId);
-		Object* GetObjectRef(const FileId& fileId);
+		FileId GetFileId(ObjectId objectId);
+		Object* GetObjectRef(FileId fileId);
 		Object* GetNextObjectToSerialize();
 
 		Object* GetPtrObject(const ObjectPtrData& data);
@@ -64,8 +64,8 @@ namespace Blueberry
 		void SerializeNode(SerializationNodeRef node, Context context);
 		void DeserializeNode(SerializationNodeConstRef node, Context context);
 
-		virtual void AddAdditionalObject(const ObjectId& objectId);
-		void AddDeserializedObject(const ObjectId& objectId, const FileId& fileId);
+		virtual void AddAdditionalObject(ObjectId objectId);
+		void AddDeserializedObject(ObjectId objectId, FileId fileId);
 
 	protected:
 		Dictionary<FileId, ObjectId> m_FileIdToObjectId;

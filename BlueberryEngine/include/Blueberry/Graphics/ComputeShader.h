@@ -29,8 +29,8 @@ namespace Blueberry
 		ComputeShaderData() = default;
 		virtual ~ComputeShaderData() = default;
 
-		const KernelData& GetKernel(const uint32_t& index) const;
-		const size_t GetKernelCount() const;
+		const KernelData& GetKernel(uint32_t index) const;
+		size_t GetKernelCount() const;
 		void SetKernels(const List<KernelData>& kernels);
 
 	private:
@@ -50,7 +50,7 @@ namespace Blueberry
 
 		static ComputeShader* Create(const List<void*>& shaders, const ComputeShaderData& shaderData);
 		
-		GfxComputeShader* GetKernel(const uint8_t& index);
+		GfxComputeShader* GetKernel(uint8_t index) const;
 
 	private:
 		ComputeShaderData m_Data;

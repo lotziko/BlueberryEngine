@@ -12,15 +12,15 @@ namespace Blueberry
 	DATA_DEFINITION(PrefabModificationData)
 	{
 		DEFINE_FIELD(PrefabModificationData, m_Target, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Object::Type))
-		DEFINE_FIELD(PrefabModificationData, m_Path, BindingType::String, {})
-		DEFINE_FIELD(PrefabModificationData, m_Value, BindingType::Variant, {})
+		DEFINE_FIELD(PrefabModificationData, m_Path, BindingType::String, FieldOptions())
+		DEFINE_FIELD(PrefabModificationData, m_Value, BindingType::Variant, FieldOptions())
 	}
 
 	DATA_DEFINITION(PrefabAddedEntityData)
 	{
 		DEFINE_FIELD(PrefabAddedEntityData, m_Parent, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Transform::Type))
 		DEFINE_FIELD(PrefabAddedEntityData, m_Entity, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Entity::Type))
-		DEFINE_FIELD(PrefabAddedEntityData, m_Index, BindingType::Int, {})
+		DEFINE_FIELD(PrefabAddedEntityData, m_Index, BindingType::Int, FieldOptions())
 	}
 
 	OBJECT_DEFINITION(PrefabInstance, Object)
@@ -92,6 +92,35 @@ namespace Blueberry
 		m_Index = index;
 	}
 
+	PrefabInstance::~PrefabInstance()
+	{
+		for (auto& pair : m_PrefabToInstanceMapping)
+		{
+			// This breaks nested root too
+			// Need to rethink them
+			PrefabManager::s_ObjectToPrefabInstance.erase(pair.second);
+			PrefabManager::s_ObjectToPrefabObject.erase(pair.second);
+		}
+
+		if (m_Entity.IsValid())
+		{
+			PrefabManager::s_RootToPrefabInstance.erase(m_Entity->GetObjectId());
+			//Object::Destroy(m_Entity.Get());
+		}
+	}
+
+	void PrefabInstance::Initialize()
+	{
+		if (m_SourcePrefab.IsValid())
+		{
+			PrefabManager::InitializeHierarchy(this);
+		}
+		else
+		{
+			PrefabManager::InitializeContext(this);
+		}
+	}
+
 	Entity* PrefabInstance::GetEntity()
 	{
 		return m_Entity.Get();
@@ -115,35 +144,6 @@ namespace Blueberry
 	PrefabInstance* PrefabInstance::GetSource()
 	{
 		return m_SourcePrefab.Get();
-	}
-
-	void PrefabInstance::OnCreate()
-	{
-		if (m_SourcePrefab.IsValid())
-		{
-			PrefabManager::InitializeHierarchy(this);
-		}
-		else
-		{
-			PrefabManager::InitializeContext(this);
-		}
-	}
-
-	void PrefabInstance::OnDestroy()
-	{
-		for (auto& pair : m_PrefabToInstanceMapping)
-		{
-			// This breaks nested root too
-			// Need to rethink them
-			PrefabManager::s_ObjectToPrefabInstance.erase(pair.second);
-			PrefabManager::s_ObjectToPrefabObject.erase(pair.second);
-		}
-
-		if (m_Entity.IsValid())
-		{
-			PrefabManager::s_RootToPrefabInstance.erase(m_Entity->GetObjectId());
-			//Object::Destroy(m_Entity.Get());
-		}
 	}
 
 	void PrefabInstance::UpdateIfNeeded()

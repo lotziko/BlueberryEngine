@@ -23,16 +23,17 @@ namespace Blueberry
 {
 	DATA_DEFINITION(ModelMaterialData)
 	{
-		DEFINE_FIELD(ModelMaterialData, m_Name, BindingType::String, {})
+		DEFINE_FIELD(ModelMaterialData, m_Name, BindingType::String, FieldOptions())
 		DEFINE_FIELD(ModelMaterialData, m_Material, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Material::Type))
 	}
 
 	DATA_DEFINITION(ModelAnimationClipData)
 	{
-		DEFINE_FIELD(ModelAnimationClipData, m_Name, BindingType::String, {})
-		DEFINE_FIELD(ModelAnimationClipData, m_ReplaceName, BindingType::String, {})
-		DEFINE_FIELD(ModelAnimationClipData, m_FirstFrame, BindingType::Uint, {})
-		DEFINE_FIELD(ModelAnimationClipData, m_LastFrame, BindingType::Uint, {})
+		DEFINE_FIELD(ModelAnimationClipData, m_Name, BindingType::String, FieldOptions())
+		DEFINE_FIELD(ModelAnimationClipData, m_ReplaceName, BindingType::String, FieldOptions())
+		DEFINE_FIELD(ModelAnimationClipData, m_FirstFrame, BindingType::Uint, FieldOptions())
+		DEFINE_FIELD(ModelAnimationClipData, m_LastFrame, BindingType::Uint, FieldOptions())
+		DEFINE_FIELD(ModelAnimationClipData, m_IsLoop, BindingType::Bool, FieldOptions())
 	}
 
 	OBJECT_DEFINITION(ModelImporter, AssetImporter)
@@ -40,9 +41,9 @@ namespace Blueberry
 		DEFINE_BASE_FIELDS(ModelImporter, AssetImporter)
 		DEFINE_FIELD(ModelImporter, m_Materials, BindingType::DataList, FieldOptions().SetObjectType(&ModelMaterialData::Type))
 		DEFINE_FIELD(ModelImporter, m_AnimationClips, BindingType::DataList, FieldOptions().SetObjectType(&ModelAnimationClipData::Type))
-		DEFINE_FIELD(ModelImporter, m_Scale, BindingType::Float, {})
-		DEFINE_FIELD(ModelImporter, m_GenerateLightmapUV, BindingType::Bool, {})
-		DEFINE_FIELD(ModelImporter, m_GeneratePhysicsShape, BindingType::Bool, {})
+		DEFINE_FIELD(ModelImporter, m_Scale, BindingType::Float, FieldOptions())
+		DEFINE_FIELD(ModelImporter, m_GenerateLightmapUV, BindingType::Bool, FieldOptions())
+		DEFINE_FIELD(ModelImporter, m_GeneratePhysicsShape, BindingType::Bool, FieldOptions())
 	}
 
 	const String& ModelMaterialData::GetName()
@@ -70,7 +71,7 @@ namespace Blueberry
 		return m_Materials;
 	}
 
-	const String& ModelAnimationClipData::GetName()
+	const String& ModelAnimationClipData::GetName() const
 	{
 		return m_Name;
 	}
@@ -80,7 +81,7 @@ namespace Blueberry
 		m_Name = name;
 	}
 
-	const String& ModelAnimationClipData::GetReplaceName()
+	const String& ModelAnimationClipData::GetReplaceName() const
 	{
 		return m_ReplaceName;
 	}
@@ -90,52 +91,62 @@ namespace Blueberry
 		m_ReplaceName = replaceName;
 	}
 
-	const uint32_t& ModelAnimationClipData::GetFirstFrame()
+	uint32_t ModelAnimationClipData::GetFirstFrame() const
 	{
 		return m_FirstFrame;
 	}
 
-	void ModelAnimationClipData::SetFirstFrame(const uint32_t& firstFrame)
+	void ModelAnimationClipData::SetFirstFrame(uint32_t firstFrame)
 	{
 		m_FirstFrame = firstFrame;
 	}
 
-	const uint32_t& ModelAnimationClipData::GetLastFrame()
+	uint32_t ModelAnimationClipData::GetLastFrame() const
 	{
 		return m_LastFrame;
 	}
 
-	void ModelAnimationClipData::SetLastFrame(const uint32_t& lastFrame)
+	void ModelAnimationClipData::SetLastFrame(uint32_t lastFrame)
 	{
 		m_LastFrame = lastFrame;
 	}
 
-	const float& ModelImporter::GetScale()
+	bool ModelAnimationClipData::IsLoop() const
+	{
+		return m_IsLoop;
+	}
+
+	void ModelAnimationClipData::SetLoop(bool loop)
+	{
+		m_IsLoop = loop;
+	}
+
+	float ModelImporter::GetScale() const
 	{
 		return m_Scale;
 	}
 
-	void ModelImporter::SetScale(const float& scale)
+	void ModelImporter::SetScale(float scale)
 	{
 		m_Scale = scale;
 	}
 
-	const bool& ModelImporter::GetGenerateLightmapUV()
+	bool ModelImporter::GetGenerateLightmapUV() const
 	{
 		return m_GenerateLightmapUV;
 	}
 
-	void ModelImporter::SetGenerateLightmapUV(const bool& generate)
+	void ModelImporter::SetGenerateLightmapUV(bool generate)
 	{
 		m_GenerateLightmapUV = generate;
 	}
 
-	const bool& ModelImporter::GetGeneratePhysicsShape()
+	bool ModelImporter::GetGeneratePhysicsShape() const
 	{
 		return m_GeneratePhysicsShape;
 	}
 
-	void ModelImporter::SetGeneratePhysicsShape(const bool& generate)
+	void ModelImporter::SetGeneratePhysicsShape(bool generate)
 	{
 		m_GeneratePhysicsShape = generate;
 	}
@@ -190,7 +201,7 @@ namespace Blueberry
 		importer->Destroy();
 		manager->Destroy();
 
-		instance->OnCreate();
+		instance->Initialize();
 		AssetDB::SaveAssetObjectsToCache(objects);
 	}
 
@@ -209,7 +220,7 @@ namespace Blueberry
 		return Matrix(ConvertVector(matrix.GetRow(0)), ConvertVector(matrix.GetRow(1)), ConvertVector(matrix.GetRow(2)), ConvertVector(matrix.GetRow(3)));
 	}
 
-	void OptimizeMesh(uint32_t& verticesCount, const uint32_t& indicesCount, List<Vector3>& vertices, List<Vector3>& normals, List<Vector2>& uvs0, List<Vector3>& uvs1, List<Vector4>& boneWeights, List<Vector4Uint>& boneIndices, List<uint32_t>& indices)
+	void OptimizeMesh(uint32_t& verticesCount, uint32_t indicesCount, List<Vector3>& vertices, List<Vector3>& normals, List<Vector2>& uvs0, List<Vector3>& uvs1, List<Vector4>& boneWeights, List<Vector4Uint>& boneIndices, List<uint32_t>& indices)
 	{
 		// TODO submeshes separate OptimizeVertices
 		// https://github.com/microsoft/DirectXMesh/wiki/WeldVertices
@@ -352,7 +363,7 @@ namespace Blueberry
 		verticesCount = newVerticesCount;
 	}
 
-	void ModelImporter::CreateHierarchy(Transform* parent, fbxsdk::FbxNode* node, List<Object*>& objects, Dictionary<fbxsdk::FbxNode*, NodeData>& nodeToData, const float& globalScale)
+	void ModelImporter::CreateHierarchy(Transform* parent, fbxsdk::FbxNode* node, List<Object*>& objects, Dictionary<fbxsdk::FbxNode*, NodeData>& nodeToData, float globalScale)
 	{
 		String nodeName = node->GetName();
 		String entityName = nodeName;
@@ -405,7 +416,7 @@ namespace Blueberry
 		}
 	}
 
-	void ModelImporter::CreateMesh(fbxsdk::FbxNode* node, List<Object*>& objects, Dictionary<fbxsdk::FbxNode*, NodeData>& nodeToData, const float& globalScale)
+	void ModelImporter::CreateMesh(fbxsdk::FbxNode* node, List<Object*>& objects, Dictionary<fbxsdk::FbxNode*, NodeData>& nodeToData, float globalScale)
 	{
 		FbxScene* scene = node->GetScene();
 		fbxsdk::FbxMesh* fbxMesh = node->GetMesh();
@@ -1037,7 +1048,7 @@ namespace Blueberry
 		objects.push_back(mesh);
 	}
 
-	void ModelImporter::CreateAnimationClips(fbxsdk::FbxScene* scene, List<Object*>& objects, const float& globalScale)
+	void ModelImporter::CreateAnimationClips(fbxsdk::FbxScene* scene, List<Object*>& objects, float globalScale)
 	{
 		// Animation clips
 		int stackCount = scene->GetSrcObjectCount<FbxAnimStack>();
@@ -1102,6 +1113,7 @@ namespace Blueberry
 				FbxTime::EMode timeMode = scene->GetGlobalSettings().GetTimeMode();
 				double fps = FbxTime::GetFrameRate(timeMode);
 				double dt = 1.0 / fps;
+				bool isLoop = false;
 
 				auto index = std::find_if(m_AnimationClips.begin(), m_AnimationClips.end(), [name](ModelAnimationClipData& d) { return d.GetName() == name; });
 				if (index == m_AnimationClips.end())
@@ -1111,6 +1123,7 @@ namespace Blueberry
 					data.SetReplaceName(name);
 					data.SetFirstFrame(0);
 					data.SetLastFrame(static_cast<uint32_t>(std::floor(endSec * fps)));
+					data.SetLoop(isLoop);
 					m_AnimationClips.push_back(data);
 				}
 				else
@@ -1130,6 +1143,7 @@ namespace Blueberry
 					{
 						endSec = lastFrame;
 					}
+					isLoop = index->IsLoop();
 				}
 
 				List<Vector3> positions;
@@ -1170,6 +1184,7 @@ namespace Blueberry
 				clip->SetName(name);
 				clip->SetFrameRate(static_cast<float>(fps));
 				clip->SetLength(static_cast<float>(endSec - startSec));
+				clip->SetLoop(isLoop);
 
 				AddAssetObject(clip, clipFileId);
 				objects.push_back(clip);

@@ -48,7 +48,7 @@ namespace Blueberry
 		void AddToRoot(Entity* entity);
 		void RemoveFromRoot(Entity* entity);
 		const size_t GetRootIndex(Entity* entity);
-		void SetRootIndex(Entity* entity, const size_t& index);
+		void SetRootIndex(Entity* entity, size_t index);
 
 		void AddChildEntity(Entity* entity);
 

@@ -52,17 +52,17 @@ namespace Blueberry
 		List<TextureData>& GetTextureDatas();
 		void AddTextureData(const TextureData& data);
 
-		void SetKeyword(const String& keyword, const bool& enabled);
-		const uint32_t& GetActiveKeywordsMask();
+		void SetKeyword(const String& keyword, bool enabled);
+		uint32_t GetActiveKeywordsMask() const;
 
-		const uint32_t& GetCRC();
-		Texture* GetTexture(const size_t& id);
+		uint32_t GetCRC();
+		Texture* GetTexture(size_t id);
 
 		virtual void OnNotify(void* args) final;
 
 	private:
 		void FillTextureMap();
-		void ApplyTextureBinding(const size_t& id, Texture* texture);
+		void ApplyTextureBinding(size_t id, Texture* texture);
 
 	private:
 		List<TextureData> m_Textures;

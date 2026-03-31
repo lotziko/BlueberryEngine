@@ -54,16 +54,15 @@ namespace Blueberry
 		OBJECT_DECLARATION(PrefabInstance)
 
 		PrefabInstance() = default;
-		virtual ~PrefabInstance() = default;
+		virtual ~PrefabInstance();
+
+		void Initialize();
 
 		Entity* GetEntity();
 		Object* GetCorrespondingObject(const FileId& fileId);
 
 		bool HasSource();
 		PrefabInstance* GetSource();
-
-		virtual void OnCreate() final;
-		virtual void OnDestroy() final;
 
 		void UpdateIfNeeded();
 

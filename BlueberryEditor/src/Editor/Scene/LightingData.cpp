@@ -34,7 +34,7 @@ namespace Blueberry
 	DATA_DEFINITION(MeshRendererData)
 	{
 		DEFINE_FIELD(MeshRendererData, m_ObjectId, BindingType::Raw, FieldOptions().SetSize(sizeof(GlobalObjectId)))
-		DEFINE_FIELD(MeshRendererData, m_ChartInstanceOffset, BindingType::Int, {})
+		DEFINE_FIELD(MeshRendererData, m_ChartInstanceOffset, BindingType::Int, FieldOptions())
 	}
 
 	DATA_DEFINITION(ReflectionProbeData)
@@ -48,11 +48,11 @@ namespace Blueberry
 		DEFINE_PREFER_BINARY()
 		DEFINE_FIELD(LightingData, m_Lightmap, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Texture2D::Type))
 		DEFINE_FIELD(LightingData, m_ProbeVolume, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Texture3D::Type))
-		DEFINE_FIELD(LightingData, m_ChartScaleOffset, BindingType::ByteData, {})
-		DEFINE_FIELD(LightingData, m_ChartInstanceOffset, BindingType::ByteData, {})
+		DEFINE_FIELD(LightingData, m_ChartScaleOffset, BindingType::ByteData, FieldOptions())
+		DEFINE_FIELD(LightingData, m_ChartInstanceOffset, BindingType::ByteData, FieldOptions())
 		DEFINE_FIELD(LightingData, m_MeshRenderers, BindingType::DataList, FieldOptions().SetObjectType(&MeshRendererData::Type))
 		DEFINE_FIELD(LightingData, m_ReflectionProbes, BindingType::DataList, FieldOptions().SetObjectType(&ReflectionProbeData::Type))
-		DEFINE_FIELD(LightingData, m_ChartOffsetScale, BindingType::Vector4List, {})
+		DEFINE_FIELD(LightingData, m_ChartOffsetScale, BindingType::Vector4List, FieldOptions())
 	}
 
 	const GlobalObjectId& MeshRendererData::GetObjectId()
@@ -65,12 +65,12 @@ namespace Blueberry
 		m_ObjectId = objectId;
 	}
 
-	const uint32_t& MeshRendererData::GetChartInstanceOffset()
+	uint32_t MeshRendererData::GetChartInstanceOffset()
 	{
 		return m_ChartInstanceOffset;
 	}
 
-	void MeshRendererData::SetChartInstanceOffset(const uint32_t& chartInstanceOffset)
+	void MeshRendererData::SetChartInstanceOffset(uint32_t chartInstanceOffset)
 	{
 		m_ChartInstanceOffset = chartInstanceOffset;
 	}
@@ -143,7 +143,7 @@ namespace Blueberry
 		m_ProbeVolume = probeVolume;
 	}
 
-	const size_t LightingData::GetReflectionProbeCount()
+	size_t LightingData::GetReflectionProbeCount()
 	{
 		return m_ReflectionProbes.size();
 	}
@@ -162,7 +162,7 @@ namespace Blueberry
 		ApplyReflections();
 	}
 
-	void LightingData::SetReflectionProbe(const uint32_t& index, ReflectionProbe* reflectionProbe, TextureCube* textureCube)
+	void LightingData::SetReflectionProbe(uint32_t index, ReflectionProbe* reflectionProbe, TextureCube* textureCube)
 	{
 		if (m_ReflectionProbes.size() <= 1 + index)
 		{
@@ -185,7 +185,7 @@ namespace Blueberry
 
 	void LightingData::ApplyLightmap()
 	{
-		if (m_Lightmap.IsValid() && m_Lightmap->GetState() == ObjectState::Default)
+		if (m_Lightmap.IsValid())
 		{
 			Texture2D* lightmap = m_Lightmap.Get();
 			GfxDevice::SetGlobalTexture(s_LightmapTextureId, lightmap->Get());
@@ -275,7 +275,7 @@ namespace Blueberry
 
 	void LightingData::ApplyProbeVolume()
 	{
-		if (m_ProbeVolume.IsValid() && m_ProbeVolume->GetState() == ObjectState::Default)
+		if (m_ProbeVolume.IsValid())
 		{
 			GfxDevice::SetGlobalTexture(s_ProbeVolumeTextureId, m_ProbeVolume->Get());
 		}

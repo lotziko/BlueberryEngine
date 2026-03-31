@@ -30,7 +30,7 @@ namespace Blueberry
 		{
 			Material* material = static_cast<Material*>(object);
 			Shader* shader = material->GetShader();
-			if (shader != nullptr && shader->GetState() == ObjectState::Default)
+			if (shader != nullptr)
 			{
 				auto& data = shader->GetData();
 				auto& textureDatas = material->GetTextureDatas();

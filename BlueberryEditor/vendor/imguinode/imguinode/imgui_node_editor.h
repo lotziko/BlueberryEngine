@@ -87,26 +87,35 @@ using ConfigLoadNodeSettings = size_t (*)(NodeId nodeId, char* data, void* userP
 
 using ConfigSession          = void   (*)(void* userPointer);
 
+using LinkDrawCallback = void (*)(ImDrawList* drawList, const ImVec2& from, const ImVec2& to, ImU32 color, float thickness);
+using LinkUpdateEndpointsCallback = void(*)(ImVec2& from, ImVec2& to, bool isPreview);
+using LinkTestHitCallback = bool (*)(const ImVec2& point, const ImVec2& from, const ImVec2& to, float thickness);
+
 struct Config
 {
     using CanvasSizeModeAlias = ax::NodeEditor::CanvasSizeMode;
 
-    const char*             SettingsFile;
-    ConfigSession           BeginSaveSession;
-    ConfigSession           EndSaveSession;
-    ConfigSaveSettings      SaveSettings;
-    ConfigLoadSettings      LoadSettings;
-    ConfigSaveNodeSettings  SaveNodeSettings;
-    ConfigLoadNodeSettings  LoadNodeSettings;
-    void*                   UserPointer;
-    ImVector<float>         CustomZoomLevels;
-    CanvasSizeModeAlias     CanvasSizeMode;
-    int                     DragButtonIndex;        // Mouse button index drag action will react to (0-left, 1-right, 2-middle)
-    int                     SelectButtonIndex;      // Mouse button index select action will react to (0-left, 1-right, 2-middle)
-    int                     NavigateButtonIndex;    // Mouse button index navigate action will react to (0-left, 1-right, 2-middle)
-    int                     ContextMenuButtonIndex; // Mouse button index context menu action will react to (0-left, 1-right, 2-middle)
-    bool                    EnableSmoothZoom;
-    float                   SmoothZoomPower;
+    const char*                 SettingsFile;
+    ConfigSession               BeginSaveSession;
+    ConfigSession               EndSaveSession;
+    ConfigSaveSettings          SaveSettings;
+    ConfigLoadSettings          LoadSettings;
+    ConfigSaveNodeSettings      SaveNodeSettings;
+    ConfigLoadNodeSettings      LoadNodeSettings;
+    LinkUpdateEndpointsCallback LinkUpdateEndpointsCallback;
+    LinkDrawCallback            LinkDrawCallback;
+    LinkTestHitCallback         LinkTestHitCallback;
+    void*                       UserPointer;
+    ImVector<float>             CustomZoomLevels;
+    CanvasSizeModeAlias         CanvasSizeMode;
+    int                         DragButtonIndex;        // Mouse button index drag action will react to (0-left, 1-right, 2-middle)
+    int                         SelectButtonIndex;      // Mouse button index select action will react to (0-left, 1-right, 2-middle)
+    int                         NavigateButtonIndex;    // Mouse button index navigate action will react to (0-left, 1-right, 2-middle)
+    int                         ContextMenuButtonIndex; // Mouse button index context menu action will react to (0-left, 1-right, 2-middle)
+    bool                        EnableSmoothZoom;
+    float                       SmoothZoomPower;
+    float                       AlignSize;
+    float                       GridSize;
 
     Config()
         : SettingsFile("NodeEditor.json")
@@ -116,6 +125,9 @@ struct Config
         , LoadSettings(nullptr)
         , SaveNodeSettings(nullptr)
         , LoadNodeSettings(nullptr)
+        , LinkDrawCallback(nullptr)
+        , LinkUpdateEndpointsCallback(nullptr)
+        , LinkTestHitCallback(nullptr)
         , UserPointer(nullptr)
         , CustomZoomLevels()
         , CanvasSizeMode(CanvasSizeModeAlias::FitVerticalView)
@@ -129,6 +141,8 @@ struct Config
 # else
         , SmoothZoomPower(1.3f)
 # endif
+        , AlignSize(16.0f)
+        , GridSize(32.0f)
     {
     }
 };

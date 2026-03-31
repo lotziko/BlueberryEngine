@@ -215,9 +215,9 @@ namespace Blueberry
 		return s_HierarchyUpdated;
 	}
 
-	void SceneHierarchy::DrawNode(List<TransformTreeNode>& nodes, const size_t& index)
+	void SceneHierarchy::DrawNode(List<TransformTreeNode>& nodes, size_t index)
 	{
-		ImGui::PushID(index);
+		ImGui::PushID(static_cast<int>(index));
 		TransformTreeNode& node = nodes[index];
 		Entity* entity = node.entity.Get();
 		if (!ImGui::IsItemToggledOpen())
@@ -255,13 +255,13 @@ namespace Blueberry
 						}
 					}
 				}
-				else
-				{
-					if (!Selection::IsActiveObject(entity))
-					{
-						Selection::SetActiveObject(entity);
-					}
-				}
+				//else
+				//{
+				//	if (!Selection::IsActiveObject(entity))
+				//	{
+				//		//Selection::SetActiveObject(entity);
+				//	}
+				//}
 				m_LastClickedItem = index;
 			}
 			if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0) && index == m_LastClickedItem)
@@ -288,8 +288,13 @@ namespace Blueberry
 
 		if (ImGui::BeginDragDropSource())
 		{
-			ObjectId id = entity->GetObjectId();
-			ImGui::SetDragDropPayload("OBJECT_ID", &id, sizeof(ObjectId));
+			List<ObjectId> ids;
+			ids.push_back(entity->GetObjectId());
+			for (size_t i = 0; i < entity->GetComponentCount(); ++i)
+			{
+				ids.push_back(entity->GetComponentAt(i)->GetObjectId());
+			}
+			ImGui::SetDragDropPayload("OBJECT_ID", ids.data(), ids.size() * sizeof(ObjectId));
 			ImGui::Text("%s", entity->GetName().c_str());
 			ImGui::EndDragDropSource();
 		}

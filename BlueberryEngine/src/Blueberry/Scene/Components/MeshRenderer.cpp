@@ -14,7 +14,7 @@ namespace Blueberry
 		DEFINE_BASE_FIELDS(MeshRenderer, Renderer)
 		DEFINE_FIELD(MeshRenderer, m_Mesh, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Mesh::Type).SetUpdateCallback(MethodBind::Create(&MeshRenderer::InvalidateBounds)))
 		DEFINE_FIELD(MeshRenderer, m_Materials, BindingType::ObjectPtrList, FieldOptions().SetObjectType(&Material::Type))
-		DEFINE_FIELD(MeshRenderer, m_IsBakeable, BindingType::Bool, {})
+		DEFINE_FIELD(MeshRenderer, m_IsBakeable, BindingType::Bool, FieldOptions())
 		DEFINE_ITERATOR(MeshRenderer)
 		DEFINE_EXECUTE_ALWAYS()
 	}
@@ -60,7 +60,7 @@ namespace Blueberry
 		InvalidateBounds();
 	}
 
-	Material* MeshRenderer::GetMaterial(const uint32_t& index)
+	Material* MeshRenderer::GetMaterial(uint32_t index) const
 	{
 		if (index >= m_Materials.size())
 		{
@@ -87,7 +87,7 @@ namespace Blueberry
 		}
 	}
 
-	uint32_t MeshRenderer::GetMaterialCount()
+	uint32_t MeshRenderer::GetMaterialCount() const
 	{
 		return static_cast<uint32_t>(m_Materials.size());
 	}
@@ -113,12 +113,12 @@ namespace Blueberry
 		return m_IsBakeable;
 	}
 
-	const uint32_t& MeshRenderer::GetLightmapChartOffset()
+	uint32_t MeshRenderer::GetLightmapChartOffset() const
 	{
 		return m_LightmapChartOffset;
 	}
 
-	void MeshRenderer::SetLightmapChartOffset(const uint32_t& offset)
+	void MeshRenderer::SetLightmapChartOffset(uint32_t offset)
 	{
 		m_LightmapChartOffset = offset;
 	}

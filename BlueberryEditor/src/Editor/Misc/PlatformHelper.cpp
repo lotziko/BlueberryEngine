@@ -2,10 +2,12 @@
 
 #include "Blueberry\Core\Application.h"
 #include "Blueberry\Core\Window.h"
+#include "Blueberry\Tools\StringConverter.h"
 
 #include <shobjidl.h> // IFileOpenDialog
 #include <shlobj.h> // SHOpenFolderAndSelectItems
 #include <commctrl.h>
+#include <filesystem>
 
 #include <atomic>
 
@@ -16,13 +18,14 @@
 namespace Blueberry
 {
 	static DWORD s_ProgressThreadId = 0;
+	static HANDLE s_ProgressThreadReadyEvent = 0;
 
 	#define WM_SHOWPROGRESS (WM_USER + 1)
 	#define WM_HIDEPROGRESS (WM_USER + 2)
 
-	WString PlatformHelper::OpenFileDialog()
+	String PlatformHelper::OpenFileDialog()
 	{
-		WString result;
+		String result;
 		IFileOpenDialog* dialog = nullptr;
 
 		HRESULT hr = CoCreateInstance(
@@ -34,7 +37,7 @@ namespace Blueberry
 
 		if (FAILED(hr))
 		{
-			return L"";
+			return "";
 		}
 
 		DWORD options;
@@ -50,7 +53,7 @@ namespace Blueberry
 				PWSTR path = nullptr;
 				if (SUCCEEDED(item->GetDisplayName(SIGDN_FILESYSPATH, &path)))
 				{
-					result = path;
+					result = StringConverter::WideToString(path);
 					CoTaskMemFree(path);
 					item->Release();
 					dialog->Release();
@@ -75,24 +78,27 @@ namespace Blueberry
 		return S_OK;
 	}
 
-	DialogResult PlatformHelper::OpenDialog(const WString& titleText, const WString& contentText, const WString& yesText, const WString& noText, const WString& cancelText)
+	DialogResult PlatformHelper::OpenDialog(const String& titleText, const String& contentText, const String& yesText, const String& noText, const String& cancelText)
 	{
 		TASKDIALOG_BUTTON buttons[] =
 		{
-			{ IDYES, yesText.c_str() },
-			{ IDNO, noText.c_str() },
-			{ IDCANCEL, cancelText.c_str() }
+			{ IDYES, StringConverter::StringToWide(yesText).c_str() },
+			{ IDNO, StringConverter::StringToWide(noText).c_str() },
+			{ IDCANCEL, StringConverter::StringToWide(cancelText).c_str() }
 		};
+
+		WString wtitleText = StringConverter::StringToWide(titleText);
+		WString wcontentText = StringConverter::StringToWide(contentText);
 
 		TASKDIALOGCONFIG config = {};
 		config.cbSize = sizeof(config);
 		config.hwndParent = NULL;
 		config.dwFlags = TDF_ALLOW_DIALOG_CANCELLATION;
 		config.dwCommonButtons = 0;
-		config.pszWindowTitle = titleText.c_str();
+		config.pszWindowTitle = wtitleText.c_str();
 		config.pszMainIcon = TD_WARNING_ICON;
 		config.pszMainInstruction = NULL;
-		config.pszContent = contentText.c_str();
+		config.pszContent = wcontentText.c_str();
 		config.pButtons = buttons;
 		config.cButtons = ARRAYSIZE(buttons);
 		config.nDefaultButton = IDYES;
@@ -112,11 +118,11 @@ namespace Blueberry
 		}
 	}
 
-	void PlatformHelper::RevealInExplorer(const WString& path)
+	void PlatformHelper::RevealInExplorer(const String& path)
 	{
 		PIDLIST_ABSOLUTE pidl = nullptr;
 		HRESULT hr = SHParseDisplayName(
-			path.c_str(),
+			StringConverter::StringToWide(path).c_str(),
 			nullptr,
 			&pidl,
 			0,
@@ -195,17 +201,9 @@ namespace Blueberry
 		return DefWindowProcW(hwnd, msg, wParam, lParam);
 	}
 
-	struct ProgressWindowData
+	DWORD WINAPI ProgressUiThread(void*)
 	{
-		HWND windowHandle;
-		HWND labelHandle;
-		HFONT labelFont;
-	};
-
-	ProgressWindowData CreateProgressWindow()
-	{
-		ProgressWindowData data;
-
+		BB_INITIALIZE_ALLOCATOR_THREAD();
 		WNDCLASSW wc{};
 		wc.lpfnWndProc = ProgressWndProc;
 		wc.hInstance = GetModuleHandle(nullptr);
@@ -214,11 +212,11 @@ namespace Blueberry
 
 		RegisterClassW(&wc);
 
-		data.windowHandle = CreateWindowExW(
+		HWND windowHandle = CreateWindowExW(
 			WS_EX_DLGMODALFRAME | WS_EX_DLGMODALFRAME | WS_EX_NOACTIVATE,
 			L"ProgressWindow",
 			NULL,
-			WS_CAPTION | WS_VISIBLE,
+			WS_CAPTION,
 			CW_USEDEFAULT, CW_USEDEFAULT, 540, 160,
 			NULL,
 			NULL,
@@ -232,20 +230,20 @@ namespace Blueberry
 			nullptr,
 			WS_CHILD | WS_VISIBLE | PBS_MARQUEE,
 			20, 50, 480, 20,
-			data.windowHandle,
+			windowHandle,
 			nullptr,
 			GetModuleHandle(nullptr),
 			nullptr
 		);
 		SendMessage(progressBarHandle, PBM_SETMARQUEE, TRUE, 0);
 
-		data.labelHandle = CreateWindowEx(
+		HWND labelHandle = CreateWindowEx(
 			0,
 			L"STATIC",
 			L"Test",
 			WS_CHILD | WS_VISIBLE | SS_LEFT,
 			20, 80, 480, 20,
-			data.windowHandle,
+			windowHandle,
 			nullptr,
 			GetModuleHandle(nullptr),
 			nullptr
@@ -253,16 +251,17 @@ namespace Blueberry
 
 		NONCLIENTMETRICS ncm = { sizeof(NONCLIENTMETRICS) };
 		SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0);
-		data.labelFont = CreateFontIndirect(&ncm.lfCaptionFont);
-		SendMessage(data.labelHandle, WM_SETFONT, (WPARAM)data.labelFont, TRUE);
-		return data;
-	}
+		HFONT labelFont = CreateFontIndirect(&ncm.lfCaptionFont);
+		SendMessage(labelHandle, WM_SETFONT, (WPARAM)labelFont, TRUE);
 
-	DWORD WINAPI ProgressUiThread(void*)
-	{
-		ProgressWindowData data = CreateProgressWindow();
-		DWORD closeTime = 0;
 		MSG msg;
+		ULONGLONG showTime = 0;
+		ULONGLONG hideTime = 0;
+		INT counter = 0;
+		BOOL isVisible = false;
+		PeekMessage(&msg, nullptr, 0, 0, PM_NOREMOVE);
+		SetEvent(s_ProgressThreadReadyEvent);
+
 		while (true)
 		{
 			while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
@@ -274,46 +273,72 @@ namespace Blueberry
 				{
 				case WM_SHOWPROGRESS:
 				{
-					closeTime = 0;
-					auto pair = reinterpret_cast<std::pair<std::wstring, std::wstring>*>(msg.lParam);
-					SetWindowTextW(data.windowHandle, pair->first.c_str());
-					SetWindowTextW(data.labelHandle, pair->second.c_str());
+					++counter;
+					if (!isVisible && counter > 0)
+					{
+						isVisible = true;
+						showTime = GetTickCount64() + 10;
+					}
+					hideTime = 0;
+					auto pair = reinterpret_cast<std::pair<WString, WString>*>(msg.lParam);
+					SetWindowTextW(windowHandle, pair->first.c_str());
+					SetWindowTextW(labelHandle, pair->second.c_str());
 					delete pair;
 				}
 				break;
 				case WM_HIDEPROGRESS:
 				{
-					closeTime = static_cast<DWORD>(msg.lParam);
+					--counter;
+					showTime = 0;
+					if (isVisible && counter <= 0)
+					{
+						isVisible = false;
+						hideTime = GetTickCount64() + 10;
+					}
 				}
 				break;
 				}
 			}
-			Sleep(10);
+			Sleep(5);
 
-			if (closeTime != 0 && closeTime > GetTickCount())
+			ULONGLONG tickCount = GetTickCount64();
+			if (showTime != 0 && tickCount > showTime)
 			{
-				break;
+				ShowWindow(windowHandle, SW_SHOW);
+				SetForegroundWindow(windowHandle);
+				showTime = 0;
+			}
+			if (hideTime != 0 && tickCount > hideTime)
+			{
+				ShowWindow(windowHandle, SW_HIDE);
+				hideTime = 0;
 			}
 		}
-		DestroyWindow(data.windowHandle);
-		DeleteObject(data.labelFont);
+		DestroyWindow(windowHandle);
+		DeleteObject(labelFont);
 		s_ProgressThreadId = 0;
+		BB_SHUTDOWN_ALLOCATOR_THREAD();
 		return 0;
 	}
 
-	void PlatformHelper::ShowProgressBar(const WString& title, const WString& info)
+	void PlatformHelper::ShowProgressBar(const String& title, const String& info)
 	{
 		if (s_ProgressThreadId == 0)
 		{
+			s_ProgressThreadReadyEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr);
 			CreateThread(nullptr, 0, ProgressUiThread, nullptr, 0, &s_ProgressThreadId);
-			Sleep(5);
+			if (s_ProgressThreadReadyEvent != 0)
+			{
+				WaitForSingleObject(s_ProgressThreadReadyEvent, INFINITE);
+				CloseHandle(s_ProgressThreadReadyEvent);
+			}
 		}
-		PostThreadMessage(s_ProgressThreadId, WM_SHOWPROGRESS, 0, (LPARAM)new std::pair(std::wstring(title), std::wstring(info)));
+		PostThreadMessage(s_ProgressThreadId, WM_SHOWPROGRESS, 0, (LPARAM)new std::pair(StringConverter::StringToWide(title), StringConverter::StringToWide(info)));
 	}
 
 	void PlatformHelper::HideProgressBar()
 	{
-		PostThreadMessage(s_ProgressThreadId, WM_HIDEPROGRESS, 0, GetTickCount() + 50);
+		PostThreadMessage(s_ProgressThreadId, WM_HIDEPROGRESS, 0, 0);
 	}
 
 	String PlatformHelper::GetEditorDataFolder()
@@ -322,12 +347,13 @@ namespace Blueberry
 		return String(adddataPath).append("\\Blueberry\\");
 	}
 
-	void PlatformHelper::MoveToRecycleBin(const WString& path)
+	void PlatformHelper::MoveToRecycleBin(const String& path)
 	{
+		WString wpath = StringConverter::StringToWide(path);
 		SHFILEOPSTRUCTW fileOp = { 0 };
 		fileOp.hwnd = NULL;
 		fileOp.wFunc = FO_DELETE;
-		fileOp.pFrom = path.c_str();
+		fileOp.pFrom = wpath.c_str();
 		fileOp.pTo = NULL;
 		fileOp.fFlags = FOF_ALLOWUNDO | FOF_NOERRORUI | FOF_NOCONFIRMATION | FOF_SILENT;
 		int result = SHFileOperationW(&fileOp);

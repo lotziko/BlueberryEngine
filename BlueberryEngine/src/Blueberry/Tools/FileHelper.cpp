@@ -2,7 +2,7 @@
 
 namespace Blueberry
 {
-	void FileHelper::Save(const uint8_t* data, const size_t& length, const String& path)
+	void FileHelper::Save(const uint8_t* data, size_t length, const String& path)
 	{
 		auto file = fopen(path.c_str(), "wb");
 		fwrite(data, sizeof(uint8_t) * length, 1, file);

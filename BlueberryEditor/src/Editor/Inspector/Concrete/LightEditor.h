@@ -17,7 +17,7 @@ namespace Blueberry
 		virtual void OnDrawSceneSelected() override;
 
 	private:
-		void DrawCone(const float& radius, const float& height, const int& mask);
+		void DrawCone(float radius, float height, int mask);
 	
 	private:
 		SerializedProperty m_TypeProperty;

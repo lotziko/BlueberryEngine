@@ -10,12 +10,12 @@ namespace Blueberry
 		return s_GizmoSnapping;
 	}
 
-	const int& Preferences::GetGizmoOperation()
+	int Preferences::GetGizmoOperation()
 	{
 		return s_GizmoOperation;
 	}
 
-	void Preferences::SetGizmoOperation(const int& operation)
+	void Preferences::SetGizmoOperation(int operation)
 	{
 		s_GizmoOperation = operation;
 	}

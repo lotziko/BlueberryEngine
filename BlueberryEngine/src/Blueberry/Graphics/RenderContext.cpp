@@ -72,6 +72,7 @@ namespace Blueberry
 	static uint32_t s_CurrentCullerIndex = 0;
 	static Keyword s_CurrentKeyword = Keyword::None;
 	static List<std::pair<Matrix, Vector4>> s_PerDrawData = {};
+	static uint32_t s_Indices[INSTANCE_BUFFER_SIZE];
 
 	static size_t s_LightmapId = TO_HASH("LIGHTMAP");
 	static size_t s_ProbesId = TO_HASH("PROBES");
@@ -422,7 +423,7 @@ namespace Blueberry
 								if (Vector3::Distance(currentCascadeCenter, cascadeCenter) > cascadeGrid * 0.5f)
 								{
 									light->m_WorldToShadow[i] = viewProjection;
-									light->m_ShadowCascades[i] = Vector4(cascadeCenter.x, cascadeCenter.y, cascadeCenter.z, std::pow(radius, 2));
+									light->m_ShadowCascades[i] = Vector4(cascadeCenter.x, cascadeCenter.y, cascadeCenter.z, std::powf(radius, 2));
 									light->m_IsDirty[i] = true;
 								}
 
@@ -512,7 +513,7 @@ namespace Blueberry
 								viewProjection *= Matrix::CreateTranslation(dx, dy, 0);
 
 								light->m_WorldToShadow[i] = viewProjection;
-								light->m_ShadowCascades[i] = Vector4(center.x, center.y, center.z, std::pow(radius, 2));
+								light->m_ShadowCascades[i] = Vector4(center.x, center.y, center.z, std::powf(radius, 2));
 
 								Math::GetOrthographicPlanes(viewProjection.Invert(), &lightCullerInfo.planes[0], &lightCullerInfo.planes[1], &lightCullerInfo.planes[2], &lightCullerInfo.planes[3], &lightCullerInfo.planes[4], &lightCullerInfo.planes[5]);
 
@@ -609,16 +610,15 @@ namespace Blueberry
 
 		if (s_IndexBuffer == nullptr)
 		{
-			uint32_t indices[INSTANCE_BUFFER_SIZE];
 			for (uint32_t i = 0; i < INSTANCE_BUFFER_SIZE; ++i)
 			{
-				indices[i] = i;
+				s_Indices[i] = i;
 			}
 
 			BufferProperties indexBufferProperties = {};
 			indexBufferProperties.elementCount = INSTANCE_BUFFER_SIZE;
 			indexBufferProperties.elementSize = sizeof(uint32_t);
-			indexBufferProperties.data = indices;
+			indexBufferProperties.data = s_Indices;
 			indexBufferProperties.dataSize = INSTANCE_BUFFER_SIZE * sizeof(uint32_t);
 			indexBufferProperties.usageFlags = BufferUsageFlags::VertexBuffer;
 

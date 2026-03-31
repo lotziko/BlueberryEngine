@@ -2,7 +2,6 @@
 
 #include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Assets\AssetLoader.h"
-#include "Blueberry\Tools\StringConverter.h"
 
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Serialization\MetaSerializer.h"
@@ -15,21 +14,21 @@ namespace Blueberry
 		DEFINE_BASE_FIELDS(AssetImporter, Object)
 	}
 
-	const Guid& AssetImporter::GetGuid()
+	const Guid& AssetImporter::GetGuid() const
 	{
 		return m_Guid;
 	}
 
 	String AssetImporter::GetFilePath()
 	{
-		auto dataPath = Path::GetAssetsPath();
+		std::filesystem::path dataPath = Path::GetAssetsPath();
 		dataPath.append(m_RelativePath);
 		return String(dataPath.string());
 	}
 
 	String AssetImporter::GetMetaFilePath()
 	{
-		auto dataPath = Path::GetAssetsPath();
+		std::filesystem::path dataPath = Path::GetAssetsPath();
 		dataPath.append(m_RelativeMetaPath);
 		return String(dataPath.string());
 	}
@@ -44,7 +43,7 @@ namespace Blueberry
 		return m_RelativeMetaPath;
 	}
 
-	const FileId& AssetImporter::GetMainObject()
+	FileId AssetImporter::GetMainObject() const
 	{
 		return m_MainObject;
 	}
@@ -54,8 +53,12 @@ namespace Blueberry
 		return m_AssetObjects;
 	}
 
-	const bool AssetImporter::IsImported()
+	bool AssetImporter::IsImported()
 	{
+		if (!IsImportable())
+		{
+			return true;
+		}
 		if (m_MainObject > 0)
 		{
 			Object* mainObject = ObjectDB::GetObjectFromGuid(m_Guid, m_MainObject);
@@ -67,7 +70,7 @@ namespace Blueberry
 		return false;
 	}
 
-	const bool AssetImporter::IsRequiringReimport()
+	bool AssetImporter::IsRequiringReimport() const
 	{
 		Guid guid = GetGuid();
 		if (AssetDB::HasAssetWithGuidInData(guid))
@@ -77,7 +80,7 @@ namespace Blueberry
 		return true;
 	}
 
-	const bool& AssetImporter::IsRequiringSave()
+	bool AssetImporter::IsRequiringSave() const
 	{
 		return m_RequireSave;
 	}
@@ -109,13 +112,15 @@ namespace Blueberry
 		{
 			if (IsRequiringReimport())
 			{
-				PlatformHelper::ShowProgressBar(L"Importing assets", StringConverter::StringToWide(GetRelativeFilePath()));
+				PlatformHelper::ShowProgressBar("Importing assets", GetRelativeFilePath());
 				ImportData();
 				PlatformHelper::HideProgressBar();
 			}
 			else
 			{
+				PlatformHelper::ShowProgressBar("Loading assets", GetRelativeFilePath());
 				LoadData();
+				PlatformHelper::HideProgressBar();
 			}
 		}
 	}
@@ -135,7 +140,7 @@ namespace Blueberry
 		ResetImport();
 		if (IsRequiringReimport())
 		{
-			PlatformHelper::ShowProgressBar(L"Importing assets", StringConverter::StringToWide(GetRelativeFilePath()));
+			PlatformHelper::ShowProgressBar("Importing assets", GetRelativeFilePath());
 			ImportData();
 			PlatformHelper::HideProgressBar();
 		}
@@ -145,25 +150,39 @@ namespace Blueberry
 		}
 	}
 
-	AssetImporter* AssetImporter::CreateNew(const TypeId& type, const std::filesystem::path& relativePath, const std::filesystem::path& relativeMetaPath)
+	void AssetImporter::Rename(const std::filesystem::path& relativePath)
+	{
+		m_Name = relativePath.stem().string();
+		m_RelativePath = relativePath.string();
+		m_RelativeMetaPath = relativePath.string() + ".meta";
+	}
+
+	long long AssetImporter::GetLastWrite() const
+	{
+		return m_LastWrite;
+	}
+
+	AssetImporter* AssetImporter::CreateNew(const TypeId& type, const std::filesystem::path& relativePath)
 	{
 		const ClassInfo* info = ClassDB::GetInfo(type);
 		AssetImporter* importer = static_cast<AssetImporter*>(info->Create());
 		importer->m_Guid = Guid::Create();
 		importer->m_RelativePath = relativePath.string();
-		importer->m_RelativeMetaPath = relativeMetaPath.string();
+		importer->m_RelativeMetaPath = relativePath.string() + ".meta";
 		importer->m_Name = relativePath.stem().string();
 		importer->Save();
 		importer->m_RequireSave = true; // Importer may get some important data from the asset and should be saved second time
 		return importer;
 	}
 
-	AssetImporter* AssetImporter::CreateFromMeta(const std::filesystem::path& relativePath, const std::filesystem::path& relativeMetaPath)
+	AssetImporter* AssetImporter::CreateFromMeta(const std::filesystem::path& relativePath)
 	{
+		std::filesystem::path relativeMetaPath = relativePath;
+		relativeMetaPath += ".meta";
+
 		MetaSerializer serializer = {};
-		auto dataPath = Path::GetAssetsPath();
-		dataPath.append(relativeMetaPath.string());
-		serializer.Deserialize(String(dataPath.string()));
+		String metaPath = Path::GetAssetsPath(String(relativeMetaPath.string()));
+		serializer.Deserialize(metaPath);
 
 		auto& deserializedObjects = serializer.GetDeserializedObjects();
 		if (deserializedObjects.size() > 0)
@@ -172,7 +191,7 @@ namespace Blueberry
 			Guid guid = serializer.GetGuid();
 			importer->m_Guid = guid;
 			importer->m_RelativePath = relativePath.string();
-			importer->m_RelativeMetaPath = relativeMetaPath.string();
+			importer->m_RelativeMetaPath = relativePath.string() + ".meta";
 			importer->m_Name = relativePath.stem().string();
 			importer->SetState(ObjectState::AwaitingLoading);
 			// Data will be imported when it's needed
@@ -186,9 +205,12 @@ namespace Blueberry
 	{
 		MetaSerializer serializer = {};
 		serializer.AddObject(importer);
-		auto dataPath = Path::GetAssetsPath();
-		dataPath.append(importer->GetRelativeMetaFilePath());
-		serializer.Deserialize(String(dataPath.string()));
+		serializer.Deserialize(importer->GetMetaFilePath());
+	}
+
+	bool AssetImporter::IsImportable() const
+	{
+		return true;
 	}
 
 	void AssetImporter::LoadData()

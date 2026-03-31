@@ -17,7 +17,7 @@ namespace Blueberry
 	OBJECT_DEFINITION(PhysicsBody, Component)
 	{
 		DEFINE_BASE_FIELDS(PhysicsBody, Component)
-		DEFINE_FIELD(PhysicsBody, m_IsKinematic, BindingType::Bool, {})
+		DEFINE_FIELD(PhysicsBody, m_IsKinematic, BindingType::Bool, FieldOptions())
 		DEFINE_ITERATOR(UpdatableComponent)
 	}
 
@@ -66,11 +66,24 @@ namespace Blueberry
 		}
 	}
 
+	void PhysicsBody::OnFixedUpdate()
+	{
+		if (m_Transform->GetUpdateCount() > m_UpdateCount)
+		{
+			JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
+			Vector3 position = m_Transform->GetPosition();
+			Quaternion rotation = m_Transform->GetRotation();
+			bodyInterface.SetPositionAndRotation(m_PrivateData->bodyId, JPH::RVec3(position.x, position.y, position.z), JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w), JPH::EActivation::Activate);
+			m_UpdateCount = m_Transform->GetUpdateCount();
+		}
+	}
+
 	void PhysicsBody::OnUpdate()
 	{
 		JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
 		if (m_PrivateData->bodyId.GetIndex() == 0)
 		{
+			// Update is used here because colliders attach to PhysicsBody in OnCreate
 			size_t collidersCount = m_Colliders.size();
 			if (collidersCount == 1)
 			{
@@ -111,17 +124,49 @@ namespace Blueberry
 				JPH::BodyCreationSettings settings(shapeSettings, JPH::RVec3(position.x, position.y, position.z), JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w), motionType, 1);
 				m_PrivateData->bodyId = bodyInterface.CreateAndAddBody(settings, JPH::EActivation::Activate);
 			}
+			m_UpdateCount = m_Transform->GetUpdateCount();
 		}
 		else
 		{
-			JPH::RVec3 position;
-			JPH::Quat rotation;
 			if (bodyInterface.IsActive(m_PrivateData->bodyId))
 			{
+				JPH::RVec3 position;
+				JPH::Quat rotation;
 				bodyInterface.GetPositionAndRotation(m_PrivateData->bodyId, position, rotation);
 				m_Transform->SetPosition(Vector3(position[0], position[1], position[2]));
 				m_Transform->SetRotation(Quaternion(-rotation.GetX(), rotation.GetY(), -rotation.GetZ(), rotation.GetW()));
+				m_UpdateCount = m_Transform->GetUpdateCount();
 			}
+		}
+	}
+
+	void PhysicsBody::Move(const Vector3& position)
+	{
+		JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
+		if (bodyInterface.IsAdded(m_PrivateData->bodyId))
+		{
+			JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
+			bodyInterface.SetPosition(m_PrivateData->bodyId, JPH::RVec3(position.x, position.y, position.z), JPH::EActivation::Activate);
+		}
+	}
+
+	void PhysicsBody::Move(const Quaternion& rotation)
+	{
+		JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
+		if (bodyInterface.IsAdded(m_PrivateData->bodyId))
+		{
+			JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
+			bodyInterface.SetRotation(m_PrivateData->bodyId, JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w), JPH::EActivation::Activate);
+		}
+	}
+
+	void PhysicsBody::Move(const Vector3& position, const Quaternion& rotation)
+	{
+		JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
+		if (bodyInterface.IsAdded(m_PrivateData->bodyId))
+		{
+			JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
+			bodyInterface.SetPositionAndRotation(m_PrivateData->bodyId, JPH::RVec3(position.x, position.y, position.z), JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w), JPH::EActivation::Activate);
 		}
 	}
 }

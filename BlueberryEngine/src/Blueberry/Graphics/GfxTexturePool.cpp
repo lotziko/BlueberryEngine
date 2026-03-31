@@ -19,7 +19,7 @@ namespace Blueberry
 		return first != other.first || second != other.second;
 	}
 
-	GfxTexturePoolKey GetKey(const uint32_t& width, const uint32_t& height, const uint32_t& depth, const TextureUsageFlags& usageFlags, const uint32_t& antiAliasing, const uint32_t& mipCount, const TextureFormat& textureFormat, const TextureDimension& textureDimension, const WrapMode& wrapMode, const FilterMode& filterMode)
+	GfxTexturePoolKey GetKey(uint32_t width, uint32_t height, uint32_t depth, TextureUsageFlags usageFlags, uint32_t antiAliasing, uint32_t mipCount, TextureFormat textureFormat, TextureDimension textureDimension, WrapMode wrapMode, FilterMode filterMode)
 	{
 		GfxTexturePoolKey key;
 		key.first = static_cast<uint64_t>(width) | static_cast<uint64_t>(height) << 16 | static_cast<uint64_t>(depth) << 32 | static_cast<uint64_t>(usageFlags) << 40 | static_cast<uint64_t>(antiAliasing) << 48 | static_cast<uint64_t>(mipCount) << 56;
@@ -77,7 +77,7 @@ namespace Blueberry
 		return texture;
 	}
 
-	GfxTexture* GfxTexturePool::Get(const uint32_t& width, const uint32_t& height, const uint32_t& depth, const TextureUsageFlags& usageFlags, const uint32_t& antiAliasing, const uint32_t& mipCount, const TextureFormat& textureFormat, const TextureDimension& textureDimension, const WrapMode& wrapMode, const FilterMode& filterMode)
+	GfxTexture* GfxTexturePool::Get(uint32_t width, uint32_t height, uint32_t depth, TextureUsageFlags usageFlags, uint32_t antiAliasing, uint32_t mipCount, TextureFormat textureFormat, TextureDimension textureDimension, WrapMode wrapMode, FilterMode filterMode)
 	{
 		GfxTexturePoolKey key = GetKey(width, height, depth, usageFlags, antiAliasing, mipCount, textureFormat, textureDimension, wrapMode, filterMode);
 		GfxTexture* texture = Find(key);

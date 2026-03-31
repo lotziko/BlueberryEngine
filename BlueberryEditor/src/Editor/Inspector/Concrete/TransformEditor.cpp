@@ -126,7 +126,7 @@ namespace Blueberry
 		{
 			float snapping[3];
 			float* gizmoSnapping = Preferences::GetGizmoSnapping();
-			const int& gizmoOperation = Preferences::GetGizmoOperation();
+			int gizmoOperation = Preferences::GetGizmoOperation();
 			if (gizmoOperation == ImGuizmo::OPERATION::TRANSLATE)
 			{
 				snapping[0] = gizmoSnapping[0];

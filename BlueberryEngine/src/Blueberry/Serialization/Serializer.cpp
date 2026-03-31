@@ -15,7 +15,7 @@
 
 namespace Blueberry
 {
-	void Serializer::Serialize(const String& path, const bool& isText)
+	void Serializer::Serialize(const String& path, bool isText)
 	{
 		std::ofstream stream(path.data(), std::ios::out | std::ofstream::binary);
 		if (stream.is_open())
@@ -110,12 +110,12 @@ namespace Blueberry
 		m_ObjectsToSerialize.push_back(objectId);
 	}
 
-	void Serializer::AddObject(Object* object, const FileId& fileId)
+	void Serializer::AddObject(Object* object, FileId fileId)
 	{
 		m_FileIdToObjectId.insert({ fileId, object->GetObjectId() });
 	}
 
-	FileId Serializer::GetFileId(const ObjectId& objectId)
+	FileId Serializer::GetFileId(ObjectId objectId)
 	{
 		if (ObjectDB::HasFileId(objectId))
 		{
@@ -124,11 +124,18 @@ namespace Blueberry
 
 		FileId fileId = GenerateFileId();
 		m_FileIdToObjectId.insert_or_assign(fileId, objectId);
-		ObjectDB::AllocateIdToFileId(objectId, fileId);
+		if (m_Guid.IsValid())
+		{
+			ObjectDB::AllocateIdToGuid(objectId, m_Guid, fileId);
+		}
+		else
+		{
+			ObjectDB::AllocateIdToFileId(objectId, fileId);
+		}
 		return fileId;
 	}
 
-	Object* Serializer::GetObjectRef(const FileId& fileId)
+	Object* Serializer::GetObjectRef(FileId fileId)
 	{
 		auto idIt = m_FileIdToObjectId.find(fileId);
 		if (idIt != m_FileIdToObjectId.end())
@@ -268,37 +275,37 @@ namespace Blueberry
 				break;
 			case BindingType::ByteData:
 			{
-				ByteData data = *field.Get<ByteData>(ptr);
-				if (data.size() > 0)
+				ByteData* data = field.Get<ByteData>(ptr);
+				if (data->size() > 0)
 				{
-					DataWrapper<ByteData> wrapper = { data };
+					DataWrapper<ByteData> wrapper = { *data };
 					fieldNode << wrapper;
 				}
 			}
 			break;
 			case BindingType::IntList:
 			{
-				List<int> data = *field.Get<List<int>>(ptr);
-				DataWrapper<List<int>> wrapper = { data };
+				List<int>* data = field.Get<List<int>>(ptr);
+				DataWrapper<List<int>> wrapper = { *data };
 				fieldNode << wrapper;
 			}
 			break;
 			case BindingType::FloatList:
 			{
-				List<float> data = *field.Get<List<float>>(ptr);
-				DataWrapper<List<float>> wrapper = { data };
+				List<float>* data = field.Get<List<float>>(ptr);
+				DataWrapper<List<float>> wrapper = { *data };
 				fieldNode << wrapper;
 			}
 			break;
 			case BindingType::StringList:
 			{
 				fieldNode |= SerializationFlags::SEQUENCE;
-				List<String> arrayValue = *field.Get<List<String>>(ptr);
-				if (arrayValue.size() > 0)
+				List<String>* arrayValue = field.Get<List<String>>(ptr);
+				if (arrayValue->size() > 0)
 				{
-					for (auto stringValue : arrayValue)
+					for (size_t i = 0; i < arrayValue->size(); ++i)
 					{
-						fieldNode.AppendChild() << stringValue;
+						fieldNode.AppendChild() << arrayValue->at(i);
 					}
 				}
 			}
@@ -443,7 +450,14 @@ namespace Blueberry
 				fieldNode |= SerializationFlags::MAP;
 				Data* data = field.Get<Data>(ptr);
 				Context context = Context::CreateNoOffset(data, *field.options.objectType);
-				SerializeNode(fieldNode, context);
+				if (context.info != nullptr)
+				{
+					SerializeNode(fieldNode, context);
+				}
+				else
+				{
+					BB_ERROR("Data class not exists.");
+				}
 			}
 			break;
 			case BindingType::DataList:
@@ -455,9 +469,16 @@ namespace Blueberry
 				{
 					void* data = dataArrayPointer->get_base(i);
 					Context context = Context::CreateNoOffset(data, *field.options.objectType);
-					SerializationNodeRef dataNode = fieldNode.AppendChild();
-					dataNode |= SerializationFlags::MAP;
-					SerializeNode(dataNode, context);
+					if (context.info != nullptr)
+					{
+						SerializationNodeRef dataNode = fieldNode.AppendChild();
+						dataNode |= SerializationFlags::MAP;
+						SerializeNode(dataNode, context);
+					}
+					else
+					{
+						BB_ERROR("Data class not exists.");
+					}
 				}
 			}
 			break;
@@ -720,7 +741,14 @@ namespace Blueberry
 				{
 					Data* data = field->Get<Data>(ptr);
 					Context context = Context::CreateNoOffset(data, *field->options.objectType);
-					DeserializeNode(fieldNode, context);
+					if (context.info != nullptr)
+					{
+						DeserializeNode(fieldNode, context);
+					}
+					else
+					{
+						BB_ERROR("Data class not exists.");
+					}
 				}
 				break;
 				case BindingType::DataList:
@@ -731,7 +759,14 @@ namespace Blueberry
 					{
 						void* data = dataArrayPointer->emplace_back_base();
 						Context context = Context::CreateNoOffset(data, *field->options.objectType);
-						DeserializeNode(child, context);
+						if (context.info != nullptr)
+						{
+							DeserializeNode(child, context);
+						}
+						else
+						{
+							BB_ERROR("Data class not exists.");
+						}
 					}
 				}
 				break;
@@ -876,7 +911,7 @@ namespace Blueberry
 		}
 	}
 
-	void Serializer::AddAdditionalObject(const ObjectId& objectId)
+	void Serializer::AddAdditionalObject(ObjectId objectId)
 	{
 		auto it = std::find(m_ObjectsToSerialize.begin(), m_ObjectsToSerialize.end(), objectId);
 		if (it != m_ObjectsToSerialize.end())
@@ -893,7 +928,7 @@ namespace Blueberry
 		}
 	}
 
-	void Serializer::AddDeserializedObject(const ObjectId& objectId, const FileId& fileId)
+	void Serializer::AddDeserializedObject(ObjectId objectId, FileId fileId)
 	{
 		ObjectDB::AllocateIdToFileId(objectId, fileId);
 		m_FileIdToObjectId.insert_or_assign(fileId, objectId);

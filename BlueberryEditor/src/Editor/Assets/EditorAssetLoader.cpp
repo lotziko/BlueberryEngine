@@ -30,7 +30,7 @@ namespace Blueberry
 		}
 	}
 
-	Object* EditorAssetLoader::LoadImpl(const Guid& guid, const FileId& fileId)
+	Object* EditorAssetLoader::LoadImpl(const Guid& guid, FileId fileId)
 	{
 		AssetImporter* importer = AssetDB::GetImporter(guid);
 		if (importer != nullptr)
@@ -79,7 +79,7 @@ namespace Blueberry
 				}
 				DirectX::ScratchImage image = {};
 				TextureHelper::Load(image, path, ".png", parameters.first);
-				auto metadata = image.GetMetadata();
+				auto& metadata = image.GetMetadata();
 				texture = Texture2D::Create(static_cast<uint32_t>(metadata.width), static_cast<uint32_t>(metadata.height), static_cast<uint32_t>(metadata.mipLevels), static_cast<TextureFormat>(metadata.format), parameters.second);
 				ObjectDB::AllocateIdToGuid(texture, guid, 1);
 				texture->SetData(static_cast<uint8_t*>(image.GetPixels()), image.GetPixelsSize());

@@ -27,7 +27,7 @@ namespace Blueberry
 		m_RenderStates.reserve(4096);
 	}
 
-	const GfxRenderStateDX11 GfxRenderStateCacheDX11::GetState(Material* material, const uint8_t& passIndex, const bool& isCounterClockwise)
+	const GfxRenderStateDX11 GfxRenderStateCacheDX11::GetState(Material* material, uint8_t passIndex, bool isCounterClockwise)
 	{
 		uint64_t keywordMask = static_cast<uint64_t>(Shader::GetActiveKeywordsMask()) | (static_cast<uint64_t>(material->GetActiveKeywordsMask()) << 32);
 		ObjectId objectId = material->GetObjectId(); // Maybe also use shader id to be able to switch it

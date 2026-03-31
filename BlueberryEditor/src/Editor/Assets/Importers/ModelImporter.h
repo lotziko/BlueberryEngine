@@ -42,22 +42,26 @@ namespace Blueberry
 		ModelAnimationClipData() = default;
 		virtual ~ModelAnimationClipData() = default;
 
-		const String& GetName();
+		const String& GetName() const;
 		void SetName(const String& name);
 
-		const String& GetReplaceName();
+		const String& GetReplaceName() const;
 		void SetReplaceName(const String& replaceName);
 
-		const uint32_t& GetFirstFrame();
-		void SetFirstFrame(const uint32_t& firstFrame);
+		uint32_t GetFirstFrame() const;
+		void SetFirstFrame(uint32_t firstFrame);
 
-		const uint32_t& GetLastFrame();
-		void SetLastFrame(const uint32_t& lastFrame);
+		uint32_t GetLastFrame() const;
+		void SetLastFrame(uint32_t lastFrame);
+
+		bool IsLoop() const;
+		void SetLoop(bool loop);
 
 		String m_Name;
 		String m_ReplaceName;
-		uint32_t m_FirstFrame;
-		uint32_t m_LastFrame;
+		uint32_t m_FirstFrame = 0;
+		uint32_t m_LastFrame = 0;
+		bool m_IsLoop = false;
 	};
 
 	class ModelImporter : public AssetImporter
@@ -69,17 +73,17 @@ namespace Blueberry
 
 		List<ModelMaterialData>& GetMaterials();
 		
-		const float& GetScale();
-		void SetScale(const float& scale);
+		float GetScale() const;
+		void SetScale(float scale);
 
-		const bool& GetGenerateLightmapUV();
-		void SetGenerateLightmapUV(const bool& generate);
+		bool GetGenerateLightmapUV() const;
+		void SetGenerateLightmapUV(bool generate);
 
-		const bool& GetGeneratePhysicsShape();
-		void SetGeneratePhysicsShape(const bool& generate);
+		bool GetGeneratePhysicsShape() const;
+		void SetGeneratePhysicsShape(bool generate);
 
 	protected:
-		virtual void ImportData() override;
+		virtual void ImportData() final;
 
 	private:
 		struct NodeData
@@ -90,9 +94,9 @@ namespace Blueberry
 			String entityName;
 		};
 
-		void CreateHierarchy(Transform* parent, fbxsdk::FbxNode* node, List<Object*>& objects, Dictionary<fbxsdk::FbxNode*, NodeData>& nodeToData, const float& globalScale);
-		void CreateMesh(fbxsdk::FbxNode* node, List<Object*>& objects, Dictionary<fbxsdk::FbxNode*, NodeData>& nodeToData, const float& globalScale);
-		void CreateAnimationClips(fbxsdk::FbxScene* scene, List<Object*>& objects, const float& globalScale);
+		void CreateHierarchy(Transform* parent, fbxsdk::FbxNode* node, List<Object*>& objects, Dictionary<fbxsdk::FbxNode*, NodeData>& nodeToData, float globalScale);
+		void CreateMesh(fbxsdk::FbxNode* node, List<Object*>& objects, Dictionary<fbxsdk::FbxNode*, NodeData>& nodeToData, float globalScale);
+		void CreateAnimationClips(fbxsdk::FbxScene* scene, List<Object*>& objects, float globalScale);
 		
 	private:
 		List<ModelMaterialData> m_Materials;

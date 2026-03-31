@@ -11,6 +11,6 @@ namespace Blueberry
 	class YamlWriter
 	{
 	public:
-		static void Write(List<SerializationTree>& trees, std::ofstream& stream, const bool& hasHeaders);
+		static void Write(List<SerializationTree>& trees, std::ofstream& stream, bool hasHeaders);
 	};
 }

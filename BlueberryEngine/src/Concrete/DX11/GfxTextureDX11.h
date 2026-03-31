@@ -28,18 +28,18 @@ namespace Blueberry
 
 		virtual void GetData(void* target, const Rectangle& area) override;
 		virtual void GetData(void* target) override;
-		virtual void SetData(void* data, const size_t& size) override;
-		virtual void SetData(void* data, const size_t& size, const uint32_t& slice) override;
+		virtual void SetData(void* data, size_t size) override;
+		virtual void SetData(void* data, size_t size, uint32_t slice) override;
 
-		virtual void SetWrapMode(const WrapMode& wrapMode) override;
-		virtual void SetFilterMode(const FilterMode& filterMode) override;
+		virtual void SetWrapMode(WrapMode wrapMode) override;
+		virtual void SetFilterMode(FilterMode filterMode) override;
 		virtual void SetName(const String& name) override;
 
 		virtual void GenerateMipMaps() override;
 
 	private:
-		uint32_t GetQualityLevel(const DXGI_FORMAT& format, const uint32_t& antiAliasing);
-		bool Initialize(D3D11_SUBRESOURCE_DATA* subresourceData, const uint32_t& subresourceCount, const TextureProperties& properties);
+		uint32_t GetQualityLevel(const DXGI_FORMAT& format, uint32_t antiAliasing);
+		bool Initialize(D3D11_SUBRESOURCE_DATA* subresourceData, uint32_t subresourceCount, const TextureProperties& properties);
 
 	private:
 		ComPtr<ID3D11Resource> m_Texture;

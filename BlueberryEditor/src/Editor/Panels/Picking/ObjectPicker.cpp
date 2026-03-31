@@ -16,7 +16,7 @@ namespace Blueberry
 {
 	static void* s_IdPtr = nullptr;
 	static const char* s_Label;
-	static std::string s_SearchName;
+	static String s_SearchName;
 	static List<Object*> s_AllObjects = {};
 	static List<Object*> s_Objects = {};
 	static Object* s_SelectedObject = nullptr;

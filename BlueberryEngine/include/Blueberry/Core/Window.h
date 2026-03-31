@@ -6,7 +6,7 @@ namespace Blueberry
 {
 	struct WindowProperties
 	{
-		WindowProperties(String title, int width, int height, void* data, bool canDropFiles = false) : title(title), width(width), height(height), data(data), canDropFiles(canDropFiles)
+		WindowProperties(const String& title, int width, int height, void* data, bool canDropFiles = false) : title(title), width(width), height(height), data(data), canDropFiles(canDropFiles)
 		{
 		}
 
@@ -33,6 +33,6 @@ namespace Blueberry
 		static Window* Create(const WindowProperties& properties);
 
 	protected:
-		void SetScreenSize(const uint32_t& width, const uint32_t& height, const float& scale);
+		void SetScreenSize(uint32_t width, uint32_t height, float scale);
 	};
 }

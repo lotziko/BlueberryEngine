@@ -11,7 +11,7 @@ namespace Blueberry
 
 	void DependencyCache::Load()
 	{
-		auto dataPath = Path::GetAssetCachePath();
+		std::filesystem::path dataPath = Path::GetAssetCachePath();
 		dataPath.append("DependencyCache");
 
 		if (std::filesystem::exists(dataPath))
@@ -39,7 +39,7 @@ namespace Blueberry
 
 	void DependencyCache::Save()
 	{
-		auto dataPath = Path::GetAssetCachePath();
+		std::filesystem::path dataPath = Path::GetAssetCachePath();
 		dataPath.append("DependencyCache");
 
 		size_t cacheSize = s_DependencyCache.size();

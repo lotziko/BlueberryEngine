@@ -27,26 +27,26 @@ namespace Blueberry
 		const Matrix& GetInverseViewMatrix();
 		const Matrix& GetInverseViewProjectionMatrix();
 
-		const bool& IsOrthographic();
-		void SetOrthographic(const bool& isOrthographic);
+		bool IsOrthographic() const;
+		void SetOrthographic(bool isOrthographic);
 
-		const float& GetOrthographicSize();
-		const void SetOrthographicSize(const float& size);
+		float GetOrthographicSize() const;
+		const void SetOrthographicSize(float size);
 
-		const Vector2& GetPixelSize();
+		const Vector2& GetPixelSize() const;
 		const void SetPixelSize(const Vector2& pixelSize);
 
-		const float& GetAspectRatio();
-		void SetAspectRatio(const float& aspectRatio);
+		float GetAspectRatio() const;
+		void SetAspectRatio(float aspectRatio);
 
-		const float& GetFieldOfView();
-		void SetFieldOfView(const float& fieldOfView);
+		float GetFieldOfView() const;
+		void SetFieldOfView(float fieldOfView);
 
-		const float& GetNearClipPlane();
-		void SetNearClipPlane(const float& nearClip);
+		float GetNearClipPlane() const;
+		void SetNearClipPlane(float nearClip);
 
-		const float& GetFarClipPlane();
-		void SetFarClipPlane(const float& farClip);
+		float GetFarClipPlane() const;
+		void SetFarClipPlane(float farClip);
 
 		static Camera* GetCurrent();
 		static void SetCurrent(Camera* camera);
@@ -54,8 +54,8 @@ namespace Blueberry
 		Vector3 WorldToScreenPoint(Vector3 position);
 		Vector3 ScreenToWorldPoint(Vector3 position);
 
-		const CameraType& GetCameraType();
-		void SetCameraType(const CameraType& cameraType);
+		CameraType GetCameraType() const;
+		void SetCameraType(CameraType cameraType);
 
 	private:
 		bool IsViewDirty();

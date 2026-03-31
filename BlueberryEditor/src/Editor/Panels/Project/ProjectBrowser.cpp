@@ -8,13 +8,13 @@
 #include "Editor\Prefabs\PrefabManager.h"
 #include "Editor\Panels\Scene\SceneArea.h"
 #include "Editor\Panels\Inspector\InspectorExpandedItemsCache.h"
+#include "Editor\Panels\AnimationGraph\AnimationGraphWindow.h"
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Animations\AnimationGraph.h"
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Scene\Components\Component.h"
-#include "Blueberry\Tools\StringConverter.h"
 #include "Blueberry\Events\WindowEvents.h"
 
 #include "Editor\Assets\ThumbnailCache.h"
@@ -30,7 +30,7 @@ namespace Blueberry
 	OBJECT_DEFINITION(ProjectBrowser, EditorWindow)
 	{
 		DEFINE_BASE_FIELDS(ProjectBrowser, EditorWindow)
-		DEFINE_FIELD(ProjectBrowser, m_FoldersColumnWidth, BindingType::Float, {})
+		DEFINE_FIELD(ProjectBrowser, m_FoldersColumnWidth, BindingType::Float, FieldOptions())
 		EditorMenuManager::AddItem("Window/Project", &ProjectBrowser::Open);
 	}
 
@@ -262,16 +262,9 @@ namespace Blueberry
 			}
 			if (ImGui::MenuItem("Animation Graph"))
 			{
-				std::string animationGraphName("New Animation Graph");
-				animationGraphName.append(".animgraph");
-
-				auto relativePath = std::filesystem::relative(m_CurrentDirectory, Path::GetAssetsPath());
-				relativePath.append(animationGraphName);
-
-				AnimationGraph* animationGraph = Object::Create<AnimationGraph>();
-				AssetDB::CreateAsset(animationGraph, relativePath.string().data());
-				AssetDB::SaveAssets();
-				AssetDB::Refresh();
+				m_CreatingObject = Object::Create<AnimationGraph>();
+				m_CreatingObjectName = "New Animation Graph.animgraph";
+				UpdateFiles();
 			}
 			if (ImGui::MenuItem("Show in Explorer"))
 			{
@@ -282,7 +275,7 @@ namespace Blueberry
 					String relativePath = AssetDB::GetRelativeAssetPath(selectedObject);
 					if (relativePath.size() > 0)
 					{
-						auto dataPath = Path::GetAssetsPath();
+						std::filesystem::path dataPath = Path::GetAssetsPath();
 						dataPath.append(relativePath);
 						path = dataPath.string();
 					}
@@ -293,7 +286,15 @@ namespace Blueberry
 				}
 				if (path.size() > 0)
 				{
-					PlatformHelper::RevealInExplorer(StringConverter::StringToWide(path));
+					PlatformHelper::RevealInExplorer(path);
+				}
+			}
+			if (ImGui::MenuItem("Rename"))
+			{
+				Object* selectedObject = Selection::GetActiveObject();
+				if (selectedObject != nullptr)
+				{
+					m_RenamingObject = selectedObject;
 				}
 			}
 			if (ImGui::MenuItem("Delete"))
@@ -301,7 +302,8 @@ namespace Blueberry
 				Object* selectedObject = Selection::GetActiveObject();
 				if (selectedObject != nullptr)
 				{
-					AssetDB::DeleteAsset(selectedObject);
+					AssetDB::DeleteAsset(AssetDB::GetRelativeAssetPath(selectedObject));
+					AssetDB::Refresh();
 					Selection::SetActiveObject(nullptr);
 				}
 			}
@@ -413,18 +415,39 @@ namespace Blueberry
 
 			if (ImGui::IsItemDeactivated())
 			{
+				String oldName = m_RenamingObject->GetName();
 				m_RenamingObject->SetName(buf);
+				String newName = buf;
 				if (m_CreatingObject == m_RenamingObject)
 				{
-					String name = m_RenamingObject->GetName();
-					name.append(m_CreatingObjectName.substr(m_CreatingObjectName.find('.')));
-					auto relativePath = std::filesystem::relative(m_CurrentDirectory, Path::GetAssetsPath());
-					relativePath.append(name);
-					AssetDB::CreateAsset(m_CreatingObject, relativePath.string().data());
+					newName.append(m_CreatingObjectName.substr(m_CreatingObjectName.find('.')));
+					std::filesystem::path relativePath = std::filesystem::relative(m_CurrentDirectory, Path::GetAssetsPath());
+					relativePath.append(newName);
+					AssetDB::CreateAsset(m_CreatingObject, relativePath.string().c_str());
 					m_CreatingObject = nullptr;
-					AssetDB::SaveAssets();
-					AssetDB::Refresh();
 				}
+				else
+				{
+					AssetImporter* importer;
+					if (m_RenamingObject->IsClassType(AssetImporter::Type))
+					{
+						importer = static_cast<AssetImporter*>(m_RenamingObject);
+					}
+					else
+					{
+						Guid guid = ObjectDB::GetGuidFromObject(m_RenamingObject);
+						importer = AssetDB::GetImporter(guid);
+					}
+					importer->SetName(newName);
+					importer->Save();
+					std::filesystem::path oldRelativePath = AssetDB::GetRelativeAssetPath(m_RenamingObject);
+					std::filesystem::path newRelativePath = oldRelativePath;
+					std::filesystem::path extension = oldRelativePath.extension();
+					newRelativePath.replace_filename(newName);
+					newRelativePath += extension;
+					AssetDB::RenameAsset(oldRelativePath.string().c_str(), newRelativePath.string().c_str());
+				}
+				AssetDB::Refresh();
 				m_RenamingObject = nullptr;
 				isRenaming = false;
 			}
@@ -473,6 +496,11 @@ namespace Blueberry
 					Selection::SetActiveObject(root);
 				}
 			}
+			else if (filePath.extension() == ".animgraph")
+			{
+				AnimationGraph* graph = static_cast<AnimationGraph*>(ObjectDB::GetObjectFromGuid(asset.importer->GetGuid(), asset.importer->GetMainObject()));
+				AnimationGraphWindow::Open(graph);
+			}
 		}
 	}
 
@@ -501,12 +529,17 @@ namespace Blueberry
 
 	void ProjectBrowser::UpdateFiles()
 	{
+		if (!std::filesystem::exists(m_CurrentDirectory))
+		{
+			m_CurrentDirectory = Path::GetAssetsPath();
+		}
+
 		m_PreviousDirectory = m_CurrentDirectory;
 		m_CurrentDirectoryAssets.clear();
 
 		for (auto& it : std::filesystem::directory_iterator(m_CurrentDirectory))
 		{
-			auto path = it.path();
+			auto& path = it.path();
 			if (it.is_directory() && path.extension() != ".meta")
 			{
 				auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
@@ -522,7 +555,7 @@ namespace Blueberry
 		}
 		for (auto& it : std::filesystem::directory_iterator(m_CurrentDirectory))
 		{
-			auto path = it.path();
+			auto& path = it.path();
 
 			if (!it.is_directory() && path.extension() != ".meta")
 			{
@@ -576,7 +609,7 @@ namespace Blueberry
 	{
 		ProjectBrowser* browser = static_cast<ProjectBrowser*>(EditorWindow::GetWindow(ProjectBrowser::Type));
 		String relativePath = AssetDB::GetRelativeAssetPath(object);
-		auto dataPath = Path::GetAssetsPath();
+		std::filesystem::path dataPath = Path::GetAssetsPath();
 		dataPath.append(relativePath);
 		browser->m_CurrentDirectory = dataPath.parent_path();
 		browser->UpdateFiles();

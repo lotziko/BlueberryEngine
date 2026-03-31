@@ -1,20 +1,14 @@
 #include "ProjectCache.h"
 
+#include "Blueberry\Tools\StringConverter.h"
 #include "Editor\Misc\PlatformHelper.h"
 
 #include <fstream>
 #include <filesystem>
-#include <codecvt>
 
 namespace Blueberry
 {
 	List<ProjectInfo> ProjectCache::s_ProjectInfoCache = {};
-
-	String ConvertString(const WString& wstr)
-	{
-		static std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-		return String(converter.to_bytes(wstr.c_str()));
-	}
 
 	void ProjectCache::Load()
 	{
@@ -28,7 +22,7 @@ namespace Blueberry
 			{
 				ProjectInfo info;
 				info.wpath = WString(line);
-				info.path = ConvertString(info.wpath);
+				info.path = StringConverter::WideToString(info.wpath);
 				s_ProjectInfoCache.push_back(std::move(info));
 			}
 			input.close();
@@ -59,26 +53,26 @@ namespace Blueberry
 		return s_ProjectInfoCache;
 	}
 
-	void ProjectCache::Add(const WString& path)
+	void ProjectCache::Add(const String& path)
 	{
 		for (auto& info : s_ProjectInfoCache)
 		{
-			if (info.wpath == path)
+			if (info.path == path)
 			{
 				return;
 			}
 		}
 		ProjectInfo info;
-		info.wpath = path;
-		info.path = ConvertString(path);
+		info.wpath = StringConverter::StringToWide(path);
+		info.path = path;
 		s_ProjectInfoCache.push_back(std::move(info));
 	}
 
-	void ProjectCache::Remove(const WString& path)
+	void ProjectCache::Remove(const String& path)
 	{
 		for (auto& it = s_ProjectInfoCache.begin(); it != s_ProjectInfoCache.end(); ++it)
 		{
-			if (it->wpath == path)
+			if (it->path == path)
 			{
 				s_ProjectInfoCache.erase(it);
 				break;

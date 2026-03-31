@@ -15,9 +15,9 @@ namespace Blueberry
 		SkyRenderer() = default;
 		virtual ~SkyRenderer() = default;
 
-		Material* GetMaterial();
+		Material* GetMaterial() const;
 
-		const Color& GetAmbientColor();
+		const Color& GetAmbientColor() const;
 		void SetAmbientColor(const Color& color);
 
 	private:

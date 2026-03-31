@@ -345,7 +345,7 @@ namespace Blueberry
 		return true;
 	}
 
-	void YamlReader::Read(List<SerializationTree>& trees, std::ifstream& stream, const bool& hasHeaders)
+	void YamlReader::Read(List<SerializationTree>& trees, std::ifstream& stream, bool hasHeaders)
 	{
 		SerializationTree tree = {};
 		if (hasHeaders)

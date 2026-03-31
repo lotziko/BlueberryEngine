@@ -10,7 +10,7 @@
 
 namespace Blueberry
 {
-	String GetPhysicsShapePath(const Guid& guid, const FileId& fileId, const uint8_t& key)
+	String GetPhysicsShapePath(const Guid& guid, FileId fileId, uint8_t key)
 	{
 		std::filesystem::path dataPath = Path::GetPhysicsShapeCachePath();
 		dataPath.append(guid.ToString());
@@ -29,7 +29,7 @@ namespace Blueberry
 		return String(dataPath.string());
 	}
 	
-	uint8_t GetKey(const bool& isConvex, const Vector3& scale)
+	uint8_t GetKey(bool isConvex, const Vector3& scale)
 	{
 		return (isConvex ? 1 : 0) | (scale.x > 0.0f ? 2 : 0) | (scale.y > 0.0f ? 4 : 0) | (scale.z > 0.0f ? 8 : 0);
 	}
@@ -44,7 +44,7 @@ namespace Blueberry
 		}
 	}
 
-	bool EditorPhysicsShapeCache::TryLoadImpl(Mesh* mesh, const bool& isConvex, const Vector3& scale, List<uint8_t>& data)
+	bool EditorPhysicsShapeCache::TryLoadImpl(Mesh* mesh, bool isConvex, const Vector3& scale, List<uint8_t>& data)
 	{
 		auto& pair = ObjectDB::GetGuidAndFileIdFromObject(mesh);
 		String physicsShapePath = GetPhysicsShapePath(pair.first, pair.second, GetKey(isConvex, scale));
@@ -56,7 +56,7 @@ namespace Blueberry
 		return false;
 	}
 
-	void EditorPhysicsShapeCache::SaveImpl(Mesh* mesh, const bool& isConvex, const Vector3& scale, List<uint8_t>& data)
+	void EditorPhysicsShapeCache::SaveImpl(Mesh* mesh, bool isConvex, const Vector3& scale, List<uint8_t>& data)
 	{
 		auto& pair = ObjectDB::GetGuidAndFileIdFromObject(mesh);
 		String physicsShapePath = GetPhysicsShapePath(pair.first, pair.second, GetKey(isConvex, scale));

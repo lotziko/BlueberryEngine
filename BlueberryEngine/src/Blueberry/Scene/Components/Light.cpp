@@ -13,14 +13,14 @@ namespace Blueberry
 	{
 		DEFINE_BASE_FIELDS(Light, Component)
 		DEFINE_FIELD(Light, m_Type, BindingType::Enum, FieldOptions().SetEnumHint("Spot,Directional,Point"))
-		DEFINE_FIELD(Light, m_Color, BindingType::Color, {})
-		DEFINE_FIELD(Light, m_Intensity, BindingType::Float, {})
-		DEFINE_FIELD(Light, m_Range, BindingType::Float, {})
-		DEFINE_FIELD(Light, m_OuterSpotAngle, BindingType::Float, {})
-		DEFINE_FIELD(Light, m_InnerSpotAngle, BindingType::Float, {})
-		DEFINE_FIELD(Light, m_IsCastingShadows, BindingType::Bool, {})
-		DEFINE_FIELD(Light, m_IsCastingFog, BindingType::Bool, {})
-		DEFINE_FIELD(Light, m_IsCached, BindingType::Bool, {})
+		DEFINE_FIELD(Light, m_Color, BindingType::Color, FieldOptions())
+		DEFINE_FIELD(Light, m_Intensity, BindingType::Float, FieldOptions())
+		DEFINE_FIELD(Light, m_Range, BindingType::Float, FieldOptions())
+		DEFINE_FIELD(Light, m_OuterSpotAngle, BindingType::Float, FieldOptions())
+		DEFINE_FIELD(Light, m_InnerSpotAngle, BindingType::Float, FieldOptions())
+		DEFINE_FIELD(Light, m_IsCastingShadows, BindingType::Bool, FieldOptions())
+		DEFINE_FIELD(Light, m_IsCastingFog, BindingType::Bool, FieldOptions())
+		DEFINE_FIELD(Light, m_IsCached, BindingType::Bool, FieldOptions())
 		DEFINE_FIELD(Light, m_Cookie, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Texture::Type))
 		DEFINE_ITERATOR(Light)
 		DEFINE_EXECUTE_ALWAYS()
@@ -36,17 +36,17 @@ namespace Blueberry
 		UpdateBounds();
 	}
 
-	const LightType& Light::GetType()
+	LightType Light::GetType()
 	{
 		return m_Type;
 	}
 
-	void Light::SetType(const LightType& type)
+	void Light::SetType(LightType type)
 	{
 		m_Type = type;
 	}
 
-	const Color& Light::GetColor()
+	const Color& Light::GetColor() const
 	{
 		return m_Color;
 	}
@@ -56,67 +56,67 @@ namespace Blueberry
 		m_Color = color;
 	}
 
-	const float& Light::GetIntensity()
+	float Light::GetIntensity() const
 	{
 		return m_Intensity;
 	}
 
-	void Light::SetIntensity(const float& intensity)
+	void Light::SetIntensity(float intensity)
 	{
 		m_Intensity = intensity;
 	}
 
-	const float& Light::GetRange()
+	float Light::GetRange() const
 	{
 		return m_Range;
 	}
 
-	void Light::SetRange(const float& range)
+	void Light::SetRange(float range)
 	{
 		m_Range = range;
 	}
 
-	const float& Light::GetOuterSpotAngle()
+	float Light::GetOuterSpotAngle() const
 	{
 		return m_OuterSpotAngle;
 	}
 
-	const float& Light::GetInnerSpotAngle()
+	float Light::GetInnerSpotAngle() const
 	{
 		return m_InnerSpotAngle;
 	}
 
-	const bool& Light::IsCastingShadows()
+	bool Light::IsCastingShadows() const
 	{
 		return m_IsCastingShadows;
 	}
 
-	void Light::SetCastingShadows(const bool& castingShadows)
+	void Light::SetCastingShadows(bool castingShadows)
 	{
 		m_IsCastingShadows = castingShadows;
 	}
 
-	const bool& Light::IsCastingFog()
+	bool Light::IsCastingFog() const
 	{
 		return m_IsCastingFog;
 	}
 
-	void Light::SetCastingFog(const bool& castingFog)
+	void Light::SetCastingFog(bool castingFog)
 	{
 		m_IsCastingFog = castingFog;
 	}
 
-	const bool& Light::IsCached()
+	bool Light::IsCached() const
 	{
 		return m_IsCached;
 	}
 
-	void Light::SetCached(const bool& cached)
+	void Light::SetCached(bool cached)
 	{
 		m_IsCached = cached;
 	}
 
-	Texture* Light::GetCookie()
+	Texture* Light::GetCookie() const
 	{
 		return m_Cookie.Get();
 	}

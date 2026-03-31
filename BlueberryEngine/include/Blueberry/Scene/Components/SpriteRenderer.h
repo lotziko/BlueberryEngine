@@ -18,13 +18,13 @@ namespace Blueberry
 		virtual const AABB& GetBounds() final;
 		virtual const Matrix& GetLocalToWorldMatrix() final;
 
-		const Color& GetColor();
+		const Color& GetColor() const;
 		void SetColor(const Color& color);
 
-		Texture2D* GetTexture();
+		Texture2D* GetTexture() const;
 		void SetTexture(Texture2D* texture);
 
-		Material* GetMaterial();
+		Material* GetMaterial() const;
 		void SetMaterial(Material* material);
 
 	private:

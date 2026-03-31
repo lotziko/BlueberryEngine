@@ -13,7 +13,7 @@ namespace Blueberry
 	OBJECT_DEFINITION(EditorWindow, Object)
 	{
 		DEFINE_BASE_FIELDS(EditorWindow, Object)
-		DEFINE_FIELD(EditorWindow, m_Title, BindingType::String, {})
+		DEFINE_FIELD(EditorWindow, m_Title, BindingType::String, FieldOptions())
 		DEFINE_FIELD(EditorWindow, m_RawData, BindingType::Raw, FieldOptions().SetSize(37))
 	}
 
@@ -186,7 +186,7 @@ namespace Blueberry
 			{
 				if (window->m_HasUnsavedChanges)
 				{
-					DialogResult dialogResult = PlatformHelper::OpenDialog(L"Unsaved changes", window->GetSaveChangesMessage(), L"Save", L"Don't save", L"Cancel");
+					DialogResult dialogResult = PlatformHelper::OpenDialog("Unsaved changes", window->GetSaveChangesMessage(), "Save", "Don't save", "Cancel");
 					switch (dialogResult)
 					{
 					case DialogResult::Yes:
@@ -304,9 +304,9 @@ namespace Blueberry
 	{
 	}
 
-	WString EditorWindow::GetSaveChangesMessage()
+	String EditorWindow::GetSaveChangesMessage()
 	{
-		return L"Window has unsaved changes.";
+		return "Window has unsaved changes.";
 	}
 
 	void EditorWindow::DrawUI()

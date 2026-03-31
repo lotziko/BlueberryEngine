@@ -20,14 +20,14 @@ namespace Blueberry
 		ReflectionProbe() = default;
 		virtual ~ReflectionProbe() = default;
 
-		const ReflectionProbeType& GetType();
-		void SetType(const ReflectionProbeType& type);
+		ReflectionProbeType GetType();
+		void SetType(ReflectionProbeType type);
 
-		const uint32_t& GetAtlasIndex();
-		void SetAtlasIndex(const uint32_t& atlasIndex);
+		uint32_t GetAtlasIndex() const;
+		void SetAtlasIndex(uint32_t atlasIndex);
 
-		const float& GetRadius();
-		const Vector3& GetSize();
+		float GetRadius() const;
+		const Vector3& GetSize() const;
 
 	private:
 		ReflectionProbeType m_Type = ReflectionProbeType::Sphere;

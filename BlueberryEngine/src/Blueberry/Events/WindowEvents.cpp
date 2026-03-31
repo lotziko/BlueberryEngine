@@ -53,7 +53,7 @@ namespace Blueberry
 		return m_Pathes;
 	}
 
-	const bool& WindowClosingEventArgs::IsCanceled()
+	bool WindowClosingEventArgs::IsCanceled() const
 	{
 		return m_IsCanceled;
 	}

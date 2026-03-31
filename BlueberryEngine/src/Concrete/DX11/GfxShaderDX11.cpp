@@ -134,6 +134,10 @@ namespace Blueberry
 				else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32) inputElementDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 				size = 16;
 			}
+			else
+			{
+				size = 0;
+			}
 			
 			uint32_t nameInt = *reinterpret_cast<const uint32_t*>(paramDesc.SemanticName);
 			m_Crc = CRCHelper::Calculate(nameInt, m_Crc);

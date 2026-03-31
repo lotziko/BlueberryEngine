@@ -5,6 +5,7 @@
 #include "Blueberry\Scene\Components\Component.h"
 #include "Blueberry\Serialization\Serializer.h"
 #include "Blueberry\Core\ClassDB.h"
+#include "Blueberry\Scene\SceneEvents.h"
 
 namespace Blueberry
 {
@@ -84,8 +85,8 @@ namespace Blueberry
 		{
 			return;
 		}
-		entity->m_Scene = nullptr;
 		entity->DisableComponents();
+		entity->m_Scene = nullptr;
 		if (entity->GetTransform()->GetParent() == nullptr)
 		{
 			RemoveFromRoot(entity);
@@ -110,7 +111,7 @@ namespace Blueberry
 		}
 		m_Entities.erase(entity->GetObjectId());
 		entity->OnDestroy();
-		Object::Destroy(entity);
+		SceneEvents::s_DestroyedEntities.push_back(entity);
 	}
 
 	const Dictionary<ObjectId, ObjectPtr<Entity>>& Scene::GetEntities()
@@ -157,7 +158,7 @@ namespace Blueberry
 		return 0;
 	}
 
-	void Scene::SetRootIndex(Entity* entity, const size_t& index)
+	void Scene::SetRootIndex(Entity* entity, size_t index)
 	{
 		size_t oldIndex = 0;
 		for (size_t i = 0; i < m_RootEntities.size(); ++i)

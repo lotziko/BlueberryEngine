@@ -419,7 +419,7 @@ namespace Blueberry
 		}
 	}
 
-	void GfxTextureDX11::SetData(void* data, const size_t& size)
+	void GfxTextureDX11::SetData(void* data, size_t size)
 	{
 		if (m_StagingTexture.Get() == nullptr)
 		{
@@ -436,7 +436,7 @@ namespace Blueberry
 		m_DeviceContext->CopyResource(m_Texture.Get(), m_StagingTexture.Get());
 	}
 
-	void GfxTextureDX11::SetData(void* data, const size_t& size, const uint32_t& slice)
+	void GfxTextureDX11::SetData(void* data, size_t size, uint32_t slice)
 	{
 		if (m_StagingTexture.Get() == nullptr)
 		{
@@ -481,7 +481,7 @@ namespace Blueberry
 		m_DeviceContext->CopyResource(m_Texture.Get(), m_StagingTexture.Get());
 	}
 
-	void GfxTextureDX11::SetWrapMode(const WrapMode& wrapMode)
+	void GfxTextureDX11::SetWrapMode(WrapMode wrapMode)
 	{
 		if (m_WrapMode != wrapMode)
 		{
@@ -490,7 +490,7 @@ namespace Blueberry
 		}
 	}
 
-	void GfxTextureDX11::SetFilterMode(const FilterMode& filterMode)
+	void GfxTextureDX11::SetFilterMode(FilterMode filterMode)
 	{
 		if (m_FilterMode != filterMode)
 		{
@@ -544,7 +544,7 @@ namespace Blueberry
 		return (usageFlags & flag) != TextureUsageFlags::None;
 	}
 
-	bool GfxTextureDX11::Initialize(D3D11_SUBRESOURCE_DATA* subresourceData, const uint32_t& subresourceCount, const TextureProperties& properties)
+	bool GfxTextureDX11::Initialize(D3D11_SUBRESOURCE_DATA* subresourceData, uint32_t subresourceCount, const TextureProperties& properties)
 	{
 		uint32_t antiAliasing = std::max(1u, properties.antiAliasing);
 		uint32_t arraySize = GetArraySize(properties.dimension, properties.depth);

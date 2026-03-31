@@ -5,8 +5,6 @@
 
 namespace Blueberry
 {
-	TypeId GenerateTypeId();
-
 //********************************************************************************
 // OBJECT_DECLARATION
 // This macro must be included in the declaration of any subclass of Object.
@@ -20,9 +18,9 @@ public:																			\
 	static const String ParentTypeName;											\
 	static void DefineFields();													\
 public:																			\
-    virtual bool IsClassType( const TypeId classType ) const override;			\
+    virtual bool IsClassType(TypeId classType) const override;					\
 	virtual TypeId GetType() const override;									\
-	virtual String GetTypeName() const override;								\
+	virtual const String& GetTypeName() const override;							\
 
 //********************************************************************************
 // OBJECT_DEFINITION
@@ -35,17 +33,17 @@ TypeId childclass::Type = 0;														\
 TypeId childclass::ParentType = 0;													\
 const String childclass::TypeName = TO_STRING(childclass);							\
 const String childclass::ParentTypeName = TO_STRING(parentclass);					\
-bool childclass::IsClassType( const TypeId classType ) const						\
+bool childclass::IsClassType(TypeId classType) const								\
 {																					\
     if ( classType == childclass::Type )											\
         return true;																\
-    return parentclass::IsClassType( classType );									\
+    return parentclass::IsClassType(classType);										\
 }																					\
 TypeId childclass::GetType() const													\
 {																					\
 	return childclass::Type;														\
 }																					\
-String childclass::GetTypeName() const												\
+const String& childclass::GetTypeName() const										\
 {																					\
 	return childclass::TypeName;													\
 }																					\
@@ -73,9 +71,9 @@ void childclass::DefineFields()														\
 		Object() = default;
 		virtual ~Object() = default;
 
-		virtual bool IsClassType(const TypeId classType) const;
+		virtual bool IsClassType(TypeId classType) const;
 		virtual TypeId GetType() const;
-		virtual String GetTypeName() const;
+		virtual const String& GetTypeName() const;
 
 	public:
 		ObjectId GetObjectId() const;
@@ -85,7 +83,7 @@ void childclass::DefineFields()														\
 
 		const ObjectState& GetState();
 		const bool IsDefaultState();
-		void SetState(const ObjectState& state);
+		void SetState(ObjectState state);
 
 		static void DefineFields();
 
@@ -96,7 +94,7 @@ void childclass::DefineFields()														\
 		static void Destroy(Object* object);
 
 	protected:
-		ObjectId m_ObjectId;
+		ObjectId m_ObjectId = INVALID_ID;
 		String m_Name;
 		ObjectState m_State = ObjectState::Default;
 

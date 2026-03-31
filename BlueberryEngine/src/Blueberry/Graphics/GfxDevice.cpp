@@ -38,7 +38,7 @@ namespace Blueberry
 		s_Instance->ClearColorImpl(color);
 	}
 
-	void GfxDevice::ClearDepth(const float& depth)
+	void GfxDevice::ClearDepth(float depth)
 	{
 		s_Instance->ClearDepthImpl(depth);
 	}
@@ -63,17 +63,17 @@ namespace Blueberry
 		s_Instance->ResizeBackbufferImpl(width, height);
 	}
 
-	const uint32_t& GfxDevice::GetViewCount()
+	uint32_t GfxDevice::GetViewCount()
 	{
 		return s_Instance->GetViewCountImpl();
 	}
 
-	void GfxDevice::SetViewCount(const uint32_t& count)
+	void GfxDevice::SetViewCount(uint32_t count)
 	{
 		s_Instance->SetViewCountImpl(count);
 	}
 
-	void GfxDevice::SetDepthBias(const uint32_t& bias, const float& slopeBias)
+	void GfxDevice::SetDepthBias(uint32_t bias, float slopeBias)
 	{
 		s_Instance->SetDepthBiasImpl(bias, slopeBias);
 	}
@@ -123,7 +123,7 @@ namespace Blueberry
 		s_Instance->CopyImpl(source, target, offset, area);
 	}
 
-	void GfxDevice::Copy(GfxTexture* source, GfxTexture* target, const uint32_t& sourceSlice, const uint32_t& targetSlice, const uint32_t& mipLevel)
+	void GfxDevice::Copy(GfxTexture* source, GfxTexture* target, uint32_t sourceSlice, uint32_t targetSlice, uint32_t mipLevel)
 	{
 		s_Instance->CopyImpl(source, target, sourceSlice, targetSlice, mipLevel);
 	}
@@ -138,22 +138,22 @@ namespace Blueberry
 		s_Instance->SetRenderTargetImpl(renderTexture, depthStencilTexture);
 	}
 
-	void GfxDevice::SetRenderTarget(GfxTexture* renderTexture, const uint32_t& slice)
+	void GfxDevice::SetRenderTarget(GfxTexture* renderTexture, uint32_t slice)
 	{
 		s_Instance->SetRenderTargetImpl(renderTexture, nullptr, slice);
 	}
 
-	void GfxDevice::SetRenderTarget(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, const uint32_t& slice)
+	void GfxDevice::SetRenderTarget(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, uint32_t slice)
 	{
 		s_Instance->SetRenderTargetImpl(renderTexture, depthStencilTexture, slice);
 	}
 
-	void GfxDevice::SetGlobalBuffer(const size_t& id, GfxBuffer* buffer)
+	void GfxDevice::SetGlobalBuffer(size_t id, GfxBuffer* buffer)
 	{
 		s_Instance->SetGlobalBufferImpl(id, buffer);
 	}
 
-	void GfxDevice::SetGlobalTexture(const size_t& id, GfxTexture* texture)
+	void GfxDevice::SetGlobalTexture(size_t id, GfxTexture* texture)
 	{
 		s_Instance->SetGlobalTextureImpl(id, texture);
 	}
@@ -163,7 +163,7 @@ namespace Blueberry
 		s_Instance->DrawImpl(operation);
 	}
 
-	void GfxDevice::Dispatch(GfxComputeShader* shader, const uint32_t& threadGroupsX, const uint32_t& threadGroupsY, const uint32_t& threadGroupsZ)
+	void GfxDevice::Dispatch(GfxComputeShader* shader, uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ)
 	{
 		s_Instance->DispatchImpl(shader, threadGroupsX, threadGroupsY, threadGroupsZ);
 	}

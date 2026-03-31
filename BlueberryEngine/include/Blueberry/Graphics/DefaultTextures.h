@@ -14,7 +14,7 @@ namespace Blueberry
 	class DefaultTextures
 	{
 	public:
-		static Texture* GetTexture(const String& name, const TextureDimension& dimension);
+		static Texture* GetTexture(const String& name, TextureDimension dimension);
 		static Texture2D* GetWhite2D();
 		static Texture2D* GetBlack2D();
 		static Texture2D* GetNormal2D();

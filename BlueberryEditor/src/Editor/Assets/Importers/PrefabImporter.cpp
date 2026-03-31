@@ -53,7 +53,7 @@ namespace Blueberry
 				mainObjectIsSet = true;
 			}
 		}
-		instance->OnCreate();
+		instance->Initialize();
 		AssetDB::SaveAssetObjectsToCache(objects);
 	}
 }

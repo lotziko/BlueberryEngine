@@ -20,6 +20,7 @@ namespace Blueberry
 		static void Flip(DirectX::ScratchImage& scratchImage);
 		static void GenerateMipMaps(DirectX::ScratchImage& scratchImage);
 		static void Compress(DirectX::ScratchImage& scratchImage, const TextureFormat& format, const bool& srgb);
+		static void CompressNormals(DirectX::ScratchImage& scratchImage);
 		static void EquirectangularToTextureCube(DirectX::ScratchImage& scratchImage, const TextureFormat& uncompressedFormat);
 		static void SlicesToTextureCube(DirectX::ScratchImage& scratchImage);
 		static void DownscaleTextureCube(GfxTexture* texture, DirectX::ScratchImage& scratchImage);

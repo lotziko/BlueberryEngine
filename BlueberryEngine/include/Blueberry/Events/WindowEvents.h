@@ -33,7 +33,7 @@ namespace Blueberry
 	class WindowClosingEventArgs
 	{
 	public:
-		const bool& IsCanceled();
+		bool IsCanceled() const;
 		void Cancel();
 		
 	private:

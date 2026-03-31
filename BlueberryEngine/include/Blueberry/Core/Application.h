@@ -29,7 +29,7 @@ namespace Blueberry
 		static Application* GetInstance();
 
 		static bool IsRunning();
-		static void SetRunning(const bool& isRunning);
+		static void SetRunning(bool isRunning);
 		
 	private:
 		bool ProcessMessages();

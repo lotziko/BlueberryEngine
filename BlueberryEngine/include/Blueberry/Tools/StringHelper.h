@@ -7,6 +7,7 @@ namespace Blueberry
 	class StringHelper
 	{
 	public:
+		static void Replace(String& str, const String& from, const String& to);
 		static void Split(const char* data, const char symbol, List<String>& result);
 		static int32_t HasSubstring(const String& str1, const String& str2);
 	};

@@ -12,7 +12,7 @@ namespace Blueberry
 	{
 		DEFINE_BASE_FIELDS(MeshCollider, Collider)
 		DEFINE_FIELD(MeshCollider, m_Mesh, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Mesh::Type))
-		DEFINE_FIELD(MeshCollider, m_IsConvex, BindingType::Bool, {})
+		DEFINE_FIELD(MeshCollider, m_IsConvex, BindingType::Bool, FieldOptions())
 	}
 
 	JPH::Shape* MeshCollider::GetShape()

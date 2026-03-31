@@ -17,10 +17,10 @@ namespace Blueberry
 		bool Initialize(const BufferProperties& properties);
 
 		virtual void GetData(void* data) final;
-		virtual void SetData(const void* data, const size_t& size) final;
+		virtual void SetData(const void* data, size_t size) final;
 
-		virtual const uint32_t& GetElementSize() final;
-		virtual const uint32_t& GetElementCount() final;
+		virtual uint32_t GetElementSize() const final;
+		virtual uint32_t GetElementCount() const final;
 
 	private:
 		bool Initialize(D3D11_SUBRESOURCE_DATA* subresourceData, const BufferProperties& properties);
@@ -34,10 +34,10 @@ namespace Blueberry
 		ID3D11Device* m_Device;
 		ID3D11DeviceContext* m_DeviceContext;
 
-		uint32_t m_ElementSize;
-		uint32_t m_ElementCount;
-		bool m_IsConstant;
-		
+		uint32_t m_ElementSize = 0;
+		uint32_t m_ElementCount = 0;
+		bool m_IsConstant = false;
+
 		friend class GfxDeviceDX11;
 		friend class GfxRenderStateCacheDX11;
 

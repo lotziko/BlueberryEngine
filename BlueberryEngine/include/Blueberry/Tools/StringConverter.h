@@ -7,6 +7,7 @@ namespace Blueberry
 	class StringConverter
 	{
 	public:
-		static WString StringToWide(String str);
+		static WString StringToWide(const String& str);
+		static String WideToString(const WString& wstr);
 	};
 }

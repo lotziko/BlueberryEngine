@@ -13,9 +13,9 @@ namespace Blueberry
 		AnimationBoneData() = default;
 
 		void SetName(const String& name);
-		void SetPositions(const Vector3* positions, const size_t& count);
-		void SetRotations(const Quaternion* rotations, const size_t& count);
-		void SetScales(const Vector3* scales, const size_t& count);
+		void SetPositions(const Vector3* positions, size_t count);
+		void SetRotations(const Quaternion* rotations, size_t count);
+		void SetScales(const Vector3* scales, size_t count);
 
 	private:
 		String m_Name;
@@ -36,20 +36,24 @@ namespace Blueberry
 
 		void ClearAnimationBones();
 		void AddAnimationBone(const AnimationBoneData& data);
-		uint32_t GetBoneIndex(const String& name);
+		uint32_t GetBoneIndex(const String& name) const;
 
-		size_t GetBoneCount();
-		TRS GetTRS(const float& time, const size_t& index);
+		size_t GetBoneCount() const;
+		TRS GetTRS(float time, size_t index) const;
 
-		const float& GetFrameRate();
-		void SetFrameRate(const float& frameRate);
+		float GetFrameRate() const;
+		void SetFrameRate(float frameRate);
 		
-		const float& GetLength();
-		void SetLength(const float& length);
+		float GetLength() const;
+		void SetLength(float length);
+
+		bool IsLoop() const;
+		void SetLoop(bool loop);
 
 	private:
 		List<AnimationBoneData> m_AnimationBones;
-		float m_FrameRate;
-		float m_Length;
+		float m_FrameRate = 0.0f;
+		float m_Length = 0.0f;
+		bool m_IsLoop = false;
 	};
 }

@@ -17,7 +17,7 @@ namespace Blueberry
 		static void Enable();
 		static void Disable();
 
-		static void Update(const float& deltaTime);
+		static void Update(float deltaTime);
 
 	private:
 		static JPH::TempAllocatorImpl* s_TempAllocator;

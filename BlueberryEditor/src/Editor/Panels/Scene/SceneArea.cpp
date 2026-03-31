@@ -283,7 +283,7 @@ namespace Blueberry
 
 		ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(m_ColorRenderTarget->GetHandle()), ImVec2(pos.x, pos.y), ImVec2(pos.x + size.x, pos.y + size.y), ImVec2(0, 0), ImVec2(size.x / Screen::GetWidth(), size.y / Screen::GetHeight()));
 		DrawControls();
-		DrawGizmos(Rectangle(pos.x, pos.y, size.x, size.y));
+		DrawGizmos(Rectangle(static_cast<long>(pos.x), static_cast<long>(pos.y), static_cast<long>(size.x), static_cast<long>(size.y)));
 	}
 
 	void SceneArea::OnSaveChanges()
@@ -297,21 +297,21 @@ namespace Blueberry
 		SetHasUnsavedChanges(false);
 	}
 
-	WString SceneArea::GetSaveChangesMessage()
+	String SceneArea::GetSaveChangesMessage()
 	{
 		if (EditorSceneManager::HasPrefabScene())
 		{
-			return L"Current prefab has unsaved changes.";
+			return "Current prefab has unsaved changes.";
 		}
-		return L"Current scene has unsaved changes.";
+		return "Current scene has unsaved changes.";
 	}
 
-	float SceneArea::GetPerspectiveDistance(const float objectSize, const float fov)
+	float SceneArea::GetPerspectiveDistance(float objectSize, float fov) const
 	{
 		return objectSize / sin(Math::ToRadians(fov * 0.5f));
 	}
 
-	float SceneArea::GetCameraDistance()
+	float SceneArea::GetCameraDistance() const
 	{
 		if (m_Camera->IsOrthographic())
 		{
@@ -323,12 +323,12 @@ namespace Blueberry
 		}
 	}
 
-	Camera* SceneArea::GetCamera()
+	Camera* SceneArea::GetCamera() const
 	{
 		return m_Camera;
 	}
 
-	Vector3 SceneArea::GetPosition()
+	const Vector3& SceneArea::GetPosition() const
 	{
 		return m_Position;
 	}
@@ -338,7 +338,7 @@ namespace Blueberry
 		m_Position = position;
 	}
 
-	Quaternion SceneArea::GetRotation()
+	const Quaternion& SceneArea::GetRotation() const
 	{
 		return m_Rotation;
 	}
@@ -348,27 +348,27 @@ namespace Blueberry
 		m_Rotation = rotation;
 	}
 
-	float SceneArea::GetSize()
+	float SceneArea::GetSize() const
 	{
 		return m_Size;
 	}
 
-	void SceneArea::SetSize(const float& size)
+	void SceneArea::SetSize(float size)
 	{
 		m_Size = size;
 	}
 
-	bool SceneArea::IsOrthographic()
+	bool SceneArea::IsOrthographic() const
 	{
 		return m_IsOrthographic;
 	}
 
-	bool SceneArea::Is2DMode()
+	bool SceneArea::Is2DMode() const
 	{
 		return m_Is2DMode;
 	}
 
-	void SceneArea::Set2DMode(const bool& is2DMode)
+	void SceneArea::Set2DMode(bool is2DMode)
 	{
 		m_Is2DMode = is2DMode;
 		if (m_Is2DMode)
@@ -387,29 +387,29 @@ namespace Blueberry
 		EditorLayer::RequestFrameUpdate();
 	}
 
-	Vector3 SceneArea::GetCameraPosition()
+	Vector3 SceneArea::GetCameraPosition() const
 	{
 		// GetCameraDistance() is inverted because of right handed coordinate system
 		return m_Position + Vector3::Transform(Vector3(0, 0, -GetCameraDistance()), m_Camera->GetTransform()->GetRotation());
 	}
 
-	Quaternion SceneArea::GetCameraRotation()
+	Quaternion SceneArea::GetCameraRotation() const
 	{
 		return m_Is2DMode ? Quaternion::Identity : m_Rotation;
 	}
 
-	Vector3 SceneArea::GetCameraTargetPosition()
+	Vector3 SceneArea::GetCameraTargetPosition() const
 	{
 		// GetCameraDistance() is inverted because of right handed coordinate system
 		return m_Position + Vector3::Transform(Vector3(0, 0, -GetCameraDistance()), m_Rotation);
 	}
 
-	Quaternion SceneArea::GetCameraTargetRotation()
+	const Quaternion& SceneArea::GetCameraTargetRotation() const
 	{
 		return m_Rotation;
 	}
 
-	float SceneArea::GetCameraOrthographicSize()
+	float SceneArea::GetCameraOrthographicSize() const
 	{
 		float result = m_Size;
 		if (m_Camera->GetAspectRatio() < 1.0f)
@@ -419,7 +419,7 @@ namespace Blueberry
 		return result;
 	}
 
-	void SceneArea::SetupCamera(const float& width, const float& height)
+	void SceneArea::SetupCamera(float width, float height)
 	{
 		Transform* transform = m_Camera->GetTransform();
 		// avoid changing this when there is no motion
@@ -543,9 +543,9 @@ namespace Blueberry
 	void SceneArea::DrawGizmos(const Rectangle& viewport)
 	{
 		ImDrawList* drawList = ImGui::GetWindowDrawList();
-		drawList->PushClipRect(ImVec2(viewport.x, viewport.y), ImVec2(viewport.x + viewport.width, viewport.y + viewport.height));
+		drawList->PushClipRect(ImVec2(static_cast<float>(viewport.x), static_cast<float>(viewport.y)), ImVec2(static_cast<float>(viewport.x + viewport.width), static_cast<float>(viewport.y + viewport.height)));
 		ImGuizmo::SetDrawlist(drawList);
-		ImGuizmo::SetRect(viewport.x, viewport.y, viewport.width, viewport.height);
+		ImGuizmo::SetRect(static_cast<float>(viewport.x), static_cast<float>(viewport.y), static_cast<float>(viewport.width), static_cast<float>(viewport.height));
 		ImGuizmo::Enable(!ImGui::IsPopupOpen(NULL, ImGuiPopupFlags_AnyPopup));
 
 		Scene* scene = EditorSceneManager::GetScene();
@@ -559,7 +559,7 @@ namespace Blueberry
 		drawList->PopClipRect();
 	}
 
-	void SceneArea::DrawScene(const float width, const float height)
+	void SceneArea::DrawScene(float width, float height)
 	{
 		int viewportWidth = static_cast<int>(width);
 		int viewportHeight = static_cast<int>(height);
@@ -583,7 +583,7 @@ namespace Blueberry
 		GfxDevice::SetRenderTarget(nullptr);
 	}
 
-	void SceneArea::LookAt(const Vector3& point, const Quaternion& direction, const float& newSize, const bool& isOrthographic)
+	void SceneArea::LookAt(const Vector3& point, const Quaternion& direction, float newSize, bool isOrthographic)
 	{
 		m_Position = point;
 		m_Rotation = direction;

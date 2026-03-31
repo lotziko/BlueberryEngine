@@ -17,8 +17,8 @@ namespace Blueberry
 		static void Save();
 
 		static const List<ProjectInfo>& Get();
-		static void Add(const WString&path);
-		static void Remove(const WString&path);
+		static void Add(const String& path);
+		static void Remove(const String& path);
 
 	private:
 		static List<ProjectInfo> s_ProjectInfoCache;

@@ -72,9 +72,9 @@ namespace Blueberry
 		List<BoneData> m_BoneDatas;
 		bool m_CullingDirty = true;
 
-		GfxBuffer* m_SkinningVertexBuffer;
-		ObjectId m_SkinningMeshId;
-		uint32_t m_SkinningMeshUpdateCount;
+		GfxBuffer* m_SkinningVertexBuffer = nullptr;
+		ObjectId m_SkinningMeshId = INVALID_ID;
+		uint32_t m_SkinningMeshUpdateCount = 0;
 
 		friend class Skinning;
 	};

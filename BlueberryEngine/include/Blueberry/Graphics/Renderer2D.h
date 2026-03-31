@@ -20,7 +20,7 @@ namespace Blueberry
 
 		static void Begin();
 		static void End();
-		static void Draw(const Matrix& transform, Texture2D* texture, Material* material, const Color& color, const int& sortingOrder);
+		static void Draw(const Matrix& transform, Texture2D* texture, Material* material, const Color& color, int sortingOrder);
 		static void DrawImmediate(const Vector3& position, const Vector2& size, Texture2D* texture, Material* material, const Color& color);
 		static void Flush();
 

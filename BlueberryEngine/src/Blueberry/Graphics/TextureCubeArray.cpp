@@ -9,7 +9,7 @@ namespace Blueberry
 	OBJECT_DEFINITION(TextureCubeArray, Texture)
 	{
 		DEFINE_BASE_FIELDS(TextureCubeArray, Texture)
-		DEFINE_FIELD(TextureCubeArray, m_Count, BindingType::Int, {})
+		DEFINE_FIELD(TextureCubeArray, m_Count, BindingType::Int, FieldOptions())
 	}
 
 	TextureCubeArray::~TextureCubeArray()
@@ -20,12 +20,12 @@ namespace Blueberry
 		}
 	}
 
-	const uint32_t& TextureCubeArray::GetCount()
+	uint32_t TextureCubeArray::GetCount() const
 	{
 		return m_Count;
 	}
 
-	void TextureCubeArray::SetData(uint8_t* data, const size_t& dataSize)
+	void TextureCubeArray::SetData(uint8_t* data, size_t dataSize)
 	{
 		m_RawData.resize(dataSize);
 		memcpy(m_RawData.data(), data, dataSize);
@@ -61,7 +61,7 @@ namespace Blueberry
 		}
 	}
 
-	TextureCubeArray* TextureCubeArray::Create(const uint32_t& width, const uint32_t& height, const uint32_t& count, const uint32_t& mipCount, const TextureFormat& textureFormat, const WrapMode& wrapMode, const FilterMode& filterMode)
+	TextureCubeArray* TextureCubeArray::Create(uint32_t width, uint32_t height, uint32_t count, uint32_t mipCount, TextureFormat textureFormat, WrapMode wrapMode, FilterMode filterMode)
 	{
 		TextureCubeArray* texture = Object::Create<TextureCubeArray>();
 		texture->m_Width = width;

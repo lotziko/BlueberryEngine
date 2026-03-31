@@ -28,7 +28,7 @@ namespace Blueberry
 		rpmalloc_thread_finalize(0);
 	}
 
-	void* Allocator::Allocate(const size_t& size)
+	void* Allocator::Allocate(size_t size)
 	{
 		return rpmalloc(size);
 	}

@@ -4,7 +4,7 @@
 
 namespace Blueberry
 {
-	GfxPassData GfxRenderStateCache::GetPassData(Material* material, const uint8_t& passIndex)
+	GfxPassData GfxRenderStateCache::GetPassData(Material* material, uint8_t passIndex) const
 	{
 		GfxPassData data = {};
 		Shader* shader = material->GetShader();
@@ -84,7 +84,7 @@ namespace Blueberry
 		return data;
 	}
 
-	uint32_t GfxRenderStateCache::GetTextureIndex(Material* material, const size_t& id)
+	uint32_t GfxRenderStateCache::GetTextureIndex(Material* material, size_t id) const
 	{
 		auto& bindedTextures = material->m_BindedTextures;
 		for (size_t i = 0; i < bindedTextures.size(); ++i)
@@ -97,7 +97,7 @@ namespace Blueberry
 		return UINT32_MAX;
 	}
 
-	uint32_t GfxRenderStateCache::GetTextureIndex(Material* material, const uint32_t& slotIndex)
+	uint32_t GfxRenderStateCache::GetTextureIndex(Material* material, uint32_t slotIndex) const
 	{
 		return material->m_BindedTextures[slotIndex].index;
 	}

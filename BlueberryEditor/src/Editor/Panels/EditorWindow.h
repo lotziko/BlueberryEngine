@@ -42,7 +42,7 @@ namespace Blueberry
 		virtual void OnDrawUI() = 0;
 		virtual void OnSaveChanges();
 		virtual void OnDiscardChanges();
-		virtual WString GetSaveChangesMessage();
+		virtual String GetSaveChangesMessage();
 
 	private:
 		void DrawUI();

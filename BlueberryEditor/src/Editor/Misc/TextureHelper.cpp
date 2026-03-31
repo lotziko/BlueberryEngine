@@ -192,9 +192,28 @@ namespace Blueberry
 		scratchImage = std::move(compressedScratchImage);
 	}
 
+	void TextureHelper::CompressNormals(DirectX::ScratchImage& scratchImage)
+	{
+		auto& metadata = scratchImage.GetMetadata();
+		if (DirectX::IsCompressed(metadata.format) || !DirectX::HasAlpha(metadata.format))
+		{
+			return;
+		}
+		size_t bytePerPixel = scratchImage.GetPixelsSize() / (metadata.width * metadata.height);
+		size_t bytePerChannel = bytePerPixel / 4;
+		uint8_t* ptr = scratchImage.GetImages()->pixels;
+		uint8_t* end = ptr + scratchImage.GetPixelsSize();
+		size_t targetOffset = 2 * bytePerChannel;
+		size_t sourceOffset = 3 * bytePerChannel;
+		for (; ptr < end; ptr += bytePerPixel)
+		{
+			memcpy(ptr + targetOffset, ptr + sourceOffset, bytePerChannel);
+		}
+	}
+
 	void TextureHelper::EquirectangularToTextureCube(DirectX::ScratchImage& scratchImage, const TextureFormat& uncompressedFormat)
 	{
-		auto metadata = scratchImage.GetMetadata();
+		auto& metadata = scratchImage.GetMetadata();
 		uint32_t size = static_cast<uint32_t>(std::min(metadata.width, metadata.height));
 
 		uint8_t* temporaryData = BB_MALLOC_ARRAY(uint8_t, scratchImage.GetPixelsSize());
@@ -228,7 +247,7 @@ namespace Blueberry
 
 	void TextureHelper::SlicesToTextureCube(DirectX::ScratchImage& scratchImage)
 	{
-		auto metadata = scratchImage.GetMetadata();
+		auto& metadata = scratchImage.GetMetadata();
 		const uint32_t size = static_cast<uint32_t>(metadata.height);
 		const size_t dataSize = scratchImage.GetPixelsSize();
 		const uint32_t bytesPerPixel = static_cast<uint32_t>(DirectX::BitsPerPixel(metadata.format)) / 8;
@@ -252,7 +271,7 @@ namespace Blueberry
 
 	void TextureHelper::DownscaleTextureCube(GfxTexture* texture, DirectX::ScratchImage& scratchImage)
 	{
-		auto metadata = scratchImage.GetMetadata();
+		auto& metadata = scratchImage.GetMetadata();
 		const uint32_t bytesPerPixel = 8;
 		uint32_t size = static_cast<uint32_t>(std::min(metadata.width, metadata.height));
 		
@@ -308,7 +327,7 @@ namespace Blueberry
 
 	void TextureHelper::ConvoluteSpecularTextureCube(DirectX::ScratchImage& scratchImage)
 	{
-		auto metadata = scratchImage.GetMetadata();
+		auto& metadata = scratchImage.GetMetadata();
 		uint32_t size = static_cast<uint32_t>(std::min(metadata.width, metadata.height));
 
 		if (s_GenerateReflectionMaterial == nullptr)

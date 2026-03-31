@@ -78,4 +78,25 @@ namespace Blueberry
 		thumbnailCachePath.append(L"\\ThumbnailCache");
 		s_ThumbnailCachePath = thumbnailCachePath;
 	}
+
+	std::filesystem::path Path::GetAssetPath(const String& relativePath)
+	{
+		std::filesystem::path assetPath = s_AssetsPath;
+		assetPath.append(relativePath);
+		return assetPath;
+	}
+
+	String Path::GetAssetsPath(const String& relativePath)
+	{
+		std::filesystem::path dataPath = s_AssetsPath;
+		dataPath.append(relativePath);
+		return String(dataPath.string());
+	}
+
+	String Path::GetAssetCachePath(const String& relativePath)
+	{
+		std::filesystem::path dataPath = s_AssetCachePath;
+		dataPath.append(relativePath);
+		return String(dataPath.string());
+	}
 }

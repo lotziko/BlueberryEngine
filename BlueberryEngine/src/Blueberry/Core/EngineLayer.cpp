@@ -8,6 +8,7 @@
 #include "Blueberry\Graphics\DefaultShaders.h"
 #include "Blueberry\Graphics\Skinning.h"
 #include "..\Animations\RegisterAnimationsTypes.h"
+#include "Blueberry\Scene\SceneEvents.h"
 
 namespace Blueberry
 {
@@ -29,5 +30,10 @@ namespace Blueberry
 		DefaultRenderer::Shutdown();
 		Skinning::Shutdown();
 		Input::Shutdown();
+	}
+
+	void EngineLayer::OnUpdate()
+	{
+		SceneEvents::Poll();
 	}
 }

@@ -17,19 +17,19 @@ namespace Blueberry
 		Texture() = default;
 		virtual ~Texture() = default;
 
-		const uint32_t& GetWidth();
-		const uint32_t& GetHeight();
+		uint32_t GetWidth() const;
+		uint32_t GetHeight() const;
 		GfxTexture* Get();
 		void* GetHandle();
 
-		const WrapMode& GetWrapMode();
-		void SetWrapMode(const WrapMode& wrapMode);
+		WrapMode GetWrapMode() const;
+		void SetWrapMode(WrapMode wrapMode);
 
-		const FilterMode& GetFilterMode();
-		void SetFilterMode(const FilterMode& filterMode);
+		FilterMode GetFilterMode() const;
+		void SetFilterMode(FilterMode filterMode);
 
-		const bool& IsReadable();
-		void SetReadable(const bool& readable);
+		bool IsReadable() const;
+		void SetReadable(bool readable);
 
 	protected:
 		void IncrementUpdateCount();

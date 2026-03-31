@@ -23,20 +23,20 @@ namespace Blueberry
 		Mesh* GetMesh();
 		void SetMesh(Mesh* mesh);
 
-		Material* GetMaterial(const uint32_t& index = 0);
+		Material* GetMaterial(uint32_t index = 0) const;
 		void SetMaterial(Material* material);
 
 		void SetMaterials(const List<Material*> materials);
 
-		uint32_t GetMaterialCount();
+		uint32_t GetMaterialCount() const;
 
 		virtual const AABB& GetBounds() final;
 		virtual const Matrix& GetLocalToWorldMatrix() final;
 
 		const bool& IsBakeable();
 
-		const uint32_t& GetLightmapChartOffset();
-		void SetLightmapChartOffset(const uint32_t& offset);
+		uint32_t GetLightmapChartOffset() const;
+		void SetLightmapChartOffset(uint32_t offset);
 
 	private:
 		void UpdateBounds();

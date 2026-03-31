@@ -9,12 +9,12 @@ namespace Blueberry
 		DEFINE_BASE_FIELDS(Renderer, Component)
 	}
 
-	const int& Renderer::GetSortingOrder()
+	int Renderer::GetSortingOrder() const
 	{
 		return m_SortingOrder;
 	}
 
-	void Renderer::SetSortingOrder(const int& sortingOrder)
+	void Renderer::SetSortingOrder(int sortingOrder)
 	{
 		m_SortingOrder = sortingOrder;
 	}

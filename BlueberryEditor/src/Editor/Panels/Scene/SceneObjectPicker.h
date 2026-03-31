@@ -14,7 +14,7 @@ namespace Blueberry
 		SceneObjectPicker();
 		virtual ~SceneObjectPicker();
 
-		Object* Pick(Scene* scene, Camera* camera, const int& positionX, const int& positionY);
+		Object* Pick(Scene* scene, Camera* camera, int positionX, int positionY);
 		void DrawOutline(Scene* scene, Camera* camera, GfxTexture* renderTarget);
 	private:
 		GfxTexture* m_SceneRenderTarget = nullptr;

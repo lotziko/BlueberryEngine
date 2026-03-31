@@ -24,42 +24,42 @@ namespace Blueberry
 		virtual void OnDrawUI() final;
 		virtual void OnSaveChanges() final;
 		virtual void OnDiscardChanges() final;
-		virtual WString GetSaveChangesMessage() final;
+		virtual String GetSaveChangesMessage() final;
 
-		float GetPerspectiveDistance(const float objectSize, const float fov);
-		float GetCameraDistance();
+		float GetPerspectiveDistance(float objectSize, float fov) const;
+		float GetCameraDistance() const;
 
-		Camera* GetCamera();
+		Camera* GetCamera() const;
 
-		Vector3 GetPosition();
+		const Vector3& GetPosition() const;
 		void SetPosition(const Vector3& position);
 
-		Quaternion GetRotation();
+		const Quaternion& GetRotation() const;
 		void SetRotation(const Quaternion& rotation);
 
-		float GetSize();
-		void SetSize(const float& size);
+		float GetSize() const;
+		void SetSize(float size);
 
-		bool IsOrthographic();
+		bool IsOrthographic() const;
 
-		bool Is2DMode();
-		void Set2DMode(const bool& is2DMode);
+		bool Is2DMode() const;
+		void Set2DMode(bool is2DMode);
 
 		static void RequestRedrawAll();
 
 	private:
-		Vector3 GetCameraPosition();
-		Quaternion GetCameraRotation();
+		Vector3 GetCameraPosition() const;
+		Quaternion GetCameraRotation() const;
 
-		Vector3 GetCameraTargetPosition();
-		Quaternion GetCameraTargetRotation();
-		float GetCameraOrthographicSize();
+		Vector3 GetCameraTargetPosition() const;
+		const Quaternion& GetCameraTargetRotation() const;
+		float GetCameraOrthographicSize() const;
 
-		void SetupCamera(const float& width, const float& height);
+		void SetupCamera(float width, float height);
 		void DrawControls();
 		void DrawGizmos(const Rectangle& viewport);
-		void DrawScene(const float width, const float height);
-		void LookAt(const Vector3& point, const Quaternion& direction, const float& newSize, const bool& isOrthographic);
+		void DrawScene(float width, float height);
+		void LookAt(const Vector3& point, const Quaternion& direction, float newSize, bool isOrthographic);
 
 		void OnSelectionChange();
 		void OnEntityUpdate();

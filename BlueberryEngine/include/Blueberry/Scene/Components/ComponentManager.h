@@ -24,15 +24,15 @@ namespace Blueberry
 	public:
 		void AddComponent(Component* component);
 		// Unsafe
-		void AddComponent(Component* component, const TypeId& type);
+		void AddComponent(Component* component, TypeId type);
 		void RemoveComponent(Component* component);
 		// Unsafe
-		void RemoveComponent(Component* component, const TypeId& type);
+		void RemoveComponent(Component* component, TypeId type);
 
 		template<class ComponentType>
 		ComponentIterator GetIterator();
-		ComponentIterator GetIterator(const TypeId& type);
-		ComponentMap& GetComponents(const TypeId& type);
+		ComponentIterator GetIterator(TypeId type);
+		ComponentMap& GetComponents(TypeId type);
 
 	private:
 		Dictionary<size_t, ComponentMap> m_Components;
@@ -49,7 +49,7 @@ namespace Blueberry
 		m_Components[component->GetType()][component->GetObjectId()] = component;
 	}
 
-	inline void ComponentManager::AddComponent(Component* component, const TypeId& type)
+	inline void ComponentManager::AddComponent(Component* component, TypeId type)
 	{
 		m_Components[type][component->GetObjectId()] = component;
 	}
@@ -59,17 +59,17 @@ namespace Blueberry
 		m_Components[component->GetType()].erase(component->GetObjectId());
 	}
 
-	inline void ComponentManager::RemoveComponent(Component* component, const TypeId& type)
+	inline void ComponentManager::RemoveComponent(Component* component, TypeId type)
 	{
 		m_Components[type].erase(component->GetObjectId());
 	}
 
-	inline ComponentIterator ComponentManager::GetIterator(const TypeId& type)
+	inline ComponentIterator ComponentManager::GetIterator(TypeId type)
 	{
 		return ComponentIterator(&m_Components[type]);
 	}
 
-	inline ComponentMap& ComponentManager::GetComponents(const TypeId& type)
+	inline ComponentMap& ComponentManager::GetComponents(TypeId type)
 	{
 		return m_Components[type];
 	}

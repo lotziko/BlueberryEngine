@@ -36,10 +36,12 @@ namespace Blueberry
 			SerializedProperty replaceNameProperty = animationClipDataProperty.FindProperty("m_ReplaceName");
 			SerializedProperty firstFrameProperty = animationClipDataProperty.FindProperty("m_FirstFrame");
 			SerializedProperty lastFrameProperty = animationClipDataProperty.FindProperty("m_LastFrame");
+			SerializedProperty isLoopProperty = animationClipDataProperty.FindProperty("m_IsLoop");
 			ImGui::Text(nameProperty.GetString().c_str());
 			ImGui::Property(&replaceNameProperty, "Replace name");
 			ImGui::Property(&firstFrameProperty, "First frame");
 			ImGui::Property(&lastFrameProperty, "Last frame");
+			ImGui::Property(&isLoopProperty, "Is loop");
 		}
 
 		ImGui::Property(&m_ScaleProperty, "Scale");

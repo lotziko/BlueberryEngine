@@ -35,7 +35,7 @@ namespace Blueberry
 		static void Shutdown();
 		static void Update();
 		static GfxTexture* Get(const TextureProperties& textureProperties);
-		static GfxTexture* Get(const uint32_t& width, const uint32_t& height, const uint32_t& depth, const TextureUsageFlags& usageFlags, const uint32_t& antiAliasing = 1, const uint32_t& mipCount = 1, const TextureFormat& textureFormat = TextureFormat::R8G8B8A8_UNorm, const TextureDimension& textureDimension = TextureDimension::Texture2D, const WrapMode& wrapMode = WrapMode::Clamp, const FilterMode& filterMode = FilterMode::Bilinear);
+		static GfxTexture* Get(uint32_t width, uint32_t height, uint32_t depth, TextureUsageFlags usageFlags, uint32_t antiAliasing = 1, uint32_t mipCount = 1, TextureFormat textureFormat = TextureFormat::R8G8B8A8_UNorm, TextureDimension textureDimension = TextureDimension::Texture2D, WrapMode wrapMode = WrapMode::Clamp, FilterMode filterMode = FilterMode::Bilinear);
 		static void Release(GfxTexture* texture);
 
 	private:

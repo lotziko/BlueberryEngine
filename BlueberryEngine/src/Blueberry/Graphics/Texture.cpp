@@ -10,22 +10,22 @@ namespace Blueberry
 	OBJECT_DEFINITION(Texture, Object)
 	{
 		DEFINE_BASE_FIELDS(Texture, Object)
-		DEFINE_FIELD(Texture, m_Width, BindingType::Int, {})
-		DEFINE_FIELD(Texture, m_Height, BindingType::Int, {})
-		DEFINE_FIELD(Texture, m_MipCount, BindingType::Int, {})
-		DEFINE_FIELD(Texture, m_Format, BindingType::Enum, {})
+		DEFINE_FIELD(Texture, m_Width, BindingType::Int, FieldOptions())
+		DEFINE_FIELD(Texture, m_Height, BindingType::Int, FieldOptions())
+		DEFINE_FIELD(Texture, m_MipCount, BindingType::Int, FieldOptions())
+		DEFINE_FIELD(Texture, m_Format, BindingType::Enum, FieldOptions())
 		DEFINE_FIELD(Texture, m_WrapMode, BindingType::Enum, FieldOptions().SetEnumHint("Repeat,Clamp"))
 		DEFINE_FIELD(Texture, m_FilterMode, BindingType::Enum, FieldOptions().SetEnumHint("Linear,Point,Trilinear"))
-		DEFINE_FIELD(Texture, m_RawData, BindingType::ByteData, {})
-		DEFINE_FIELD(Texture, m_IsReadable, BindingType::Bool, {})
+		DEFINE_FIELD(Texture, m_RawData, BindingType::ByteData, FieldOptions())
+		DEFINE_FIELD(Texture, m_IsReadable, BindingType::Bool, FieldOptions())
 	}
 
-	const uint32_t& Texture::GetWidth()
+	uint32_t Texture::GetWidth() const
 	{
 		return m_Width;
 	}
 
-	const uint32_t& Texture::GetHeight()
+	uint32_t Texture::GetHeight() const
 	{
 		return m_Height;
 	}
@@ -44,12 +44,12 @@ namespace Blueberry
 		return nullptr;
 	}
 
-	const WrapMode& Texture::GetWrapMode()
+	WrapMode Texture::GetWrapMode() const
 	{
 		return m_WrapMode;
 	}
 
-	void Texture::SetWrapMode(const WrapMode& wrapMode)
+	void Texture::SetWrapMode(WrapMode wrapMode)
 	{
 		m_WrapMode = wrapMode;
 		if (m_Texture != nullptr)
@@ -58,12 +58,12 @@ namespace Blueberry
 		}
 	}
 
-	const FilterMode& Texture::GetFilterMode()
+	FilterMode Texture::GetFilterMode() const
 	{
 		return m_FilterMode;
 	}
 
-	void Texture::SetFilterMode(const FilterMode& filterMode)
+	void Texture::SetFilterMode(FilterMode filterMode)
 	{
 		m_FilterMode = filterMode;
 		if (m_Texture != nullptr)
@@ -72,12 +72,12 @@ namespace Blueberry
 		}
 	}
 
-	const bool& Texture::IsReadable()
+	bool Texture::IsReadable() const
 	{
 		return m_IsReadable;
 	}
 
-	void Texture::SetReadable(const bool& readable)
+	void Texture::SetReadable(bool readable)
 	{
 		m_IsReadable = readable;
 	}

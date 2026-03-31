@@ -9,38 +9,38 @@ namespace Blueberry
 	{
 		DEFINE_BASE_FIELDS(ReflectionProbe, Component)
 		DEFINE_FIELD(ReflectionProbe, m_Type, BindingType::Enum, FieldOptions().SetEnumHint("Sphere,Box"))
-		DEFINE_FIELD(ReflectionProbe, m_Radius, BindingType::Float, {})
-		DEFINE_FIELD(ReflectionProbe, m_Size, BindingType::Vector3, {})
-		DEFINE_FIELD(ReflectionProbe, m_Fade, BindingType::Float, {})
+		DEFINE_FIELD(ReflectionProbe, m_Radius, BindingType::Float, FieldOptions())
+		DEFINE_FIELD(ReflectionProbe, m_Size, BindingType::Vector3, FieldOptions())
+		DEFINE_FIELD(ReflectionProbe, m_Fade, BindingType::Float, FieldOptions())
 		DEFINE_ITERATOR(ReflectionProbe)
 	}
 
-	const ReflectionProbeType& ReflectionProbe::GetType()
+	ReflectionProbeType ReflectionProbe::GetType()
 	{
 		return m_Type;
 	}
 
-	void ReflectionProbe::SetType(const ReflectionProbeType& type)
+	void ReflectionProbe::SetType(ReflectionProbeType type)
 	{
 		m_Type = type;
 	}
 
-	const uint32_t& ReflectionProbe::GetAtlasIndex()
+	uint32_t ReflectionProbe::GetAtlasIndex() const
 	{
 		return m_AtlasIndex;
 	}
 
-	void ReflectionProbe::SetAtlasIndex(const uint32_t& atlasIndex)
+	void ReflectionProbe::SetAtlasIndex(uint32_t atlasIndex)
 	{
 		m_AtlasIndex = atlasIndex;
 	}
 
-	const float& ReflectionProbe::GetRadius()
+	float ReflectionProbe::GetRadius() const
 	{
 		return m_Radius;
 	}
 
-	const Vector3& ReflectionProbe::GetSize()
+	const Vector3& ReflectionProbe::GetSize() const
 	{
 		return m_Size;
 	}

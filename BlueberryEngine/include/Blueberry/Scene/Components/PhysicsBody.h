@@ -8,13 +8,6 @@ namespace Blueberry
 	class Transform;
 	class Collider;
 
-	enum class BB_API BodyType
-	{
-		Static,
-		Kinematic,
-		Dynamic
-	};
-
 	class BB_API PhysicsBody : public Component
 	{
 		OBJECT_DECLARATION(PhysicsBody)
@@ -27,7 +20,12 @@ namespace Blueberry
 		virtual void OnDestroy() final;
 		virtual void OnEnable() final;
 		virtual void OnDisable() final;
+		virtual void OnFixedUpdate() final;
 		virtual void OnUpdate() final;
+
+		void Move(const Vector3& position);
+		void Move(const Quaternion& rotation);
+		void Move(const Vector3& position, const Quaternion& rotation);
 
 	private:
 		bool m_IsKinematic = false;
@@ -38,6 +36,7 @@ namespace Blueberry
 		PrivateData* m_PrivateData;
 		alignas(8) char m_PrivateStorage[4];
 		List<ObjectPtr<Collider>> m_Colliders;
+		size_t m_UpdateCount;
 
 		friend class Collider;
 	};

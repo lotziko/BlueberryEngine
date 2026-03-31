@@ -14,11 +14,11 @@ namespace Blueberry
 		DATA_DECLARATION(SubMeshData)
 
 	public:
-		const uint32_t& GetIndexStart() const;
-		void SetIndexStart(const uint32_t& indexStart);
+		uint32_t GetIndexStart() const;
+		void SetIndexStart(uint32_t indexStart);
 
-		const uint32_t& GetIndexCount() const;
-		void SetIndexCount(const uint32_t& indexCount);
+		uint32_t GetIndexCount() const;
+		void SetIndexCount(uint32_t indexCount);
 
 	private:
 		uint32_t m_IndexStart;
@@ -33,12 +33,12 @@ namespace Blueberry
 		Mesh() = default;
 		virtual ~Mesh();
 
-		const uint32_t& GetVertexCount();
-		const uint32_t& GetIndexCount();
-		const size_t GetBindPoseCount();
-		const Matrix& GetBindPose(const size_t& index);
-		const uint32_t GetSubMeshCount();
-		const SubMeshData& GetSubMesh(const size_t& index);
+		uint32_t GetVertexCount() const;
+		uint32_t GetIndexCount() const;
+		size_t GetBindPoseCount() const;
+		const Matrix& GetBindPose(size_t index) const;
+		uint32_t GetSubMeshCount() const;
+		const SubMeshData& GetSubMesh(size_t index) const;
 		
 		Vector3* GetVertices();
 		Vector3* GetNormals();
@@ -47,42 +47,42 @@ namespace Blueberry
 		Vector4* GetBoneWeights();
 		Vector4Uint* GetBoneIndices();
 		uint32_t* GetIndices();
-		float* GetUVs(const int& channel);
-		uint32_t GetUVSize(const int& channel);
+		float* GetUVs(int channel);
+		uint32_t GetUVSize(int channel);
 
-		void SetVertices(const Vector3* vertices, const uint32_t& vertexCount);
-		void SetNormals(const Vector3* normals, const uint32_t& vertexCount);
-		void SetTangents(const Vector4* tangents, const uint32_t& vertexCount);
-		void SetColors(const Color* colors, const uint32_t& vertexCount);
-		void SetIndices(const uint32_t* indices, const uint32_t& indexCount);
-		void SetUVs(const int& channel, const Vector2* uvs, const uint32_t& uvCount);
-		void SetUVs(const int& channel, const Vector3* uvs, const uint32_t& uvCount);
-		void SetUVs(const int& channel, const Vector4* uvs, const uint32_t& uvCount);
-		void SetBoneWeights(const Vector4* weights, const uint32_t& vertexCount);
-		void SetBoneIndices(const Vector4Uint* indices, const uint32_t& vertexCount);
+		void SetVertices(const Vector3* vertices, uint32_t vertexCount);
+		void SetNormals(const Vector3* normals, uint32_t vertexCount);
+		void SetTangents(const Vector4* tangents, uint32_t vertexCount);
+		void SetColors(const Color* colors, uint32_t vertexCount);
+		void SetIndices(const uint32_t* indices, uint32_t indexCount);
+		void SetUVs(const int& channel, const Vector2* uvs, uint32_t uvCount);
+		void SetUVs(const int& channel, const Vector3* uvs, uint32_t uvCount);
+		void SetUVs(const int& channel, const Vector4* uvs, uint32_t uvCount);
+		void SetBoneWeights(const Vector4* weights, uint32_t vertexCount);
+		void SetBoneIndices(const Vector4Uint* indices, uint32_t vertexCount);
 		void SetBindPoses(const List<Matrix>& bindPoses);
-		void SetSubMesh(const uint32_t& index, const SubMeshData& data);
+		void SetSubMesh(uint32_t index, const SubMeshData& data);
 
 		void GenerateTangents();
 
-		const Topology& GetTopology();
-		void SetTopology(const Topology& topology);
+		Topology GetTopology() const;
+		void SetTopology(Topology topology);
 
-		const AABB& GetBounds();
+		const AABB& GetBounds() const;
 
 		void Apply();
 
-		GfxBuffer* GetVertexBuffer();
-		GfxBuffer* GetIndexBuffer();
-		const VertexLayout& GetLayout();
+		GfxBuffer* GetVertexBuffer() const;
+		GfxBuffer* GetIndexBuffer() const;
+		const VertexLayout& GetLayout() const;
 
-		const uint32_t& GetUpdateCount();
+		uint32_t GetUpdateCount() const;
 
 		static Mesh* Create();
 
 	private:
-		GfxBuffer* m_VertexBuffer;
-		GfxBuffer* m_IndexBuffer;
+		GfxBuffer* m_VertexBuffer = nullptr;
+		GfxBuffer* m_IndexBuffer = nullptr;
 		bool m_BufferIsDirty = false;
 
 		List<Vector3> m_Vertices;
@@ -99,8 +99,8 @@ namespace Blueberry
 		List<SubMeshData> m_SubMeshes;
 		VertexLayout m_Layout;
 
-		uint32_t m_VertexCount;
-		uint32_t m_IndexCount;
+		uint32_t m_VertexCount = 0;
+		uint32_t m_IndexCount = 0;
 		AABB m_Bounds;
 
 		Topology m_Topology = Topology::TriangleList;

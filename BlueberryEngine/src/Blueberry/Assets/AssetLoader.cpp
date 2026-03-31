@@ -14,7 +14,7 @@ namespace Blueberry
 		return s_Instance->LoadImpl(guid);
 	}
 
-	Object* AssetLoader::Load(const Guid& guid, const FileId& fileId)
+	Object* AssetLoader::Load(const Guid& guid, FileId fileId)
 	{
 		return s_Instance->LoadImpl(guid, fileId);
 	}

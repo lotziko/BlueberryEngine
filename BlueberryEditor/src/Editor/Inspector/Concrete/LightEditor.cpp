@@ -155,7 +155,7 @@ namespace Blueberry
 		}
 	}
 
-	void LightEditor::DrawCone(const float& radius, const float& height, const int& mask)
+	void LightEditor::DrawCone(float radius, float height, int mask)
 	{
 		Vector3 rangeCenter = Vector3::UnitZ * height;
 

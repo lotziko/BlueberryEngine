@@ -23,7 +23,7 @@ namespace Blueberry
 		Transform* GetTransform();
 		Scene* GetScene();
 
-		const bool& IsActive();
+		bool IsActive() const;
 		bool CanExecute();
 		
 		virtual void OnCreate() { };
@@ -38,6 +38,7 @@ namespace Blueberry
 
 		bool m_IsCreated = false;
 		bool m_IsActive = false;
+		bool m_IsDestroyed = false;
 
 		friend class Entity;
 	};

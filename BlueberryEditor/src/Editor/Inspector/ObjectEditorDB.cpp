@@ -12,7 +12,7 @@ namespace Blueberry
 		return s_ObjectEditors;
 	}
 
-	const ObjectEditorInfo* ObjectEditorDB::GetInfo(const TypeId& id)
+	const ObjectEditorInfo* ObjectEditorDB::GetInfo(TypeId id)
 	{
 		TypeId inheritsId = id;
 		while (true)

@@ -4,21 +4,21 @@
 
 namespace Blueberry
 {
-	VertexLayout::Element::Element(const uint32_t& size) : m_Size(size)
+	VertexLayout::Element::Element(uint32_t size) : m_Size(size)
 	{
 	}
 
-	const uint32_t& VertexLayout::Element::GetSize()
-	{
-		return m_Size;
-	}
-
-	const uint32_t& VertexLayout::Element::GetOffset()
+	uint32_t VertexLayout::Element::GetSize() const
 	{
 		return m_Size;
 	}
 
-	VertexLayout& VertexLayout::Append(const VertexAttribute& type, const uint32_t& size)
+	uint32_t VertexLayout::Element::GetOffset() const
+	{
+		return m_Size;
+	}
+
+	VertexLayout& VertexLayout::Append(VertexAttribute type, uint32_t size)
 	{
 		m_Elements[static_cast<uint32_t>(type)] = Element(size);
 		m_Crc = UINT32_MAX;
@@ -43,32 +43,32 @@ namespace Blueberry
 		return *this;
 	}
 
-	const bool VertexLayout::Has(const VertexAttribute& type) const
+	bool VertexLayout::Has(VertexAttribute type) const
 	{
 		return m_Elements[static_cast<uint32_t>(type)].m_Size > 0;
 	}
 
-	const uint32_t& VertexLayout::GetOffset(const VertexAttribute& type) const
+	uint32_t VertexLayout::GetOffset(VertexAttribute type) const
 	{
 		return m_Elements[static_cast<uint32_t>(type)].m_Offset;
 	}
 
-	const uint32_t& VertexLayout::GetOffset(const uint32_t& index) const
+	uint32_t VertexLayout::GetOffset(uint32_t index) const
 	{
 		return m_Elements[index].m_Offset;
 	}
 
-	const uint32_t& VertexLayout::GetSize(const VertexAttribute& type) const
+	uint32_t VertexLayout::GetSize(VertexAttribute type) const
 	{
 		return m_Elements[static_cast<uint32_t>(type)].m_Size;
 	}
 
-	const uint32_t& VertexLayout::GetSize() const
+	uint32_t VertexLayout::GetSize() const
 	{
 		return m_Size;
 	}
 
-	const uint32_t& VertexLayout::GetCrc() const
+	uint32_t VertexLayout::GetCrc() const
 	{
 		return m_Crc;
 	}
