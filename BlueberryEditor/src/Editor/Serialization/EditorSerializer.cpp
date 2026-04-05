@@ -7,17 +7,34 @@
 #include "Blueberry\Serialization\BinaryReader.h"
 #include "Blueberry\Serialization\BinaryWriter.h"
 
+#include "Blueberry\Graphics\Texture2D.h"
+#include "Blueberry\Graphics\TextureCube.h"
+#include "Blueberry\Graphics\Texture3D.h"
+#include "Blueberry\Graphics\Mesh.h"
+#include "Blueberry\Graphics\Shader.h"
+#include "Blueberry\Graphics\ComputeShader.h"
+#include "Blueberry\Tools\FileHelper.h"
+
 #include "Editor\Assets\AssetDB.h"
-#include "Editor\Assets\AssetFinalizer.h"
 #include "Editor\Prefabs\PrefabInstance.h"
 #include "Editor\Prefabs\PrefabManager.h"
+
+#include "Editor\Assets\Processors\HLSLShaderProcessor.h"
+#include "Editor\Assets\Processors\HLSLComputeShaderProcessor.h"
+#include "Editor\Assets\Importers\ShaderImporter.h"
+#include "Editor\Assets\Importers\ComputeShaderImporter.h"
+#include "Editor\Assets\Importers\TextureImporter.h"
 
 #include <fstream>
 
 namespace Blueberry
 {
-	void EditorSerializer::Serialize(const String& path, const bool& isText)
+	void EditorSerializer::Serialize(const String& path, SerializationFlags flags)
 	{
+		bool isText = (flags & SerializationFlags::Text) != SerializationFlags::None;
+		bool hasHeaders = (flags & SerializationFlags::HasHeaders) != SerializationFlags::None;
+		bool hasGuids = (flags & SerializationFlags::HasGuids) != SerializationFlags::None;
+
 		std::ofstream stream(path.data(), std::ios::out | std::ofstream::binary);
 		if (stream.is_open())
 		{
@@ -54,29 +71,32 @@ namespace Blueberry
 					}
 					else
 					{
-						SerializeNode(tree.GetRoot(), Context::Create(m_CurrentObject, m_CurrentObject->GetType()));
+						SerializeNode(tree.GetRoot(), Context::Create(m_CurrentObject, m_CurrentObject->GetType()), flags);
 					}
 				}
 				else
 				{
-					SerializeNode(tree.GetRoot(), Context::Create(m_CurrentObject, m_CurrentObject->GetType()));
+					SerializeNode(tree.GetRoot(), Context::Create(m_CurrentObject, m_CurrentObject->GetType()), flags);
 				}
 				m_Trees.push_back(std::move(tree));
 			}
 			if (isText)
 			{
-				YamlWriter::Write(m_Trees, stream, true);
+				YamlWriter::Write(m_Trees, stream, hasHeaders);
 			}
 			else
 			{
-				BinaryWriter::Write(m_Trees, stream);
+				BinaryWriter::Write(m_Trees, stream, hasGuids);
 			}
 			stream.close();
 		}
 	}
 
-	void EditorSerializer::Deserialize(const String& path)
+	void EditorSerializer::Deserialize(const String& path, SerializationFlags flags)
 	{
+		bool hasHeaders = (flags & SerializationFlags::HasHeaders) != SerializationFlags::None;
+		bool hasGuids = (flags & SerializationFlags::HasGuids) != SerializationFlags::None;
+
 		std::ifstream stream(path.data(), std::ios::in | std::ofstream::binary);
 		if (stream.is_open())
 		{
@@ -84,12 +104,13 @@ namespace Blueberry
 			switch (stream.peek())
 			{
 			case '%':
-				YamlReader::Read(m_Trees, stream, true);
+				YamlReader::Read(m_Trees, stream, hasHeaders);
 				break;
 			case 'B':
-				BinaryReader::Read(m_Trees, stream);
+				BinaryReader::Read(m_Trees, stream, hasGuids);
 				break;
 			}
+			Guid invalidGuid = {};
 			for (auto& tree : m_Trees)
 			{
 				Object* instance = nullptr;
@@ -109,7 +130,7 @@ namespace Blueberry
 					instance = ObjectDB::GetObject(it->second);
 				}
 				tree.objectId = instance->GetObjectId();
-				AddDeserializedObject(instance->GetObjectId(), tree.fileId);
+				AddDeserializedObject(instance->GetObjectId(), hasGuids ? tree.guid : invalidGuid, tree.fileId);
 			}
 			for (auto& tree : m_Trees)
 			{
@@ -185,7 +206,7 @@ namespace Blueberry
 			for (auto& tree : m_Trees)
 			{
 				Object* object = ObjectDB::GetObject(tree.objectId);
-				AssetFinalizer::Finalize(object, m_Guid, tree.fileId);
+				Finalize(object, m_Guid, tree.fileId);
 			}
 		}
 		if (m_PrefabInstances.size() > 0)
@@ -225,6 +246,73 @@ namespace Blueberry
 				}
 			}
 		}
+	}
+
+	void EditorSerializer::Finalize(Object* object, const Guid& guid, const FileId& fileId)
+	{
+		TypeId type = object->GetType();
+		if (type == Mesh::Type)
+		{
+			Mesh* mesh = static_cast<Mesh*>(object);
+			mesh->Apply();
+		}
+		else if (type == Texture2D::Type)
+		{
+			Texture2D* texture = static_cast<Texture2D*>(object);
+			String texturePath = TextureImporter::GetTexturePath(guid);
+			if (std::filesystem::exists(texturePath))
+			{
+				List<uint8_t> data;
+				FileHelper::Load(data, texturePath);
+				texture->SetData(data.data(), data.size());
+			}
+			texture->Apply();
+		}
+		else if (type == TextureCube::Type)
+		{
+			TextureCube* texture = static_cast<TextureCube*>(object);
+			String texturePath = TextureImporter::GetTexturePath(guid);
+			if (std::filesystem::exists(texturePath))
+			{
+				List<uint8_t> data;
+				FileHelper::Load(data, texturePath);
+				texture->SetData(data.data(), data.size());
+			}
+			texture->Apply();
+		}
+		else if (type == Texture3D::Type)
+		{
+			Texture3D* texture = static_cast<Texture3D*>(object);
+			String texturePath = TextureImporter::GetTexturePath(guid);
+			if (std::filesystem::exists(texturePath))
+			{
+				List<uint8_t> data;
+				FileHelper::Load(data, texturePath);
+				texture->SetData(data.data(), data.size());
+			}
+			texture->Apply();
+		}
+		else if (type == Shader::Type)
+		{
+			Shader* shader = static_cast<Shader*>(object);
+			String folderPath = ShaderImporter::GetShaderFolder(guid);
+			HLSLShaderProcessor processor;
+			if (processor.LoadVariants(folderPath))
+			{
+				shader->Initialize(processor.GetVariantsData());
+			}
+		}
+		else if (type == ComputeShader::Type)
+		{
+			ComputeShader* shader = static_cast<ComputeShader*>(object);
+			String folderPath = ComputeShaderImporter::GetShaderFolder(guid);
+			HLSLComputeShaderProcessor processor;
+			if (processor.LoadKernels(folderPath))
+			{
+				shader->Initialize(processor.GetShaders());
+			}
+		}
+		object->SetState(ObjectState::Default);
 	}
 
 	void EditorSerializer::GatherChildrenPrefabs(Entity* entity)

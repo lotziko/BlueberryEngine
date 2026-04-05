@@ -17,6 +17,9 @@ namespace Blueberry
 		static Vector2 GetMousePosition();
 		static Vector2 GetMouseDelta();
 
+		static bool IsEnabled();
+		static void SetEnabled(bool enabled);
+
 	private:
 		static void OnKeyDown(const KeyEventArgs& args);
 		static void OnKeyUp(const KeyEventArgs& args);
@@ -28,5 +31,6 @@ namespace Blueberry
 		static Vector2 s_MousePosition;
 		static Vector2 s_MouseDelta;
 		static size_t s_DeltaFrame;
+		static bool s_IsEnabled;
 	};
 }

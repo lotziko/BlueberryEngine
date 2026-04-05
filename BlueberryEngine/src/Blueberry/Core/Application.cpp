@@ -47,22 +47,19 @@ namespace Blueberry
 	void Application::Run()
 	{
 		// Based on https://stackoverflow.com/questions/63429337/limit-fps-in-loop-c
-		auto targetFrameRate = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<double>(1.0 / 60.0));
 		auto prev = std::chrono::steady_clock::now();
-		auto next = prev + targetFrameRate;
 		std::chrono::steady_clock::duration sum{ 0 };
 
 		while (ProcessMessages())
 		{
-			bool hasCallbacks = m_WaitFrameCallback != nullptr;
+			bool hasCallbacks = m_WaitForFrameCallback != nullptr;
 			if (hasCallbacks)
 			{
-				m_WaitFrameCallback();
+				m_WaitForFrameCallback();
 			}
 			else
 			{
-				std::this_thread::sleep_until(next);
-				next += targetFrameRate;
+				GfxDevice::WaitForFrame();
 			}
 
 			auto targetUpdateRate = std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<float>(Time::GetFixedDeltaTime()));
@@ -99,14 +96,14 @@ namespace Blueberry
 		layer->OnDetach();
 	}
 
-	void Application::AddWaitFrameCallback(const std::function<void()>& waitFrameCallback)
+	void Application::AddWaitForFrameCallback(const std::function<void()>& waitForFrameCallback)
 	{
-		m_WaitFrameCallback = waitFrameCallback;
+		m_WaitForFrameCallback = waitForFrameCallback;
 	}
 
-	void Application::RemoveWaitFrameCallback()
+	void Application::RemoveWaitForFrameCallback()
 	{
-		m_WaitFrameCallback = nullptr;
+		m_WaitForFrameCallback = nullptr;
 	}
 
 	Application* Application::GetInstance()

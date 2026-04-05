@@ -41,7 +41,7 @@ namespace Blueberry
 		{
 			SerializationNode& elementNode = tree.nodes[i];
 			stream << elementNode.key << ": ";
-			if (elementNode.flags & SerializationFlags::FLOWMAP)
+			if ((elementNode.flags & SerializationTreeFlags::FLOWMAP) != SerializationTreeFlags::NONE)
 			{
 				WriteFlowmap(stream, elementNode, tree);
 			}
@@ -64,7 +64,7 @@ namespace Blueberry
 		{
 			if (isSequenceElement)
 			{
-				if ((node.flags & SerializationFlags::MAP) == 0)
+				if ((node.flags & SerializationTreeFlags::MAP) == SerializationTreeFlags::NONE)
 				{
 					Indent(stream, indent - 2);
 					stream << "- ";
@@ -80,12 +80,12 @@ namespace Blueberry
 		{
 			stream << node.key << ": ";
 		}
-		if (node.flags & SerializationFlags::FLOWMAP)
+		if ((node.flags & SerializationTreeFlags::FLOWMAP) != SerializationTreeFlags::NONE)
 		{
 			WriteFlowmap(stream, node, tree);
 			stream << "\n";
 		}
-		else if (node.flags & SerializationFlags::MAP)
+		else if ((node.flags & SerializationTreeFlags::MAP) != SerializationTreeFlags::NONE)
 		{
 			if (node.key.size() > 0)
 			{
@@ -102,7 +102,7 @@ namespace Blueberry
 				i = mapElementNode.nextSibling;
 			}
 		}
-		else if (node.flags & SerializationFlags::SEQUENCE)
+		else if ((node.flags & SerializationTreeFlags::SEQUENCE) != SerializationTreeFlags::NONE)
 		{
 			if (node.firstChild != UINT64_MAX)
 			{
@@ -120,7 +120,7 @@ namespace Blueberry
 				stream << "[]\n";
 			}
 		}
-		else if (node.flags == 0)
+		else if (node.flags == SerializationTreeFlags::NONE)
 		{
 			WriteValue(stream, node);
 			stream << "\n";

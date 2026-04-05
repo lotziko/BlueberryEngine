@@ -6,7 +6,7 @@
 #include "Blueberry\Events\InputEvents.h"
 #include "WindowsHelper.h"
 
-#include "Blueberry\Tools\StringConverter.h"
+#include "Blueberry\Tools\StringHelper.h"
 
 #include <imgui\imgui.h>
 
@@ -24,9 +24,9 @@ namespace Blueberry
 
 		m_HInstance = *(static_cast<HINSTANCE*>(properties.data));
 		m_WindowTitle = windowTitle;
-		m_WindowTitleWide = StringConverter::StringToWide(windowTitle);
+		m_WindowTitleWide = StringHelper::StringToWide(windowTitle);
 		m_WindowClass = windowClass;
-		m_WindowClassWide = StringConverter::StringToWide(windowClass);
+		m_WindowClassWide = StringHelper::StringToWide(windowClass);
 		m_Width = properties.width;
 		m_Height = properties.height;
 
@@ -120,6 +120,13 @@ namespace Blueberry
 			DispatchMessage(&msg); //Dispatch message to our Window Proc for this window. See: https://msdn.microsoft.com/en-us/library/windows/desktop/ms644934(v=vs.85).aspx
 		}
 
+		if (m_IsSizeDirty)
+		{
+			m_IsSizeDirty = false;
+			WindowResizeEventArgs args(m_Width, m_Height);
+			WindowEvents::GetWindowResized().Invoke(args);
+		}
+
 		// Check if the window was closed
 		if (msg.message == WM_NULL)
 		{
@@ -147,6 +154,15 @@ namespace Blueberry
 	int WindowsWindow::GetHeight() const
 	{
 		return m_Height;
+	}
+
+	void WindowsWindow::SetCursor(bool visible)
+	{
+		if (m_IsCursorVisible != visible)
+		{
+			m_IsCursorVisible = visible;
+			ShowCursor(visible);
+		}
 	}
 
 	LRESULT CALLBACK HandleMsgRedirect(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -525,7 +541,7 @@ namespace Blueberry
 		}
 		case WM_INPUT:
 		{
-			UINT size;
+			UINT size = 0;
 			GetRawInputData((HRAWINPUT)lParam, RID_INPUT, nullptr, &size, sizeof(RAWINPUTHEADER));
 			List<BYTE> buffer(size);
 
@@ -574,9 +590,7 @@ namespace Blueberry
 			{
 				m_Width = width;
 				m_Height = height;
-
-				WindowResizeEventArgs args(width, height);
-				WindowEvents::GetWindowResized().Invoke(args);
+				m_IsSizeDirty = true;
 			}
 			return 0;
 		}

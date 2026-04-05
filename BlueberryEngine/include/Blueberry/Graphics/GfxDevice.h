@@ -26,6 +26,7 @@ namespace Blueberry
 
 		static void ClearColor(const Color& color);
 		static void ClearDepth(float depth);
+		static void WaitForFrame();
 		static void SwapBuffers();
 
 		static void SetViewport(int x, int y, int width, int height);
@@ -67,6 +68,7 @@ namespace Blueberry
 
 		virtual void ClearColorImpl(const Color& color) const = 0;
 		virtual void ClearDepthImpl(float depth) const = 0;
+		virtual void WaitForFrameImpl() const = 0;
 		virtual void SwapBuffersImpl() = 0;
 
 		virtual void SetViewportImpl(int x, int y, int width, int height) = 0;

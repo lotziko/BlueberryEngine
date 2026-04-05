@@ -32,7 +32,7 @@ namespace Blueberry
 		}
 		context.dataStream.write(reinterpret_cast<char*>(&keyOffset), sizeof(uint32_t));
 		context.dataStream.write(reinterpret_cast<char*>(&node.flags), sizeof(uint8_t));
-		if (node.flags & (SerializationFlags::MAP | SerializationFlags::SEQUENCE | SerializationFlags::FLOWMAP))
+		if ((node.flags & (SerializationTreeFlags::MAP | SerializationTreeFlags::SEQUENCE | SerializationTreeFlags::FLOWMAP)) != SerializationTreeFlags::NONE)
 		{
 			uint32_t childCount = 0;
 			for (size_t i = node.firstChild; i != UINT64_MAX; i = tree.GetNextSibling(i))
@@ -58,7 +58,7 @@ namespace Blueberry
 		}
 	}
 
-	void WriteObject(SerializationTree& tree, Context& context)
+	void WriteObject(SerializationTree& tree, Context& context, bool hasGuids)
 	{
 		uint32_t rootNodeCount = 0;
 		for (size_t i = tree.nodes[0].firstChild; i != UINT64_MAX; i = tree.GetNextSibling(i))
@@ -81,6 +81,10 @@ namespace Blueberry
 		}
 		context.dataStream.write(reinterpret_cast<char*>(&keyOffset), sizeof(uint32_t));
 		context.dataStream.write(reinterpret_cast<char*>(&tree.fileId), sizeof(FileId));
+		if (hasGuids)
+		{
+			context.dataStream.write(reinterpret_cast<char*>(&tree.guid), sizeof(Guid));
+		}
 		context.dataStream.write(reinterpret_cast<char*>(&tree.isReference), sizeof(bool));
 		context.dataStream.write(reinterpret_cast<char*>(&rootNodeCount), sizeof(uint32_t));
 		for (size_t i = tree.nodes[0].firstChild; i != UINT64_MAX;)
@@ -91,7 +95,7 @@ namespace Blueberry
 		}
 	}
 
-	void BinaryWriter::Write(List<SerializationTree>& trees, std::ofstream& stream)
+	void BinaryWriter::Write(List<SerializationTree>& trees, std::ofstream& stream, bool hasGuids)
 	{
 		uint32_t version = 1;
 		stream << 'B';
@@ -102,7 +106,7 @@ namespace Blueberry
 		Context context = { keyToOffset, keyStream, dataStream, 0 };
 		for (SerializationTree& tree : trees)
 		{
-			WriteObject(tree, context);
+			WriteObject(tree, context, hasGuids);
 		}
 		uint32_t keyBufferSize = static_cast<uint32_t>(context.streamSize);
 		stream.write(reinterpret_cast<char*>(&keyBufferSize), sizeof(uint32_t));

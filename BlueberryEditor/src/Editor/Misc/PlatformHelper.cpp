@@ -2,7 +2,7 @@
 
 #include "Blueberry\Core\Application.h"
 #include "Blueberry\Core\Window.h"
-#include "Blueberry\Tools\StringConverter.h"
+#include "Blueberry\Tools\StringHelper.h"
 
 #include <shobjidl.h> // IFileOpenDialog
 #include <shlobj.h> // SHOpenFolderAndSelectItems
@@ -53,7 +53,7 @@ namespace Blueberry
 				PWSTR path = nullptr;
 				if (SUCCEEDED(item->GetDisplayName(SIGDN_FILESYSPATH, &path)))
 				{
-					result = StringConverter::WideToString(path);
+					result = StringHelper::WideToString(path);
 					CoTaskMemFree(path);
 					item->Release();
 					dialog->Release();
@@ -82,13 +82,13 @@ namespace Blueberry
 	{
 		TASKDIALOG_BUTTON buttons[] =
 		{
-			{ IDYES, StringConverter::StringToWide(yesText).c_str() },
-			{ IDNO, StringConverter::StringToWide(noText).c_str() },
-			{ IDCANCEL, StringConverter::StringToWide(cancelText).c_str() }
+			{ IDYES, StringHelper::StringToWide(yesText).c_str() },
+			{ IDNO, StringHelper::StringToWide(noText).c_str() },
+			{ IDCANCEL, StringHelper::StringToWide(cancelText).c_str() }
 		};
 
-		WString wtitleText = StringConverter::StringToWide(titleText);
-		WString wcontentText = StringConverter::StringToWide(contentText);
+		WString wtitleText = StringHelper::StringToWide(titleText);
+		WString wcontentText = StringHelper::StringToWide(contentText);
 
 		TASKDIALOGCONFIG config = {};
 		config.cbSize = sizeof(config);
@@ -122,7 +122,7 @@ namespace Blueberry
 	{
 		PIDLIST_ABSOLUTE pidl = nullptr;
 		HRESULT hr = SHParseDisplayName(
-			StringConverter::StringToWide(path).c_str(),
+			StringHelper::StringToWide(path).c_str(),
 			nullptr,
 			&pidl,
 			0,
@@ -333,7 +333,7 @@ namespace Blueberry
 				CloseHandle(s_ProgressThreadReadyEvent);
 			}
 		}
-		PostThreadMessage(s_ProgressThreadId, WM_SHOWPROGRESS, 0, (LPARAM)new std::pair(StringConverter::StringToWide(title), StringConverter::StringToWide(info)));
+		PostThreadMessage(s_ProgressThreadId, WM_SHOWPROGRESS, 0, (LPARAM)new std::pair(StringHelper::StringToWide(title), StringHelper::StringToWide(info)));
 	}
 
 	void PlatformHelper::HideProgressBar()
@@ -349,7 +349,7 @@ namespace Blueberry
 
 	void PlatformHelper::MoveToRecycleBin(const String& path)
 	{
-		WString wpath = StringConverter::StringToWide(path);
+		WString wpath = StringHelper::StringToWide(path);
 		SHFILEOPSTRUCTW fileOp = { 0 };
 		fileOp.hwnd = NULL;
 		fileOp.wFunc = FO_DELETE;

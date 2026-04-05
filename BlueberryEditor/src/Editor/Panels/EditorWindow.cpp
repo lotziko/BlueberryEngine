@@ -96,16 +96,16 @@ namespace Blueberry
 
 	void EditorWindow::Initialize()
 	{
-		auto layoutPath = Path::GetDataPath();
+		std::filesystem::path layoutPath = Path::GetDataPath();
 		layoutPath.append("EditorLayout");
 
-		auto dockPath = Path::GetDataPath();
+		std::filesystem::path dockPath = Path::GetDataPath();
 		dockPath.append("DockLayout");
 
 		if (std::filesystem::exists(layoutPath))
 		{
 			Serializer serializer = {};
-			serializer.Deserialize(layoutPath.string().data());
+			serializer.Deserialize(StringHelper::ToString(layoutPath), SerializationFlags::EditorOnly | SerializationFlags::Text | SerializationFlags::HasHeaders);
 			for (auto& pair : serializer.GetDeserializedObjects())
 			{
 				EditorWindow* activeWindow = static_cast<EditorWindow*>(ObjectDB::GetObject(pair.first));
@@ -138,10 +138,10 @@ namespace Blueberry
 
 	void EditorWindow::Shutdown()
 	{
-		auto layoutPath = Path::GetDataPath();
+		std::filesystem::path layoutPath = Path::GetDataPath();
 		layoutPath.append("EditorLayout");
 
-		auto dockPath = Path::GetDataPath();
+		std::filesystem::path dockPath = Path::GetDataPath();
 		dockPath.append("DockLayout");
 
 		if (s_ActiveWindows.size() > 0)
@@ -155,7 +155,7 @@ namespace Blueberry
 				activeWindow->m_RawData[36] = activeWindow->m_Focused;
 				serializer.AddObject(activeWindow.Get());
 			}
-			serializer.Serialize(layoutPath.string().data(), true);
+			serializer.Serialize(StringHelper::ToString(layoutPath), SerializationFlags::EditorOnly | SerializationFlags::Text | SerializationFlags::HasHeaders);
 
 			ImGui::PrepareDockNodeData();
 			uint32_t nodeCount = ImGui::GetDockNodeDataCount();

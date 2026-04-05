@@ -11,8 +11,8 @@ namespace Blueberry
 	class EditorSerializer : public Serializer
 	{
 	public:
-		virtual void Serialize(const String& path, const bool& isText) final;
-		virtual void Deserialize(const String& path) final;
+		virtual void Serialize(const String& path, SerializationFlags flags) final;
+		virtual void Deserialize(const String& path, SerializationFlags flags) final;
 
 		virtual void AddAdditionalObject(const ObjectId& objectId) final;
 
@@ -22,6 +22,7 @@ namespace Blueberry
 	private:
 		void GatherChildrenPrefabs(Entity* entity);
 		void FinalizeObjects();
+		void Finalize(Object* object, const Guid& guid, const FileId& fileId);
 
 	private:
 		List<PrefabInstance*> m_PrefabInstances;

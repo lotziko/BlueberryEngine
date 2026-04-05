@@ -9,7 +9,6 @@ namespace Blueberry
 		EditorAssetLoader() = default;
 
 	protected:
-		virtual void LoadImpl(const Guid& guid) override;
 		virtual Object* LoadImpl(const Guid& guid, FileId fileId) override;
 		virtual Object* LoadImpl(const String& path, void* args) override;
 

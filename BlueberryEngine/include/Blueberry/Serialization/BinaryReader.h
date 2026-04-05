@@ -11,6 +11,6 @@ namespace Blueberry
 	class BinaryReader
 	{
 	public:
-		static void Read(List<SerializationTree>& trees, std::ifstream& stream);
+		static void Read(List<SerializationTree>& trees, std::ifstream& stream, bool hasGuids);
 	};
 }

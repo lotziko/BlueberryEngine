@@ -223,7 +223,7 @@ namespace Blueberry
 				{
 					size_t valueId = tree.AppendChild(parentsStack.size() > 0 ? parentsStack.top().id : rootId);
 					SerializationNode& valueNode = tree.nodes[valueId];
-					valueNode.flags = SerializationFlags::VALUE;
+					valueNode.flags = SerializationTreeFlags::VALUE;
 
 					String value = line.substr(firstCharPos, lastCharPos - firstCharPos + 1);
 					value.erase(0, value.find_first_not_of(" \t\f\v\n\r"));
@@ -270,7 +270,7 @@ namespace Blueberry
 							}
 							SerializationNode& flowNode = tree.nodes[flowId];
 							flowNode.key = flowLastKey;
-							flowNode.flags = SerializationFlags::FLOWMAP;
+							flowNode.flags = SerializationTreeFlags::FLOWMAP;
 							isKeyStart = true;
 						}
 						break;
@@ -314,7 +314,7 @@ namespace Blueberry
 								size_t flowChildId = tree.AppendChild(parentsStack.size() > 0 ? parentsStack.top().id : rootId);
 								SerializationNode& flowChildNode = tree.nodes[flowChildId];
 								flowChildNode.key = flowLastKey;
-								flowChildNode.flags = SerializationFlags::VALUE;
+								flowChildNode.flags = SerializationTreeFlags::VALUE;
 								String flowValue = valueEndPos - valueStartPos > 0 ? flowLineValue.substr(valueStartPos, valueEndPos - valueStartPos) : "";
 								flowChildNode.value.resize(flowValue.size() + 1, '\0');
 								memcpy(flowChildNode.value.data(), flowValue.data(), flowValue.size());
@@ -333,7 +333,7 @@ namespace Blueberry
 					size_t valueId = tree.AppendChild(parentsStack.size() > 0 ? parentsStack.top().id : rootId);
 					SerializationNode& valueNode = tree.nodes[valueId];
 					valueNode.key = key;
-					valueNode.flags = SerializationFlags::VALUE;
+					valueNode.flags = SerializationTreeFlags::VALUE;
 
 					String value = line.substr(colonPos + 1, lastCharPos - colonPos);
 					value.erase(0, value.find_first_not_of(" \t\f\v\n\r"));

@@ -8,6 +8,7 @@
 #include "Editor\Panels\Picking\ObjectPicker.h"
 #include "Editor\Panels\Project\ProjectBrowser.h"
 #include "Editor\Serialization\SerializedProperty.h"
+#include "Editor\Assets\AssetDB.h"
 
 #include <imgui\imgui_internal.h>
 #include <imgui\misc\freetype\imgui_freetype.h>
@@ -715,7 +716,7 @@ bool ImGui::ObjectEdit(const char* label, Blueberry::Object** v, const Blueberry
 		vObj = *v;
 		if (vObj != nullptr && vObj->GetState() == Blueberry::ObjectState::AwaitingLoading && Blueberry::ObjectDB::HasGuid(vObj))
 		{
-			Blueberry::AssetLoader::Load(Blueberry::ObjectDB::GetGuidFromObject(vObj));
+			Blueberry::AssetDB::LoadAsset(Blueberry::ObjectDB::GetGuidFromObject(vObj));
 		}
 		result = true;
 	}
@@ -747,7 +748,7 @@ bool ImGui::ObjectEdit(const char* label, Blueberry::Object** v, const Blueberry
 				{
 					if (object->GetState() == Blueberry::ObjectState::AwaitingLoading && Blueberry::ObjectDB::HasGuid(object))
 					{
-						Blueberry::AssetLoader::Load(Blueberry::ObjectDB::GetGuidFromObject(object));
+						Blueberry::AssetDB::LoadAsset(Blueberry::ObjectDB::GetGuidFromObject(object));
 					}
 
 					*v = object;

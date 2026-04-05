@@ -60,7 +60,7 @@ namespace Blueberry
 
 	Texture2D* ThumbnailCache::Load(Object* asset)
 	{
-		auto thumbnailPath = Path::GetThumbnailCachePath();
+		std::filesystem::path thumbnailPath = Path::GetThumbnailCachePath();
 		auto pair = ObjectDB::GetGuidAndFileIdFromObject(asset);
 		thumbnailPath.append(pair.first.ToString().append(std::to_string(pair.second)));
 		if (!std::filesystem::exists(thumbnailPath))
@@ -70,7 +70,7 @@ namespace Blueberry
 
 		unsigned char* data;
 		size_t length;
-		FileHelper::Load(data, length, thumbnailPath.string().data());
+		FileHelper::Load(data, length, StringHelper::ToString(thumbnailPath));
 
 		Texture2D* thumbnail = Texture2D::Create(THUMBNAIL_SIZE, THUMBNAIL_SIZE);
 		thumbnail->SetData(data, THUMBNAIL_DATA_SIZE);
@@ -81,14 +81,14 @@ namespace Blueberry
 
 	void ThumbnailCache::Save(Object* asset, unsigned char* thumbnail)
 	{
-		auto thumbnailPath = Path::GetThumbnailCachePath();
+		std::filesystem::path thumbnailPath = Path::GetThumbnailCachePath();
 		auto pair = ObjectDB::GetGuidAndFileIdFromObject(asset);
 		if (!std::filesystem::exists(thumbnailPath))
 		{
 			std::filesystem::create_directories(thumbnailPath);
 		}
 		thumbnailPath.append(pair.first.ToString().append(std::to_string(pair.second)));
-		FileHelper::Save(thumbnail, THUMBNAIL_DATA_SIZE, thumbnailPath.string().data());
+		FileHelper::Save(thumbnail, THUMBNAIL_DATA_SIZE, StringHelper::ToString(thumbnailPath));
 	}
 
 	Texture2D* ThumbnailCache::DrawAndSave(Object* asset)

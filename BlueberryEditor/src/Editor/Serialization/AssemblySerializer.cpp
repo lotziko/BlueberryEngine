@@ -20,7 +20,7 @@ namespace Blueberry
 				tree.fileId = GetFileId(object->GetObjectId());
 				tree.objectId = object->GetObjectId();
 				tree.isText = false;
-				SerializeNode(tree.GetRoot(), Context::Create(object, object->GetType()));
+				SerializeNode(tree.GetRoot(), Context::Create(object, object->GetType()), SerializationFlags::EditorAndRuntime);
 				// TODO handle components OnDisable()/OnDestroy() for now just ignore them because DEFINE_EXECUTE_ALWAYS() is rare
 				objects.push_back(object);
 				m_Trees.push_back(tree);

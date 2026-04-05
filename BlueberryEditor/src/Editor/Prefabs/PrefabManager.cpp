@@ -120,7 +120,7 @@ namespace Blueberry
 		auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
 		relativePath.append(prefabName);
 
-		AssetDB::CreateAsset(prefabEntity, relativePath.string().data());
+		AssetDB::CreateAsset(prefabEntity, StringHelper::ToString(relativePath));
 		AssetDB::SaveAssets();
 		AssetDB::Refresh();
 	}

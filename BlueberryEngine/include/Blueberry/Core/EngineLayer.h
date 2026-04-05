@@ -1,16 +1,13 @@
 #pragma once
 
-#include "Blueberry\Core\Layer.h"
-
 namespace Blueberry
 {
-	class EngineLayer : public Layer
+	class EngineLayer
 	{
 	public:
-		EngineLayer() = default;
-
-		virtual void OnAttach() override;
-		virtual void OnDetach() override;
-		virtual void OnUpdate() override;
+		static void Register();
+		static void Initialize();
+		static void Shutdown();
+		static void Update();
 	};
 }

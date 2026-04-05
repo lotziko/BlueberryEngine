@@ -249,7 +249,7 @@ namespace Blueberry
 		{
 			return false;
 		}
-		s_Application->AddWaitFrameCallback(&WaitForFrame);
+		s_Application->AddWaitForFrameCallback(&WaitForFrame);
 
 		// OpenXR uses a couple different types of reference frames for positioning content, we need to choose one for
 		// displaying our content! STAGE would be relative to the center of your guardian system's bounds, and LOCAL
@@ -333,7 +333,7 @@ namespace Blueberry
 			xrDestroySwapchain(swapchain.handle);
 		}
 		s_XrSwapchains.clear();
-		s_Application->RemoveWaitFrameCallback();
+		s_Application->RemoveWaitForFrameCallback();
 		s_XrRunning = false;
 		s_XrSessionState = XR_SESSION_STATE_UNKNOWN;
 		s_XrSystemId = XR_NULL_SYSTEM_ID;

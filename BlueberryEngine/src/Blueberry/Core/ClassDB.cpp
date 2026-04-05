@@ -128,15 +128,21 @@ namespace Blueberry
 		return *this;
 	}
 
-	FieldOptions& FieldOptions::SetSize(const uint32_t& size)
+	FieldOptions& FieldOptions::SetSize(uint32_t size)
 	{
 		this->size = size;
 		return *this;
 	}
 
-	FieldOptions& FieldOptions::SetVisibility(const VisibilityType& visibility)
+	FieldOptions& FieldOptions::SetVisibility(VisibilityType visibility)
 	{
 		this->visibility = visibility;
+		return *this;
+	}
+
+	FieldOptions& FieldOptions::SetSerializationFlags(SerializationFlags serializationFlags)
+	{
+		this->serializationFlags = serializationFlags;
 		return *this;
 	}
 

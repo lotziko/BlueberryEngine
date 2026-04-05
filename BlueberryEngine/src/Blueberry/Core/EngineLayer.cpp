@@ -12,12 +12,15 @@
 
 namespace Blueberry
 {
-	void EngineLayer::OnAttach()
+	void EngineLayer::Register()
 	{
 		RegisterSceneTypes();
 		RegisterGraphicsTypes();
 		RegisterAnimationsTypes();
+	}
 
+	void EngineLayer::Initialize()
+	{
 		DefaultRenderer::Initialize();
 		Input::Initialize();
 		JobSystem::Initialize();
@@ -25,14 +28,14 @@ namespace Blueberry
 		Skinning::Initialize();
 	}
 
-	void EngineLayer::OnDetach()
+	void EngineLayer::Shutdown()
 	{
 		DefaultRenderer::Shutdown();
 		Skinning::Shutdown();
 		Input::Shutdown();
 	}
 
-	void EngineLayer::OnUpdate()
+	void EngineLayer::Update()
 	{
 		SceneEvents::Poll();
 	}

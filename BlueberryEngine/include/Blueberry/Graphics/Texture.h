@@ -19,6 +19,8 @@ namespace Blueberry
 
 		uint32_t GetWidth() const;
 		uint32_t GetHeight() const;
+		uint32_t GetMipCount() const;
+		TextureFormat GetFormat() const;
 		GfxTexture* Get();
 		void* GetHandle();
 
@@ -30,6 +32,9 @@ namespace Blueberry
 
 		bool IsReadable() const;
 		void SetReadable(bool readable);
+
+		bool HasData();
+		const ByteData& GetData();
 
 	protected:
 		void IncrementUpdateCount();
@@ -43,7 +48,7 @@ namespace Blueberry
 		TextureDimension m_Dimension = TextureDimension::Texture2D;
 		WrapMode m_WrapMode = WrapMode::Clamp;
 		FilterMode m_FilterMode = FilterMode::Bilinear;
-		bool m_IsReadable = true;
+		bool m_IsReadable = false;
 		ByteData m_RawData = {};
 
 		uint32_t m_UpdateCount = 0;

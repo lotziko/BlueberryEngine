@@ -1,12 +1,12 @@
 #include "WindowsFileWatch.h"
 
-#include "Blueberry\Tools\StringConverter.h"
+#include "Blueberry\Tools\StringHelper.h"
 
 namespace Blueberry
 {
 	WindowsFileWatch::WindowsFileWatch(const String& path)
 	{
-		WString wpath = StringConverter::StringToWide(path);
+		WString wpath = StringHelper::StringToWide(path);
 
 		m_FileHandle = CreateFile(wpath.c_str(),
 			FILE_LIST_DIRECTORY,
@@ -65,7 +65,7 @@ namespace Blueberry
 				for (;;)
 				{
 					DWORD name_len = event->FileNameLength / sizeof(wchar_t);
-					String name = StringConverter::WideToString(WString(event->FileName, name_len));
+					String name = StringHelper::WideToString(WString(event->FileName, name_len));
 
 					switch (event->Action)
 					{

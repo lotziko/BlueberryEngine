@@ -14,7 +14,6 @@
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Graphics\GfxDevice.h"
-#include "Blueberry\Tools\StringConverter.h"
 
 #include "Editor\Misc\TextureHelper.h"
 #include "Editor\EditorSceneManager.h"
@@ -162,7 +161,7 @@ namespace Blueberry
 
 		AssetDB::Refresh();
 		auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
-		TextureImporter* importer = static_cast<TextureImporter*>(AssetDB::GetImporter(relativePath.string().data()));
+		TextureImporter* importer = static_cast<TextureImporter*>(AssetDB::GetImporter(StringHelper::ToString(relativePath)));
 		importer->SetReadable(true);
 		importer->SetTextureShape(TextureImporter::TextureShape::TextureCube);
 		importer->SetTextureFormat(TextureImporter::TextureFormat::BC6H);

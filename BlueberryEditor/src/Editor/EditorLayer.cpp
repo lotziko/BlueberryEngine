@@ -2,6 +2,7 @@
 
 #include "Blueberry\Core\Application.h"
 #include "Blueberry\Core\Time.h"
+#include "Blueberry\Core\EngineLayer.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\ImGuiRenderer.h"
 #include "Blueberry\Graphics\GfxTexturePool.h"
@@ -12,6 +13,7 @@
 #include "Blueberry\Scene\Scene.h"
 
 #include "Editor\EditorSceneManager.h"
+#include "Editor\ProjectBuilder.h"
 #include "Editor\Misc\ImGuiHelper.h"
 #include "Editor\Inspector\RegisterObjectEditors.h"
 #include "Editor\Assets\RegisterAssetImporters.h"
@@ -23,6 +25,7 @@
 #include "Editor\Assets\RegisterIcons.h"
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Assets\AssemblyManager.h"
+#include "Editor\Assets\EditorAssetLoader.h"
 #include "Editor\Gizmos\Gizmos.h"
 #include "Editor\Gizmos\IconRenderer.h"
 #include "Editor\Menu\EditorMenuManager.h"
@@ -40,11 +43,14 @@ namespace Blueberry
 
 	void EditorLayer::OnAttach()
 	{
+		EngineLayer::Register();
+		AssetLoader::Initialize(new EditorAssetLoader());
+		EngineLayer::Initialize();
 		RegisterEditorTypes();
 		RegisterAssetImporters();
 		RegisterObjectEditors();
 		RegisterIcons();
-		AssemblyManager::Build(false);
+		AssemblyManager::BuildEditor(false);
 		AssemblyManager::Load();
 
 		PhysicsShapeCache::Initialize(new EditorPhysicsShapeCache());
@@ -83,6 +89,7 @@ namespace Blueberry
 		Physics::Shutdown();
 		GfxTexturePool::Shutdown();
 		ImGuiRenderer::Shutdown();
+		EngineLayer::Shutdown();
 		/*if (OpenXRRenderer::IsActive())
 		{
 			OpenXRRenderer::Shutdown();
@@ -140,6 +147,7 @@ namespace Blueberry
 				GfxTexturePool::Update();
 				s_FrameUpdateRequested = false;
 			}
+			EngineLayer::Update();
 		}
 	}
 
@@ -244,6 +252,10 @@ namespace Blueberry
 							EditorSceneManager::Run();
 						}
 					}
+					if (ImGui::Button("Build"))
+					{
+						ProjectBuilder::Build(EditorSceneManager::GetScene(), StringHelper::ToString(Path::GetBuildPath()));
+					}
 				}
 			}
 			ImGui::PopStyleVar();
@@ -294,9 +306,9 @@ namespace Blueberry
 	{
 		AssetDB::Refresh();
 
-		if (AssemblyManager::Build())
+		if (AssemblyManager::BuildEditor())
 		{
-			AssemblySerializer serializer;
+			AssemblySerializer serializer = {};
 			serializer.Serialize();
 			AssemblyManager::Unload();
 			AssemblyManager::Load();

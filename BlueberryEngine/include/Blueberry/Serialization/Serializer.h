@@ -3,16 +3,15 @@
 #include "Blueberry\Core\Structs.h"
 #include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Serialization\SerializationTree.h"
+#include "Blueberry\Serialization\Enums.h"
 
 namespace Blueberry
 {
-	class SerializerBackend;
-
 	class Serializer
 	{
 	public:
-		virtual void Serialize(const String& path, bool isText);
-		virtual void Deserialize(const String& path);
+		virtual void Serialize(const String& path, SerializationFlags flags);
+		virtual void Deserialize(const String& path, SerializationFlags flags);
 
 		const Guid& GetGuid();
 		void SetGuid(const Guid& guid);
@@ -46,6 +45,11 @@ namespace Blueberry
 				return { data, info };
 			}
 
+			static Context CreateNoOffset(void* data, const ClassInfo* info)
+			{
+				return { data, info };
+			}
+
 			static Context Create(Data* data, const ClassInfo* info)
 			{
 				return { data - info->offset, info };
@@ -53,6 +57,7 @@ namespace Blueberry
 		};
 
 	protected:
+		Guid GetGuid(ObjectId objectId);
 		FileId GetFileId(ObjectId objectId);
 		Object* GetObjectRef(FileId fileId);
 		Object* GetNextObjectToSerialize();
@@ -61,11 +66,11 @@ namespace Blueberry
 		ObjectPtrData GetPtrData(Object* object);
 		FileId GenerateFileId();
 
-		void SerializeNode(SerializationNodeRef node, Context context);
+		void SerializeNode(SerializationNodeRef node, Context context, SerializationFlags flags);
 		void DeserializeNode(SerializationNodeConstRef node, Context context);
 
 		virtual void AddAdditionalObject(ObjectId objectId);
-		void AddDeserializedObject(ObjectId objectId, FileId fileId);
+		void AddDeserializedObject(ObjectId objectId, const Guid& guid, FileId fileId);
 
 	protected:
 		Dictionary<FileId, ObjectId> m_FileIdToObjectId;

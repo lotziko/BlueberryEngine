@@ -108,6 +108,14 @@ namespace Blueberry
 		Vector3 scale;
 	};
 
+	struct RectangleFloat
+	{
+		float x;
+		float y;
+		float width;
+		float height;
+	};
+
 	class Math
 	{
 	public:

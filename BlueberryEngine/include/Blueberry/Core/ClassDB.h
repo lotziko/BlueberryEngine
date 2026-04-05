@@ -5,6 +5,7 @@
 #include "Blueberry\Core\ObjectDB.h"
 #include "Blueberry\Core\MethodBind.h"
 #include "Blueberry\Tools\StringHelper.h"
+#include "Blueberry\Serialization\Enums.h"
 
 namespace Blueberry
 {
@@ -75,14 +76,16 @@ namespace Blueberry
 	{
 		FieldOptions& SetEnumHint(char* hintData);
 		FieldOptions& SetObjectType(TypeId* type);
-		FieldOptions& SetSize(const uint32_t& size);
-		FieldOptions& SetVisibility(const VisibilityType& visibility);
+		FieldOptions& SetSize(uint32_t size);
+		FieldOptions& SetVisibility(VisibilityType visibility);
+		FieldOptions& SetSerializationFlags(SerializationFlags serializationFlags);
 		FieldOptions& SetUpdateCallback(MethodBind* updateCallback);
 
 		TypeId* objectType;
 		uint32_t size;
 		void* hintData;
 		VisibilityType visibility;
+		SerializationFlags serializationFlags = SerializationFlags::EditorAndRuntime;
 		MethodBind* updateCallback;
 	};
 

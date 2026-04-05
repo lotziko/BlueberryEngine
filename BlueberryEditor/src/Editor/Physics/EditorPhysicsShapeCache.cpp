@@ -3,6 +3,7 @@
 #include "Blueberry\Core\ObjectDB.h"
 #include "Blueberry\Graphics\Mesh.h"
 #include "Blueberry\Tools\FileHelper.h"
+#include "Blueberry\Tools\StringHelper.h"
 
 #include "Editor\Path.h"
 
@@ -19,14 +20,14 @@ namespace Blueberry
 			std::filesystem::create_directories(dataPath);
 		}
 		dataPath.append((std::to_string(fileId).append(std::to_string(key))).append(".shape"));
-		return String(dataPath.string());
+		return StringHelper::ToString(dataPath);
 	}
 
 	String GetPhysicsShapeDirectory(const Guid& guid)
 	{
 		std::filesystem::path dataPath = Path::GetPhysicsShapeCachePath();
 		dataPath.append(guid.ToString());
-		return String(dataPath.string());
+		return StringHelper::ToString(dataPath);
 	}
 	
 	uint8_t GetKey(bool isConvex, const Vector3& scale)

@@ -2,17 +2,8 @@
 
 #include "Blueberry\Core\Layer.h"
 
-#include "Editor\Panels\Hierarchy\SceneHierarchy.h"
-#include "Editor\Panels\Inspector\SceneInspector.h"
-#include "Editor\Panels\Project\ProjectBrowser.h"
-
 namespace Blueberry
 {
-	class Scene;
-	class Camera;
-	class Texture;
-	class SceneArea;
-	class GameView;
 	class WindowResizeEventArgs;
 
 	class EditorLayer : public Layer
@@ -37,7 +28,6 @@ namespace Blueberry
 		void Refresh();
 
 	private:
-		Scene* m_Scene = nullptr;
 		bool m_Focused = true;
 
 		static bool s_FrameUpdateRequested;

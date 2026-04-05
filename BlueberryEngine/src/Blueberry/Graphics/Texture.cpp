@@ -16,7 +16,7 @@ namespace Blueberry
 		DEFINE_FIELD(Texture, m_Format, BindingType::Enum, FieldOptions())
 		DEFINE_FIELD(Texture, m_WrapMode, BindingType::Enum, FieldOptions().SetEnumHint("Repeat,Clamp"))
 		DEFINE_FIELD(Texture, m_FilterMode, BindingType::Enum, FieldOptions().SetEnumHint("Linear,Point,Trilinear"))
-		DEFINE_FIELD(Texture, m_RawData, BindingType::ByteData, FieldOptions())
+		DEFINE_FIELD(Texture, m_RawData, BindingType::ByteData, FieldOptions().SetSerializationFlags(SerializationFlags::EditorOnly))
 		DEFINE_FIELD(Texture, m_IsReadable, BindingType::Bool, FieldOptions())
 	}
 
@@ -28,6 +28,16 @@ namespace Blueberry
 	uint32_t Texture::GetHeight() const
 	{
 		return m_Height;
+	}
+
+	uint32_t Texture::GetMipCount() const
+	{
+		return m_MipCount;
+	}
+
+	TextureFormat Texture::GetFormat() const
+	{
+		return m_Format;
 	}
 
 	GfxTexture* Texture::Get()
@@ -80,6 +90,16 @@ namespace Blueberry
 	void Texture::SetReadable(bool readable)
 	{
 		m_IsReadable = readable;
+	}
+
+	bool Texture::HasData()
+	{
+		return m_RawData.size() > 0;
+	}
+
+	const ByteData& Texture::GetData()
+	{
+		return m_RawData;
 	}
 
 	void Texture::IncrementUpdateCount()

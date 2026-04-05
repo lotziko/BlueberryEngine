@@ -43,6 +43,11 @@ namespace Blueberry
 		s_Instance->ClearDepthImpl(depth);
 	}
 
+	void GfxDevice::WaitForFrame()
+	{
+		s_Instance->WaitForFrameImpl();
+	}
+
 	void GfxDevice::SwapBuffers()
 	{
 		s_Instance->SwapBuffersImpl();

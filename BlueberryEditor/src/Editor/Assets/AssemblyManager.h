@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Blueberry\Core\Base.h"
+
 namespace Blueberry
 {
 	class AssemblyManager
@@ -7,6 +9,8 @@ namespace Blueberry
 	public:
 		static void Unload();
 		static void Load();
-		static bool Build(const bool& incrementCount = true);
+		static String GetAssemblyDirectory();
+		static bool BuildEditor(const bool& incrementCount = true);
+		static bool BuildRuntime();
 	};
 }

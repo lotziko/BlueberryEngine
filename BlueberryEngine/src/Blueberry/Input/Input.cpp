@@ -1,7 +1,6 @@
 #include "Blueberry\Input\Input.h"
 
 #include "Blueberry\Core\Time.h"
-#include "Blueberry\Core\Screen.h"
 #include "Blueberry\Events\WindowEvents.h"
 
 namespace Blueberry
@@ -10,6 +9,7 @@ namespace Blueberry
 	Vector2 Input::s_MousePosition = Vector2::Zero;
 	Vector2 Input::s_MouseDelta = Vector2::Zero;
 	size_t Input::s_DeltaFrame = 0;
+	bool Input::s_IsEnabled = false;
 
 	void Input::Initialize()
 	{
@@ -46,7 +46,7 @@ namespace Blueberry
 
 	void Input::OnKeyDown(const KeyEventArgs& args)
 	{
-		if (Screen::IsAllowCursorLock())
+		if (s_IsEnabled)
 		{
 			s_State[static_cast<uint8_t>(args.GetKeyCode())] = std::make_pair(true, Time::GetFrameCount());
 		}
@@ -89,5 +89,15 @@ namespace Blueberry
 			return Vector2::Zero;
 		}
 		return s_MouseDelta;
+	}
+
+	bool Input::IsEnabled()
+	{
+		return s_IsEnabled;
+	}
+
+	void Input::SetEnabled(bool enabled)
+	{
+		s_IsEnabled = enabled;
 	}
 }

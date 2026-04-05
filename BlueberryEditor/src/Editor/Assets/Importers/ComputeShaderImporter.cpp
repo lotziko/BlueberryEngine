@@ -23,7 +23,7 @@ namespace Blueberry
 		{
 			std::filesystem::create_directories(dataPath);
 		}
-		return dataPath.string().data();
+		return StringHelper::ToString(dataPath);
 	}
 
 	bool ComputeShaderImporter::IsRequiringReimport() const

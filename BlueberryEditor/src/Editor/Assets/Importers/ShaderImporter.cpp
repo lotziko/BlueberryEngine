@@ -23,7 +23,7 @@ namespace Blueberry
 		{
 			std::filesystem::create_directories(dataPath);
 		}
-		return dataPath.string().data();
+		return StringHelper::ToString(dataPath);
 	}
 
 	long long ShaderImporter::GetLastFilesWriteTime()

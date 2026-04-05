@@ -21,15 +21,6 @@
 
 namespace Blueberry
 {
-	void EditorAssetLoader::LoadImpl(const Guid& guid)
-	{
-		AssetImporter* importer = AssetDB::GetImporter(guid);
-		if (importer != nullptr)
-		{
-			importer->ImportDataIfNeeded();
-		}
-	}
-
 	Object* EditorAssetLoader::LoadImpl(const Guid& guid, FileId fileId)
 	{
 		AssetImporter* importer = AssetDB::GetImporter(guid);
@@ -50,9 +41,9 @@ namespace Blueberry
 		}
 
 		std::filesystem::path assetPath = path;
-		std::string name = assetPath.filename().string();
-		Guid guid = Guid(TO_HASH(String(name)), 0);
-		std::string extension = assetPath.extension().string();
+		std::filesystem::path extension = assetPath.extension();
+		String name = StringHelper::ToString(assetPath.filename());
+		Guid guid = Guid(TO_HASH(name), 0);
 		
 		if (extension == ".png")
 		{
@@ -91,7 +82,7 @@ namespace Blueberry
 
 			if (texture != nullptr)
 			{
-				texture->SetName(assetPath.stem().string().data());
+				texture->SetName(StringHelper::ToString(assetPath.stem()));
 				m_LoadedAssets.insert_or_assign(path, texture);
 			}
 			return texture;
@@ -128,7 +119,7 @@ namespace Blueberry
 
 			if (shader != nullptr)
 			{
-				shader->SetName(assetPath.stem().string().data());
+				shader->SetName(StringHelper::ToString(assetPath.stem()));
 				m_LoadedAssets.insert_or_assign(path, shader);
 			}
 			return shader;
@@ -165,7 +156,7 @@ namespace Blueberry
 
 			if (shader != nullptr)
 			{
-				shader->SetName(assetPath.stem().string().data());
+				shader->SetName(StringHelper::ToString(assetPath.stem()));
 				m_LoadedAssets.insert_or_assign(path, shader);
 			}
 			return shader;

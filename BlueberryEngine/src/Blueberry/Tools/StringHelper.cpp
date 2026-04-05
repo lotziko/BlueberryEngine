@@ -1,6 +1,8 @@
 #include "Blueberry\Tools\StringHelper.h"
 
 #include <cctype>
+#include <codecvt>
+#include <filesystem>
 
 namespace Blueberry
 {
@@ -42,5 +44,27 @@ namespace Blueberry
 			[](unsigned char ch1, unsigned char ch2) { return std::toupper(ch1) == std::toupper(ch2); }
 		);
 		return (it != str1.end());
+	}
+
+	WString StringHelper::StringToWide(const String& str)
+	{
+		WString wide_string(str.begin(), str.end());
+		return wide_string;
+	}
+
+	String StringHelper::WideToString(const WString& wstr)
+	{
+		static std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+		return String(converter.to_bytes(wstr.c_str()));
+	}
+
+	String StringHelper::ToString(const std::filesystem::path& path)
+	{
+		return path.string<char, std::char_traits<char>, STLAllocator<char>>(STLAllocator<char>());
+	}
+
+	String StringHelper::ToGenericString(const std::filesystem::path& path)
+	{
+		return path.generic_string<char, std::char_traits<char>, STLAllocator<char>>(STLAllocator<char>());
 	}
 }

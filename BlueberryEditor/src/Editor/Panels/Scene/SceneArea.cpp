@@ -17,6 +17,7 @@
 #include "Editor\Gizmos\IconRenderer.h"
 #include "Editor\Menu\EditorMenuManager.h"
 #include "Editor\Serialization\SerializedObject.h"
+#include "Editor\Assets\AssetDB.h"
 
 #include "Blueberry\Core\Application.h"
 #include "Blueberry\Core\Time.h"
@@ -214,7 +215,7 @@ namespace Blueberry
 					if (EditorSceneManager::HasScene() || EditorSceneManager::HasPrefabScene())
 					{
 						Guid guid = Blueberry::ObjectDB::GetGuidFromObject(object);
-						AssetLoader::Load(guid);
+						AssetDB::LoadAsset(guid);
 						PrefabInstance* instance = static_cast<PrefabInstance*>(ObjectDB::GetObjectFromGuid(guid, TO_HASH("PrefabInstance")));
 						if (instance != nullptr)
 						{

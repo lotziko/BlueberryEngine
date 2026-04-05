@@ -5,6 +5,7 @@
 #include "Blueberry\Core\Object.h"
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Scene\Scene.h"
+#include "Blueberry\Scene\LightingSettings.h"
 #include "Blueberry\Scene\Components\Component.h"
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Components\Renderer.h"
@@ -30,6 +31,7 @@ namespace Blueberry
 	{
 		REGISTER_ABSTRACT_CLASS(Object);
 		REGISTER_CLASS(Entity);
+		REGISTER_CLASS(LightingSettings);
 		REGISTER_ABSTRACT_CLASS(Component);
 		REGISTER_ITERATOR(UpdatableComponent);
 		REGISTER_CLASS(Transform);

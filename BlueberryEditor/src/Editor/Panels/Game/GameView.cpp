@@ -13,6 +13,8 @@
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Input\Cursor.h"
+#include "Blueberry\Input\Input.h"
+#include "Blueberry\Tools\CameraHelper.h"
 
 #include <imgui\imgui.h>
 
@@ -40,6 +42,7 @@ namespace Blueberry
 		{
 			if (ImGui::IsWindowFocused())
 			{
+				Input::SetEnabled(true);
 				Screen::SetAllowCursorLock(true);
 				Screen::SetGameViewport(Rectangle(0, 0, static_cast<long>(size.x), static_cast<long>(size.y)));
 				if (Cursor::IsHidden())
@@ -49,6 +52,7 @@ namespace Blueberry
 			}
 			if (ImGui::IsKeyDown(ImGuiKey_Escape))
 			{
+				Input::SetEnabled(false);
 				Screen::SetAllowCursorLock(false);
 				ImGui::SetWindowFocus(nullptr);
 			}
@@ -70,29 +74,7 @@ namespace Blueberry
 			{
 				EditorLayer::RequestFrameUpdate();
 				Camera::SetCurrent(camera);
-
-				float areaAspectRatio = size.x / size.y;
-				float cameraAspectRatio = camera->GetAspectRatio();
-
-				float x, y, width, height;
-
-				if (areaAspectRatio > cameraAspectRatio)
-				{
-					width = size.y * cameraAspectRatio;
-					x = pos.x + (size.x - width) / 2.0f;
-					y = pos.y;
-					height = size.y;
-				}
-				else
-				{
-					height = size.x / cameraAspectRatio;
-					y = pos.y + (size.y - height) / 2.0f;
-					x = pos.x;
-					width = size.x;
-				}
-
-				// TODO viewport change
-				Vector2 viewport = Vector2(size.x, size.y);
+				RectangleFloat viewport = CameraHelper::CalculateViewport(camera, Rectangle(static_cast<long>(pos.x), static_cast<long>(pos.y), static_cast<long>(size.x), static_cast<long>(size.y)));
 
 				if (m_RenderTarget == nullptr || viewport.x != m_RenderTarget->GetWidth() || viewport.y != m_RenderTarget->GetHeight())
 				{
@@ -100,12 +82,12 @@ namespace Blueberry
 					{
 						GfxTexturePool::Release(m_RenderTarget);
 					}
-					m_RenderTarget = GfxTexturePool::Get(static_cast<uint32_t>(viewport.x), static_cast<uint32_t>(viewport.y), 1, TextureUsageFlags::RenderTarget, 1, 1, TextureFormat::R8G8B8A8_UNorm);
-					camera->SetPixelSize(Vector2(width, height));
+					m_RenderTarget = GfxTexturePool::Get(static_cast<uint32_t>(viewport.width), static_cast<uint32_t>(viewport.height), 1, TextureUsageFlags::RenderTarget, 1, 1, TextureFormat::R8G8B8A8_UNorm);
+					camera->SetPixelSize(Vector2(viewport.width, viewport.height));
 				}
 
-				DefaultRenderer::Draw(scene, camera, Rectangle(0, 0, static_cast<long>(viewport.x), static_cast<long>(viewport.y)), Color(0.0f, 0.0f, 0.0f, 1.0f), m_RenderTarget);
-				ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(m_RenderTarget->GetHandle()), ImVec2(x, y), ImVec2(x + width, y + height), ImVec2(0.0f, 0.0f), ImVec2(viewport.x / m_RenderTarget->GetWidth(), viewport.y / m_RenderTarget->GetHeight()));
+				DefaultRenderer::Draw(scene, camera, Rectangle(0l, 0l, viewport.width, viewport.height), Color(0.0f, 0.0f, 0.0f, 1.0f), m_RenderTarget);
+				ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(m_RenderTarget->GetHandle()), ImVec2(viewport.x, viewport.y), ImVec2(viewport.x + viewport.width, viewport.y + viewport.height), ImVec2(0.0f, 0.0f), ImVec2(viewport.width / m_RenderTarget->GetWidth(), viewport.height / m_RenderTarget->GetHeight()));
 			}
 		}
 	}

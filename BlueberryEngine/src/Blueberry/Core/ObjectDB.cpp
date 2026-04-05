@@ -83,6 +83,7 @@ namespace Blueberry
 	{
 		m_MaxChunksCount = MAX_OBJECTS / ELEMENTS_PER_CHUNK + 1;
 		m_Objects = BB_MALLOC_ARRAY(ObjectItem*, m_MaxChunksCount);
+		memset(m_Objects, 0, sizeof(ObjectItem*) * m_MaxChunksCount);
 	}
 
 	void ChunkedObjectArray::Shutdown()
@@ -137,6 +138,7 @@ namespace Blueberry
 		{
 			ObjectItem** chunk = &m_Objects[m_ChunksCount];
 			ObjectItem* newChunk = BB_MALLOC_ARRAY(ObjectItem, ELEMENTS_PER_CHUNK);
+			memset(newChunk, 0, sizeof(ObjectItem) * ELEMENTS_PER_CHUNK);
 			*chunk = newChunk;
 			++m_ChunksCount;
 		}
@@ -298,6 +300,11 @@ namespace Blueberry
 	bool ObjectDB::HasFileId(Object* object)
 	{
 		return s_ObjectIdToFileId.count(object->GetObjectId()) > 0;
+	}
+
+	bool ObjectDB::HasGuid(ObjectId id)
+	{
+		return s_ObjectIdToGuid.count(id) > 0;
 	}
 
 	bool ObjectDB::HasGuid(Object* object)

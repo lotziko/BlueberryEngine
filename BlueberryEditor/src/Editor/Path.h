@@ -17,6 +17,7 @@ namespace Blueberry
 		static const std::filesystem::path& GetTextureCachePath();
 		static const std::filesystem::path& GetPhysicsShapeCachePath();
 		static const std::filesystem::path& GetThumbnailCachePath();
+		static const std::filesystem::path& GetBuildPath();
 		static void SetProjectPath(const WString& path);
 
 		static std::filesystem::path GetAssetPath(const String& relativePath);
@@ -32,5 +33,6 @@ namespace Blueberry
 		static std::filesystem::path s_TextureCachePath;
 		static std::filesystem::path s_PhysicsShapeCachePath;
 		static std::filesystem::path s_ThumbnailCachePath;
+		static std::filesystem::path s_BuildPath;
 	};
 }

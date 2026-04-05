@@ -29,6 +29,7 @@ namespace Blueberry
 		
 		virtual int GetWidth() const = 0;
 		virtual int GetHeight() const = 0;
+		virtual void SetCursor(bool visible) = 0;
 
 		static Window* Create(const WindowProperties& properties);
 

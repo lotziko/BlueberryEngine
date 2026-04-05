@@ -23,14 +23,14 @@ namespace Blueberry
 	{
 		std::filesystem::path dataPath = Path::GetAssetsPath();
 		dataPath.append(m_RelativePath);
-		return String(dataPath.string());
+		return StringHelper::ToString(dataPath);
 	}
 
 	String AssetImporter::GetMetaFilePath()
 	{
 		std::filesystem::path dataPath = Path::GetAssetsPath();
 		dataPath.append(m_RelativeMetaPath);
-		return String(dataPath.string());
+		return StringHelper::ToString(dataPath);
 	}
 
 	const String& AssetImporter::GetRelativeFilePath()
@@ -130,7 +130,7 @@ namespace Blueberry
 		MetaSerializer serializer = {};
 		serializer.SetGuid(m_Guid);
 		serializer.AddObject(this);
-		serializer.Serialize(GetMetaFilePath(), true);
+		serializer.Serialize(GetMetaFilePath(), SerializationFlags::EditorOnly);
 		m_RequireSave = false;
 	}
 
@@ -152,9 +152,9 @@ namespace Blueberry
 
 	void AssetImporter::Rename(const std::filesystem::path& relativePath)
 	{
-		m_Name = relativePath.stem().string();
-		m_RelativePath = relativePath.string();
-		m_RelativeMetaPath = relativePath.string() + ".meta";
+		m_Name = StringHelper::ToString(relativePath.stem());
+		m_RelativePath = StringHelper::ToString(relativePath);
+		m_RelativeMetaPath = StringHelper::ToString(relativePath) + ".meta";
 	}
 
 	long long AssetImporter::GetLastWrite() const
@@ -167,9 +167,9 @@ namespace Blueberry
 		const ClassInfo* info = ClassDB::GetInfo(type);
 		AssetImporter* importer = static_cast<AssetImporter*>(info->Create());
 		importer->m_Guid = Guid::Create();
-		importer->m_RelativePath = relativePath.string();
-		importer->m_RelativeMetaPath = relativePath.string() + ".meta";
-		importer->m_Name = relativePath.stem().string();
+		importer->m_RelativePath = StringHelper::ToString(relativePath);
+		importer->m_RelativeMetaPath = StringHelper::ToString(relativePath) + ".meta";
+		importer->m_Name = StringHelper::ToString(relativePath.stem());
 		importer->Save();
 		importer->m_RequireSave = true; // Importer may get some important data from the asset and should be saved second time
 		return importer;
@@ -181,8 +181,8 @@ namespace Blueberry
 		relativeMetaPath += ".meta";
 
 		MetaSerializer serializer = {};
-		String metaPath = Path::GetAssetsPath(String(relativeMetaPath.string()));
-		serializer.Deserialize(metaPath);
+		String metaPath = Path::GetAssetsPath(StringHelper::ToString(relativeMetaPath));
+		serializer.Deserialize(metaPath, SerializationFlags::EditorOnly);
 
 		auto& deserializedObjects = serializer.GetDeserializedObjects();
 		if (deserializedObjects.size() > 0)
@@ -190,9 +190,9 @@ namespace Blueberry
 			AssetImporter* importer = static_cast<AssetImporter*>(ObjectDB::GetObject(deserializedObjects[0].first));
 			Guid guid = serializer.GetGuid();
 			importer->m_Guid = guid;
-			importer->m_RelativePath = relativePath.string();
-			importer->m_RelativeMetaPath = relativePath.string() + ".meta";
-			importer->m_Name = relativePath.stem().string();
+			importer->m_RelativePath = StringHelper::ToString(relativePath);
+			importer->m_RelativeMetaPath = StringHelper::ToString(relativePath) + ".meta";
+			importer->m_Name = StringHelper::ToString(relativePath.stem());
 			importer->SetState(ObjectState::AwaitingLoading);
 			// Data will be imported when it's needed
 			//importer->ImportData();
@@ -205,7 +205,7 @@ namespace Blueberry
 	{
 		MetaSerializer serializer = {};
 		serializer.AddObject(importer);
-		serializer.Deserialize(importer->GetMetaFilePath());
+		serializer.Deserialize(importer->GetMetaFilePath(), SerializationFlags::EditorOnly);
 	}
 
 	bool AssetImporter::IsImportable() const

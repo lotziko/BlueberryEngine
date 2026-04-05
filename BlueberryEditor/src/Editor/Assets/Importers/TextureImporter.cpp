@@ -134,7 +134,7 @@ namespace Blueberry
 			std::filesystem::create_directories(dataPath);
 		}
 		dataPath.append(guid.ToString().append(".texture"));
-		return String(dataPath.string());
+		return StringHelper::ToString(dataPath);
 	}
 
 	bool TextureImporter::IsRequiringReimport() const
@@ -155,7 +155,7 @@ namespace Blueberry
 		String texturePath = GetTexturePath(guid);
 
 		String path = GetFilePath();
-		String extension = String(std::filesystem::path(path).extension().string());
+		String extension = StringHelper::ToString(std::filesystem::path(path).extension());
 		DirectX::ScratchImage image = {};
 		TextureHelper::Load(image, path, extension, m_IsSRGB);
 

@@ -8,6 +8,21 @@ namespace Blueberry
 {
 	#define EMPTY_ID UINT64_MAX
 
+	SerializationTreeFlags operator|(SerializationTreeFlags lhs, SerializationTreeFlags rhs)
+	{
+		return static_cast<SerializationTreeFlags>(static_cast<uint8_t>(lhs) | static_cast<uint8_t>(rhs));
+	}
+
+	SerializationTreeFlags& operator|=(SerializationTreeFlags& lhs, SerializationTreeFlags rhs)
+	{
+		return lhs = static_cast<SerializationTreeFlags>(static_cast<uint8_t>(lhs) | static_cast<uint8_t>(rhs));
+	}
+
+	SerializationTreeFlags operator&(SerializationTreeFlags lhs, SerializationTreeFlags rhs)
+	{
+		return static_cast<SerializationTreeFlags>(static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs));
+	}
+
 	ChildIterator& ChildIterator::operator++()
 	{
 		childId = tree->GetNextSibling(childId);
@@ -527,21 +542,21 @@ namespace Blueberry
 
 	void WriteValue(SerializationNodeRef& ref, Vector2& value)
 	{
-		ref |= SerializationFlags::FLOWMAP;
+		ref |= SerializationTreeFlags::FLOWMAP;
 		ref["x"] << value.x;
 		ref["y"] << value.y;
 	}
 
 	void WriteValue(SerializationNodeRef& ref, Vector2Int& value)
 	{
-		ref |= SerializationFlags::FLOWMAP;
+		ref |= SerializationTreeFlags::FLOWMAP;
 		ref["x"] << value.x;
 		ref["y"] << value.y;
 	}
 
 	void WriteValue(SerializationNodeRef& ref, Vector3& value)
 	{
-		ref |= SerializationFlags::FLOWMAP;
+		ref |= SerializationTreeFlags::FLOWMAP;
 		ref["x"] << value.x;
 		ref["y"] << value.y;
 		ref["z"] << value.z;
@@ -549,7 +564,7 @@ namespace Blueberry
 
 	void WriteValue(SerializationNodeRef& ref, Vector3Int& value)
 	{
-		ref |= SerializationFlags::FLOWMAP;
+		ref |= SerializationTreeFlags::FLOWMAP;
 		ref["x"] << value.x;
 		ref["y"] << value.y;
 		ref["z"] << value.z;
@@ -557,7 +572,7 @@ namespace Blueberry
 
 	void WriteValue(SerializationNodeRef& ref, Vector4& value)
 	{
-		ref |= SerializationFlags::FLOWMAP;
+		ref |= SerializationTreeFlags::FLOWMAP;
 		ref["x"] << value.x;
 		ref["y"] << value.y;
 		ref["z"] << value.z;
@@ -566,7 +581,7 @@ namespace Blueberry
 
 	void WriteValue(SerializationNodeRef& ref, Vector4Int& value)
 	{
-		ref |= SerializationFlags::FLOWMAP;
+		ref |= SerializationTreeFlags::FLOWMAP;
 		ref["x"] << value.x;
 		ref["y"] << value.y;
 		ref["z"] << value.z;
@@ -575,7 +590,7 @@ namespace Blueberry
 
 	void WriteValue(SerializationNodeRef& ref, Quaternion& value)
 	{
-		ref |= SerializationFlags::FLOWMAP;
+		ref |= SerializationTreeFlags::FLOWMAP;
 		ref["x"] << value.x;
 		ref["y"] << value.y;
 		ref["z"] << value.z;
@@ -584,7 +599,7 @@ namespace Blueberry
 
 	void WriteValue(SerializationNodeRef& ref, Color& value)
 	{
-		ref |= SerializationFlags::FLOWMAP;
+		ref |= SerializationTreeFlags::FLOWMAP;
 		ref["r"] << value.x;
 		ref["g"] << value.y;
 		ref["b"] << value.z;
@@ -593,7 +608,7 @@ namespace Blueberry
 
 	void WriteValue(SerializationNodeRef& ref, AABB& value)
 	{
-		ref |= SerializationFlags::FLOWMAP;
+		ref |= SerializationTreeFlags::FLOWMAP;
 		ref["center"] << Vector3(value.Center);
 		ref["extents"] << Vector3(value.Extents);
 	}
@@ -630,7 +645,7 @@ namespace Blueberry
 
 	void WriteValue(SerializationNodeRef& ref, ObjectPtrData& value)
 	{
-		ref |= SerializationFlags::FLOWMAP;
+		ref |= SerializationTreeFlags::FLOWMAP;
 		ref["fileId"] << value.fileId;
 		if (value.guid.data[0] > 0)
 		{
@@ -683,7 +698,7 @@ namespace Blueberry
 		}
 	}
 
-	void SerializationNodeRef::operator|=(SerializationFlags flags)
+	void SerializationNodeRef::operator|=(SerializationTreeFlags flags)
 	{
 		tree->nodes[id].flags |= flags;
 	}

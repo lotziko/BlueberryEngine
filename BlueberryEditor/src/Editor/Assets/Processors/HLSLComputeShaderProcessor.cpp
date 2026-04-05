@@ -3,7 +3,7 @@
 #include "HLSLComputeShaderParser.h"
 #include "HLSLShaderProcessor.h"
 
-#include "Blueberry\Tools\StringConverter.h"
+#include "Blueberry\Tools\StringHelper.h"
 
 #include <filesystem>
 #include <fstream>
@@ -63,7 +63,7 @@ namespace Blueberry
 			ComPtr<ID3DBlob> blob = m_Blobs[i];
 			if (blob != nullptr && blob->GetBufferSize() > 0)
 			{
-				D3DWriteBlobToFile(blob.Get(), StringConverter::StringToWide(String(path.string())).c_str(), true);
+				D3DWriteBlobToFile(blob.Get(), StringHelper::StringToWide(StringHelper::ToString(path)).c_str(), true);
 			}
 		}
 	}
@@ -86,8 +86,8 @@ namespace Blueberry
 				ComPtr<ID3DBlob> blob;
 				std::filesystem::path path = folderPath;
 				path.append(std::to_string(i));
-				String stringPath = String(path.string());
-				HRESULT hr = D3DReadFileToBlob(StringConverter::StringToWide(stringPath).c_str(), blob.GetAddressOf());
+				String stringPath = StringHelper::ToString(path);
+				HRESULT hr = D3DReadFileToBlob(StringHelper::StringToWide(stringPath).c_str(), blob.GetAddressOf());
 				if (FAILED(hr))
 				{
 					BB_ERROR("Failed to load shader: " + String(stringPath.begin(), stringPath.end()));

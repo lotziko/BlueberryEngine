@@ -1,6 +1,6 @@
 #include "ProjectCache.h"
 
-#include "Blueberry\Tools\StringConverter.h"
+#include "Blueberry\Tools\StringHelper.h"
 #include "Editor\Misc\PlatformHelper.h"
 
 #include <fstream>
@@ -22,7 +22,7 @@ namespace Blueberry
 			{
 				ProjectInfo info;
 				info.wpath = WString(line);
-				info.path = StringConverter::WideToString(info.wpath);
+				info.path = StringHelper::WideToString(info.wpath);
 				s_ProjectInfoCache.push_back(std::move(info));
 			}
 			input.close();
@@ -63,7 +63,7 @@ namespace Blueberry
 			}
 		}
 		ProjectInfo info;
-		info.wpath = StringConverter::StringToWide(path);
+		info.wpath = StringHelper::StringToWide(path);
 		info.path = path;
 		s_ProjectInfoCache.push_back(std::move(info));
 	}

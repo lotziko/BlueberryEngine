@@ -113,6 +113,7 @@ namespace Blueberry
 		static std::pair<Guid, FileId> GetGuidAndFileIdFromObject(Object* object);
 		static bool HasFileId(ObjectId id);
 		static bool HasFileId(Object* object);
+		static bool HasGuid(ObjectId id);
 		static bool HasGuid(Object* object);
 		static bool HasGuid(const Guid& guid);
 		static bool HasGuidAndFileId(const Guid& guid, FileId fileId);

@@ -21,7 +21,7 @@ namespace Blueberry
 		context.stream.read(reinterpret_cast<char*>(&keyOffset), sizeof(uint32_t));
 		context.stream.read(reinterpret_cast<char*>(&node.flags), sizeof(uint8_t));
 		node.key = String(context.keyBuffer.data() + keyOffset);
-		if (node.flags & (SerializationFlags::MAP | SerializationFlags::SEQUENCE | SerializationFlags::FLOWMAP))
+		if ((node.flags & (SerializationTreeFlags::MAP | SerializationTreeFlags::SEQUENCE | SerializationTreeFlags::FLOWMAP)) != SerializationTreeFlags::NONE)
 		{
 			uint32_t childCount;
 			context.stream.read(reinterpret_cast<char*>(&childCount), sizeof(uint32_t));
@@ -39,7 +39,7 @@ namespace Blueberry
 		}
 	}
 
-	void ReadObject(SerializationTree& tree, Context& context)
+	void ReadObject(SerializationTree& tree, Context& context, bool hasGuids)
 	{
 		uint32_t rootNodeCount;
 		if (context.version == 1)
@@ -56,6 +56,10 @@ namespace Blueberry
 			tree.typeId = ClassDB::GetInfo(typeHash)->id;
 		}
 		context.stream.read(reinterpret_cast<char*>(&tree.fileId), sizeof(FileId));
+		if (hasGuids)
+		{
+			context.stream.read(reinterpret_cast<char*>(&tree.guid), sizeof(Guid));
+		}
 		context.stream.read(reinterpret_cast<char*>(&tree.isReference), sizeof(bool));
 		context.stream.read(reinterpret_cast<char*>(&rootNodeCount), sizeof(uint32_t));
 		SerializationNodeRef root = tree.GetRoot();
@@ -66,7 +70,7 @@ namespace Blueberry
 		}
 	}
 
-	void BinaryReader::Read(List<SerializationTree>& trees, std::ifstream& stream)
+	void BinaryReader::Read(List<SerializationTree>& trees, std::ifstream& stream, bool hasGuids)
 	{
 		List<char> keyBuffer;
 		Context context = { 0, stream, keyBuffer };
@@ -82,7 +86,7 @@ namespace Blueberry
 		{
 			SerializationTree tree = {};
 			tree.isText = false;
-			ReadObject(tree, context);
+			ReadObject(tree, context, hasGuids);
 			trees.push_back(tree);
 		}
 	}

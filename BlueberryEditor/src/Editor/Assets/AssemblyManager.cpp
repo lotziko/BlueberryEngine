@@ -43,7 +43,7 @@ namespace Blueberry
 
 	String GetAssemblyPath()
 	{
-		return String(Path::GetAssemblyPath().string());
+		return StringHelper::ToString(Path::GetAssemblyPath());
 	}
 
 	void AssemblyManager::Unload()
@@ -101,7 +101,7 @@ namespace Blueberry
 			return;
 		}
 
-		String dllDirectory = GetAssemblyPath().append("\\bin\\").append(GetDebugReleaseFolder()).append("\\GameAssembly\\");
+		String dllDirectory = GetAssemblyDirectory();
 		String dllPath = String(dllDirectory).append(GetDLLName()).append(".dll");
 		
 		if (std::filesystem::exists(String(dllDirectory).append("GameAssembly.dll")))
@@ -110,12 +110,20 @@ namespace Blueberry
 
 			using EntryFunc = void(*)();
 			s_GameAssembly = LoadLibraryA(dllPath.c_str());
-			EntryFunc entryFunc = (EntryFunc)GetProcAddress(s_GameAssembly, "Entry");
-			if (entryFunc != nullptr)
+			if (s_GameAssembly != nullptr)
 			{
-				entryFunc();
+				EntryFunc entryFunc = (EntryFunc)GetProcAddress(s_GameAssembly, "Entry");
+				if (entryFunc != nullptr)
+				{
+					entryFunc();
+				}
 			}
 		}
+	}
+
+	String AssemblyManager::GetAssemblyDirectory()
+	{
+		return GetAssemblyPath().append("\\bin\\").append(GetDebugReleaseFolder()).append("\\GameAssembly\\");
 	}
 
 	String GetMVCSPath()
@@ -144,7 +152,7 @@ namespace Blueberry
 		{
 			if (entry.is_directory())
 			{
-				versions.push_back(String(entry.path().filename().string()));
+				versions.push_back(StringHelper::ToString(entry.path().filename()));
 			}
 		}
 
@@ -165,7 +173,7 @@ namespace Blueberry
 		{
 			if (entry.is_directory()) 
 			{
-				versions.push_back(String(entry.path().filename().string()));
+				versions.push_back(StringHelper::ToString(entry.path().filename()));
 			}
 		}
 
@@ -186,7 +194,7 @@ namespace Blueberry
 		{
 			if (entry.is_directory())
 			{
-				versions.push_back(String(entry.path().filename().string()));
+				versions.push_back(StringHelper::ToString(entry.path().filename()));
 			}
 		}
 
@@ -200,15 +208,16 @@ namespace Blueberry
 
 	String GetEditorPath()
 	{
-		return String(std::filesystem::current_path().string());
+		return StringHelper::ToString(std::filesystem::current_path());
 	}
 
-	void CreateCompileAndLinkConfig()
+	void CreateCompileAndLinkConfig(bool isRuntime)
 	{
 		String msvcPath = GetMVCSPath();
 		String windowsSDKIncludePath = GetWindowsSDKIncludePath();
 		String windowsSDKLibPath = GetWindowsSDKLibPath();
 		String editorPath = GetEditorPath();
+		String importLibraryName = isRuntime ? "BlueberryRuntime" : "BlueberryEditor";
 
 		StringStream ss;
 		ss << ".VSBasePath				= '" << msvcPath << "'\n";
@@ -253,7 +262,7 @@ namespace Blueberry
 		ss << "    .Libraries			= { \"GameAssembly-Obj\" }\n";
 		ss << "    .LinkerOutput		= 'bin\\" << GetDebugReleaseFolder() << "\\GameAssembly\\GameAssembly.dll'\n";
 		ss << "    .LinkerOptions		+ ' uuid.lib'\n";
-		ss << "						+ ' $EditorBasePath$\\BlueberryEditor.lib'\n";
+		ss << "						+ ' $EditorBasePath$\\" << importLibraryName << ".lib'\n";
 		ss << "}\n";
 		ss << "\n";
 		ss << "Alias( 'all' ) { .Targets = { 'GameAssembly' } }";
@@ -284,7 +293,7 @@ namespace Blueberry
 		return GetLastDllWriteTime() > writeTime;
 	}
 
-	bool AssemblyManager::Build(const bool& incrementCount)
+	bool AssemblyManager::BuildEditor(const bool& incrementCount)
 	{
 		if (!std::filesystem::exists(GetAssemblyPath()))
 		{
@@ -299,13 +308,23 @@ namespace Blueberry
 		{
 			s_SourceLastWriteTime = lastWriteTime;
 		}
-		CreateCompileAndLinkConfig();
+		CreateCompileAndLinkConfig(false);
 		if (CompileAndLinkProject())
 		{
 			if (incrementCount)
 			{
 				++s_ReloadCount;
 			}
+			return true;
+		}
+		return false;
+	}
+
+	bool AssemblyManager::BuildRuntime()
+	{
+		CreateCompileAndLinkConfig(true);
+		if (CompileAndLinkProject())
+		{
 			return true;
 		}
 		return false;

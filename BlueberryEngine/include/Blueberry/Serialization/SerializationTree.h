@@ -7,7 +7,7 @@
 
 namespace Blueberry
 {
-	enum SerializationFlags : uint8_t
+	enum class SerializationTreeFlags : uint8_t
 	{
 		NONE = 0,
 		SEQUENCE = 1,
@@ -15,6 +15,10 @@ namespace Blueberry
 		VALUE = 4,
 		FLOWMAP = 8,
 	};
+
+	SerializationTreeFlags operator|(SerializationTreeFlags lhs, SerializationTreeFlags rhs);
+	SerializationTreeFlags& operator|=(SerializationTreeFlags& lhs, SerializationTreeFlags rhs);
+	SerializationTreeFlags operator&(SerializationTreeFlags lhs, SerializationTreeFlags rhs);
 
 	struct SerializationNodeRef;
 	struct SerializationNodeConstRef;
@@ -86,7 +90,7 @@ namespace Blueberry
 		template<class Type>
 		void operator<< (Type& value);
 
-		void operator|= (SerializationFlags flags);
+		void operator|= (SerializationTreeFlags flags);
 
 		SerializationNodeRef operator[] (const char* name);
 
@@ -128,7 +132,7 @@ namespace Blueberry
 		size_t nextSibling = UINT64_MAX;
 		size_t previousSibling = UINT64_MAX;
 
-		uint8_t flags = 0;
+		SerializationTreeFlags flags = SerializationTreeFlags::NONE;
 	};
 
 	struct SerializationTree
@@ -153,6 +157,7 @@ namespace Blueberry
 
 		TypeId typeId;
 		String typeName;
+		Guid guid;
 		FileId fileId;
 		ObjectId objectId;
 		List<SerializationNode> nodes;

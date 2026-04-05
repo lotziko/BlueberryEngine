@@ -27,6 +27,7 @@ namespace Blueberry
 
 		virtual void ClearColorImpl(const Color& color) const final;
 		virtual void ClearDepthImpl(float depth) const final;
+		virtual void WaitForFrameImpl() const final;
 		virtual void SwapBuffersImpl() final;
 
 		virtual void SetViewportImpl(int x, int y, int width, int height) final;
@@ -82,6 +83,7 @@ namespace Blueberry
 		ComPtr<ID3D11DeviceContext> m_DeviceContext;
 		ComPtr<IDXGISwapChain> m_SwapChain;
 		ComPtr<ID3D11RenderTargetView> m_RenderTargetView;
+		HANDLE m_FrameLatencyWaitHandle;
 
 		List<std::pair<size_t, ComPtr<ID3D11RasterizerState>>> m_RasterizerStates;
 		List<std::pair<size_t, ComPtr<ID3D11DepthStencilState>>> m_DepthStencilStates;

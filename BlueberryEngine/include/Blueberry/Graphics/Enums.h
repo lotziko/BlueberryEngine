@@ -13,8 +13,15 @@ namespace Blueberry
 		CPUWritable = 8,
 	};
 
-	TextureUsageFlags operator|(const TextureUsageFlags& lhs, const TextureUsageFlags& rhs);
-	TextureUsageFlags operator&(const TextureUsageFlags& lhs, const TextureUsageFlags& rhs);
+	inline TextureUsageFlags operator|(TextureUsageFlags lhs, TextureUsageFlags rhs)
+	{
+		return static_cast<TextureUsageFlags>(static_cast<int>(lhs) | static_cast<int>(rhs));
+	}
+
+	inline TextureUsageFlags operator&(TextureUsageFlags lhs, TextureUsageFlags rhs)
+	{
+		return static_cast<TextureUsageFlags>(static_cast<int>(lhs) & static_cast<int>(rhs));
+	}
 
 	enum class WrapMode
 	{
@@ -75,8 +82,15 @@ namespace Blueberry
 		CPUWritable = 256,
 	};
 
-	BufferUsageFlags operator|(const BufferUsageFlags& lhs, const BufferUsageFlags& rhs);
-	BufferUsageFlags operator&(const BufferUsageFlags& lhs, const BufferUsageFlags& rhs);
+	inline BufferUsageFlags operator|(BufferUsageFlags lhs, BufferUsageFlags rhs)
+	{
+		return static_cast<BufferUsageFlags>(static_cast<int>(lhs) | static_cast<int>(rhs));
+	}
+
+	inline BufferUsageFlags operator&(BufferUsageFlags lhs, BufferUsageFlags rhs)
+	{
+		return static_cast<BufferUsageFlags>(static_cast<int>(lhs) & static_cast<int>(rhs));
+	}
 
 	enum class BufferFormat
 	{

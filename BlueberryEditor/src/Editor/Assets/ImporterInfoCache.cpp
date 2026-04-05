@@ -30,13 +30,14 @@ namespace Blueberry
 
 			for (size_t i = 0; i < cacheSize; ++i)
 			{
+				Guid guid;
+				input.read(reinterpret_cast<char*>(&guid), sizeof(Guid));
+
 				if (input.eof())
 				{
 					break;
 				}
 
-				Guid guid;
-				input.read(reinterpret_cast<char*>(&guid), sizeof(Guid));
 				ImporterInfo info = {};
 				Read(input, info);
 				s_ImporterInfoCache.insert_or_assign(guid, info);
@@ -157,13 +158,13 @@ namespace Blueberry
 
 		for (size_t i = 0; i < objectCount; ++i)
 		{
+			FileId objectFileId;
+			is.read(reinterpret_cast<char*>(&objectFileId), sizeof(FileId));
+
 			if (is.eof())
 			{
 				break;
 			}
-
-			FileId objectFileId;
-			is.read(reinterpret_cast<char*>(&objectFileId), sizeof(FileId));
 
 			size_t typeNameSize;
 			is.read(reinterpret_cast<char*>(&typeNameSize), sizeof(size_t));

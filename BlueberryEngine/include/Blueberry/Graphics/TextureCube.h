@@ -17,6 +17,7 @@ namespace Blueberry
 		void Initialize(uint32_t width, uint32_t height, uint32_t mipCount = 1, TextureFormat textureFormat = TextureFormat::R8G8B8A8_UNorm);
 		void SetData(uint8_t* data, size_t dataSize);
 		void Apply();
+		void Apply(uint8_t* data, size_t dataSize);
 
 		static TextureCube* Create(uint32_t width, uint32_t height, uint32_t mipCount = 1, TextureFormat textureFormat = TextureFormat::R8G8B8A8_UNorm, WrapMode wrapMode = WrapMode::Clamp, FilterMode filterMode = FilterMode::Bilinear);
 	};

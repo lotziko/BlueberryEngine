@@ -126,7 +126,7 @@ namespace Blueberry
 						}
 
 						list->PushClipRect(pos, pos + size, true);
-						Vector4* chartScaleOffset = lightingData->GetChartOffsetScale();
+						const List<Vector4>& chartScaleOffset = lightingData->GetChartOffsetScale();
 						for (auto& component : scene->GetIterator<MeshRenderer>())
 						{
 							MeshRenderer* meshRenderer = static_cast<MeshRenderer*>(component.second);
@@ -202,7 +202,7 @@ namespace Blueberry
 							}
 
 							auto relativePath = std::filesystem::relative(lightmapPath, Path::GetAssetsPath());
-							TextureImporter* importer = static_cast<TextureImporter*>(AssetDB::GetImporter(relativePath.string().data()));
+							TextureImporter* importer = static_cast<TextureImporter*>(AssetDB::GetImporter(StringHelper::ToString(relativePath)));
 							importer->SetTextureShape(TextureImporter::TextureShape::Texture2D);
 							importer->SetTextureFormat(TextureImporter::TextureFormat::BC6H);
 							importer->SetFilterMode(FilterMode::Bilinear);
@@ -229,7 +229,7 @@ namespace Blueberry
 							lightingData->SetProbeVolumeData(probeVolume);
 
 							auto relativePath = std::filesystem::relative(probeVolumePath, Path::GetAssetsPath());
-							AssetDB::CreateAsset(probeVolume, relativePath.string().data());
+							AssetDB::CreateAsset(probeVolume, StringHelper::ToString(relativePath));
 							AssetDB::Refresh();
 							lightingData->ApplyProbeVolume();
 
@@ -245,7 +245,7 @@ namespace Blueberry
 					String lightingDataPath = EditorSceneManager::GetPath();
 					lightingDataPath.replace(lightingDataPath.find(".scene"), 6, "\\LightingData.asset");
 					auto relativeLightingDataPath = std::filesystem::relative(lightingDataPath, Path::GetAssetsPath());
-					AssetDB::CreateAsset(lightingData, relativeLightingDataPath.string().data());
+					AssetDB::CreateAsset(lightingData, StringHelper::ToString(relativeLightingDataPath));
 
 					EditorSceneManager::Save();
 					LightmappingManager::Shutdown();

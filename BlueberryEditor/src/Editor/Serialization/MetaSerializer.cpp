@@ -8,7 +8,7 @@
 
 namespace Blueberry
 {
-	void MetaSerializer::Serialize(const String& path, const bool& isText)
+	void MetaSerializer::Serialize(const String& path, SerializationFlags flags)
 	{
 		std::ofstream stream(path.data(), std::ios::out | std::ofstream::binary);
 		if (stream.is_open())
@@ -21,8 +21,8 @@ namespace Blueberry
 			{
 				Object* object = ObjectDB::GetObject(m_ObjectsToSerialize[0]);
 				SerializationNodeRef objectNode = root[object->GetTypeName().c_str()];
-				objectNode |= SerializationFlags::MAP;
-				SerializeNode(objectNode, Context::Create(object, object->GetType()));
+				objectNode |= SerializationTreeFlags::MAP;
+				SerializeNode(objectNode, Context::Create(object, object->GetType()), flags);
 			}
 			m_Trees.push_back(std::move(tree));
 			YamlWriter::Write(m_Trees, stream, false);
@@ -30,7 +30,7 @@ namespace Blueberry
 		}
 	}
 
-	void MetaSerializer::Deserialize(const String& path)
+	void MetaSerializer::Deserialize(const String& path, SerializationFlags flags)
 	{
 		std::ifstream stream(path.data(), std::ios::in | std::ofstream::binary);
 		if (stream.is_open())

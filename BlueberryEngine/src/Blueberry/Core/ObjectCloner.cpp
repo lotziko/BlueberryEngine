@@ -68,7 +68,7 @@ namespace Blueberry
 		}
 		visited.insert(object->GetObjectId());
 
-		for (auto field : info->fields)
+		for (auto& field : info->fields)
 		{
 			switch (field.type)
 			{
@@ -77,6 +77,9 @@ namespace Blueberry
 				break;
 			case BindingType::Int:
 				*field.Get<int>(clone) = *field.Get<int>(object);
+				break;
+			case BindingType::Uint:
+				*field.Get<uint32_t>(clone) = *field.Get<uint32_t>(object);
 				break;
 			case BindingType::Float:
 				*field.Get<float>(clone) = *field.Get<float>(object);

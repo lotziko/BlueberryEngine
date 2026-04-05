@@ -55,8 +55,7 @@ namespace Blueberry
 
 	const String EditorSceneManager::GetRelativePath()
 	{
-		std::string path = std::filesystem::relative(s_Path, Path::GetAssetsPath()).string();
-		return String(path);
+		return StringHelper::ToString(std::filesystem::relative(s_Path, Path::GetAssetsPath()));
 	}
 
 	const String& EditorSceneManager::GetPath()
@@ -66,8 +65,8 @@ namespace Blueberry
 
 	const Guid& EditorSceneManager::GetGuid()
 	{
-		std::string path = std::filesystem::relative(s_Path, Path::GetAssetsPath()).string();
-		return AssetDB::GetImporter(String(path.data()))->GetGuid();
+		String path = StringHelper::ToString(std::filesystem::relative(s_Path, Path::GetAssetsPath()));
+		return AssetDB::GetImporter(path)->GetGuid();
 	}
 
 	void EditorSceneManager::Load(const String& path)
@@ -107,7 +106,7 @@ namespace Blueberry
 			String relativePath = AssetDB::GetRelativeAssetPath(data.root);
 			std::filesystem::path dataPath = Path::GetAssetsPath();
 			dataPath.append(relativePath);
-			Serialize(String(dataPath.string()));
+			Serialize(StringHelper::ToString(dataPath));
 
 			// TODO recursive dependencies
 			HashSet<Guid> dependent;
@@ -164,7 +163,7 @@ namespace Blueberry
 		dataPath.append(relativePath);
 
 		EditorSerializer serializer = {};
-		serializer.Deserialize(String(dataPath.string().c_str()));
+		serializer.Deserialize(StringHelper::ToString(dataPath), SerializationFlags::EditorOnly | SerializationFlags::Text | SerializationFlags::HasHeaders);
 		for (auto& pair : serializer.GetDeserializedObjects())
 		{
 			Object* object = ObjectDB::GetObject(pair.first);
@@ -268,14 +267,14 @@ namespace Blueberry
 			}
 			serializer.GatherPrefabs(s_Scene);
 		}
-		serializer.Serialize(path, true);
+		serializer.Serialize(path, SerializationFlags::EditorOnly | SerializationFlags::Text | SerializationFlags::HasHeaders);
 		AssetDB::Refresh();	// maybe skip refresh on prefabs and save straight to cache?
 	}
 
 	void EditorSceneManager::Deserialize(const String& path)
 	{
 		EditorSerializer serializer = {};
-		serializer.Deserialize(path);
+		serializer.Deserialize(path, SerializationFlags::EditorOnly | SerializationFlags::Text | SerializationFlags::HasHeaders);
 		for (auto& pair : serializer.GetDeserializedObjects())
 		{
 			Object* object = ObjectDB::GetObject(pair.first);

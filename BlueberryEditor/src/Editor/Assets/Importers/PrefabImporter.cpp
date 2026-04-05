@@ -18,7 +18,7 @@ namespace Blueberry
 		Guid guid = GetGuid();
 		List<Object*> objects;
 		String path = GetFilePath();
-		EditorSerializer serializer;
+		EditorSerializer serializer = {};
 		for (auto& object : ObjectDB::GetObjectsFromGuid(guid))
 		{
 			Object* importedObject = ObjectDB::GetObject(object.second);
@@ -27,7 +27,7 @@ namespace Blueberry
 				serializer.AddObject(importedObject, object.first);
 			}
 		}
-		serializer.Deserialize(path);
+		serializer.Deserialize(path, SerializationFlags::EditorOnly | SerializationFlags::HasHeaders);
 		HashSet<Guid> dependencies;
 		serializer.GatherDependencies(dependencies);
 		AssetDB::SetDependencies(guid, dependencies);

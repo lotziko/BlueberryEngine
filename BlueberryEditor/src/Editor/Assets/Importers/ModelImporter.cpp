@@ -490,12 +490,10 @@ namespace Blueberry
 		fbxsdk::FbxArray<fbxsdk::FbxVector2> fbxUvs1;
 		if (fbxUvNames.GetCount() > 0)
 		{
-			std::string str = fbxUvNames[0];
 			fbxMesh->GetPolygonVertexUVs(fbxUvNames[0], fbxUvs0);
 		}
 		if (fbxUvNames.GetCount() > 1)
 		{
-			std::string str = fbxUvNames[1];
 			fbxMesh->GetPolygonVertexUVs(fbxUvNames[1], fbxUvs1);
 		}
 

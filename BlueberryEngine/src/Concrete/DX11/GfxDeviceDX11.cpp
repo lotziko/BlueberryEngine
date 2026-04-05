@@ -10,19 +10,19 @@
 #include "Blueberry\Tools\CRCHelper.h"
 #include "..\Windows\WindowsHelper.h"
 
+#include "Blueberry\Logging\Profiler.h"
+
 namespace Blueberry
 {
+	#define BUFFER_COUNT 2
+
 	GfxDeviceDX11::~GfxDeviceDX11()
 	{
-		//ID3D11Debug* debug;
-		//m_Device->QueryInterface(__uuidof(ID3D11Debug), reinterpret_cast<void**>(&debug));
-		
 		m_LayoutCache.Shutdown();
 		m_SwapChain = nullptr;
 		m_RenderTargetView = nullptr;
 		m_DeviceContext = nullptr;
-
-		//debug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+		m_FrameLatencyWaitHandle = nullptr;
 	}
 
 	bool GfxDeviceDX11::InitializeImpl(int width, int height, void* data)
@@ -57,20 +57,18 @@ namespace Blueberry
 		}
 	}
 
+	void GfxDeviceDX11::WaitForFrameImpl() const
+	{
+		if (BUFFER_COUNT > 1)
+		{
+			WaitForSingleObjectEx(m_FrameLatencyWaitHandle, 16, TRUE);
+		}
+	}
+
 	void GfxDeviceDX11::SwapBuffersImpl()
 	{
-		/*static ID3DUserDefinedAnnotation* annotation = nullptr;
-		if (annotation != nullptr)
-		{
-			annotation->EndEvent();
-			annotation->Release();
-		}*/
-
-		m_SwapChain->Present(1, NULL);
+		m_SwapChain->Present(1, 0);
 		Clear();
-
-		//m_DeviceContext->QueryInterface(__uuidof(ID3DUserDefinedAnnotation), (void**)&annotation);
-		//annotation->BeginEvent(L"Frame");
 	}
 
 	void GfxDeviceDX11::SetViewportImpl(int x, int y, int width, int height)
@@ -114,7 +112,7 @@ namespace Blueberry
 
 		HRESULT hr;
 
-		hr = m_SwapChain->ResizeBuffers(1, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+		hr = m_SwapChain->ResizeBuffers(BUFFER_COUNT, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, BUFFER_COUNT > 1 ? DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT : 0);
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "ResizeBuffers failed."));
@@ -135,11 +133,10 @@ namespace Blueberry
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create render target view."));
 			return;
 		}
-
 		backBuffer->Release();
 
 		m_DeviceContext->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), NULL);
-
+		
 		D3D11_VIEWPORT viewport;
 		ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
 
@@ -630,6 +627,33 @@ namespace Blueberry
 	{
 		m_Hwnd = hwnd;
 
+		IDXGIFactory6* dxgiFactory;
+		HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(&dxgiFactory));
+
+		if (FAILED(hr))
+		{
+			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error creating dxgi factory."));
+			return false;
+		}
+
+		List<IDXGIAdapter*> adapters;
+		IDXGIAdapter1* adapter = nullptr;
+
+		for (UINT i = 0; dxgiFactory->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter)) != DXGI_ERROR_NOT_FOUND; ++i)
+		{
+			DXGI_ADAPTER_DESC1 desc;
+			adapter->GetDesc1(&desc);
+
+			if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+			{
+				continue;
+			}
+
+			break;
+		}
+
+		dxgiFactory->Release();
+
 		DXGI_SWAP_CHAIN_DESC scd;
 		ZeroMemory(&scd, sizeof(DXGI_SWAP_CHAIN_DESC));
 
@@ -645,18 +669,17 @@ namespace Blueberry
 		scd.SampleDesc.Quality = 0;
 
 		scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		scd.BufferCount = 1;
+		scd.BufferCount = BUFFER_COUNT;
 		scd.OutputWindow = hwnd;
 		scd.Windowed = TRUE;
-		scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-		scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+		scd.SwapEffect = BUFFER_COUNT > 1 ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_DISCARD;
+		scd.Flags = (BUFFER_COUNT > 1 ? DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT : 0) | DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
-		HRESULT hr;
 		hr = D3D11CreateDeviceAndSwapChain(
-			NULL,
-			D3D_DRIVER_TYPE_HARDWARE, //hardware driver
+			adapter,
+			adapter == NULL ? D3D_DRIVER_TYPE_HARDWARE : D3D_DRIVER_TYPE_UNKNOWN, //hardware driver
 			NULL, //software driver
-			0, //no flags
+			0, //no flags	// D3D11_CREATE_DEVICE_DEBUG does not work in runtime
 			NULL, //feature levels
 			0, //no feature levels
 			D3D11_SDK_VERSION,
@@ -673,6 +696,21 @@ namespace Blueberry
 			return false;
 		}
 
+		if (BUFFER_COUNT > 1)
+		{
+			IDXGISwapChain2* swapChain2;
+			hr = m_SwapChain->QueryInterface(__uuidof(IDXGISwapChain2), (void**)&swapChain2);
+			if (FAILED(hr))
+			{
+				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error creating swapchain."));
+				return false;
+			}
+			swapChain2->SetMaximumFrameLatency(1);
+
+			m_FrameLatencyWaitHandle = swapChain2->GetFrameLatencyWaitableObject();
+			swapChain2->Release();
+		}
+		
 		ID3D11Texture2D* backBuffer;
 		hr = m_SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&backBuffer));
 		if (FAILED(hr))
@@ -687,7 +725,6 @@ namespace Blueberry
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create render target view."));
 			return false;
 		}
-
 		backBuffer->Release();
 
 		m_DeviceContext->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), NULL);

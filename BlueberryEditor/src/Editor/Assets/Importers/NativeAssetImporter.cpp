@@ -16,8 +16,7 @@ namespace Blueberry
 		Guid guid = GetGuid();
 		List<Object*> objects;
 		String path = GetFilePath();
-		String extension = String(std::filesystem::path(path).extension().string());
-		EditorSerializer serializer;
+		EditorSerializer serializer = {};
 		for (auto& object : ObjectDB::GetObjectsFromGuid(guid))
 		{
 			Object* importedObject = ObjectDB::GetObject(object.second);
@@ -26,7 +25,7 @@ namespace Blueberry
 				serializer.AddObject(importedObject, object.first);
 			}
 		}
-		serializer.Deserialize(path);
+		serializer.Deserialize(path, SerializationFlags::EditorOnly | SerializationFlags::HasHeaders);
 		auto& deserializedObjects = serializer.GetDeserializedObjects();
 
 		bool mainObjectIsSet = false;

@@ -185,7 +185,7 @@ namespace Blueberry
 						Blueberry::Object* object = Blueberry::ObjectDB::GetObject(*id);
 						if (object != nullptr && object->IsClassType(Entity::Type) && ImGui::AcceptDragDropPayload("OBJECT_ID"))
 						{
-							PrefabManager::CreatePrefab(m_CurrentDirectory.string().data(), static_cast<Entity*>(object));
+							PrefabManager::CreatePrefab(StringHelper::ToString(m_CurrentDirectory), static_cast<Entity*>(object));
 							UpdateFiles();
 						}
 					}
@@ -277,12 +277,12 @@ namespace Blueberry
 					{
 						std::filesystem::path dataPath = Path::GetAssetsPath();
 						dataPath.append(relativePath);
-						path = dataPath.string();
+						path = StringHelper::ToString(dataPath);
 					}
 				}
 				else
 				{
-					path = String(m_CurrentDirectory.string());
+					path = StringHelper::ToString(m_CurrentDirectory);
 				}
 				if (path.size() > 0)
 				{
@@ -423,7 +423,7 @@ namespace Blueberry
 					newName.append(m_CreatingObjectName.substr(m_CreatingObjectName.find('.')));
 					std::filesystem::path relativePath = std::filesystem::relative(m_CurrentDirectory, Path::GetAssetsPath());
 					relativePath.append(newName);
-					AssetDB::CreateAsset(m_CreatingObject, relativePath.string().c_str());
+					AssetDB::CreateAsset(m_CreatingObject, StringHelper::ToString(relativePath));
 					m_CreatingObject = nullptr;
 				}
 				else
@@ -445,7 +445,7 @@ namespace Blueberry
 					std::filesystem::path extension = oldRelativePath.extension();
 					newRelativePath.replace_filename(newName);
 					newRelativePath += extension;
-					AssetDB::RenameAsset(oldRelativePath.string().c_str(), newRelativePath.string().c_str());
+					AssetDB::RenameAsset(StringHelper::ToString(oldRelativePath), StringHelper::ToString(newRelativePath));
 				}
 				AssetDB::Refresh();
 				m_RenamingObject = nullptr;
@@ -516,7 +516,7 @@ namespace Blueberry
 		{
 			std::filesystem::path fromPath = file;
 			std::filesystem::path toPath = m_CurrentDirectory;
-			toPath.append(fromPath.filename().string());
+			toPath.append(StringHelper::ToString(fromPath.filename()));
 			std::filesystem::copy_file(fromPath, toPath);
 		}
 		AssetDB::Refresh();
@@ -524,7 +524,7 @@ namespace Blueberry
 
 	void ProjectBrowser::UpdateTree()
 	{
-		m_FolderTree.Update(Path::GetAssetsPath().string().data());
+		m_FolderTree.Update(StringHelper::ToString(Path::GetAssetsPath()));
 	}
 
 	void ProjectBrowser::UpdateFiles()
@@ -545,8 +545,8 @@ namespace Blueberry
 				auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
 				AssetInfo info = {};
 				info.path = path;
-				info.pathString = path.string();
-				info.importer = AssetDB::GetImporter(relativePath.string().data());
+				info.pathString = StringHelper::ToString(path);
+				info.importer = AssetDB::GetImporter(StringHelper::ToString(relativePath));
 				info.objects.push_back(nullptr);
 				info.positions.resize(1);
 				info.isDirectory = true;
@@ -560,13 +560,13 @@ namespace Blueberry
 			if (!it.is_directory() && path.extension() != ".meta")
 			{
 				auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
-				AssetImporter* importer = AssetDB::GetImporter(relativePath.string().data());
+				AssetImporter* importer = AssetDB::GetImporter(StringHelper::ToString(relativePath));
 				if (importer != nullptr)
 				{
 					Object* mainObject = ObjectDB::GetObjectFromGuid(importer->GetGuid(), importer->GetMainObject());
 					AssetInfo info = {};
 					info.path = relativePath;
-					info.pathString = relativePath.string();
+					info.pathString = StringHelper::ToString(relativePath);
 					info.importer = importer;
 					if (mainObject != nullptr)
 					{

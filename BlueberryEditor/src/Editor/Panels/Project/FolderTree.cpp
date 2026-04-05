@@ -1,5 +1,7 @@
 #include "FolderTree.h"
 
+#include "Blueberry\Tools\StringHelper.h"
+
 namespace Blueberry
 {
 	const FolderTreeNode& FolderTree::GetRoot()
@@ -12,7 +14,7 @@ namespace Blueberry
 		std::filesystem::path path = root;
 		m_Root = {};
 		m_Root.path = path;
-		m_Root.name = path.filename().string();
+		m_Root.name = StringHelper::ToString(path.filename());
 		Populate(&m_Root);
 	}
 
@@ -25,7 +27,7 @@ namespace Blueberry
 				std::filesystem::path path = it;
 				FolderTreeNode child;
 				child.path = path;
-				child.name = path.filename().string();
+				child.name = StringHelper::ToString(path.filename());
 				Populate(&child);
 				parent->children.push_back(child);
 			}

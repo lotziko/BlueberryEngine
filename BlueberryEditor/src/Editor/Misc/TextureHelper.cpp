@@ -1,6 +1,6 @@
 #include "TextureHelper.h"
 
-#include "Blueberry\Tools\StringConverter.h"
+#include "Blueberry\Tools\StringHelper.h"
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\Material.h"
@@ -70,7 +70,7 @@ namespace Blueberry
 	{
 		if (extension == ".dds")
 		{
-			HRESULT hr = DirectX::LoadFromDDSFile(StringConverter::StringToWide(path).c_str(), DirectX::DDS_FLAGS::DDS_FLAGS_NONE, nullptr, scratchImage);
+			HRESULT hr = DirectX::LoadFromDDSFile(StringHelper::StringToWide(path).c_str(), DirectX::DDS_FLAGS::DDS_FLAGS_NONE, nullptr, scratchImage);
 			if (FAILED(hr))
 			{
 				BB_ERROR("Failed to load DDS texture from file.");
@@ -79,7 +79,7 @@ namespace Blueberry
 		}
 		else if (extension == ".hdr")
 		{
-			HRESULT hr = DirectX::LoadFromHDRFile(StringConverter::StringToWide(path).c_str(), nullptr, scratchImage);
+			HRESULT hr = DirectX::LoadFromHDRFile(StringHelper::StringToWide(path).c_str(), nullptr, scratchImage);
 			if (FAILED(hr))
 			{
 				BB_ERROR("Failed to load HDR texture from file.");
@@ -88,7 +88,7 @@ namespace Blueberry
 		}
 		else
 		{
-			HRESULT hr = DirectX::LoadFromWICFile(StringConverter::StringToWide(path).c_str(), srgb ? DirectX::WIC_FLAGS_NONE : DirectX::WIC_FLAGS_IGNORE_SRGB, nullptr, scratchImage);
+			HRESULT hr = DirectX::LoadFromWICFile(StringHelper::StringToWide(path).c_str(), srgb ? DirectX::WIC_FLAGS_NONE : DirectX::WIC_FLAGS_IGNORE_SRGB, nullptr, scratchImage);
 			if (FAILED(hr))
 			{
 				BB_ERROR("Failed to load texture from file.");

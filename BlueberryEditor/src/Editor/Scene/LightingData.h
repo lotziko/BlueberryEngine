@@ -59,13 +59,15 @@ namespace Blueberry
 		LightingData() = default;
 		virtual ~LightingData() = default;
 
-		Vector4* GetChartOffsetScale();
+		const List<Vector4>& GetChartOffsetScale();
 
 		Texture2D* GetLightmap();
 		void SetLightmapData(Texture2D* lightmap, const List<Vector4>& scaleOffset, const Dictionary<ObjectId, uint32_t>& instanceOffset);
-
+		
+		Texture3D* GetProbeVolume();
 		void SetProbeVolumeData(Texture3D* probeVolume);
 
+		List<TextureCube*> GetReflectionProbes();
 		size_t GetReflectionProbeCount();
 		void SetSkyReflection(SkyRenderer* skyRenderer, TextureCube* textureCube);
 		void SetReflectionProbe(uint32_t index, ReflectionProbe* reflectionProbe, TextureCube* textureCube);
@@ -83,8 +85,5 @@ namespace Blueberry
 		List<MeshRendererData> m_MeshRenderers;
 		List<ReflectionProbeData> m_ReflectionProbes;
 		List<Vector4> m_ChartOffsetScale;
-
-		ByteData m_ChartScaleOffset;
-		ByteData m_ChartInstanceOffset;
 	};
 }

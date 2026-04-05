@@ -15,35 +15,53 @@
 
 namespace Blueberry
 {
-	void Serializer::Serialize(const String& path, bool isText)
+	void Serializer::Serialize(const String& path, SerializationFlags flags)
 	{
+		bool isText = (flags & SerializationFlags::Text) != SerializationFlags::None;
+		bool hasHeaders = (flags & SerializationFlags::HasHeaders) != SerializationFlags::None;
+		bool hasGuids = (flags & SerializationFlags::HasGuids) != SerializationFlags::None;
+
+		if (hasGuids)
+		{
+			m_FileIdToObjectId.clear();
+		}
+		
 		std::ofstream stream(path.data(), std::ios::out | std::ofstream::binary);
 		if (stream.is_open())
 		{
 			while ((m_CurrentObject = GetNextObjectToSerialize()) != nullptr)
 			{
 				SerializationTree tree = {};
-				tree.typeId = m_CurrentObject->GetType();
-				tree.fileId = GetFileId(m_CurrentObject->GetObjectId());
-				tree.objectId = m_CurrentObject->GetObjectId();
+				TypeId typeId = m_CurrentObject->GetType();
+				ObjectId objectId = m_CurrentObject->GetObjectId();
+				tree.typeId = typeId;
+				tree.fileId = GetFileId(objectId);
+				if (hasGuids)
+				{
+					tree.guid = GetGuid(objectId);
+				}
+				tree.objectId = objectId;
 				tree.isText = isText;
-				SerializeNode(tree.GetRoot(), Context::Create(m_CurrentObject, m_CurrentObject->GetType()));
+				SerializeNode(tree.GetRoot(), Context::Create(m_CurrentObject, typeId), flags);
 				m_Trees.push_back(std::move(tree));
 			}
 			if (isText)
 			{
-				YamlWriter::Write(m_Trees, stream, true);
+				YamlWriter::Write(m_Trees, stream, hasHeaders);
 			}
 			else
 			{
-				BinaryWriter::Write(m_Trees, stream);
+				BinaryWriter::Write(m_Trees, stream, hasGuids);
 			}
 			stream.close();
 		}
 	}
 
-	void Serializer::Deserialize(const String& path)
+	void Serializer::Deserialize(const String& path, SerializationFlags flags)
 	{
+		bool hasHeaders = (flags & SerializationFlags::HasHeaders) != SerializationFlags::None;
+		bool hasGuids = (flags & SerializationFlags::HasGuids) != SerializationFlags::None;
+
 		std::ifstream stream(path.data(), std::ios::in | std::ofstream::binary);
 		if (stream.is_open())
 		{
@@ -51,12 +69,13 @@ namespace Blueberry
 			switch (stream.peek())
 			{
 			case '%':
-				YamlReader::Read(m_Trees, stream, true);
+				YamlReader::Read(m_Trees, stream, hasHeaders);
 				break;
 			case 'B':
-				BinaryReader::Read(m_Trees, stream);
+				BinaryReader::Read(m_Trees, stream, hasGuids);
 				break;
 			}
+			Guid invalidGuid = {};
 			for (auto& tree : m_Trees)
 			{
 				Object* instance = nullptr;
@@ -76,7 +95,7 @@ namespace Blueberry
 					instance = ObjectDB::GetObject(it->second);
 				}
 				tree.objectId = instance->GetObjectId();
-				AddDeserializedObject(instance->GetObjectId(), tree.fileId);
+				AddDeserializedObject(instance->GetObjectId(), hasGuids ? tree.guid : invalidGuid, tree.fileId);
 			}
 			for (auto& tree : m_Trees)
 			{
@@ -113,6 +132,15 @@ namespace Blueberry
 	void Serializer::AddObject(Object* object, FileId fileId)
 	{
 		m_FileIdToObjectId.insert({ fileId, object->GetObjectId() });
+	}
+
+	Guid Serializer::GetGuid(ObjectId objectId)
+	{
+		if (ObjectDB::HasGuid(objectId))
+		{
+			return ObjectDB::GetGuidFromObjectId(objectId);
+		}
+		return m_Guid;
 	}
 
 	FileId Serializer::GetFileId(ObjectId objectId)
@@ -249,10 +277,15 @@ namespace Blueberry
 		return dis(gen);
 	}
 
-	void Serializer::SerializeNode(SerializationNodeRef node, Context context)
+	void Serializer::SerializeNode(SerializationNodeRef node, Context context, SerializationFlags flags)
 	{
 		for (auto& field : context.info->fields)
 		{
+			if ((field.options.serializationFlags & flags) == SerializationFlags::None)
+			{
+				continue;
+			}
+
 			void* ptr = context.ptr;
 			SerializationNodeRef fieldNode = node[field.name.c_str()];
 
@@ -299,7 +332,7 @@ namespace Blueberry
 			break;
 			case BindingType::StringList:
 			{
-				fieldNode |= SerializationFlags::SEQUENCE;
+				fieldNode |= SerializationTreeFlags::SEQUENCE;
 				List<String>* arrayValue = field.Get<List<String>>(ptr);
 				if (arrayValue->size() > 0)
 				{
@@ -345,55 +378,55 @@ namespace Blueberry
 				break;
 			case BindingType::Vector2List:
 			{
-				fieldNode |= SerializationFlags::SEQUENCE;
+				fieldNode |= SerializationTreeFlags::SEQUENCE;
 				List<Vector2>* arrayValue = field.Get<List<Vector2>>(ptr);
 				for (size_t i = 0; i < arrayValue->size(); ++i)
 				{
 					SerializationNodeRef childNode = fieldNode.AppendChild();
-					childNode |= SerializationFlags::FLOWMAP;
+					childNode |= SerializationTreeFlags::FLOWMAP;
 					childNode << arrayValue->at(i);
 				}
 			}
 			break;
 			case BindingType::Vector3List:
 			{
-				fieldNode |= SerializationFlags::SEQUENCE;
+				fieldNode |= SerializationTreeFlags::SEQUENCE;
 				List<Vector3>* arrayValue = field.Get<List<Vector3>>(ptr);
 				for (size_t i = 0; i < arrayValue->size(); ++i)
 				{
 					SerializationNodeRef childNode = fieldNode.AppendChild();
-					childNode |= SerializationFlags::FLOWMAP;
+					childNode |= SerializationTreeFlags::FLOWMAP;
 					childNode << arrayValue->at(i);
 				}
 			}
 			break;
 			case BindingType::Vector4List:
 			{
-				fieldNode |= SerializationFlags::SEQUENCE;
+				fieldNode |= SerializationTreeFlags::SEQUENCE;
 				List<Vector4>* arrayValue = field.Get<List<Vector4>>(ptr);
 				for (size_t i = 0; i < arrayValue->size(); ++i)
 				{
 					SerializationNodeRef childNode = fieldNode.AppendChild();
-					childNode |= SerializationFlags::FLOWMAP;
+					childNode |= SerializationTreeFlags::FLOWMAP;
 					childNode << arrayValue->at(i);
 				}
 			}
 			break;
 			case BindingType::QuaternionList:
 			{
-				fieldNode |= SerializationFlags::SEQUENCE;
+				fieldNode |= SerializationTreeFlags::SEQUENCE;
 				List<Quaternion>* arrayValue = field.Get<List<Quaternion>>(ptr);
 				for (size_t i = 0; i < arrayValue->size(); ++i)
 				{
 					SerializationNodeRef childNode = fieldNode.AppendChild();
-					childNode |= SerializationFlags::FLOWMAP;
+					childNode |= SerializationTreeFlags::FLOWMAP;
 					childNode << arrayValue->at(i);
 				}
 			}
 			break;
 			case BindingType::MatrixList:
 			{
-				fieldNode |= SerializationFlags::SEQUENCE;
+				fieldNode |= SerializationTreeFlags::SEQUENCE;
 				List<Matrix>* arrayValue = field.Get<List<Matrix>>(ptr);
 				for (size_t i = 0; i < arrayValue->size(); ++i)
 				{
@@ -427,7 +460,7 @@ namespace Blueberry
 			break;
 			case BindingType::ObjectPtrList:
 			{
-				fieldNode |= SerializationFlags::SEQUENCE;
+				fieldNode |= SerializationTreeFlags::SEQUENCE;
 				List<ObjectPtr<Object>>* arrayValue = field.Get<List<ObjectPtr<Object>>>(ptr);
 				for (size_t i = 0; i < arrayValue->size(); ++i)
 				{
@@ -447,12 +480,13 @@ namespace Blueberry
 			break;
 			case BindingType::Data:
 			{
-				fieldNode |= SerializationFlags::MAP;
+				fieldNode |= SerializationTreeFlags::MAP;
 				Data* data = field.Get<Data>(ptr);
-				Context context = Context::CreateNoOffset(data, *field.options.objectType);
-				if (context.info != nullptr)
+				const ClassInfo* info = ClassDB::GetInfo(*field.options.objectType);
+				if (info != nullptr)
 				{
-					SerializeNode(fieldNode, context);
+					Context context = Context::CreateNoOffset(data, info);
+					SerializeNode(fieldNode, context, flags);
 				}
 				else
 				{
@@ -462,23 +496,24 @@ namespace Blueberry
 			break;
 			case BindingType::DataList:
 			{
-				fieldNode |= SerializationFlags::SEQUENCE;
+				fieldNode |= SerializationTreeFlags::SEQUENCE;
 				ListBase* dataArrayPointer = field.Get<ListBase>(ptr);
-				size_t dataSize = dataArrayPointer->size_base();
-				for (size_t i = 0; i < dataSize; ++i)
+				const ClassInfo* info = ClassDB::GetInfo(*field.options.objectType);
+				if (info != nullptr)
 				{
-					void* data = dataArrayPointer->get_base(i);
-					Context context = Context::CreateNoOffset(data, *field.options.objectType);
-					if (context.info != nullptr)
+					size_t dataSize = dataArrayPointer->size_base();
+					for (size_t i = 0; i < dataSize; ++i)
 					{
+						void* data = dataArrayPointer->get_base(i);
+						Context context = Context::CreateNoOffset(data, info);
 						SerializationNodeRef dataNode = fieldNode.AppendChild();
-						dataNode |= SerializationFlags::MAP;
-						SerializeNode(dataNode, context);
+						dataNode |= SerializationTreeFlags::MAP;
+						SerializeNode(dataNode, context, flags);
 					}
-					else
-					{
-						BB_ERROR("Data class not exists.");
-					}
+				}
+				else
+				{
+					BB_ERROR("Data class not exists.");
 				}
 			}
 			break;
@@ -486,7 +521,7 @@ namespace Blueberry
 			{
 				Variant variant = *field.Get<Variant>(ptr);
 				size_t type = variant.index();
-				fieldNode |= SerializationFlags::FLOWMAP;
+				fieldNode |= SerializationTreeFlags::FLOWMAP;
 
 				SerializationNodeRef typeNode = fieldNode["type"];
 				SerializationNodeRef dataNode = fieldNode["data"];
@@ -928,10 +963,17 @@ namespace Blueberry
 		}
 	}
 
-	void Serializer::AddDeserializedObject(ObjectId objectId, FileId fileId)
+	void Serializer::AddDeserializedObject(ObjectId objectId, const Guid& guid, FileId fileId)
 	{
-		ObjectDB::AllocateIdToFileId(objectId, fileId);
-		m_FileIdToObjectId.insert_or_assign(fileId, objectId);
+		if (guid.IsValid())
+		{
+			ObjectDB::AllocateIdToGuid(objectId, guid, fileId);
+		}
+		else
+		{
+			ObjectDB::AllocateIdToFileId(objectId, fileId);
+			m_FileIdToObjectId.insert_or_assign(fileId, objectId);
+		}
 		m_DeserializedObjects.push_back(std::make_pair(objectId, fileId));
 	}
 }

@@ -77,6 +77,30 @@ namespace Blueberry
 		}
 	}
 
+	void TextureCube::Apply(uint8_t* data, size_t dataSize)
+	{
+		if (m_Texture != nullptr)
+		{
+			delete m_Texture;
+			m_Texture = nullptr;
+		}
+
+		TextureProperties textureProperties = {};
+
+		textureProperties.width = m_Width;
+		textureProperties.height = m_Height;
+		textureProperties.data = data;
+		textureProperties.dataSize = dataSize;
+		textureProperties.mipCount = m_MipCount;
+		textureProperties.format = m_Format;
+		textureProperties.dimension = TextureDimension::TextureCube;
+		textureProperties.wrapMode = m_WrapMode;
+		textureProperties.filterMode = m_FilterMode;
+
+		GfxDevice::CreateTexture(textureProperties, m_Texture);
+		IncrementUpdateCount();
+	}
+
 	TextureCube* TextureCube::Create(uint32_t width, uint32_t height, uint32_t mipCount, TextureFormat textureFormat, WrapMode wrapMode, FilterMode filterMode)
 	{
 		TextureCube* texture = Object::Create<TextureCube>();

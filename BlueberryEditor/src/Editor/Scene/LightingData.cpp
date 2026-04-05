@@ -48,8 +48,6 @@ namespace Blueberry
 		DEFINE_PREFER_BINARY()
 		DEFINE_FIELD(LightingData, m_Lightmap, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Texture2D::Type))
 		DEFINE_FIELD(LightingData, m_ProbeVolume, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Texture3D::Type))
-		DEFINE_FIELD(LightingData, m_ChartScaleOffset, BindingType::ByteData, FieldOptions())
-		DEFINE_FIELD(LightingData, m_ChartInstanceOffset, BindingType::ByteData, FieldOptions())
 		DEFINE_FIELD(LightingData, m_MeshRenderers, BindingType::DataList, FieldOptions().SetObjectType(&MeshRendererData::Type))
 		DEFINE_FIELD(LightingData, m_ReflectionProbes, BindingType::DataList, FieldOptions().SetObjectType(&ReflectionProbeData::Type))
 		DEFINE_FIELD(LightingData, m_ChartOffsetScale, BindingType::Vector4List, FieldOptions())
@@ -95,9 +93,9 @@ namespace Blueberry
 		m_TextureCube = textureCube;
 	}
 
-	Vector4* LightingData::GetChartOffsetScale()
+	const List<Vector4>& LightingData::GetChartOffsetScale()
 	{
-		return m_ChartOffsetScale.data();
+		return m_ChartOffsetScale;
 	}
 
 	Texture2D* LightingData::GetLightmap()
@@ -138,9 +136,24 @@ namespace Blueberry
 		}
 	}
 
+	Texture3D* LightingData::GetProbeVolume()
+	{
+		return m_ProbeVolume.Get();
+	}
+
 	void LightingData::SetProbeVolumeData(Texture3D* probeVolume)
 	{
 		m_ProbeVolume = probeVolume;
+	}
+
+	List<TextureCube*> LightingData::GetReflectionProbes()
+	{
+		List<TextureCube*> result;
+		for (size_t i = 0; i < m_ReflectionProbes.size(); ++i)
+		{
+			result.push_back(m_ReflectionProbes[i].GetTextureCube());
+		}
+		return result;
 	}
 
 	size_t LightingData::GetReflectionProbeCount()

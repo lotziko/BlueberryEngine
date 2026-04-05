@@ -12,6 +12,6 @@ namespace Blueberry
 	class BinaryWriter
 	{
 	public:
-		static void Write(List<SerializationTree>& trees, std::ofstream& stream);
+		static void Write(List<SerializationTree>& trees, std::ofstream& stream, bool hasGuids);
 	};
 }
