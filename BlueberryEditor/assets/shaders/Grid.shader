@@ -34,7 +34,7 @@ Shader
 		// Based on https://asliceofrendering.com/scene%20helper/2020/01/05/InfiniteGrid/
 		float3 Unproject(float3 positionCS, float4x4 unprojectMatrix)
 		{
-			float4 unprojectedPoint = mul(float4(positionCS, 1.0f), unprojectMatrix);
+			float4 unprojectedPoint = mul(unprojectMatrix, float4(positionCS, 1.0f));
 			return unprojectedPoint.xyz / unprojectedPoint.w;
 		}
 
@@ -49,7 +49,7 @@ Shader
 
 		float ComputeDepth(float3 positionWS)
 		{
-			float4 positionCS = mul(float4(positionWS, 1.0f), VIEW_PROJECTION_MATRIX);
+			float4 positionCS = mul(VIEW_PROJECTION_MATRIX, float4(positionWS, 1.0f));
 			return positionCS.z / positionCS.w;
 		}
 

@@ -67,15 +67,15 @@ namespace Blueberry
 	void ObjectEditor::OnDrawInspector()
 	{
 		SerializedProperty iterator = m_SerializedObject->GetIterator();
-		while (iterator.Next())
+		ImGui::BeginChangeCheck();
+		do
 		{
-			ImGui::BeginChangeCheck();
 			ImGui::Property(&iterator);
-			if (ImGui::EndChangeCheck())
-			{
-				m_SerializedObject->ApplyModifiedProperties();
-				AssetDB::SetDirty(m_SerializedObject->GetTarget());
-			}
+		} while (iterator.Next(false));
+		if (ImGui::EndChangeCheck())
+		{
+			m_SerializedObject->ApplyModifiedProperties();
+			AssetDB::SetDirty(m_SerializedObject->GetTarget());
 		}
 	}
 

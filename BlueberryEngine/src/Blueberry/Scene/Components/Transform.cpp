@@ -231,7 +231,9 @@ namespace Blueberry
 		}
 		else
 		{
-			m_LocalRotation = Quaternion::CreateFromRotationMatrix(Matrix::Transform(m_Parent->GetWorldToLocalMatrix(), rotation));
+			Quaternion parentRotation;
+			m_Parent->GetRotation().Inverse(parentRotation);
+			m_LocalRotation = rotation * parentRotation;
 		}
 		m_LocalRotationEulerHint = Math::ToDegrees(m_LocalRotation.ToEuler());
 		InvalidateHierarchy();
@@ -369,10 +371,10 @@ namespace Blueberry
 				{
 					m_Parent.Get()->RecalculateHierarchy();
 				}
-				m_LocalToWorldMatrix = m_LocalMatrix * (m_Parent->m_LocalToWorldMatrix);
-				m_Position = m_Parent->m_Position + Vector3::Transform(m_Parent->m_Scale * m_LocalPosition, m_Parent->m_Rotation);
+				m_LocalToWorldMatrix = m_LocalMatrix * m_Parent->m_LocalToWorldMatrix;
+				m_Position = Vector3::Transform(m_Parent->m_Scale * m_LocalPosition, m_Parent->m_Rotation) + m_Parent->m_Position;
 				m_Rotation = m_LocalRotation * m_Parent->m_Rotation;
-				m_Scale = m_Parent->m_Scale * m_LocalScale;
+				m_Scale = m_LocalScale * m_Parent->m_Scale;
 			}
 			else
 			{

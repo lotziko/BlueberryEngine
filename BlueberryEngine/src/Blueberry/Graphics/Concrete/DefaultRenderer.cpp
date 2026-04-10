@@ -8,6 +8,7 @@
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\Texture3D.h"
 #include "Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\GfxBuffer.h"
 #include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Graphics\GfxTexturePool.h"
 #include "Blueberry\Graphics\StandardMeshes.h"

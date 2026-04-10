@@ -1,5 +1,8 @@
 #include "Blueberry\Physics\Physics.h"
 
+#include "Blueberry\Core\ObjectDB.h"
+#include "Blueberry\Scene\Components\Collider.h"
+
 #include <Jolt\Jolt.h>
 
 #include <Jolt\RegisterTypes.h>
@@ -8,9 +11,8 @@
 #include <Jolt\Core\JobSystemThreadPool.h>
 #include <Jolt\Physics\PhysicsSettings.h>
 #include <Jolt\Physics\PhysicsSystem.h>
-
-#include <Jolt\Physics\Collision\Shape\BoxShape.h>
-#include <Jolt\Physics\Body\BodyCreationSettings.h>
+#include <Jolt\Physics\Collision\RayCast.h>
+#include <Jolt\Physics\Collision\CastResult.h>
 
 using namespace JPH;
 
@@ -140,7 +142,7 @@ namespace Blueberry
 
 		s_PhysicsSystem = new PhysicsSystem();
 		s_PhysicsSystem->Init(cMaxBodies, cNumBodyMutexes, cMaxBodyPairs, cMaxContactConstraints, broad_phase_layer_interface, object_vs_broadphase_layer_filter, object_vs_object_layer_filter);
-
+		
 		// Increase sleep threshold
 		PhysicsSettings settings = s_PhysicsSystem->GetPhysicsSettings();
 		settings.mPointVelocitySleepThreshold /= 4;
@@ -155,5 +157,21 @@ namespace Blueberry
 	{
 		const int cCollisionSteps = 1;
 		s_PhysicsSystem->Update(deltaTime, cCollisionSteps, s_TempAllocator, job_system);
+	}
+
+	bool Physics::Raycast(const Vector3& origin, const Vector3& direction, float distance, RaycastHitData& raycastHitData)
+	{
+		JPH::RRayCast ray(JPH::RVec3(origin.x, origin.y, origin.z), JPH::Vec3(direction.x * distance, direction.y * distance, direction.z * distance));
+		JPH::RayCastResult result = {};
+		if (s_PhysicsSystem->GetNarrowPhaseQuery().CastRay(ray, result))
+		{
+			float fraction = result.mFraction;
+			JPH::RVec3 hitPos = ray.GetPointOnRay(fraction);
+			ObjectId colliderId = static_cast<ObjectId>(s_PhysicsSystem->GetBodyInterface().GetUserData(result.mBodyID));
+			raycastHitData.position = Vector3(hitPos.GetX(), hitPos.GetY(), hitPos.GetZ());
+			raycastHitData.collider = static_cast<Collider*>(ObjectDB::GetObject(colliderId));
+			return true;
+		}
+		return false;
 	}
 }

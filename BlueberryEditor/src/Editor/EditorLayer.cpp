@@ -30,6 +30,7 @@
 #include "Editor\Gizmos\IconRenderer.h"
 #include "Editor\Menu\EditorMenuManager.h"
 #include "Editor\Serialization\AssemblySerializer.h"
+#include "Editor\Selection.h"
 
 //#include "Blueberry\Graphics\OpenXRRenderer.h"
 
@@ -313,6 +314,7 @@ namespace Blueberry
 			AssemblyManager::Unload();
 			AssemblyManager::Load();
 			serializer.Deserialize();
+			Selection::SetActiveObject(nullptr);
 		}
 	}
 }

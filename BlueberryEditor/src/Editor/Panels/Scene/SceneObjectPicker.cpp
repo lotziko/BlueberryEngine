@@ -13,6 +13,7 @@
 #include "Blueberry\Graphics\Renderer2D.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\GfxBuffer.h"
 #include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Graphics\Buffers\PerCameraDataConstantBuffer.h"

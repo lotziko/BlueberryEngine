@@ -12,12 +12,12 @@ namespace Blueberry
 
 	struct GfxDrawingOperation
 	{
-		GfxDrawingOperation(GfxBuffer* vertexBuffer, GfxBuffer* indexBuffer, Material* material, VertexLayout* layout, uint32_t indexCount, uint32_t indexOffset, uint32_t vertexCount, Topology topology, uint8_t passIndex = 0, GfxBuffer* instanceBuffer = nullptr, uint32_t instanceOffset = 0, uint32_t instanceCount = 1, bool isCounterClockwise = false);
-		GfxDrawingOperation(Mesh* mesh, Material* material, uint32_t indexCount, uint32_t indexOffset, uint32_t vertexCount, uint8_t passIndex = 0, GfxBuffer* instanceBuffer = nullptr, uint32_t instanceOffset = 0, uint32_t instanceCount = 1, bool isCounterClockwise = false);
-		GfxDrawingOperation(Mesh* mesh, GfxBuffer* vertexBufferOverride, Material* material, uint32_t indexCount, uint32_t indexOffset, uint32_t vertexCount, uint8_t passIndex = 0, GfxBuffer* instanceBuffer = nullptr, uint32_t instanceOffset = 0, uint32_t instanceCount = 1, bool isCounterClockwise = false);
-		GfxDrawingOperation(Mesh* mesh, Material* material, uint8_t passIndex = 0, GfxBuffer* instanceBuffer = nullptr, uint32_t instanceOffset = 0, uint32_t instanceCount = 1, bool isCounterClockwise = false);
-		GfxDrawingOperation(Mesh* mesh, GfxBuffer* vertexBufferOverride, Material* material, uint8_t passIndex = 0, GfxBuffer* instanceBuffer = nullptr, uint32_t instanceOffset = 0, uint32_t instanceCount = 1, bool isCounterClockwise = false);
-
+		GfxDrawingOperation(GfxBuffer* vertexBuffer, GfxBuffer* indexBuffer, Material* material, VertexLayout* layout, uint32_t indexCount, uint32_t indexOffset, uint32_t vertexCount, Topology topology, uint8_t passIndex = 0, GfxBuffer* instanceBuffer = nullptr, uint32_t instanceOffset = 0, uint32_t instanceCount = 1, bool isCounterClockwise = false, bool isSolid = true);
+		GfxDrawingOperation(Mesh* mesh, Material* material, uint32_t indexCount, uint32_t indexOffset, uint32_t vertexCount, uint8_t passIndex = 0, GfxBuffer* instanceBuffer = nullptr, uint32_t instanceOffset = 0, uint32_t instanceCount = 1, bool isCounterClockwise = false, bool isSolid = true);
+		GfxDrawingOperation(Mesh* mesh, GfxBuffer* vertexBufferOverride, Material* material, uint32_t indexCount, uint32_t indexOffset, uint32_t vertexCount, uint8_t passIndex = 0, GfxBuffer* instanceBuffer = nullptr, uint32_t instanceOffset = 0, uint32_t instanceCount = 1, bool isCounterClockwise = false, bool isSolid = true);
+		GfxDrawingOperation(Mesh* mesh, Material* material, uint8_t passIndex = 0, GfxBuffer* instanceBuffer = nullptr, uint32_t instanceOffset = 0, uint32_t instanceCount = 1, bool isCounterClockwise = false, bool isSolid = true);
+		GfxDrawingOperation(Mesh* mesh, GfxBuffer* vertexBufferOverride, Material* material, uint8_t passIndex = 0, GfxBuffer* instanceBuffer = nullptr, uint32_t instanceOffset = 0, uint32_t instanceCount = 1, bool isCounterClockwise = false, bool isSolid = true);
+		
 		static Material* GetValidMaterial(Material* material);
 
 		bool IsValid() const;
@@ -36,5 +36,6 @@ namespace Blueberry
 		Topology topology;
 		uint8_t passIndex;
 		bool isCounterClockwise;
+		bool isSolid;
 	};
 }

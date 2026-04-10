@@ -4,6 +4,7 @@
 #include "..\LightHelper.h"
 #include "Blueberry\Graphics\GfxTexturePool.h"
 #include "Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\GfxBuffer.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\DefaultMaterials.h"
 #include "Blueberry\Graphics\Texture.h"

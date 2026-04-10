@@ -34,7 +34,7 @@ float3 ScreenToView(float2 positionSS)
 {
 	float4 positionNdc = float4(positionSS * 2.0 - 1.0, 0.0, 1.0);
 	positionNdc.y = -positionNdc.y;	// DirectX convention ndc is flipped
-	float4 positionVS = mul(positionNdc, INVERSE_PROJECTION_MATRIX);
+	float4 positionVS = mul(INVERSE_PROJECTION_MATRIX, positionNdc);
 	positionVS.xyz /= positionVS.w;
 	return positionVS.xyz;
 }

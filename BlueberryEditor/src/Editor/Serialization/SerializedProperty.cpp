@@ -16,6 +16,11 @@ namespace Blueberry
 		return Get()->name;
 	}
 
+	const String& SerializedProperty::GetDisplayName()
+	{
+		return Get()->displayName;
+	}
+
 	BindingType SerializedProperty::GetType()
 	{
 		return Get()->bindingType;
@@ -51,9 +56,7 @@ namespace Blueberry
 	{
 		size_t id = m_SerializedObject->Get(m_Id)->children[index];
 		SerializedProperty elementProperty = SerializedProperty(m_SerializedObject, id);
-		std::stack<std::pair<size_t, uint32_t>> stack = m_Stack;
-		stack.push(std::make_pair(id, 0));
-		elementProperty.m_Stack = std::move(stack);
+		elementProperty.m_Depth = m_Depth + 1;
 		return elementProperty;
 	}
 
@@ -327,7 +330,7 @@ namespace Blueberry
 
 	size_t SerializedProperty::GetDepth()
 	{
-		return m_Stack.size();
+		return m_Depth;
 	}
 
 	SerializedProperty::SerializedProperty(SerializedObject* serializedObject, size_t id)
@@ -341,35 +344,45 @@ namespace Blueberry
 		return m_SerializedObject->Get(m_Id);
 	}
 
-	bool SerializedProperty::Next(const bool& enterChildren)
+	bool SerializedProperty::Next(bool enterChildren)
 	{
-		PropertyTreeNode* node = Get();
-		while (!m_Stack.empty())
+		while (true)
 		{
-			std::pair<size_t, uint32_t>& pair = m_Stack.top();
-			PropertyTreeNode* stackNode = m_SerializedObject->Get(pair.first);
-			if (pair.second < stackNode->children.size())
+			PropertyTreeNode* node = Get();
+			if (enterChildren)
 			{
-				size_t child = stackNode->children[pair.second++];
-				PropertyTreeNode* childNode = m_SerializedObject->Get(child);
-				if (childNode->isVisible && !childNode->isDeleted)
+				for (size_t i = 0; i < node->children.size(); ++i)
 				{
-					m_Id = child;
-					if (enterChildren)
+					size_t child = node->children[i];
+					PropertyTreeNode* childNode = m_SerializedObject->Get(child);
+					if (childNode->isVisible && !childNode->isDeleted)
 					{
-						m_Stack.push(std::make_pair(child, 0));
+						m_Id = child;
+						++m_Depth;
+						return true;
 					}
-					return true;
 				}
 			}
-			else
+
+			while (true)
 			{
-				m_Stack.pop();
-				if (!m_Stack.empty())
+				if (node->parent == UINT64_MAX)
 				{
-					return Next();
+					return false;
 				}
-				return false;
+				PropertyTreeNode* parentNode = m_SerializedObject->Get(node->parent);
+				for (size_t i = node->index + 1; i < parentNode->children.size(); ++i)
+				{
+					size_t child = parentNode->children[i];
+					PropertyTreeNode* childNode = m_SerializedObject->Get(child);
+					if (childNode->isVisible && !childNode->isDeleted)
+					{
+						m_Id = child;
+						return true;
+					}
+				}
+				node = parentNode;
+				--m_Depth;
 			}
 		}
 		return false;

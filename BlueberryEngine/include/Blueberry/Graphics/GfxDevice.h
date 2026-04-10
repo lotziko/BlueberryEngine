@@ -59,7 +59,7 @@ namespace Blueberry
 
 		static void Dispatch(GfxComputeShader* shader, uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ);
 
-		static Matrix GetGPUMatrix(const Matrix& viewProjection);
+		static Matrix GetGPUMatrix(const Matrix& matrix);
 
 		static GfxDevice* GetInstance();
 
@@ -99,7 +99,7 @@ namespace Blueberry
 
 		virtual void DispatchImpl(GfxComputeShader* shader, uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ) = 0;
 
-		virtual Matrix GetGPUMatrixImpl(const Matrix& viewProjection) const = 0;
+		virtual Matrix GetGPUMatrixImpl(const Matrix& matrix) const = 0;
 
 	private:
 		static GfxDevice* s_Instance;

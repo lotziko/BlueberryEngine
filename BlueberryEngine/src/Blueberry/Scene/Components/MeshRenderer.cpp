@@ -15,7 +15,7 @@ namespace Blueberry
 		DEFINE_FIELD(MeshRenderer, m_Mesh, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Mesh::Type).SetUpdateCallback(MethodBind::Create(&MeshRenderer::InvalidateBounds)))
 		DEFINE_FIELD(MeshRenderer, m_Materials, BindingType::ObjectPtrList, FieldOptions().SetObjectType(&Material::Type))
 		DEFINE_FIELD(MeshRenderer, m_IsBakeable, BindingType::Bool, FieldOptions())
-		DEFINE_FIELD(MeshRenderer, m_LightmapChartOffset, BindingType::Uint, FieldOptions().SetSerializationFlags(SerializationFlags::RuntimeOnly))
+		DEFINE_FIELD(MeshRenderer, m_LightmapChartOffset, BindingType::Uint, FieldOptions().SetVisibility(VisibilityType::Hidden).SetSerializationFlags(SerializationFlags::RuntimeOnly))
 		DEFINE_ITERATOR(MeshRenderer)
 		DEFINE_EXECUTE_ALWAYS()
 	}

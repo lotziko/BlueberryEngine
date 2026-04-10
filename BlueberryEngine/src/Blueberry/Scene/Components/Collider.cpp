@@ -57,11 +57,13 @@ namespace Blueberry
 				{
 					JPH::Result result = shape->ScaleShape(JPH::RVec3(std::abs(scale.x), std::abs(scale.y), std::abs(scale.z)));
 					JPH::BodyCreationSettings settings(result.Get().GetPtr(), JPH::RVec3(position.x, position.y, position.z), JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w), JPH::EMotionType::Static, 1);
+					settings.mUserData = GetObjectId();
 					m_PrivateData->bodyId = bodyInterface.CreateAndAddBody(settings, JPH::EActivation::Activate);
 				}
 				else
 				{
 					JPH::BodyCreationSettings settings(shape, JPH::RVec3(position.x, position.y, position.z), JPH::Quat(rotation.x, rotation.y, rotation.z, rotation.w), JPH::EMotionType::Static, 1);
+					settings.mUserData = GetObjectId();
 					m_PrivateData->bodyId = bodyInterface.CreateAndAddBody(settings, JPH::EActivation::Activate);
 				}
 			}
@@ -97,5 +99,10 @@ namespace Blueberry
 		{
 			bodyInterface.RemoveBody(m_PrivateData->bodyId);
 		}
+	}
+
+	PhysicsBody* Collider::GetPhysicsBody()
+	{
+		return m_PhysicsBody.Get();
 	}
 }

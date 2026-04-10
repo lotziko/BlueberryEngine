@@ -80,15 +80,18 @@ namespace Blueberry
 
 	DialogResult PlatformHelper::OpenDialog(const String& titleText, const String& contentText, const String& yesText, const String& noText, const String& cancelText)
 	{
-		TASKDIALOG_BUTTON buttons[] =
-		{
-			{ IDYES, StringHelper::StringToWide(yesText).c_str() },
-			{ IDNO, StringHelper::StringToWide(noText).c_str() },
-			{ IDCANCEL, StringHelper::StringToWide(cancelText).c_str() }
-		};
-
+		WString wyesText = StringHelper::StringToWide(yesText);
+		WString wnoText = StringHelper::StringToWide(noText);
+		WString wcancelText = StringHelper::StringToWide(cancelText);
 		WString wtitleText = StringHelper::StringToWide(titleText);
 		WString wcontentText = StringHelper::StringToWide(contentText);
+
+		TASKDIALOG_BUTTON buttons[] =
+		{
+			{ IDYES, wyesText.c_str() },
+			{ IDNO, wnoText.c_str() },
+			{ IDCANCEL, wcancelText.c_str() }
+		};
 
 		TASKDIALOGCONFIG config = {};
 		config.cbSize = sizeof(config);

@@ -20,6 +20,7 @@ ImGui::ClearOverrideEvent ImGui::Events::s_ClearedOverride = {};
 static Blueberry::List<bool> s_ChangeStack = {};
 static bool s_MixedValue = false;
 static bool s_ShowPopup = false;
+static int s_LabelIndent = 0;
 static const bool* s_MixedValueMask = {};
 static ImVector<ImRect> s_PaddingStack;
 
@@ -28,7 +29,9 @@ ImGui::PushID(label);\
 float availableWidth = ImGui::GetContentRegionAvail().x;\
 float labelWidth = std::max(150.0f, availableWidth * 0.4f);\
 float valueWidth = std::max(0.0f, availableWidth - labelWidth);\
+ImGui::SetCursorPosX(ImGui::GetCursorPosX() + s_LabelIndent);\
 ImGui::Text(label);\
+ImGui::SetCursorPosX(ImGui::GetCursorPosX() - s_LabelIndent);\
 if (ImGui::IsItemClicked(ImGuiMouseButton_Right))\
 {\
 	s_ShowPopup = true;\
@@ -72,12 +75,7 @@ ImGui::EditorStyle& ImGui::GetEditorStyle()
 
 bool ImGui::Property(Blueberry::SerializedProperty* property)
 {
-	Blueberry::String name = property->GetName();
-	if (name.rfind("m_", 0) == 0)
-	{
-		name.replace(0, 2, "");
-	}
-	return Property(property, name.c_str());
+	return Property(property, property->GetDisplayName().c_str());
 }
 
 ImVec2 GetPropertyHeight(Blueberry::SerializedProperty* property)
@@ -226,17 +224,17 @@ bool ImGui::Property(Blueberry::SerializedProperty* property, const char* label)
 	break;
 	case Blueberry::BindingType::Data:
 	{
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + s_LabelIndent);
 		ImGui::Text(label);
+		s_LabelIndent += 15;
 		Blueberry::SerializedProperty childProperty = *property;
-		size_t depth = childProperty.GetDepth() + 1;
-		while (childProperty.Next(true))
+		size_t depth = childProperty.GetDepth();
+		childProperty.Next();
+		do
 		{
-			if (childProperty.GetDepth() <= depth)
-			{
-				break;
-			}
 			ImGui::Property(&childProperty);
-		}
+		} while (childProperty.Next(false) && childProperty.GetDepth() > depth);
+		s_LabelIndent -= 15;
 	}
 	break;
 	case Blueberry::BindingType::FloatList:

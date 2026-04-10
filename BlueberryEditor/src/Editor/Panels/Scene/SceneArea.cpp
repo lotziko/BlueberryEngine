@@ -3,6 +3,7 @@
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\GfxBuffer.h"
 #include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Graphics\GfxTexturePool.h"
 

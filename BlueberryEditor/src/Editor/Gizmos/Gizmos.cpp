@@ -10,8 +10,7 @@
 
 namespace Blueberry
 {
-	Material* Gizmos::s_LineMaterial = nullptr;
-	Material* Gizmos::s_ArcMaterial = nullptr;
+	Material* Gizmos::s_GizmosMaterial = nullptr;
 	Color Gizmos::s_CurrentColor = Color();
 
 	GfxBuffer* Gizmos::s_LineVertexBuffer = nullptr;
@@ -32,24 +31,17 @@ namespace Blueberry
 
 	static VertexLayout s_LineLayout;
 	static VertexLayout s_ArcLayout;
+	static VertexLayout s_MeshLayout;
 
 	bool Gizmos::Initialize()
 	{
-		Shader* lineShader = static_cast<Shader*>(AssetLoader::Load("assets/shaders/Line.shader"));
-		if (lineShader == nullptr)
+		Shader* gizmosShader = static_cast<Shader*>(AssetLoader::Load("assets/shaders/Gizmos.shader"));
+		if (gizmosShader == nullptr)
 		{
-			BB_ERROR("Failed to load gizmo line shader.")
-				return false;
+			BB_ERROR("Failed to load gizmos shader.");
+			return false;
 		}
-		s_LineMaterial = Material::Create(lineShader);
-
-		Shader* arcShader = static_cast<Shader*>(AssetLoader::Load("assets/shaders/ArcLine.shader"));
-		if (arcShader == nullptr)
-		{
-			BB_ERROR("Failed to load gizmo arc shader.")
-				return false;
-		}
-		s_ArcMaterial = Material::Create(arcShader);
+		s_GizmosMaterial = Material::Create(gizmosShader);
 
 		s_LineLayout = VertexLayout{}
 			.Append(VertexAttribute::Position, 12)
@@ -93,16 +85,19 @@ namespace Blueberry
 
 		s_Arcs = new Arc[MAX_LINES];
 
+		s_MeshLayout = VertexLayout{}
+			.Append(VertexAttribute::Position, 12)
+			.Apply();
+
 		return true;
 	}
 
 	void Gizmos::Shutdown()
 	{
-		Material::Destroy(s_LineMaterial);
+		Material::Destroy(s_GizmosMaterial);
 		delete s_LineVertexData;
 		delete s_Lines;
 		delete s_LineVertexBuffer;
-		Material::Destroy(s_ArcMaterial);
 		delete s_ArcVertexData;
 		delete s_Arcs;
 		delete s_ArcVertexBuffer;
@@ -257,6 +252,13 @@ namespace Blueberry
 		s_Lines[s_LineCount++] = { corners[3], corners[7], s_CurrentColor };
 	}
 
+	void Gizmos::DrawMesh(GfxBuffer* vertexBuffer, GfxBuffer* indexBuffer)
+	{
+		uint32_t indexCount = indexBuffer == nullptr ? 0 : indexBuffer->GetElementCount();
+		GfxDevice::Draw(GfxDrawingOperation(vertexBuffer, indexBuffer, s_GizmosMaterial, &s_MeshLayout, indexCount, 0, vertexBuffer->GetElementCount(), Topology::TriangleList, 4, nullptr, 0, 1, false, false));
+		GfxDevice::Draw(GfxDrawingOperation(vertexBuffer, indexBuffer, s_GizmosMaterial, &s_MeshLayout, indexCount, 0, vertexBuffer->GetElementCount(), Topology::TriangleList, 5, nullptr, 0, 1, false, false));
+	}
+
 	void Gizmos::FlushLines()
 	{
 		if (s_LineCount == 0)
@@ -294,8 +296,8 @@ namespace Blueberry
 
 		s_LineVertexBuffer->SetData(s_LineVertexData, s_LineCount * 2 * s_LineVertexBuffer->GetElementSize());
 
-		GfxDevice::Draw(GfxDrawingOperation(s_LineVertexBuffer, nullptr, s_LineMaterial, &s_LineLayout, 0, 0, s_LineCount * 2, Topology::LineList, 0));
-		GfxDevice::Draw(GfxDrawingOperation(s_LineVertexBuffer, nullptr, s_LineMaterial, &s_LineLayout, 0, 0, s_LineCount * 2, Topology::LineList, 1));
+		GfxDevice::Draw(GfxDrawingOperation(s_LineVertexBuffer, nullptr, s_GizmosMaterial, &s_LineLayout, 0, 0, s_LineCount * 2, Topology::LineList, 0));
+		GfxDevice::Draw(GfxDrawingOperation(s_LineVertexBuffer, nullptr, s_GizmosMaterial, &s_LineLayout, 0, 0, s_LineCount * 2, Topology::LineList, 1));
 		
 		s_LineCount = 0;
 		s_LineVertexDataPtr = s_LineVertexData;
@@ -342,8 +344,8 @@ namespace Blueberry
 
 		s_ArcVertexBuffer->SetData(s_ArcVertexData, s_ArcCount * s_ArcVertexBuffer->GetElementSize());
 
-		GfxDevice::Draw(GfxDrawingOperation(s_ArcVertexBuffer, nullptr, s_ArcMaterial, &s_ArcLayout, 0, 0, s_ArcCount, Topology::PointList, 0));
-		GfxDevice::Draw(GfxDrawingOperation(s_ArcVertexBuffer, nullptr, s_ArcMaterial, &s_ArcLayout, 0, 1, s_ArcCount, Topology::PointList, 1));
+		GfxDevice::Draw(GfxDrawingOperation(s_ArcVertexBuffer, nullptr, s_GizmosMaterial, &s_ArcLayout, 0, 0, s_ArcCount, Topology::PointList, 2));
+		GfxDevice::Draw(GfxDrawingOperation(s_ArcVertexBuffer, nullptr, s_GizmosMaterial, &s_ArcLayout, 0, 1, s_ArcCount, Topology::PointList, 3));
 	
 		s_ArcCount = 0;
 		s_ArcVertexDataPtr = s_ArcVertexData;

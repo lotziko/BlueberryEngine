@@ -30,7 +30,7 @@ bool IsOutOfBounds(float4 position, float4 bounds)
 
 float4 TransformWorldToShadow(float3 positionWS, float4x4 worldToShadow)
 {
-	float4 positionSS = mul(float4(positionWS, 1.0), worldToShadow);
+	float4 positionSS = mul(worldToShadow, float4(positionWS, 1.0));
 	positionSS.xyz /= positionSS.w;
 	return float4(positionSS.xy, positionSS.zw);
 }

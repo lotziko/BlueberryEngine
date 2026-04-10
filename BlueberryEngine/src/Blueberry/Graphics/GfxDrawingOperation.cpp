@@ -8,7 +8,7 @@
 
 namespace Blueberry
 {
-	GfxDrawingOperation::GfxDrawingOperation(GfxBuffer* vertexBuffer, GfxBuffer* indexBuffer, Material* material, VertexLayout* layout, uint32_t indexCount, uint32_t indexOffset, uint32_t vertexCount, Topology topology, uint8_t passIndex, GfxBuffer* instanceBuffer, uint32_t instanceOffset, uint32_t instanceCount, bool isCounterClockwise)
+	GfxDrawingOperation::GfxDrawingOperation(GfxBuffer* vertexBuffer, GfxBuffer* indexBuffer, Material* material, VertexLayout* layout, uint32_t indexCount, uint32_t indexOffset, uint32_t vertexCount, Topology topology, uint8_t passIndex, GfxBuffer* instanceBuffer, uint32_t instanceOffset, uint32_t instanceCount, bool isCounterClockwise, bool isSolid)
 	{
 		// TODO move into pipeline state
 		if (vertexBuffer == nullptr || topology == Topology::Unknown)
@@ -36,21 +36,22 @@ namespace Blueberry
 		this->material = material;
 		this->passIndex = passIndex;
 		this->isCounterClockwise = isCounterClockwise;
+		this->isSolid = isSolid;
 	}
 
-	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material, uint32_t indexCount, uint32_t indexOffset, uint32_t vertexCount, uint8_t passIndex, GfxBuffer* instanceBuffer, uint32_t instanceOffset, uint32_t instanceCount, bool isCounterClockwise) : GfxDrawingOperation(mesh->m_VertexBuffer, mesh->m_IndexBuffer, material, &mesh->m_Layout, indexCount, indexOffset, vertexCount, mesh->m_Topology, passIndex, instanceBuffer, instanceOffset, instanceCount, isCounterClockwise)
+	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material, uint32_t indexCount, uint32_t indexOffset, uint32_t vertexCount, uint8_t passIndex, GfxBuffer* instanceBuffer, uint32_t instanceOffset, uint32_t instanceCount, bool isCounterClockwise, bool isSolid) : GfxDrawingOperation(mesh->m_VertexBuffer, mesh->m_IndexBuffer, material, &mesh->m_Layout, indexCount, indexOffset, vertexCount, mesh->m_Topology, passIndex, instanceBuffer, instanceOffset, instanceCount, isCounterClockwise, isSolid)
 	{
 	}
 
-	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, GfxBuffer* vertexBufferOverride, Material* material, uint32_t indexCount, uint32_t indexOffset, uint32_t vertexCount, uint8_t passIndex, GfxBuffer* instanceBuffer, uint32_t instanceOffset, uint32_t instanceCount, bool isCounterClockwise) : GfxDrawingOperation(vertexBufferOverride == nullptr ? mesh->m_VertexBuffer : vertexBufferOverride, mesh->m_IndexBuffer, material, &mesh->m_Layout, indexCount, indexOffset, vertexCount, mesh->m_Topology, passIndex, instanceBuffer, instanceOffset, instanceCount, isCounterClockwise)
+	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, GfxBuffer* vertexBufferOverride, Material* material, uint32_t indexCount, uint32_t indexOffset, uint32_t vertexCount, uint8_t passIndex, GfxBuffer* instanceBuffer, uint32_t instanceOffset, uint32_t instanceCount, bool isCounterClockwise, bool isSolid) : GfxDrawingOperation(vertexBufferOverride == nullptr ? mesh->m_VertexBuffer : vertexBufferOverride, mesh->m_IndexBuffer, material, &mesh->m_Layout, indexCount, indexOffset, vertexCount, mesh->m_Topology, passIndex, instanceBuffer, instanceOffset, instanceCount, isCounterClockwise, isSolid)
 	{
 	}
 
-	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material, uint8_t passIndex, GfxBuffer* instanceBuffer, uint32_t instanceOffset, uint32_t instanceCount, bool isCounterClockwise) : GfxDrawingOperation(mesh->m_VertexBuffer, mesh->m_IndexBuffer, material, &mesh->m_Layout, mesh->m_IndexCount, 0, mesh->m_VertexCount, mesh->m_Topology, passIndex, instanceBuffer, instanceOffset, instanceCount, isCounterClockwise)
+	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material, uint8_t passIndex, GfxBuffer* instanceBuffer, uint32_t instanceOffset, uint32_t instanceCount, bool isCounterClockwise, bool isSolid) : GfxDrawingOperation(mesh->m_VertexBuffer, mesh->m_IndexBuffer, material, &mesh->m_Layout, mesh->m_IndexCount, 0, mesh->m_VertexCount, mesh->m_Topology, passIndex, instanceBuffer, instanceOffset, instanceCount, isCounterClockwise, isSolid)
 	{
 	}
 
-	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, GfxBuffer* vertexBufferOverride, Material* material, uint8_t passIndex, GfxBuffer* instanceBuffer, uint32_t instanceOffset, uint32_t instanceCount, bool isCounterClockwise) : GfxDrawingOperation(vertexBufferOverride == nullptr ? mesh->m_VertexBuffer : vertexBufferOverride, mesh->m_IndexBuffer, material, &mesh->m_Layout, mesh->m_IndexCount, 0, mesh->m_VertexCount, mesh->m_Topology, passIndex, instanceBuffer, instanceOffset, instanceCount, isCounterClockwise)
+	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, GfxBuffer* vertexBufferOverride, Material* material, uint8_t passIndex, GfxBuffer* instanceBuffer, uint32_t instanceOffset, uint32_t instanceCount, bool isCounterClockwise, bool isSolid) : GfxDrawingOperation(vertexBufferOverride == nullptr ? mesh->m_VertexBuffer : vertexBufferOverride, mesh->m_IndexBuffer, material, &mesh->m_Layout, mesh->m_IndexCount, 0, mesh->m_VertexCount, mesh->m_Topology, passIndex, instanceBuffer, instanceOffset, instanceCount, isCounterClockwise, isSolid)
 	{
 	}
 

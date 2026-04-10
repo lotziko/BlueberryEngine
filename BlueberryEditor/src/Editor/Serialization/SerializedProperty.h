@@ -19,6 +19,7 @@ namespace Blueberry
 
 		size_t GetId();
 		const String& GetName();
+		const String& GetDisplayName();
 		BindingType GetType();
 		bool IsMixedValue();
 		bool* GetMixedMask();
@@ -74,7 +75,7 @@ namespace Blueberry
 
 		size_t GetDepth();
 
-		bool Next(const bool& enterChildren = true);
+		bool Next(bool enterChildren = true);
 		SerializedProperty FindProperty(const String& name);
 
 		SerializedObject* GetSerializedObject();
@@ -85,8 +86,8 @@ namespace Blueberry
 
 	private:
 		SerializedObject* m_SerializedObject;
-		size_t m_Id;
-		std::stack<std::pair<size_t, uint32_t>> m_Stack;
+		size_t m_Id = 0;
+		size_t m_Depth = 0;
 
 		friend class SerializedObject;
 	};

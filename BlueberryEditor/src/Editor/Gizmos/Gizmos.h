@@ -24,6 +24,7 @@ namespace Blueberry
 		static void DrawSphere(const Vector3& center, float radius);
 		static void DrawDisc(const Vector3& center, const Vector3& normal, float radius);
 		static void DrawFrustum(const Frustum& frustum);
+		static void DrawMesh(GfxBuffer* vertexBuffer, GfxBuffer* indexBuffer);
 
 	private:
 		static void FlushLines();
@@ -48,8 +49,7 @@ namespace Blueberry
 		};
 
 	private:
-		static Material* s_LineMaterial;
-		static Material* s_ArcMaterial;
+		static Material* s_GizmosMaterial;
 		static Color s_CurrentColor;
 
 		static GfxBuffer* s_LineVertexBuffer;

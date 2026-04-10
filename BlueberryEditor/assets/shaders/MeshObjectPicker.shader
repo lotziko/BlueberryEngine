@@ -30,7 +30,7 @@ Shader
 		Varyings MeshObjectPickerVertex(Attributes input)
 		{
 			Varyings output;
-			output.positionCS = mul(mul(float4(input.positionOS, 1.0f), _ModelMatrix), VIEW_PROJECTION_MATRIX);
+			output.positionCS = mul(VIEW_PROJECTION_MATRIX, mul(_ModelMatrix, float4(input.positionOS, 1.0f)));
 			return output;
 		}
 

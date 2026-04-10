@@ -54,9 +54,17 @@ namespace Blueberry
 
 	SerializedProperty SerializedObject::GetIterator()
 	{
-		SerializedProperty iterator = SerializedProperty(this, 0);
-		iterator.m_Stack.push(std::make_pair(0, 0));
-		return iterator;
+		PropertyTreeNode& rootNode = m_Nodes[0];
+		for (size_t child : rootNode.children)
+		{
+			if (m_Nodes[child].isVisible)
+			{
+				SerializedProperty iterator = SerializedProperty(this, child);
+				iterator.m_Depth = 1;
+				return iterator;
+			}
+		}
+		return SerializedProperty(this, 0);
 	}
 
 	Object* SerializedObject::GetTarget()
@@ -112,6 +120,16 @@ namespace Blueberry
 	ObjectUpdateEvent& SerializedObject::GetObjectUpdated()
 	{
 		return s_ObjectUpdated;
+	}
+
+	String GetDisplayName(const String& name)
+	{
+		String displayName = name;
+		if (displayName.rfind("m_", 0) == 0)
+		{
+			displayName.replace(0, 2, "");
+		}
+		return displayName;
 	}
 
 	void CalculateMixedMask(PropertyTreeNode* node)
@@ -235,6 +253,7 @@ namespace Blueberry
 		size_t root = Allocate();
 		PropertyTreeNode* rootNode = Get(root);
 		rootNode->name = "Root";
+		rootNode->displayName = rootNode->name;
 		rootNode->parent = EMPTY_ID;
 		rootNode->type = PropertyType::Root;
 		rootNode->isVisible = false;
@@ -260,6 +279,7 @@ namespace Blueberry
 			size_t child = Allocate();
 			PropertyTreeNode* childNode = Get(child);
 			childNode->name = fieldInfo.name;
+			childNode->displayName = GetDisplayName(fieldInfo.name);
 			childNode->parent = parent;
 			childNode->index = i;
 			childNode->fieldInfo = &fieldInfo;
@@ -335,6 +355,7 @@ namespace Blueberry
 			size_t listElement = Allocate();
 			PropertyTreeNode* listElementNode = Get(listElement);
 			listElementNode->name = "Element";
+			listElementNode->displayName = listElementNode->name;
 			listElementNode->parent = parent;
 			listElementNode->index = i;
 			listElementNode->fieldInfo = &fieldInfo;
@@ -556,6 +577,7 @@ namespace Blueberry
 			size_t child = Allocate();
 			PropertyTreeNode* childNode = Get(child);
 			childNode->name = "Element";
+			childNode->displayName = childNode->name;
 			childNode->parent = parent;
 			childNode->fieldInfo = parentNode->fieldInfo;
 			childNode->bindingType = childType;

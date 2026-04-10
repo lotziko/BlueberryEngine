@@ -36,6 +36,7 @@ namespace Blueberry
 	struct PropertyTreeNode
 	{
 		String name;
+		String displayName;
 		size_t index;
 		bool isVisible;
 		bool isDeleted;

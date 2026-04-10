@@ -23,6 +23,7 @@ project "BlueberryEditor"
 		"src",
 		"%{wks.location}/BlueberryEngine/include",
 		"%{wks.location}/BlueberryBaking/include",
+		"%{IncludeDir.jolt}",
 		"%{IncludeDir.imgui}",
 		"%{IncludeDir.imguinode}",
 		"%{IncludeDir.rapidyaml}",

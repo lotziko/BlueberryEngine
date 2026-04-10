@@ -155,13 +155,27 @@ namespace Blueberry
 				JPH::Triangle* trianglePtr = triangles.data();
 
 				Vector3 bakeScale = Vector3(scale.x > 0.0f ? 1.0f : -1.0f, scale.y > 0.0f ? 1.0f : -1.0f, scale.z > 0.0f ? 1.0f : -1.0f);
-				for (uint32_t i = 0; i < mesh->GetIndexCount(); i += 3)
+				if (scale.x * scale.y * scale.z > 0.0f)
 				{
-					Vector3 vertex1 = vertices[indices[i]] * bakeScale;
-					Vector3 vertex2 = vertices[indices[i + 1]] * bakeScale;
-					Vector3 vertex3 = vertices[indices[i + 2]] * bakeScale;
-					*trianglePtr = JPH::Triangle(JPH::Vec3(vertex1.x, vertex1.y, vertex1.z), JPH::Vec3(vertex2.x, vertex2.y, vertex2.z), JPH::Vec3(vertex3.x, vertex3.y, vertex3.z));
-					++trianglePtr;
+					for (uint32_t i = 0; i < mesh->GetIndexCount(); i += 3)
+					{
+						Vector3 vertex1 = vertices[indices[i]] * bakeScale;
+						Vector3 vertex2 = vertices[indices[i + 1]] * bakeScale;
+						Vector3 vertex3 = vertices[indices[i + 2]] * bakeScale;
+						*trianglePtr = JPH::Triangle(JPH::Vec3(vertex1.x, vertex1.y, vertex1.z), JPH::Vec3(vertex2.x, vertex2.y, vertex2.z), JPH::Vec3(vertex3.x, vertex3.y, vertex3.z));
+						++trianglePtr;
+					}
+				}
+				else
+				{
+					for (uint32_t i = 0; i < mesh->GetIndexCount(); i += 3)
+					{
+						Vector3 vertex1 = vertices[indices[i]] * bakeScale;
+						Vector3 vertex2 = vertices[indices[i + 1]] * bakeScale;
+						Vector3 vertex3 = vertices[indices[i + 2]] * bakeScale;
+						*trianglePtr = JPH::Triangle(JPH::Vec3(vertex1.x, vertex1.y, vertex1.z), JPH::Vec3(vertex3.x, vertex3.y, vertex3.z), JPH::Vec3(vertex2.x, vertex2.y, vertex2.z));
+						++trianglePtr;
+					}
 				}
 
 				JoltStreamOut joltStream(data);

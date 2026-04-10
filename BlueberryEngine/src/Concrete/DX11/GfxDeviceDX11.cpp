@@ -368,7 +368,7 @@ namespace Blueberry
 			return;
 		}
 
-		const GfxRenderStateDX11 renderState = m_StateCache.GetState(operation.material, operation.passIndex, operation.isCounterClockwise);
+		const GfxRenderStateDX11 renderState = m_StateCache.GetState(operation.material, operation.passIndex, operation.isCounterClockwise, operation.isSolid);
 		
 		if (!renderState.isValid)
 		{
@@ -601,11 +601,9 @@ namespace Blueberry
 		m_DeviceContext->CSSetUnorderedAccessViews(0, 8, m_EmptyUnorderedAccessViews, NULL);
 	}
 
-	Matrix GfxDeviceDX11::GetGPUMatrixImpl(const Matrix& viewProjection) const
+	Matrix GfxDeviceDX11::GetGPUMatrixImpl(const Matrix& matrix) const
 	{
-		Matrix copy;
-		viewProjection.Transpose(copy);
-		return copy;
+		return matrix;
 	}
 
 	ID3D11Device* GfxDeviceDX11::GetDevice()
@@ -679,7 +677,7 @@ namespace Blueberry
 			adapter,
 			adapter == NULL ? D3D_DRIVER_TYPE_HARDWARE : D3D_DRIVER_TYPE_UNKNOWN, //hardware driver
 			NULL, //software driver
-			0, //no flags	// D3D11_CREATE_DEVICE_DEBUG does not work in runtime
+			D3D11_CREATE_DEVICE_DEBUG, //no flags	// D3D11_CREATE_DEVICE_DEBUG does not work in runtime
 			NULL, //feature levels
 			0, //no feature levels
 			D3D11_SDK_VERSION,
@@ -780,9 +778,9 @@ namespace Blueberry
 		}
 	}
 
-	ID3D11RasterizerState* GfxDeviceDX11::GetRasterizerState(CullMode mode, bool isCounterClockwise)
+	ID3D11RasterizerState* GfxDeviceDX11::GetRasterizerState(CullMode mode, bool isCounterClockwise, bool isSolid)
 	{
-		size_t key = static_cast<size_t>(mode) | static_cast<size_t>(m_DepthBias) << 8 | *(reinterpret_cast<size_t*>(&m_SlopeDepthBias)) << 16 | (isCounterClockwise ? 1ull : 0ull) << 24;
+		size_t key = static_cast<size_t>(mode) | static_cast<size_t>(m_DepthBias) << 8 | *(reinterpret_cast<size_t*>(&m_SlopeDepthBias)) << 16 | (isCounterClockwise ? 1ull : 0ull) << 24 | (isSolid ? 1ull : 0ull) << 25;
 		for (auto& pair : m_RasterizerStates)
 		{
 			if (pair.first == key)
@@ -794,7 +792,7 @@ namespace Blueberry
 		D3D11_RASTERIZER_DESC rasterizerDesc;
 		ZeroMemory(&rasterizerDesc, sizeof(D3D11_RASTERIZER_DESC));
 
-		rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
+		rasterizerDesc.FillMode = isSolid ? D3D11_FILL_MODE::D3D11_FILL_SOLID : D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
 		rasterizerDesc.CullMode = static_cast<D3D11_CULL_MODE>(static_cast<uint32_t>(mode) + 1);
 		rasterizerDesc.FrontCounterClockwise = isCounterClockwise;
 		rasterizerDesc.MultisampleEnable = true;

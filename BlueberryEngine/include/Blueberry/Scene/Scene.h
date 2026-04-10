@@ -14,7 +14,7 @@ namespace Blueberry
 	class Entity;
 	class Component;
 	
-	class Scene
+	class BB_API Scene
 	{
 	public:
 		BB_OVERRIDE_NEW_DELETE

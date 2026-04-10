@@ -27,6 +27,9 @@ namespace Blueberry
 		void Move(const Quaternion& rotation);
 		void Move(const Vector3& position, const Quaternion& rotation);
 
+		void AddImpulse(const Vector3& impulse);
+		void AddImpulse(const Vector3& impulse, const Vector3& position);
+
 	private:
 		bool m_IsKinematic = false;
 

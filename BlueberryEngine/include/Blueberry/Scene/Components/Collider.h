@@ -9,6 +9,8 @@ namespace JPH
 
 namespace Blueberry
 {
+	class PhysicsBody;
+
 	class BB_API Collider : public Component
 	{
 		OBJECT_DECLARATION(Collider)
@@ -17,15 +19,19 @@ namespace Blueberry
 		Collider();
 		virtual ~Collider() = default;
 
-	private:
-		virtual JPH::Shape* GetShape() = 0;
-
 		virtual void OnCreate() final;
 		virtual void OnDestroy() final;
 		virtual void OnEnable() final;
 		virtual void OnDisable() final;
 
+		PhysicsBody* GetPhysicsBody();
+
 	private:
+		virtual JPH::Shape* GetShape() = 0;
+
+	private:
+		ObjectPtr<PhysicsBody> m_PhysicsBody;
+		
 		struct PrivateData;
 
 		PrivateData* m_PrivateData;

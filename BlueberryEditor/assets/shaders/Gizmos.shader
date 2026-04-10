@@ -7,6 +7,84 @@ Shader
 		Cull None
 
 		HLSLBEGIN
+		#pragma vertex ColorVertex
+		#pragma fragment ColorFragment
+
+		#include "Core.hlsl"
+
+		struct Attributes
+		{
+			float3 positionOS : POSITION;
+			float4 color : COLOR;
+		};
+
+		struct Varyings
+		{
+			float4 positionCS : SV_POSITION;
+			float4 color : COLOR;
+		};
+
+		Varyings ColorVertex(Attributes input)
+		{
+			Varyings output;
+			output.positionCS = mul(VIEW_PROJECTION_MATRIX, mul(_ModelMatrix, float4(input.positionOS, 1.0f)));
+			output.color = input.color;
+			return output;
+		}
+
+		float4 ColorFragment(Varyings input) : SV_TARGET
+		{
+			return input.color;
+		}
+		HLSLEND
+	}
+	Pass
+	{
+		Blend One Zero
+		ZWrite Off
+		ZTest Greater
+		Cull None
+
+		HLSLBEGIN
+		#pragma vertex ColorVertex
+		#pragma fragment ColorFragment
+
+		#include "Core.hlsl"
+
+		struct Attributes
+		{
+			float3 positionOS : POSITION;
+			float4 color : COLOR;
+		};
+
+		struct Varyings
+		{
+			float4 positionCS : SV_POSITION;
+			float4 color : COLOR;
+		};
+
+		Varyings ColorVertex(Attributes input)
+		{
+			Varyings output;
+			output.positionCS = mul(VIEW_PROJECTION_MATRIX, mul(_ModelMatrix, float4(input.positionOS, 1.0f)));
+			output.color = input.color;
+			return output;
+		}
+
+		float4 ColorFragment(Varyings input) : SV_TARGET
+		{
+			input.color.rgb *= 0.25;
+			return input.color;
+		}
+		HLSLEND
+	}
+	Pass
+	{
+		Blend One Zero
+		ZWrite Off
+		Cull None
+
+		HLSLBEGIN
 		#pragma vertex ArcLineVertex
 		#pragma geometry ArcLineGeometry
 		#pragma fragment ArcLineFragment
@@ -63,9 +141,9 @@ Shader
 			{
 				float u = cos(radians(i / segments * angle)) * radius;
 				float v = sin(radians(i / segments * angle)) * radius;
-				
+
 				FragmentVaryings p1;
-				p1.positionCS = mul(mul(float4(center + tangentOS * u + bitangentOS * v, 1.0), _ModelMatrix), VIEW_PROJECTION_MATRIX);
+				p1.positionCS = mul(VIEW_PROJECTION_MATRIX, mul(_ModelMatrix, float4(center + tangentOS * u + bitangentOS * v, 1.0)));
 				p1.color = color;
 				lineStream.Append(p1);
 			}
@@ -155,6 +233,77 @@ Shader
 		{
 			input.color.rgb *= 0.25;
 			return input.color;
+		}
+		HLSLEND
+	}
+	Pass
+	{
+		Blend One Zero
+		ZWrite Off
+		Cull None
+
+		HLSLBEGIN
+		#pragma vertex ColorVertex
+		#pragma fragment ColorFragment
+
+		#include "Core.hlsl"
+
+		struct Attributes
+		{
+			float3 positionOS : POSITION;
+		};
+
+		struct Varyings
+		{
+			float4 positionCS : SV_POSITION;
+		};
+
+		Varyings ColorVertex(Attributes input)
+		{
+			Varyings output;
+			output.positionCS = mul(VIEW_PROJECTION_MATRIX, mul(_ModelMatrix, float4(input.positionOS, 1.0f)));
+			return output;
+		}
+
+		float4 ColorFragment(Varyings input) : SV_TARGET
+		{
+			return float4(1, 1, 1, 1);
+		}
+		HLSLEND
+	}
+	Pass
+	{
+		Blend One Zero
+		ZWrite Off
+		ZTest Greater
+		Cull None
+
+		HLSLBEGIN
+		#pragma vertex ColorVertex
+		#pragma fragment ColorFragment
+
+		#include "Core.hlsl"
+
+		struct Attributes
+		{
+			float3 positionOS : POSITION;
+		};
+
+		struct Varyings
+		{
+			float4 positionCS : SV_POSITION;
+		};
+
+		Varyings ColorVertex(Attributes input)
+		{
+			Varyings output;
+			output.positionCS = mul(VIEW_PROJECTION_MATRIX, mul(_ModelMatrix, float4(input.positionOS, 1.0f)));
+			return output;
+		}
+
+		float4 ColorFragment(Varyings input) : SV_TARGET
+		{
+			return float4(0.25, 0.25, 0.25, 1);
 		}
 		HLSLEND
 	}

@@ -58,7 +58,7 @@ namespace Blueberry
 
 		virtual void DispatchImpl(GfxComputeShader* shader, uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ) final;
 
-		virtual Matrix GetGPUMatrixImpl(const Matrix& viewProjection) const final;
+		virtual Matrix GetGPUMatrixImpl(const Matrix& matrix) const final;
 
 	public:
 		ID3D11Device* GetDevice();
@@ -70,7 +70,7 @@ namespace Blueberry
 
 		void Clear();
 
-		ID3D11RasterizerState* GetRasterizerState(CullMode mode, bool isCounterClockwise);
+		ID3D11RasterizerState* GetRasterizerState(CullMode mode, bool isCounterClockwise, bool isSolid);
 		ID3D11BlendState* GetBlendState(BlendMode blendSrcColor, BlendMode blendSrcAlpha, BlendMode blendDstColor, BlendMode blendDstAlpha);
 		ID3D11DepthStencilState* GetDepthStencilState(ZTest zTest, ZWrite zWrite);
 		ID3D11SamplerState* GetSamplerState(WrapMode wrapMode, FilterMode filterMode);
