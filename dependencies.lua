@@ -13,6 +13,7 @@ IncludeDir["directxmesh"] = "%{wks.location}/BlueberryEditor/vendor/directxmesh"
 IncludeDir["cuda"] = "%{wks.location}/BlueberryBaking/vendor/cuda/include"
 IncludeDir["optix"] = "%{wks.location}/BlueberryBaking/vendor/optix/include"
 IncludeDir["xatlas"] = "%{wks.location}/BlueberryEngine/vendor/xatlas"
+IncludeDir["miniaudio"] = "%{wks.location}/BlueberryEngine/vendor/miniaudio"
 
 Library = {}
 Library["hbao"] = "%{wks.location}/BlueberryEngine/vendor/hbao/lib/GFSDK_SSAO_D3D11.win64.lib"

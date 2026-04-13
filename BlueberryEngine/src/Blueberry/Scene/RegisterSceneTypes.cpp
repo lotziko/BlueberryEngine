@@ -24,6 +24,7 @@
 #include "Blueberry\Scene\Components\SphereCollider.h"
 #include "Blueberry\Scene\Components\MeshCollider.h"
 #include "Blueberry\Scene\Components\CharacterController.h"
+#include "Blueberry\Scene\Components\AudioSource.h"
 
 namespace Blueberry
 {
@@ -51,5 +52,6 @@ namespace Blueberry
 		REGISTER_CLASS(SphereCollider);
 		REGISTER_CLASS(MeshCollider);
 		REGISTER_CLASS(CharacterController);
+		REGISTER_CLASS(AudioSource);
 	}
 }

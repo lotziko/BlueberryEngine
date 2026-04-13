@@ -115,7 +115,7 @@ namespace Blueberry
 		PropertyTreeNode* Get(size_t id);
 
 		String GetNodePath(size_t id);
-		void FindPath(PropertyTreeNode* node, List<void*>& result, size_t& offset);
+		void FindPath(PropertyTreeNode* node, List<void*>& result);
 		void ApplyModification(const PropertyModification& modification);
 
 	private:
@@ -123,7 +123,7 @@ namespace Blueberry
 		List<Object*> m_Targets = {};
 		List<ObjectPtr<Object>> m_TargetPtrs = {};
 		List<PropertyModification> m_Modifications = {};
-		List<PropertyTreeNode> m_Nodes;
+		List<PropertyTreeNode> m_Nodes = {};
 		List<bool> m_IsPrefabInstance = {};
 
 		static ObjectUpdateEvent s_ObjectUpdated;

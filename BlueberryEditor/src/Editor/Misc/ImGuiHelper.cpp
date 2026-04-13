@@ -245,17 +245,19 @@ bool ImGui::Property(Blueberry::SerializedProperty* property, const char* label)
 	case Blueberry::BindingType::ObjectPtrList:
 	case Blueberry::BindingType::DataList:
 	{
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + s_LabelIndent);
 		ImGui::Text(label);
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + s_LabelIndent);
 		ImGui::BeginChild("##list", GetPropertyHeight(property), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
 		ImGui::BeginPaddedArea(ImVec2(10, 5), ImVec2(4, 1));
 		Blueberry::SerializedProperty listProperty = *property;
 		for (size_t i = 0; i < listProperty.GetListSize(); ++i)
 		{
 			ImGui::Property(&listProperty.GetListElement(i));
-			property->Next(false);
 		}
 		ImGui::EndPaddedArea();
 		ImGui::EndChild();
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + s_LabelIndent);
 		if (ImGui::Button("+"))
 		{
 			listProperty.InsertListElement(listProperty.GetListSize());

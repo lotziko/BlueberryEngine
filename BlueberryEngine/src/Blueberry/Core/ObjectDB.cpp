@@ -187,6 +187,11 @@ namespace Blueberry
 		return s_Array.GetObjectItem(id)->object != nullptr;
 	}
 
+	bool ObjectDB::IsValid(ObjectId id)
+	{
+		return s_Array.GetObjectItem(id)->object != nullptr;
+	}
+
 	ObjectItem* ObjectDB::IdToObjectItem(ObjectId id)
 	{
 		return s_Array.GetObjectItem(id);

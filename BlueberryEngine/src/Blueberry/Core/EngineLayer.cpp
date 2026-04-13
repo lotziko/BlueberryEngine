@@ -8,6 +8,7 @@
 #include "Blueberry\Graphics\DefaultShaders.h"
 #include "Blueberry\Graphics\Skinning.h"
 #include "..\Animations\RegisterAnimationsTypes.h"
+#include "..\Audio\RegisterAudioTypes.h"
 #include "Blueberry\Scene\SceneEvents.h"
 
 namespace Blueberry
@@ -17,6 +18,7 @@ namespace Blueberry
 		RegisterSceneTypes();
 		RegisterGraphicsTypes();
 		RegisterAnimationsTypes();
+		RegisterAudioTypes();
 	}
 
 	void EngineLayer::Initialize()

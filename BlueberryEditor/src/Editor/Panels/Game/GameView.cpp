@@ -86,7 +86,7 @@ namespace Blueberry
 					camera->SetPixelSize(Vector2(viewport.width, viewport.height));
 				}
 
-				DefaultRenderer::Draw(scene, camera, Rectangle(0l, 0l, viewport.width, viewport.height), Color(0.0f, 0.0f, 0.0f, 1.0f), m_RenderTarget);
+				DefaultRenderer::Draw(scene, camera, Rectangle(0l, 0l, static_cast<long>(viewport.width), static_cast<long>(viewport.height)), Color(0.0f, 0.0f, 0.0f, 1.0f), m_RenderTarget);
 				ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(m_RenderTarget->GetHandle()), ImVec2(viewport.x, viewport.y), ImVec2(viewport.x + viewport.width, viewport.y + viewport.height), ImVec2(0.0f, 0.0f), ImVec2(viewport.width / m_RenderTarget->GetWidth(), viewport.height / m_RenderTarget->GetHeight()));
 			}
 		}

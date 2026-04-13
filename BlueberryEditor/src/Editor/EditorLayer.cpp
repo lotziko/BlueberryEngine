@@ -2,6 +2,7 @@
 
 #include "Blueberry\Core\Application.h"
 #include "Blueberry\Core\Time.h"
+#include "Blueberry\Core\Timer.h"
 #include "Blueberry\Core\EngineLayer.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\ImGuiRenderer.h"
@@ -11,6 +12,7 @@
 #include "Blueberry\Physics\Physics.h"
 #include "Blueberry\Physics\PhysicsShapeCache.h"
 #include "Blueberry\Scene\Scene.h"
+#include "Blueberry\Audio\Audio.h"
 
 #include "Editor\EditorSceneManager.h"
 #include "Editor\ProjectBuilder.h"
@@ -70,6 +72,7 @@ namespace Blueberry
 		Gizmos::Initialize();
 		IconRenderer::Initialize();
 		Physics::Initialize();
+		Audio::Initialize();
 		EditorWindow::Initialize();
 
 		WindowEvents::GetWindowResized().AddCallback<EditorLayer, &EditorLayer::OnWindowResize>(this);
@@ -88,6 +91,7 @@ namespace Blueberry
 		Gizmos::Shutdown();
 		IconRenderer::Shutdown();
 		Physics::Shutdown();
+		Audio::Shutdown();
 		GfxTexturePool::Shutdown();
 		ImGuiRenderer::Shutdown();
 		EngineLayer::Shutdown();
@@ -113,6 +117,7 @@ namespace Blueberry
 					Physics::Update(Time::GetFixedDeltaTime());
 				}
 			}
+			Audio::Update();
 		}
 	}
 
@@ -145,6 +150,7 @@ namespace Blueberry
 			if (s_FrameUpdateRequested)
 			{
 				Time::EndFrame();
+				Timer::Update();
 				GfxTexturePool::Update();
 				s_FrameUpdateRequested = false;
 			}

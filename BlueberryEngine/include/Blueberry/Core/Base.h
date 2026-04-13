@@ -7,6 +7,7 @@
 #endif
 
 #pragma warning(disable: 4251) // Hide STL dllexport warnings
+#pragma warning(disable: 26812) // Hide unscoped enum warnings
 
 #include "Blueberry\Core\Memory.h"
 #include "Blueberry\Math\Math.h"

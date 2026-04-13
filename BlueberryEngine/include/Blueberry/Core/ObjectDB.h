@@ -96,6 +96,7 @@ namespace Blueberry
 		static void AllocateId(Object* object);
 		static void FreeId(Object* object);
 		static bool IsValid(Object* object);
+		static bool IsValid(ObjectId id);
 		static ObjectItem* IdToObjectItem(ObjectId id);
 		static Object* GetObject(ObjectId id);
 		static ObjectView GetObjects(TypeId type, SearchObjectType searchType = SearchObjectType::Any);

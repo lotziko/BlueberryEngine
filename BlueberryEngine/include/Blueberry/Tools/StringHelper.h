@@ -15,6 +15,7 @@ namespace Blueberry
 		static void Replace(String& str, const String& from, const String& to);
 		static void Split(const char* data, const char symbol, List<String>& result);
 		static int32_t HasSubstring(const String& str1, const String& str2);
+		static bool EndsWith(const String& str1, const String& str2);
 		static WString StringToWide(const String& str);
 		static String WideToString(const WString& wstr);
 		static String ToString(const std::filesystem::path& path);

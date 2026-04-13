@@ -12,7 +12,7 @@ namespace Blueberry
 
 	class TextureCube;
 
-	class ReflectionProbe : public Component
+	class BB_API ReflectionProbe : public Component
 	{
 		OBJECT_DECLARATION(ReflectionProbe)
 

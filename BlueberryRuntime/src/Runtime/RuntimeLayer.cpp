@@ -1,6 +1,7 @@
 #include "RuntimeLayer.h"
 
 #include "Blueberry\Core\Time.h"
+#include "Blueberry\Core\Timer.h"
 #include "Blueberry\Core\Screen.h"
 #include "Blueberry\Core\Application.h"
 #include "Blueberry\Core\Window.h"
@@ -14,6 +15,7 @@
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Input\Cursor.h"
 #include "Blueberry\Input\Input.h"
+#include "Blueberry\Audio\Audio.h"
 
 #include "Runtime\RuntimeLoader.h"
 #include "Runtime\Assets\RuntimeAssetLoader.h"
@@ -29,6 +31,7 @@ namespace Blueberry
 		EngineLayer::Register();
 		Physics::Initialize();
 		Physics::Enable();
+		Audio::Initialize();
 		AssetLoader::Initialize(new RuntimeAssetLoader());
 		PhysicsShapeCache::Initialize(new RuntimePhysicsShapeCache());
 		RuntimeLoader::Load(m_Scene);
@@ -45,6 +48,7 @@ namespace Blueberry
 	{
 		Physics::Disable();
 		Physics::Shutdown();
+		Audio::Shutdown();
 		GfxTexturePool::Shutdown();
 		EngineLayer::Shutdown();
 		ImGuiRenderer::Shutdown();
@@ -57,6 +61,7 @@ namespace Blueberry
 	{
 		m_Scene->FixedUpdate();
 		Physics::Update(Time::GetFixedDeltaTime());
+		Audio::Update();
 	}
 
 	void RuntimeLayer::OnDraw()
@@ -80,6 +85,7 @@ namespace Blueberry
 		GfxDevice::SwapBuffers();
 
 		Time::EndFrame();
+		Timer::Update();
 		GfxTexturePool::Update();
 		EngineLayer::Update();
 	}

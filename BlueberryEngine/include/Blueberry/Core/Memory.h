@@ -185,6 +185,7 @@ namespace Blueberry
 	using String = std::basic_string<char, std::char_traits<char>, STLAllocator<char>>;
 	using WString = std::basic_string<wchar_t, std::char_traits<wchar_t>, STLAllocator<wchar_t>>;
 	using StringStream = std::basic_stringstream<char, std::char_traits<char>, STLAllocator<char>>;
+	using ByteData = List<uint8_t>;
 }
 
 #define BB_OVERRIDE_NEW_DELETE													\

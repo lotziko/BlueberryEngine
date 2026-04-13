@@ -528,10 +528,22 @@ namespace Blueberry
 		}
 		if (node.bindingType == BindingType::DataList)
 		{
+			List<void*> listTargets;
 			List<void*> targets;
-			size_t offset;
-			FindPath(&m_Nodes[child], targets, offset);
-			BuildProperties(child, ClassDB::GetInfo(*node.fieldInfo->options.objectType), targets, false);
+			FindPath(&node, listTargets);
+			// Temporary add an element to build properties
+			for (size_t i = 0; i < listTargets.size(); ++i)
+			{
+				ListBase* list = static_cast<ListBase*>(listTargets[i]);
+				list->insert_base(index);
+				targets.push_back(list->get_base(index));
+			}
+			BuildProperties(child, ClassDB::GetInfo(*node.fieldInfo->options.objectType), targets, true);
+			for (size_t i = 0; i < listTargets.size(); ++i)
+			{
+				ListBase* list = static_cast<ListBase*>(listTargets[i]);
+				list->erase_base(index);
+			}
 		}
 		AddModifiedProperty(id, PropertyModificationType::Insert, index);
 	}
@@ -634,12 +646,11 @@ namespace Blueberry
 		return result;
 	}
 
-	void SerializedObject::FindPath(PropertyTreeNode* node, List<void*>& result, size_t& offset)
+	void SerializedObject::FindPath(PropertyTreeNode* node, List<void*>& result)
 	{
 		size_t size = m_Targets.size();
 		List<PropertyTreeNode*> path;
 		PropertyTreeNode* currentNode = node;
-		PropertyTreeNode* parentNode = nullptr;
 		while (currentNode->type != PropertyType::Root)
 		{
 			path.push_back(currentNode);
@@ -651,40 +662,52 @@ namespace Blueberry
 			result.push_back(m_Targets[i]);
 		}
 		int pathSize = static_cast<int>(path.size());
-		offset = 0;
-
+		
 		for (int i = pathSize - 1; i >= 0; --i)
 		{
 			currentNode = path[i];
-			const FieldInfo* fieldInfo = currentNode->fieldInfo;
-			// TODO check data
-			if (parentNode != nullptr && parentNode->type == PropertyType::List)
+			if (currentNode->type == PropertyType::List)
 			{
-				offset = 0;
+				const FieldInfo* fieldInfo = currentNode->fieldInfo;
+				if (i > 0)
+				{
+					PropertyTreeNode* nextNode = path[i - 1];
+					if (nextNode->type == PropertyType::Value)
+					{
+						i -= 1;
+						for (size_t j = 0; j < size; ++j)
+						{
+							ListBase* list = fieldInfo->Get<ListBase>(result[j]);
+							result[j] = list->get_base(nextNode->index);
+						}
+						continue;
+					}
+				}
 				for (size_t j = 0; j < size; ++j)
 				{
-					ListBase* list = parentNode->fieldInfo->Get<ListBase>(result[j]);
-					result[j] = list->get_base(currentNode->index);
+					result[j] = (static_cast<char*>(result[j]) + fieldInfo->offset);
 				}
 			}
-			else
+			else if (currentNode->type == PropertyType::Data || currentNode->type == PropertyType::Value)
 			{
-				offset += fieldInfo->offset;
+				const FieldInfo* fieldInfo = currentNode->fieldInfo;
+				for (size_t j = 0; j < size; ++j)
+				{
+					result[j] = (static_cast<char*>(result[j]) + fieldInfo->offset);
+				}
 			}
-			parentNode = currentNode;
 		}
 	}
 
 	void SerializedObject::ApplyModification(const PropertyModification& modification)
 	{
 		PropertyTreeNode* node = Get(modification.id);
-		size_t offset = 0;
 		switch (modification.type)
 		{
 		case PropertyModificationType::Value:
 		{
 			List<void*> targets;
-			FindPath(node, targets, offset);
+			FindPath(node, targets);
 			const FieldInfo* fieldInfo = node->fieldInfo;
 			MethodBind* callback = fieldInfo->options.updateCallback;
 			for (size_t i = 0; i < node->values.size(); ++i)
@@ -698,7 +721,7 @@ namespace Blueberry
 						PrefabManager::AddModification(m_Targets[i], GetNodePath(modification.id), node->values[i]);
 					}
 				}
-				VariantHelper::WriteValue(node->bindingType, static_cast<char*>(targets[i]) + offset, node->values[i]);
+				VariantHelper::WriteValue(node->bindingType, targets[i], node->values[i]);
 				if (callback != nullptr)
 				{
 					callback->Invoke(m_Targets[i]);
@@ -740,11 +763,10 @@ namespace Blueberry
 		case PropertyModificationType::Insert:
 		{
 			List<void*> targets;
-			FindPath(node, targets, offset);
-			const FieldInfo* fieldInfo = node->fieldInfo;
+			FindPath(node, targets);
 			for (size_t i = 0; i < targets.size(); ++i)
 			{
-				ListBase* list = reinterpret_cast<ListBase*>(static_cast<char*>(targets[i]) + offset);
+				ListBase* list = reinterpret_cast<ListBase*>(targets[i]);
 				list->insert_base(modification.index1);
 			}
 		}
@@ -752,11 +774,10 @@ namespace Blueberry
 		case PropertyModificationType::Delete:
 		{
 			List<void*> targets;
-			FindPath(node, targets, offset);
-			const FieldInfo* fieldInfo = node->fieldInfo;
+			FindPath(node, targets);
 			for (size_t i = 0; i < targets.size(); ++i)
 			{
-				ListBase* list = reinterpret_cast<ListBase*>(static_cast<char*>(targets[i]) + offset);
+				ListBase* list = reinterpret_cast<ListBase*>(targets[i]);
 				list->erase_base(modification.index1);
 			}
 			node->children.erase(node->children.begin() + modification.index1);
@@ -765,11 +786,10 @@ namespace Blueberry
 		case PropertyModificationType::Move:
 		{
 			List<void*> targets;
-			FindPath(node, targets, offset);
-			const FieldInfo* fieldInfo = node->fieldInfo;
+			FindPath(node, targets);
 			for (size_t i = 0; i < targets.size(); ++i)
 			{
-				ListBase* list = reinterpret_cast<ListBase*>(static_cast<char*>(targets[i]) + offset);
+				ListBase* list = reinterpret_cast<ListBase*>(targets[i]);
 				list->move_element_base(modification.index1, modification.index2);
 			}
 		}
@@ -779,11 +799,10 @@ namespace Blueberry
 			if (node->children.size() > 0)
 			{
 				List<void*> targets;
-				FindPath(node, targets, offset);
-				const FieldInfo* fieldInfo = node->fieldInfo;
+				FindPath(node, targets);
 				for (size_t i = 0; i < targets.size(); ++i)
 				{
-					ListBase* list = reinterpret_cast<ListBase*>(static_cast<char*>(targets[i]) + offset);
+					ListBase* list = reinterpret_cast<ListBase*>(targets[i]);
 					list->clear_base();
 				}
 				node->children.clear();

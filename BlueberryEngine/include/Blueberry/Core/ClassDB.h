@@ -62,7 +62,22 @@ namespace Blueberry
 
 	inline bool IsList(const BindingType& type)
 	{
-		return (type == BindingType::ObjectPtrList || type == BindingType::DataList || type == BindingType::StringList || type == BindingType::IntList || type == BindingType::FloatList);
+		switch (type)
+		{
+		case BindingType::ByteData:
+		case BindingType::IntList:
+		case BindingType::FloatList:
+		case BindingType::StringList:
+		case BindingType::Vector2List:
+		case BindingType::Vector3List:
+		case BindingType::Vector4List:
+		case BindingType::QuaternionList:
+		case BindingType::MatrixList:
+		case BindingType::ObjectPtrList:
+		case BindingType::DataList:
+			return true;
+		}
+		return false;
 	}
 
 	enum class BB_API VisibilityType

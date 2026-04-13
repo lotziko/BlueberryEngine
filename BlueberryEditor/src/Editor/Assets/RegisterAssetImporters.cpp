@@ -8,6 +8,7 @@
 #include "Editor\Assets\Importers\NativeAssetImporter.h"
 #include "Editor\Assets\Importers\PrefabImporter.h"
 #include "Editor\Assets\Importers\ModelImporter.h"
+#include "Editor\Assets\Importers\AudioImporter.h"
 #include "Editor\Assets\Importers\FolderImporter.h"
 #include "Blueberry\Core\ClassDB.h"
 
@@ -25,6 +26,7 @@ namespace Blueberry
 		REGISTER_DATA_CLASS(ModelMaterialData);
 		REGISTER_DATA_CLASS(ModelAnimationClipData);
 		REGISTER_CLASS(ModelImporter);
+		REGISTER_CLASS(AudioImporter);
 		REGISTER_CLASS(FolderImporter);
 
 		REGISTER_ASSET_IMPORTER(".png", TextureImporter::Type);
@@ -40,6 +42,8 @@ namespace Blueberry
 		REGISTER_ASSET_IMPORTER(".animgraph", NativeAssetImporter::Type);
 		REGISTER_ASSET_IMPORTER(".asset", NativeAssetImporter::Type);
 		REGISTER_ASSET_IMPORTER(".fbx", ModelImporter::Type);
+		REGISTER_ASSET_IMPORTER(".mp3", AudioImporter::Type);
+		REGISTER_ASSET_IMPORTER(".wav", AudioImporter::Type);
 		REGISTER_ASSET_IMPORTER("", FolderImporter::Type);
 	}
 }

@@ -23,6 +23,8 @@ project "BlueberryEngine"
 		"vendor/rpmalloc/**.cpp",
 		"vendor/xatlas/**.h",
 		"vendor/xatlas/**.cpp",
+		"vendor/miniaudio/**.h",
+		"vendor/miniaudio/**.c",
 	}
 
 	includedirs
@@ -35,6 +37,7 @@ project "BlueberryEngine"
 		"%{IncludeDir.openxr}",
 		"%{IncludeDir.flathashmap}",
 		"%{IncludeDir.rpmalloc}",
+		"%{IncludeDir.miniaudio}",
 	}
 
 	links

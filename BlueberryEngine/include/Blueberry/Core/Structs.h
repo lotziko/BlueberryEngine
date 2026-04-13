@@ -5,8 +5,6 @@
 
 namespace Blueberry
 {
-	using ByteData = Blueberry::List<uint8_t>;
-
 	struct ObjectPtrData
 	{
 		FileId fileId;

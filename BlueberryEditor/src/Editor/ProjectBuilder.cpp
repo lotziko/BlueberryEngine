@@ -11,12 +11,14 @@
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\ComputeShader.h"
 #include "Blueberry\Graphics\Mesh.h"
+#include "Blueberry\Audio\AudioClip.h"
 #include "Blueberry\Scene\LightingSettings.h"
 
 #include "Editor\Assets\EditorAssetLoader.h"
 #include "Editor\Assets\Importers\ShaderImporter.h"
 #include "Editor\Assets\Importers\ComputeShaderImporter.h"
 #include "Editor\Assets\Importers\TextureImporter.h"
+#include "Editor\Assets\Importers\AudioImporter.h"
 #include "Editor\Assets\AssemblyManager.h"
 #include "Editor\EditorSceneManager.h"
 #include "Editor\Scene\SceneSettings.h"
@@ -116,6 +118,20 @@ namespace Blueberry
 						context.resourcesStream.write(reinterpret_cast<char*>(data.data()), size);
 					}
 				}
+			}
+		}
+		else if (type == AudioClip::Type)
+		{
+			String audioClipPath = AudioImporter::GetAudioPath(guid);
+			if (std::filesystem::exists(audioClipPath))
+			{
+				List<uint8_t> data;
+				FileHelper::Load(data, audioClipPath);
+				size_t size = data.size();
+				context.resourceBlobOffsets.insert_or_assign(guid, context.resourcesStream.tellp());
+				context.resourcesStream.write(reinterpret_cast<char*>(&guid), sizeof(Guid));
+				context.resourcesStream.write(reinterpret_cast<char*>(&size), sizeof(size_t));
+				context.resourcesStream.write(reinterpret_cast<char*>(data.data()), size);
 			}
 		}
 	}

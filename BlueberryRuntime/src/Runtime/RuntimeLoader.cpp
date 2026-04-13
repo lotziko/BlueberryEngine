@@ -9,6 +9,7 @@
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\ComputeShader.h"
 #include "Blueberry\Graphics\Mesh.h"
+#include "Blueberry\Audio\AudioClip.h"
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Scene\SceneEvents.h"
@@ -162,6 +163,15 @@ namespace Blueberry
 			{
 				blob.Reset();
 			}
+		}
+		else if (type == AudioClip::Type)
+		{
+			AudioClip* audioClip = static_cast<AudioClip*>(object);
+			size_t size;
+			resourcesStream.read(reinterpret_cast<char*>(&size), sizeof(size_t));
+			data.resize(size);
+			resourcesStream.read(reinterpret_cast<char*>(data.data()), size);
+			audioClip->Initialize(data);
 		}
 	}
 

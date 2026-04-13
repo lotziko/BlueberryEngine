@@ -90,7 +90,6 @@ void childclass::DefineFields()														\
 		template<class ObjectType>
 		static ObjectType* Create();
 
-		static Object* Clone(Object* object);
 		static void Destroy(Object* object);
 
 	protected:

@@ -108,13 +108,11 @@ namespace Blueberry
 
 		for (auto& pair : m_ComponentsEditors)
 		{
+			ImGui::PushID(pair.first);
+
 			String name = ObjectDB::GetObject(pair.first)->GetTypeName();
-			const char* headerId = name.c_str();
-
-			ImGui::PushID(headerId);
-
 			ImGui::SetNextItemOpen(InspectorExpandedItemsCache::Get(name));
-			bool opened = ImGui::CollapsingHeader(headerId);
+			bool opened = ImGui::CollapsingHeader(name.c_str());
 			if (ImGui::IsItemToggledOpen())
 			{
 				InspectorExpandedItemsCache::Set(name, opened);

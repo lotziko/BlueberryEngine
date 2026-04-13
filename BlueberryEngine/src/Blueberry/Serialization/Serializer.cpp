@@ -12,6 +12,7 @@
 #include <fstream>
 #include <iomanip>
 #include <random>
+#include <filesystem>
 
 namespace Blueberry
 {
@@ -25,8 +26,8 @@ namespace Blueberry
 		{
 			m_FileIdToObjectId.clear();
 		}
-		
-		std::ofstream stream(path.data(), std::ios::out | std::ofstream::binary);
+
+		std::ofstream stream("temp", std::ios::out | std::ofstream::binary);
 		if (stream.is_open())
 		{
 			while ((m_CurrentObject = GetNextObjectToSerialize()) != nullptr)
@@ -54,6 +55,8 @@ namespace Blueberry
 				BinaryWriter::Write(m_Trees, stream, hasGuids);
 			}
 			stream.close();
+			std::filesystem::copy_file("temp", path, std::filesystem::copy_options::overwrite_existing);
+			std::filesystem::remove("temp");
 		}
 	}
 

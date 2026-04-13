@@ -6,8 +6,8 @@ namespace Blueberry
 {
 	RectangleFloat CameraHelper::CalculateViewport(Camera* camera, const Rectangle& area)
 	{
-		Vector2 pos = Vector2(area.x, area.y);
-		Vector2 size = Vector2(area.width, area.height);
+		Vector2 pos = Vector2(static_cast<float>(area.x), static_cast<float>(area.y));
+		Vector2 size = Vector2(static_cast<float>(area.width), static_cast<float>(area.height));
 		float areaAspectRatio = size.x / size.y;
 		float cameraAspectRatio = camera->GetAspectRatio();
 

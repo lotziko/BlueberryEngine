@@ -54,7 +54,7 @@ namespace Blueberry
 		Vector4 position = transform->GetPosition();
 
 		Frustum frustum = {};
-		frustum.CreateFromMatrix(frustum, projection, false);
+		frustum.CreateFromMatrix(frustum, projection);
 		frustum.Transform(frustum, inverseView);
 
 		Vector3 corners[8];

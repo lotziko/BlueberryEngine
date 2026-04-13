@@ -13,6 +13,7 @@
 #include "Blueberry\Graphics\Mesh.h"
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\ComputeShader.h"
+#include "Blueberry\Audio\AudioClip.h"
 #include "Blueberry\Tools\FileHelper.h"
 
 #include "Editor\Assets\AssetDB.h"
@@ -24,6 +25,7 @@
 #include "Editor\Assets\Importers\ShaderImporter.h"
 #include "Editor\Assets\Importers\ComputeShaderImporter.h"
 #include "Editor\Assets\Importers\TextureImporter.h"
+#include "Editor\Assets\Importers\AudioImporter.h"
 
 #include <fstream>
 
@@ -35,7 +37,7 @@ namespace Blueberry
 		bool hasHeaders = (flags & SerializationFlags::HasHeaders) != SerializationFlags::None;
 		bool hasGuids = (flags & SerializationFlags::HasGuids) != SerializationFlags::None;
 
-		std::ofstream stream(path.data(), std::ios::out | std::ofstream::binary);
+		std::ofstream stream("temp", std::ios::out | std::ofstream::binary);
 		if (stream.is_open())
 		{
 			for (ObjectId id : m_ObjectsToSerialize)
@@ -89,6 +91,8 @@ namespace Blueberry
 				BinaryWriter::Write(m_Trees, stream, hasGuids);
 			}
 			stream.close();
+			std::filesystem::copy_file("temp", path, std::filesystem::copy_options::overwrite_existing);
+			std::filesystem::remove("temp");
 		}
 	}
 
@@ -311,6 +315,14 @@ namespace Blueberry
 			{
 				shader->Initialize(processor.GetShaders());
 			}
+		}
+		else if (type == AudioClip::Type)
+		{
+			AudioClip* audioClip = static_cast<AudioClip*>(object);
+			String audioClipPath = AudioImporter::GetAudioPath(guid);
+			List<uint8_t> data;
+			FileHelper::Load(data, audioClipPath);
+			audioClip->Initialize(data);
 		}
 		object->SetState(ObjectState::Default);
 	}

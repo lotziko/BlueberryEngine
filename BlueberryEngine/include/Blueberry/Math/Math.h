@@ -374,6 +374,11 @@ namespace Blueberry
 			return a + GetRandomFloat01()*(b - a);
 		}
 
+		static inline int GetRandomInt(int a, int b)
+		{
+			return a + rand() % (b - a);
+		}
+
 		// https://github.com/Auburn/FastNoiseLite/blob/master/Cpp/FastNoiseLite.h
 		static inline float PerlinNoise(float x, float y)
 		{

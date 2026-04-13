@@ -51,12 +51,22 @@ namespace Blueberry
 				{
 					for (auto& entry : std::filesystem::recursive_directory_iterator(path))
 					{
-						pathsToCheck.insert(StringHelper::ToString(entry.path()));
+						String pathString = StringHelper::ToString(entry.path());
+						if (StringHelper::EndsWith(pathString, ".meta"))
+						{
+							pathString = pathString.substr(0, pathString.size() - 5);
+						}
+						pathsToCheck.insert(pathString);
 					}
 				}
 				else
 				{
-					pathsToCheck.insert(StringHelper::ToString(path));
+					String pathString = StringHelper::ToString(path);
+					if (StringHelper::EndsWith(pathString, ".meta"))
+					{
+						pathString = pathString.substr(0, pathString.size() - 5);
+					}
+					pathsToCheck.insert(pathString);
 				}
 			}
 		}

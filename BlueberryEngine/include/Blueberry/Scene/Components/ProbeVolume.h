@@ -4,7 +4,7 @@
 
 namespace Blueberry
 {
-	class ProbeVolume : public Component
+	class BB_API ProbeVolume : public Component
 	{
 		OBJECT_DECLARATION(ProbeVolume)
 

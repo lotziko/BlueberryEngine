@@ -110,98 +110,119 @@ namespace Blueberry
 	void ReadValue(SerializationNodeConstRef& ref, bool& value)
 	{
 		SerializationNode& node = ref.Get();
-		if (ref.tree->isText)
+		if (node.value.size() > 0)
 		{
-			const char* text = node.value.data();
-			value = (strcmp(text, "1") == 0);
-		}
-		else
-		{
-			memcpy(&value, node.value.data(), sizeof(bool));
+			if (ref.tree->isText)
+			{
+				const char* text = node.value.data();
+				value = (strcmp(text, "1") == 0);
+			}
+			else
+			{
+				memcpy(&value, node.value.data(), sizeof(bool));
+			}
 		}
 	}
 
 	void ReadValue(SerializationNodeConstRef& ref, float& value)
 	{
 		SerializationNode& node = ref.Get();
-		if (ref.tree->isText)
+		if (node.value.size() > 0)
 		{
-			const char* text = node.value.data();
-			value = strtof(text, nullptr);
-		}
-		else
-		{
-			memcpy(&value, node.value.data(), sizeof(float));
+			if (ref.tree->isText)
+			{
+				const char* text = node.value.data();
+				value = strtof(text, nullptr);
+			}
+			else
+			{
+				memcpy(&value, node.value.data(), sizeof(float));
+			}
 		}
 	}
 
 	void ReadValue(SerializationNodeConstRef& ref, int& value)
 	{
 		SerializationNode& node = ref.Get();
-		if (ref.tree->isText)
+		if (node.value.size() > 0)
 		{
-			const char* text = node.value.data();
-			value = static_cast<int>(strtol(text, nullptr, 10));
-		}
-		else
-		{
-			memcpy(&value, node.value.data(), sizeof(int));
+			if (ref.tree->isText)
+			{
+				const char* text = node.value.data();
+				value = static_cast<int>(strtol(text, nullptr, 10));
+			}
+			else
+			{
+				memcpy(&value, node.value.data(), sizeof(int));
+			}
 		}
 	}
 
 	void ReadValue(SerializationNodeConstRef& ref, unsigned int& value)
 	{
 		SerializationNode& node = ref.Get();
-		if (ref.tree->isText)
+		if (node.value.size() > 0)
 		{
-			const char* text = node.value.data();
-			value = static_cast<uint32_t>(strtol(text, nullptr, 10));
-		}
-		else
-		{
-			memcpy(&value, node.value.data(), sizeof(unsigned int));
+			if (ref.tree->isText)
+			{
+				const char* text = node.value.data();
+				value = static_cast<uint32_t>(strtol(text, nullptr, 10));
+			}
+			else
+			{
+				memcpy(&value, node.value.data(), sizeof(unsigned int));
+			}
 		}
 	}
 
 	void ReadValue(SerializationNodeConstRef& ref, long& value)
 	{
 		SerializationNode& node = ref.Get();
-		if (ref.tree->isText)
+		if (node.value.size() > 0)
 		{
-			const char* text = node.value.data();
-			value = strtol(text, nullptr, 10);
-		}
-		else
-		{
-			memcpy(&value, node.value.data(), sizeof(long));
+			if (ref.tree->isText)
+			{
+				const char* text = node.value.data();
+				value = strtol(text, nullptr, 10);
+			}
+			else
+			{
+				memcpy(&value, node.value.data(), sizeof(long));
+			}
 		}
 	}
 
 	void ReadValue(SerializationNodeConstRef & ref, long long& value)
 	{
 		SerializationNode& node = ref.Get();
-		if (ref.tree->isText)
+		if (node.value.size() > 0)
 		{
-			const char* text = node.value.data();
-			value = strtoll(text, nullptr, 10);
-		}
-		else
-		{
-			memcpy(&value, node.value.data(), sizeof(long long));
+			if (ref.tree->isText)
+			{
+				const char* text = node.value.data();
+				value = strtoll(text, nullptr, 10);
+			}
+			else
+			{
+				memcpy(&value, node.value.data(), sizeof(long long));
+			}
 		}
 	}
 
 	void ReadValue(SerializationNodeConstRef& ref, unsigned long long& value)
 	{
 		SerializationNode& node = ref.Get();
-		if (ref.tree->isText)
+		if (node.value.size() > 0)
 		{
-			const char* text = node.value.data();
-			value = strtoull(text, nullptr, 10);
-		}
-		else
-		{
-			memcpy(&value, node.value.data(), sizeof(unsigned long long));
+			if (ref.tree->isText)
+			{
+				const char* text = node.value.data();
+				value = strtoull(text, nullptr, 10);
+			}
+			else
+			{
+				memcpy(&value, node.value.data(), sizeof(unsigned long long));
+			}
 		}
 	}
 
@@ -302,28 +323,34 @@ namespace Blueberry
 	void ReadValue(SerializationNodeConstRef& ref, Matrix& value)
 	{
 		SerializationNode& node = ref.Get();
-		if (ref.tree->isText)
+		if (node.value.size() > 0)
 		{
-			size_t size = node.value.size() - 1;
-			ByteConverter::HexStringToBytes(node.value.data(), value.m, size);
-		}
-		else
-		{
-			memcpy(&value, node.value.data(), sizeof(Matrix));
+			if (ref.tree->isText)
+			{
+				size_t size = node.value.size() - 1;
+				ByteConverter::HexStringToBytes(node.value.data(), value.m, size);
+			}
+			else
+			{
+				memcpy(&value, node.value.data(), sizeof(Matrix));
+			}
 		}
 	}
 
 	void ReadValue(SerializationNodeConstRef& ref, Guid& value)
 	{
 		SerializationNode& node = ref.Get();
-		if (ref.tree->isText)
+		if (node.value.size() > 0)
 		{
-			size_t size = node.value.size() - 1;
-			ByteConverter::HexStringToBytes(node.value.data(), value.data, size);
-		}
-		else
-		{
-			memcpy(&value, node.value.data(), sizeof(Guid));
+			if (ref.tree->isText)
+			{
+				size_t size = node.value.size() - 1;
+				ByteConverter::HexStringToBytes(node.value.data(), value.data, size);
+			}
+			else
+			{
+				memcpy(&value, node.value.data(), sizeof(Guid));
+			}
 		}
 	}
 

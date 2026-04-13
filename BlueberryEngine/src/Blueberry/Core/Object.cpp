@@ -2,7 +2,6 @@
 
 #include "Blueberry\Core\ObjectDB.h"
 #include "Blueberry\Core\ClassDB.h"
-#include "Blueberry\Core\ObjectCloner.h"
 
 namespace Blueberry
 {
@@ -59,11 +58,6 @@ namespace Blueberry
 	void Object::DefineFields()
 	{
 		DEFINE_FIELD(Object, m_Name, BindingType::String, FieldOptions().SetVisibility(VisibilityType::Hidden))
-	}
-
-	Object* Object::Clone(Object* object)
-	{
-		return ObjectCloner::Clone(object);
 	}
 
 	void Object::Destroy(Object* object)

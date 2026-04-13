@@ -5,12 +5,13 @@
 #include "Blueberry\Serialization\YamlWriter.h"
 
 #include <fstream>
+#include <filesystem>
 
 namespace Blueberry
 {
 	void MetaSerializer::Serialize(const String& path, SerializationFlags flags)
 	{
-		std::ofstream stream(path.data(), std::ios::out | std::ofstream::binary);
+		std::ofstream stream("temp", std::ios::out | std::ofstream::binary);
 		if (stream.is_open())
 		{
 			SerializationTree tree = {};
@@ -27,6 +28,8 @@ namespace Blueberry
 			m_Trees.push_back(std::move(tree));
 			YamlWriter::Write(m_Trees, stream, false);
 			stream.close();
+			std::filesystem::copy_file("temp", path, std::filesystem::copy_options::overwrite_existing);
+			std::filesystem::remove("temp");
 		}
 	}
 

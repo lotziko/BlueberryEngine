@@ -306,7 +306,7 @@ namespace Blueberry
 		Matrix view = cameraData.isMultiview ? cameraData.multiviewViewMatrix[0].Invert() : camera->GetInverseViewMatrix();
 		Matrix projection = cameraData.isMultiview ? cameraData.multiviewProjectionMatrix[0] : camera->GetProjectionMatrix();
 		Frustum cameraFrustum;
-		cameraFrustum.CreateFromMatrix(cameraFrustum, projection, false);
+		cameraFrustum.CreateFromMatrix(cameraFrustum, projection);
 		cameraFrustum.Transform(cameraFrustum, view);
 
 		CullingResults::CullerInfo cameraFrustumInfo = {};
@@ -444,7 +444,7 @@ namespace Blueberry
 								float farPlane = planes[i + 1];
 
 								Frustum cameraSliceFrustum;
-								cameraSliceFrustum.CreateFromMatrix(cameraSliceFrustum, Matrix::CreatePerspectiveFieldOfView(Math::ToRadians(camera->GetFieldOfView()), camera->GetAspectRatio(), nearPlane, farPlane), false);
+								cameraSliceFrustum.CreateFromMatrix(cameraSliceFrustum, Matrix::CreatePerspectiveFieldOfView(Math::ToRadians(camera->GetFieldOfView()), camera->GetAspectRatio(), nearPlane, farPlane));
 								cameraSliceFrustum.Transform(cameraSliceFrustum, view);
 
 								// Find near and far planes
@@ -529,7 +529,7 @@ namespace Blueberry
 						Matrix projection = LightHelper::GetProjectionMatrix(light);
 
 						Frustum lightFrustum;
-						lightFrustum.CreateFromMatrix(lightFrustum, projection, false);
+						lightFrustum.CreateFromMatrix(lightFrustum, projection);
 						lightFrustum.Transform(lightFrustum, transform->GetLocalToWorldMatrix());
 
 						lightFrustum.GetPlanes(&lightCullerInfo.planes[0], &lightCullerInfo.planes[1], &lightCullerInfo.planes[2], &lightCullerInfo.planes[3], &lightCullerInfo.planes[4], &lightCullerInfo.planes[5]);
@@ -545,7 +545,7 @@ namespace Blueberry
 						{
 							Matrix view = LightHelper::GetViewMatrix(light, transform, i);
 							Frustum lightFrustum;
-							lightFrustum.CreateFromMatrix(lightFrustum, projection, false);
+							lightFrustum.CreateFromMatrix(lightFrustum, projection);
 							lightFrustum.Transform(lightFrustum, view.Invert());
 
 							lightFrustum.GetPlanes(&lightCullerInfo.planes[0], &lightCullerInfo.planes[1], &lightCullerInfo.planes[2], &lightCullerInfo.planes[3], &lightCullerInfo.planes[4], &lightCullerInfo.planes[5]);

@@ -112,7 +112,7 @@ namespace Blueberry
 			return;
 		}
 
-		Entity* prefabEntity = static_cast<Entity*>(Object::Clone(entity));
+		Entity* prefabEntity = static_cast<Entity*>(ObjectCloner::Clone(entity));
 		ClassDB::GetInfo(Transform::Type)->GetField("m_Parent")->Set(prefabEntity->GetTransform(), ObjectPtr<Transform>());
 		String prefabName(prefabEntity->GetName());
 		prefabName.append(".prefab");
@@ -325,6 +325,7 @@ namespace Blueberry
 						}
 					}
 				}
+				entity->UpdateHierarchy();
 			}
 			instance->m_UpdateCount = sourcePrefab->m_UpdateCount;
 		}

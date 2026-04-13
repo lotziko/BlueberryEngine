@@ -8,7 +8,7 @@ namespace Blueberry
 	class Material;
 	class GfxBuffer;
 
-	class SkinnedMeshRenderer : public Renderer
+	class BB_API SkinnedMeshRenderer : public Renderer
 	{
 		OBJECT_DECLARATION(SkinnedMeshRenderer)
 
