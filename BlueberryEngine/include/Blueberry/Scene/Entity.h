@@ -34,6 +34,8 @@ namespace Blueberry
 		ComponentType* GetComponentInParent();
 		template<class ComponentType>
 		ComponentType* GetComponentInChildren();
+		template<class ComponentType>
+		List<ComponentType*> GetComponentsInChildren();
 
 		const size_t GetComponentCount();
 
@@ -56,10 +58,11 @@ namespace Blueberry
 		Component* GetComponent(TypeId type);
 		Component* GetComponentInParent(TypeId type);
 		Component* GetComponentInChildren(TypeId type);
-
-	private:
+		List<Component*> GetComponentsInChildren(TypeId type);
 		void AddComponentToScene(Component* component);
 		void RemoveComponentFromScene(Component* component);
+
+	private:
 		void UpdateHierarchy(bool active);
 		void UpdateComponents();
 		void EnableComponents();
@@ -106,6 +109,19 @@ namespace Blueberry
 	{
 		static_assert(std::is_base_of<Component, ComponentType>::value, "Type is not derived from Component.");
 		return static_cast<ComponentType*>(GetComponentInChildren(ComponentType::Type));
+	}
+
+	template<class ComponentType>
+	inline List<ComponentType*> Entity::GetComponentsInChildren()
+	{
+		static_assert(std::is_base_of<Component, ComponentType>::value, "Type is not derived from Component.");
+		List<Component*> components = GetComponentsInChildren(ComponentType::Type);
+		List<ComponentType*> result(components.size());
+		for (size_t i = 0; i < components.size(); ++i)
+		{
+			result[i] = static_cast<ComponentType*>(components[i]);
+		}
+		return result;
 	}
 
 	template<class ComponentType>

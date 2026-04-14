@@ -10,6 +10,7 @@ namespace Blueberry
 		DEFINE_FIELD(ProbeVolume, m_Bounds, BindingType::AABB, FieldOptions())
 		DEFINE_FIELD(ProbeVolume, m_Size, BindingType::Vector3Int, FieldOptions())
 		DEFINE_ITERATOR(ProbeVolume)
+		DEFINE_EXECUTE_ALWAYS()
 	}
 
 	const AABB& ProbeVolume::GetBounds()

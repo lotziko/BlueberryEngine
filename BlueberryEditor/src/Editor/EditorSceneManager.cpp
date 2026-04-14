@@ -3,7 +3,6 @@
 #include "Blueberry\Core\Application.h"
 #include "Blueberry\Core\ObjectCloner.h"
 #include "Blueberry\Scene\Scene.h"
-#include "Blueberry\Scene\SceneEvents.h"
 #include "Blueberry\Scene\Components\Transform.h"
 
 #include "Editor\Path.h"
@@ -170,7 +169,10 @@ namespace Blueberry
 			if (object->IsClassType(Entity::Type) && !PrefabManager::IsPartOfPrefabInstance(object))
 			{
 				Entity* entity = static_cast<Entity*>(object);
-				data.scene->AddEntity(entity);
+				if (entity->GetTransform()->GetParent() == nullptr)
+				{
+					data.scene->AddEntity(entity);
+				}
 			}
 			else if (object->IsClassType(PrefabInstance::Type))
 			{
@@ -186,7 +188,6 @@ namespace Blueberry
 		s_PrefabScenes.push_back(std::move(data));
 		UpdateScene();
 		s_SceneLoaded.Invoke();
-		SceneEvents::Poll();
 	}
 
 	void EditorSceneManager::ClosePrefab(const bool& all)
@@ -297,7 +298,6 @@ namespace Blueberry
 				s_SceneSettings = static_cast<SceneSettings*>(object);
 			}
 		}
-		SceneEvents::Poll();
 	}
 
 	void EditorSceneManager::UpdateScene()

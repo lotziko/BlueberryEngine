@@ -3,7 +3,6 @@
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Scene\Scene.h"
-#include "Blueberry\Scene\SceneEvents.h"
 
 namespace Blueberry
 {
@@ -30,20 +29,21 @@ namespace Blueberry
 			if (componentSlot.IsValid())
 			{
 				Component* component = componentSlot.Get();
-				RemoveComponentFromScene(component);
 				if (component->CanExecute())
 				{
 					if (component->m_IsActive)
 					{
-						SceneEvents::s_DisabledComponents.push_back(component);
+						RemoveComponentFromScene(component);
+						component->OnDisable();
 						component->m_IsActive = false;
 					}
 					if (!component->m_IsDestroyed)
 					{
-						SceneEvents::s_DestroyedComponents.push_back(component);
+						component->OnDestroy();
 						component->m_IsDestroyed = true;
 					}
 				}
+				Object::Destroy(component);
 			}
 		}
 		m_Components.clear();
@@ -69,17 +69,17 @@ namespace Blueberry
 		}
 		if (IsActiveInHierarchy())
 		{
-			AddComponentToScene(component);
 			if (component->CanExecute())
 			{
 				if (!component->m_IsCreated)
 				{
-					SceneEvents::s_CreatedComponents.push_back(component);
+					component->OnCreate();
 					component->m_IsCreated = true;
 				}
 				if (!component->m_IsActive)
 				{
-					SceneEvents::s_EnabledComponents.push_back(component);
+					AddComponentToScene(component);
+					component->OnEnable();
 					component->m_IsActive = true;
 				}
 			}
@@ -104,17 +104,17 @@ namespace Blueberry
 	{
 		if (component->m_Entity == this)
 		{
-			RemoveComponentFromScene(component);
 			if (component->CanExecute())
 			{
 				if (component->m_IsActive)
 				{
-					SceneEvents::s_DisabledComponents.push_back(component);
+					RemoveComponentFromScene(component);
+					component->OnDisable();
 					component->m_IsActive = false;
 				}
 				if (!component->m_IsDestroyed)
 				{
-					SceneEvents::s_DestroyedComponents.push_back(component);
+					component->OnDestroy();
 					component->m_IsDestroyed = true;
 				}
 			}
@@ -240,27 +240,52 @@ namespace Blueberry
 		return nullptr;
 	}
 
+	List<Component*> Entity::GetComponentsInChildren(TypeId type)
+	{
+		List<Component*> result;
+		List<Entity*> stack;
+		stack.push_back(this);
+		while (stack.size() > 0)
+		{
+			Entity* entity = stack[stack.size() - 1];
+			for (size_t i = 0; i < entity->GetComponentCount(); ++i)
+			{
+				Component* component = entity->GetComponentAt(i);
+				if (component->IsClassType(type))
+				{
+					result.push_back(component);
+				}
+			}
+			stack.pop_back();
+			for (auto& child : entity->GetTransform()->GetChildren())
+			{
+				stack.push_back(child.Get()->GetEntity());
+			}
+		}
+		return result;
+	}
+
 	void Entity::AddComponentToScene(Component* component)
 	{
-		if (m_Scene == nullptr)
+		Scene* scene = component->GetEntity()->GetScene();
+		if (scene != nullptr)
 		{
-			return;
-		}
-		for (TypeId* type : ClassDB::GetInfo(component->GetType())->iterators)
-		{
-			m_Scene->m_ComponentManager.AddComponent(component, *type);
+			for (TypeId* type : ClassDB::GetInfo(component->GetType())->iterators)
+			{
+				scene->m_ComponentManager.AddComponent(component, *type);
+			}
 		}
 	}
 
 	void Entity::RemoveComponentFromScene(Component* component)
 	{
-		if (m_Scene == nullptr)
+		Scene* scene = component->GetEntity()->GetScene();
+		if (scene != nullptr)
 		{
-			return;
-		}
-		for (TypeId* type : ClassDB::GetInfo(component->GetType())->iterators)
-		{
-			m_Scene->m_ComponentManager.RemoveComponent(component, *type);
+			for (TypeId* type : ClassDB::GetInfo(component->GetType())->iterators)
+			{
+				scene->m_ComponentManager.RemoveComponent(component, *type);
+			}
 		}
 	}
 
@@ -298,17 +323,17 @@ namespace Blueberry
 		for (auto&& componentSlot : m_Components)
 		{
 			Component* component = componentSlot.Get();
-			AddComponentToScene(component);
 			if (component->CanExecute())
 			{
 				if (!component->m_IsCreated)
 				{
-					SceneEvents::s_CreatedComponents.push_back(component);
+					component->OnCreate();
 					component->m_IsCreated = true;
 				}
 				if (!component->m_IsActive)
 				{
-					SceneEvents::s_EnabledComponents.push_back(component);
+					AddComponentToScene(component);
+					component->OnEnable();
 					component->m_IsActive = true;
 				}
 			}
@@ -320,10 +345,10 @@ namespace Blueberry
 		for (auto&& componentSlot : m_Components)
 		{
 			Component* component = componentSlot.Get();
-			RemoveComponentFromScene(component);
 			if (component->m_IsActive && component->CanExecute())
 			{
-				SceneEvents::s_DisabledComponents.push_back(component);
+				RemoveComponentFromScene(component);
+				component->OnDisable();
 				component->m_IsActive = false;
 			}
 		}

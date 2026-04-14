@@ -18,7 +18,7 @@ namespace Blueberry
 		Animator() = default;
 		virtual ~Animator() = default;
 
-		virtual void OnCreate() final;
+		virtual void OnEnable() final;
 		virtual void OnUpdate() final;
 		
 		AnimationGraph* GetAnimationGraph();

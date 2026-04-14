@@ -14,6 +14,7 @@ namespace Blueberry
 		DEFINE_FIELD(ReflectionProbe, m_Fade, BindingType::Float, FieldOptions())
 		DEFINE_FIELD(ReflectionProbe, m_AtlasIndex, BindingType::Uint, FieldOptions().SetSerializationFlags(SerializationFlags::RuntimeOnly))
 		DEFINE_ITERATOR(ReflectionProbe)
+		DEFINE_EXECUTE_ALWAYS()
 	}
 
 	ReflectionProbeType ReflectionProbe::GetType()

@@ -12,7 +12,7 @@
 #include "Blueberry\Audio\AudioClip.h"
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Scene\Scene.h"
-#include "Blueberry\Scene\SceneEvents.h"
+#include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\LightingSettings.h"
 
 #include "Concrete\DX11\DX11.h"
@@ -247,7 +247,11 @@ namespace Blueberry
 				Object* object = ObjectDB::GetObject(pair.first);
 				if (object->GetType() == Entity::Type)
 				{
-					scene->AddEntity(static_cast<Entity*>(object));
+					Entity* entity = static_cast<Entity*>(object);
+					if (entity->GetTransform()->GetParent() == nullptr)
+					{
+						scene->AddEntity(entity);
+					}
 				}
 				else if (object->GetType() == LightingSettings::Type)
 				{
@@ -289,7 +293,5 @@ namespace Blueberry
 				}
 			}
 		}
-
-		SceneEvents::Poll();
 	}
 }

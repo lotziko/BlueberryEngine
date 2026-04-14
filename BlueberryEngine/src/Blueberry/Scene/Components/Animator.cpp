@@ -33,7 +33,7 @@ namespace Blueberry
 		}
 	}
 
-	void Animator::OnCreate()
+	void Animator::OnEnable()
 	{
 		Initialize();
 	}
@@ -58,14 +58,14 @@ namespace Blueberry
 					stateData.previousNormalizedTime = stateData.normalizedTime;
 					if (stateData.isLoop)
 					{
-						stateData.time = std::clamp(stateData.time + deltaTime * stateData.speed, 0.0f, stateData.length);
+						stateData.time += deltaTime * stateData.speed;
 						stateData.normalizedTime = stateData.time / stateData.length;
 						stateData.previousLoopNormalizedTime = stateData.loopNormalizedTime;
 						stateData.loopNormalizedTime = std::fmodf(stateData.normalizedTime, stateData.length);
 					}
 					else
 					{
-						stateData.time += deltaTime * stateData.speed;
+						stateData.time = std::clamp(stateData.time + deltaTime * stateData.speed, 0.0f, stateData.length);
 						stateData.normalizedTime = stateData.time / stateData.length;
 					}
 				}

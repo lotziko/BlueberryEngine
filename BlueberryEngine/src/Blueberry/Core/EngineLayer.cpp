@@ -9,7 +9,6 @@
 #include "Blueberry\Graphics\Skinning.h"
 #include "..\Animations\RegisterAnimationsTypes.h"
 #include "..\Audio\RegisterAudioTypes.h"
-#include "Blueberry\Scene\SceneEvents.h"
 
 namespace Blueberry
 {
@@ -39,6 +38,5 @@ namespace Blueberry
 
 	void EngineLayer::Update()
 	{
-		SceneEvents::Poll();
 	}
 }

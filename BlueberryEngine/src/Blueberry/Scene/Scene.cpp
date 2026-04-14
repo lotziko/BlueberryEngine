@@ -5,7 +5,6 @@
 #include "Blueberry\Scene\Components\Component.h"
 #include "Blueberry\Serialization\Serializer.h"
 #include "Blueberry\Core\ClassDB.h"
-#include "Blueberry\Scene\SceneEvents.h"
 
 namespace Blueberry
 {
@@ -111,7 +110,7 @@ namespace Blueberry
 		}
 		m_Entities.erase(entity->GetObjectId());
 		entity->OnDestroy();
-		SceneEvents::s_DestroyedEntities.push_back(entity);
+		Object::Destroy(entity);
 	}
 
 	const Dictionary<ObjectId, ObjectPtr<Entity>>& Scene::GetEntities()

@@ -16,6 +16,7 @@ namespace Blueberry
 		DEFINE_FIELD(Camera, m_ZNearPlane, BindingType::Float, FieldOptions().SetUpdateCallback(MethodBind::Create(&Camera::InvalidateProjection)))
 		DEFINE_FIELD(Camera, m_ZFarPlane, BindingType::Float, FieldOptions().SetUpdateCallback(MethodBind::Create(&Camera::InvalidateProjection)))
 		DEFINE_ITERATOR(Camera)
+		DEFINE_EXECUTE_ALWAYS()
 	}
 
 	const Matrix& Camera::GetProjectionMatrix()

@@ -316,21 +316,21 @@ namespace Blueberry
 		results.cullerInfos.push_back(cameraFrustumInfo);
 
 		results.skyRenderer = nullptr;
-		for (auto component : scene->GetIterator<SkyRenderer>())
+		for (auto& component : scene->GetIterator<SkyRenderer>())
 		{
 			results.skyRenderer = static_cast<SkyRenderer*>(component.second);
 			break;
 		}
 
 		results.probeVolume = nullptr;
-		for (auto component : scene->GetIterator<ProbeVolume>())
+		for (auto& component : scene->GetIterator<ProbeVolume>())
 		{
 			results.probeVolume = static_cast<ProbeVolume*>(component.second);
 			break;
 		}
 
 		// TODO culling
-		for (auto component : scene->GetIterator<ReflectionProbe>())
+		for (auto& component : scene->GetIterator<ReflectionProbe>())
 		{
 			results.reflectionProbes.push_back(static_cast<ReflectionProbe*>(component.second));
 		}
@@ -338,28 +338,28 @@ namespace Blueberry
 		if (s_LastCullingFrame < Time::GetFrameCount())
 		{
 			// TODO move to frame start or find the other away to react on the transform movement
-			for (auto component : scene->GetIterator<MeshRenderer>())
+			for (auto& component : scene->GetIterator<MeshRenderer>())
 			{
-				auto meshRenderer = static_cast<MeshRenderer*>(component.second);
+				MeshRenderer* meshRenderer = static_cast<MeshRenderer*>(component.second);
 				meshRenderer->OnPreCull();
 			}
-			for (auto component : scene->GetIterator<SkinnedMeshRenderer>())
+			for (auto& component : scene->GetIterator<SkinnedMeshRenderer>())
 			{
-				auto skinnedMeshRenderer = static_cast<SkinnedMeshRenderer*>(component.second);
+				SkinnedMeshRenderer* skinnedMeshRenderer = static_cast<SkinnedMeshRenderer*>(component.second);
 				skinnedMeshRenderer->OnPreCull();
 			}
-			for (auto component : scene->GetIterator<Light>())
+			for (auto& component : scene->GetIterator<Light>())
 			{
-				auto light = static_cast<Light*>(component.second);
+				Light* light = static_cast<Light*>(component.second);
 				light->OnPreCull();
 			}
 			s_LastCullingFrame = Time::GetFrameCount();
 		}
 
-		for (auto component : scene->GetIterator<Light>())
+		for (auto& component : scene->GetIterator<Light>())
 		{
-			auto light = static_cast<Light*>(component.second);
-			auto transform = light->GetTransform();
+			Light* light = static_cast<Light*>(component.second);
+			Transform* transform = light->GetTransform();
 			// TODO light types
 			Sphere bounds = Sphere(transform->GetPosition(), light->GetRange());
 			LightType type = light->GetType();

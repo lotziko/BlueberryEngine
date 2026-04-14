@@ -74,7 +74,7 @@ namespace Blueberry
 		Quaternion m_LocalRotation;
 		Vector3 m_LocalScale = Vector3(1, 1, 1);
 		Vector3 m_LocalRotationEulerHint;
-		bool m_IsStatic = true;
+		bool m_IsStatic = false;
 
 		Vector3 m_Position;
 		Quaternion m_Rotation;
