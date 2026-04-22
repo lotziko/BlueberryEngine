@@ -11,6 +11,7 @@
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\ComputeShader.h"
 #include "Blueberry\Graphics\Material.h"
+#include "Blueberry\Graphics\Font.h"
 
 namespace Blueberry
 {
@@ -32,5 +33,6 @@ namespace Blueberry
 		REGISTER_CLASS(ComputeShader);
 		REGISTER_DATA_CLASS(TextureData);
 		REGISTER_CLASS(Material);
+		REGISTER_CLASS(Font);
 	}
 }

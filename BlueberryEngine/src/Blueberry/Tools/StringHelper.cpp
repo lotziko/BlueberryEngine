@@ -45,6 +45,21 @@ namespace Blueberry
 		return (it != str1.end());
 	}
 
+	bool StringHelper::StartsWith(const char* str1, const char* str2)
+	{
+		return strncmp(str2, str1, strlen(str2)) == 0;
+	}
+
+	bool StringHelper::StartsWith(const String& str1, const char* str2)
+	{
+		return str1.compare(0, strlen(str2), str2) == 0;
+	}
+
+	bool StringHelper::StartsWith(const String& str1, const String& str2)
+	{
+		return str1.compare(0, str2.size(), str2) == 0;
+	}
+
 	bool StringHelper::EndsWith(const String& str1, const String& str2)
 	{
 		// Based on https://www.geeksforgeeks.org/cpp/check-if-string-ends-substring-in-cpp/

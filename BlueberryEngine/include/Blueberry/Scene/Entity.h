@@ -3,6 +3,8 @@
 #include "Blueberry\Core\Object.h"
 #include "Blueberry\Core\ObjectPtr.h"
 
+#include <queue>
+
 namespace Blueberry
 {
 	class Component;
@@ -16,6 +18,7 @@ namespace Blueberry
 	public:
 		Entity() = default;
 		Entity(const String& name);
+		virtual ~Entity() = default;
 
 		void OnCreate();
 		void OnDestroy();
@@ -53,14 +56,14 @@ namespace Blueberry
 
 		void UpdateHierarchy();
 
+		static void Poll();
+
 	private:
 		bool HasComponent(TypeId type);
 		Component* GetComponent(TypeId type);
 		Component* GetComponentInParent(TypeId type);
 		Component* GetComponentInChildren(TypeId type);
 		List<Component*> GetComponentsInChildren(TypeId type);
-		void AddComponentToScene(Component* component);
-		void RemoveComponentFromScene(Component* component);
 
 	private:
 		void UpdateHierarchy(bool active);
@@ -69,12 +72,46 @@ namespace Blueberry
 		void DisableComponents();
 
 	private:
+		enum class Operation
+		{
+			None,
+			CreateComponent,
+			EnableComponent,
+			DisableComponent,
+			DestroyComponent,
+			DestroyEntity
+		};
+
+		struct OperationData
+		{
+			bool operator<(const OperationData& other)
+			{
+				return priority > other.priority;
+			}
+
+			int priority;
+			Operation operation;
+			ObjectPtr<Object> object;
+		};
+
+		struct CompareOperations
+		{
+			bool operator()(const OperationData& o1, const OperationData& o2)
+			{
+				return o1.priority > o2.priority;
+			}
+		};
+
+		static std::priority_queue<OperationData, List<OperationData>, CompareOperations> s_Operations;
+
+	private:
 		List<ObjectPtr<Component>> m_Components;
 		bool m_IsActive = true;
 
 		Transform* m_Transform = nullptr;
 		Scene* m_Scene = nullptr;
 		bool m_IsActiveInHierarchy = false;
+		bool m_IsDestroyed = false;
 
 		friend class Scene;
 		friend class Component;

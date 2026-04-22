@@ -9,6 +9,8 @@
 #include "Blueberry\Graphics\Skinning.h"
 #include "..\Animations\RegisterAnimationsTypes.h"
 #include "..\Audio\RegisterAudioTypes.h"
+#include "..\UI\RegisterUITypes.h"
+#include "Blueberry\Scene\Entity.h"
 
 namespace Blueberry
 {
@@ -18,6 +20,7 @@ namespace Blueberry
 		RegisterGraphicsTypes();
 		RegisterAnimationsTypes();
 		RegisterAudioTypes();
+		RegisterUITypes();
 	}
 
 	void EngineLayer::Initialize()
@@ -38,5 +41,6 @@ namespace Blueberry
 
 	void EngineLayer::Update()
 	{
+		Entity::Poll();
 	}
 }

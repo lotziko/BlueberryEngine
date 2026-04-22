@@ -110,7 +110,6 @@ namespace Blueberry
 		}
 		m_Entities.erase(entity->GetObjectId());
 		entity->OnDestroy();
-		Object::Destroy(entity);
 	}
 
 	const Dictionary<ObjectId, ObjectPtr<Entity>>& Scene::GetEntities()

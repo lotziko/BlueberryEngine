@@ -189,6 +189,9 @@ namespace Blueberry
 		
 		PostProcessing::Draw(camera, colorMSAARenderTarget, colorRenderTarget, resultRenderTarget, viewport, size, cameraType);
 
+		GfxDevice::SetRenderTarget(resultRenderTarget);
+		s_DefaultContext.DrawCanvases(s_Results);
+
 		if (isVr)
 		{
 			OpenXRRenderer::SubmitColorRenderTarget(resultRenderTarget);

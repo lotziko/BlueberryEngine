@@ -259,7 +259,7 @@ namespace Blueberry
 			uint32_t size = arraySize * mipLevels;
 			D3D11_SUBRESOURCE_DATA* subresourceDatas = BB_MALLOC_ARRAY(D3D11_SUBRESOURCE_DATA, size);
 
-			uint8_t* ptr = static_cast<uint8_t*>(properties.data);
+			const uint8_t* ptr = static_cast<const uint8_t*>(properties.data);
 			if (IsCompressed(m_Format))
 			{
 				uint32_t blockSize = bitsPerPixel * 16 / 8;

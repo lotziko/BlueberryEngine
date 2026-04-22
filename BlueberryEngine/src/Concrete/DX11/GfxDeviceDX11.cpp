@@ -677,7 +677,7 @@ namespace Blueberry
 			adapter,
 			adapter == NULL ? D3D_DRIVER_TYPE_HARDWARE : D3D_DRIVER_TYPE_UNKNOWN, //hardware driver
 			NULL, //software driver
-			D3D11_CREATE_DEVICE_DEBUG, //no flags	// D3D11_CREATE_DEVICE_DEBUG does not work in runtime
+			0, //no flags	// D3D11_CREATE_DEVICE_DEBUG does not work in runtime
 			NULL, //feature levels
 			0, //no feature levels
 			D3D11_SDK_VERSION,

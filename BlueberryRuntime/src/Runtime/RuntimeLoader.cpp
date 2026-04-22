@@ -175,7 +175,7 @@ namespace Blueberry
 		}
 	}
 
-	void RuntimeLoader::Load(Scene* scene)
+	void RuntimeLoader::LoadAssets()
 	{
 		// Assembly
 		String dllPath = "GameAssembly.dll";
@@ -235,63 +235,64 @@ namespace Blueberry
 				resourcesStream.close();
 			}
 		}
+	}
 
-		// Scene
+	void RuntimeLoader::LoadScene(Scene* scene)
+	{
+		String scenePath = "Scene";
+		Serializer sceneSerializer = {};
+		sceneSerializer.Deserialize(scenePath, SerializationFlags::RuntimeOnly);
+
+		for (auto& pair : sceneSerializer.GetDeserializedObjects())
 		{
-			String scenePath = "Scene";
-			Serializer sceneSerializer = {};
-			sceneSerializer.Deserialize(scenePath, SerializationFlags::RuntimeOnly);
-
-			for (auto& pair : sceneSerializer.GetDeserializedObjects())
+			Object* object = ObjectDB::GetObject(pair.first);
+			if (object->GetType() == Entity::Type)
 			{
-				Object* object = ObjectDB::GetObject(pair.first);
-				if (object->GetType() == Entity::Type)
+				Entity* entity = static_cast<Entity*>(object);
+				if (entity->GetTransform()->GetParent() == nullptr)
 				{
-					Entity* entity = static_cast<Entity*>(object);
-					if (entity->GetTransform()->GetParent() == nullptr)
-					{
-						scene->AddEntity(entity);
-					}
+					scene->AddEntity(entity);
 				}
-				else if (object->GetType() == LightingSettings::Type)
+			}
+			else if (object->GetType() == LightingSettings::Type)
+			{
+				LightingSettings* lightingSettings = static_cast<LightingSettings*>(object);
+
+				// Lightmap
 				{
-					LightingSettings* lightingSettings = static_cast<LightingSettings*>(object);
+					Texture2D* lightmap = lightingSettings->GetLightmap();
+					GfxDevice::SetGlobalTexture(TO_HASH("_LightmapTexture"), lightmap->Get());
+				}
 
-					// Lightmap
-					{
-						Texture2D* lightmap = lightingSettings->GetLightmap();
-						GfxDevice::SetGlobalTexture(TO_HASH("_LightmapTexture"), lightmap->Get());
-					}
+				// Probe volume
+				{
+					Texture3D* probeVolume = lightingSettings->GetProbeVolume();
+					GfxDevice::SetGlobalTexture(TO_HASH("_ProbeVolumeTexture"), probeVolume->Get());
+				}
 
-					// Probe volume
-					{
-						Texture3D* probeVolume = lightingSettings->GetProbeVolume();
-						GfxDevice::SetGlobalTexture(TO_HASH("_ProbeVolumeTexture"), probeVolume->Get());
-					}
+				// Charts
+				{
+					List<Vector4>& chartOffsetScale = lightingSettings->GetChartOffsetScale();
+					GfxBuffer* scaleOffsetBuffer;
+					BufferProperties properties = {};
 
-					// Charts
-					{
-						List<Vector4>& chartOffsetScale = lightingSettings->GetChartOffsetScale();
-						GfxBuffer* scaleOffsetBuffer;
-						BufferProperties properties = {};
+					properties.elementCount = static_cast<uint32_t>(chartOffsetScale.size());
+					properties.elementSize = sizeof(Vector4);
+					properties.data = chartOffsetScale.data();
+					properties.dataSize = chartOffsetScale.size() * sizeof(Vector4);
+					properties.usageFlags = BufferUsageFlags::StructuredBuffer | BufferUsageFlags::ShaderResource;
 
-						properties.elementCount = static_cast<uint32_t>(chartOffsetScale.size());
-						properties.elementSize = sizeof(Vector4);
-						properties.data = chartOffsetScale.data();
-						properties.dataSize = chartOffsetScale.size() * sizeof(Vector4);
-						properties.usageFlags = BufferUsageFlags::StructuredBuffer | BufferUsageFlags::ShaderResource;
-						
-						GfxDevice::CreateBuffer(properties, scaleOffsetBuffer);
-						GfxDevice::SetGlobalBuffer(TO_HASH("_PerLightmapInstanceData"), scaleOffsetBuffer);
-					}
+					GfxDevice::CreateBuffer(properties, scaleOffsetBuffer);
+					GfxDevice::SetGlobalBuffer(TO_HASH("_PerLightmapInstanceData"), scaleOffsetBuffer);
+				}
 
-					// Reflection probes
-					{
-						TextureCubeArray* reflectionProbes = lightingSettings->GetReflectionProbes();
-						GfxDevice::SetGlobalTexture(TO_HASH("_ReflectionTexture"), reflectionProbes->Get());
-					}
+				// Reflection probes
+				{
+					TextureCubeArray* reflectionProbes = lightingSettings->GetReflectionProbes();
+					GfxDevice::SetGlobalTexture(TO_HASH("_ReflectionTexture"), reflectionProbes->Get());
 				}
 			}
 		}
+		Entity::Poll();
 	}
 }

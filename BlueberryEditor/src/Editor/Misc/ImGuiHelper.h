@@ -28,7 +28,7 @@ namespace ImGui
 		Blueberry::SerializedProperty* m_Property;
 	};
 
-	using ClearOverrideEvent = Blueberry::Event<ClearOverrideEventArgs>;
+	using ClearOverrideEvent = Blueberry::Event<ClearOverrideEventArgs&>;
 
 	class Events
 	{

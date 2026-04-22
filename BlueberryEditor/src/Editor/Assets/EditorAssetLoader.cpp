@@ -5,6 +5,7 @@
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\ComputeShader.h"
+#include "Blueberry\Graphics\Font.h"
 #include "Blueberry\Tools\FileHelper.h"
 
 #include "Editor\Assets\AssetDB.h"
@@ -160,6 +161,38 @@ namespace Blueberry
 				m_LoadedAssets.insert_or_assign(path, shader);
 			}
 			return shader;
+		}
+		else if (extension == ".ttf")
+		{
+			Font* font = nullptr;
+			
+			bool needImport = true;
+			if (AssetDB::HasAssetWithGuidInData(guid))
+			{
+				auto objects = AssetDB::LoadAssetObjects(guid, ObjectDB::GetObjectsFromGuid(guid));
+				if (objects.size() == 1 && objects[0].first->IsClassType(Font::Type))
+				{
+					font = static_cast<Font*>(objects[0].first);
+					needImport = false;
+				}
+			}
+
+			if (needImport)
+			{
+				List<uint8_t> data;
+				FileHelper::Load(data, path);
+				font = Object::Create<Font>();
+				ObjectDB::AllocateIdToGuid(font, guid, 1);
+				font->SetData(data);
+				AssetDB::SaveAssetObjectsToCache(List<Object*> { font });
+			}
+
+			if (font != nullptr)
+			{
+				font->SetName(StringHelper::ToString(assetPath.stem()));
+				m_LoadedAssets.insert_or_assign(path, font);
+			}
+			return font;
 		}
 		return nullptr;
 	}

@@ -13,6 +13,7 @@ namespace Blueberry
 	class ProbeVolume;
 	class ReflectionProbe;
 	class Light;
+	class Canvas;
 	class Material;
 	class MeshRenderer;
 
@@ -43,6 +44,7 @@ namespace Blueberry
 		ProbeVolume* probeVolume;
 		List<ReflectionProbe*> reflectionProbes;
 		List<Light*> lights;
+		List<Canvas*> canvases;
 		List<CullerInfo> cullerInfos;
 	};
 
@@ -81,6 +83,7 @@ namespace Blueberry
 		void DrawSky(CullingResults& results);
 		void DrawShadows(CullingResults& results, ShadowDrawingSettings& shadowDrawingSettings);
 		void DrawRenderers(CullingResults& results, DrawingSettings& drawingSettings);
+		void DrawCanvases(CullingResults& results);
 
 	private:
 		static GfxBuffer* s_IndexBuffer;

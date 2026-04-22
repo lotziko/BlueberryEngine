@@ -43,7 +43,7 @@ namespace Blueberry
 		output.open(path.c_str(), std::wofstream::binary);
 		for (auto& info : s_ProjectInfoCache)
 		{
-			output << info.wpath;
+			output << info.wpath << "\n";
 		}
 		output.close();
 	}

@@ -1,6 +1,7 @@
 #include "Blueberry\Input\Input.h"
 
 #include "Blueberry\Core\Time.h"
+#include "Blueberry\Core\Screen.h"
 #include "Blueberry\Events\WindowEvents.h"
 
 namespace Blueberry
@@ -59,7 +60,7 @@ namespace Blueberry
 
 	void Input::OnMouseMove(const MouseMoveEventArgs& args)
 	{
-		s_MousePosition = args.GetPosition();
+		s_MousePosition = args.GetPosition() - Screen::GetGameViewport().Location();
 		s_MouseDelta = args.GetDelta();
 		s_DeltaFrame = Time::GetFrameCount();
 	}

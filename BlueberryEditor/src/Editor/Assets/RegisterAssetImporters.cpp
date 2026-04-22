@@ -10,6 +10,8 @@
 #include "Editor\Assets\Importers\ModelImporter.h"
 #include "Editor\Assets\Importers\AudioImporter.h"
 #include "Editor\Assets\Importers\FolderImporter.h"
+#include "Editor\Assets\Importers\FontImporter.h"
+#include "Editor\Assets\Importers\UIDocumentImporter.h"
 #include "Blueberry\Core\ClassDB.h"
 
 namespace Blueberry
@@ -28,6 +30,8 @@ namespace Blueberry
 		REGISTER_CLASS(ModelImporter);
 		REGISTER_CLASS(AudioImporter);
 		REGISTER_CLASS(FolderImporter);
+		REGISTER_CLASS(FontImporter);
+		REGISTER_CLASS(UIDocumentImporter);
 
 		REGISTER_ASSET_IMPORTER(".png", TextureImporter::Type);
 		REGISTER_ASSET_IMPORTER(".tif", TextureImporter::Type);
@@ -44,6 +48,9 @@ namespace Blueberry
 		REGISTER_ASSET_IMPORTER(".fbx", ModelImporter::Type);
 		REGISTER_ASSET_IMPORTER(".mp3", AudioImporter::Type);
 		REGISTER_ASSET_IMPORTER(".wav", AudioImporter::Type);
+		REGISTER_ASSET_IMPORTER(".ttf", FontImporter::Type);
+		REGISTER_ASSET_IMPORTER(".otf", FontImporter::Type);
+		REGISTER_ASSET_IMPORTER(".rml", UIDocumentImporter::Type);
 		REGISTER_ASSET_IMPORTER("", FolderImporter::Type);
 	}
 }

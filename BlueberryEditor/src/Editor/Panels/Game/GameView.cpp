@@ -44,7 +44,6 @@ namespace Blueberry
 			{
 				Input::SetEnabled(true);
 				Screen::SetAllowCursorLock(true);
-				Screen::SetGameViewport(Rectangle(0, 0, static_cast<long>(size.x), static_cast<long>(size.y)));
 				if (Cursor::IsHidden())
 				{
 					ImGui::SetMouseCursor(ImGuiMouseCursor_None);
@@ -75,7 +74,8 @@ namespace Blueberry
 				EditorLayer::RequestFrameUpdate();
 				Camera::SetCurrent(camera);
 				RectangleFloat viewport = CameraHelper::CalculateViewport(camera, Rectangle(static_cast<long>(pos.x), static_cast<long>(pos.y), static_cast<long>(size.x), static_cast<long>(size.y)));
-
+				Screen::SetGameViewport(Rectangle(static_cast<long>(viewport.x), static_cast<long>(viewport.y), static_cast<long>(viewport.width), static_cast<long>(viewport.height)));
+				
 				if (m_RenderTarget == nullptr || viewport.x != m_RenderTarget->GetWidth() || viewport.y != m_RenderTarget->GetHeight())
 				{
 					if (m_RenderTarget != nullptr)

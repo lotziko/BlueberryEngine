@@ -10,6 +10,7 @@
 #include "Blueberry\Scene\Components\ReflectionProbe.h"
 #include "Blueberry\Graphics\Texture.h"
 #include "Blueberry\Scene\Components\Light.h"
+#include "Blueberry\Scene\Components\Canvas.h"
 #include "Blueberry\Scene\Components\Transform.h"
 
 #include "Blueberry\Graphics\Mesh.h"
@@ -299,8 +300,9 @@ namespace Blueberry
 		}
 
 		results.camera = camera;
-		results.lights.clear();
 		results.reflectionProbes.clear();
+		results.lights.clear();
+		results.canvases.clear();
 		results.cullerInfos.clear();
 
 		Matrix view = cameraData.isMultiview ? cameraData.multiviewViewMatrix[0].Invert() : camera->GetInverseViewMatrix();
@@ -333,6 +335,15 @@ namespace Blueberry
 		for (auto& component : scene->GetIterator<ReflectionProbe>())
 		{
 			results.reflectionProbes.push_back(static_cast<ReflectionProbe*>(component.second));
+		}
+
+		for (auto& component : scene->GetIterator<Canvas>())
+		{
+			Canvas* canvas = static_cast<Canvas*>(component.second);
+			if (canvas->GetCamera() == camera)
+			{
+				results.canvases.push_back(canvas);
+			}
 		}
 
 		if (s_LastCullingFrame < Time::GetFrameCount())
@@ -657,6 +668,14 @@ namespace Blueberry
 				GfxDevice::Draw(GfxDrawingOperation(operation.mesh, operation.vertexBufferOverride, operation.material, subMesh.GetIndexCount(), subMesh.GetIndexStart(), operation.mesh->GetVertexCount(), passIndex, s_IndexBuffer, i, operation.instanceCount, operation.isCounterClockwise));
 			}
 			i += operation.instanceCount;
+		}
+	}
+
+	void RenderContext::DrawCanvases(CullingResults& results)
+	{
+		for (Canvas* canvas : results.canvases)
+		{
+			canvas->Draw();
 		}
 	}
 }

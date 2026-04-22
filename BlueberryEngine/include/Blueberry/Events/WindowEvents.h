@@ -40,11 +40,11 @@ namespace Blueberry
 		bool m_IsCanceled;
 	};
 
-	using WindowResizeEvent = Event<const WindowResizeEventArgs>;
+	using WindowResizeEvent = Event<const WindowResizeEventArgs&>;
 	using WindowFocusEvent = Event<>;
 	using WindowUnfocusEvent = Event<>;
-	using WindowDropFilesEvent = Event<const WindowDropFilesEventArgs>;
-	using WindowClosingEvent = Event<WindowClosingEventArgs>;
+	using WindowDropFilesEvent = Event<const WindowDropFilesEventArgs&>;
+	using WindowClosingEvent = Event<WindowClosingEventArgs&>;
 
 	class WindowEvents
 	{

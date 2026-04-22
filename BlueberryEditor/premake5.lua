@@ -48,11 +48,13 @@ project "BlueberryEditor"
 		"{COPYDIR} %{wks.location}/BlueberryEngine/assets %{cfg.targetdir}/assets",
 		"{COPYDIR} %{wks.location}/bin/" .. outputdir .. "/BlueberryBaking/assets %{cfg.targetdir}/assets",
 		"{COPYDIR} %{wks.location}/BlueberryEngine/include %{cfg.targetdir}/include",
+		"{COPYDIR} %{wks.location}/BlueberryEngine/vendor/rmlui/include %{cfg.targetdir}/include",
 		"{COPYFILE} %{wks.location}/BlueberryEditor/vendor/fbxsdk/lib/vs2017/x64/release/libfbxsdk.dll %{cfg.targetdir}/libfbxsdk.dll",
 		"{COPYFILE} %{wks.location}/BlueberryEngine/vendor/hbao/lib/GFSDK_SSAO_D3D11.win64.dll %{cfg.targetdir}/GFSDK_SSAO_D3D11.win64.dll",
 		"{COPYFILE} %{wks.location}/BlueberryEngine/vendor/openxr/native/x64/release/bin/openxr_loader.dll %{cfg.targetdir}/openxr_loader.dll",
 		"{COPYFILE} %{wks.location}/bin/" .. outputdir .. "/BlueberryRuntime/BlueberryRuntime.lib %{cfg.targetdir}/BlueberryRuntime.lib",
 		"{COPYFILE} %{wks.location}/bin/" .. outputdir .. "/BlueberryRuntime/BlueberryRuntime.exe %{cfg.targetdir}/BlueberryRuntime.exe",
+		"{COPYFILE} %{wks.location}/BlueberryEngine/vendor/rmlui/lib/rmlui.lib %{cfg.targetdir}/rmlui.lib",
 		"{COPYFILE} %{wks.location}/BlueberryEditor/vendor/fastbuild/bin/FBuild.exe %{cfg.targetdir}/FBuild.exe",
 	}
 

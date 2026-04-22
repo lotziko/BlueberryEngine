@@ -337,6 +337,11 @@ namespace Blueberry
 		{
 			ObjectId instanceObjectId = instance->GetObjectId();
 			Guid guid = ObjectDB::GetGuidFromObject(instance);
+			if (!guid.IsValid())
+			{
+				BB_ERROR("Prefab is invalid.");
+				return;
+			}
 			AssetImporter* importer = AssetDB::GetImporter(guid);
 			Entity* entity = static_cast<Entity*>(ObjectDB::GetObjectFromGuid(guid, importer->GetMainObject()));
 			if (entity == nullptr)

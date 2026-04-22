@@ -6,6 +6,8 @@
 
 namespace Blueberry
 {
+	std::priority_queue<Entity::OperationData, List<Entity::OperationData>, Entity::CompareOperations> Entity::s_Operations;
+
 	OBJECT_DEFINITION(Entity, Object)
 	{
 		DEFINE_BASE_FIELDS(Entity, Object)
@@ -24,29 +26,32 @@ namespace Blueberry
 
 	void Entity::OnDestroy()
 	{
-		for (auto& componentSlot : m_Components)
+		if (!m_IsDestroyed)
 		{
-			if (componentSlot.IsValid())
+			for (auto& componentSlot : m_Components)
 			{
-				Component* component = componentSlot.Get();
-				if (component->CanExecute())
+				if (componentSlot.IsValid())
 				{
-					if (component->m_IsActive)
+					Component* component = componentSlot.Get();
+					if (component->CanExecute())
 					{
-						RemoveComponentFromScene(component);
-						component->OnDisable();
-						component->m_IsActive = false;
-					}
-					if (!component->m_IsDestroyed)
-					{
-						component->OnDestroy();
-						component->m_IsDestroyed = true;
+						if (component->m_IsActive)
+						{
+							s_Operations.push({ 3000, Operation::DisableComponent, component });
+							component->m_IsActive = false;
+						}
+						if (!component->m_IsDestroyed)
+						{
+							s_Operations.push({ 4000, Operation::DestroyComponent, component });
+							component->m_IsDestroyed = true;
+						}
 					}
 				}
-				Object::Destroy(component);
 			}
+			m_Components.clear();
+			s_Operations.push({ 5000, Operation::DestroyEntity, this });
+			m_IsDestroyed = true;
 		}
-		m_Components.clear();
 	}
 
 	void Entity::AddComponent(Component* component)
@@ -73,13 +78,12 @@ namespace Blueberry
 			{
 				if (!component->m_IsCreated)
 				{
-					component->OnCreate();
+					s_Operations.push({ 1000, Operation::CreateComponent, component });
 					component->m_IsCreated = true;
 				}
 				if (!component->m_IsActive)
 				{
-					AddComponentToScene(component);
-					component->OnEnable();
+					s_Operations.push({ 2000, Operation::EnableComponent, component });
 					component->m_IsActive = true;
 				}
 			}
@@ -108,13 +112,12 @@ namespace Blueberry
 			{
 				if (component->m_IsActive)
 				{
-					RemoveComponentFromScene(component);
-					component->OnDisable();
+					s_Operations.push({ 3000, Operation::DisableComponent, component });
 					component->m_IsActive = false;
 				}
 				if (!component->m_IsDestroyed)
 				{
-					component->OnDestroy();
+					s_Operations.push({ 4000, Operation::DestroyComponent, component });
 					component->m_IsDestroyed = true;
 				}
 			}
@@ -170,6 +173,63 @@ namespace Blueberry
 		else
 		{
 			UpdateHierarchy(true);
+		}
+	}
+
+	void Entity::Poll()
+	{
+		if (s_Operations.size() > 0)
+		{
+			while (!s_Operations.empty())
+			{
+				OperationData data = s_Operations.top();
+				s_Operations.pop();
+				Object* object = data.object.Get();
+				if (object != nullptr)
+				{
+					switch (data.operation)
+					{
+					case Operation::CreateComponent:
+						(static_cast<Component*>(object))->OnCreate();
+						break;
+					case Operation::EnableComponent:
+					{
+						Component* component = static_cast<Component*>(object);
+						Scene* scene = component->GetEntity()->GetScene();
+						if (scene != nullptr)
+						{
+							for (TypeId* type : ClassDB::GetInfo(component->GetType())->iterators)
+							{
+								scene->m_ComponentManager.AddComponent(component, *type);
+							}
+						}
+						component->OnEnable();
+					}
+					break;
+					case Operation::DisableComponent:
+					{
+						Component* component = static_cast<Component*>(object);
+						Scene* scene = component->GetEntity()->GetScene();
+						if (scene != nullptr)
+						{
+							for (TypeId* type : ClassDB::GetInfo(component->GetType())->iterators)
+							{
+								scene->m_ComponentManager.RemoveComponent(component, *type);
+							}
+						}
+						component->OnDisable();
+					}
+					break;
+					case Operation::DestroyComponent:
+						(static_cast<Component*>(object))->OnDestroy();
+						Object::Destroy(object);
+						break;
+					case Operation::DestroyEntity:
+						Object::Destroy(object);
+						break;
+					}
+				}
+			}
 		}
 	}
 
@@ -265,30 +325,6 @@ namespace Blueberry
 		return result;
 	}
 
-	void Entity::AddComponentToScene(Component* component)
-	{
-		Scene* scene = component->GetEntity()->GetScene();
-		if (scene != nullptr)
-		{
-			for (TypeId* type : ClassDB::GetInfo(component->GetType())->iterators)
-			{
-				scene->m_ComponentManager.AddComponent(component, *type);
-			}
-		}
-	}
-
-	void Entity::RemoveComponentFromScene(Component* component)
-	{
-		Scene* scene = component->GetEntity()->GetScene();
-		if (scene != nullptr)
-		{
-			for (TypeId* type : ClassDB::GetInfo(component->GetType())->iterators)
-			{
-				scene->m_ComponentManager.RemoveComponent(component, *type);
-			}
-		}
-	}
-
 	void Entity::UpdateHierarchy(bool active)
 	{
 		bool newActive = m_IsActive && active;
@@ -327,13 +363,12 @@ namespace Blueberry
 			{
 				if (!component->m_IsCreated)
 				{
-					component->OnCreate();
+					s_Operations.push({ 1000, Operation::CreateComponent, component });
 					component->m_IsCreated = true;
 				}
 				if (!component->m_IsActive)
 				{
-					AddComponentToScene(component);
-					component->OnEnable();
+					s_Operations.push({ 2000, Operation::EnableComponent, component });
 					component->m_IsActive = true;
 				}
 			}
@@ -347,8 +382,7 @@ namespace Blueberry
 			Component* component = componentSlot.Get();
 			if (component->m_IsActive && component->CanExecute())
 			{
-				RemoveComponentFromScene(component);
-				component->OnDisable();
+				s_Operations.push({ 3000, Operation::DisableComponent, component });
 				component->m_IsActive = false;
 			}
 		}

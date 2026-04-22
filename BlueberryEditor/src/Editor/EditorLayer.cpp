@@ -6,6 +6,7 @@
 #include "Blueberry\Core\EngineLayer.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\ImGuiRenderer.h"
+#include "Blueberry\Graphics\RmlUiRenderer.h"
 #include "Blueberry\Graphics\GfxTexturePool.h"
 #include "Blueberry\Math\Math.h"
 #include "Blueberry\Events\WindowEvents.h"
@@ -73,6 +74,7 @@ namespace Blueberry
 		IconRenderer::Initialize();
 		Physics::Initialize();
 		Audio::Initialize();
+		RmlUiRenderer::Initialize();
 		EditorWindow::Initialize();
 
 		WindowEvents::GetWindowResized().AddCallback<EditorLayer, &EditorLayer::OnWindowResize>(this);
@@ -92,6 +94,7 @@ namespace Blueberry
 		IconRenderer::Shutdown();
 		Physics::Shutdown();
 		Audio::Shutdown();
+		RmlUiRenderer::Shutdown();
 		GfxTexturePool::Shutdown();
 		ImGuiRenderer::Shutdown();
 		EngineLayer::Shutdown();

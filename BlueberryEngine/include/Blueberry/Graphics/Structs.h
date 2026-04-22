@@ -11,7 +11,7 @@ namespace Blueberry
 		uint32_t width;
 		uint32_t height;
 		uint32_t depth;
-		void* data;
+		const void* data;
 		size_t dataSize;
 		uint32_t antiAliasing;
 		uint32_t mipCount;

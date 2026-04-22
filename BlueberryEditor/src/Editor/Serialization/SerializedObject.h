@@ -72,7 +72,7 @@ namespace Blueberry
 		Object* m_Object;
 	};
 
-	using ObjectUpdateEvent = Event<const ObjectUpdateEventArgs>;
+	using ObjectUpdateEvent = Event<const ObjectUpdateEventArgs&>;
 
 	class SerializedObject : public std::enable_shared_from_this<SerializedObject>
 	{

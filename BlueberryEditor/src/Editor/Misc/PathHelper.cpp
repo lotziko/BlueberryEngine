@@ -1,6 +1,7 @@
 #include "PathHelper.h"
 
 #include "Blueberry\Tools\ByteConverter.h"
+#include "Blueberry\Tools\StringHelper.h"
 
 #include <cstdlib>
 #include <fstream>
@@ -36,7 +37,7 @@ namespace Blueberry
 		{
 			String line;
 			std::getline(input, line);
-			if (line._Starts_with("Guid:"))
+			if (StringHelper::StartsWith(line, "Guid:"))
 			{
 				size_t colonPos = line.find(':');
 				size_t guidPos = line.find_first_not_of(' ', colonPos + 1);

@@ -9,6 +9,7 @@ namespace Blueberry
 	class RuntimeLoader
 	{
 	public:
-		static void Load(Scene* scene);
+		static void LoadAssets();
+		static void LoadScene(Scene* scene);
 	};
 }

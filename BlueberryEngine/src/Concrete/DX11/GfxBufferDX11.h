@@ -16,6 +16,9 @@ namespace Blueberry
 
 		bool Initialize(const BufferProperties& properties);
 
+		virtual void* Map() final;
+		virtual void Unmap() final;
+
 		virtual void GetData(void* data) final;
 		virtual void SetData(const void* data, size_t size) final;
 

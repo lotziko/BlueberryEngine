@@ -32,6 +32,25 @@ namespace Blueberry
 		}
 	}
 
+	void* GfxBufferDX11::Map()
+	{
+		D3D11_MAPPED_SUBRESOURCE mappedBuffer;
+		ZeroMemory(&mappedBuffer, sizeof(D3D11_MAPPED_SUBRESOURCE));
+
+		HRESULT hr = m_DeviceContext->Map(m_Buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
+		if (FAILED(hr))
+		{
+			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to map the buffer."));
+			return nullptr;
+		}
+		return mappedBuffer.pData;
+	}
+
+	void GfxBufferDX11::Unmap()
+	{
+		m_DeviceContext->Unmap(m_Buffer.Get(), 0);
+	}
+
 	void GfxBufferDX11::GetData(void* data)
 	{
 		m_DeviceContext->CopyResource(m_StagingBuffer.Get(), m_Buffer.Get());

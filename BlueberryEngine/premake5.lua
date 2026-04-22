@@ -38,15 +38,19 @@ project "BlueberryEngine"
 		"%{IncludeDir.flathashmap}",
 		"%{IncludeDir.rpmalloc}",
 		"%{IncludeDir.miniaudio}",
+		"%{IncludeDir.rmlui}",
 	}
 
 	links
 	{
 		"Imgui",
 		"Jolt",
+		"RmlUi",
 		"%{Library.hbao}",
 		"%{Library.openxr}",
 	}
+
+	defines { "RMLUI_CORE_EXPORTS" }
 
 	filter "system:windows"
 

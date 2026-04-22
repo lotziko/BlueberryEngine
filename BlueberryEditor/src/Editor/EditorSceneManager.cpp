@@ -76,6 +76,7 @@ namespace Blueberry
 		}
 
 		Unload();
+		Entity::Poll();
 
 		s_Scene = new Scene();
 		s_Scene->Initialize();
@@ -215,6 +216,7 @@ namespace Blueberry
 			return;
 		}
 		Unload();
+		Entity::Poll();
 		Application::SetRunning(true);
 		Reload();
 	}
@@ -226,6 +228,7 @@ namespace Blueberry
 			return;
 		}
 		Unload();
+		Entity::Poll();
 		Application::SetRunning(false);
 		Reload();
 	}
@@ -298,6 +301,7 @@ namespace Blueberry
 				s_SceneSettings = static_cast<SceneSettings*>(object);
 			}
 		}
+		Entity::Poll();
 	}
 
 	void EditorSceneManager::UpdateScene()

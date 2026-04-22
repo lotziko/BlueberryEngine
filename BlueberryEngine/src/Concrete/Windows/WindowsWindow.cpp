@@ -574,7 +574,8 @@ namespace Blueberry
 					}
 
 					POINT p;
-					GetCursorPos(&p);
+					GetCursorPos(&p); 
+					ScreenToClient(m_Handle, &p);
 					MouseMoveEventArgs args(static_cast<float>(p.x), static_cast<float>(p.y), static_cast<float>(xDelta), static_cast<float>(yDelta));
 					InputEvents::GetMouseMoved().Invoke(args);
 				}

@@ -11,6 +11,9 @@ namespace Blueberry
 
 		virtual ~GfxBuffer() = default;
 
+		virtual void* Map() = 0;
+		virtual void Unmap() = 0;
+
 		virtual void GetData(void* data) = 0;
 		virtual void SetData(const void* data, size_t size) = 0;
 

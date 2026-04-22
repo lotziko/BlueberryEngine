@@ -9,6 +9,7 @@
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\GfxTexturePool.h"
 #include "Blueberry\Graphics\ImGuiRenderer.h"
+#include "Blueberry\Graphics\RmlUiRenderer.h"
 #include "Blueberry\Events\WindowEvents.h"
 #include "Blueberry\Physics\Physics.h"
 #include "Blueberry\Physics\PhysicsShapeCache.h"
@@ -33,8 +34,10 @@ namespace Blueberry
 		Physics::Enable();
 		Audio::Initialize();
 		AssetLoader::Initialize(new RuntimeAssetLoader());
+		RuntimeLoader::LoadAssets();
 		PhysicsShapeCache::Initialize(new RuntimePhysicsShapeCache());
-		RuntimeLoader::Load(m_Scene);
+		RmlUiRenderer::Initialize();
+		RuntimeLoader::LoadScene(m_Scene);
 		EngineLayer::Initialize();
 		ImGuiRenderer::Initialize();
 		Input::SetEnabled(true);
@@ -49,6 +52,7 @@ namespace Blueberry
 		Physics::Disable();
 		Physics::Shutdown();
 		Audio::Shutdown();
+		RmlUiRenderer::Shutdown();
 		GfxTexturePool::Shutdown();
 		EngineLayer::Shutdown();
 		ImGuiRenderer::Shutdown();
