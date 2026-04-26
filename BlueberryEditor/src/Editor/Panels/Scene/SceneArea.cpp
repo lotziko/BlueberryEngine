@@ -59,6 +59,7 @@ namespace Blueberry
 		Entity* cameraEntity = Object::Create<Entity>();
 		cameraEntity->AddComponent<Transform>();
 		m_Camera = cameraEntity->AddComponent<Camera>();
+		m_Camera->SetBackgroundColor(Color(0.117f, 0.117f, 0.117f, 1.0f));
 		cameraEntity->OnCreate();
 
 		m_ColorRenderTarget = GfxTexturePool::Get(Screen::GetWidth(), Screen::GetHeight(), 1, TextureUsageFlags::RenderTarget, 1, 1, TextureFormat::R8G8B8A8_UNorm);
@@ -283,7 +284,7 @@ namespace Blueberry
 			--s_SceneRedrawRequestsCount;
 		}
 
-		ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(m_ColorRenderTarget->GetHandle()), ImVec2(pos.x, pos.y), ImVec2(pos.x + size.x, pos.y + size.y), ImVec2(0, 0), ImVec2(size.x / Screen::GetWidth(), size.y / Screen::GetHeight()));
+		ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(m_ColorRenderTarget->GetHandle()), pos, ImVec2(pos.x + size.x, pos.y + size.y), ImVec2(0, 0), ImVec2(size.x / Screen::GetWidth(), size.y / Screen::GetHeight()));
 		DrawControls();
 		DrawGizmos(Rectangle(static_cast<long>(pos.x), static_cast<long>(pos.y), static_cast<long>(size.x), static_cast<long>(size.y)));
 	}
@@ -466,73 +467,76 @@ namespace Blueberry
 
 		ImGui::BeginGroup();
 
-		if (EditorSceneManager::GetScene() != nullptr && !Application::IsRunning())
+		if (EditorSceneManager::GetScene() != nullptr)
 		{
-			if (ImGui::Button("Save"))
+			if (!Application::IsRunning())
 			{
-				EditorSceneManager::Save();
-				SetHasUnsavedChanges(false);
-			}
-			ImGui::SameLine();
-
-			if (EditorSceneManager::HasPrefabScene() && ImGui::Button("Close"))
-			{
-				if (EditorWindow::Save(SceneArea::Type))
+				if (ImGui::Button("Save"))
 				{
-					Selection::SetActiveObject(nullptr);
-					EditorSceneManager::ClosePrefab(false);
+					EditorSceneManager::Save();
+					SetHasUnsavedChanges(false);
 				}
-			}
-			ImGui::SameLine();
-		}
+				ImGui::SameLine();
 
-		if (Is2DMode())
-		{
-			if (ImGui::Button("3D"))
-			{
-				Set2DMode(false);
+				if (EditorSceneManager::HasPrefabScene() && ImGui::Button("Close"))
+				{
+					if (EditorWindow::Save(SceneArea::Type))
+					{
+						Selection::SetActiveObject(nullptr);
+						EditorSceneManager::ClosePrefab(false);
+					}
+				}
+				ImGui::SameLine();
 			}
-			ImGui::SameLine();
-		}
-		else
-		{
-			if (ImGui::Button("2D"))
+			
+			if (Is2DMode())
 			{
-				Set2DMode(true);
+				if (ImGui::Button("3D"))
+				{
+					Set2DMode(false);
+				}
+				ImGui::SameLine();
 			}
-			ImGui::SameLine();
-		}
-
-		// Snapping
-		{
-			const char* popId = "Snap";
-			if (ImGui::Button("Snapping"))
+			else
 			{
-				ImGui::OpenPopup(popId);
-			}
-			ImGui::SameLine();
-
-			if (ImGui::BeginPopup(popId))
-			{
-				ImGui::InputFloat("##positionSnap", Preferences::GetGizmoSnapping());
-				ImGui::InputFloat("##rotationSnap", Preferences::GetGizmoSnapping() + 1);
-				ImGui::InputFloat("##scaleSnap", Preferences::GetGizmoSnapping() + 2);
-				ImGui::EndPopup();
+				if (ImGui::Button("2D"))
+				{
+					Set2DMode(true);
+				}
+				ImGui::SameLine();
 			}
 
-			if (ImGui::Button("Position"))
+			// Snapping
 			{
-				Preferences::SetGizmoOperation(ImGuizmo::OPERATION::TRANSLATE);
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("Rotation"))
-			{
-				Preferences::SetGizmoOperation(ImGuizmo::OPERATION::ROTATE);
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("Scale"))
-			{
-				Preferences::SetGizmoOperation(ImGuizmo::OPERATION::SCALE);
+				const char* popId = "Snap";
+				if (ImGui::Button("Snapping"))
+				{
+					ImGui::OpenPopup(popId);
+				}
+				ImGui::SameLine();
+
+				if (ImGui::BeginPopup(popId))
+				{
+					ImGui::InputFloat("##positionSnap", Preferences::GetGizmoSnapping());
+					ImGui::InputFloat("##rotationSnap", Preferences::GetGizmoSnapping() + 1);
+					ImGui::InputFloat("##scaleSnap", Preferences::GetGizmoSnapping() + 2);
+					ImGui::EndPopup();
+				}
+
+				if (ImGui::Button("Position"))
+				{
+					Preferences::SetGizmoOperation(ImGuizmo::OPERATION::TRANSLATE);
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Rotation"))
+				{
+					Preferences::SetGizmoOperation(ImGuizmo::OPERATION::ROTATE);
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Scale"))
+				{
+					Preferences::SetGizmoOperation(ImGuizmo::OPERATION::SCALE);
+				}
 			}
 		}
 
@@ -565,18 +569,14 @@ namespace Blueberry
 	{
 		int viewportWidth = static_cast<int>(width);
 		int viewportHeight = static_cast<int>(height);
-		Color background = { 0.117f, 0.117f, 0.117f, 1 };
 
 		Scene* scene = EditorSceneManager::GetScene();
 		if (scene == nullptr)
 		{
-			GfxDevice::SetRenderTarget(m_ColorRenderTarget);
-			GfxDevice::ClearColor(background);
-			GfxDevice::SetRenderTarget(nullptr);
 			return;
 		}
 		BB_PROFILE_BEGIN("Scene draw");
-		DefaultRenderer::Draw(scene, m_Camera, Rectangle(0, 0, viewportWidth, viewportHeight), background, m_ColorRenderTarget, m_DepthStencilRenderTarget);
+		DefaultRenderer::Draw(scene, m_Camera, Rectangle(0, 0, viewportWidth, viewportHeight), m_ColorRenderTarget, m_DepthStencilRenderTarget);
 		BB_PROFILE_END();
 		GfxDevice::SetRenderTarget(m_ColorRenderTarget, m_DepthStencilRenderTarget);
 		GfxDevice::SetViewport(0, 0, viewportWidth, viewportHeight);

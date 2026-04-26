@@ -25,7 +25,6 @@ namespace Blueberry
 
 	OBJECT_DEFINITION(PrefabInstance, Object)
 	{
-		DEFINE_BASE_FIELDS(PrefabInstance, Object)
 		DEFINE_FIELD(PrefabInstance, m_SourcePrefab, BindingType::ObjectPtr, FieldOptions().SetObjectType(&PrefabInstance::Type))
 		DEFINE_FIELD(PrefabInstance, m_Parent, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Transform::Type))
 		DEFINE_FIELD(PrefabInstance, m_Modifications, BindingType::DataList, FieldOptions().SetObjectType(&PrefabModificationData::Type))

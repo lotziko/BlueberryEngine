@@ -7,6 +7,8 @@ namespace Blueberry
 	class StandardMeshes
 	{
 	public:
+		static void Initialize();
+
 		static Mesh* GetFullscreen();
 		static Mesh* GetPlane();
 		static Mesh* GetSphere();

@@ -203,12 +203,33 @@ namespace Blueberry
 		size_t bytePerChannel = bytePerPixel / 4;
 		uint8_t* ptr = scratchImage.GetImages()->pixels;
 		uint8_t* end = ptr + scratchImage.GetPixelsSize();
-		size_t targetOffset = 2 * bytePerChannel;
-		size_t sourceOffset = 3 * bytePerChannel;
-		for (; ptr < end; ptr += bytePerPixel)
+		switch (scratchImage.GetMetadata().format)
 		{
-			memcpy(ptr + targetOffset, ptr + sourceOffset, bytePerChannel);
+		case DXGI_FORMAT_R8G8B8A8_UNORM:
+		{
+			size_t targetOffset = 2 * bytePerChannel;
+			size_t sourceOffset = 3 * bytePerChannel;
+			for (; ptr < end; ptr += bytePerPixel)
+			{
+				memcpy(ptr + targetOffset, ptr + sourceOffset, bytePerChannel);
+			}
 		}
+		break;
+		case DXGI_FORMAT_B8G8R8A8_UNORM:
+		{
+			size_t targetOffset = 0;
+			size_t sourceOffset = 3 * bytePerChannel;
+			for (; ptr < end; ptr += bytePerPixel)
+			{
+				memcpy(ptr + targetOffset, ptr + sourceOffset, bytePerChannel);
+			}
+		}
+		break;
+		default:
+			BB_ERROR("Unknown format.");
+			break;
+		}
+		
 	}
 
 	void TextureHelper::EquirectangularToTextureCube(DirectX::ScratchImage& scratchImage, const TextureFormat& uncompressedFormat)

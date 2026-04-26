@@ -40,13 +40,14 @@ namespace Blueberry
 	{
 		ObjectMapping mapping;
 		List<Object*> objectsToClone;
+		Entity* rootEntity = nullptr;
 		if (object->IsClassType(Component::Type))
 		{
-			GatherHierarchy(static_cast<Component*>(object)->GetEntity(), objectsToClone);
+			GatherHierarchy(rootEntity = static_cast<Component*>(object)->GetEntity(), objectsToClone);
 		}
 		else if (object->IsClassType(Entity::Type))
 		{
-			GatherHierarchy(static_cast<Entity*>(object), objectsToClone);
+			GatherHierarchy(rootEntity = static_cast<Entity*>(object), objectsToClone);
 		}
 		else
 		{
@@ -63,6 +64,11 @@ namespace Blueberry
 		for (auto& tuple : objectsToCopy)
 		{
 			CopyFields(mapping, std::get<0>(tuple), std::get<1>(tuple), std::get<2>(tuple));
+		}
+		if (rootEntity != nullptr)
+		{
+			Entity* newRootEntity = static_cast<Entity*>(ObjectDB::GetObject(mapping[rootEntity->GetObjectId()]));
+			ClassDB::GetInfo(Transform::Type)->GetField("m_Parent")->Set(newRootEntity->GetTransform(), ObjectPtr<Transform>());
 		}
 		return ObjectDB::GetObject(mapping[object->GetObjectId()]);
 	}

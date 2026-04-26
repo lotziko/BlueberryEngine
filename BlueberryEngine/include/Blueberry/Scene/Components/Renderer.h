@@ -15,7 +15,11 @@ namespace Blueberry
 		int GetSortingOrder() const;
 		void SetSortingOrder(int sortingOrder);
 
+		bool IsCastingShadows() const;
+		void SetCastingShadows(bool castingShadows);
+
 	protected:
 		int m_SortingOrder = 0;
+		bool m_IsCastingShadows = true;
 	};
 }

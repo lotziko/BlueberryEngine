@@ -25,6 +25,7 @@ namespace Blueberry
 				serializer.AddObject(importedObject, object.first);
 			}
 		}
+		serializer.SetGuid(guid);
 		serializer.Deserialize(path, SerializationFlags::EditorOnly | SerializationFlags::HasHeaders);
 		auto& deserializedObjects = serializer.GetDeserializedObjects();
 
@@ -45,5 +46,6 @@ namespace Blueberry
 			}
 		}
 		AssetDB::SaveAssetObjectsToCache(objects);
+		serializer.FinalizeObjects();
 	}
 }

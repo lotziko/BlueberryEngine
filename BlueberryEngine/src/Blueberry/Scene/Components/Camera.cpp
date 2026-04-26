@@ -264,6 +264,16 @@ namespace Blueberry
 		m_CameraType = cameraType;
 	}
 
+	const Color& Camera::GetBackgroundColor() const
+	{
+		return m_BackgroundColor;
+	}
+
+	void Camera::SetBackgroundColor(const Color& backgroundColor)
+	{
+		m_BackgroundColor = backgroundColor;
+	}
+
 	bool Camera::IsViewDirty()
 	{
 		// This may cause problems some time later

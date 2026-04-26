@@ -51,6 +51,6 @@ namespace Blueberry
 			skyRenderer->SetAmbientColor(Color(0.01f, 0.01f, 0.01f, 1));
 		}
 		m_Renderer->SetMaterial(material);
-		DefaultRenderer::Draw(m_Scene, m_Camera, Rectangle(0, 0, target->GetWidth(), target->GetHeight()), Color(0, 0, 0, 1), target, nullptr);
+		DefaultRenderer::Draw(m_Scene, m_Camera, Rectangle(0, 0, target->GetWidth(), target->GetHeight()), target, nullptr);
 	}
 }

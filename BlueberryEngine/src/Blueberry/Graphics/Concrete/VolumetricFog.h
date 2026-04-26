@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Blueberry\Core\Base.h"
+
 namespace Blueberry
 {
 	class ComputeShader;
@@ -19,5 +21,7 @@ namespace Blueberry
 		static ComputeShader* s_VolumetricFogShader;
 		static GfxTexture* s_FrustumVolume0;
 		static GfxTexture* s_FrustumVolume1;
+		static GfxTexture* s_FrustumVolume2;
+		static ObjectId s_CameraId;
 	};
 }

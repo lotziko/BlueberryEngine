@@ -353,6 +353,7 @@ namespace Blueberry
 	void PlatformHelper::MoveToRecycleBin(const String& path)
 	{
 		WString wpath = StringHelper::StringToWide(path);
+		wpath.push_back(L'\0');
 		SHFILEOPSTRUCTW fileOp = { 0 };
 		fileOp.hwnd = NULL;
 		fileOp.wFunc = FO_DELETE;

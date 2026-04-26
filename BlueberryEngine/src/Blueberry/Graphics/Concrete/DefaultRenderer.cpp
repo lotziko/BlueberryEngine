@@ -61,7 +61,7 @@ namespace Blueberry
 		ShadowAtlas::Shutdown();
 	}
 	
-	void DefaultRenderer::Draw(Scene* scene, Camera* camera, Rectangle viewport, Color background, GfxTexture* colorOutput, GfxTexture* depthOutput)
+	void DefaultRenderer::Draw(Scene* scene, Camera* camera, Rectangle viewport, GfxTexture* colorOutput, GfxTexture* depthOutput)
 	{
 		CameraData cameraData = {};
 		cameraData.camera = camera;
@@ -147,7 +147,6 @@ namespace Blueberry
 		GfxDevice::SetViewCount(viewCount);
 		GfxDevice::SetRenderTarget(nullptr, depthStencilMSAARenderTarget);
 		GfxDevice::SetViewport(viewport.x, viewport.y, viewport.width, viewport.height);
-		GfxDevice::ClearColor({ 0.0f, 0.0f, 0.0f, 0.0f });
 		GfxDevice::ClearDepth(1.0f);
 		DrawingSettings drawingSettings = {};
 		drawingSettings.passIndex = 1;
@@ -156,8 +155,7 @@ namespace Blueberry
 		BB_PROFILE_END();
 
 		// Resolve depth/normal
-		GfxDevice::SetRenderTarget(colorRenderTarget, depthStencilRenderTarget);
-		GfxDevice::ClearColor({ 0.0f, 0.0f, 0.0f, 0.0f });
+		GfxDevice::SetRenderTarget(nullptr, depthStencilRenderTarget);
 		GfxDevice::ClearDepth(1.0f);
 		GfxDevice::SetGlobalTexture(s_ScreenDepthStencilTextureId, depthStencilMSAARenderTarget);
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetResolveMSAA(), 0));
@@ -177,11 +175,8 @@ namespace Blueberry
 		BB_PROFILE_BEGIN("Forward");
 		RealtimeLights::CalculateClusters();
 		GfxDevice::SetRenderTarget(colorMSAARenderTarget, depthStencilMSAARenderTarget);
-		GfxDevice::ClearColor(background);
-		if (cameraType != CameraType::Preview)
-		{
-			s_DefaultContext.DrawSky(s_Results);
-		}
+		GfxDevice::ClearColor({ 0.0f, 0.0f, 0.0f, 0.0f });
+		s_DefaultContext.DrawSky(s_Results);
 		drawingSettings.passIndex = 0;
 		drawingSettings.sortingMode = SortingMode::Default;
 		s_DefaultContext.DrawRenderers(s_Results, drawingSettings);

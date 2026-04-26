@@ -6,6 +6,7 @@
 #include "Blueberry\Threading\JobSystem.h"
 #include "..\Graphics\RegisterGraphicsTypes.h"
 #include "Blueberry\Graphics\DefaultShaders.h"
+#include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\Skinning.h"
 #include "..\Animations\RegisterAnimationsTypes.h"
 #include "..\Audio\RegisterAudioTypes.h"
@@ -29,6 +30,7 @@ namespace Blueberry
 		Input::Initialize();
 		JobSystem::Initialize();
 		DefaultShaders::Initialize();
+		StandardMeshes::Initialize();
 		Skinning::Initialize();
 	}
 

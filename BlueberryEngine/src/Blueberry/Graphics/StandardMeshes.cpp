@@ -1,5 +1,6 @@
 #include "Blueberry\Graphics\StandardMeshes.h"
 
+#include "Blueberry\Core\ObjectDB.h"
 #include "Blueberry\Graphics\Mesh.h"
 
 namespace Blueberry
@@ -9,6 +10,11 @@ namespace Blueberry
 	Mesh* StandardMeshes::s_PlaneMesh = nullptr;
 	Mesh* StandardMeshes::s_SphereMesh = nullptr;
 	Mesh* StandardMeshes::s_CubeMesh = nullptr;
+
+	void StandardMeshes::Initialize()
+	{
+		GetPlane();
+	}
 
 	Mesh* StandardMeshes::GetFullscreen()
 	{
@@ -83,6 +89,7 @@ namespace Blueberry
 			s_PlaneMesh->SetUVs(0, uvs, 4);
 			s_PlaneMesh->GenerateTangents();
 			s_PlaneMesh->Apply();
+			ObjectDB::AllocateIdToGuid(s_PlaneMesh, Guid(TO_HASH("Plane"), 0), 1);
 		}
 
 		return s_PlaneMesh;

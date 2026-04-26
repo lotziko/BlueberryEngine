@@ -5,6 +5,7 @@
 #include "..\RenderContext.h"
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Scene\Components\Transform.h"
+#include "Blueberry\Core\Time.h"
 
 namespace Blueberry
 {
@@ -12,7 +13,9 @@ namespace Blueberry
 
 	struct FogViewData
 	{
-		Vector4 viewInvCount;
+		unsigned int jitterOffset;
+		float viewInvCount;
+		Vector2 dummy;
 		Vector4 viewDX[2];
 		Vector4 viewDY[2];
 		Vector4 viewCorner[2];
@@ -63,8 +66,9 @@ namespace Blueberry
 		Vector4 bottomLeft = corners[7] - position;
 		Vector4 bottomRight = corners[6] - position;
 		Vector4 topLeft = corners[4] - position;
-
-		constants.viewInvCount = Vector4(1, 0, 0, 0);
+		
+		constants.jitterOffset = static_cast<uint32_t>((Time::GetFrameCount() % 100));
+		constants.viewInvCount = 1;
 		constants.viewDX[0] = bottomRight - bottomLeft;
 		constants.viewDY[0] = topLeft - bottomLeft;
 		constants.viewCorner[0] = bottomLeft;

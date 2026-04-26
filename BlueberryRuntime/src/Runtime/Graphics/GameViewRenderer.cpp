@@ -41,7 +41,7 @@ namespace Blueberry
 				camera->SetPixelSize(Vector2(viewport.width, viewport.height));
 			}
 
-			DefaultRenderer::Draw(scene, camera, Rectangle(0l, 0l, static_cast<long>(viewport.width), static_cast<long>(viewport.height)), Color(0.0f, 0.0f, 0.0f, 1.0f), s_RenderTarget);
+			DefaultRenderer::Draw(scene, camera, Rectangle(0l, 0l, static_cast<long>(viewport.width), static_cast<long>(viewport.height)), s_RenderTarget);
 			GfxDevice::SetRenderTarget(nullptr);
 			GfxDevice::SetViewport(static_cast<int>(viewport.x), static_cast<int>(viewport.y), static_cast<int>(viewport.width), static_cast<int>(viewport.height));
 			GfxDevice::SetGlobalTexture(TO_HASH("_BlitTexture"), s_RenderTarget);

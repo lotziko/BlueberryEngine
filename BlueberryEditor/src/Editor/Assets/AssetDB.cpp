@@ -176,6 +176,7 @@ namespace Blueberry
 			}
 		}
 		serializer.Deserialize(assetPath, SerializationFlags::HasHeaders);
+		serializer.FinalizeObjects();
 		auto& deserializedObjects = serializer.GetDeserializedObjects();
 		if (deserializedObjects.size() > 0)
 		{
@@ -285,7 +286,6 @@ namespace Blueberry
 		{
 			return;
 		}
-
 		s_DirtyAssets.push_back(object->GetObjectId());
 	}
 
@@ -321,11 +321,14 @@ namespace Blueberry
 
 	void AssetDB::DeleteAsset(const String& relativePath)
 	{
-		if (s_RelativePathToImporterId.count(relativePath) > 0)
+		auto it = s_RelativePathToImporterId.find(relativePath);
+		if (it != s_RelativePathToImporterId.end())
 		{
 			String assetPath = Path::GetAssetsPath(relativePath);
-			PlatformHelper::MoveToRecycleBin(assetPath + '\0');
-			PlatformHelper::MoveToRecycleBin(assetPath + ".meta\0");
+			PlatformHelper::MoveToRecycleBin(assetPath);
+			PlatformHelper::MoveToRecycleBin(assetPath + ".meta");
+			AssetImporter* importer = static_cast<AssetImporter*>(ObjectDB::GetObject(it->second));
+			DeleteAssetFromData(importer->GetGuid());
 		}
 	}
 
@@ -408,6 +411,10 @@ namespace Blueberry
 
 	bool AssetDB::NeedsReimport(AssetImporter* importer)
 	{
+		if (!std::filesystem::exists(importer->GetFilePath()))
+		{
+			return false;
+		}
 		if (!ImporterInfoCache::Has(importer))
 		{
 			return true;
@@ -439,9 +446,14 @@ namespace Blueberry
 	{
 		const String& relativePath = importer->GetRelativeFilePath();
 		const Guid& guid = importer->GetGuid();
-		for (auto& pair : ObjectDB::GetObjectsFromGuid(guid))
+		auto snapshot = ObjectDB::GetObjectsFromGuid(guid);
+		for (auto& pair : snapshot)
 		{
-			Object::Destroy(ObjectDB::GetObject(pair.second));
+			Object* object = ObjectDB::GetObject(pair.second);
+			if (object != nullptr)
+			{
+				Object::Destroy(object);
+			}
 		}
 		ImporterInfoCache::Clear(importer);
 		Object::Destroy(importer);

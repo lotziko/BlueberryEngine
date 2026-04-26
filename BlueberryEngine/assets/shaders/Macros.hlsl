@@ -36,6 +36,7 @@ static uint _RenderInstanceId;
 #define CAMERA_POSITION_WS					_CameraPositionWS
 #define CAMERA_FORWARD_DIRECTION_WS			_CameraForwardDirectionWS
 #define CAMERA_SIZE_INV_SIZE				_CameraSizeInvSize
+#define CAMERA_COLOR						_CameraColor
 #define RENDER_TARGET_SIZE_INV_SIZE			_RenderTargetSizeInvSize
 
 

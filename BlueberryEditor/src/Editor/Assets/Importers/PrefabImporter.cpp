@@ -28,6 +28,7 @@ namespace Blueberry
 			}
 		}
 		serializer.Deserialize(path, SerializationFlags::EditorOnly | SerializationFlags::HasHeaders);
+		serializer.FinalizeObjects();
 		HashSet<Guid> dependencies;
 		serializer.GatherDependencies(dependencies);
 		AssetDB::SetDependencies(guid, dependencies);

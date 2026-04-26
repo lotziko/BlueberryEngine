@@ -41,6 +41,6 @@ namespace Blueberry
 		m_Camera->GetTransform()->SetRotation(Quaternion::CreateFromYawPitchRoll(Math::ToRadians(45), Math::ToRadians(15), 0));
 		m_Camera->GetTransform()->SetPosition(cameraPosition);
 
-		DefaultRenderer::Draw(m_Scene, m_Camera, Rectangle(0, 0, target->GetWidth(), target->GetHeight()), Color(0, 0, 0, 1), target, nullptr);
+		DefaultRenderer::Draw(m_Scene, m_Camera, Rectangle(0, 0, target->GetWidth(), target->GetHeight()), target, nullptr);
 	}
 }

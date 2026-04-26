@@ -166,7 +166,6 @@ namespace Blueberry
 			}
 			stream.close();
 		}
-		FinalizeObjects();
 	}
 
 	void EditorSerializer::AddAdditionalObject(const ObjectId& objectId)
@@ -252,6 +251,44 @@ namespace Blueberry
 		}
 	}
 
+	void EditorSerializer::GatherChildrenPrefabs(Entity* entity)
+	{
+		if (entity == nullptr)
+		{
+			return;
+		}
+		if (PrefabManager::IsPartOfPrefabInstance(entity))
+		{
+			if (PrefabManager::IsPrefabInstanceRoot(entity))
+			{
+				PrefabInstance* instance = PrefabManager::GetInstance(entity);
+				instance->PrepareData();
+				AddObject(instance);
+			}
+			for (size_t i = 0; i < entity->GetComponentCount(); ++i)
+			{
+				Component* component = entity->GetComponentAt(i);
+				if (!PrefabManager::IsPartOfPrefabInstance(component))
+				{
+					AddObject(component);
+				}
+			}
+		}
+		else
+		{
+			AddObject(entity);
+			for (size_t i = 0; i < entity->GetComponentCount(); ++i)
+			{
+				AddObject(entity->GetComponentAt(i));
+			}
+		}
+		Transform* transform = entity->GetTransform();
+		for (auto& child : transform->GetChildren())
+		{
+			GatherChildrenPrefabs(child.Get()->GetEntity());
+		}
+	}
+
 	void EditorSerializer::Finalize(Object* object, const Guid& guid, const FileId& fileId)
 	{
 		TypeId type = object->GetType();
@@ -325,43 +362,5 @@ namespace Blueberry
 			audioClip->Initialize(data);
 		}
 		object->SetState(ObjectState::Default);
-	}
-
-	void EditorSerializer::GatherChildrenPrefabs(Entity* entity)
-	{
-		if (entity == nullptr)
-		{
-			return;
-		}
-		if (PrefabManager::IsPartOfPrefabInstance(entity))
-		{
-			if (PrefabManager::IsPrefabInstanceRoot(entity))
-			{
-				PrefabInstance* instance = PrefabManager::GetInstance(entity);
-				instance->PrepareData();
-				AddObject(instance);
-			}
-			for (size_t i = 0; i < entity->GetComponentCount(); ++i)
-			{
-				Component* component = entity->GetComponentAt(i);
-				if (!PrefabManager::IsPartOfPrefabInstance(component))
-				{
-					AddObject(component);
-				}
-			}
-		}
-		else
-		{
-			AddObject(entity);
-			for (size_t i = 0; i < entity->GetComponentCount(); ++i)
-			{
-				AddObject(entity->GetComponentAt(i));
-			}
-		}
-		Transform* transform = entity->GetTransform();
-		for (auto& child : transform->GetChildren())
-		{
-			GatherChildrenPrefabs(child.Get()->GetEntity());
-		}
 	}
 }

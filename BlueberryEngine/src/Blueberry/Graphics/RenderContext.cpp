@@ -17,6 +17,7 @@
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\DefaultTextures.h"
+#include "Blueberry\Graphics\DefaultMaterials.h"
 #include "Blueberry\Graphics\Renderer2D.h"
 #include "Blueberry\Graphics\Skinning.h"
 #include "LightHelper.h"
@@ -31,12 +32,14 @@
 
 namespace Blueberry
 {
+
 	GfxBuffer* RenderContext::s_IndexBuffer = nullptr;
 	size_t RenderContext::s_LastCullingFrame = 0;
 
 	const uint32_t INSTANCE_BUFFER_SIZE = 8192;
 	const uint32_t SKINNING_BUFFER_SIZE = 128;
-	
+	const uint8_t SHADOW_CASTER_PASS = 2;
+
 	struct DrawingOperation
 	{
 		Matrix matrix;
@@ -112,7 +115,7 @@ namespace Blueberry
 		PerDrawDataConstantBuffer::BindDataInstanced(s_PerDrawData.data(), operationCount);
 	}
 
-	void GatherOperations(const CullingResults& results, Object* cullerObject, const uint32_t& index, const SortingMode& sortingMode, const ObjectsFilter& objectsFilter)
+	void GatherOperations(const CullingResults& results, Object* cullerObject, uint32_t index, SortingMode sortingMode, ObjectsFilter objectsFilter, uint8_t passIndex)
 	{
 		bool isAll = objectsFilter == ObjectsFilter::All;
 		bool isStatic = objectsFilter == ObjectsFilter::Static;
@@ -148,6 +151,13 @@ namespace Blueberry
 		for (auto it = begin; it < end; ++it)
 		{
 			Renderer* renderer = static_cast<Renderer*>(ObjectDB::GetObject(*it));
+			if (passIndex == SHADOW_CASTER_PASS)
+			{
+				if (!renderer->IsCastingShadows())
+				{
+					continue;
+				}
+			}
 			if (renderer->GetType() == MeshRenderer::Type)
 			{
 				MeshRenderer* meshRenderer = static_cast<MeshRenderer*>(renderer);
@@ -598,6 +608,10 @@ namespace Blueberry
 				GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetCube(), material, 0));
 			}
 		}
+		else
+		{
+			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetSkybox(), 1));
+		}
 	}
 
 	void RenderContext::DrawShadows(CullingResults& results, ShadowDrawingSettings& shadowDrawingSettings)
@@ -609,7 +623,7 @@ namespace Blueberry
 		s_CurrentCullerIndex = shadowDrawingSettings.sliceIndex;
 
 		DrawingSettings drawingSettings = {};
-		drawingSettings.passIndex = 2; // Shadow caster
+		drawingSettings.passIndex = SHADOW_CASTER_PASS;
 		drawingSettings.sortingMode = SortingMode::FrontToBack;
 		drawingSettings.objectsFilter = shadowDrawingSettings.objectsFilter;
 		DrawRenderers(results, drawingSettings);
@@ -636,7 +650,7 @@ namespace Blueberry
 			GfxDevice::CreateBuffer(indexBufferProperties, s_IndexBuffer);
 		}
 
-		GatherOperations(results, s_CurrentCuller, s_CurrentCullerIndex, drawingSettings.sortingMode, drawingSettings.objectsFilter);
+		GatherOperations(results, s_CurrentCuller, s_CurrentCullerIndex, drawingSettings.sortingMode, drawingSettings.objectsFilter, passIndex);
 
 		// Draw meshes
 		uint32_t operationCount = static_cast<uint32_t>(s_DrawingOperations.size());

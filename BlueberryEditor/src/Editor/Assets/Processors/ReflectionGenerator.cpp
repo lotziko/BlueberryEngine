@@ -76,7 +76,7 @@ namespace Blueberry
 		for (uint32_t i = 0; i < 6; ++i)
 		{
 			cameraTransform->SetLocalRotation(s_Rotation[i]);
-			DefaultRenderer::Draw(reflectionProbe->GetScene(), s_Camera, Rectangle(0, 0, SIZE, SIZE), Color(0, 0, 0), s_RenderTargetTexture, nullptr);
+			DefaultRenderer::Draw(reflectionProbe->GetScene(), s_Camera, Rectangle(0, 0, SIZE, SIZE), s_RenderTargetTexture, nullptr);
 			s_RenderTargetTexture->GetData(s_SliceData.data() + SLICE_SIZE * i);
 		}
 		s_CubeTexture->SetData(s_SliceData.data(), SLICE_SIZE * 6);

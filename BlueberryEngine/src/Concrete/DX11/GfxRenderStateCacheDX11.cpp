@@ -274,6 +274,11 @@ namespace Blueberry
 		for (auto& texture : bindingState.pixelTextures)
 		{
 			GfxTextureDX11* dxTexture = GfxTextureDX11::s_PointerCache.Get(texture.isGlobal ? m_Device->m_BindedTextures[texture.bindingIndex].second : GetTextureIndex(material, texture.bindingIndex));
+			if (dxTexture == nullptr)
+			{
+				BB_ERROR("Texture is missing.");
+				continue;
+			}
 			renderState.pixelShaderResourceViews[texture.srvSlot] = dxTexture->m_ShaderResourceView.Get();
 			if (texture.samplerSlot != UINT8_MAX)
 			{

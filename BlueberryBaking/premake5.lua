@@ -21,6 +21,7 @@ project "BlueberryBaking"
 		"include/**.h",
 		"src/**.h",
 		"src/**.cpp",
+		"src/**.cu",
 	}
 
 	includedirs

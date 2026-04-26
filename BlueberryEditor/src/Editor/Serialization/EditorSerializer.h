@@ -18,10 +18,10 @@ namespace Blueberry
 
 		void GatherPrefabs(Scene* scene);
 		void GatherDependencies(HashSet<Guid>& dependencies);
+		void FinalizeObjects();
 
 	private:
 		void GatherChildrenPrefabs(Entity* entity);
-		void FinalizeObjects();
 		void Finalize(Object* object, const Guid& guid, const FileId& fileId);
 
 	private:

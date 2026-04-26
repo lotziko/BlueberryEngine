@@ -164,6 +164,7 @@ namespace Blueberry
 
 		EditorSerializer serializer = {};
 		serializer.Deserialize(StringHelper::ToString(dataPath), SerializationFlags::EditorOnly | SerializationFlags::Text | SerializationFlags::HasHeaders);
+		serializer.FinalizeObjects();
 		for (auto& pair : serializer.GetDeserializedObjects())
 		{
 			Object* object = ObjectDB::GetObject(pair.first);
@@ -279,6 +280,7 @@ namespace Blueberry
 	{
 		EditorSerializer serializer = {};
 		serializer.Deserialize(path, SerializationFlags::EditorOnly | SerializationFlags::Text | SerializationFlags::HasHeaders);
+		serializer.FinalizeObjects();
 		for (auto& pair : serializer.GetDeserializedObjects())
 		{
 			Object* object = ObjectDB::GetObject(pair.first);

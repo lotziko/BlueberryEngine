@@ -57,6 +57,9 @@ namespace Blueberry
 		CameraType GetCameraType() const;
 		void SetCameraType(CameraType cameraType);
 
+		const Color& GetBackgroundColor() const;
+		void SetBackgroundColor(const Color& backgroundColor);
+
 	private:
 		bool IsViewDirty();
 		void InvalidateProjection();
@@ -92,6 +95,7 @@ namespace Blueberry
 		float m_ZFarPlane = 1000.0f;
 
 		CameraType m_CameraType = CameraType::Game;
+		Color m_BackgroundColor = Color(0.0f, 0.0f, 0.0f, 1.0f);
 
 	private:
 		Vector4 m_ShadowCascades[6];

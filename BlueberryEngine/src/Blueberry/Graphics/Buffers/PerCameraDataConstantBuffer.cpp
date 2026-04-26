@@ -26,6 +26,7 @@ namespace Blueberry
 		Vector4 cameraForwardDirectionWS;
 		Vector4 cameraNearFarClipPlane;
 		Vector4 cameraSizeInvSize;
+		Color cameraColor;
 		Vector4 renderTargetSizeInvSize;
 		Vector4 fogNearFarClipPlane;
 	};
@@ -63,6 +64,7 @@ namespace Blueberry
 		const Vector4& direction = Vector4(Vector3::Transform(Vector3::Forward, transform->GetRotation()));
 		const Vector4& nearFar = Vector4(camera->GetNearClipPlane(), camera->GetFarClipPlane(), 1.0f - camera->GetFarClipPlane() / camera->GetNearClipPlane(), camera->GetFarClipPlane() / camera->GetNearClipPlane());
 		const Vector4& fogNearFar = Vector4(camera->GetNearClipPlane(), 128, camera->GetNearClipPlane() / 128, camera->GetFarClipPlane() / 128);
+		const Color& color = camera->GetBackgroundColor();
 
 		if (viewCount == 1)
 		{
@@ -84,6 +86,7 @@ namespace Blueberry
 			constants.inverseProjectionMatrix[0] = inverseProjection;
 			constants.inverseViewProjectionMatrix[0] = inverseViewProjection;
 			constants.cameraSizeInvSize = sizeInvSize;
+			constants.cameraColor = color;
 			constants.renderTargetSizeInvSize = renderTargetSizeInvSize;
 		}
 		else
@@ -106,6 +109,7 @@ namespace Blueberry
 				constants.inverseProjectionMatrix[i] = inverseProjection;
 				constants.inverseViewProjectionMatrix[i] = inverseViewProjection;
 				constants.cameraSizeInvSize = sizeInvSize;
+				constants.cameraColor = color;
 				constants.renderTargetSizeInvSize = sizeInvSize;
 			}
 		}
