@@ -19,6 +19,7 @@ namespace Blueberry
 		static const std::filesystem::path& GetAudioCachePath();
 		static const std::filesystem::path& GetThumbnailCachePath();
 		static const std::filesystem::path& GetBuildPath();
+		static const std::filesystem::path& GetProjectPath();
 		static void SetProjectPath(const WString& path);
 
 		static std::filesystem::path GetAssetPath(const String& relativePath);
@@ -26,6 +27,7 @@ namespace Blueberry
 		static String GetAssetCachePath(const String& relativePath);
 
 	private:
+		static std::filesystem::path s_ProjectPath;
 		static std::filesystem::path s_AssetsPath;
 		static std::filesystem::path s_DataPath;
 		static std::filesystem::path s_AssemblyPath;

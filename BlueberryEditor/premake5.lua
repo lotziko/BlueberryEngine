@@ -56,6 +56,7 @@ project "BlueberryEditor"
 		"{COPYFILE} %{wks.location}/bin/" .. outputdir .. "/BlueberryRuntime/BlueberryRuntime.exe %{cfg.targetdir}/BlueberryRuntime.exe",
 		"{COPYFILE} %{wks.location}/BlueberryEngine/vendor/rmlui/lib/rmlui.lib %{cfg.targetdir}/rmlui.lib",
 		"{COPYFILE} %{wks.location}/BlueberryEditor/vendor/fastbuild/bin/FBuild.exe %{cfg.targetdir}/FBuild.exe",
+		"{COPYFILE} %{wks.location}/vendor/premake/bin/premake5.exe %{cfg.targetdir}/premake5.exe",
 	}
 
 	filter "system:windows"

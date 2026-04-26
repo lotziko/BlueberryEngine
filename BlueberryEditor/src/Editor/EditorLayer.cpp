@@ -54,8 +54,12 @@ namespace Blueberry
 		RegisterAssetImporters();
 		RegisterObjectEditors();
 		RegisterIcons();
-		AssemblyManager::BuildEditor(false);
-		AssemblyManager::Load();
+		
+		if (AssemblyManager::CreateSolution())
+		{
+			AssemblyManager::BuildEditor(false);
+			AssemblyManager::Load();
+		}
 
 		PhysicsShapeCache::Initialize(new EditorPhysicsShapeCache());
 		AssetDB::Initialize();

@@ -10,6 +10,7 @@ namespace Blueberry
 		static void Unload();
 		static void Load();
 		static String GetAssemblyDirectory();
+		static bool CreateSolution();
 		static bool BuildEditor(const bool& incrementCount = true);
 		static bool BuildRuntime();
 	};

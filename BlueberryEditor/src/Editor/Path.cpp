@@ -4,6 +4,7 @@
 
 namespace Blueberry
 {
+	std::filesystem::path Path::s_ProjectPath = "";
 	std::filesystem::path Path::s_AssetsPath = "Assets";
 	std::filesystem::path Path::s_DataPath = "Data";
 	std::filesystem::path Path::s_AssemblyPath = "Source";
@@ -65,8 +66,14 @@ namespace Blueberry
 		return s_BuildPath;
 	}
 
+	const std::filesystem::path& Path::GetProjectPath()
+	{
+		return s_ProjectPath;
+	}
+
 	void Path::SetProjectPath(const WString& path)
 	{
+		s_ProjectPath = path;
 		std::filesystem::path assetsPath = path;
 		assetsPath += "\\Assets";
 		s_AssetsPath = assetsPath;
