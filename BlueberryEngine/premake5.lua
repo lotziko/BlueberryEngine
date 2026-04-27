@@ -35,7 +35,6 @@ project "BlueberryEngine"
 		"%{IncludeDir.mikktspace}",
 		"%{IncludeDir.hbao}",
 		"%{IncludeDir.openxr}",
-		"%{IncludeDir.flathashmap}",
 		"%{IncludeDir.rpmalloc}",
 		"%{IncludeDir.miniaudio}",
 		"%{IncludeDir.rmlui}",
