@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Blueberry\Core\Base.h"
+#include "Blueberry\Core\Variant.h"
 #include "Blueberry\Core\ObjectPtr.h"
 
 namespace Blueberry
@@ -16,23 +17,35 @@ namespace Blueberry
 		
 		SerializedProperty() = default;
 
+		size_t GetId();
 		const String& GetName();
-		const BindingType GetType();
-		const bool IsMixedValue();
-		const bool* GetMixedMask();
+		const String& GetDisplayName();
+		BindingType GetType();
+		bool IsMixedValue();
+		bool* GetMixedMask();
 		void* GetHintData();
 
-		const uint32_t GetArraySize();
-		SerializedProperty GetArrayElement(const uint32_t& index);
+		size_t GetListSize();
+		SerializedProperty GetListElement(size_t index);
+		void InsertListElement(size_t index);
+		void DeleteListElement(size_t index);
+		void MoveListElement(size_t fromIndex, size_t toIndex);
+		void ClearList();
 
-		const bool& GetBool();
-		void SetBool(const bool& value);
+		bool IsOverriden();
+		void ClearOverride();
 
-		const int& GetInt();
-		void SetInt(const int& value);
+		bool GetBool();
+		void SetBool(bool value);
 
-		const float& GetFloat();
-		void SetFloat(const float& value);
+		int GetInt();
+		void SetInt(int value);
+
+		uint32_t GetUint();
+		void SetUint(uint32_t value);
+
+		float GetFloat();
+		void SetFloat(float value);
 
 		template<typename T>
 		T GetEnum();
@@ -58,18 +71,23 @@ namespace Blueberry
 		const ObjectPtr<Object>& GetObjectPtr();
 		void SetObjectPtr(const ObjectPtr<Object>& value);
 
-		const size_t& GetObjectPtrType();
+		TypeId GetObjectPtrType();
 
-		bool Next();
+		size_t GetDepth();
+
+		bool Next(bool enterChildren = true);
 		SerializedProperty FindProperty(const String& name);
 
+		SerializedObject* GetSerializedObject();
+
 	private:
-		SerializedProperty(SerializedObject* serializedObject, PropertyTreeNode* treeNode);
+		SerializedProperty(SerializedObject* serializedObject, size_t id);
+		PropertyTreeNode* Get();
 
 	private:
 		SerializedObject* m_SerializedObject;
-		PropertyTreeNode* m_TreeNode;
-		std::stack<std::pair<PropertyTreeNode*, uint32_t>> m_Stack;
+		size_t m_Id = 0;
+		size_t m_Depth = 0;
 
 		friend class SerializedObject;
 	};
@@ -77,6 +95,6 @@ namespace Blueberry
 	template<typename T>
 	inline T SerializedProperty::GetEnum()
 	{
-		return static_cast<T>(std::get<int>(m_TreeNode->values[0]));
+		return static_cast<T>(std::get<int>(Get()->values[0]));
 	}
 }

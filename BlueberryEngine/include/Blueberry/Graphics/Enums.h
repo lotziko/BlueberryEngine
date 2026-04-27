@@ -2,6 +2,27 @@
 
 namespace Blueberry
 {
+	enum class TextureUsageFlags
+	{
+		None = 0,
+		// For now create SRV for every texture
+		//ShaderResource = 1,
+		RenderTarget = 1,
+		UnorderedAccess = 2,
+		CPUReadable = 4,
+		CPUWritable = 8,
+	};
+
+	inline TextureUsageFlags operator|(TextureUsageFlags lhs, TextureUsageFlags rhs)
+	{
+		return static_cast<TextureUsageFlags>(static_cast<int>(lhs) | static_cast<int>(rhs));
+	}
+
+	inline TextureUsageFlags operator&(TextureUsageFlags lhs, TextureUsageFlags rhs)
+	{
+		return static_cast<TextureUsageFlags>(static_cast<int>(lhs) & static_cast<int>(rhs));
+	}
+
 	enum class WrapMode
 	{
 		Repeat,
@@ -24,6 +45,7 @@ namespace Blueberry
 		R32G32B32A32_Float = 2,
 		R16G16B16A16_Float = 10,
 		R16G16B16A16_UNorm = 11,
+		R11G11B10_Float = 26,
 		R8G8B8A8_UNorm = 28,
 		R8G8B8A8_UNorm_SRGB = 29,
 		R8G8B8A8_UInt = 30,
@@ -46,14 +68,29 @@ namespace Blueberry
 		BC7_UNorm_SRGB = 99,
 	};
 
-	enum class BufferType
+	enum class BufferUsageFlags
 	{
-		Vertex,
-		Index,
-		Structured,
-		Raw,
-		Constant
+		None = 0,
+		VertexBuffer = 1,
+		IndexBuffer = 2,
+		StructuredBuffer = 4,
+		ByteAdressBuffer = 8,
+		ConstantBuffer = 16,
+		UnorderedAccess = 32,
+		ShaderResource = 64,
+		CPUReadable = 128,
+		CPUWritable = 256,
 	};
+
+	inline BufferUsageFlags operator|(BufferUsageFlags lhs, BufferUsageFlags rhs)
+	{
+		return static_cast<BufferUsageFlags>(static_cast<int>(lhs) | static_cast<int>(rhs));
+	}
+
+	inline BufferUsageFlags operator&(BufferUsageFlags lhs, BufferUsageFlags rhs)
+	{
+		return static_cast<BufferUsageFlags>(static_cast<int>(lhs) & static_cast<int>(rhs));
+	}
 
 	enum class BufferFormat
 	{

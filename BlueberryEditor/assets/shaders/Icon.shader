@@ -38,9 +38,9 @@ Shader
 		Varyings IconVertex(Attributes input)
 		{
 			Varyings output;
-			output.positionCS = mul(mul(float4(input.positionOS, 1.0f), _ModelMatrix), VIEW_PROJECTION_MATRIX);
+			output.positionCS = mul(VIEW_PROJECTION_MATRIX, mul(_ModelMatrix, float4(input.positionOS, 1.0f)));
 			output.texcoordAlpha.xy = input.texcoord;
-			float3 modelPositionWS = float3(_ModelMatrix._41, _ModelMatrix._42, _ModelMatrix._43);
+			float3 modelPositionWS = float3(_ModelMatrix._14, _ModelMatrix._24, _ModelMatrix._34);
 			output.texcoordAlpha.z = GetAlpha(distance(modelPositionWS, CAMERA_POSITION_WS));
 			return output;
 		}
@@ -90,9 +90,9 @@ Shader
 		Varyings IconVertex(Attributes input)
 		{
 			Varyings output;
-			output.positionCS = mul(mul(float4(input.positionOS, 1.0f), _ModelMatrix), VIEW_PROJECTION_MATRIX);
+			output.positionCS = mul(VIEW_PROJECTION_MATRIX, mul(_ModelMatrix, float4(input.positionOS, 1.0f)));
 			output.texcoordAlpha.xy = input.texcoord;
-			float3 modelPositionWS = float3(_ModelMatrix._41, _ModelMatrix._42, _ModelMatrix._43);
+			float3 modelPositionWS = float3(_ModelMatrix._14, _ModelMatrix._24, _ModelMatrix._34);
 			output.texcoordAlpha.z = GetAlpha(distance(modelPositionWS, CAMERA_POSITION_WS));
 			return output;
 		}

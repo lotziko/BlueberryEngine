@@ -8,8 +8,9 @@
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\Texture3D.h"
 #include "Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\GfxBuffer.h"
 #include "Blueberry\Graphics\GfxTexture.h"
-#include "Blueberry\Graphics\GfxRenderTexturePool.h"
+#include "Blueberry\Graphics\GfxTexturePool.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\DefaultMaterials.h"
 #include "Blueberry\Graphics\DefaultTextures.h"
@@ -30,14 +31,15 @@ namespace Blueberry
 	static CullingResults s_Results = {};
 
 	static size_t s_ScreenColorTextureId = TO_HASH("_ScreenColorTexture");
-	static size_t s_ScreenNormalTextureId = TO_HASH("_ScreenNormalTexture");
 	static size_t s_ScreenDepthStencilTextureId = TO_HASH("_ScreenDepthStencilTexture");
 	static size_t s_ShadowTextureId = TO_HASH("_ShadowTexture");
 	static size_t s_CookieTextureId = TO_HASH("_CookieTexture");
+	static size_t s_ReflectionTextureId = TO_HASH("_ReflectionTexture");
 	static size_t s_HBAOTextureId = TO_HASH("_ScreenOcclusionTexture");
 	static size_t s_VolumetricFogTextureId = TO_HASH("_VolumetricFogTexture");
 	static size_t s_MultiviewKeywordId = TO_HASH("MULTIVIEW");
 	static size_t s_ShadowsKeywordId = TO_HASH("SHADOWS");
+	static size_t s_ReflectionsKeywordId = TO_HASH("REFLECTIONS");
 
 	void DefaultRenderer::Initialize()
 	{
@@ -46,35 +48,35 @@ namespace Blueberry
 		PostProcessing::Initialize();
 		VolumetricFog::Initialize();
 		RealtimeLights::Initialize();
-		s_ShadowAtlas = new ShadowAtlas(4096, 4096, 128);
-		GfxDevice::SetGlobalTexture(TO_HASH("_LightmapTexture"), DefaultTextures::GetWhite2D()->Get());
+		ShadowAtlas::Initialize();
 	}
 
 	void DefaultRenderer::Shutdown()
 	{
 		HBAORenderer::Shutdown();
-		delete s_ShadowAtlas;
 		CookieAtlas::Shutdown();
 		PostProcessing::Shutdown();
 		VolumetricFog::Shutdown();
 		RealtimeLights::Shutdown();
+		ShadowAtlas::Shutdown();
 	}
 	
-	void DefaultRenderer::Draw(Scene* scene, Camera* camera, Rectangle viewport, Color background, GfxTexture* colorOutput, GfxTexture* depthOutput, const bool& simplified)
+	void DefaultRenderer::Draw(Scene* scene, Camera* camera, Rectangle viewport, GfxTexture* colorOutput, GfxTexture* depthOutput)
 	{
 		CameraData cameraData = {};
 		cameraData.camera = camera;
 
+		CameraType cameraType = camera->GetCameraType();
+
 		GfxTexture* colorMSAARenderTarget = nullptr;
-		//GfxTexture* normalMSAARenderTarget = nullptr;
 		GfxTexture* depthStencilMSAARenderTarget = nullptr;
 
-		GfxTexture* colorNormalRenderTarget = nullptr;
+		GfxTexture* colorRenderTarget = nullptr;
 		GfxTexture* depthStencilRenderTarget = nullptr;
 		GfxTexture* HBAORenderTarget = nullptr;
 		GfxTexture* resultRenderTarget = nullptr;
 
-		bool isVr = OpenXRRenderer::IsActive() && camera->m_IsVR;
+		bool isVr = OpenXRRenderer::IsActive() && cameraType == CameraType::VR;
 		TextureDimension textureDimension = isVr ? TextureDimension::Texture2DArray : TextureDimension::Texture2D;
 		uint32_t viewCount = isVr ? 2 : 1;
 		Vector2Int size = Vector2Int(colorOutput->GetWidth(), colorOutput->GetHeight());
@@ -92,20 +94,21 @@ namespace Blueberry
 			cameraData.renderTargetSize = size;
 		}
 
-		colorMSAARenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 4, 1, TextureFormat::R16G16B16A16_Float, textureDimension);
-		//normalMSAARenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 4, 1, TextureFormat::R8G8B8A8_UNorm, textureDimension);
-		depthStencilMSAARenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 4, 1, TextureFormat::D24_UNorm, textureDimension);
+		colorMSAARenderTarget = GfxTexturePool::Get(size.x, size.y, viewCount, TextureUsageFlags::RenderTarget, 4, 1, TextureFormat::R16G16B16A16_Float, textureDimension);
+		depthStencilMSAARenderTarget = GfxTexturePool::Get(size.x, size.y, viewCount, TextureUsageFlags::RenderTarget, 4, 1, TextureFormat::D24_UNorm, textureDimension);
 
-		colorNormalRenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 1, 1, TextureFormat::R16G16B16A16_Float, textureDimension, WrapMode::Clamp, FilterMode::Bilinear, false, true);
-		depthStencilRenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 1, 1, TextureFormat::D24_UNorm, textureDimension);
-		HBAORenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 1, 1, TextureFormat::R8G8B8A8_UNorm, textureDimension);
-		resultRenderTarget = GfxRenderTexturePool::Get(size.x, size.y, viewCount, 1, 1, TextureFormat::R8G8B8A8_UNorm, textureDimension);
+		colorRenderTarget = GfxTexturePool::Get(size.x, size.y, viewCount, TextureUsageFlags::RenderTarget | TextureUsageFlags::UnorderedAccess, 1, 1, TextureFormat::R16G16B16A16_Float, textureDimension, WrapMode::Clamp, FilterMode::Bilinear);
+		depthStencilRenderTarget = GfxTexturePool::Get(size.x, size.y, viewCount, TextureUsageFlags::RenderTarget, 1, 1, TextureFormat::D24_UNorm, textureDimension);
+		HBAORenderTarget = GfxTexturePool::Get(size.x, size.y, viewCount, TextureUsageFlags::RenderTarget, 1, 1, TextureFormat::R8G8B8A8_UNorm, textureDimension);
+		resultRenderTarget = GfxTexturePool::Get(size.x, size.y, viewCount, TextureUsageFlags::RenderTarget, 1, 1, colorOutput->GetFormat(), textureDimension);
 
 		BB_PROFILE_BEGIN("Culling");
 		s_DefaultContext.Cull(scene, cameraData, s_Results);
 		BB_PROFILE_END();
 
-		if (simplified)
+		Shader::SetKeyword(s_ReflectionsKeywordId, cameraType != CameraType::Reflection && cameraType != CameraType::Preview);
+
+		if (cameraType == CameraType::Preview)
 		{
 			Shader::SetKeyword(s_ShadowsKeywordId, false);
 			GfxDevice::SetGlobalTexture(s_CookieTextureId, DefaultTextures::GetWhite3D()->Get());
@@ -116,35 +119,34 @@ namespace Blueberry
 			BB_PROFILE_BEGIN("Shadows");
 			// Prepare shadows
 			GfxDevice::SetViewCount(1);
-			s_ShadowAtlas->Clear();
-			RealtimeLights::PrepareShadows(s_Results, s_ShadowAtlas);
+			ShadowAtlas::Clear();
+			RealtimeLights::PrepareShadows(s_Results);
 			CookieAtlas::PrepareCookies(s_Results);
 			GfxDevice::SetGlobalTexture(s_CookieTextureId, CookieAtlas::GetAtlasTexture());
 
 			// Draw shadows
 			Shader::SetKeyword(s_ShadowsKeywordId, true);
-			s_ShadowAtlas->Draw(s_DefaultContext, s_Results);
-			GfxDevice::SetGlobalTexture(s_ShadowTextureId, s_ShadowAtlas->GetAtlasTexture());
+			ShadowAtlas::Draw(s_DefaultContext, s_Results);
+			GfxDevice::SetGlobalTexture(s_ShadowTextureId, ShadowAtlas::GetAtlasTexture());
 			BB_PROFILE_END();
 		}
 		
 		s_DefaultContext.BindCamera(s_Results, cameraData);
 
 		// Lights are binded after shadows finished rendering to have valid shadow matrices
-		RealtimeLights::BindLights(s_Results, s_ShadowAtlas);
+		RealtimeLights::BindLights(s_Results);
 
-		if (!simplified)
+		if (cameraType != CameraType::Preview)
 		{
-			VolumetricFog::CalculateFrustum(s_Results, cameraData, s_ShadowAtlas);
+			VolumetricFog::CalculateFrustum(s_Results, cameraData);
 			GfxDevice::SetGlobalTexture(s_VolumetricFogTextureId, VolumetricFog::GetFrustumTexture());
 		}
 		
-		// Depth/normal prepass
-		BB_PROFILE_BEGIN("Depth/normals");
+		// Depth prepass
+		BB_PROFILE_BEGIN("Depth");
 		GfxDevice::SetViewCount(viewCount);
 		GfxDevice::SetRenderTarget(nullptr, depthStencilMSAARenderTarget);
 		GfxDevice::SetViewport(viewport.x, viewport.y, viewport.width, viewport.height);
-		GfxDevice::ClearColor({ 0.0f, 0.0f, 0.0f, 0.0f });
 		GfxDevice::ClearDepth(1.0f);
 		DrawingSettings drawingSettings = {};
 		drawingSettings.passIndex = 1;
@@ -153,21 +155,19 @@ namespace Blueberry
 		BB_PROFILE_END();
 
 		// Resolve depth/normal
-		GfxDevice::SetRenderTarget(colorNormalRenderTarget, depthStencilRenderTarget);
-		GfxDevice::ClearColor({ 0.0f, 0.0f, 0.0f, 0.0f });
+		GfxDevice::SetRenderTarget(nullptr, depthStencilRenderTarget);
 		GfxDevice::ClearDepth(1.0f);
-		//GfxDevice::SetGlobalTexture(s_ScreenColorTextureId, normalMSAARenderTarget);
 		GfxDevice::SetGlobalTexture(s_ScreenDepthStencilTextureId, depthStencilMSAARenderTarget);
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetResolveMSAA(), 0));
 
 		// HBAO
-		if (simplified)
+		if (cameraType == CameraType::Preview)
 		{
 			GfxDevice::SetGlobalTexture(s_HBAOTextureId, DefaultTextures::GetWhite2D()->Get());
 		}
 		else
 		{
-			HBAORenderer::Draw(depthStencilRenderTarget, colorNormalRenderTarget, camera->GetViewMatrix(), camera->GetProjectionMatrix(), viewport, HBAORenderTarget);
+			HBAORenderer::Draw(depthStencilRenderTarget, colorRenderTarget, camera->GetViewMatrix(), camera->GetProjectionMatrix(), viewport, HBAORenderTarget);
 			GfxDevice::SetGlobalTexture(s_HBAOTextureId, HBAORenderTarget);
 		}
 
@@ -182,14 +182,17 @@ namespace Blueberry
 		s_DefaultContext.DrawRenderers(s_Results, drawingSettings);
 		BB_PROFILE_END();
 		
-		PostProcessing::Draw(colorMSAARenderTarget, colorNormalRenderTarget, resultRenderTarget, viewport, size, simplified);
+		PostProcessing::Draw(camera, colorMSAARenderTarget, colorRenderTarget, resultRenderTarget, viewport, size, cameraType);
+
+		GfxDevice::SetRenderTarget(resultRenderTarget);
+		s_DefaultContext.DrawCanvases(s_Results);
 
 		if (isVr)
 		{
 			OpenXRRenderer::SubmitColorRenderTarget(resultRenderTarget);
 
 			float aspectRatio = static_cast<float>(viewport.height) / viewport.width;
-			Rectangle eyeViewport = Rectangle(0, 0, aspectRatio * colorOutput->GetHeight(), colorOutput->GetHeight());
+			Rectangle eyeViewport = Rectangle(0, 0, static_cast<long>(aspectRatio * colorOutput->GetHeight()), static_cast<long>(colorOutput->GetHeight()));
 
 			GfxDevice::SetRenderTarget(colorOutput);
 			GfxDevice::ClearColor({ 0.0f, 0.0f, 0.0f, 0.0f });
@@ -210,13 +213,12 @@ namespace Blueberry
 			}
 		}
 
-		GfxRenderTexturePool::Release(colorMSAARenderTarget);
-		//GfxRenderTexturePool::Release(normalMSAARenderTarget);
-		GfxRenderTexturePool::Release(depthStencilMSAARenderTarget);
+		GfxTexturePool::Release(colorMSAARenderTarget);
+		GfxTexturePool::Release(depthStencilMSAARenderTarget);
 
-		GfxRenderTexturePool::Release(colorNormalRenderTarget);
-		GfxRenderTexturePool::Release(depthStencilRenderTarget);
-		GfxRenderTexturePool::Release(HBAORenderTarget);
-		GfxRenderTexturePool::Release(resultRenderTarget);
+		GfxTexturePool::Release(colorRenderTarget);
+		GfxTexturePool::Release(depthStencilRenderTarget);
+		GfxTexturePool::Release(HBAORenderTarget);
+		GfxTexturePool::Release(resultRenderTarget);
 	}
 }

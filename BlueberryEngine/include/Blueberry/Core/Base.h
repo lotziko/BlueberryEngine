@@ -7,6 +7,7 @@
 #endif
 
 #pragma warning(disable: 4251) // Hide STL dllexport warnings
+#pragma warning(disable: 26812) // Hide unscoped enum warnings
 
 #include "Blueberry\Core\Memory.h"
 #include "Blueberry\Math\Math.h"
@@ -22,3 +23,9 @@
 #define INVALID_ID -1
 #define TO_STRING( x ) #x
 #define TO_HASH( x ) std::hash<String>()(x)
+
+namespace Blueberry
+{
+	using TypeId = uint32_t;
+	using ObjectId = int32_t;
+}

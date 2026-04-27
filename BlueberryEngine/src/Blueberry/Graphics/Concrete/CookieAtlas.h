@@ -21,7 +21,7 @@ namespace Blueberry
 		static uint32_t GetIndex(Texture* cookie);
 
 	private:
-		static inline GfxTexture* s_AtlasTexture = nullptr;
+		static GfxTexture* s_AtlasTexture;
 		static List<ObjectId> s_Cookies;
 	};
 }

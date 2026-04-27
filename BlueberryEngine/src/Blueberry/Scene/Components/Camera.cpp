@@ -15,16 +15,8 @@ namespace Blueberry
 		DEFINE_FIELD(Camera, m_AspectRatio, BindingType::Float, FieldOptions().SetUpdateCallback(MethodBind::Create(&Camera::InvalidateProjection)))
 		DEFINE_FIELD(Camera, m_ZNearPlane, BindingType::Float, FieldOptions().SetUpdateCallback(MethodBind::Create(&Camera::InvalidateProjection)))
 		DEFINE_FIELD(Camera, m_ZFarPlane, BindingType::Float, FieldOptions().SetUpdateCallback(MethodBind::Create(&Camera::InvalidateProjection)))
-	}
-
-	void Camera::OnEnable()
-	{
-		AddToSceneComponents(Camera::Type);
-	}
-
-	void Camera::OnDisable()
-	{
-		RemoveFromSceneComponents(Camera::Type);
+		DEFINE_ITERATOR(Camera)
+		DEFINE_EXECUTE_ALWAYS()
 	}
 
 	const Matrix& Camera::GetProjectionMatrix()
@@ -89,12 +81,12 @@ namespace Blueberry
 		return m_InverseViewProjectionMatrix;
 	}
 
-	const bool& Camera::IsOrthographic()
+	bool Camera::IsOrthographic() const
 	{
 		return m_IsOrthographic;
 	}
 
-	void Camera::SetOrthographic(const bool& isOrthographic)
+	void Camera::SetOrthographic(bool isOrthographic)
 	{
 		if (m_IsOrthographic != isOrthographic)
 		{
@@ -103,18 +95,18 @@ namespace Blueberry
 		}
 	}
 
-	const float& Camera::GetOrthographicSize()
+	float Camera::GetOrthographicSize() const
 	{
 		return m_OrthographicSize;
 	}
 
-	const void Camera::SetOrthographicSize(const float& size)
+	const void Camera::SetOrthographicSize(float size)
 	{
 		m_OrthographicSize = size;
 		InvalidateProjection();
 	}
 
-	const Vector2& Camera::GetPixelSize()
+	const Vector2& Camera::GetPixelSize() const
 	{
 		return m_PixelSize;
 	}
@@ -129,12 +121,12 @@ namespace Blueberry
 		}
 	}
 
-	const float& Camera::GetAspectRatio()
+	float Camera::GetAspectRatio() const
 	{
 		return m_AspectRatio;
 	}
 
-	void Camera::SetAspectRatio(const float& aspectRatio)
+	void Camera::SetAspectRatio(float aspectRatio)
 	{
 		if (m_AspectRatio != aspectRatio)
 		{
@@ -143,12 +135,12 @@ namespace Blueberry
 		}
 	}
 
-	const float& Camera::GetFieldOfView()
+	float Camera::GetFieldOfView() const
 	{
 		return m_FieldOfView;
 	}
 
-	void Camera::SetFieldOfView(const float& fieldOfView)
+	void Camera::SetFieldOfView(float fieldOfView)
 	{
 		if (m_FieldOfView != fieldOfView)
 		{
@@ -157,12 +149,12 @@ namespace Blueberry
 		}
 	}
 
-	const float& Camera::GetNearClipPlane()
+	float Camera::GetNearClipPlane() const
 	{
 		return m_ZNearPlane;
 	}
 
-	void Camera::SetNearClipPlane(const float& nearClip)
+	void Camera::SetNearClipPlane(float nearClip)
 	{
 		if (m_ZNearPlane != nearClip)
 		{
@@ -171,12 +163,12 @@ namespace Blueberry
 		}
 	}
 
-	const float& Camera::GetFarClipPlane()
+	float Camera::GetFarClipPlane() const
 	{
 		return m_ZFarPlane;
 	}
 
-	void Camera::SetFarClipPlane(const float& farClip)
+	void Camera::SetFarClipPlane(float farClip)
 	{
 		if (m_ZNearPlane != farClip)
 		{
@@ -262,13 +254,33 @@ namespace Blueberry
 		return Vector3::Zero;
 	}
 
+	CameraType Camera::GetCameraType() const
+	{
+		return m_CameraType;
+	}
+
+	void Camera::SetCameraType(CameraType cameraType)
+	{
+		m_CameraType = cameraType;
+	}
+
+	const Color& Camera::GetBackgroundColor() const
+	{
+		return m_BackgroundColor;
+	}
+
+	void Camera::SetBackgroundColor(const Color& backgroundColor)
+	{
+		m_BackgroundColor = backgroundColor;
+	}
+
 	bool Camera::IsViewDirty()
 	{
 		// This may cause problems some time later
-		size_t transformRecalculationFrame = GetTransform()->GetRecalculationFrame();
-		if (m_RecalculationFrame <= transformRecalculationFrame)
+		size_t transformUpdateCount = GetTransform()->GetUpdateCount();
+		if (m_UpdateCount != transformUpdateCount)
 		{
-			m_RecalculationFrame = transformRecalculationFrame;
+			m_UpdateCount = transformUpdateCount;
 			return true;
 		}
 		return false;
@@ -304,7 +316,7 @@ namespace Blueberry
 		}
 		else
 		{
-			m_ProjectionMatrix = Matrix::CreatePerspectiveFieldOfView(ToRadians(m_FieldOfView), m_AspectRatio, m_ZNearPlane, m_ZFarPlane);
+			m_ProjectionMatrix = Matrix::CreatePerspectiveFieldOfView(Math::ToRadians(m_FieldOfView), m_AspectRatio, m_ZNearPlane, m_ZFarPlane);
 		}
 		m_InverseProjectionMatrix = m_ProjectionMatrix.Invert();
 		m_ViewProjectionMatrix = m_ViewMatrix * m_ProjectionMatrix;

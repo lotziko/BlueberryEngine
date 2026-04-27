@@ -7,7 +7,7 @@ namespace Blueberry
 {
 	OBJECT_DEFINITION(SceneSettings, Object)
 	{
-		DEFINE_FIELD(SceneSettings, m_LightingData, BindingType::ObjectPtr, FieldOptions().SetObjectType(LightingData::Type))
+		DEFINE_FIELD(SceneSettings, m_LightingData, BindingType::ObjectPtr, FieldOptions().SetObjectType(&LightingData::Type))
 	}
 
 	LightingData* SceneSettings::GetLightingData()

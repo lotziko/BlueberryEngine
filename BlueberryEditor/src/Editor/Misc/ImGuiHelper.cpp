@@ -6,20 +6,66 @@
 #include "Blueberry\Core\ClassDB.h"
 
 #include "Editor\Panels\Picking\ObjectPicker.h"
+#include "Editor\Panels\Project\ProjectBrowser.h"
 #include "Editor\Serialization\SerializedProperty.h"
+#include "Editor\Assets\AssetDB.h"
 
 #include <imgui\imgui_internal.h>
 #include <imgui\misc\freetype\imgui_freetype.h>
 #include <imgui\misc\cpp\imgui_stdlib.h>
 
 ImGui::EditorContext* ImGui::GEditor = NULL;
+ImGui::ClearOverrideEvent ImGui::Events::s_ClearedOverride = {};
+
 static Blueberry::List<bool> s_ChangeStack = {};
 static bool s_MixedValue = false;
+static bool s_ShowPopup = false;
+static int s_LabelIndent = 0;
 static const bool* s_MixedValueMask = {};
+static ImVector<ImRect> s_PaddingStack;
+
+#define PROPERTY_LABEL()\
+ImGui::PushID(label);\
+float availableWidth = ImGui::GetContentRegionAvail().x;\
+float labelWidth = std::max(150.0f, availableWidth * 0.4f);\
+float valueWidth = std::max(0.0f, availableWidth - labelWidth);\
+ImGui::SetCursorPosX(ImGui::GetCursorPosX() + s_LabelIndent);\
+ImGui::Text(label);\
+ImGui::SetCursorPosX(ImGui::GetCursorPosX() - s_LabelIndent);\
+if (ImGui::IsItemClicked(ImGuiMouseButton_Right))\
+{\
+	s_ShowPopup = true;\
+}\
+ImGui::SameLine(labelWidth);\
+
+#define PROPERTY_BEGIN_VALUE()\
+if (s_MixedValue)\
+{\
+	ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, true);\
+}\
+ImGui::SetNextItemWidth(valueWidth);\
+
+#define PROPERTY_END_VALUE()\
+if (s_MixedValue)\
+{\
+	ImGui::PopItemFlag();\
+}\
+ImGui::PopID();\
+
+Blueberry::SerializedProperty* ImGui::ClearOverrideEventArgs::GetProperty()
+{
+	return m_Property;
+}
+
+ImGui::ClearOverrideEvent& ImGui::Events::GetClearedOverride()
+{
+	return s_ClearedOverride;
+}
 
 void ImGui::CreateEditorContext()
 {
 	GEditor = static_cast<EditorContext*>(BB_MALLOC(sizeof(ImGui::EditorContext)));
+	s_PaddingStack.push_back(ImRect());
 }
 
 ImGui::EditorStyle& ImGui::GetEditorStyle()
@@ -29,16 +75,28 @@ ImGui::EditorStyle& ImGui::GetEditorStyle()
 
 bool ImGui::Property(Blueberry::SerializedProperty* property)
 {
-	Blueberry::String name = property->GetName();
-	if (name.rfind("m_", 0) == 0)
+	return Property(property, property->GetDisplayName().c_str());
+}
+
+ImVec2 GetPropertyHeight(Blueberry::SerializedProperty* property)
+{
+	if (property->GetType() == Blueberry::BindingType::DataList)
 	{
-		name.replace(0, 2, "");
+		return ImVec2(0, 0);
 	}
-	return Property(property, name.c_str());
+	return ImVec2(ImGui::GetContentRegionAvail().x, property->GetListSize() * (ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f + ImGui::GetStyle().ItemSpacing.y) + 6);
 }
 
 bool ImGui::Property(Blueberry::SerializedProperty* property, const char* label)
 {
+	ImGui::PushID(static_cast<int>(property->GetId()));
+	if (property->IsOverriden())
+	{
+		ImVec2 screenPos = ImGui::GetCursorScreenPos() - ImVec2(s_PaddingStack.back().Min.x, 0);
+		ImVec2 min = screenPos;
+		ImVec2 max = screenPos + ImVec2(4, ImGui::GetTextLineHeightWithSpacing());
+		ImGui::GetWindowDrawList()->AddRectFilled(min, max, ImGui::GetColorU32(ImGuiCol_SeparatorActive));
+	}
 	s_MixedValue = property->IsMixedValue();
 	s_MixedValueMask = property->GetMixedMask();
 	bool result = false;
@@ -60,6 +118,16 @@ bool ImGui::Property(Blueberry::SerializedProperty* property, const char* label)
 		if (ImGui::IntEdit(label, &value))
 		{
 			property->SetInt(value);
+			result = true;
+		}
+	}
+	break;
+	case Blueberry::BindingType::Uint:
+	{
+		uint32_t value = property->GetUint();
+		if (ImGui::UintEdit(label, &value))
+		{
+			property->SetUint(value);
 			result = true;
 		}
 	}
@@ -86,8 +154,8 @@ bool ImGui::Property(Blueberry::SerializedProperty* property, const char* label)
 	break;
 	case Blueberry::BindingType::String:
 	{
-		std::string value(property->GetString().data());
-		if (ImGui::InputText(label, &value)) // TODO mixed
+		Blueberry::String value = property->GetString();
+		if (ImGui::StringEdit(label, &value)) // TODO mixed
 		{
 			property->SetString(Blueberry::String(value.data()));
 			result = true;
@@ -154,11 +222,92 @@ bool ImGui::Property(Blueberry::SerializedProperty* property, const char* label)
 		}
 	}
 	break;
+	case Blueberry::BindingType::Data:
+	{
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + s_LabelIndent);
+		ImGui::Text(label);
+		s_LabelIndent += 15;
+		Blueberry::SerializedProperty childProperty = *property;
+		size_t depth = childProperty.GetDepth();
+		childProperty.Next();
+		do
+		{
+			ImGui::Property(&childProperty);
+		} while (childProperty.Next(false) && childProperty.GetDepth() > depth);
+		s_LabelIndent -= 15;
+	}
+	break;
+	case Blueberry::BindingType::FloatList:
+	case Blueberry::BindingType::StringList:
+	case Blueberry::BindingType::Vector2List:
+	case Blueberry::BindingType::Vector3List:
+	case Blueberry::BindingType::Vector4List:
+	case Blueberry::BindingType::ObjectPtrList:
+	case Blueberry::BindingType::DataList:
+	{
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + s_LabelIndent);
+		ImGui::Text(label);
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + s_LabelIndent);
+		ImGui::BeginChild("##list", GetPropertyHeight(property), ImGuiChildFlags_Borders | ImGuiChildFlags_AutoResizeY);
+		ImGui::BeginPaddedArea(ImVec2(10, 5), ImVec2(4, 1));
+		Blueberry::SerializedProperty listProperty = *property;
+		for (size_t i = 0; i < listProperty.GetListSize(); ++i)
+		{
+			ImGui::Property(&listProperty.GetListElement(i));
+		}
+		ImGui::EndPaddedArea();
+		ImGui::EndChild();
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + s_LabelIndent);
+		if (ImGui::Button("+"))
+		{
+			listProperty.InsertListElement(listProperty.GetListSize());
+			TriggerChange();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("-"))
+		{
+			listProperty.DeleteListElement(listProperty.GetListSize() - 1);
+			TriggerChange();
+		}
+	}
+	break;
 	default:
 		ImGui::Text(label);
 		break;
 	}
+	const char* popupId = "PropertyPopup";
+	if (s_ShowPopup)
+	{
+		ImGui::OpenPopup(popupId);
+		// gather items
+		s_ShowPopup = false;
+	}
+	if (ImGui::BeginPopup(popupId))
+	{
+		bool hasAnyItem = false;
+		if (property->IsOverriden())
+		{
+			if (ImGui::MenuItem("Clear override"))
+			{
+				property->ClearOverride();
+				auto& event = ImGui::Events::GetClearedOverride();
+				if (event.HasCallbacks())
+				{
+					ClearOverrideEventArgs args(property);
+					event.Invoke(args);
+				}
+				TriggerChange();
+			}
+			hasAnyItem = true;
+		}
+		if (!hasAnyItem)
+		{
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
 	s_MixedValue = false;
+	ImGui::PopID();
 	return result;
 }
 
@@ -204,31 +353,25 @@ bool ImGui::BeginPopup(ImGuiID id, ImGuiWindowFlags flags)
 	return BeginPopupEx(id, flags);
 }
 
-#define PROPERTY_LABEL( text )\
-ImGui::PushID(text);\
-float availableWidth = ImGui::GetContentRegionAvail().x;\
-float labelWidth = std::max(150.0f, availableWidth * 0.4f);\
-float valueWidth = std::max(0.0f, availableWidth - labelWidth);\
-ImGui::Text(text);\
-ImGui::SameLine(labelWidth);\
+void ImGui::BeginPaddedArea(ImVec2 min, ImVec2 max)
+{
+	ImGui::SetCursorPos(ImGui::GetCursorPos() + min);
+	s_PaddingStack.push_back(ImRect(min, max));
+	ImGui::GetCurrentWindow()->ContentRegionRect.Max -= ImVec2(max.x, 0);
+	ImGui::BeginGroup();
+}
 
-#define PROPERTY_BEGIN_VALUE()\
-if (s_MixedValue)\
-{\
-	ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, true);\
-}\
-ImGui::SetNextItemWidth(valueWidth);\
-
-#define PROPERTY_END_VALUE()\
-if (s_MixedValue)\
-{\
-	ImGui::PopItemFlag();\
-}\
-ImGui::PopID();\
+void ImGui::EndPaddedArea()
+{
+	ImGui::EndGroup();
+	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + s_PaddingStack.back().Max.y);
+	ImGui::GetCurrentWindow()->ContentRegionRect.Max += ImVec2(s_PaddingStack.back().Max.x, 0);
+	s_PaddingStack.pop_back();
+}
 
 bool ImGui::DragVector2(const char* label, Blueberry::Vector2* v)
 {
-	PROPERTY_LABEL(label)
+	PROPERTY_LABEL()
 	PROPERTY_BEGIN_VALUE()
 
 	bool result = false;
@@ -250,7 +393,7 @@ bool ImGui::DragVector2(const char* label, Blueberry::Vector2* v)
 
 bool ImGui::DragVector3(const char* label, Blueberry::Vector3* v)
 {
-	PROPERTY_LABEL(label)
+	PROPERTY_LABEL()
 	PROPERTY_BEGIN_VALUE()
 
 	bool result = false;
@@ -274,7 +417,7 @@ bool ImGui::DragVector3(const char* label, Blueberry::Vector3* v)
 
 bool ImGui::DragVector4(const char* label, Blueberry::Vector4* v)
 {
-	PROPERTY_LABEL(label)
+	PROPERTY_LABEL()
 	PROPERTY_BEGIN_VALUE()
 
 	bool result = false;
@@ -303,13 +446,18 @@ bool ImGui::DragVectorN(const char* label, ImGuiDataType dataType, int component
 	if (window->SkipItems)
 		return false;
 
+	ImGuiContext& g = *GImGui;
 	bool result = false;
 	ImGui::BeginGroup();
-	ImGui::PushMultiItemsWidths(components, ImGui::CalcItemWidth());
+	ImGui::PushID(label);
+	ImGui::PushMultiItemsWidths(components, ImGui::CalcItemWidth());// - s_PaddingStack.back().Max.x);
 	size_t typeSize = ImGui::DataTypeGetInfo(dataType)->Size;
 	for (int i = 0; i < components; i++)
 	{
-		if (i > 0) ImGui::SameLine();
+		if (i > 0)
+		{
+			ImGui::SameLine(0, g.Style.ItemInnerSpacing.x);
+		}
 		ImGui::PushID(i);
 		ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, s_MixedValueMask[i]);
 		if (ImGui::DragScalar("", dataType, data, 0.1f, 0, 0, "%.3f"))
@@ -319,21 +467,15 @@ bool ImGui::DragVectorN(const char* label, ImGuiDataType dataType, int component
 		data = (void*)((char*)data + typeSize);
 		ImGui::PopItemFlag();
 		ImGui::PopID();
+		ImGui::PopItemWidth();
 	}
+	ImGui::PopID();
 	ImGui::EndGroup();
 	return result;
 }
 
-bool ImGui::EnumEdit(const char* label, int* v, const Blueberry::List<Blueberry::String>* names)
+bool ImGui::InputEnum(const char* label, int* v, const Blueberry::List<Blueberry::String>* names)
 {
-	if (names == nullptr || names->size() == 0)
-	{
-		return false;
-	}
-
-	PROPERTY_LABEL(label)
-	PROPERTY_BEGIN_VALUE()
-
 	bool result = false;
 	if (ImGui::BeginCombo("##enum", names->at(*v).c_str()))
 	{
@@ -353,25 +495,11 @@ bool ImGui::EnumEdit(const char* label, int* v, const Blueberry::List<Blueberry:
 		}
 		ImGui::EndCombo();
 	}
-
-	PROPERTY_END_VALUE()
-	if (result)
-	{
-		TriggerChange();
-	}
 	return result;
 }
 
-bool ImGui::EnumEdit(const char* label, int* v, const Blueberry::List<std::pair<Blueberry::String, int>>* nameValues)
+bool ImGui::InputEnum(const char* label, int* v, const Blueberry::List<std::pair<Blueberry::String, int>>* nameValues)
 {
-	if (nameValues == nullptr || nameValues->size() == 0)
-	{
-		return false;
-	}
-
-	PROPERTY_LABEL(label)
-	PROPERTY_BEGIN_VALUE()
-
 	int value = *v;
 	int size = static_cast<int>(nameValues->size());
 	const char* preview = nullptr;
@@ -405,6 +533,40 @@ bool ImGui::EnumEdit(const char* label, int* v, const Blueberry::List<std::pair<
 		}
 		ImGui::EndCombo();
 	}
+	return result;
+}
+
+bool ImGui::EnumEdit(const char* label, int* v, const Blueberry::List<Blueberry::String>* names)
+{
+	if (names == nullptr || names->size() == 0)
+	{
+		return false;
+	}
+
+	PROPERTY_LABEL()
+	PROPERTY_BEGIN_VALUE()
+
+	bool result = InputEnum(label, v, names);
+
+	PROPERTY_END_VALUE()
+	if (result)
+	{
+		TriggerChange();
+	}
+	return result;
+}
+
+bool ImGui::EnumEdit(const char* label, int* v, const Blueberry::List<std::pair<Blueberry::String, int>>* nameValues)
+{
+	if (nameValues == nullptr || nameValues->size() == 0)
+	{
+		return false;
+	}
+
+	PROPERTY_LABEL()
+	PROPERTY_BEGIN_VALUE()
+
+	bool result = InputEnum(label, v, nameValues);
 
 	PROPERTY_END_VALUE()
 	if (result)
@@ -416,7 +578,7 @@ bool ImGui::EnumEdit(const char* label, int* v, const Blueberry::List<std::pair<
 
 bool ImGui::BoolEdit(const char* label, bool* v)
 {
-	PROPERTY_LABEL(label)
+	PROPERTY_LABEL()
 	PROPERTY_BEGIN_VALUE()
 
 	bool result = false;
@@ -435,7 +597,7 @@ bool ImGui::BoolEdit(const char* label, bool* v)
 
 bool ImGui::IntEdit(const char* label, int* v)
 {
-	PROPERTY_LABEL(label)
+	PROPERTY_LABEL()
 	PROPERTY_BEGIN_VALUE()
 
 	bool result = false;
@@ -452,13 +614,32 @@ bool ImGui::IntEdit(const char* label, int* v)
 	return result;
 }
 
+bool ImGui::UintEdit(const char* label, uint32_t* v)
+{
+	PROPERTY_LABEL()
+	PROPERTY_BEGIN_VALUE()
+
+	bool result = false;
+	if (ImGui::DragScalar("##uint", ImGuiDataType_U32, v))
+	{
+		result = true;
+	}
+
+	PROPERTY_END_VALUE()
+	if (result)
+	{
+		TriggerChange();
+	}
+	return result;
+}
+
 bool ImGui::FloatEdit(const char* label, float* v, float min, float max)
 {
-	PROPERTY_LABEL(label)
+	PROPERTY_LABEL()
 	PROPERTY_BEGIN_VALUE()
 	
 	bool result = false;
-	if (ImGui::DragFloat("##float", v, 1.0f, min, max))
+	if (ImGui::DragFloat("##float", v, 0.02f, min, max))
 	{
 		result = true;
 	}
@@ -473,7 +654,7 @@ bool ImGui::FloatEdit(const char* label, float* v, float min, float max)
 
 bool ImGui::ColorEdit(const char* label, Blueberry::Color* v)
 {
-	PROPERTY_LABEL(label)
+	PROPERTY_LABEL()
 	PROPERTY_BEGIN_VALUE()
 
 	bool result = false;
@@ -495,25 +676,62 @@ bool ImGui::ColorEdit(const char* label, Blueberry::Color* v)
 	return result;
 }
 
-bool ImGui::ObjectEdit(const char* label, Blueberry::Object** v, const size_t& type)
+bool ImGui::StringEdit(const char* label, Blueberry::String* v)
 {
-	PROPERTY_LABEL(label)
+	PROPERTY_LABEL()
+	PROPERTY_BEGIN_VALUE()
+	
+	bool result = false;
+	if (ImGui::InputText("##string", v))
+	{
+		result = true;
+	}
+
+	PROPERTY_END_VALUE()
+	if (result)
+	{
+		TriggerChange();
+	}
+	return result;
+}
+
+bool ImGui::ObjectEdit(const char* label, Blueberry::Object** v, const Blueberry::TypeId& type)
+{
+	PROPERTY_LABEL()
 	PROPERTY_BEGIN_VALUE()
 
 	bool result = false;
 	Blueberry::Object* vObj = *v;
-	if (ImGui::Button((vObj != nullptr && Blueberry::ObjectDB::IsValid(vObj)) ? vObj->GetName().c_str() : "None"))
+	ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetColorU32(ImGuiCol_FrameBg));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetColorU32(ImGuiCol_FrameBgHovered));
+	ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.0f, 0.5f));
+	if (ImGui::Button(vObj == nullptr ? "None" : vObj->GetName().c_str(), ImVec2(ImGui::CalcItemWidth(), 0)))
 	{
 		Blueberry::ObjectPicker::Open(v, type);
 	}
+	ImGui::PopStyleVar();
+	ImGui::PopStyleColor(2);
 	if (Blueberry::ObjectPicker::GetResult(v))
 	{
 		vObj = *v;
 		if (vObj != nullptr && vObj->GetState() == Blueberry::ObjectState::AwaitingLoading && Blueberry::ObjectDB::HasGuid(vObj))
 		{
-			Blueberry::AssetLoader::Load(Blueberry::ObjectDB::GetGuidFromObject(vObj));
+			Blueberry::AssetDB::LoadAsset(Blueberry::ObjectDB::GetGuidFromObject(vObj));
 		}
 		result = true;
+	}
+	
+	if (ImGui::BeginPopupContextItem())
+	{
+		if (ImGui::MenuItem("Show in project"))
+		{
+			Blueberry::ProjectBrowser::ShowObject(vObj);
+		}
+		if (!Blueberry::ObjectDB::HasGuid(vObj))
+		{
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
 	}
 
 	if (ImGui::BeginDragDropTarget())
@@ -521,18 +739,22 @@ bool ImGui::ObjectEdit(const char* label, Blueberry::Object** v, const size_t& t
 		const ImGuiPayload* payload = ImGui::GetDragDropPayload();
 		if (payload != nullptr && payload->IsDataType("OBJECT_ID"))
 		{
-			Blueberry::ObjectId* id = static_cast<Blueberry::ObjectId*>(payload->Data);
-			Blueberry::Object* object = Blueberry::ObjectDB::GetObject(*id);
-
-			if (object != nullptr && object->IsClassType(type) && ImGui::AcceptDragDropPayload("OBJECT_ID"))
+			size_t count = payload->DataSize / sizeof(Blueberry::ObjectId);
+			Blueberry::ObjectId* ids = static_cast<Blueberry::ObjectId*>(payload->Data);
+			for (size_t i = 0; i < count; ++i)
 			{
-				if (object->GetState() == Blueberry::ObjectState::AwaitingLoading && Blueberry::ObjectDB::HasGuid(object))
+				Blueberry::Object* object = Blueberry::ObjectDB::GetObject(ids[i]);
+				if (object != nullptr && object->IsClassType(type) && ImGui::AcceptDragDropPayload("OBJECT_ID"))
 				{
-					Blueberry::AssetLoader::Load(Blueberry::ObjectDB::GetGuidFromObject(object));
-				}
+					if (object->GetState() == Blueberry::ObjectState::AwaitingLoading && Blueberry::ObjectDB::HasGuid(object))
+					{
+						Blueberry::AssetDB::LoadAsset(Blueberry::ObjectDB::GetGuidFromObject(object));
+					}
 
-				*v = object;
-				result = true;
+					*v = object;
+					result = true;
+					break;
+				}
 			}
 		}
 		ImGui::EndDragDropTarget();
@@ -546,7 +768,7 @@ bool ImGui::ObjectEdit(const char* label, Blueberry::Object** v, const size_t& t
 	return result;
 }
 
-bool ImGui::ObjectEdit(const char* label, Blueberry::ObjectPtr<Blueberry::Object>* v, const size_t& type)
+bool ImGui::ObjectEdit(const char* label, Blueberry::ObjectPtr<Blueberry::Object>* v, const Blueberry::TypeId& type)
 {
 	Blueberry::Object* object = v->Get();
 	if (ObjectEdit(label, &object, type))
@@ -557,7 +779,7 @@ bool ImGui::ObjectEdit(const char* label, Blueberry::ObjectPtr<Blueberry::Object
 	return false;
 }
 
-bool ImGui::ObjectArrayEdit(const char* label, Blueberry::List<Blueberry::ObjectPtr<Blueberry::Object>>* v, const size_t& type)
+bool ImGui::ObjectArrayEdit(const char* label, Blueberry::List<Blueberry::ObjectPtr<Blueberry::Object>>* v, const Blueberry::TypeId& type)
 {
 	ImGui::Text(label);
 	for (int i = 0; i < v->size(); ++i)
@@ -571,7 +793,71 @@ bool ImGui::ObjectArrayEdit(const char* label, Blueberry::List<Blueberry::Object
 	return false;
 }
 
-bool ImGui::SearchInputText(const char* hint, std::string* text)
+struct InputTextCallback_UserData
+{
+	Blueberry::String* Str;
+	ImGuiInputTextCallback  ChainCallback;
+	void* ChainCallbackUserData;
+};
+
+static int InputTextCallback(ImGuiInputTextCallbackData* data)
+{
+	InputTextCallback_UserData* user_data = (InputTextCallback_UserData*)data->UserData;
+	if (data->EventFlag == ImGuiInputTextFlags_CallbackResize)
+	{
+		// Resize string callback
+		// If for some reason we refuse the new length (BufTextLen) and/or capacity (BufSize) we need to set them back to what we want.
+		Blueberry::String* str = user_data->Str;
+		IM_ASSERT(data->Buf == str->c_str());
+		str->resize(data->BufTextLen);
+		data->Buf = (char*)str->c_str();
+	}
+	else if (user_data->ChainCallback)
+	{
+		// Forward to user callback, if any
+		data->UserData = user_data->ChainCallbackUserData;
+		return user_data->ChainCallback(data);
+	}
+	return 0;
+}
+
+bool ImGui::InputText(const char* label, Blueberry::String* str, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void* user_data)
+{
+	IM_ASSERT((flags & ImGuiInputTextFlags_CallbackResize) == 0);
+	flags |= ImGuiInputTextFlags_CallbackResize;
+
+	InputTextCallback_UserData cb_user_data;
+	cb_user_data.Str = str;
+	cb_user_data.ChainCallback = callback;
+	cb_user_data.ChainCallbackUserData = user_data;
+	return InputText(label, (char*)str->c_str(), str->capacity() + 1, flags, InputTextCallback, &cb_user_data);
+}
+
+bool ImGui::InputTextMultiline(const char* label, Blueberry::String* str, const ImVec2& size, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void* user_data)
+{
+	IM_ASSERT((flags & ImGuiInputTextFlags_CallbackResize) == 0);
+	flags |= ImGuiInputTextFlags_CallbackResize;
+
+	InputTextCallback_UserData cb_user_data;
+	cb_user_data.Str = str;
+	cb_user_data.ChainCallback = callback;
+	cb_user_data.ChainCallbackUserData = user_data;
+	return InputTextMultiline(label, (char*)str->c_str(), str->capacity() + 1, size, flags, InputTextCallback, &cb_user_data);
+}
+
+bool ImGui::InputTextWithHint(const char* label, const char* hint, Blueberry::String* str, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void* user_data)
+{
+	IM_ASSERT((flags & ImGuiInputTextFlags_CallbackResize) == 0);
+	flags |= ImGuiInputTextFlags_CallbackResize;
+
+	InputTextCallback_UserData cb_user_data;
+	cb_user_data.Str = str;
+	cb_user_data.ChainCallback = callback;
+	cb_user_data.ChainCallbackUserData = user_data;
+	return InputTextWithHint(label, hint, (char*)str->c_str(), str->capacity() + 1, flags, InputTextCallback, &cb_user_data);
+}
+
+bool ImGui::SearchInputText(const char* hint, Blueberry::String* text)
 {
 	// https://github.com/ocornut/imgui/issues/7510
 	ImGuiID id = ImGui::GetID("###search");
@@ -627,6 +913,23 @@ void ImGui::HorizontalSplitter(const char* strId, float* size, float minSize)
 	}
 }
 
+bool ImGui::CenteredButton(const char* label)
+{
+	// https://github.com/ocornut/imgui/discussions/3862
+	ImGuiStyle& style = ImGui::GetStyle();
+
+	float size = ImGui::CalcTextSize(label).x + style.FramePadding.x * 2.0f;
+	float avail = ImGui::GetContentRegionAvail().x;
+
+	float off = (avail - size) * 0.5f;
+	if (off > 0.0f)
+	{
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + off);
+	}
+
+	return ImGui::Button(label);
+}
+
 void ImGui::ApplyEditorDarkTheme()
 {
 	ImGuiStyle* style = &ImGui::GetStyle();
@@ -636,7 +939,7 @@ void ImGui::ApplyEditorDarkTheme()
 	colors[ImGuiCol_TextDisabled] = ImVec4(0.500f, 0.500f, 0.500f, 1.000f);
 	colors[ImGuiCol_WindowBg] = ImVec4(0.180f, 0.180f, 0.180f, 1.000f);
 	colors[ImGuiCol_ChildBg] = ImVec4(0.280f, 0.280f, 0.280f, 0.000f);
-	colors[ImGuiCol_PopupBg] = ImVec4(0.313f, 0.313f, 0.313f, 1.000f);
+	colors[ImGuiCol_PopupBg] = ImVec4(0.148f, 0.148f, 0.148f, 1.000f);
 	colors[ImGuiCol_Border] = ImVec4(0.266f, 0.266f, 0.266f, 1.000f);
 	colors[ImGuiCol_BorderShadow] = ImVec4(0.000f, 0.000f, 0.000f, 0.000f);
 	colors[ImGuiCol_FrameBg] = ImVec4(0.160f, 0.160f, 0.160f, 1.000f);
@@ -665,10 +968,10 @@ void ImGui::ApplyEditorDarkTheme()
 	colors[ImGuiCol_ResizeGrip] = ImVec4(1.000f, 1.000f, 1.000f, 0.250f);
 	colors[ImGuiCol_ResizeGripHovered] = ImVec4(1.000f, 1.000f, 1.000f, 0.670f);
 	colors[ImGuiCol_ResizeGripActive] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
-	colors[ImGuiCol_Tab] = ImVec4(0.098f, 0.098f, 0.098f, 1.000f);
+	colors[ImGuiCol_Tab] = ImVec4(0.148f, 0.148f, 0.148f, 1.000f);
 	colors[ImGuiCol_TabHovered] = ImVec4(0.352f, 0.352f, 0.352f, 1.000f);
 	colors[ImGuiCol_TabActive] = ImVec4(0.195f, 0.195f, 0.195f, 1.000f);
-	colors[ImGuiCol_TabUnfocused] = ImVec4(0.098f, 0.098f, 0.098f, 1.000f);
+	colors[ImGuiCol_TabUnfocused] = ImVec4(0.148f, 0.148f, 0.148f, 1.000f);
 	colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.195f, 0.195f, 0.195f, 1.000f);
 	colors[ImGuiCol_DockingPreview] = ImVec4(1.000f, 0.391f, 0.000f, 0.781f);
 	colors[ImGuiCol_DockingEmptyBg] = ImVec4(0.180f, 0.180f, 0.180f, 1.000f);
@@ -715,6 +1018,7 @@ void ImGui::ApplyEditorDarkTheme()
 	editorStyle->ProjectCellIconPadding = 8 * scale;
 	editorStyle->ProjectExpandIconSize = 16 * scale;
 	editorStyle->ProjectFolderIconSize = 16 * scale;
+	editorStyle->InspectorIndent = 20 * scale;
 }
 
 void ImGui::LoadDefaultEditorFonts()
@@ -722,8 +1026,8 @@ void ImGui::LoadDefaultEditorFonts()
 	ImFontConfig cfg = {};
 	cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags::ImGuiFreeTypeBuilderFlags_LightHinting;
 
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	ImGuiIO& io = ImGui::GetIO();
 	float fontSize = 16 * Blueberry::Screen::GetScale();
-	io.Fonts->AddFontFromFileTTF("assets/fonts/segoeui/segoeui.ttf", fontSize, &cfg, io.Fonts->GetGlyphRangesCyrillic());
+	io.Fonts->FontBuilderIO = ImGuiFreeType::GetBuilderForFreeType();
 	io.FontDefault = io.Fonts->AddFontFromFileTTF("assets/fonts/segoeui/segoeui.ttf", fontSize, &cfg, io.Fonts->GetGlyphRangesCyrillic());
 }

@@ -4,6 +4,14 @@
 
 namespace Blueberry
 {
+	enum class CameraType
+	{
+		Game,
+		VR,
+		Preview,
+		Reflection,
+	};
+
 	class BB_API Camera : public Component
 	{
 		OBJECT_DECLARATION(Camera)
@@ -12,9 +20,6 @@ namespace Blueberry
 		Camera() = default;
 		virtual ~Camera() = default;
 
-		virtual void OnEnable() final;
-		virtual void OnDisable() final;
-
 		const Matrix& GetProjectionMatrix();
 		const Matrix& GetViewMatrix();
 		const Matrix& GetViewProjectionMatrix();
@@ -22,32 +27,38 @@ namespace Blueberry
 		const Matrix& GetInverseViewMatrix();
 		const Matrix& GetInverseViewProjectionMatrix();
 
-		const bool& IsOrthographic();
-		void SetOrthographic(const bool& isOrthographic);
+		bool IsOrthographic() const;
+		void SetOrthographic(bool isOrthographic);
 
-		const float& GetOrthographicSize();
-		const void SetOrthographicSize(const float& size);
+		float GetOrthographicSize() const;
+		const void SetOrthographicSize(float size);
 
-		const Vector2& GetPixelSize();
+		const Vector2& GetPixelSize() const;
 		const void SetPixelSize(const Vector2& pixelSize);
 
-		const float& GetAspectRatio();
-		void SetAspectRatio(const float& aspectRatio);
+		float GetAspectRatio() const;
+		void SetAspectRatio(float aspectRatio);
 
-		const float& GetFieldOfView();
-		void SetFieldOfView(const float& fieldOfView);
+		float GetFieldOfView() const;
+		void SetFieldOfView(float fieldOfView);
 
-		const float& GetNearClipPlane();
-		void SetNearClipPlane(const float& nearClip);
+		float GetNearClipPlane() const;
+		void SetNearClipPlane(float nearClip);
 
-		const float& GetFarClipPlane();
-		void SetFarClipPlane(const float& farClip);
+		float GetFarClipPlane() const;
+		void SetFarClipPlane(float farClip);
 
 		static Camera* GetCurrent();
 		static void SetCurrent(Camera* camera);
 
 		Vector3 WorldToScreenPoint(Vector3 position);
 		Vector3 ScreenToWorldPoint(Vector3 position);
+
+		CameraType GetCameraType() const;
+		void SetCameraType(CameraType cameraType);
+
+		const Color& GetBackgroundColor() const;
+		void SetBackgroundColor(const Color& backgroundColor);
 
 	private:
 		bool IsViewDirty();
@@ -78,12 +89,17 @@ namespace Blueberry
 		Vector3 m_Direction = Vector3(0, 0, 1);
 		Vector3 m_Up = Vector3(0, 1, 0);
 
-		size_t m_RecalculationFrame = 0;
+		size_t m_UpdateCount = 0;
 
 		float m_ZNearPlane = 0.1f;
 		float m_ZFarPlane = 1000.0f;
 
-	public:
-		bool m_IsVR = true;
+		CameraType m_CameraType = CameraType::Game;
+		Color m_BackgroundColor = Color(0.0f, 0.0f, 0.0f, 1.0f);
+
+	private:
+		Vector4 m_ShadowCascades[6];
+
+		friend class RenderContext;
 	};
 }

@@ -77,6 +77,9 @@ namespace Blueberry
 		const bool& IsSRGB();
 		void SetSRGB(const bool& srgb);
 
+		const bool& IsReadable();
+		void SetReadable(const bool& readable);
+
 		const WrapMode& GetWrapMode();
 		void SetWrapMode(const WrapMode& wrapMode);
 
@@ -86,7 +89,8 @@ namespace Blueberry
 		static String GetTexturePath(const Guid& guid);
 
 	protected:
-		virtual void ImportData() override;
+		virtual bool IsRequiringReimport() const final;
+		virtual void ImportData() final;
 
 	private:
 		Blueberry::TextureFormat GetFormat();
@@ -94,6 +98,7 @@ namespace Blueberry
 	private:
 		bool m_GenerateMipmaps = true;
 		bool m_IsSRGB = true;
+		bool m_IsReadable = false;
 		WrapMode m_WrapMode = WrapMode::Clamp;
 		FilterMode m_FilterMode = FilterMode::Bilinear;
 		TextureShape m_TextureShape = TextureShape::Texture2D;

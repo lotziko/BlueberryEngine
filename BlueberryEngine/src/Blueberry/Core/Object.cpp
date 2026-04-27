@@ -2,35 +2,25 @@
 
 #include "Blueberry\Core\ObjectDB.h"
 #include "Blueberry\Core\ClassDB.h"
-#include "Blueberry\Core\ObjectCloner.h"
 
 namespace Blueberry
 {
-	const size_t Object::Type = TO_OBJECT_TYPE(TO_STRING(Object));
-	const size_t Object::ParentType = 0;
+	TypeId Object::Type = 0;
+	TypeId Object::ParentType = 0;
 	const String Object::TypeName = "Object";
+	const String Object::ParentTypeName = "";
 	
-	Object::Object()
-	{
-		ObjectDB::AllocateId(this);
-	}
-
-	Object::~Object()
-	{
-		ObjectDB::FreeId(this);
-	}
-
-	bool Object::IsClassType(const size_t classType) const
+	bool Object::IsClassType(const TypeId classType) const
 	{
 		return classType == Type;
 	}
 
-	size_t Object::GetType() const
+	TypeId Object::GetType() const
 	{
 		return Type;
 	}
 
-	String Object::GetTypeName() const
+	const String& Object::GetTypeName() const
 	{
 		return TypeName;
 	}
@@ -60,7 +50,7 @@ namespace Blueberry
 		return m_State == ObjectState::Default;
 	}
 
-	void Object::SetState(const ObjectState& state)
+	void Object::SetState(ObjectState state)
 	{
 		m_State = state;
 	}
@@ -70,13 +60,9 @@ namespace Blueberry
 		DEFINE_FIELD(Object, m_Name, BindingType::String, FieldOptions().SetVisibility(VisibilityType::Hidden))
 	}
 
-	Object* Object::Clone(Object* object)
-	{
-		return ObjectCloner::Clone(object);
-	}
-
 	void Object::Destroy(Object* object)
 	{
+		ObjectDB::FreeId(object);
 		delete object;
 	}
 }

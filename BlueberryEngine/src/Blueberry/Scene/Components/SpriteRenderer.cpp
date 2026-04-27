@@ -4,19 +4,30 @@
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Scene\Entity.h"
+#include "Blueberry\Scene\Components\Transform.h"
 
 namespace Blueberry
 {
 	OBJECT_DEFINITION(SpriteRenderer, Renderer)
 	{
 		DEFINE_BASE_FIELDS(SpriteRenderer, Renderer)
-		DEFINE_FIELD(SpriteRenderer, m_Color, BindingType::Color, {})
-		DEFINE_FIELD(SpriteRenderer, m_Texture, BindingType::ObjectPtr, FieldOptions().SetObjectType(Texture::Type))
-		DEFINE_FIELD(SpriteRenderer, m_Material, BindingType::ObjectPtr, FieldOptions().SetObjectType(Material::Type))
-		DEFINE_FIELD(SpriteRenderer, m_SortingOrder, BindingType::Int, {})
+		DEFINE_FIELD(SpriteRenderer, m_Color, BindingType::Color, FieldOptions())
+		DEFINE_FIELD(SpriteRenderer, m_Texture, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Texture::Type))
+		DEFINE_FIELD(SpriteRenderer, m_Material, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Material::Type))
+		DEFINE_FIELD(SpriteRenderer, m_SortingOrder, BindingType::Int, FieldOptions())
 	}
 
-	const Color& SpriteRenderer::GetColor()
+	const AABB& SpriteRenderer::GetBounds()
+	{
+		return m_Bounds;
+	}
+
+	const Matrix& SpriteRenderer::GetLocalToWorldMatrix()
+	{
+		return GetTransform()->GetLocalToWorldMatrix();
+	}
+
+	const Color& SpriteRenderer::GetColor() const
 	{
 		return m_Color;
 	}
@@ -26,7 +37,7 @@ namespace Blueberry
 		m_Color = color;
 	}
 
-	Texture2D* SpriteRenderer::GetTexture()
+	Texture2D* SpriteRenderer::GetTexture() const
 	{
 		return m_Texture.Get();
 	}
@@ -36,7 +47,7 @@ namespace Blueberry
 		m_Texture = texture;
 	}
 
-	Material* SpriteRenderer::GetMaterial()
+	Material* SpriteRenderer::GetMaterial() const
 	{
 		return m_Material.Get();
 	}

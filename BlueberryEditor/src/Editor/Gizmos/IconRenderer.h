@@ -33,7 +33,7 @@ namespace Blueberry
 		static void GenerateCache(Scene* scene);
 
 	private:
-		static inline Material* s_IconMaterial = nullptr;
+		static Material* s_IconMaterial;
 		static List<IconInfo> s_IconsCache;
 	};
 }

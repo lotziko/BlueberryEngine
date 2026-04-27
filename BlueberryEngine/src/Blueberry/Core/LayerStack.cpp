@@ -11,11 +11,12 @@ namespace Blueberry
 			layer->OnDetach();
 			delete layer;
 		}
+		m_Layers.clear();
 	}
 
 	void LayerStack::PushLayer(Layer* layer)
 	{
-		m_Layers.emplace_back(layer);
+		m_Layers.push_back(layer);
 	}
 
 	void LayerStack::PopLayer(Layer* layer)

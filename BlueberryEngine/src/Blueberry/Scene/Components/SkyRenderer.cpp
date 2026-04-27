@@ -12,27 +12,18 @@ namespace Blueberry
 	OBJECT_DEFINITION(SkyRenderer, Component)
 	{
 		DEFINE_BASE_FIELDS(SkyRenderer, Component)
-		DEFINE_FIELD(SkyRenderer, m_Material, BindingType::ObjectPtr, FieldOptions().SetObjectType(Material::Type))
-		DEFINE_FIELD(SkyRenderer, m_AmbientColor, BindingType::Color, {})
-		DEFINE_FIELD(SkyRenderer, m_ReflectionTexture, BindingType::ObjectPtr, FieldOptions().SetObjectType(TextureCube::Type))
+		DEFINE_FIELD(SkyRenderer, m_Material, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Material::Type))
+		DEFINE_FIELD(SkyRenderer, m_AmbientColor, BindingType::Color, FieldOptions())
+		DEFINE_ITERATOR(SkyRenderer)
+		DEFINE_EXECUTE_ALWAYS()
 	}
 
-	void SkyRenderer::OnEnable()
-	{
-		AddToSceneComponents(SkyRenderer::Type);
-	}
-
-	void SkyRenderer::OnDisable()
-	{
-		RemoveFromSceneComponents(SkyRenderer::Type);
-	}
-
-	Material* SkyRenderer::GetMaterial()
+	Material* SkyRenderer::GetMaterial() const
 	{
 		return m_Material.Get();
 	}
 
-	const Color& SkyRenderer::GetAmbientColor()
+	const Color& SkyRenderer::GetAmbientColor() const
 	{
 		return m_AmbientColor;
 	}
@@ -40,19 +31,5 @@ namespace Blueberry
 	void SkyRenderer::SetAmbientColor(const Color& color)
 	{
 		m_AmbientColor = color;
-	}
-
-	TextureCube* SkyRenderer::GetReflectionTexture()
-	{
-		if (!m_ReflectionTexture.IsValid())
-		{
-			return DefaultTextures::GetBlackCube();
-		}
-		return m_ReflectionTexture.Get();
-	}
-
-	void SkyRenderer::SetReflectionTexture(TextureCube* texture)
-	{
-		m_ReflectionTexture = texture;
 	}
 }

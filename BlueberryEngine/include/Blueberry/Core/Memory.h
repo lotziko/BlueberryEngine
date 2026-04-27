@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <set>
+#include <sstream>
 
 namespace Blueberry
 {
@@ -25,11 +26,12 @@ namespace Blueberry
 		static void InitializeThread();
 		static void ShutdownThread();
 
-		static void* Allocate(const size_t& size);
+		static void* Allocate(size_t size);
 		static void Free(void* ptr);
 
 	private:
 		static inline Initializer s_Initializer = {};
+		static inline bool s_IsInitialized = false;
 	};
 
 	// Based on Jolt STLAllocator
@@ -89,8 +91,12 @@ namespace Blueberry
 	{
 	public:
 		virtual size_t size_base() = 0;
+		virtual void insert_base(size_t index) = 0;
+		virtual void erase_base(size_t index) = 0;
+		virtual void move_element_base(size_t from, size_t to) = 0;
+		virtual void clear_base() = 0;
 		virtual void* emplace_back_base() = 0;
-		virtual void* get_base(const uint32_t& index) = 0;
+		virtual void* get_base(size_t index) = 0;
 	};
 
 	template <class T>
@@ -98,15 +104,58 @@ namespace Blueberry
 	{
 	public:
 		using std::vector<T, STLAllocator<T>>::vector;
+		void move_element(size_t from, size_t to);
 		virtual size_t size_base() final;
+		virtual void insert_base(size_t index) final;
+		virtual void erase_base(size_t index) final;
+		virtual void move_element_base(size_t from, size_t to) final;
+		virtual void clear_base() final;
 		virtual void* emplace_back_base() final;
-		virtual void* get_base(const uint32_t& index) final;
+		virtual void* get_base(size_t index) final;
 	};
+
+	template<class T>
+	inline void List<T>::move_element(size_t from, size_t to)
+	{
+		if (from < to)
+		{
+			size_t newTo = std::min(to, size() - 1);
+			std::rotate(begin() + from, begin() + from + 1, begin() + newTo + 1);
+		}
+		else
+		{
+			std::rotate(begin() + to, begin() + from, begin() + from + 1);
+		}
+	}
 
 	template<class T>
 	inline size_t List<T>::size_base()
 	{
 		return size();
+	}
+
+	template<class T>
+	inline void List<T>::insert_base(size_t index)
+	{
+		insert(this->begin() + index, T());
+	}
+
+	template<class T>
+	inline void List<T>::erase_base(size_t index)
+	{
+		erase(this->begin() + index);
+	}
+
+	template<class T>
+	inline void List<T>::move_element_base(size_t from, size_t to)
+	{
+		move_element(from, to);
+	}
+
+	template<class T>
+	inline void List<T>::clear_base()
+	{
+		clear();
 	}
 
 	template<class T>
@@ -121,7 +170,7 @@ namespace Blueberry
 	}
 
 	template<class T>
-	inline void* List<T>::get_base(const uint32_t& index)
+	inline void* List<T>::get_base(size_t index)
 	{
 		if constexpr (!std::is_same_v<T, bool>)
 		{
@@ -135,11 +184,13 @@ namespace Blueberry
 	template <class T, class Hash = std::hash<T>, class KeyEqual = std::equal_to<T>> using HashSet = std::unordered_set<T, Hash, KeyEqual, STLAllocator<T>>;
 	using String = std::basic_string<char, std::char_traits<char>, STLAllocator<char>>;
 	using WString = std::basic_string<wchar_t, std::char_traits<wchar_t>, STLAllocator<wchar_t>>;
+	using StringStream = std::basic_stringstream<char, std::char_traits<char>, STLAllocator<char>>;
+	using ByteData = List<uint8_t>;
 }
 
 #define BB_OVERRIDE_NEW_DELETE													\
-inline void* operator new(std::size_t size) { return BB_MALLOC(size); }			\
-inline void* operator new[](std::size_t size) { return BB_MALLOC(size); }		\
+inline void* operator new(size_t size) { return BB_MALLOC(size); }				\
+inline void* operator new[](size_t size) { return BB_MALLOC(size); }			\
 inline void operator delete(void* ptr) { BB_FREE(ptr); }						\
 inline void operator delete[](void* ptr) { BB_FREE(ptr); }						\
 

@@ -12,8 +12,9 @@ namespace Blueberry
 	{
 	public:
 		static Object* Clone(Object* object);
+		static Object* Resolve(ObjectMapping& mapping, List<ObjectId>& removed, Object* object);
 
 	private:
-		static Object* CloneObject(ObjectMapping& mapping, Object* object);
+		static void CopyFields(ObjectMapping& mapping, void* source, void* target, const ClassInfo* info);
 	};
 }

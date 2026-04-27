@@ -10,22 +10,34 @@ namespace Blueberry
 	OBJECT_DEFINITION(Texture, Object)
 	{
 		DEFINE_BASE_FIELDS(Texture, Object)
-		DEFINE_FIELD(Texture, m_Width, BindingType::Int, {})
-		DEFINE_FIELD(Texture, m_Height, BindingType::Int, {})
-		DEFINE_FIELD(Texture, m_MipCount, BindingType::Int, {})
-		DEFINE_FIELD(Texture, m_Format, BindingType::Enum, {})
+		DEFINE_FIELD(Texture, m_Width, BindingType::Int, FieldOptions())
+		DEFINE_FIELD(Texture, m_Height, BindingType::Int, FieldOptions())
+		DEFINE_FIELD(Texture, m_MipCount, BindingType::Int, FieldOptions())
+		DEFINE_FIELD(Texture, m_Format, BindingType::Enum, FieldOptions())
 		DEFINE_FIELD(Texture, m_WrapMode, BindingType::Enum, FieldOptions().SetEnumHint("Repeat,Clamp"))
-		DEFINE_FIELD(Texture, m_FilterMode, BindingType::Enum, FieldOptions().SetEnumHint("Linear,Point"))
+		DEFINE_FIELD(Texture, m_FilterMode, BindingType::Enum, FieldOptions().SetEnumHint("Linear,Point,Trilinear"))
+		DEFINE_FIELD(Texture, m_RawData, BindingType::ByteData, FieldOptions().SetSerializationFlags(SerializationFlags::EditorOnly))
+		DEFINE_FIELD(Texture, m_IsReadable, BindingType::Bool, FieldOptions())
 	}
 
-	const uint32_t& Texture::GetWidth()
+	uint32_t Texture::GetWidth() const
 	{
 		return m_Width;
 	}
 
-	const uint32_t& Texture::GetHeight()
+	uint32_t Texture::GetHeight() const
 	{
 		return m_Height;
+	}
+
+	uint32_t Texture::GetMipCount() const
+	{
+		return m_MipCount;
+	}
+
+	TextureFormat Texture::GetFormat() const
+	{
+		return m_Format;
 	}
 
 	GfxTexture* Texture::Get()
@@ -42,6 +54,54 @@ namespace Blueberry
 		return nullptr;
 	}
 
+	WrapMode Texture::GetWrapMode() const
+	{
+		return m_WrapMode;
+	}
+
+	void Texture::SetWrapMode(WrapMode wrapMode)
+	{
+		m_WrapMode = wrapMode;
+		if (m_Texture != nullptr)
+		{
+			m_Texture->SetWrapMode(wrapMode);
+		}
+	}
+
+	FilterMode Texture::GetFilterMode() const
+	{
+		return m_FilterMode;
+	}
+
+	void Texture::SetFilterMode(FilterMode filterMode)
+	{
+		m_FilterMode = filterMode;
+		if (m_Texture != nullptr)
+		{
+			m_Texture->SetFilterMode(filterMode);
+		}
+	}
+
+	bool Texture::IsReadable() const
+	{
+		return m_IsReadable;
+	}
+
+	void Texture::SetReadable(bool readable)
+	{
+		m_IsReadable = readable;
+	}
+
+	bool Texture::HasData()
+	{
+		return m_RawData.size() > 0;
+	}
+
+	const ByteData& Texture::GetData()
+	{
+		return m_RawData;
+	}
+
 	void Texture::IncrementUpdateCount()
 	{
 		++m_UpdateCount;
@@ -50,7 +110,7 @@ namespace Blueberry
 			Object* object = ObjectDB::GetObject(dependency);
 			if (object != nullptr)
 			{
-				dynamic_cast<Notifyable*>(object)->OnNotify();
+				dynamic_cast<Notifyable*>(object)->OnNotify(static_cast<Object*>(this));
 			}
 		}
 	}

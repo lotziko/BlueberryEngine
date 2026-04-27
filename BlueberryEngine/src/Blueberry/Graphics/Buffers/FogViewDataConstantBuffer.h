@@ -13,6 +13,6 @@ namespace Blueberry
 		static void BindData(const CameraData& data, const Vector3Int& frustumVolumeSize);
 
 	private:
-		static inline GfxBuffer* s_ConstantBuffer = nullptr;
+		static GfxBuffer* s_ConstantBuffer;
 	};
 }

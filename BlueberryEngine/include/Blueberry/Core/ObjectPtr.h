@@ -14,9 +14,10 @@ namespace Blueberry
 		void operator=(const ObjectType* object);
 		bool operator==(const ObjectPtr<ObjectType>& other) const;
 		ObjectType* operator->();
+		ObjectType* operator->() const;
 
 		ObjectType* Get() const;
-		const size_t& GetType() const;
+		size_t GetType() const;
 		bool IsValid() const;
 		void Reset();
 
@@ -66,6 +67,12 @@ namespace Blueberry
 	}
 
 	template<class ObjectType>
+	inline ObjectType* ObjectPtr<ObjectType>::operator->() const
+	{
+		return ObjectPtr<ObjectType>::Get();
+	}
+
+	template<class ObjectType>
 	inline ObjectType* ObjectPtr<ObjectType>::Get() const
 	{
 		if (m_Id < 0)
@@ -76,9 +83,9 @@ namespace Blueberry
 	}
 
 	template<class ObjectType>
-	inline const size_t& ObjectPtr<ObjectType>::GetType() const
+	inline size_t ObjectPtr<ObjectType>::GetType() const
 	{
-		return m_Type;
+		return Get()->GetType();
 	}
 
 	template<class ObjectType>

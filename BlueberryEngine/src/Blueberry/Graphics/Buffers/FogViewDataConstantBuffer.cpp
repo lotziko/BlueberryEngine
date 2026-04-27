@@ -5,12 +5,17 @@
 #include "..\RenderContext.h"
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Scene\Components\Transform.h"
+#include "Blueberry\Core\Time.h"
 
 namespace Blueberry
 {
+	GfxBuffer* FogViewDataConstantBuffer::s_ConstantBuffer = nullptr;
+
 	struct FogViewData
 	{
-		Vector4 viewInvCount;
+		unsigned int jitterOffset;
+		float viewInvCount;
+		Vector2 dummy;
 		Vector4 viewDX[2];
 		Vector4 viewDY[2];
 		Vector4 viewCorner[2];
@@ -33,10 +38,9 @@ namespace Blueberry
 		if (s_ConstantBuffer == nullptr)
 		{
 			BufferProperties constantBufferProperties = {};
-			constantBufferProperties.type = BufferType::Constant;
 			constantBufferProperties.elementCount = 1;
 			constantBufferProperties.elementSize = sizeof(FogViewData) * 1;
-			constantBufferProperties.isWritable = true;
+			constantBufferProperties.usageFlags = BufferUsageFlags::ConstantBuffer;
 
 			GfxDevice::CreateBuffer(constantBufferProperties, s_ConstantBuffer);
 		}
@@ -48,12 +52,12 @@ namespace Blueberry
 		float fogFarClipPlane = 128;
 
 		Matrix inverseView = camera->GetInverseViewMatrix();
-		Matrix projection = Matrix::CreatePerspectiveFieldOfView(ToRadians(camera->GetFieldOfView()), camera->GetAspectRatio(), fogNearClipPlane, fogFarClipPlane);
+		Matrix projection = Matrix::CreatePerspectiveFieldOfView(Math::ToRadians(camera->GetFieldOfView()), camera->GetAspectRatio(), fogNearClipPlane, fogFarClipPlane);
 		Transform* transform = camera->GetTransform();
 		Vector4 position = transform->GetPosition();
 
 		Frustum frustum = {};
-		frustum.CreateFromMatrix(frustum, projection, false);
+		frustum.CreateFromMatrix(frustum, projection);
 		frustum.Transform(frustum, inverseView);
 
 		Vector3 corners[8];
@@ -62,8 +66,9 @@ namespace Blueberry
 		Vector4 bottomLeft = corners[7] - position;
 		Vector4 bottomRight = corners[6] - position;
 		Vector4 topLeft = corners[4] - position;
-
-		constants.viewInvCount = Vector4(1, 0, 0, 0);
+		
+		constants.jitterOffset = static_cast<uint32_t>((Time::GetFrameCount() % 100));
+		constants.viewInvCount = 1;
 		constants.viewDX[0] = bottomRight - bottomLeft;
 		constants.viewDY[0] = topLeft - bottomLeft;
 		constants.viewCorner[0] = bottomLeft;
@@ -71,7 +76,7 @@ namespace Blueberry
 		constants.previousViewProj[0] = GfxDevice::GetGPUMatrix(previousViewProj);
 		constants.fogNearRange = Vector4(1.0f - fogFarClipPlane / fogNearClipPlane, fogFarClipPlane / fogNearClipPlane, fogNearClipPlane / fogFarClipPlane, 1.0f / (1.0f - fogNearClipPlane / fogFarClipPlane));
 		constants.frustumVolumeInvSize = Vector4(1.0f / frustumVolumeSize.x, 1.0f / frustumVolumeSize.y, 1.0f / frustumVolumeSize.z, 1.0f / (frustumVolumeSize.z - 1.0f));
-		constants.frustumVolumeSize = Vector4(frustumVolumeSize.x, frustumVolumeSize.y, frustumVolumeSize.z, 0);
+		constants.frustumVolumeSize = Vector4(static_cast<float>(frustumVolumeSize.x), static_cast<float>(frustumVolumeSize.y), static_cast<float>(frustumVolumeSize.z), 0.0f);
 	
 		previousViewProj = camera->GetViewProjectionMatrix();
 

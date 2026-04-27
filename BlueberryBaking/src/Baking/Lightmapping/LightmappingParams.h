@@ -31,7 +31,7 @@ namespace Blueberry
 
 		uint2* validTexels;
 		unsigned int validTexelsCount;
-		unsigned int* completeCounter;
+		unsigned int* completeTexelCounter;
 
 		float4* color;
 		float3* normal;
@@ -46,6 +46,12 @@ namespace Blueberry
 		unsigned int pointLightCount;
 		uchar4* skyColor;
 		BVH bvh;
+
+		float3* probePosition;
+		unsigned int* probeColor; // R11G10B11
+		unsigned int probeCount;
+		unsigned int* completeProbeCounter;
+		float distanceBetweenProbes;
 
 		Matrix3x4* instanceMatrices;
 		OptixTraversableHandle handle;

@@ -5,9 +5,13 @@
 
 #include "Core.hlsl"
 
+#define TEMPORAL_REPROJECTION true
+
 cbuffer FogViewData
 {
-	float4 _ViewInvCount; // is used to offset position during inject volume sampling
+	uint _JitterOffset;
+	float _ViewInvCount; // is used to offset position during inject volume sampling
+	float2 _Dummy;
 	float4 _ViewDX[2];
 	float4 _ViewDY[2];
 	float4 _ViewCorner[2];
@@ -36,7 +40,7 @@ float3 CalculateLight(float3 positionWS)
 		{
 			if (!IsOutOfBounds(positionSS, _MainShadowBounds[cascadeIndex]))
 			{
-				shadowAttenuation = ComputeShadowPCF3x3(positionSS, _ShadowTexture, _ShadowTexture_Sampler, _Shadow3x3PCFTermC0, _Shadow3x3PCFTermC1, _Shadow3x3PCFTermC2, _Shadow3x3PCFTermC3);
+				shadowAttenuation = SampleShadowAtlas(positionSS);
 			}
 		}
 		float3 lightColor = _MainLightColor.rgb;
@@ -48,7 +52,7 @@ float3 CalculateLight(float3 positionWS)
 	{
 		PointLightData data = _PointLightsData[i];
 
-		if (!data.hasFog)
+		if ((data.flags & 2) == 0)
 		{
 			continue;
 		}
@@ -64,14 +68,15 @@ float3 CalculateLight(float3 positionWS)
 		float3 lightDirectionWS = normalize(posToLight);
 
 		float shadowAttenuation = 1.0;
-		if (data.hasShadow)
+		if ((data.flags & 1) != 0)
 		{
 			uint faceIndex = GetFaceIndex(-lightDirectionWS);
+			ShadowData shadowData = _ShadowsData[data.shadowDataOffset + faceIndex];
 			shadowAttenuation = 0.0;
-			float4 positionSS = TransformWorldToShadow(positionWS, data.worldToShadow[faceIndex]);
-			if (!IsOutOfBounds(positionSS, data.shadowBounds[faceIndex]))
+			float4 positionSS = TransformWorldToShadow(positionWS, shadowData.worldToShadow);
+			if (!IsOutOfBounds(positionSS, shadowData.shadowBounds))
 			{
-				shadowAttenuation = ComputeShadowPCF3x3(positionSS, _ShadowTexture, _ShadowTexture_Sampler, _Shadow3x3PCFTermC0, _Shadow3x3PCFTermC1, _Shadow3x3PCFTermC2, _Shadow3x3PCFTermC3);
+				shadowAttenuation = SampleShadowAtlas(positionSS);
 			}
 		}
 
@@ -92,7 +97,7 @@ float3 CalculateLight(float3 positionWS)
 	{
 		SpotLightData data = _SpotLightsData[i];
 
-		if (!data.hasFog)
+		if ((data.flags & 2) == 0)
 		{
 			continue;
 		}
@@ -114,7 +119,7 @@ float3 CalculateLight(float3 positionWS)
 		}
 
 		float cookieAttenuation = 1.0;
-		if (data.hasCookie) //has cookie
+		if ((data.flags & 4) != 0) //has cookie
 		{
 			float4 positionLCS = ApplyShadowBias(TransformWorldToShadow(positionWS, data.worldToCookie));
 			cookieAttenuation = _CookieTexture.SampleLevel(_CookieTexture_Sampler, positionLCS.xyz, 0).r;
@@ -122,13 +127,14 @@ float3 CalculateLight(float3 positionWS)
 		}
 
 		float shadowAttenuation = 1.0;
-		if (data.hasShadow) // has shadow
+		if ((data.flags & 1) != 0) // has shadow
 		{
+			ShadowData shadowData = _ShadowsData[data.shadowDataOffset];
 			shadowAttenuation = 0.0;
-			float4 positionSS = TransformWorldToShadow(positionWS, data.worldToShadow);
-			if (!IsOutOfBounds(positionSS, data.shadowBounds))
+			float4 positionSS = TransformWorldToShadow(positionWS, shadowData.worldToShadow);
+			if (!IsOutOfBounds(positionSS, shadowData.shadowBounds))
 			{
-				shadowAttenuation = ComputeShadowPCF3x3(positionSS, _ShadowTexture, _ShadowTexture_Sampler, _Shadow3x3PCFTermC0, _Shadow3x3PCFTermC1, _Shadow3x3PCFTermC2, _Shadow3x3PCFTermC3);
+				shadowAttenuation = SampleShadowAtlas(positionSS);
 			}
 		}
 
@@ -217,14 +223,28 @@ float4 ScatterStep(float3 accumulatedLight, float accumulatedTransmittance, floa
 	return float4(accumulatedLight, accumulatedTransmittance);
 }
 
+float4 SamplePreviousColor(float3 positionWS, float4x4 previousViewProj, uint viewIndex)
+{
+	float4 positionCS = mul(previousViewProj, float4(positionWS, 1));
+	float3 positionNDC = (positionCS.xyz * rcp(positionCS.w));
+
+	positionNDC.xy = positionNDC.xy * 0.5 + 0.5;
+	float isInBounds = (positionNDC.x > 0.0 && positionNDC.x < 1.0 && positionNDC.y > 0.0 && positionNDC.y < 1.0);
+	positionNDC.x = positionNDC.x * _ViewInvCount + viewIndex * 0.5;
+	float depth = (sqrt(Linear01Depth(positionNDC.z)) - _FogNearRange.z) * _FogNearRange.w; // Depth is in range [near/far, 1], so transform it to [0, 1] for sampling
+
+	float4 previousColor = _PreviousFrameInjectFogVolume.SampleLevel(_PreviousFrameInjectFogVolume_Sampler, float3(positionNDC.xy, depth), 0);
+	return previousColor * isInBounds;
+}
+
 [numthreads(16, 16, 1)]
 void CSInject(uint3 id : SV_DispatchThreadID)
 {
 	uint viewIndex = id.z;
 	uint3 positionFVS = uint3((uint)_FrustumVolumeSize.x * viewIndex + id.x, id.y, 0);
 
-	uint jitterIndex = (id.y * 6547 + id.x * 4159) & 31;
-	float3 positionWSJitter = (_ViewDX[viewIndex].xyz * kJitterOffsets[jitterIndex].x + _ViewDY[viewIndex].xyz * kJitterOffsets[jitterIndex].y) / 4000;
+	uint jitterIndex = (id.y * 6547 + (id.x * 4159 + _JitterOffset)) & 31;
+	float3 positionWSJitter = (_ViewDX[viewIndex].xyz * kJitterOffsets[jitterIndex].x + _ViewDY[viewIndex].xyz * kJitterOffsets[jitterIndex].y);
 
 	float3 positionFS = float3(id.x + 0.5, id.y + 0.5, 0) * _FrustumVolumeInvSize.xyz;// FS means frustum space
 	float3 vectorFS = _ViewDY[viewIndex].xyz * positionFS.y + (_ViewDX[viewIndex].xyz * positionFS.x + _ViewCorner[viewIndex].xyz); // Vector to far plane
@@ -237,12 +257,18 @@ void CSInject(uint3 id : SV_DispatchThreadID)
 		positionFS.z = pow(z * _FrustumVolumeInvSize.w, 2); // .w has size.z - 1 value to match [0, 1] depth range here
 		float zVS = _FogNearRange.z + positionFS.z * (1 - _FogNearRange.z); // Depth is in range [0, 1], so transform it to [near/far, 1] to match the frustum
 		float3 positionWS = _ViewPos[viewIndex].xyz + vectorFS * zVS;
-
-		float4 color = float4(0, 0, 0, 1);//DecodeColor(SampleBakedColor(positionWS + positionWSJitter));
-		float3 light = CalculateLight(positionWS + positionWSJitter * (z * _FrustumVolumeInvSize.z));
-		color.rgb += light * color.a;
-
-		_InjectFogVolume[positionFVS] = color;
+		float3 light = CalculateLight(TEMPORAL_REPROJECTION ? (positionWS + positionWSJitter * _FogNearRange.z) : positionWS);
+		float transmittance = 1.0f;
+		float3 color = min(light, 100.0f) * transmittance;
+		if (TEMPORAL_REPROJECTION)
+		{
+			float4 previousColor = SamplePreviousColor(positionWS, _PreviousViewProj[viewIndex], viewIndex);
+			_InjectFogVolume[positionFVS] = float4(previousColor.a > 0 ? ((previousColor.rgb - color.rgb) * 0.9 + color.rgb) : color.rgb, transmittance);
+		}
+		else
+		{
+			_InjectFogVolume[positionFVS] = float4(color, transmittance);
+		}
 	}
 }
 
@@ -264,7 +290,7 @@ void CSScatter(uint3 id : SV_DispatchThreadID)
 	for (uint z = 0; z < steps; ++z)
 	{
 		pos.z = z;
-		positionVS = float3(pos.x + 0.5, pos.y + 0.5, pos.z + 0.5) * float3(_FrustumVolumeInvSize.x * _ViewInvCount.x, _FrustumVolumeInvSize.yz);
+		positionVS = float3(pos.x + 0.5, pos.y + 0.5, pos.z + 0.5) * float3(_FrustumVolumeInvSize.x * _ViewInvCount, _FrustumVolumeInvSize.yz);
 
 		float4 slice0 = _InjectedFogVolume.SampleLevel(_InjectedFogVolume_Sampler, positionVS + float3(-0.5, -0.5, -0.5) * _FrustumVolumeInvSize.xyz, 0);
 		float4 slice1 = _InjectedFogVolume.SampleLevel(_InjectedFogVolume_Sampler, positionVS + float3(-0.5, -0.5, 0.5) * _FrustumVolumeInvSize.xyz, 0);
@@ -288,11 +314,11 @@ Texture3D<float4> _ScatterNoBlurFogVolume;
 RWTexture3D<float4> _ScatterBlurFogVolume;
 
 static const uint2 kBlurOffsets[5] = {
-	uint2(-2, 0),
-	uint2(-1, 0),
 	uint2(0, 0),
-	uint2(1, 0),
-	uint2(2, 0),
+	uint2(0, 0),
+	uint2(0, 0),
+	uint2(0, 0),
+	uint2(0, 0),
 };
 
 [numthreads(8, 8, 8)]
@@ -300,12 +326,17 @@ void CSBlurHorizontal(uint3 id : SV_DispatchThreadID)
 {
 	uint2 size = (uint2)_FrustumVolumeSize.xy - 1;
 	float4 result = 0;
+	float weight = 0;
 	for (int i = 0; i < 5; i++)
 	{
-		uint3 pos = uint3(min(max(id.xy + kBlurOffsets[i], uint2(0, 0)), size), id.z);
-		result += _ScatterNoBlurFogVolume[pos] * 0.2;
+		uint3 pos = uint3(id.xy + kBlurOffsets[i], id.z);
+		if (pos.x >= 0 && pos.y >= 0 && pos.x <= size.x && pos.y <= size.y)
+		{
+			result += _ScatterNoBlurFogVolume[pos];
+			weight += 1;
+		}
 	}
-	_ScatterBlurFogVolume[id] = result;
+	_ScatterBlurFogVolume[id] = result / weight;
 }
 
 [numthreads(8, 8, 8)]
@@ -313,10 +344,15 @@ void CSBlurVertical(uint3 id : SV_DispatchThreadID)
 {
 	uint2 size = (uint2)_FrustumVolumeSize.xy - 1;
 	float4 result = 0;
+	float weight = 0;
 	for (int i = 0; i < 5; i++)
 	{
-		uint3 pos = uint3(min(max(id.xy + kBlurOffsets[i].yx, uint2(0, 0)), size), id.z);
-		result += _ScatterNoBlurFogVolume[pos] * 0.2;
+		uint3 pos = uint3(id.xy + kBlurOffsets[i].yx, id.z);
+		if (pos.x >= 0 && pos.y >= 0 && pos.x <= size.x && pos.y <= size.y)
+		{
+			result += _ScatterNoBlurFogVolume[pos];
+			weight += 1;
+		}
 	}
-	_ScatterBlurFogVolume[id] = result;
+	_ScatterBlurFogVolume[id] = result / weight;
 }

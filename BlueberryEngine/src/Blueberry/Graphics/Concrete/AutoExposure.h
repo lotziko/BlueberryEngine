@@ -1,28 +1,35 @@
 #pragma once
 
 #include "Blueberry\Core\Base.h"
+#include "Blueberry\Core\Object.h"
 
 namespace Blueberry
 {
 	class GfxTexture;
 	class GfxBuffer;
 	class ComputeShader;
+	class Camera;
+
+	struct PerCameraExposureData
+	{
+		uint32_t recalculateTimer = 0;
+		float targetExposure = 0.15f;
+		float currentExposure = 0.15f;
+	};
 
 	class AutoExposure
 	{
 	public:
 		static void Initialize();
 		static void Shutdown();
-		static void Calculate(GfxTexture* color, const Rectangle& viewport);
-		static float GetExposure();
+		static void Calculate(Camera* camera, GfxTexture* color, const Rectangle& viewport);
+		static float GetExposure(Camera* camera);
 
 	private:
-		static inline ComputeShader* s_ExposureShader = nullptr;
-		static inline GfxBuffer* s_ExposureData = nullptr;
-		static inline GfxBuffer* s_Histogram = nullptr;
-		static inline GfxBuffer* s_Result = nullptr;
-		static inline uint32_t s_RecalculateTimer = 0;
-		static inline float s_TargetExposure = 0.15f;
-		static inline float s_CurrentExposure = 0.15f;
+		static ComputeShader* s_ExposureShader;
+		static GfxBuffer* s_ExposureData;
+		static GfxBuffer* s_Histogram;
+		static GfxBuffer* s_Result;
+		static Dictionary<ObjectId, PerCameraExposureData> s_PerCameraData;
 	};
 }

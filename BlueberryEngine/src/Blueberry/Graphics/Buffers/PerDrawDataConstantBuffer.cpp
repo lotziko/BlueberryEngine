@@ -5,6 +5,10 @@
 
 namespace Blueberry
 {
+	GfxBuffer* PerDrawDataConstantBuffer::s_StructuredBuffer = nullptr;
+	GfxBuffer* PerDrawDataConstantBuffer::s_ConstantBuffer = nullptr;
+	GfxBuffer* PerDrawDataConstantBuffer::s_ConstantBufferInstanced = nullptr;
+
 	struct PerDrawData
 	{
 		Matrix modelMatrix;
@@ -18,10 +22,9 @@ namespace Blueberry
 		if (s_ConstantBuffer == nullptr)
 		{
 			BufferProperties constantBufferProperties = {};
-			constantBufferProperties.type = BufferType::Constant;
 			constantBufferProperties.elementCount = 1;
 			constantBufferProperties.elementSize = sizeof(PerDrawData) * 1;
-			constantBufferProperties.isWritable = true;
+			constantBufferProperties.usageFlags = BufferUsageFlags::ConstantBuffer;
 
 			GfxDevice::CreateBuffer(constantBufferProperties, s_ConstantBuffer);
 		}
@@ -44,10 +47,9 @@ namespace Blueberry
 		if (s_StructuredBuffer == nullptr)
 		{
 			BufferProperties structuredBufferProperties = {};
-			structuredBufferProperties.type = BufferType::Structured;
 			structuredBufferProperties.elementCount = 2048;
 			structuredBufferProperties.elementSize = sizeof(PerDrawData);
-			structuredBufferProperties.isWritable = true;
+			structuredBufferProperties.usageFlags = BufferUsageFlags::StructuredBuffer | BufferUsageFlags::ShaderResource | BufferUsageFlags::CPUWritable;
 
 			GfxDevice::CreateBuffer(structuredBufferProperties, s_StructuredBuffer);
 		}

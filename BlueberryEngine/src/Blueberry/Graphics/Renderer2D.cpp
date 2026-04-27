@@ -9,6 +9,15 @@
 
 namespace Blueberry
 {
+	GfxBuffer* Renderer2D::s_VertexBuffer = nullptr;
+	GfxBuffer* Renderer2D::s_IndexBuffer = nullptr;
+
+	float* Renderer2D::s_VertexData = nullptr;
+	float* Renderer2D::s_VertexDataPtr = nullptr;
+	Renderer2D::DrawingData* Renderer2D::s_DrawingDatas = nullptr;
+	uint32_t Renderer2D::s_QuadIndexCount = 0;
+	uint32_t Renderer2D::s_DrawingDataCount = 0;
+
 	static Vector4 s_QuadVertexPositons[4];
 	static Vector2 s_QuadTextureCoords[4];
 
@@ -29,10 +38,9 @@ namespace Blueberry
 		s_VertexData = BB_MALLOC_ARRAY(float, MAX_VERTICES * size / sizeof(float));
 
 		BufferProperties vertexBufferProperties = {};
-		vertexBufferProperties.type = BufferType::Vertex;
 		vertexBufferProperties.elementCount = MAX_VERTICES;
 		vertexBufferProperties.elementSize = size;
-		vertexBufferProperties.isWritable = true;
+		vertexBufferProperties.usageFlags = BufferUsageFlags::VertexBuffer | BufferUsageFlags::CPUWritable;
 		
 		if (!GfxDevice::CreateBuffer(vertexBufferProperties, s_VertexBuffer))
 		{
@@ -55,10 +63,9 @@ namespace Blueberry
 		}
 		
 		BufferProperties indexBufferProperties = {};
-		indexBufferProperties.type = BufferType::Index;
 		indexBufferProperties.elementCount = MAX_INDICES;
 		indexBufferProperties.elementSize = sizeof(uint32_t);
-		indexBufferProperties.isWritable = true;
+		indexBufferProperties.usageFlags = BufferUsageFlags::IndexBuffer | BufferUsageFlags::CPUWritable;
 
 		if (!GfxDevice::CreateBuffer(indexBufferProperties, s_IndexBuffer))
 		{
@@ -102,7 +109,7 @@ namespace Blueberry
 		Flush();
 	}
 
-	void Renderer2D::Draw(const Matrix& transform, Texture2D* texture, Material* material, const Color& color, const int& sortingOrder)
+	void Renderer2D::Draw(const Matrix& transform, Texture2D* texture, Material* material, const Color& color, int sortingOrder)
 	{
 		if (s_DrawingDataCount >= MAX_SPRITES)
 			Flush();
@@ -168,7 +175,7 @@ namespace Blueberry
 			s_QuadIndexCount += 6;
 		}
 
-		s_VertexBuffer->SetData(s_VertexData, (s_QuadIndexCount / 6 * 4) * s_VertexBuffer->GetElementSize());
+		s_VertexBuffer->SetData(s_VertexData, (static_cast<size_t>(s_QuadIndexCount / 6) * 4) * s_VertexBuffer->GetElementSize());
 
 		// Draw quads
 		Material* currentMaterial = s_DrawingDatas->material;

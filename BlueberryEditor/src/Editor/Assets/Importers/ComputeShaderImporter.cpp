@@ -5,6 +5,8 @@
 
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Assets\Processors\HLSLComputeShaderProcessor.h"
+#include "Editor\Misc\PathHelper.h"
+#include "ShaderImporter.h"
 
 namespace Blueberry
 {
@@ -21,51 +23,37 @@ namespace Blueberry
 		{
 			std::filesystem::create_directories(dataPath);
 		}
-		return dataPath.string().data();
+		return StringHelper::ToString(dataPath);
+	}
+
+	bool ComputeShaderImporter::IsRequiringReimport() const
+	{
+		Guid guid = GetGuid();
+		if (AssetDB::HasAssetWithGuidInData(guid) && ShaderImporter::GetLastFilesWriteTime() < PathHelper::GetDirectoryLastWriteTime(GetShaderFolder(guid)))
+		{
+			return false;
+		}
+		return true;
 	}
 
 	void ComputeShaderImporter::ImportData()
 	{
 		Guid guid = GetGuid();
+		String path = GetFilePath();
+		HLSLComputeShaderProcessor processor;
 
-		ComputeShader* object;
-		if (AssetDB::HasAssetWithGuidInData(guid))
+		if (processor.Compile(path))
 		{
-			HLSLComputeShaderProcessor processor;
-			if (processor.LoadKernels(GetShaderFolder(guid)))
-			{
-				auto objects = AssetDB::LoadAssetObjects(guid, ObjectDB::GetObjectsFromGuid(guid));
-				if (objects.size() == 1 && objects[0].first->IsClassType(ComputeShader::Type))
-				{
-					object = static_cast<ComputeShader*>(objects[0].first);
-					ObjectDB::AllocateIdToGuid(object, guid, objects[0].second);
-					object->Initialize(processor.GetShaders());
-					object->SetState(ObjectState::Default);
-					BB_INFO("Compute shader \"" << GetName() << "\" imported from cache.");
-				}
-			}
+			processor.SaveKernels(GetShaderFolder(guid));
+			ComputeShader* computeShader = GetOrCreateAssetObject<ComputeShader>(1);
+			computeShader->SetName(GetName());
+			computeShader->Initialize(processor.GetShaders(), processor.GetComputeShaderData());
+			AssetDB::SaveAssetObjectsToCache(List<Object*> { computeShader });
 		}
 		else
 		{
-			String path = GetFilePath();
-			HLSLComputeShaderProcessor processor;
-
-			if (processor.Compile(path))
-			{
-				processor.SaveKernels(GetShaderFolder(guid));
-
-				object = ComputeShader::Create(processor.GetShaders(), processor.GetComputeShaderData(), static_cast<ComputeShader*>(ObjectDB::GetObjectFromGuid(guid, 1)));
-				object->SetState(ObjectState::Default);
-				ObjectDB::AllocateIdToGuid(object, guid, 1);
-				AssetDB::SaveAssetObjectsToCache(List<Object*> { object });
-				BB_INFO("Compute shader \"" << GetName() << "\" imported and compiled from: " + path);
-			}
-			else
-			{
-				BB_ERROR("Compute shader \"" << GetName() << "\" failed to compile.");
-			}
+			BB_ERROR("Compute shader \"" << GetName() << "\" failed to compile.");
 		}
-		object->SetName(GetName());
 		SetMainObject(1);
 	}
 }

@@ -2,10 +2,18 @@
 
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\Material.h"
+#include "Blueberry\Graphics\DefaultShaders.h"
 #include "Blueberry\Assets\AssetLoader.h"
 
 namespace Blueberry
 {
+	Material* DefaultMaterials::s_ErrorMaterial = nullptr;
+	Material* DefaultMaterials::s_BlitMaterial = nullptr;
+	Material* DefaultMaterials::s_ResolveMSAAMaterial = nullptr;
+	Material* DefaultMaterials::s_PostProcessingMaterial = nullptr;
+	Material* DefaultMaterials::s_VRMirrorViewMaterial = nullptr;
+	Material* DefaultMaterials::s_SkyboxMaterial = nullptr;
+
 	Material* DefaultMaterials::GetError()
 	{
 		if (s_ErrorMaterial == nullptr)
@@ -84,5 +92,16 @@ namespace Blueberry
 			s_VRMirrorViewMaterial->SetName("VRMirror");
 		}
 		return s_VRMirrorViewMaterial;
+	}
+
+	Material* DefaultMaterials::GetSkybox()
+	{
+		if (s_SkyboxMaterial == nullptr)
+		{
+			Shader* shader = DefaultShaders::GetSkybox();
+			s_SkyboxMaterial = Material::Create(shader);
+			s_SkyboxMaterial->SetName("Skybox");
+		}
+		return s_SkyboxMaterial;
 	}
 }

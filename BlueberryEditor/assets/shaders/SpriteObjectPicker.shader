@@ -29,7 +29,7 @@ Shader
 		Varyings SpriteObjectPickerVertex(Attributes input)
 		{
 			Varyings output;
-			output.positionCS = mul(float4(input.positionOS, 1.0f), VIEW_PROJECTION_MATRIX);
+			output.positionCS = mul(VIEW_PROJECTION_MATRIX, float4(input.positionOS, 1.0f));
 			output.color = input.color;
 			output.texcoord = input.texcoord;
 			return output;
@@ -40,7 +40,8 @@ Shader
 		float4 SpriteObjectPickerFragment(Varyings input) : SV_TARGET
 		{
 			float4 color = SAMPLE_TEXTURE2D(_BaseMap, _BaseMap_Sampler, input.texcoord);
-			return input.color * ceil(color.a);
+			clip(color.a - 0.125);
+			return input.color;
 		}
 		HLSLEND
 	}

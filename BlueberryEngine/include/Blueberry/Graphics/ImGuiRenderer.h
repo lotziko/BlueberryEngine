@@ -23,6 +23,6 @@ namespace Blueberry
 		virtual void EndImpl() = 0;
 
 	private:
-		static inline ImGuiRenderer* s_Instance = nullptr;
+		static ImGuiRenderer* s_Instance;
 	};
 }

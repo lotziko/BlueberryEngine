@@ -10,23 +10,23 @@ namespace Blueberry
 	public:
 		BB_OVERRIDE_NEW_DELETE
 
-		OctreeNode(const Vector3& center, const float& size, const float& minNodeSize, const float& looseness);
+		OctreeNode(const Vector3& center, float size, float minNodeSize, float looseness);
 
-		bool Add(const AABB& bounds, const ObjectId& object);
-		bool Remove(const ObjectId& object);
-		bool Remove(const AABB& bounds, const ObjectId& object);
+		bool Add(const AABB& bounds, ObjectId object);
+		bool Remove(ObjectId object);
+		bool Remove(const AABB& bounds, ObjectId object);
 		const uint32_t GetBestFit(const Vector3& center);
 
 		void Cull(DirectX::XMVECTOR* planes, List<ObjectId>& result, bool skipChecks);
 		void GatherChildrenBounds(List<AABB>& result);
 
-		std::shared_ptr<OctreeNode> ShrinkIfPossible(const float& minSize);
+		std::shared_ptr<OctreeNode> ShrinkIfPossible(float minSize);
 
 	private:
-		void FillData(const Vector3& center, const float& size, const float& minNodeSize, const float& looseness);
+		void FillData(const Vector3& center, float size, float minNodeSize, float looseness);
 		static bool Encapsulates(const AABB& first, const AABB& second);
-		void SubAdd(const AABB& bounds, const ObjectId& object);
-		bool SubRemove(const AABB& bounds, const ObjectId& object);
+		void SubAdd(const AABB& bounds, ObjectId object);
+		bool SubRemove(const AABB& bounds, ObjectId object);
 		void Split();
 		bool ShouldMerge();
 		void Merge();
@@ -51,11 +51,11 @@ namespace Blueberry
 	public:
 		BB_OVERRIDE_NEW_DELETE
 
-		Octree(const Vector3& initialPosition, const float& initialSize, const float& minNodeSize, const float& looseness);
+		Octree(const Vector3& initialPosition, float initialSize, float minNodeSize, float looseness);
 
-		void Add(const AABB& bounds, const ObjectId& object);
-		bool Remove(const ObjectId& object);
-		bool Remove(const AABB& bounds, const ObjectId& object);
+		void Add(const AABB& bounds, ObjectId object);
+		bool Remove(ObjectId object);
+		bool Remove(const AABB& bounds, ObjectId object);
 
 		void Cull(DirectX::XMVECTOR* planes, List<ObjectId>& result);
 		void GatherChildrenBounds(List<AABB>& result);

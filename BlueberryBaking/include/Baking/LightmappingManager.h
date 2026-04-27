@@ -15,13 +15,20 @@ namespace Blueberry
 		float texelPerUnit;
 		int samplePerTexel;
 		int maxSize;
+		float distanceBetweenProbes;
 		bool denoise;
+		bool generateLightmap;
+		bool generateProbes;
 	};
 
 	struct CalculationResult
 	{
 		List<uint8_t> output;
 		Vector2Int outputSize;
+		AABB probeBounds;
+		List<uint8_t> probeOutput;
+		List<Vector3> probePositions;
+		Vector3Int probeOutputSize;
 		List<Vector4> chartOffsetScale;
 		Dictionary<ObjectId, uint32_t> chartInstanceOffset;
 	};

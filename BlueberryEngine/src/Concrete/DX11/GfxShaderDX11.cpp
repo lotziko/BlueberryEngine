@@ -100,7 +100,7 @@ namespace Blueberry
 			D3D11_SIGNATURE_PARAMETER_DESC paramDesc;
 			vertexShaderReflection->GetInputParameterDesc(i, &paramDesc);
 
-			D3D11_INPUT_ELEMENT_DESC inputElementDesc;
+			D3D11_INPUT_ELEMENT_DESC inputElementDesc = {};
 
 			inputElementDesc.SemanticName = paramDesc.SemanticName;
 			inputElementDesc.SemanticIndex = paramDesc.SemanticIndex;
@@ -133,6 +133,10 @@ namespace Blueberry
 				else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_SINT32) inputElementDesc.Format = DXGI_FORMAT_R32G32B32A32_SINT;
 				else if (paramDesc.ComponentType == D3D_REGISTER_COMPONENT_FLOAT32) inputElementDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 				size = 16;
+			}
+			else
+			{
+				size = 0;
 			}
 			
 			uint32_t nameInt = *reinterpret_cast<const uint32_t*>(paramDesc.SemanticName);
@@ -170,9 +174,22 @@ namespace Blueberry
 				inputElementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 				inputElementDesc.InstanceDataStepRate = 0;
 				break;
+			case String4ToInt("BLEN"): // BLENDINDICES or BLENDWEIGHT
+				nameInt = *reinterpret_cast<const uint32_t*>(paramDesc.SemanticName + 4);
+				if (nameInt == String4ToInt("DWEI"))
+				{
+					m_LayoutIndices[8] = i;
+				}
+				else
+				{
+					m_LayoutIndices[9] = i;
+				}
+				inputElementDesc.InputSlot = 0;
+				inputElementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+				inputElementDesc.InstanceDataStepRate = 0;
+				break;
 			case String4ToInt("REND"): // RENDER_INSTANCE
 				inputElementDesc.InputSlot = 1;
-				inputElementDesc.AlignedByteOffset = 0;
 				inputElementDesc.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA;
 				inputElementDesc.InstanceDataStepRate = 1;
 				break;

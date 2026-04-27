@@ -23,8 +23,8 @@ namespace Blueberry
 			KernelData kernelData = {};
 			kernelData.SetName(name);
 
-			compilationData.computeEntryPoints.emplace_back(name);
-			compilationData.dataKernels.emplace_back(kernelData);
+			compilationData.computeEntryPoints.push_back(name);
+			compilationData.dataKernels.push_back(kernelData);
 		}
 
 		size_t offset = 0;

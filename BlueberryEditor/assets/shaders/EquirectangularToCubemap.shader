@@ -42,12 +42,12 @@ Shader
 		{
 			float3 direction[6] =
 			{
-				float3(-uv.x, -uv.y, 1.0),
-				float3(uv.x, -uv.y, -1.0),
-				float3(uv.y, 1.0, uv.x),
-				float3(-uv.y, -1.0, uv.x),
-				float3(1.0, -uv.y, uv.x),
-				float3(-1.0, -uv.y, -uv.x)
+				float3(-uv.x, uv.y, 1.0),
+				float3(uv.x, uv.y, -1.0),
+				float3(uv.y, -1.0, uv.x),
+				float3(-uv.y, 1.0, uv.x),
+				float3(1.0, uv.y, uv.x),
+				float3(-1.0, uv.y, -uv.x)
 			};
 			return normalize(direction[face]);
 		}

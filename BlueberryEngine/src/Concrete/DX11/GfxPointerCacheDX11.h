@@ -13,7 +13,7 @@ namespace Blueberry
 			return index;
 		}
 
-		void Deallocate(const uint32_t& index)
+		void Deallocate(uint32_t index)
 		{
 			if (index >= 0 && index < s_Pointers.size())
 			{
@@ -21,7 +21,7 @@ namespace Blueberry
 			}
 		}
 
-		T* Get(const uint32_t& index) const
+		T* Get(uint32_t index) const
 		{
 			return s_Pointers[index];
 		}

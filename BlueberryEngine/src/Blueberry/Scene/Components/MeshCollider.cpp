@@ -11,11 +11,12 @@ namespace Blueberry
 	OBJECT_DEFINITION(MeshCollider, Collider)
 	{
 		DEFINE_BASE_FIELDS(MeshCollider, Collider)
-		DEFINE_FIELD(MeshCollider, m_Mesh, BindingType::ObjectPtr, FieldOptions().SetObjectType(Mesh::Type))
+		DEFINE_FIELD(MeshCollider, m_Mesh, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Mesh::Type))
+		DEFINE_FIELD(MeshCollider, m_IsConvex, BindingType::Bool, FieldOptions())
 	}
 
 	JPH::Shape* MeshCollider::GetShape()
 	{
-		return static_cast<JPH::Shape*>(PhysicsShapeCache::GetShape(m_Mesh.Get()));
+		return static_cast<JPH::Shape*>(PhysicsShapeCache::GetShape(m_Mesh.Get(), m_IsConvex, GetTransform()->GetScale()));
 	}
 }

@@ -2,7 +2,7 @@
 
 #include "Blueberry\Graphics\Mesh.h"
 #include "Blueberry\Graphics\GfxTexture.h"
-#include "Blueberry\Graphics\GfxRenderTexturePool.h"
+#include "Blueberry\Graphics\GfxTexturePool.h"
 
 #include "Editor\Preview\MeshPreview.h"
 #include "Editor\Misc\ImGuiHelper.h"
@@ -11,7 +11,9 @@
 
 namespace Blueberry
 {
-	void DrawUVChannel(Mesh* mesh, const uint32_t& channel, const ImVec2& pos, const ImVec2& size)
+	GfxTexture* MeshEditor::s_RenderTexture = nullptr;
+
+	void DrawUVChannel(Mesh* mesh, uint32_t channel, const ImVec2& pos, const ImVec2& size)
 	{
 		ImDrawList* list = ImGui::GetWindowDrawList();
 		ImColor backgroundColor = ImColor(0, 0, 0);
@@ -41,7 +43,7 @@ namespace Blueberry
 	{
 		if (s_RenderTexture == nullptr)
 		{
-			s_RenderTexture = GfxRenderTexturePool::Get(512, 512, 1);
+			s_RenderTexture = GfxTexturePool::Get(512, 512, 1, TextureUsageFlags::RenderTarget);
 		}
 	}
 
@@ -66,7 +68,7 @@ namespace Blueberry
 		{
 			static MeshPreview preview;
 			preview.Draw(mesh, s_RenderTexture);
-			ImGui::Image(reinterpret_cast<ImTextureID>(s_RenderTexture->GetHandle()), imageSize, ImVec2(0, 0), ImVec2(1, 1));
+			ImGui::Image(reinterpret_cast<ImTextureID>(s_RenderTexture->GetHandle()), imageSize);
 		}
 		break;
 		case 1:

@@ -20,6 +20,47 @@ namespace Blueberry
 		WithoutGuid
 	};
 
+	class ChunkedObjectArray;
+
+	struct ObjectIterator
+	{
+		ObjectIterator(TypeId type, SearchObjectType searchType, ChunkedObjectArray* objectArray, int32_t index) : type(type), searchType(searchType), objectArray(objectArray), index(index)
+		{
+		}
+
+		ObjectIterator& operator++();
+		ObjectIterator& operator--();
+
+		Object* operator*() const;
+		Object* operator->() const;
+
+		void FindNext();
+
+		bool operator!= (ObjectIterator other) const;
+		bool operator== (ObjectIterator other) const;
+
+		TypeId type = 0;
+		SearchObjectType searchType = SearchObjectType::Any;
+		ChunkedObjectArray* objectArray;
+		int32_t index = 0;
+		Object* object = nullptr;
+	};
+
+	struct ObjectView
+	{
+		ObjectView(TypeId type, SearchObjectType searchType, ChunkedObjectArray* objectArray, int32_t index) : type(type), searchType(searchType), objectArray(objectArray), index(index)
+		{
+		}
+
+		ObjectIterator begin() const;
+		ObjectIterator end() const;
+
+		TypeId type = 0;
+		SearchObjectType searchType = SearchObjectType::Any;
+		ChunkedObjectArray* objectArray;
+		int32_t index = 0;
+	};
+
 	class ChunkedObjectArray
 	{
 	public:
@@ -41,12 +82,12 @@ namespace Blueberry
 
 	private:
 		ObjectItem** m_Objects;
-		uint32_t m_ChunksCount;
-		uint32_t m_MaxChunksCount;
-		uint32_t m_ElementsCount;
+		uint32_t m_ChunksCount = 0;
+		uint32_t m_MaxChunksCount = 0;
+		uint32_t m_ElementsCount = 0;
 	};
 
-	class ObjectDB
+	class BB_API ObjectDB
 	{
 	public:
 		static void Initialize();
@@ -55,23 +96,29 @@ namespace Blueberry
 		static void AllocateId(Object* object);
 		static void FreeId(Object* object);
 		static bool IsValid(Object* object);
-		static ObjectItem* IdToObjectItem(const ObjectId& id);
-		static Object* GetObject(const ObjectId& id);
-		static void GetObjects(const size_t& type, List<Object*>& result, SearchObjectType searchType = SearchObjectType::Any);
+		static bool IsValid(ObjectId id);
+		static ObjectItem* IdToObjectItem(ObjectId id);
+		static Object* GetObject(ObjectId id);
+		static ObjectView GetObjects(TypeId type, SearchObjectType searchType = SearchObjectType::Any);
 
-		static void AllocateIdToFileId(Object* object, const FileId& fileId);
-		static void AllocateIdToGuid(const ObjectId& id, const Guid& guid, const FileId& fileId);
-		static void AllocateIdToGuid(Object* object, const Guid& guid, const FileId& fileId);
-		static void AllocateEmptyObjectWithGuid(const Guid& guid, const FileId& fileId);
+		static void AllocateIdToFileId(ObjectId id, FileId fileId);
+		static void AllocateIdToFileId(Object* object, FileId fileId);
+		static void AllocateIdToGuid(ObjectId id, const Guid& guid, FileId fileId);
+		static void AllocateIdToGuid(Object* object, const Guid& guid, FileId fileId);
+		static void AllocateEmptyObjectWithGuid(const Guid& guid, FileId fileId);
 		static Guid GetGuidFromObject(Object* object);
+		static Guid GetGuidFromObjectId(ObjectId id);
 		static FileId GetFileIdFromObject(Object* object);
-		static FileId GetFileIdFromObjectId(const ObjectId& id);
+		static FileId GetFileIdFromObjectId(ObjectId id);
+		static std::pair<Guid, FileId> GetGuidAndFileIdFromObject(ObjectId id);
 		static std::pair<Guid, FileId> GetGuidAndFileIdFromObject(Object* object);
+		static bool HasFileId(ObjectId id);
 		static bool HasFileId(Object* object);
+		static bool HasGuid(ObjectId id);
 		static bool HasGuid(Object* object);
 		static bool HasGuid(const Guid& guid);
-		static bool HasGuidAndFileId(const Guid& guid, const FileId& fileId);
-		static Object* GetObjectFromGuid(const Guid& guid, const FileId& fileId);
+		static bool HasGuidAndFileId(const Guid& guid, FileId fileId);
+		static Object* GetObjectFromGuid(const Guid& guid, FileId fileId);
 		static const Dictionary<FileId, ObjectId>& GetObjectsFromGuid(const Guid& guid);
 
 	private:

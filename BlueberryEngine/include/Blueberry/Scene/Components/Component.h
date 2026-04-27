@@ -17,23 +17,28 @@ namespace Blueberry
 	public:
 		virtual ~Component() = default;
 		
+		virtual const String& GetName() override;
+
 		Entity* GetEntity();
 		Transform* GetTransform();
 		Scene* GetScene();
+
+		bool IsActive() const;
+		bool CanExecute();
 		
-		virtual void OnBeginPlay() { };
+		virtual void OnCreate() { };
+		virtual void OnDestroy() { };
 		virtual void OnEnable() { };
 		virtual void OnDisable() { };
+		virtual void OnFixedUpdate() { };
 		virtual void OnUpdate() { };
-
-	protected:
-		void AddToSceneComponents(const size_t& type);
-		void RemoveFromSceneComponents(const size_t& type);
 
 	protected:
 		ObjectPtr<Entity> m_Entity;
 
+		bool m_IsCreated = false;
 		bool m_IsActive = false;
+		bool m_IsDestroyed = false;
 
 		friend class Entity;
 	};
@@ -41,6 +46,7 @@ namespace Blueberry
 	class BB_API UpdatableComponent
 	{
 	public:
-		static const size_t Type;
+		static TypeId Type;
+		static const String TypeName;
 	};
 }

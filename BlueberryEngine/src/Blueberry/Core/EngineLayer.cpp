@@ -1,0 +1,48 @@
+#include "Blueberry\Core\EngineLayer.h"
+
+#include "..\Scene\RegisterSceneTypes.h"
+#include "Blueberry\Graphics\Concrete\DefaultRenderer.h"
+#include "Blueberry\Input\Input.h"
+#include "Blueberry\Threading\JobSystem.h"
+#include "..\Graphics\RegisterGraphicsTypes.h"
+#include "Blueberry\Graphics\DefaultShaders.h"
+#include "Blueberry\Graphics\StandardMeshes.h"
+#include "Blueberry\Graphics\Skinning.h"
+#include "..\Animations\RegisterAnimationsTypes.h"
+#include "..\Audio\RegisterAudioTypes.h"
+#include "..\UI\RegisterUITypes.h"
+#include "Blueberry\Scene\Entity.h"
+
+namespace Blueberry
+{
+	void EngineLayer::Register()
+	{
+		RegisterSceneTypes();
+		RegisterGraphicsTypes();
+		RegisterAnimationsTypes();
+		RegisterAudioTypes();
+		RegisterUITypes();
+	}
+
+	void EngineLayer::Initialize()
+	{
+		DefaultRenderer::Initialize();
+		Input::Initialize();
+		JobSystem::Initialize();
+		DefaultShaders::Initialize();
+		StandardMeshes::Initialize();
+		Skinning::Initialize();
+	}
+
+	void EngineLayer::Shutdown()
+	{
+		DefaultRenderer::Shutdown();
+		Skinning::Shutdown();
+		Input::Shutdown();
+	}
+
+	void EngineLayer::Update()
+	{
+		Entity::Poll();
+	}
+}

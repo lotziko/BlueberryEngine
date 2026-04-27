@@ -14,7 +14,7 @@ namespace Blueberry
 	class Entity;
 	class Component;
 	
-	class Scene
+	class BB_API Scene
 	{
 	public:
 		BB_OVERRIDE_NEW_DELETE
@@ -29,12 +29,14 @@ namespace Blueberry
 		template<class ComponentType>
 		ComponentMap& GetComponents();
 
-		void Update(const float& deltaTime);
+		void FixedUpdate();
+		void Update();
 
 		void Destroy();
 
 		Entity* CreateEntity(const String& name);
 		void AddEntity(Entity* entity);
+		void RemoveEntity(Entity* entity);
 		void DestroyEntity(Entity* entity);
 
 		const Dictionary<ObjectId, ObjectPtr<Entity>>& GetEntities();
@@ -45,12 +47,16 @@ namespace Blueberry
 	private:
 		void AddToRoot(Entity* entity);
 		void RemoveFromRoot(Entity* entity);
+		const size_t GetRootIndex(Entity* entity);
+		void SetRootIndex(Entity* entity, size_t index);
+
+		void AddChildEntity(Entity* entity);
 
 	private:
 		Dictionary<ObjectId, ObjectPtr<Entity>> m_Entities;
 		List<ObjectPtr<Entity>> m_RootEntities;
-		List<Component*> m_CreatedComponents;
-		// Stores only components added using AddToSceneComponents()
+
+		// Stores only components with iterators
 		ComponentManager m_ComponentManager;
 		RendererTree m_RendererTree;
 

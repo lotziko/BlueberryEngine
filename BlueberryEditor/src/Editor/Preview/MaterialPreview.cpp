@@ -25,7 +25,7 @@ namespace Blueberry
 			m_Renderer->SetMesh(StandardMeshes::GetSphere());
 
 			Entity* lightEntity = m_Scene->CreateEntity("Light");
-			lightEntity->GetTransform()->SetPosition(Vector3(4, -3, 3));
+			lightEntity->GetTransform()->SetPosition(Vector3(4, 3, 3));
 			Light* light = lightEntity->AddComponent<Light>();
 			light->SetType(LightType::Point);
 			light->SetCastingShadows(false);
@@ -38,18 +38,19 @@ namespace Blueberry
 
 			Entity* cameraEntity = m_Scene->CreateEntity("Camera");
 			cameraEntity->GetTransform()->SetPosition(cameraPosition);
-			cameraEntity->GetTransform()->SetRotation(LookRotation(forward, Vector3::Down));
+			cameraEntity->GetTransform()->SetRotation(Math::LookRotation(forward, Vector3::Down));
 			m_Camera = cameraEntity->AddComponent<Camera>();
 			m_Camera->SetOrthographic(false);
 			m_Camera->SetAspectRatio(1.0f);
 			m_Camera->SetFieldOfView(15.0f);
-			m_Camera->SetPixelSize(Vector2(target->GetWidth(), target->GetHeight()));
+			m_Camera->SetPixelSize(Vector2(static_cast<float>(target->GetWidth()), static_cast<float>(target->GetHeight())));
+			m_Camera->SetCameraType(CameraType::Preview);
 
 			Entity* skyEntity = m_Scene->CreateEntity("Sky");
 			SkyRenderer* skyRenderer = skyEntity->AddComponent<SkyRenderer>();
 			skyRenderer->SetAmbientColor(Color(0.01f, 0.01f, 0.01f, 1));
 		}
 		m_Renderer->SetMaterial(material);
-		DefaultRenderer::Draw(m_Scene, m_Camera, Rectangle(0, 0, target->GetWidth(), target->GetHeight()), Color(0, 0, 0, 1), target, nullptr, true);
+		DefaultRenderer::Draw(m_Scene, m_Camera, Rectangle(0, 0, target->GetWidth(), target->GetHeight()), target, nullptr);
 	}
 }

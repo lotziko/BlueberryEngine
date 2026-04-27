@@ -30,16 +30,17 @@ namespace Blueberry
 			m_Camera->SetOrthographic(false);
 			m_Camera->SetAspectRatio(1.0f);
 			m_Camera->SetFieldOfView(60.0f);
-			m_Camera->SetPixelSize(Vector2(target->GetWidth(), target->GetHeight()));
+			m_Camera->SetPixelSize(Vector2(static_cast<float>(target->GetWidth()), static_cast<float>(target->GetHeight())));
+			m_Camera->SetCameraType(CameraType::Preview);
 		}
 		m_Renderer->SetMesh(mesh);
 		AABB bounds = m_Renderer->GetBounds();
 		float distance = std::max(bounds.Extents.x, std::max(bounds.Extents.y, bounds.Extents.z)) * 2;
 		Vector3 targetPosition = bounds.Center;
 		Vector3 cameraPosition = targetPosition + Vector3(-distance, distance / 3, -distance);
-		m_Camera->GetTransform()->SetRotation(Quaternion::CreateFromYawPitchRoll(ToRadians(45), ToRadians(15), 0));
+		m_Camera->GetTransform()->SetRotation(Quaternion::CreateFromYawPitchRoll(Math::ToRadians(45), Math::ToRadians(15), 0));
 		m_Camera->GetTransform()->SetPosition(cameraPosition);
 
-		DefaultRenderer::Draw(m_Scene, m_Camera, Rectangle(0, 0, target->GetWidth(), target->GetHeight()), Color(0, 0, 0, 1), target, nullptr, true);
+		DefaultRenderer::Draw(m_Scene, m_Camera, Rectangle(0, 0, target->GetWidth(), target->GetHeight()), target, nullptr);
 	}
 }

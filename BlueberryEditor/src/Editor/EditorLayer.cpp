@@ -1,47 +1,68 @@
 #include "EditorLayer.h"
 
+#include "Blueberry\Core\Application.h"
 #include "Blueberry\Core\Time.h"
+#include "Blueberry\Core\Timer.h"
+#include "Blueberry\Core\EngineLayer.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\ImGuiRenderer.h"
-#include "Blueberry\Graphics\GfxRenderTexturePool.h"
+#include "Blueberry\Graphics\RmlUiRenderer.h"
+#include "Blueberry\Graphics\GfxTexturePool.h"
 #include "Blueberry\Math\Math.h"
 #include "Blueberry\Events\WindowEvents.h"
 #include "Blueberry\Physics\Physics.h"
+#include "Blueberry\Physics\PhysicsShapeCache.h"
 #include "Blueberry\Scene\Scene.h"
+#include "Blueberry\Audio\Audio.h"
 
 #include "Editor\EditorSceneManager.h"
+#include "Editor\ProjectBuilder.h"
 #include "Editor\Misc\ImGuiHelper.h"
 #include "Editor\Inspector\RegisterObjectEditors.h"
+#include "Editor\Assets\RegisterAssetImporters.h"
 #include "Editor\Panels\Scene\SceneArea.h"
 #include "Editor\Panels\Game\GameView.h"
+#include "Editor\Physics\EditorPhysicsShapeCache.h"
 
 #include "Editor\RegisterEditorTypes.h"
-#include "Editor\Assets\RegisterAssetImporters.h"
 #include "Editor\Assets\RegisterIcons.h"
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Assets\AssemblyManager.h"
+#include "Editor\Assets\EditorAssetLoader.h"
 #include "Editor\Gizmos\Gizmos.h"
 #include "Editor\Gizmos\IconRenderer.h"
 #include "Editor\Menu\EditorMenuManager.h"
+#include "Editor\Serialization\AssemblySerializer.h"
+#include "Editor\Selection.h"
 
 //#include "Blueberry\Graphics\OpenXRRenderer.h"
 
-#include <fstream>
 #include <imgui\imgui.h>
-#include <imgui\imguizmo.h>
 #include <imgui\imgui_internal.h>
 
 namespace Blueberry
 {
+	bool EditorLayer::s_FrameUpdateRequested = true;
+	bool EditorLayer::s_AssetsRefreshRequested = false;
+
 	void EditorLayer::OnAttach()
 	{
+		EngineLayer::Register();
+		AssetLoader::Initialize(new EditorAssetLoader());
+		EngineLayer::Initialize();
 		RegisterEditorTypes();
 		RegisterAssetImporters();
-		RegisterIcons();
-
 		RegisterObjectEditors();
-		AssemblyManager::Build(false);
-		AssemblyManager::Load();
+		RegisterIcons();
+		
+		if (AssemblyManager::CreateSolution())
+		{
+			AssemblyManager::BuildEditor(false);
+			AssemblyManager::Load();
+		}
+
+		PhysicsShapeCache::Initialize(new EditorPhysicsShapeCache());
+		AssetDB::Initialize();
 
 		if (ImGuiRenderer::Initialize())
 		{
@@ -52,12 +73,13 @@ namespace Blueberry
 			ImGui::ApplyEditorDarkTheme();
 			ImGui::LoadDefaultEditorFonts();
 		}
+
 		Gizmos::Initialize();
 		IconRenderer::Initialize();
 		Physics::Initialize();
-		EditorWindow::Load();
-
-		AssetDB::Refresh();
+		Audio::Initialize();
+		RmlUiRenderer::Initialize();
+		EditorWindow::Initialize();
 
 		WindowEvents::GetWindowResized().AddCallback<EditorLayer, &EditorLayer::OnWindowResize>(this);
 		WindowEvents::GetWindowFocused().AddCallback<EditorLayer, &EditorLayer::OnWindowFocus>(this);
@@ -66,7 +88,8 @@ namespace Blueberry
 
 	void EditorLayer::OnDetach()
 	{
-		EditorWindow::Save();
+		AssetDB::Shutdown();
+		EditorWindow::Shutdown();
 		for (auto& window : EditorWindow::GetWindows())
 		{
 			Object::Destroy(window.Get());
@@ -74,8 +97,11 @@ namespace Blueberry
 		Gizmos::Shutdown();
 		IconRenderer::Shutdown();
 		Physics::Shutdown();
-		GfxRenderTexturePool::Shutdown();
+		Audio::Shutdown();
+		RmlUiRenderer::Shutdown();
+		GfxTexturePool::Shutdown();
 		ImGuiRenderer::Shutdown();
+		EngineLayer::Shutdown();
 		/*if (OpenXRRenderer::IsActive())
 		{
 			OpenXRRenderer::Shutdown();
@@ -89,15 +115,16 @@ namespace Blueberry
 	{
 		if (m_Focused)
 		{
-			if (EditorSceneManager::IsRunning())
+			if (Application::IsRunning())
 			{
 				Scene* scene = EditorSceneManager::GetScene();
 				if (scene != nullptr)
 				{
-					Physics::Update(1.0f / 60.0f);
-					scene->Update(1.0f / 60.0f);
+					scene->FixedUpdate();
+					Physics::Update(Time::GetFixedDeltaTime());
 				}
 			}
+			Audio::Update();
 		}
 	}
 
@@ -105,8 +132,14 @@ namespace Blueberry
 	{
 		if (m_Focused)
 		{
-			if (EditorSceneManager::IsRunning())
+			Scene* scene = EditorSceneManager::GetScene();
+			if (Application::IsRunning())
 			{
+				if (scene != nullptr)
+				{
+					scene->Update();
+				}
+
 				SceneArea::RequestRedrawAll();
 			}
 
@@ -115,38 +148,37 @@ namespace Blueberry
 			//OpenXRRenderer::BeginFrame();
 			ImGuiRenderer::Begin();
 			DrawMenuBar();
-			//DrawTopBar();
 			DrawDockSpace();
 			ImGuiRenderer::End();
 			//OpenXRRenderer::EndFrame();
 
 			GfxDevice::SwapBuffers();
-
+			
 			if (s_FrameUpdateRequested)
 			{
-				Time::IncrementFrameCount();
-				GfxRenderTexturePool::Update();
+				Time::EndFrame();
+				Timer::Update();
+				GfxTexturePool::Update();
 				s_FrameUpdateRequested = false;
 			}
+			EngineLayer::Update();
 		}
 	}
 
-	void EditorLayer::OnWindowResize(const WindowResizeEventArgs& event)
+	void EditorLayer::OnWindowResize(const WindowResizeEventArgs& args)
 	{
-		GfxDevice::ResizeBackbuffer(event.GetWidth(), event.GetHeight());
+		GfxDevice::ResizeBackbuffer(args.GetWidth(), args.GetHeight());
 	}
 
 	void EditorLayer::OnWindowFocus()
 	{
-		AssetDB::Refresh();
-
-		if (AssemblyManager::Build())
+		if (!Application::IsRunning())
 		{
-			EditorSceneManager::Save();
-			EditorSceneManager::Unload();
-			AssemblyManager::Unload();
-			AssemblyManager::Load();
-			EditorSceneManager::Reload();
+			Refresh();
+		}
+		else
+		{
+			s_AssetsRefreshRequested = true;
 		}
 
 		m_Focused = true;
@@ -166,15 +198,28 @@ namespace Blueberry
 	{
 		if (ImGui::BeginMainMenuBar())
 		{
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 6));
+
 			auto& root = EditorMenuManager::GetRoot();
-			/*if (ImGui::BeginMenu("Blueberry Editor"))
+			
+			if (ImGui::BeginMenu("File"))
 			{
+				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 6));
+				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 6));
+				if (ImGui::MenuItem("Save"))
+				{
+					AssetDB::SaveAssets();
+					AssetDB::Refresh();
+				}
+				ImGui::PopStyleVar(2);
 				ImGui::EndMenu();
-			}*/
+			}
 			for (auto it = root.children.begin(); it < root.children.end(); ++it)
 			{
 				if (ImGui::BeginMenu(it->name.c_str()))
 				{
+					ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 6));
+					ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 6));
 					for (auto itemIt = it->children.begin(); itemIt < it->children.end(); ++itemIt)
 					{
 						if (ImGui::MenuItem(itemIt->name.c_str()))
@@ -182,67 +227,53 @@ namespace Blueberry
 							itemIt->clickCallback();
 						}
 					}
+					ImGui::PopStyleVar(2);
 					ImGui::EndMenu();
 				}
 			}
 
 			if (EditorSceneManager::GetScene() != nullptr)
 			{
-				if (EditorSceneManager::IsRunning())
+				static bool isStartingFromScene = false;
+				if (Application::IsRunning())
 				{
 					if (ImGui::Button("Stop"))
 					{
 						Physics::Disable();
 						//OpenXRRenderer::Shutdown();
 						EditorSceneManager::Stop();
+						if (isStartingFromScene)
+						{
+							SceneArea::Open();
+						}
+						if (s_AssetsRefreshRequested)
+						{
+							Refresh();
+							s_AssetsRefreshRequested = false;
+						}
 					}
 				}
 				else
 				{
 					if (ImGui::Button("Run"))
 					{
-						Physics::Enable();
-						//OpenXRRenderer::Initialize();
-						EditorSceneManager::Run();
-					}
-				}
-			}
-
-			ImGui::EndMainMenuBar();
-		}
-	}
-
-	void EditorLayer::DrawTopBar()
-	{
-		ImGuiViewport* viewport = ImGui::GetMainViewport();
-		if (ImGui::BeginViewportSideBar("TopBar", viewport, ImGuiDir_Up, ImGui::GetFrameHeight(), ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar)) 
-		{
-			if (ImGui::BeginMenuBar())
-			{
-				if (EditorSceneManager::GetScene() != nullptr)
-				{
-					if (EditorSceneManager::IsRunning())
-					{
-						if (ImGui::Button("Stop"))
+						if (EditorWindow::Save())
 						{
-							Physics::Disable();
-							//OpenXRRenderer::Shutdown();
-							EditorSceneManager::Stop();
-						}
-					}
-					else
-					{
-						if (ImGui::Button("Run"))
-						{
+							isStartingFromScene = EditorWindow::IsFocused(SceneArea::Type);
 							Physics::Enable();
 							//OpenXRRenderer::Initialize();
+							GameView::Open();
 							EditorSceneManager::Run();
 						}
 					}
+					if (ImGui::Button("Build"))
+					{
+						ProjectBuilder::Build(EditorSceneManager::GetScene(), StringHelper::ToString(Path::GetBuildPath()));
+					}
 				}
-				ImGui::EndMenuBar();
 			}
-			ImGui::End();
+			ImGui::PopStyleVar();
+			ImGui::EndMainMenuBar();
 		}
 	}
 
@@ -250,7 +281,7 @@ namespace Blueberry
 	{
 		//Dockspace
 		{
-			static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
+			static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoCloseButton;
 			ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
 
 			ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -282,6 +313,21 @@ namespace Blueberry
 			EditorWindow::Draw();
 
 			ImGui::End();
+		}
+	}
+
+	void EditorLayer::Refresh()
+	{
+		AssetDB::Refresh();
+
+		if (AssemblyManager::BuildEditor())
+		{
+			AssemblySerializer serializer = {};
+			serializer.Serialize();
+			AssemblyManager::Unload();
+			AssemblyManager::Load();
+			serializer.Deserialize();
+			Selection::SetActiveObject(nullptr);
 		}
 	}
 }

@@ -1,10 +1,10 @@
 #include "TextureHelper.h"
 
-#include "Blueberry\Tools\StringConverter.h"
+#include "Blueberry\Tools\StringHelper.h"
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\Material.h"
-#include "Blueberry\Graphics\GfxRenderTexturePool.h"
+#include "Blueberry\Graphics\GfxTexturePool.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Graphics\GfxBuffer.h"
@@ -70,7 +70,7 @@ namespace Blueberry
 	{
 		if (extension == ".dds")
 		{
-			HRESULT hr = DirectX::LoadFromDDSFile(StringConverter::StringToWide(path).c_str(), DirectX::DDS_FLAGS::DDS_FLAGS_NONE, nullptr, scratchImage);
+			HRESULT hr = DirectX::LoadFromDDSFile(StringHelper::StringToWide(path).c_str(), DirectX::DDS_FLAGS::DDS_FLAGS_NONE, nullptr, scratchImage);
 			if (FAILED(hr))
 			{
 				BB_ERROR("Failed to load DDS texture from file.");
@@ -79,7 +79,7 @@ namespace Blueberry
 		}
 		else if (extension == ".hdr")
 		{
-			HRESULT hr = DirectX::LoadFromHDRFile(StringConverter::StringToWide(path).c_str(), nullptr, scratchImage);
+			HRESULT hr = DirectX::LoadFromHDRFile(StringHelper::StringToWide(path).c_str(), nullptr, scratchImage);
 			if (FAILED(hr))
 			{
 				BB_ERROR("Failed to load HDR texture from file.");
@@ -88,7 +88,7 @@ namespace Blueberry
 		}
 		else
 		{
-			HRESULT hr = DirectX::LoadFromWICFile(StringConverter::StringToWide(path).c_str(), srgb ? DirectX::WIC_FLAGS_NONE : DirectX::WIC_FLAGS_IGNORE_SRGB, nullptr, scratchImage);
+			HRESULT hr = DirectX::LoadFromWICFile(StringHelper::StringToWide(path).c_str(), srgb ? DirectX::WIC_FLAGS_NONE : DirectX::WIC_FLAGS_IGNORE_SRGB, nullptr, scratchImage);
 			if (FAILED(hr))
 			{
 				BB_ERROR("Failed to load texture from file.");
@@ -121,7 +121,7 @@ namespace Blueberry
 	void TextureHelper::GenerateMipMaps(DirectX::ScratchImage& scratchImage)
 	{
 		DirectX::ScratchImage mipmappedScratchImage;
-		HRESULT hr = DirectX::GenerateMipMaps(*scratchImage.GetImages(), DirectX::TEX_FILTER_FANT, GetMipCount(static_cast<uint32_t>(scratchImage.GetMetadata().width), static_cast<uint32_t>(scratchImage.GetMetadata().height), true), mipmappedScratchImage);
+		HRESULT hr = DirectX::GenerateMipMaps(*scratchImage.GetImages(), DirectX::TEX_FILTER_FANT, Math::GetMipCount(static_cast<uint32_t>(scratchImage.GetMetadata().width), static_cast<uint32_t>(scratchImage.GetMetadata().height), true), mipmappedScratchImage);
 		if (mipmappedScratchImage.GetImageCount() > 0)
 		{
 			scratchImage = std::move(mipmappedScratchImage);
@@ -192,17 +192,57 @@ namespace Blueberry
 		scratchImage = std::move(compressedScratchImage);
 	}
 
+	void TextureHelper::CompressNormals(DirectX::ScratchImage& scratchImage)
+	{
+		auto& metadata = scratchImage.GetMetadata();
+		if (DirectX::IsCompressed(metadata.format) || !DirectX::HasAlpha(metadata.format))
+		{
+			return;
+		}
+		size_t bytePerPixel = scratchImage.GetPixelsSize() / (metadata.width * metadata.height);
+		size_t bytePerChannel = bytePerPixel / 4;
+		uint8_t* ptr = scratchImage.GetImages()->pixels;
+		uint8_t* end = ptr + scratchImage.GetPixelsSize();
+		switch (scratchImage.GetMetadata().format)
+		{
+		case DXGI_FORMAT_R8G8B8A8_UNORM:
+		{
+			size_t targetOffset = 2 * bytePerChannel;
+			size_t sourceOffset = 3 * bytePerChannel;
+			for (; ptr < end; ptr += bytePerPixel)
+			{
+				memcpy(ptr + targetOffset, ptr + sourceOffset, bytePerChannel);
+			}
+		}
+		break;
+		case DXGI_FORMAT_B8G8R8A8_UNORM:
+		{
+			size_t targetOffset = 0;
+			size_t sourceOffset = 3 * bytePerChannel;
+			for (; ptr < end; ptr += bytePerPixel)
+			{
+				memcpy(ptr + targetOffset, ptr + sourceOffset, bytePerChannel);
+			}
+		}
+		break;
+		default:
+			BB_ERROR("Unknown format.");
+			break;
+		}
+		
+	}
+
 	void TextureHelper::EquirectangularToTextureCube(DirectX::ScratchImage& scratchImage, const TextureFormat& uncompressedFormat)
 	{
-		auto metadata = scratchImage.GetMetadata();
-		uint32_t size = std::min(metadata.width, metadata.height);
+		auto& metadata = scratchImage.GetMetadata();
+		uint32_t size = static_cast<uint32_t>(std::min(metadata.width, metadata.height));
 
 		uint8_t* temporaryData = BB_MALLOC_ARRAY(uint8_t, scratchImage.GetPixelsSize());
 		memcpy(temporaryData, scratchImage.GetPixels(), scratchImage.GetPixelsSize());
-		Texture2D* temporaryTexture = Texture2D::Create(metadata.width, metadata.height, 1, uncompressedFormat);
+		Texture2D* temporaryTexture = Texture2D::Create(static_cast<uint32_t>(metadata.width), static_cast<uint32_t>(metadata.height), 1, uncompressedFormat);
 		temporaryTexture->SetData(temporaryData, scratchImage.GetPixelsSize());
 		temporaryTexture->Apply();
-		GfxTexture* temporaryTextureCube = GfxRenderTexturePool::Get(size, size, 1, 1, 1, uncompressedFormat, TextureDimension::TextureCube, WrapMode::Clamp, FilterMode::Bilinear, true);
+		GfxTexture* temporaryTextureCube = GfxTexturePool::Get(size, size, 1, TextureUsageFlags::RenderTarget | TextureUsageFlags::CPUReadable, 1, 1, uncompressedFormat, TextureDimension::TextureCube, WrapMode::Clamp, FilterMode::Bilinear);
 		
 		DirectX::ScratchImage cubeScratchImage = {};
 		cubeScratchImage.InitializeCube(static_cast<DXGI_FORMAT>(uncompressedFormat), size, size, 1, 1);
@@ -222,16 +262,16 @@ namespace Blueberry
 		temporaryTextureCube->GetData(cubeScratchImage.GetPixels());
 
 		Object::Destroy(temporaryTexture);
-		//GfxRenderTexturePool::Release(temporaryTextureCube);
+		GfxTexturePool::Release(temporaryTextureCube);
 		scratchImage = std::move(cubeScratchImage);
 	}
 
 	void TextureHelper::SlicesToTextureCube(DirectX::ScratchImage& scratchImage)
 	{
-		auto metadata = scratchImage.GetMetadata();
+		auto& metadata = scratchImage.GetMetadata();
 		const uint32_t size = static_cast<uint32_t>(metadata.height);
 		const size_t dataSize = scratchImage.GetPixelsSize();
-		const uint32_t bytesPerPixel = DirectX::BitsPerPixel(metadata.format) / 8;
+		const uint32_t bytesPerPixel = static_cast<uint32_t>(DirectX::BitsPerPixel(metadata.format)) / 8;
 
 		DirectX::ScratchImage cubeScratchImage = {};
 		cubeScratchImage.InitializeCube(metadata.format, size, size, 1, 1);
@@ -252,9 +292,9 @@ namespace Blueberry
 
 	void TextureHelper::DownscaleTextureCube(GfxTexture* texture, DirectX::ScratchImage& scratchImage)
 	{
-		auto metadata = scratchImage.GetMetadata();
+		auto& metadata = scratchImage.GetMetadata();
 		const uint32_t bytesPerPixel = 8;
-		uint32_t size = std::min(metadata.width, metadata.height);
+		uint32_t size = static_cast<uint32_t>(std::min(metadata.width, metadata.height));
 		
 		static GfxTexture* temporaryTexture = nullptr;
 
@@ -271,13 +311,12 @@ namespace Blueberry
 			textureProperties.dimension = TextureDimension::TextureCube;
 			textureProperties.wrapMode = WrapMode::Clamp;
 			textureProperties.filterMode = FilterMode::Point;
-			textureProperties.isReadable = true;
-			textureProperties.isRenderTarget = true;
+			textureProperties.usageFlags = TextureUsageFlags::RenderTarget | TextureUsageFlags::CPUReadable;
 			GfxDevice::CreateTexture(textureProperties, temporaryTexture);
 		}
 
 		GfxDevice::SetViewCount(6);
-		GfxDevice::SetGlobalTexture(TO_HASH("_SourceTexture"), texture);
+		GfxDevice::SetGlobalTexture(TO_HASH("_BlitTexture"), texture);
 		GfxDevice::SetRenderTarget(temporaryTexture, nullptr);
 		GfxDevice::SetViewport(0, 0, size, size);
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetBlit(), 1));
@@ -309,8 +348,8 @@ namespace Blueberry
 
 	void TextureHelper::ConvoluteSpecularTextureCube(DirectX::ScratchImage& scratchImage)
 	{
-		auto metadata = scratchImage.GetMetadata();
-		uint32_t size = std::min(metadata.width, metadata.height);
+		auto& metadata = scratchImage.GetMetadata();
+		uint32_t size = static_cast<uint32_t>(std::min(metadata.width, metadata.height));
 
 		if (s_GenerateReflectionMaterial == nullptr)
 		{
@@ -323,10 +362,9 @@ namespace Blueberry
 		if (constantBuffer == nullptr)
 		{
 			BufferProperties constantBufferProperties = {};
-			constantBufferProperties.type = BufferType::Constant;
 			constantBufferProperties.elementCount = 1;
 			constantBufferProperties.elementSize = sizeof(ReflectionGenerationData) * 1;
-			constantBufferProperties.isWritable = true;
+			constantBufferProperties.usageFlags = BufferUsageFlags::ConstantBuffer;
 
 			GfxDevice::CreateBuffer(constantBufferProperties, constantBuffer);
 		}
@@ -347,13 +385,11 @@ namespace Blueberry
 			textureProperties.dimension = TextureDimension::TextureCube;
 			textureProperties.wrapMode = WrapMode::Clamp;
 			textureProperties.filterMode = FilterMode::Trilinear;
-			textureProperties.isWritable = true;
+			textureProperties.usageFlags = TextureUsageFlags::CPUWritable;
 			GfxDevice::CreateTexture(textureProperties, temporaryTexture0);
 
 			textureProperties.mipCount = 6;
-			textureProperties.isReadable = true;
-			textureProperties.isWritable = false;
-			textureProperties.isRenderTarget = true;
+			textureProperties.usageFlags = TextureUsageFlags::RenderTarget | TextureUsageFlags::CPUReadable;
 			GfxDevice::CreateTexture(textureProperties, temporaryTexture1);
 		}
 

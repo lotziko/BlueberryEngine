@@ -9,18 +9,18 @@ namespace Blueberry
 {
 	DATA_DEFINITION(KernelData)
 	{
-		DEFINE_FIELD(KernelData, m_Name, BindingType::String, {})
+		DEFINE_FIELD(KernelData, m_Name, BindingType::String, FieldOptions())
 	}
 
 	DATA_DEFINITION(ComputeShaderData)
 	{
-		DEFINE_FIELD(ComputeShaderData, m_Kernels, BindingType::DataList, FieldOptions().SetObjectType(KernelData::Type))
+		DEFINE_FIELD(ComputeShaderData, m_Kernels, BindingType::DataList, FieldOptions().SetObjectType(&KernelData::Type))
 	}
 
 	OBJECT_DEFINITION(ComputeShader, Object)
 	{
 		DEFINE_BASE_FIELDS(ComputeShader, Object)
-		DEFINE_FIELD(ComputeShader, m_Data, BindingType::Data, FieldOptions().SetObjectType(ComputeShaderData::Type))
+		DEFINE_FIELD(ComputeShader, m_Data, BindingType::Data, FieldOptions().SetObjectType(&ComputeShaderData::Type))
 	}
 
 	void KernelData::SetName(const String& name)
@@ -28,12 +28,12 @@ namespace Blueberry
 		m_Name = name;
 	}
 
-	const KernelData& ComputeShaderData::GetKernel(const uint32_t& index) const
+	const KernelData& ComputeShaderData::GetKernel(uint32_t index) const
 	{
 		return m_Kernels[index];
 	}
 
-	const size_t ComputeShaderData::GetKernelCount() const
+	size_t ComputeShaderData::GetKernelCount() const
 	{
 		return m_Kernels.size();
 	}
@@ -86,22 +86,14 @@ namespace Blueberry
 		m_Data = data;
 	}
 
-	ComputeShader* ComputeShader::Create(const List<void*>& shaders, const ComputeShaderData& shaderData, ComputeShader* existingShader)
+	ComputeShader* ComputeShader::Create(const List<void*>& shaders, const ComputeShaderData& shaderData)
 	{
-		ComputeShader* shader = nullptr;
-		if (existingShader != nullptr)
-		{
-			shader = existingShader;
-		}
-		else
-		{
-			shader = Object::Create<ComputeShader>();
-		}
+		ComputeShader* shader = Object::Create<ComputeShader>();
 		shader->Initialize(shaders, shaderData);
 		return shader;
 	}
 
-	GfxComputeShader* ComputeShader::GetKernel(const uint8_t& index)
+	GfxComputeShader* ComputeShader::GetKernel(uint8_t index) const
 	{
 		if (index >= static_cast<uint8_t>(m_ComputeShaders.size()))
 		{

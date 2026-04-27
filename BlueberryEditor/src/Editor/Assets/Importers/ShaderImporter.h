@@ -14,6 +14,7 @@ namespace Blueberry
 		static long long GetLastFilesWriteTime();
 
 	protected:
-		virtual void ImportData() override;
+		virtual bool IsRequiringReimport() const final;
+		virtual void ImportData() final;
 	};
 }

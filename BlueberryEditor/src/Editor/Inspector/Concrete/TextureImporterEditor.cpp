@@ -16,6 +16,7 @@ namespace Blueberry
 	{
 		m_GenerateMipmapsProperty = m_SerializedObject->FindProperty("m_GenerateMipmaps");
 		m_IsSRGBProperty = m_SerializedObject->FindProperty("m_IsSRGB");
+		m_IsReadableProperty = m_SerializedObject->FindProperty("m_IsReadable");
 		m_WrapModeProperty = m_SerializedObject->FindProperty("m_WrapMode");
 		m_FilterModeProperty = m_SerializedObject->FindProperty("m_FilterMode");
 		m_TextureShapeProperty = m_SerializedObject->FindProperty("m_TextureShape");
@@ -29,6 +30,7 @@ namespace Blueberry
 	{
 		ImGui::Property(&m_GenerateMipmapsProperty, "Generate mipmaps");
 		ImGui::Property(&m_IsSRGBProperty, "Is SRGB");
+		ImGui::Property(&m_IsReadableProperty, "Is Readable");
 		ImGui::Property(&m_WrapModeProperty, "Wrap Mode");
 		ImGui::Property(&m_FilterModeProperty, "Filter Mode");
 		ImGui::Property(&m_TextureShapeProperty, "Shape");
@@ -127,8 +129,11 @@ namespace Blueberry
 			for (Object* object : m_SerializedObject->GetTargets())
 			{
 				AssetDB::SetDirty(object);
+				TextureImporter* textureImporter = static_cast<TextureImporter*>(object);
+				ThumbnailCache::Refresh(ObjectDB::GetObjectFromGuid(textureImporter->GetGuid(), textureImporter->GetMainObject()));
 			}
 			AssetDB::SaveAssets();
+			AssetDB::Refresh();
 		}
 
 		TextureImporter* textureImporter = static_cast<TextureImporter*>(m_SerializedObject->GetTarget());
@@ -137,7 +142,7 @@ namespace Blueberry
 		if (texture->IsClassType(Texture2D::Type))
 		{
 			ImVec2 size = ImGui::GetContentRegionAvail();
-			ImGui::Image(reinterpret_cast<ImTextureID>(texture->GetHandle()), ImVec2(size.x, (texture->GetHeight() * size.x) / static_cast<float>(texture->GetWidth())), ImVec2(0, 1), ImVec2(1, 0));
+			ImGui::Image(reinterpret_cast<ImTextureID>(texture->GetHandle()), ImVec2(size.x, (texture->GetHeight() * size.x) / static_cast<float>(texture->GetWidth())), ImVec2(0, 0), ImVec2(1, 1));
 		}
 	}
 }

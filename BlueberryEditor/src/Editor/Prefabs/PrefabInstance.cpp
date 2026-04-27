@@ -5,13 +5,119 @@
 #include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Core\ObjectCloner.h"
 #include "Editor\Prefabs\PrefabManager.h"
+#include "Editor\Misc\ObjectHelper.h"
 
 namespace Blueberry
 {
+	DATA_DEFINITION(PrefabModificationData)
+	{
+		DEFINE_FIELD(PrefabModificationData, m_Target, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Object::Type))
+		DEFINE_FIELD(PrefabModificationData, m_Path, BindingType::String, FieldOptions())
+		DEFINE_FIELD(PrefabModificationData, m_Value, BindingType::Variant, FieldOptions())
+	}
+
+	DATA_DEFINITION(PrefabAddedEntityData)
+	{
+		DEFINE_FIELD(PrefabAddedEntityData, m_Parent, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Transform::Type))
+		DEFINE_FIELD(PrefabAddedEntityData, m_Entity, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Entity::Type))
+		DEFINE_FIELD(PrefabAddedEntityData, m_Index, BindingType::Int, FieldOptions())
+	}
+
 	OBJECT_DEFINITION(PrefabInstance, Object)
 	{
-		DEFINE_BASE_FIELDS(PrefabInstance, Object)
-		DEFINE_FIELD(PrefabInstance, m_Prefab, BindingType::ObjectPtr, FieldOptions().SetObjectType(Entity::Type))
+		DEFINE_FIELD(PrefabInstance, m_SourcePrefab, BindingType::ObjectPtr, FieldOptions().SetObjectType(&PrefabInstance::Type))
+		DEFINE_FIELD(PrefabInstance, m_Parent, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Transform::Type))
+		DEFINE_FIELD(PrefabInstance, m_Modifications, BindingType::DataList, FieldOptions().SetObjectType(&PrefabModificationData::Type))
+		DEFINE_FIELD(PrefabInstance, m_AddedEntities, BindingType::DataList, FieldOptions().SetObjectType(&PrefabAddedEntityData::Type))
+	}
+
+	Object* PrefabModificationData::GetTarget()
+	{
+		return m_Target.Get();
+	}
+
+	void PrefabModificationData::SetTarget(Object* target)
+	{
+		m_Target = target;
+	}
+
+	const String& PrefabModificationData::GetPath()
+	{
+		return m_Path;
+	}
+
+	void PrefabModificationData::SetPath(const String& path)
+	{
+		m_Path = path;
+	}
+
+	Variant& PrefabModificationData::GetValue()
+	{
+		return m_Value;
+	}
+
+	void PrefabModificationData::SetValue(const Variant& value)
+	{
+		m_Value = value;
+	}
+
+	Transform* PrefabAddedEntityData::GetParent()
+	{
+		return m_Parent.Get();
+	}
+
+	void PrefabAddedEntityData::SetParent(Transform* parent)
+	{
+		m_Parent = parent;
+	}
+
+	Entity* PrefabAddedEntityData::GetEntity()
+	{
+		return m_Entity.Get();
+	}
+
+	void PrefabAddedEntityData::SetEntity(Entity* entity)
+	{
+		m_Entity = entity;
+	}
+
+	const int32_t& PrefabAddedEntityData::GetIndex()
+	{
+		return m_Index;
+	}
+
+	void PrefabAddedEntityData::SetIndex(const int32_t& index)
+	{
+		m_Index = index;
+	}
+
+	PrefabInstance::~PrefabInstance()
+	{
+		for (auto& pair : m_PrefabToInstanceMapping)
+		{
+			// This breaks nested root too
+			// Need to rethink them
+			PrefabManager::s_ObjectToPrefabInstance.erase(pair.second);
+			PrefabManager::s_ObjectToPrefabObject.erase(pair.second);
+		}
+
+		if (m_Entity.IsValid())
+		{
+			PrefabManager::s_RootToPrefabInstance.erase(m_Entity->GetObjectId());
+			//Object::Destroy(m_Entity.Get());
+		}
+	}
+
+	void PrefabInstance::Initialize()
+	{
+		if (m_SourcePrefab.IsValid())
+		{
+			PrefabManager::InitializeHierarchy(this);
+		}
+		else
+		{
+			PrefabManager::InitializeContext(this);
+		}
 	}
 
 	Entity* PrefabInstance::GetEntity()
@@ -19,7 +125,7 @@ namespace Blueberry
 		return m_Entity.Get();
 	}
 
-	Entity* PrefabInstance::GetEntity(const FileId& fileId)
+	Object* PrefabInstance::GetCorrespondingObject(const FileId& fileId)
 	{
 		auto it = m_FileIdToObject.find(fileId);
 		if (it != m_FileIdToObject.end())
@@ -29,55 +135,48 @@ namespace Blueberry
 		return nullptr;
 	}
 
-	void PrefabInstance::OnCreate()
+	bool PrefabInstance::HasSource()
 	{
-		// TODO handle changes too
-		if (m_Prefab.IsValid())
+		return m_SourcePrefab.IsValid();
+	}
+
+	PrefabInstance* PrefabInstance::GetSource()
+	{
+		return m_SourcePrefab.Get();
+	}
+
+	void PrefabInstance::UpdateIfNeeded()
+	{
+		PrefabInstance* sourcePrefab = m_SourcePrefab.Get();
+		if (sourcePrefab != nullptr && sourcePrefab->m_UpdateCount > std::max(m_UpdateCount, 1u))
 		{
-			m_Entity = static_cast<Entity*>(ObjectCloner::Clone(m_Prefab.Get()));
-			PrefabManager::s_EntityToPrefabInstance.insert_or_assign(m_Entity->GetObjectId(), GetObjectId());
-			AddPrefabEntities(m_Prefab.Get(), m_Entity.Get());
+			m_UpdateCount = sourcePrefab->m_UpdateCount;
+			PrefabManager::InitializeHierarchy(this);
 		}
 	}
 
-	void PrefabInstance::OnDestroy()
+	void PrefabInstance::PrepareData()
 	{
-		if (m_Entity.IsValid())
+		m_Parent = GetEntity()->GetTransform()->GetParent();
+
+		for (auto& addedEntity : m_AddedEntities)
 		{
-			PrefabManager::s_EntityToPrefabInstance.erase(m_Entity->GetObjectId());
-			RemovePrefabEntities(m_Entity.Get());
-			Object::Destroy(m_Entity.Get());
+			Transform* parent = addedEntity.GetParent();
+			Transform* transform = addedEntity.GetEntity()->GetTransform();
+
+			for (size_t i = 0; i < parent->GetChildrenCount(); ++i)
+			{
+				if (parent->GetChild(i) == transform)
+				{
+					addedEntity.SetIndex(static_cast<int32_t>(i));
+					break;
+				}
+			}
 		}
 	}
 
-	PrefabInstance* PrefabInstance::Create(Entity* prefab)
+	void PrefabInstance::AddObjectMapping(Object* prefabObject, Object* instanceObject)
 	{
-		PrefabInstance* instance = Object::Create<PrefabInstance>();
-		instance->m_Prefab = prefab;
-		instance->OnCreate();
-		return instance;
-	}
-
-	void PrefabInstance::AddPrefabEntities(Entity* prefabEntity, Entity* entity)
-	{
-		PrefabManager::s_PrefabEntities.insert_or_assign(entity->GetObjectId(), GetObjectId());
-		FileId fileId = ObjectDB::GetFileIdFromObjectId(prefabEntity->GetObjectId());
-		m_FileIdToObject.insert_or_assign(fileId, entity->GetObjectId());
-		ObjectDB::AllocateIdToFileId(entity, fileId);
-		auto& prefabEntityChildren = prefabEntity->GetTransform()->GetChildren();
-		auto& entityChildren = entity->GetTransform()->GetChildren();
-		for (size_t i = 0; i < entityChildren.size(); ++i)
-		{
-			AddPrefabEntities(prefabEntityChildren[i].Get()->GetEntity(), entityChildren[i].Get()->GetEntity());
-		}
-	}
-
-	void PrefabInstance::RemovePrefabEntities(Entity* entity)
-	{
-		PrefabManager::s_PrefabEntities.erase(entity->GetObjectId());
-		for (auto& child : entity->GetTransform()->GetChildren())
-		{
-			RemovePrefabEntities(child.Get()->GetEntity());
-		}
+		m_PrefabToInstanceMapping.insert_or_assign(prefabObject->GetObjectId(), instanceObject->GetObjectId());
 	}
 }

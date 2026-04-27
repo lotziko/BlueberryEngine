@@ -11,6 +11,6 @@ namespace Blueberry
 		NativeAssetImporter() = default;
 
 	protected:
-		virtual void ImportData() override;
+		virtual void ImportData() final;
 	};
 }

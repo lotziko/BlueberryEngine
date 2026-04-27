@@ -4,18 +4,18 @@
 
 namespace Blueberry
 {
-	class Screen
+	class BB_API Screen
 	{
 	public:
-		static const uint32_t& GetWidth();
-		static const uint32_t& GetHeight();
-		static const float& GetScale();
+		static uint32_t GetWidth();
+		static uint32_t GetHeight();
+		static float GetScale();
 
-		static const Rectangle& GetGameViewport();
-		static void SetGameViewport(const Rectangle& viewport);
+		static Rectangle GetGameViewport();
+		static void SetGameViewport(Rectangle viewport);
 
-		static const bool& IsAllowCursorLock();
-		static void SetAllowCursorLock(const bool& allow);
+		static bool IsAllowCursorLock();
+		static void SetAllowCursorLock(bool allow);
 
 	private:
 		static uint32_t s_Width;

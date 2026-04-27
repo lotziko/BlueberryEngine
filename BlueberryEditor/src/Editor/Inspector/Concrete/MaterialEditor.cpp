@@ -5,7 +5,7 @@
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\TextureCube.h"
 #include "Blueberry\Graphics\GfxTexture.h"
-#include "Blueberry\Graphics\GfxRenderTexturePool.h"
+#include "Blueberry\Graphics\GfxTexturePool.h"
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Assets\ThumbnailCache.h"
 #include "Editor\Misc\ImGuiHelper.h"
@@ -16,18 +16,21 @@
 
 namespace Blueberry
 {
+	GfxTexture* MaterialEditor::s_RenderTexture = nullptr;
+
 	void MaterialEditor::OnEnable()
 	{
 		if (s_RenderTexture == nullptr)
 		{
-			s_RenderTexture = GfxRenderTexturePool::Get(512, 512, 1);
+			s_RenderTexture = GfxTexturePool::Get(512, 512, 1, TextureUsageFlags::RenderTarget);
 		}
 
+		bool requireUpdate = false;
 		for (Object* object : m_SerializedObject->GetTargets())
 		{
 			Material* material = static_cast<Material*>(object);
 			Shader* shader = material->GetShader();
-			if (shader != nullptr && shader->GetState() == ObjectState::Default)
+			if (shader != nullptr)
 			{
 				auto& data = shader->GetData();
 				auto& textureDatas = material->GetTextureDatas();
@@ -51,10 +54,15 @@ namespace Blueberry
 							TextureData newTextureProperty = {};
 							newTextureProperty.SetName(propertyData.GetName());
 							material->AddTextureData(newTextureProperty);
+							requireUpdate = true;
 						}
 					}
 				}
 			}
+		}
+		if (requireUpdate)
+		{
+			m_SerializedObject->Update();
 		}
 
 		m_ShaderProperty = m_SerializedObject->FindProperty("m_Shader");
@@ -65,9 +73,9 @@ namespace Blueberry
 	{
 		ImGui::Property(&m_ShaderProperty, "Shader");
 
-		for (uint32_t i = 0; i < m_TexturesProperty.GetArraySize(); ++i)
+		for (uint32_t i = 0; i < m_TexturesProperty.GetListSize(); ++i)
 		{
-			SerializedProperty textureDataProperty = m_TexturesProperty.GetArrayElement(i);
+			SerializedProperty textureDataProperty = m_TexturesProperty.GetListElement(i);
 			SerializedProperty nameProperty = textureDataProperty.FindProperty("m_Name");
 			SerializedProperty textureProperty = textureDataProperty.FindProperty("m_Texture");
 			ImGui::Property(&textureProperty, nameProperty.GetString().c_str());
@@ -90,12 +98,13 @@ namespace Blueberry
 				ThumbnailCache::Refresh(object);
 			}
 			AssetDB::SaveAssets();
+			AssetDB::Refresh();
 		}
 
 		static MaterialPreview preview;
 		preview.Draw(static_cast<Material*>(m_SerializedObject->GetTarget()), s_RenderTexture);
 
 		ImVec2 size = ImGui::GetContentRegionAvail();
-		ImGui::Image(reinterpret_cast<ImTextureID>(s_RenderTexture->GetHandle()), ImVec2(size.x, (s_RenderTexture->GetHeight() * size.x) / static_cast<float>(s_RenderTexture->GetWidth())), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::Image(reinterpret_cast<ImTextureID>(s_RenderTexture->GetHandle()), ImVec2(size.x, (s_RenderTexture->GetHeight() * size.x) / static_cast<float>(s_RenderTexture->GetWidth())));
 	}
 }

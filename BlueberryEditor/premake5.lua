@@ -11,11 +11,11 @@ project "BlueberryEditor"
 	{
 		"src/**.h",
 		"src/**.cpp",
-		"vendor/rapidyaml/**.h",
-		"vendor/rapidyaml/**.cpp",
 		"vendor/fbxsdk/include/**.h",
 		"vendor/directxtex/**.h",
 		"vendor/directxtex/**.cpp",
+		"vendor/directxmesh/**.h",
+		"vendor/directxmesh/**.cpp",
 	}
 
 	includedirs
@@ -23,10 +23,13 @@ project "BlueberryEditor"
 		"src",
 		"%{wks.location}/BlueberryEngine/include",
 		"%{wks.location}/BlueberryBaking/include",
+		"%{IncludeDir.jolt}",
 		"%{IncludeDir.imgui}",
+		"%{IncludeDir.imguinode}",
 		"%{IncludeDir.rapidyaml}",
 		"%{IncludeDir.fbxsdk}",
 		"%{IncludeDir.directxtex}",
+		"%{IncludeDir.directxmesh}",
 		"%{IncludeDir.flathashmap}",
 		"%{IncludeDir.xatlas}",
 	}
@@ -36,6 +39,7 @@ project "BlueberryEditor"
 		"BlueberryEngine",
 		"BlueberryBaking",
 		"%{Library.fbxsdk}",
+		"ImguiNode",
 	}
 
 	postbuildcommands
@@ -44,11 +48,15 @@ project "BlueberryEditor"
 		"{COPYDIR} %{wks.location}/BlueberryEngine/assets %{cfg.targetdir}/assets",
 		"{COPYDIR} %{wks.location}/bin/" .. outputdir .. "/BlueberryBaking/assets %{cfg.targetdir}/assets",
 		"{COPYDIR} %{wks.location}/BlueberryEngine/include %{cfg.targetdir}/include",
+		"{COPYDIR} %{wks.location}/BlueberryEngine/vendor/rmlui/include %{cfg.targetdir}/include",
 		"{COPYFILE} %{wks.location}/BlueberryEditor/vendor/fbxsdk/lib/vs2017/x64/release/libfbxsdk.dll %{cfg.targetdir}/libfbxsdk.dll",
 		"{COPYFILE} %{wks.location}/BlueberryEngine/vendor/hbao/lib/GFSDK_SSAO_D3D11.win64.dll %{cfg.targetdir}/GFSDK_SSAO_D3D11.win64.dll",
 		"{COPYFILE} %{wks.location}/BlueberryEngine/vendor/openxr/native/x64/release/bin/openxr_loader.dll %{cfg.targetdir}/openxr_loader.dll",
-		"{COPYFILE} %{wks.location}/bin/" .. outputdir .. "/BlueberryEngine/BlueberryEngine.lib %{cfg.targetdir}/BlueberryEngine.lib",
+		"{COPYFILE} %{wks.location}/bin/" .. outputdir .. "/BlueberryRuntime/BlueberryRuntime.lib %{cfg.targetdir}/BlueberryRuntime.lib",
+		"{COPYFILE} %{wks.location}/bin/" .. outputdir .. "/BlueberryRuntime/BlueberryRuntime.exe %{cfg.targetdir}/BlueberryRuntime.exe",
+		"{COPYFILE} %{wks.location}/BlueberryEngine/vendor/rmlui/lib/rmlui.lib %{cfg.targetdir}/rmlui.lib",
 		"{COPYFILE} %{wks.location}/BlueberryEditor/vendor/fastbuild/bin/FBuild.exe %{cfg.targetdir}/FBuild.exe",
+		"{COPYFILE} %{wks.location}/vendor/premake/bin/premake5.exe %{cfg.targetdir}/premake5.exe",
 	}
 
 	filter "system:windows"

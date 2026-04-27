@@ -12,6 +12,7 @@ namespace Blueberry
 	};
 
 	class Texture;
+	class GfxTexture;
 
 	class BB_API Light : public Component
 	{
@@ -21,32 +22,42 @@ namespace Blueberry
 		Light() = default;
 		virtual ~Light() = default;
 
-		virtual void OnEnable() final;
 		virtual void OnDisable() final;
 
-		const LightType& GetType();
-		void SetType(const LightType& type);
+		void OnPreCull();
 
-		const Color& GetColor();
+		LightType GetType();
+		void SetType(LightType type);
+
+		const Color& GetColor() const;
 		void SetColor(const Color& color);
 
-		const float& GetIntensity();
-		void SetIntensity(const float& intensity);
+		float GetIntensity() const;
+		void SetIntensity(float intensity);
 
-		const float& GetRange();
-		void SetRange(const float& range);
+		float GetRange() const;
+		void SetRange(float range);
 
-		const float& GetOuterSpotAngle();
-		const float& GetInnerSpotAngle();
+		float GetOuterSpotAngle() const;
+		float GetInnerSpotAngle() const;
 
-		const bool& IsCastingShadows();
-		void SetCastingShadows(const bool& castingShadows);
+		bool IsCastingShadows() const;
+		void SetCastingShadows(bool castingShadows);
 
-		const bool& IsCastingFog();
-		void SetCastingFog(const bool& castingFog);
+		bool IsCastingFog() const;
+		void SetCastingFog(bool castingFog);
 
-		Texture* GetCookie();
+		bool IsCached() const;
+		void SetCached(bool cached);
+
+		Texture* GetCookie() const;
 		void SetCookie(Texture* cookie);
+
+	private:
+		GfxTexture* GetCachedShadow();
+		void ReleaseCachedShadow();
+
+		void UpdateBounds();
 
 	private:
 		LightType m_Type = LightType::Point;
@@ -57,15 +68,18 @@ namespace Blueberry
 		float m_InnerSpotAngle = 15.0f;
 		bool m_IsCastingShadows = true;
 		bool m_IsCastingFog = true;
+		bool m_IsCached = true;
 		ObjectPtr<Texture> m_Cookie;
 
 	private:
-		uint8_t m_SliceCount = 1;
+		GfxTexture* m_CachedShadow = nullptr;
+		size_t m_UpdateCount = 0;
+		bool m_IsDirty[6] = { true, true, true, true, true, true };
 		Matrix m_WorldToShadow[6];
 		Matrix m_AtlasWorldToShadow[6];
 		Vector4 m_ShadowBounds[6];
 		Vector4 m_ShadowCascades[6];
-		Matrix m_WorldToCookie[6];
+		Matrix m_WorldToCookie;
 
 		friend class RenderContext;
 		friend class ShadowAtlas;

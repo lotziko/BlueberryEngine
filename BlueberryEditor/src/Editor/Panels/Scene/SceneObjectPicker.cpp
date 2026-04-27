@@ -8,16 +8,19 @@
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Scene\Components\MeshRenderer.h"
+#include "Blueberry\Scene\Components\SkinnedMeshRenderer.h"
 #include "Blueberry\Scene\Components\SpriteRenderer.h"
 #include "Blueberry\Graphics\Renderer2D.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\GfxDevice.h"
-#include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Graphics\GfxBuffer.h"
+#include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Graphics\Buffers\PerCameraDataConstantBuffer.h"
 #include "Blueberry\Graphics\Buffers\PerDrawDataConstantBuffer.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
+#include "Blueberry\Graphics\Skinning.h"
+#include "PerObjectDataConstantBuffer.h"
 
 namespace Blueberry
 {
@@ -29,58 +32,22 @@ namespace Blueberry
 		return result;
 	}
 
-	class PerObjectDataConstantBuffer
-	{
-	public:
-		struct CONSTANTS
-		{
-			Color objectId;
-		};
-
-		static void BindData(Color indexColor)
-		{
-			static size_t objectDataId = TO_HASH("PerObjectData");
-
-			if (s_ConstantBuffer == nullptr)
-			{
-				BufferProperties constantBufferProperties = {};
-				constantBufferProperties.type = BufferType::Constant;
-				constantBufferProperties.elementCount = 1;
-				constantBufferProperties.elementSize = sizeof(CONSTANTS) * 1;
-				constantBufferProperties.isWritable = true;
-
-				GfxDevice::CreateBuffer(constantBufferProperties, s_ConstantBuffer);
-			}
-
-			CONSTANTS constants
-			{
-				indexColor
-			};
-
-			s_ConstantBuffer->SetData(reinterpret_cast<char*>(&constants), sizeof(constants));
-			GfxDevice::SetGlobalBuffer(objectDataId, s_ConstantBuffer);
-		}
-
-	private:
-		static inline GfxBuffer* s_ConstantBuffer = nullptr;
-	};
-
 	SceneObjectPicker::SceneObjectPicker()
 	{
-		TextureProperties properties = {};
-		properties.width = Screen::GetWidth();
-		properties.height = Screen::GetHeight();
-		properties.isRenderTarget = true;
-		properties.isReadable = true;
-		properties.format = TextureFormat::R8G8B8A8_UNorm;
-		GfxDevice::CreateTexture(properties, m_SceneRenderTarget);
+		TextureProperties textureProperties = {};
+		textureProperties.width = Screen::GetWidth();
+		textureProperties.height = Screen::GetHeight();
+		textureProperties.format = TextureFormat::R8G8B8A8_UNorm;
+		textureProperties.usageFlags = TextureUsageFlags::RenderTarget | TextureUsageFlags::CPUReadable;
+		GfxDevice::CreateTexture(textureProperties, m_SceneRenderTarget);
 
-		properties.isReadable = false;
-		properties.format = TextureFormat::D24_UNorm;
-		GfxDevice::CreateTexture(properties, m_SceneDepthStencil);
+		textureProperties.usageFlags = TextureUsageFlags::RenderTarget;
+		textureProperties.format = TextureFormat::D24_UNorm;
+		GfxDevice::CreateTexture(textureProperties, m_SceneDepthStencil);
 
 		m_SpriteObjectPickerMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/SpriteObjectPicker.shader")));
 		m_MeshObjectPickerMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/MeshObjectPicker.shader")));
+		m_IconObjectPickerMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/IconObjectPicker.shader")));
 		m_ObjectPickerOutlineMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/ObjectPickerOutline.shader")));
 	}
 
@@ -88,9 +55,13 @@ namespace Blueberry
 	{
 		delete m_SceneRenderTarget;
 		delete m_SceneDepthStencil;
+		Object::Destroy(m_SpriteObjectPickerMaterial);
+		Object::Destroy(m_MeshObjectPickerMaterial);
+		Object::Destroy(m_IconObjectPickerMaterial);
+		Object::Destroy(m_ObjectPickerOutlineMaterial);
 	}
 
-	Object* SceneObjectPicker::Pick(Scene* scene, Camera* camera, const int& positionX, const int& positionY)
+	Object* SceneObjectPicker::Pick(Scene* scene, Camera* camera, int positionX, int positionY)
 	{
 		if (scene == nullptr)
 		{
@@ -114,10 +85,10 @@ namespace Blueberry
 			Entity* entity = pair.second->GetEntity();
 			if (entity->IsActiveInHierarchy())
 			{
-				auto spriteRenderer = static_cast<SpriteRenderer*>(pair.second);
+				SpriteRenderer* spriteRenderer = static_cast<SpriteRenderer*>(pair.second);
 				if (spriteRenderer->GetTexture() != nullptr)
 				{
-					Renderer2D::Draw(entity->GetTransform()->GetLocalToWorldMatrix(), spriteRenderer->GetTexture(), m_SpriteObjectPickerMaterial, ConvertIndexToColor(index), spriteRenderer->GetSortingOrder());
+					Renderer2D::Draw(spriteRenderer->GetLocalToWorldMatrix(), spriteRenderer->GetTexture(), m_SpriteObjectPickerMaterial, ConvertIndexToColor(index), spriteRenderer->GetSortingOrder());
 					validObjects[index] = entity->GetObjectId();
 					++index;
 				}
@@ -128,13 +99,28 @@ namespace Blueberry
 		for (auto& pair : scene->GetIterator<MeshRenderer>())
 		{
 			Entity* entity = pair.second->GetEntity();
-			auto meshRenderer = static_cast<MeshRenderer*>(pair.second);
+			MeshRenderer* meshRenderer = static_cast<MeshRenderer*>(pair.second);
 			Mesh* mesh = meshRenderer->GetMesh();
 			if (mesh != nullptr)
 			{
-				PerDrawDataConstantBuffer::BindData(entity->GetTransform()->GetLocalToWorldMatrix());
+				PerDrawDataConstantBuffer::BindData(meshRenderer->GetLocalToWorldMatrix());
 				PerObjectDataConstantBuffer::BindData(ConvertIndexToColor(index));
 				GfxDevice::Draw(GfxDrawingOperation(mesh, m_MeshObjectPickerMaterial));
+				validObjects[index] = entity->GetObjectId();
+				++index;
+			}
+		}
+
+		for (auto& pair : scene->GetIterator<SkinnedMeshRenderer>())
+		{
+			Entity* entity = pair.second->GetEntity();
+			SkinnedMeshRenderer* skinnedMeshRenderer = static_cast<SkinnedMeshRenderer*>(pair.second);
+			Mesh* mesh = skinnedMeshRenderer->GetMesh();
+			if (mesh != nullptr)
+			{
+				PerDrawDataConstantBuffer::BindData(skinnedMeshRenderer->GetLocalToWorldMatrix());
+				PerObjectDataConstantBuffer::BindData(ConvertIndexToColor(index));
+				GfxDevice::Draw(GfxDrawingOperation(mesh, Skinning::GetVertexBuffer(skinnedMeshRenderer), m_MeshObjectPickerMaterial));
 				validObjects[index] = entity->GetObjectId();
 				++index;
 			}
@@ -148,15 +134,17 @@ namespace Blueberry
 			{
 				for (uint32_t i = 0; i < entity->GetComponentCount(); ++i)
 				{
-					Component* component = entity->GetComponent(i);
+					Component* component = entity->GetComponentAt(i);
 					ObjectEditor* editor = ObjectEditor::GetDefaultEditor(component);
-					if (editor->GetIcon(component) != nullptr)
+					Texture* icon;
+					if ((icon = editor->GetIcon(component)) != nullptr)
 					{
+						m_IconObjectPickerMaterial->SetTexture("_BaseMap", icon);
 						Vector3 position = entity->GetTransform()->GetPosition();
-						Matrix modelMatrix = Matrix::CreateScale(0.75f) * Matrix::CreateBillboard(position, position + cameraDirection, Vector3(0, -1, 0));
+						Matrix modelMatrix = Matrix::CreateScale(-0.75f, 0.75f, 0.75f) * Matrix::CreateBillboard(position, position + cameraDirection, Vector3(0, 1, 0));
 						PerDrawDataConstantBuffer::BindData(modelMatrix);
 						PerObjectDataConstantBuffer::BindData(ConvertIndexToColor(index));
-						GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_MeshObjectPickerMaterial));
+						GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_IconObjectPickerMaterial));
 						validObjects[index] = entity->GetObjectId();
 						++index;
 						break;
@@ -201,27 +189,46 @@ namespace Blueberry
 			Entity* entity = pair.second->GetEntity();
 			if (Selection::IsActiveObject(entity) && entity->IsActiveInHierarchy())
 			{
-				auto spriteRenderer = static_cast<SpriteRenderer*>(pair.second);
+				SpriteRenderer* spriteRenderer = static_cast<SpriteRenderer*>(pair.second);
 				if (spriteRenderer->GetTexture() != nullptr)
 				{
-					Renderer2D::Draw(entity->GetTransform()->GetLocalToWorldMatrix(), spriteRenderer->GetTexture(), m_SpriteObjectPickerMaterial, ConvertIndexToColor(65535), spriteRenderer->GetSortingOrder());
+					Renderer2D::Draw(spriteRenderer->GetLocalToWorldMatrix(), spriteRenderer->GetTexture(), m_SpriteObjectPickerMaterial, ConvertIndexToColor(65535), spriteRenderer->GetSortingOrder());
 				}
 			}
 		}
 		Renderer2D::End();
 
-		for (auto& pair : scene->GetIterator<MeshRenderer>()) // REMOVE FROM LIST WHEN DISABLING INSTEAD OF ITERATING OVER DISABLED ONES
+		for (auto& pair : scene->GetIterator<MeshRenderer>())
 		{
 			Entity* entity = pair.second->GetEntity();
 			if (Selection::IsActiveObject(entity) && entity->IsActiveInHierarchy())
 			{
-				auto meshRenderer = static_cast<MeshRenderer*>(pair.second);
+				MeshRenderer* meshRenderer = static_cast<MeshRenderer*>(pair.second);
 				Mesh* mesh = meshRenderer->GetMesh();
 				if (mesh != nullptr)
 				{
-					PerDrawDataConstantBuffer::BindData(entity->GetTransform()->GetLocalToWorldMatrix());
+					PerDrawDataConstantBuffer::BindData(meshRenderer->GetLocalToWorldMatrix());
 					PerObjectDataConstantBuffer::BindData(ConvertIndexToColor(10000));
 					GfxDevice::Draw(GfxDrawingOperation(mesh, m_MeshObjectPickerMaterial));
+				}
+			}
+		}
+
+		for (auto& pair : scene->GetIterator<SkinnedMeshRenderer>())
+		{
+			Entity* entity = pair.second->GetEntity();
+			if (Selection::IsActiveObject(entity) && entity->IsActiveInHierarchy())
+			{
+				SkinnedMeshRenderer* skinnedMeshRenderer = static_cast<SkinnedMeshRenderer*>(pair.second);
+				if (skinnedMeshRenderer->HasRoot())
+				{
+					Mesh* mesh = skinnedMeshRenderer->GetMesh();
+					if (mesh != nullptr)
+					{
+						PerDrawDataConstantBuffer::BindData(skinnedMeshRenderer->GetLocalToWorldMatrix());
+						PerObjectDataConstantBuffer::BindData(ConvertIndexToColor(10000));
+						GfxDevice::Draw(GfxDrawingOperation(mesh, Skinning::GetVertexBuffer(skinnedMeshRenderer), m_MeshObjectPickerMaterial));
+					}
 				}
 			}
 		}

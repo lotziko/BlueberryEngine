@@ -47,7 +47,51 @@ Shader
 
 		float4 SkyboxFragment(Varyings input) : SV_TARGET
 		{
-			float4 color = SAMPLE_TEXTURECUBE(_BaseMap, _BaseMap_Sampler, input.texcoord) * 10; // TODO exposure property
+			float4 color = SAMPLE_TEXTURECUBE(_BaseMap, _BaseMap_Sampler, input.texcoord) * pow(2, 2.2); // TODO exposure property
+			color = ApplyVolumetricFog(color, input.positionCS.xy * CAMERA_SIZE_INV_SIZE.zw, 1);
+			return color;
+		}
+		HLSLEND
+	}
+	Pass
+	{
+		Blend One Zero
+		ZWrite Off
+		Cull None
+
+		HLSLBEGIN
+		#pragma vertex SkyboxVertex
+		#pragma fragment SkyboxFragment
+
+		#pragma keyword_global_vertex MULTIVIEW
+
+		#include "Core.hlsl"
+
+		struct Attributes
+		{
+			float3 positionOS : POSITION;
+			VERTEX_INPUT_INSTANCE_ID
+		};
+
+		struct Varyings
+		{
+			float4 positionCS : SV_POSITION;
+			VERTEX_OUTPUT_VIEW_INDEX
+		};
+
+		Varyings SkyboxVertex(Attributes input)
+		{
+			Varyings output;
+			SETUP_INSTANCE_ID(input);
+			SETUP_OUTPUT_VIEW_INDEX(output);
+
+			output.positionCS = float4(input.positionOS, 1.0f);
+			return output;
+		}
+
+		float4 SkyboxFragment(Varyings input) : SV_TARGET
+		{
+			float4 color = CAMERA_COLOR;
 			color = ApplyVolumetricFog(color, input.positionCS.xy * CAMERA_SIZE_INV_SIZE.zw, 1);
 			return color;
 		}

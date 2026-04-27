@@ -7,28 +7,31 @@ namespace Blueberry
 	class Texture;
 	class Texture2D;
 	class TextureCube;
+	class TextureCubeArray;
 	class Texture3D;
 	enum class TextureDimension;
 
 	class DefaultTextures
 	{
 	public:
-		static Texture* GetTexture(const String& name, const TextureDimension& dimension);
+		static Texture* GetTexture(const String& name, TextureDimension dimension);
 		static Texture2D* GetWhite2D();
 		static Texture2D* GetBlack2D();
 		static Texture2D* GetNormal2D();
 		static TextureCube* GetWhiteCube();
 		static TextureCube* GetBlackCube();
+		static TextureCubeArray* GetBlackCubeArray();
 		static Texture3D* GetWhite3D();
 		static Texture3D* GetBlack3D();
 
 	private:
-		static inline Texture2D* s_WhiteTexture2D = nullptr;
-		static inline Texture2D* s_BlackTexture2D = nullptr;
-		static inline Texture2D* s_NormalTexture2D = nullptr;
-		static inline TextureCube* s_WhiteTextureCube = nullptr;
-		static inline TextureCube* s_BlackTextureCube = nullptr;
-		static inline Texture3D* s_WhiteTexture3D = nullptr;
-		static inline Texture3D* s_BlackTexture3D = nullptr;
+		static Texture2D* s_WhiteTexture2D;
+		static Texture2D* s_BlackTexture2D;
+		static Texture2D* s_NormalTexture2D;
+		static TextureCube* s_WhiteTextureCube;
+		static TextureCube* s_BlackTextureCube;
+		static TextureCubeArray* s_BlackTextureCubeArray;
+		static Texture3D* s_WhiteTexture3D;
+		static Texture3D* s_BlackTexture3D;
 	};
 }

@@ -57,10 +57,7 @@ namespace Blueberry
 		ImGui::Property(&m_ZNearPlaneProperty, "Near plane");
 		ImGui::Property(&m_ZFarPlaneProperty, "Far plane");
 
-		if (m_SerializedObject->ApplyModifiedProperties())
-		{
-			SceneArea::RequestRedrawAll();
-		}
+		m_SerializedObject->ApplyModifiedProperties();
 	}
 
 	Texture* CameraEditor::GetIcon(Object* object)
@@ -78,7 +75,7 @@ namespace Blueberry
 			Matrix view = camera->GetInverseViewMatrix();
 			Matrix projection = camera->GetProjectionMatrix();
 			Frustum frustum;
-			frustum.CreateFromMatrix(frustum, projection, false);
+			frustum.CreateFromMatrix(frustum, projection);
 			frustum.Transform(frustum, view);
 
 			Gizmos::SetMatrix(Matrix::Identity);

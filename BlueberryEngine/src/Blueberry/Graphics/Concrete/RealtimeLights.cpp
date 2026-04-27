@@ -1,7 +1,6 @@
 #include "RealtimeLights.h"
 
 #include "Blueberry\Assets\AssetLoader.h"
-#include "Blueberry\Graphics\GfxRenderTexturePool.h"
 #include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "..\RenderContext.h"
@@ -12,36 +11,17 @@
 
 namespace Blueberry
 {
+	ComputeShader* RealtimeLights::s_ClusteringShader = nullptr;
+	GfxTexture* RealtimeLights::s_LightIndexTexture = nullptr;
+
 	#define CLUSTERS_X 30
 	#define CLUSTERS_Y 17
 	#define CLUSTERS_Z 16
 	#define MAX_LIGHTS 64
-	#define LIGHT_TYPE_COUNT 2
+	#define LIGHT_TYPE_COUNT (2 + 1)
 
 	static size_t s_ClusteringLightIndexTextureId = TO_HASH("_ClusteringLightIndexTexture");
 	static size_t s_LightIndexTextureId = TO_HASH("_LightIndexTexture");
-
-	uint32_t GetShadowSize(const LightType& type)
-	{
-		if (type == LightType::Spot)
-			return 512;
-		if (type == LightType::Directional)
-			return 2048;
-		if (type == LightType::Point)
-			return 256;
-		return 0;
-	}
-
-	uint8_t GetSliceCount(const LightType& type)
-	{
-		if (type == LightType::Spot)
-			return 1;
-		if (type == LightType::Directional)
-			return 3;
-		if (type == LightType::Point)
-			return 6;
-		return 0;
-	}
 
 	void RealtimeLights::Initialize()
 	{
@@ -58,10 +38,7 @@ namespace Blueberry
 		textureProperties.dimension = TextureDimension::Texture2D;
 		textureProperties.wrapMode = WrapMode::Clamp;
 		textureProperties.filterMode = FilterMode::Point;
-		textureProperties.isRenderTarget = false;
-		textureProperties.isReadable = false;
-		textureProperties.isWritable = false;
-		textureProperties.isUnorderedAccess = true;
+		textureProperties.usageFlags = TextureUsageFlags::UnorderedAccess;
 		
 		GfxDevice::CreateTexture(textureProperties, s_LightIndexTexture);
 	}
@@ -72,19 +49,18 @@ namespace Blueberry
 		delete s_LightIndexTexture;
 	}
 
-	void RealtimeLights::PrepareShadows(CullingResults& results, ShadowAtlas* atlas)
+	void RealtimeLights::PrepareShadows(CullingResults& results)
 	{
 		for (Light* light : results.lights)
 		{
 			if (light->IsCastingShadows())
 			{
-				LightType type = light->GetType();
-				atlas->Insert(light, GetShadowSize(type), GetSliceCount(type));
+				ShadowAtlas::Insert(light);
 			}
 		}
 	}
 
-	void RealtimeLights::BindLights(CullingResults& results, ShadowAtlas* atlas)
+	void RealtimeLights::BindLights(CullingResults& results)
 	{
 		Light* mainLight = nullptr;
 		List<Light*> lights = {};
@@ -95,9 +71,9 @@ namespace Blueberry
 				mainLight = light;
 				continue;
 			}
-			lights.emplace_back(light);
+			lights.push_back(light);
 		}
-		PerCameraLightDataConstantBuffer::BindData(results.camera, mainLight, results.skyRenderer, lights, atlas->GetSize());
+		PerCameraLightDataConstantBuffer::BindData(results.camera, mainLight, results.skyRenderer, results.probeVolume, lights, results.reflectionProbes, ShadowAtlas::GetSize());
 	}
 
 	void RealtimeLights::CalculateClusters()

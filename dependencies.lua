@@ -1,17 +1,20 @@
 IncludeDir = {}
 IncludeDir["imgui"] = "%{wks.location}/BlueberryEngine/vendor/imgui"
+IncludeDir["imguinode"] = "%{wks.location}/BlueberryEditor/vendor/imguinode"
 IncludeDir["jolt"] = "%{wks.location}/BlueberryEngine/vendor/jolt/src"
 IncludeDir["mikktspace"] = "%{wks.location}/BlueberryEngine/vendor/mikktspace"
 IncludeDir["hbao"] = "%{wks.location}/BlueberryEngine/vendor/hbao/include"
 IncludeDir["openxr"] = "%{wks.location}/BlueberryEngine/vendor/openxr/include"
 IncludeDir["flathashmap"] = "%{wks.location}/BlueberryEngine/vendor/flathashmap"
 IncludeDir["rpmalloc"] = "%{wks.location}/BlueberryEngine/vendor/rpmalloc"
-IncludeDir["rapidyaml"] = "%{wks.location}/BlueberryEditor/vendor/rapidyaml"
 IncludeDir["fbxsdk"] = "%{wks.location}/BlueberryEditor/vendor/fbxsdk/include"
 IncludeDir["directxtex"] = "%{wks.location}/BlueberryEditor/vendor/directxtex"
+IncludeDir["directxmesh"] = "%{wks.location}/BlueberryEditor/vendor/directxmesh"
 IncludeDir["cuda"] = "%{wks.location}/BlueberryBaking/vendor/cuda/include"
 IncludeDir["optix"] = "%{wks.location}/BlueberryBaking/vendor/optix/include"
 IncludeDir["xatlas"] = "%{wks.location}/BlueberryEngine/vendor/xatlas"
+IncludeDir["miniaudio"] = "%{wks.location}/BlueberryEngine/vendor/miniaudio"
+IncludeDir["rmlui"] = "%{wks.location}/BlueberryEngine/vendor/rmlui/include"
 
 Library = {}
 Library["hbao"] = "%{wks.location}/BlueberryEngine/vendor/hbao/lib/GFSDK_SSAO_D3D11.win64.lib"

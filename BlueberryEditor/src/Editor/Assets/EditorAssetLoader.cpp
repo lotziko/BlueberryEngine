@@ -5,6 +5,7 @@
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\ComputeShader.h"
+#include "Blueberry\Graphics\Font.h"
 #include "Blueberry\Tools\FileHelper.h"
 
 #include "Editor\Assets\AssetDB.h"
@@ -21,16 +22,7 @@
 
 namespace Blueberry
 {
-	void EditorAssetLoader::LoadImpl(const Guid& guid)
-	{
-		AssetImporter* importer = AssetDB::GetImporter(guid);
-		if (importer != nullptr)
-		{
-			importer->ImportDataIfNeeded();
-		}
-	}
-
-	Object* EditorAssetLoader::LoadImpl(const Guid& guid, const FileId& fileId)
+	Object* EditorAssetLoader::LoadImpl(const Guid& guid, FileId fileId)
 	{
 		AssetImporter* importer = AssetDB::GetImporter(guid);
 		if (importer != nullptr)
@@ -41,7 +33,7 @@ namespace Blueberry
 		return nullptr;
 	}
 
-	Object* EditorAssetLoader::LoadImpl(const String& path)
+	Object* EditorAssetLoader::LoadImpl(const String& path, void* args)
 	{
 		auto it = m_LoadedAssets.find(path);
 		if (it != m_LoadedAssets.end())
@@ -50,9 +42,9 @@ namespace Blueberry
 		}
 
 		std::filesystem::path assetPath = path;
-		std::string name = assetPath.filename().string();
-		Guid guid = Guid(TO_HASH(String(name)), 0);
-		std::string extension = assetPath.extension().string();
+		std::filesystem::path extension = assetPath.extension();
+		String name = StringHelper::ToString(assetPath.filename());
+		Guid guid = Guid(TO_HASH(name), 0);
 		
 		if (extension == ".png")
 		{
@@ -66,23 +58,21 @@ namespace Blueberry
 				if (objects.size() == 1 && objects[0].first->IsClassType(Texture2D::Type))
 				{
 					texture = static_cast<Texture2D*>(objects[0].first);
-					ObjectDB::AllocateIdToGuid(texture, guid, 1);
-					uint8_t* data;
-					size_t length;
-					FileHelper::Load(data, length, texturePath);
-					texture->SetData(data, length);
-					texture->Apply();
 					needImport = false;
 				}
 			}
 
 			if (needImport)
 			{
+				auto parameters = std::make_pair(true, WrapMode::Repeat);
+				if (args != nullptr)
+				{
+					parameters = *static_cast<std::pair<bool, WrapMode>*>(args);
+				}
 				DirectX::ScratchImage image = {};
-				TextureHelper::Load(image, path, ".png", true);
-				TextureHelper::Flip(image);
-				auto metadata = image.GetMetadata();
-				texture = Texture2D::Create(metadata.width, metadata.height, metadata.mipLevels, static_cast<TextureFormat>(metadata.format), WrapMode::Repeat);
+				TextureHelper::Load(image, path, ".png", parameters.first);
+				auto& metadata = image.GetMetadata();
+				texture = Texture2D::Create(static_cast<uint32_t>(metadata.width), static_cast<uint32_t>(metadata.height), static_cast<uint32_t>(metadata.mipLevels), static_cast<TextureFormat>(metadata.format), parameters.second);
 				ObjectDB::AllocateIdToGuid(texture, guid, 1);
 				texture->SetData(static_cast<uint8_t*>(image.GetPixels()), image.GetPixelsSize());
 				texture->Apply();
@@ -93,7 +83,7 @@ namespace Blueberry
 
 			if (texture != nullptr)
 			{
-				texture->SetName(assetPath.stem().string().data());
+				texture->SetName(StringHelper::ToString(assetPath.stem()));
 				m_LoadedAssets.insert_or_assign(path, texture);
 			}
 			return texture;
@@ -112,8 +102,6 @@ namespace Blueberry
 				if (objects.size() == 1 && objects[0].first->IsClassType(Shader::Type))
 				{
 					shader = static_cast<Shader*>(objects[0].first);
-					ObjectDB::AllocateIdToGuid(shader, guid, 1);
-					shader->Initialize(processor.GetVariantsData());
 					needImport = false;
 				}
 			}
@@ -132,7 +120,7 @@ namespace Blueberry
 
 			if (shader != nullptr)
 			{
-				shader->SetName(assetPath.stem().string().data());
+				shader->SetName(StringHelper::ToString(assetPath.stem()));
 				m_LoadedAssets.insert_or_assign(path, shader);
 			}
 			return shader;
@@ -151,8 +139,6 @@ namespace Blueberry
 				if (objects.size() == 1 && objects[0].first->IsClassType(ComputeShader::Type))
 				{
 					shader = static_cast<ComputeShader*>(objects[0].first);
-					ObjectDB::AllocateIdToGuid(shader, guid, 1);
-					shader->Initialize(processor.GetShaders());
 					needImport = false;
 				}
 			}
@@ -171,10 +157,42 @@ namespace Blueberry
 
 			if (shader != nullptr)
 			{
-				shader->SetName(assetPath.stem().string().data());
+				shader->SetName(StringHelper::ToString(assetPath.stem()));
 				m_LoadedAssets.insert_or_assign(path, shader);
 			}
 			return shader;
+		}
+		else if (extension == ".ttf")
+		{
+			Font* font = nullptr;
+			
+			bool needImport = true;
+			if (AssetDB::HasAssetWithGuidInData(guid))
+			{
+				auto objects = AssetDB::LoadAssetObjects(guid, ObjectDB::GetObjectsFromGuid(guid));
+				if (objects.size() == 1 && objects[0].first->IsClassType(Font::Type))
+				{
+					font = static_cast<Font*>(objects[0].first);
+					needImport = false;
+				}
+			}
+
+			if (needImport)
+			{
+				List<uint8_t> data;
+				FileHelper::Load(data, path);
+				font = Object::Create<Font>();
+				ObjectDB::AllocateIdToGuid(font, guid, 1);
+				font->SetData(data);
+				AssetDB::SaveAssetObjectsToCache(List<Object*> { font });
+			}
+
+			if (font != nullptr)
+			{
+				font->SetName(StringHelper::ToString(assetPath.stem()));
+				m_LoadedAssets.insert_or_assign(path, font);
+			}
+			return font;
 		}
 		return nullptr;
 	}

@@ -14,8 +14,8 @@ namespace Blueberry
 		static void BindDataInstanced(std::pair<Matrix, Vector4>* data, const uint32_t& count);
 
 	private:
-		static inline GfxBuffer* s_StructuredBuffer = nullptr;
-		static inline GfxBuffer* s_ConstantBuffer = nullptr;
-		static inline GfxBuffer* s_ConstantBufferInstanced = nullptr;
+		static GfxBuffer* s_StructuredBuffer;
+		static GfxBuffer* s_ConstantBuffer;
+		static GfxBuffer* s_ConstantBufferInstanced;
 	};
 }

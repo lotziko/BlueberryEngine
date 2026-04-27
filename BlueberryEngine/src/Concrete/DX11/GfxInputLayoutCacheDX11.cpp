@@ -26,7 +26,7 @@ namespace Blueberry
 		}
 		else
 		{
-			for (uint32_t i = 0; i < VERTEX_ATTRIBUTE_COUNT; ++i)
+			for (uint32_t i = 0; i < RENDERABLE_VERTEX_ATTRIBUTE_COUNT; ++i)
 			{
 				uint32_t offset = meshLayout->GetOffset(i);
 				uint8_t index = shader->m_LayoutIndices[i];

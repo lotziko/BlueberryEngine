@@ -6,6 +6,7 @@
 #include "Editor\Misc\ImGuiHelper.h"
 #include "Editor\Preferences.h"
 #include "Editor\Panels\Scene\SceneArea.h"
+#include "Editor\Panels\Hierarchy\SceneHierarchy.h"
 
 #include <imgui\imgui.h>
 #include <imgui\imguizmo.h>
@@ -18,32 +19,40 @@ namespace Blueberry
 		m_LocalRotationProperty = m_SerializedObject->FindProperty("m_LocalRotation");
 		m_LocalScaleProperty = m_SerializedObject->FindProperty("m_LocalScale");
 		m_LocalRotationEulerHintProperty = m_SerializedObject->FindProperty("m_LocalRotationEulerHint");
+		m_IsStaticProperty = m_SerializedObject->FindProperty("m_IsStatic");
+		SceneHierarchy::GetHierarchyUpdated().AddCallback<TransformEditor, &TransformEditor::OnHierarchyUpdate>(this);
+		ImGui::Events::GetClearedOverride().AddCallback<&TransformEditor::OnPropertyClear>();
+	}
+
+	void TransformEditor::OnDisable()
+	{
+		SceneHierarchy::GetHierarchyUpdated().RemoveCallback<TransformEditor, &TransformEditor::OnHierarchyUpdate>(this);
+		ImGui::Events::GetClearedOverride().RemoveCallback<&TransformEditor::OnPropertyClear>();
 	}
 
 	void TransformEditor::OnDrawInspector()
 	{
+		m_SerializedObject->Update();
 		ImGui::Property(&m_LocalPositionProperty, "Position");
 		if (ImGui::Property(&m_LocalRotationEulerHintProperty, "Rotation"))
 		{
 			Vector3 euler = m_LocalRotationEulerHintProperty.GetVector3();
-			m_LocalRotationProperty.SetQuaternion(Quaternion::CreateFromYawPitchRoll(ToRadians(euler.y), ToRadians(euler.x), ToRadians(euler.z)));
+			m_LocalRotationProperty.SetQuaternion(Quaternion::CreateFromYawPitchRoll(Math::Math::ToRadians(euler.y), Math::Math::ToRadians(euler.x), Math::Math::ToRadians(euler.z)));
 		}
 		ImGui::Property(&m_LocalScaleProperty, "Scale");
+		ImGui::Property(&m_IsStaticProperty, "Is Static");
 
-		if (m_SerializedObject->ApplyModifiedProperties())
-		{
-			SceneArea::RequestRedrawAll();
-		}
+		m_SerializedObject->ApplyModifiedProperties();
 	}
 
 	// Based on https://discussions.unity.com/t/quaternion-to-three-hinge-joints/714182/10
 	Vector3 CorrectEuler(Vector3 oldValue, Vector3 newValue)
 	{
-		float hint[3] = { ToRadians(oldValue.x), ToRadians(oldValue.y), ToRadians(oldValue.z) };
-		float eul[3] = { ToRadians(newValue.x), ToRadians(newValue.y), ToRadians(newValue.z) };
+		float hint[3] = { Math::ToRadians(oldValue.x), Math::ToRadians(oldValue.y), Math::ToRadians(oldValue.z) };
+		float eul[3] = { Math::ToRadians(newValue.x), Math::ToRadians(newValue.y), Math::ToRadians(newValue.z) };
 
 		const float pi_thresh = 5.1f;
-		const float pi_x2 = 2.0f * Pi;
+		const float pi_x2 = 2.0f * Math::Pi;
 
 		float dif[3] = {};
 
@@ -98,7 +107,7 @@ namespace Blueberry
 			}
 		}
 
-		return ToDegrees(Vector3(eul[0], eul[1], eul[2]));
+		return Math::ToDegrees(Vector3(eul[0], eul[1], eul[2]));
 	}
 
 	void TransformEditor::OnDrawSceneSelected()
@@ -117,7 +126,7 @@ namespace Blueberry
 		{
 			float snapping[3];
 			float* gizmoSnapping = Preferences::GetGizmoSnapping();
-			const int& gizmoOperation = Preferences::GetGizmoOperation();
+			int gizmoOperation = Preferences::GetGizmoOperation();
 			if (gizmoOperation == ImGuizmo::OPERATION::TRANSLATE)
 			{
 				snapping[0] = gizmoSnapping[0];
@@ -149,17 +158,16 @@ namespace Blueberry
 				}
 				
 				transformMatrix.Decompose(scale, rotation, translation);
-				if (translation != m_LocalPositionProperty.GetVector3())
+				if (!Math::Approximately(Math::RoundToN(translation, 4), Math::RoundToN(m_LocalPositionProperty.GetVector3(), 4)))
 				{
 					m_LocalPositionProperty.SetVector3(translation);
 				}
-				Quaternion previousRotation = m_LocalRotationProperty.GetQuaternion();
-				if (rotation != previousRotation)
+				if (!Math::Approximately(Math::RoundToN(rotation, 4), Math::RoundToN(m_LocalRotationProperty.GetQuaternion(), 4)))
 				{
 					m_LocalRotationProperty.SetQuaternion(rotation);
 
 					Vector3 previousEuler = m_LocalRotationEulerHintProperty.GetVector3();
-					Vector3 euler = CorrectEuler(previousEuler, ToDegrees(rotation.ToEuler()));
+					Vector3 euler = CorrectEuler(previousEuler, Math::ToDegrees(rotation.ToEuler()));
 
 					if (snapping[1] > 0)
 					{
@@ -182,13 +190,30 @@ namespace Blueberry
 					}
 					m_LocalRotationEulerHintProperty.SetVector3(euler);
 				}
-				if (scale != m_LocalScaleProperty.GetVector3())
+				if (!Math::Approximately(Math::RoundToN(scale, 4), Math::RoundToN(m_LocalScaleProperty.GetVector3(), 4)))
 				{
 					m_LocalScaleProperty.SetVector3(scale);
 				}
 				m_SerializedObject->ApplyModifiedProperties();
-				SceneArea::RequestRedrawAll();
 			}
+		}
+	}
+
+	void TransformEditor::OnHierarchyUpdate()
+	{
+		if (m_SerializedObject->IsValid())
+		{
+			m_SerializedObject->Update();
+		}
+	}
+
+	void TransformEditor::OnPropertyClear(ImGui::ClearOverrideEventArgs& args)
+	{
+		SerializedProperty* property = args.GetProperty();
+		SerializedObject* serializedObject = property->GetSerializedObject();
+		if (serializedObject->GetTarget()->IsClassType(Transform::Type) && property->GetName() == "m_LocalRotationEulerHint")
+		{
+			serializedObject->FindProperty("m_LocalRotation").ClearOverride();
 		}
 	}
 }

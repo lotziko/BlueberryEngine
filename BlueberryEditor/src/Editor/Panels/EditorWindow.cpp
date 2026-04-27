@@ -1,10 +1,11 @@
 #include "EditorWindow.h"
 
 #include "Editor\Path.h"
-#include "Editor\Serialization\YamlSerializer.h"
+#include "Editor\Misc\PlatformHelper.h"
+#include "Blueberry\Events\WindowEvents.h"
+#include "Blueberry\Serialization\Serializer.h"
 
-#include "imgui\imgui.h"
-
+#include <imgui\imgui.h>
 #include <fstream>
 
 namespace Blueberry
@@ -12,7 +13,7 @@ namespace Blueberry
 	OBJECT_DEFINITION(EditorWindow, Object)
 	{
 		DEFINE_BASE_FIELDS(EditorWindow, Object)
-		DEFINE_FIELD(EditorWindow, m_Title, BindingType::String, {})
+		DEFINE_FIELD(EditorWindow, m_Title, BindingType::String, FieldOptions())
 		DEFINE_FIELD(EditorWindow, m_RawData, BindingType::Raw, FieldOptions().SetSize(37))
 	}
 
@@ -20,9 +21,15 @@ namespace Blueberry
 	List<ObjectPtr<EditorWindow>> EditorWindow::s_ActiveWindows = {};
 
 	static bool s_IsInit = false;
+	struct MaximizedWindowData
+	{
+		ObjectPtr<EditorWindow> window;
+		String title;
+	} s_MaximizedWindow;
 
 	void EditorWindow::Show()
 	{
+		Focus();
 		for (auto it = s_ActiveWindows.begin(); it < s_ActiveWindows.end(); ++it)
 		{
 			if (it->IsValid() && it->Get()->m_ObjectId == m_ObjectId)
@@ -30,7 +37,7 @@ namespace Blueberry
 				return;
 			}
 		}
-		s_ActiveWindows.emplace_back(std::move(this));
+		s_ActiveWindows.push_back(this);
 	}
 
 	void EditorWindow::ShowPopup()
@@ -41,55 +48,67 @@ namespace Blueberry
 
 	void EditorWindow::Close()
 	{
-		s_ToRemoveWindows.emplace_back(std::move(this));
+		s_ToRemoveWindows.push_back(this);
 	}
 
-	void EditorWindow::DrawUI()
+	void EditorWindow::Focus()
 	{
-		bool opened = true;
-		bool focused = false;
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(100, 100));
-		if (ImGui::Begin(m_Title.c_str(), &opened, m_Flags))
-		{
-			OnDrawUI();
-			if (!opened)
-			{
-				Close();
-			}
-			focused = true;
-		}
-		else
-		{
-			focused = false;
-		}
-		ImGui::End();
-		ImGui::PopStyleVar();
-		if (s_IsInit)
-		{
-			m_Focused = focused;
-		}
+		ImGui::SetWindowFocus(m_Title.c_str());
 	}
 
-	void EditorWindow::SetTitle(const std::string& title)
+	void EditorWindow::SetTitle(const String& title)
 	{
 		m_Title = title;
 	}
 
-	void EditorWindow::Load()
+	void EditorWindow::SetMaximized(const bool& maximized)
 	{
-		auto layoutPath = Path::GetDataPath();
+		const char* name = m_Title.c_str();
+		if (maximized)
+		{
+			s_MaximizedWindow.window = this;
+			s_MaximizedWindow.title = m_Title;
+			s_MaximizedWindow.title.append("##Maximized");
+		}
+		else
+		{
+			s_MaximizedWindow.window = nullptr;
+		}
+	}
+
+	const bool& EditorWindow::HasUnsavedChanges()
+	{
+		return m_HasUnsavedChanges;
+	}
+
+	void EditorWindow::SetHasUnsavedChanges(const bool& hasChanges)
+	{
+		m_HasUnsavedChanges = hasChanges;
+		if (hasChanges)
+		{
+			m_Flags |= ImGuiWindowFlags_UnsavedDocument;
+		}
+		else
+		{
+			m_Flags &= ~ImGuiWindowFlags_UnsavedDocument;
+		}
+	}
+
+	void EditorWindow::Initialize()
+	{
+		std::filesystem::path layoutPath = Path::GetDataPath();
 		layoutPath.append("EditorLayout");
 
-		auto dockPath = Path::GetDataPath();
+		std::filesystem::path dockPath = Path::GetDataPath();
 		dockPath.append("DockLayout");
 
 		if (std::filesystem::exists(layoutPath))
 		{
-			YamlSerializer serializer;
-			serializer.Deserialize(layoutPath.string().data());
+			Serializer serializer = {};
+			serializer.Deserialize(StringHelper::ToString(layoutPath), SerializationFlags::EditorOnly | SerializationFlags::Text | SerializationFlags::HasHeaders);
 			for (auto& pair : serializer.GetDeserializedObjects())
 			{
-				EditorWindow* activeWindow = static_cast<EditorWindow*>(pair.first);
+				EditorWindow* activeWindow = static_cast<EditorWindow*>(ObjectDB::GetObject(pair.first));
 				activeWindow->Show();
 
 				activeWindow->m_Focused = activeWindow->m_RawData[36];
@@ -113,20 +132,22 @@ namespace Blueberry
 			input.close();
 		}
 		ImGui::ApplyWindowAndDockNodeData();
+
+		WindowEvents::GetWindowClosing().AddCallback<&EditorWindow::OnWindowClosing>();
 	}
 
-	void EditorWindow::Save()
+	void EditorWindow::Shutdown()
 	{
-		auto layoutPath = Path::GetDataPath();
+		std::filesystem::path layoutPath = Path::GetDataPath();
 		layoutPath.append("EditorLayout");
 
-		auto dockPath = Path::GetDataPath();
+		std::filesystem::path dockPath = Path::GetDataPath();
 		dockPath.append("DockLayout");
 
 		if (s_ActiveWindows.size() > 0)
 		{
 			ImGui::PrepareWindowData();
-			YamlSerializer serializer;
+			Serializer serializer = {};
 			for (auto& activeWindow : s_ActiveWindows)
 			{
 				const char* title = activeWindow->m_Title.c_str();
@@ -134,7 +155,7 @@ namespace Blueberry
 				activeWindow->m_RawData[36] = activeWindow->m_Focused;
 				serializer.AddObject(activeWindow.Get());
 			}
-			serializer.Serialize(layoutPath.string().data());
+			serializer.Serialize(StringHelper::ToString(layoutPath), SerializationFlags::EditorOnly | SerializationFlags::Text | SerializationFlags::HasHeaders);
 
 			ImGui::PrepareDockNodeData();
 			uint32_t nodeCount = ImGui::GetDockNodeDataCount();
@@ -143,7 +164,7 @@ namespace Blueberry
 				std::ofstream output;
 				output.open(dockPath, std::ofstream::binary);
 				output.write(reinterpret_cast<char*>(&nodeCount), sizeof(uint32_t));
-				for (int i = 0; i < nodeCount; ++i)
+				for (uint32_t i = 0; i < nodeCount; ++i)
 				{
 					char buffer[36];
 					ImGui::ReadRawDockNodeData(i, buffer);
@@ -151,6 +172,61 @@ namespace Blueberry
 				}
 				output.close();
 			}
+		}
+
+		WindowEvents::GetWindowClosing().RemoveCallback<&EditorWindow::OnWindowClosing>();
+	}
+
+	bool EditorWindow::Save(const TypeId& type)
+	{
+		bool result = true;
+		for (auto& window : s_ActiveWindows)
+		{
+			if (window->IsClassType(type))
+			{
+				if (window->m_HasUnsavedChanges)
+				{
+					DialogResult dialogResult = PlatformHelper::OpenDialog("Unsaved changes", window->GetSaveChangesMessage(), "Save", "Don't save", "Cancel");
+					switch (dialogResult)
+					{
+					case DialogResult::Yes:
+						window->OnSaveChanges();
+						break;
+					case DialogResult::No:
+						window->OnDiscardChanges();
+						break;
+					case DialogResult::Cancel:
+						result = false;
+						break;
+					}
+				}
+			}
+		}
+		return result;
+	}
+
+	bool EditorWindow::Save()
+	{
+		return Save(EditorWindow::Type);
+	}
+
+	bool EditorWindow::IsFocused(const TypeId& type)
+	{
+		for (auto& window : s_ActiveWindows)
+		{
+			if (window->IsClassType(type) && window->m_Focused)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void EditorWindow::OnWindowClosing(WindowClosingEventArgs& args)
+	{
+		if (!Save())
+		{
+			args.Cancel();
 		}
 	}
 
@@ -178,6 +254,11 @@ namespace Blueberry
 			window->DrawUI();
 		}
 
+		if (s_MaximizedWindow.window.IsValid())
+		{
+			s_MaximizedWindow.window->DrawMaximizedUI();
+		}
+
 		if (!s_IsInit)
 		{
 			s_IsInit = true;
@@ -191,7 +272,7 @@ namespace Blueberry
 		}
 	}
 
-	EditorWindow* EditorWindow::GetWindow(const size_t& type)
+	EditorWindow* EditorWindow::GetWindow(const TypeId& type)
 	{
 		for (auto& window : s_ActiveWindows)
 		{
@@ -200,12 +281,91 @@ namespace Blueberry
 				return window.Get();
 			}
 		}
-		EditorWindow* window = (EditorWindow*)ClassDB::GetInfo(type).createInstance();
+		const ClassInfo* info = ClassDB::GetInfo(type);
+		if (info == nullptr)
+		{
+			BB_ERROR("Class not exists.");
+			return nullptr;
+		}
+		EditorWindow* window = static_cast<EditorWindow*>(info->Create());
 		return window;
 	}
 
 	List<ObjectPtr<EditorWindow>>& EditorWindow::GetWindows()
 	{
 		return s_ActiveWindows;
+	}
+
+	void EditorWindow::OnSaveChanges()
+	{
+	}
+
+	void EditorWindow::OnDiscardChanges()
+	{
+	}
+
+	String EditorWindow::GetSaveChangesMessage()
+	{
+		return "Window has unsaved changes.";
+	}
+
+	void EditorWindow::DrawUI()
+	{
+		bool opened = true;
+		bool focused = false;
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(100, 100));
+
+		if (ImGui::Begin(m_Title.c_str(), &opened, m_Flags))
+		{
+			if (!s_MaximizedWindow.window.IsValid())
+			{
+				OnDrawUI();
+				if (!opened)
+				{
+					Close();
+				}
+				focused = true;
+
+				if (ImGui::IsWindowHovered() && ImGui::IsKeyPressed(ImGuiKey_F1))
+				{
+					SetMaximized(true);
+				}
+			}
+		}
+		else
+		{
+			focused = false;
+		}
+		ImGui::End();
+		ImGui::PopStyleVar();
+		if (s_IsInit)
+		{
+			m_Focused = focused;
+		}
+	}
+
+	void EditorWindow::DrawMaximizedUI()
+	{
+		const ImGuiViewport* viewport = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(viewport->WorkPos);
+		ImGui::SetNextWindowSize(viewport->WorkSize);
+		ImGui::SetNextWindowViewport(viewport->ID);
+
+		bool opened = true;
+		if (ImGui::Begin(s_MaximizedWindow.title.c_str(), &opened, m_Flags | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse))
+		{
+			OnDrawUI();
+			if (!opened)
+			{
+				Close();
+				SetMaximized(false);
+			}
+
+			if (ImGui::IsWindowHovered() && ImGui::IsKeyPressed(ImGuiKey_F1))
+			{
+				SetMaximized(false);
+			}
+		}
+		ImGui::End();
 	}
 }

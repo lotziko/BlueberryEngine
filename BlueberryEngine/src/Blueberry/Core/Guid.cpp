@@ -6,7 +6,7 @@
 
 namespace Blueberry
 {
-	Guid::Guid(const uint64_t& data1, const uint64_t& data2)
+	Guid::Guid(uint64_t data1, uint64_t data2)
 	{
 		data[0] = data1;
 		data[1] = data2;
@@ -25,6 +25,11 @@ namespace Blueberry
 	bool Guid::operator<(const Guid &other) const
 	{
 		return (data[0] < other.data[0] || (data[0] == other.data[0] && data[1] < other.data[1]));
+	}
+
+	bool Guid::IsValid() const
+	{
+		return data[0] || data[1];
 	}
 
 	String Guid::ToString() const

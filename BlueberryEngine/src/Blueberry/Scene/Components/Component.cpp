@@ -1,5 +1,6 @@
 #include "Blueberry\Scene\Components\Component.h"
 
+#include "Blueberry\Core\Application.h"
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Core\ClassDB.h"
 
@@ -7,8 +8,12 @@ namespace Blueberry
 {
 	OBJECT_DEFINITION(Component, Object)
 	{
-		DEFINE_BASE_FIELDS(Component, Object)
-		DEFINE_FIELD(Component, m_Entity, BindingType::ObjectPtr, FieldOptions().SetObjectType(Entity::Type).SetVisibility(VisibilityType::Hidden))
+		DEFINE_FIELD(Component, m_Entity, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Entity::Type).SetVisibility(VisibilityType::Hidden))
+	}
+
+	const String& Component::GetName()
+	{
+		return m_Entity->GetName();
 	}
 
 	Entity* Component::GetEntity()
@@ -26,15 +31,16 @@ namespace Blueberry
 		return m_Entity.Get()->GetScene();
 	}
 
-	void Component::AddToSceneComponents(const size_t& type)
+	bool Component::IsActive() const
 	{
-		m_Entity.Get()->AddComponentToScene(this, type);
+		return m_IsActive;
 	}
 
-	void Component::RemoveFromSceneComponents(const size_t& type)
+	bool Component::CanExecute()
 	{
-		m_Entity.Get()->RemoveComponentFromScene(this, type);
+		return Application::IsRunning() || ClassDB::GetInfo(GetType())->executeAlways;
 	}
 
-	const size_t UpdatableComponent::Type = TO_OBJECT_TYPE(TO_STRING(UpdatableComponent));
+	TypeId UpdatableComponent::Type = 0;
+	const String UpdatableComponent::TypeName = "UpdatableComponent";
 }

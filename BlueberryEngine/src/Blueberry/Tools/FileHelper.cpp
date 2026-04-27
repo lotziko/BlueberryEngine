@@ -2,10 +2,17 @@
 
 namespace Blueberry
 {
-	void FileHelper::Save(const uint8_t* data, const size_t& length, const String& path)
+	void FileHelper::Save(const uint8_t* data, size_t length, const String& path)
 	{
 		auto file = fopen(path.c_str(), "wb");
 		fwrite(data, sizeof(uint8_t) * length, 1, file);
+		fclose(file);
+	}
+
+	void FileHelper::Save(const List<uint8_t>& data, const String& path)
+	{
+		auto file = fopen(path.c_str(), "wb");
+		fwrite(data.data(), sizeof(uint8_t) * data.size(), 1, file);
 		fclose(file);
 	}
 
@@ -17,6 +24,17 @@ namespace Blueberry
 		rewind(file);
 		data = BB_MALLOC_ARRAY(uint8_t, length);
 		fread(data, sizeof(uint8_t) * length, 1, file);
+		fclose(file);
+	}
+
+	void FileHelper::Load(List<uint8_t>& data, const String& path)
+	{
+		auto file = fopen(path.c_str(), "rb");
+		fseek(file, 0, SEEK_END);
+		long length = ftell(file);
+		rewind(file);
+		data.resize(length);
+		fread(data.data(), sizeof(uint8_t) * length, 1, file);
 		fclose(file);
 	}
 

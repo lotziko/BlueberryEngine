@@ -2,71 +2,85 @@
 
 #include "Blueberry\Core\Structs.h"
 #include "Blueberry\Core\ClassDB.h"
+#include "Blueberry\Serialization\SerializationTree.h"
+#include "Blueberry\Serialization\Enums.h"
 
 namespace Blueberry
 {
-	using FileId = uint64_t;
-	class Object;
-
 	class Serializer
 	{
+	public:
+		virtual void Serialize(const String& path, SerializationFlags flags);
+		virtual void Deserialize(const String& path, SerializationFlags flags);
+
+		const Guid& GetGuid();
+		void SetGuid(const Guid& guid);
+
+		List<std::pair<ObjectId, FileId>>& GetDeserializedObjects();
+
+		void AddObject(Object* object);
+		void AddObject(Object* object, FileId fileId);
+
 	protected:
 		struct Context
 		{
 			void* ptr;
-			const ClassInfo& info;
+			const ClassInfo* info;
 
-			static Context Create(Object* object, const size_t& type)
+			static Context Create(Object* object, TypeId type)
 			{
-				const ClassInfo& info = ClassDB::GetInfo(type);
-				return { object - info.offset, info };
+				const ClassInfo* info = ClassDB::GetInfo(type);
+				return { object - info->offset, info };
 			}
 
-			static Context CreateNoOffset(Data* data, const size_t& type)
+			static Context CreateNoOffset(Data* data, TypeId type)
 			{
-				const ClassInfo& info = ClassDB::GetInfo(type);
+				const ClassInfo* info = ClassDB::GetInfo(type);
 				return { data, info };
 			}
 
-			static Context CreateNoOffset(void* data, const size_t& type)
+			static Context CreateNoOffset(void* data, TypeId type)
 			{
-				const ClassInfo& info = ClassDB::GetInfo(type);
+				const ClassInfo* info = ClassDB::GetInfo(type);
 				return { data, info };
 			}
 
-			static Context Create(Data* data, const ClassInfo& info)
+			static Context CreateNoOffset(void* data, const ClassInfo* info)
 			{
-				return { data - info.offset, info };
+				return { data, info };
+			}
+
+			static Context Create(Data* data, const ClassInfo* info)
+			{
+				return { data - info->offset, info };
 			}
 		};
 
-	public:
-		void AddObject(Object* object);
-		void AddObject(Object* object, const FileId& fileId);
-		virtual void Serialize(const String& path) = 0;
-		virtual void Deserialize(const String& path) = 0;
-
-		List<std::pair<Object*, FileId>>& GetDeserializedObjects();
-
 	protected:
-		void AddAdditionalObject(Object* object);
-		void AddDeserializedObject(Object* object, const FileId& fileId);
-
-	protected:
-		FileId GetFileId(Object* object);
-		Object* GetObjectRef(const FileId& fileId);
-
+		Guid GetGuid(ObjectId objectId);
+		FileId GetFileId(ObjectId objectId);
+		Object* GetObjectRef(FileId fileId);
 		Object* GetNextObjectToSerialize();
+
 		Object* GetPtrObject(const ObjectPtrData& data);
 		ObjectPtrData GetPtrData(Object* object);
 		FileId GenerateFileId();
 
+		void SerializeNode(SerializationNodeRef node, Context context, SerializationFlags flags);
+		void DeserializeNode(SerializationNodeConstRef node, Context context);
+
+		virtual void AddAdditionalObject(ObjectId objectId);
+		void AddDeserializedObject(ObjectId objectId, const Guid& guid, FileId fileId);
+
 	protected:
-		Guid m_AssetGuid;
-		List<Object*> m_ObjectsToSerialize;
-		List<Object*> m_AdditionalObjectsToSerialize;
-		List<std::pair<Object*, FileId>> m_DeserializedObjects;
-		Dictionary<FileId, Object*> m_FileIdToObject;
-		HashSet<FileId> m_AdditionalObjectsIds;
+		Dictionary<FileId, ObjectId> m_FileIdToObjectId;
+		HashSet<FileId> m_AdditionalObjectsFileIds;
+		List<ObjectId> m_ObjectsToSerialize;
+		List<ObjectId> m_AdditionalObjectsToSerialize;
+		List<std::pair<ObjectId, FileId>> m_DeserializedObjects;
+		List<SerializationTree> m_Trees;
+		HashSet<ObjectId> m_References;
+		Guid m_Guid;
+		Object* m_CurrentObject;
 	};
 }

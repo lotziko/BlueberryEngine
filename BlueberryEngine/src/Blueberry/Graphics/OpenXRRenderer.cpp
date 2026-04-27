@@ -6,6 +6,8 @@
 
 namespace Blueberry
 {
+	OpenXRRenderer* OpenXRRenderer::s_Instance = nullptr;
+
 	bool OpenXRRenderer::Initialize()
 	{
 		switch (GraphicsAPI::GetAPI())

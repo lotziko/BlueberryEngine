@@ -10,7 +10,7 @@ namespace Blueberry
 
 	void InspectorExpandedItemsCache::Load()
 	{
-		auto dataPath = Path::GetDataPath();
+		std::filesystem::path dataPath = Path::GetDataPath();
 		dataPath.append("InspectorExpandedItemsCache");
 
 		if (std::filesystem::exists(dataPath))
@@ -29,7 +29,7 @@ namespace Blueberry
 
 	void InspectorExpandedItemsCache::Save()
 	{
-		auto dataPath = Path::GetDataPath();
+		std::filesystem::path dataPath = Path::GetDataPath();
 		dataPath.append("InspectorExpandedItemsCache");
 
 		std::ofstream output;

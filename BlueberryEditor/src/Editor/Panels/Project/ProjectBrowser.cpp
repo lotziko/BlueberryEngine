@@ -6,17 +6,22 @@
 #include "Editor\EditorSceneManager.h"
 #include "Editor\Selection.h"
 #include "Editor\Prefabs\PrefabManager.h"
+#include "Editor\Panels\Scene\SceneArea.h"
 #include "Editor\Panels\Inspector\InspectorExpandedItemsCache.h"
+#include "Editor\Panels\AnimationGraph\AnimationGraphWindow.h"
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Graphics\Material.h"
+#include "Blueberry\Animations\AnimationGraph.h"
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Scene\Components\Component.h"
+#include "Blueberry\Events\WindowEvents.h"
 
 #include "Editor\Assets\ThumbnailCache.h"
 #include "Editor\Assets\IconDB.h"
 #include "Editor\Menu\EditorMenuManager.h"
 #include "Editor\Misc\ImGuiHelper.h"
+#include "Editor\Misc\PlatformHelper.h"
 
 #include <imgui\imgui_internal.h>
 
@@ -25,7 +30,7 @@ namespace Blueberry
 	OBJECT_DEFINITION(ProjectBrowser, EditorWindow)
 	{
 		DEFINE_BASE_FIELDS(ProjectBrowser, EditorWindow)
-		DEFINE_FIELD(ProjectBrowser, m_FoldersColumnWidth, BindingType::Float, {})
+		DEFINE_FIELD(ProjectBrowser, m_FoldersColumnWidth, BindingType::Float, FieldOptions())
 		EditorMenuManager::AddItem("Window/Project", &ProjectBrowser::Open);
 	}
 
@@ -38,11 +43,13 @@ namespace Blueberry
 		
 		UpdateTree();
 		AssetDB::GetAssetDBRefreshed().AddCallback<ProjectBrowser, &ProjectBrowser::OnAssetDBRefresh>(this);
+		WindowEvents::GetWindowDroppedFiles().AddCallback<ProjectBrowser, &ProjectBrowser::OnWindowDropFiles>(this);
 	}
 
 	ProjectBrowser::~ProjectBrowser()
 	{
 		AssetDB::GetAssetDBRefreshed().RemoveCallback<ProjectBrowser, &ProjectBrowser::OnAssetDBRefresh>(this);
+		WindowEvents::GetWindowDroppedFiles().RemoveCallback<ProjectBrowser, &ProjectBrowser::OnWindowDropFiles>(this);
 	}
 
 	void ProjectBrowser::Open()
@@ -93,7 +100,7 @@ namespace Blueberry
 
 		ImGui::SameLine();
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 4);
-		ImGui::Image(reinterpret_cast<ImTextureID>((opened && node.children.size() > 0) ? m_FolderIconSmallOpened->GetHandle() : m_FolderIconSmall->GetHandle()), ImVec2(style.ProjectFolderIconSize, style.ProjectFolderIconSize), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::Image(reinterpret_cast<ImTextureID>((opened && node.children.size() > 0) ? m_FolderIconSmallOpened->GetHandle() : m_FolderIconSmall->GetHandle()), ImVec2(style.ProjectFolderIconSize, style.ProjectFolderIconSize));
 		ImGui::SameLine();
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 4);
 		ImGui::Text("%s", label);
@@ -111,6 +118,7 @@ namespace Blueberry
 	void ProjectBrowser::DrawCurrentFolder()
 	{
 		ImGui::EditorStyle& style = ImGui::GetEditorStyle();
+		const char* contextPopupId = "ProjectPopup";
 
 		ImVec2 pos = ImGui::GetCursorScreenPos();
 		ImVec2 size = ImGui::GetContentRegionAvail();
@@ -127,6 +135,7 @@ namespace Blueberry
 			uint32_t maxCells = static_cast<uint32_t>(floorf(size.x / (style.ProjectCellSize + style.ProjectSpaceBetweenCells)));
 			if (maxCells > 0)
 			{
+				ImVec2 scrollTarget;
 				float expandedSpaceBetweenCells = (size.x - (maxCells * style.ProjectCellSize)) / (maxCells + 1);
 				// Calculate expected size and items positions
 				Vector2 expectedCursorPos = Vector2::Zero;
@@ -149,10 +158,22 @@ namespace Blueberry
 							expectedCursorPos.x = 0;
 							cellIndex = 0;
 						}
+
+						if (m_ScrollRequest != nullptr && (m_ScrollRequest == asset.importer || m_ScrollRequest == asset.objects[i].Get()))
+						{
+							scrollTarget = ImGui::GetCursorScreenPos() + ImVec2(expectedCursorPos.x, expectedCursorPos.y);
+						}
 					}
 				}
 				ImGui::Dummy(ImVec2(size.x, expectedCursorPos.y + style.ProjectCellSize));
 				ImGui::SetCursorPos(panelPos);
+
+				// Scroll to item
+				if (m_ScrollRequest != nullptr)
+				{
+					ImGui::ScrollToRect(ImGui::GetCurrentWindow(), ImRect(scrollTarget, scrollTarget + ImVec2(style.ProjectCellSize, style.ProjectCellSize)));
+					m_ScrollRequest = nullptr;
+				}
 
 				// Prefab creating
 				if (ImGui::BeginDragDropTarget())
@@ -164,7 +185,7 @@ namespace Blueberry
 						Blueberry::Object* object = Blueberry::ObjectDB::GetObject(*id);
 						if (object != nullptr && object->IsClassType(Entity::Type) && ImGui::AcceptDragDropPayload("OBJECT_ID"))
 						{
-							PrefabManager::CreatePrefab(m_CurrentDirectory.string().data(), static_cast<Entity*>(object));
+							PrefabManager::CreatePrefab(StringHelper::ToString(m_CurrentDirectory), static_cast<Entity*>(object));
 							UpdateFiles();
 						}
 					}
@@ -180,13 +201,13 @@ namespace Blueberry
 					for (uint32_t i = 0, n = asset.expanded ? static_cast<uint32_t>(asset.objects.size()) : 1; i < n; ++i)
 					{
 						Object* object;
-						if (i == 0)
+						if (i == 0 && asset.importer != nullptr)
 						{
 							object = asset.importer;
 						}
 						else
 						{
-							object = asset.objects[i];
+							object = asset.objects[i].Get();
 						}
 						Vector2 position = asset.positions[i];
 						if (position.y >= topClip && position.y <= bottomClip)
@@ -225,6 +246,79 @@ namespace Blueberry
 				Selection::SetActiveObject(nullptr);
 			}
 		}
+
+		if (ImGui::BeginPopup(contextPopupId))
+		{
+			// TODO refactor
+			if (ImGui::MenuItem("Scene"))
+			{
+				EditorSceneManager::CreateEmpty("");
+			}
+			if (ImGui::MenuItem("Material"))
+			{
+				m_CreatingObject = Object::Create<Material>();
+				m_CreatingObjectName = "New Material.material";
+				UpdateFiles();
+			}
+			if (ImGui::MenuItem("Animation Graph"))
+			{
+				m_CreatingObject = Object::Create<AnimationGraph>();
+				m_CreatingObjectName = "New Animation Graph.animgraph";
+				UpdateFiles();
+			}
+			if (ImGui::MenuItem("Show in Explorer"))
+			{
+				String path = "";
+				Object* selectedObject = Selection::GetActiveObject();
+				if (selectedObject != nullptr)
+				{
+					String relativePath = AssetDB::GetRelativeAssetPath(selectedObject);
+					if (relativePath.size() > 0)
+					{
+						std::filesystem::path dataPath = Path::GetAssetsPath();
+						dataPath.append(relativePath);
+						path = StringHelper::ToString(dataPath);
+					}
+				}
+				else
+				{
+					path = StringHelper::ToString(m_CurrentDirectory);
+				}
+				if (path.size() > 0)
+				{
+					PlatformHelper::RevealInExplorer(path);
+				}
+			}
+			if (ImGui::MenuItem("Rename"))
+			{
+				Object* selectedObject = Selection::GetActiveObject();
+				if (selectedObject != nullptr)
+				{
+					m_RenamingObject = selectedObject;
+				}
+			}
+			if (ImGui::MenuItem("Delete"))
+			{
+				Object* selectedObject = Selection::GetActiveObject();
+				if (selectedObject != nullptr)
+				{
+					AssetDB::DeleteAsset(AssetDB::GetRelativeAssetPath(selectedObject));
+					AssetDB::Refresh();
+					Selection::SetActiveObject(nullptr);
+				}
+			}
+
+			ImGui::EndPopup();
+		}
+
+		if (ImGui::IsWindowHovered())
+		{
+			if (ImGui::IsMouseClicked(1))
+			{
+				ImGui::OpenPopup(contextPopupId);
+			}
+		}
+
 		ImGui::EndChild();
 
 		ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyleColorVec4(ImGuiCol_MenuBarBg));
@@ -241,57 +335,6 @@ namespace Blueberry
 		ImGui::PopStyleVar();
 		ImGui::PopStyleColor();
 
-		const char* popId = "Delete?";
-		const char* popupId = "ProjectPopup";
-		if (ImGui::BeginPopup(popupId))
-		{
-			// TODO refactor
-			if (ImGui::MenuItem("Scene"))
-			{
-				EditorSceneManager::CreateEmpty("");
-			}
-			if (ImGui::MenuItem("Material"))
-			{
-				m_OpenedModalPopupId = popId;
-			}
-
-			ImGui::EndPopup();
-		}
-
-		if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(1))
-		{
-			ImGui::OpenPopup(popupId);
-		}
-
-		if (m_OpenedModalPopupId == popId)
-		{
-			ImGui::OpenPopup(popId);
-		}
-		if (ImGui::BeginPopupModal(popId, NULL, ImGuiWindowFlags_AlwaysAutoResize))
-		{
-			static char name[256];
-			ImGui::InputText("Name", name, 256);
-			ImGui::Separator();
-
-			if (ImGui::Button("OK", ImVec2(120, 0)))
-			{
-				std::string materialName(name);
-				materialName.append(".material");
-
-				auto relativePath = std::filesystem::relative(m_CurrentDirectory, Path::GetAssetsPath());
-				relativePath.append(materialName);
-
-				Material* material = Object::Create<Material>();
-				AssetDB::CreateAsset(material, relativePath.string().data());
-				AssetDB::SaveAssets();
-				AssetDB::Refresh();
-
-				m_OpenedModalPopupId = nullptr;
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::EndPopup();
-		}
-
 		if (ImGui::IsKeyPressed(ImGuiKey_S) && ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
 		{
 			AssetDB::SaveAssets();
@@ -307,41 +350,42 @@ namespace Blueberry
 		ImGui::PushID(object->GetObjectId());
 		ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 1.0f));
 		
-		if (ImGui::Selectable(object->GetName().c_str(), Selection::IsActiveObject(object), 0, ImVec2(style.ProjectCellSize, style.ProjectCellSize)))
+		if (m_RenamingObject == object || asset.importer == nullptr)
 		{
-			if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
-			{
-				Selection::AddActiveObject(object);
-			}
-			else
-			{
-				Selection::SetActiveObject(object);
-			}
-			asset.importer->ImportDataIfNeeded();
+			ImGui::Dummy(ImVec2(style.ProjectCellSize, style.ProjectCellSize));
 		}
-
-		if (ImGui::IsItemHovered())
+		else
 		{
-			if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+			if (ImGui::Selectable(object->GetName().c_str(), Selection::IsActiveObject(object), ImGuiSelectableFlags_SelectOnRelease | ImGuiSelectableFlags_AllowDoubleClick, ImVec2(style.ProjectCellSize, style.ProjectCellSize)))
 			{
-				OpenAsset(asset);
+				if (ImGui::IsMouseDoubleClicked(0))
+				{
+					OpenAsset(asset);
+				}
+				else
+				{
+					if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
+					{
+						Selection::AddActiveObject(object);
+					}
+					else
+					{
+						Selection::SetActiveObject(object);
+					}
+					asset.importer->ImportDataIfNeeded();
+				}
 			}
-			anyHovered = true;
+
+			if (ImGui::IsItemHovered())
+			{
+				anyHovered = true;
+			}
 		}
 
 		Object* iconObject = object;
-		if (object == asset.importer && asset.objects.size() > 0 && asset.objects[0] != nullptr)
+		if (object == asset.importer && asset.objects.size() > 0 && asset.objects[0].IsValid())
 		{
-			iconObject = asset.objects[0];
-		}
-
-		// Dragging
-		if (ImGui::BeginDragDropSource())
-		{
-			ObjectId objectId = iconObject->GetObjectId();
-			ImGui::SetDragDropPayload("OBJECT_ID", &objectId, sizeof(ObjectId));
-			ImGui::Text("%s", iconObject->GetName().c_str());
-			ImGui::EndDragDropSource();
+			iconObject = asset.objects[0].Get();
 		}
 
 		Texture* icon = ThumbnailCache::GetThumbnail(iconObject);
@@ -349,8 +393,76 @@ namespace Blueberry
 		{
 			icon = IconDB::GetAssetIcon(iconObject);
 		}
-		ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(icon->GetHandle()), ImVec2(screenPos.x + style.ProjectCellIconPadding, screenPos.y), ImVec2(screenPos.x + style.ProjectCellSize - style.ProjectCellIconPadding, screenPos.y + style.ProjectCellSize - style.ProjectCellIconPadding * 2), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(icon->GetHandle()), ImVec2(screenPos.x + style.ProjectCellIconPadding, screenPos.y), ImVec2(screenPos.x + style.ProjectCellSize - style.ProjectCellIconPadding, screenPos.y + style.ProjectCellSize - style.ProjectCellIconPadding * 2));
 
+		if (m_RenamingObject == object)
+		{
+			static char buf[256];
+			static bool isRenaming = false;
+			if (!isRenaming)
+			{
+				String name = object->GetName();
+				strncpy(buf, name.c_str(), sizeof(buf) - 1);
+				ImGui::SetKeyboardFocusHere();
+				isRenaming = true;
+			}
+
+			ImVec2 nextScreenPos = ImGui::GetCursorScreenPos();
+			ImGui::SetCursorScreenPos(screenPos + ImVec2(0, style.ProjectCellSize - ImGui::GetTextLineHeightWithSpacing()));
+			ImGui::PushItemWidth(style.ProjectCellSize);
+			ImGui::InputText("###rename", buf, 256, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+			ImGui::SetCursorScreenPos(nextScreenPos);
+
+			if (ImGui::IsItemDeactivated())
+			{
+				String oldName = m_RenamingObject->GetName();
+				m_RenamingObject->SetName(buf);
+				String newName = buf;
+				if (m_CreatingObject == m_RenamingObject)
+				{
+					newName.append(m_CreatingObjectName.substr(m_CreatingObjectName.find('.')));
+					std::filesystem::path relativePath = std::filesystem::relative(m_CurrentDirectory, Path::GetAssetsPath());
+					relativePath.append(newName);
+					AssetDB::CreateAsset(m_CreatingObject, StringHelper::ToString(relativePath));
+					m_CreatingObject = nullptr;
+				}
+				else
+				{
+					AssetImporter* importer;
+					if (m_RenamingObject->IsClassType(AssetImporter::Type))
+					{
+						importer = static_cast<AssetImporter*>(m_RenamingObject);
+					}
+					else
+					{
+						Guid guid = ObjectDB::GetGuidFromObject(m_RenamingObject);
+						importer = AssetDB::GetImporter(guid);
+					}
+					importer->SetName(newName);
+					importer->Save();
+					std::filesystem::path oldRelativePath = AssetDB::GetRelativeAssetPath(m_RenamingObject);
+					std::filesystem::path newRelativePath = oldRelativePath;
+					std::filesystem::path extension = oldRelativePath.extension();
+					newRelativePath.replace_filename(newName);
+					newRelativePath += extension;
+					AssetDB::RenameAsset(StringHelper::ToString(oldRelativePath), StringHelper::ToString(newRelativePath));
+				}
+				AssetDB::Refresh();
+				m_RenamingObject = nullptr;
+				isRenaming = false;
+			}
+		}
+		else
+		{
+			// Dragging
+			if (ImGui::BeginDragDropSource())
+			{
+				ObjectId objectId = iconObject->GetObjectId();
+				ImGui::SetDragDropPayload("OBJECT_ID", &objectId, sizeof(ObjectId));
+				ImGui::Text("%s", iconObject->GetName().c_str());
+				ImGui::EndDragDropSource();
+			}
+		}
 		ImGui::PopStyleVar();
 		ImGui::PopID();
 	}
@@ -368,11 +480,26 @@ namespace Blueberry
 			std::filesystem::path filePath = stringPath;
 			if (filePath.extension() == ".scene")
 			{
-				EditorSceneManager::Load(stringPath);
+				if (EditorWindow::Save(SceneArea::Type))
+				{
+					SceneArea::Open();
+					EditorSceneManager::Load(stringPath);
+				}
 			}
-			else
+			else if (filePath.extension() == ".prefab")
 			{
-				// TODO
+				if (EditorWindow::Save(SceneArea::Type))
+				{
+					SceneArea::Open();
+					Entity* root = static_cast<Entity*>(ObjectDB::GetObjectFromGuid(asset.importer->GetGuid(), asset.importer->GetMainObject()));
+					EditorSceneManager::OpenPrefab(root);
+					Selection::SetActiveObject(root);
+				}
+			}
+			else if (filePath.extension() == ".animgraph")
+			{
+				AnimationGraph* graph = static_cast<AnimationGraph*>(ObjectDB::GetObjectFromGuid(asset.importer->GetGuid(), asset.importer->GetMainObject()));
+				AnimationGraphWindow::Open(graph);
 			}
 		}
 	}
@@ -383,67 +510,125 @@ namespace Blueberry
 		UpdateFiles();
 	}
 
+	void ProjectBrowser::OnWindowDropFiles(const WindowDropFilesEventArgs& args)
+	{
+		for (auto& file : args.GetFiles())
+		{
+			std::filesystem::path fromPath = file;
+			std::filesystem::path toPath = m_CurrentDirectory;
+			toPath.append(StringHelper::ToString(fromPath.filename()));
+			std::filesystem::copy_file(fromPath, toPath);
+		}
+		AssetDB::Refresh();
+	}
+
 	void ProjectBrowser::UpdateTree()
 	{
-		m_FolderTree.Update(Path::GetAssetsPath().string().data());
+		m_FolderTree.Update(StringHelper::ToString(Path::GetAssetsPath()));
 	}
 
 	void ProjectBrowser::UpdateFiles()
 	{
+		if (!std::filesystem::exists(m_CurrentDirectory))
+		{
+			m_CurrentDirectory = Path::GetAssetsPath();
+		}
+
 		m_PreviousDirectory = m_CurrentDirectory;
 		m_CurrentDirectoryAssets.clear();
 
 		for (auto& it : std::filesystem::directory_iterator(m_CurrentDirectory))
 		{
-			auto path = it.path();
+			auto& path = it.path();
 			if (it.is_directory() && path.extension() != ".meta")
 			{
 				auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
 				AssetInfo info = {};
 				info.path = path;
-				info.pathString = path.string();
-				info.importer = AssetDB::GetImporter(relativePath.string().data());
-				info.objects.emplace_back(nullptr);
+				info.pathString = StringHelper::ToString(path);
+				info.importer = AssetDB::GetImporter(StringHelper::ToString(relativePath));
+				info.objects.push_back(nullptr);
 				info.positions.resize(1);
 				info.isDirectory = true;
-				m_CurrentDirectoryAssets.emplace_back(info);
+				m_CurrentDirectoryAssets.push_back(info);
 			}
 		}
 		for (auto& it : std::filesystem::directory_iterator(m_CurrentDirectory))
 		{
-			auto path = it.path();
+			auto& path = it.path();
 
 			if (!it.is_directory() && path.extension() != ".meta")
 			{
 				auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
-				AssetImporter* importer = AssetDB::GetImporter(relativePath.string().data());
+				AssetImporter* importer = AssetDB::GetImporter(StringHelper::ToString(relativePath));
 				if (importer != nullptr)
 				{
 					Object* mainObject = ObjectDB::GetObjectFromGuid(importer->GetGuid(), importer->GetMainObject());
 					AssetInfo info = {};
 					info.path = relativePath;
-					info.pathString = relativePath.string();
+					info.pathString = StringHelper::ToString(relativePath);
 					info.importer = importer;
 					if (mainObject != nullptr)
 					{
-						info.objects.emplace_back(mainObject);
+						info.objects.push_back(mainObject);
 					}
 					for (auto& pair : importer->GetAssetObjects())
 					{
 						Object* object = ObjectDB::GetObject(pair.second);
 						if (object != nullptr && object != mainObject)
 						{
-							info.objects.emplace_back(object);
+							info.objects.push_back(object);
 						}
 					}
 					if (info.objects.size() == 0)
 					{
-						info.objects.emplace_back(nullptr);
+						info.objects.push_back(nullptr);
 					}
 					info.positions.resize(std::max(1ull, info.objects.size()));
 					info.isDirectory = false;
-					m_CurrentDirectoryAssets.emplace_back(info);
+					m_CurrentDirectoryAssets.push_back(info);
 				}
+			}
+		}
+		if (m_CreatingObject != nullptr)
+		{
+			AssetInfo info = {};
+			info.path = "";
+			info.pathString = "";
+			info.importer = nullptr;
+			info.objects.push_back(m_CreatingObject);
+			info.positions.resize(1);
+			info.isDirectory = false;
+			m_CurrentDirectoryAssets.push_back(info);
+			m_RenamingObject = m_CreatingObject;
+			m_RenamingObject->SetName(m_CreatingObjectName.substr(0, m_CreatingObjectName.find('.')));
+		}
+	}
+
+	void ProjectBrowser::ShowObject(Object* object)
+	{
+		ProjectBrowser* browser = static_cast<ProjectBrowser*>(EditorWindow::GetWindow(ProjectBrowser::Type));
+		String relativePath = AssetDB::GetRelativeAssetPath(object);
+		std::filesystem::path dataPath = Path::GetAssetsPath();
+		dataPath.append(relativePath);
+		browser->m_CurrentDirectory = dataPath.parent_path();
+		browser->UpdateFiles();
+
+		AssetImporter* importer = AssetDB::GetImporter(relativePath);
+		for (auto& asset : browser->m_CurrentDirectoryAssets)
+		{
+			if (asset.importer == importer)
+			{
+				if (asset.objects.size() > 1)
+				{
+					InspectorExpandedItemsCache::Set(asset.pathString, true);
+					browser->m_ScrollRequest = object;
+				}
+				else
+				{
+					browser->m_ScrollRequest = asset.importer;
+				}
+				break;
 			}
 		}
 	}

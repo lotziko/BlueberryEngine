@@ -208,7 +208,7 @@ namespace Blueberry
 						property.SetTextureDimension(TextureDimension::TextureCube);
 					}
 				}
-				properties.emplace_back(property);
+				properties.push_back(property);
 			}
 		}
 		data.SetProperties(properties);
@@ -353,8 +353,8 @@ namespace Blueberry
 				}
 
 				compilationPass.shaderCode = codeBlock;
-				compilationData.passes.emplace_back(compilationPass);
-				compilationData.dataPasses.emplace_back(passData);
+				compilationData.passes.push_back(compilationPass);
+				compilationData.dataPasses.push_back(passData);
 			}
 			return true;
 		}

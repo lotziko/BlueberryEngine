@@ -11,19 +11,26 @@ namespace Blueberry
 		static void Initialize();
 		static void Shutdown();
 			
-		static bool IsKeyDown(const KeyCode& key);
+		static bool IsKeyDown(KeyCode key);
+		static bool IsKeyPressed(KeyCode key);
+		static bool IsKeyReleased(KeyCode key);
 		static Vector2 GetMousePosition();
 		static Vector2 GetMouseDelta();
+
+		static bool IsEnabled();
+		static void SetEnabled(bool enabled);
 
 	private:
 		static void OnKeyDown(const KeyEventArgs& args);
 		static void OnKeyUp(const KeyEventArgs& args);
 		static void OnMouseMove(const MouseMoveEventArgs& args);
+		static void OnWindowUnfocus();
 
 	private:
-		static inline bool s_State[256] = {};
-		static inline Vector2 s_MousePosition = Vector2::Zero;
-		static inline Vector2 s_MouseDelta = Vector2::Zero;
-		static inline size_t s_DeltaFrame;
+		static std::pair<bool, size_t> s_State[static_cast<uint8_t>(KeyCode::KeyCount)];
+		static Vector2 s_MousePosition;
+		static Vector2 s_MouseDelta;
+		static size_t s_DeltaFrame;
+		static bool s_IsEnabled;
 	};
 }

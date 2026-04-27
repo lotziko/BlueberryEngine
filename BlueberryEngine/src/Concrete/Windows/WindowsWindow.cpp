@@ -6,7 +6,7 @@
 #include "Blueberry\Events\InputEvents.h"
 #include "WindowsHelper.h"
 
-#include "Blueberry\Tools\StringConverter.h"
+#include "Blueberry\Tools\StringHelper.h"
 
 #include <imgui\imgui.h>
 
@@ -19,16 +19,16 @@ namespace Blueberry
 {
 	WindowsWindow::WindowsWindow(const WindowProperties& properties)
 	{
-		String windowTitle = properties.Title;
+		String windowTitle = properties.title;
 		String windowClass = "WindowClass";
 
-		m_HInstance = *(static_cast<HINSTANCE*>(properties.Data));
+		m_HInstance = *(static_cast<HINSTANCE*>(properties.data));
 		m_WindowTitle = windowTitle;
-		m_WindowTitleWide = StringConverter::StringToWide(windowTitle);
+		m_WindowTitleWide = StringHelper::StringToWide(windowTitle);
 		m_WindowClass = windowClass;
-		m_WindowClassWide = StringConverter::StringToWide(windowClass);
-		m_Width = properties.Width;
-		m_Height = properties.Height;
+		m_WindowClassWide = StringHelper::StringToWide(windowClass);
+		m_Width = properties.width;
+		m_Height = properties.height;
 
 		this->RegisterWindowClass();
 
@@ -43,14 +43,14 @@ namespace Blueberry
 
 		SetProcessDPIAware();
 
-		int centerX = (GetSystemMetrics(SM_CXSCREEN) - properties.Width) / 2;
-		int centerY = (GetSystemMetrics(SM_CYSCREEN) - properties.Height) / 2;
+		int centerX = (GetSystemMetrics(SM_CXSCREEN) - properties.width) / 2;
+		int centerY = (GetSystemMetrics(SM_CYSCREEN) - properties.height) / 2;
 
 		RECT wr;
 		wr.left = centerX;
 		wr.top = centerY;
-		wr.right = wr.left + properties.Width;
-		wr.bottom = wr.top + properties.Height;
+		wr.right = wr.left + properties.width;
+		wr.bottom = wr.top + properties.height;
 
 		AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
 
@@ -70,6 +70,19 @@ namespace Blueberry
 		if (m_Handle == NULL)
 		{
 			BB_ERROR(WindowsHelper::GetStringLastError() + "CreateWindowEX Failed for window: " + m_WindowTitle);
+			return;
+		}
+
+		RAWINPUTDEVICE rid{};
+		rid.usUsagePage = 0x01;
+		rid.usUsage = 0x02;	// Mouse
+		rid.dwFlags = 0;
+		rid.hwndTarget = m_Handle;
+		RegisterRawInputDevices(&rid, 1, sizeof(rid));
+
+		if (properties.canDropFiles)
+		{
+			DragAcceptFiles(m_Handle, TRUE);
 		}
 
 		ShowWindow(m_Handle, SW_SHOW);
@@ -98,13 +111,20 @@ namespace Blueberry
 		ZeroMemory(&msg, sizeof(MSG));
 
 		while (PeekMessage(&msg, //Where to store message (if one exists) See: https://msdn.microsoft.com/en-us/library/windows/desktop/ms644943(v=vs.85).aspx
-			m_Handle, //Handle to window we are checking messages for
+			NULL, //No handle to avoid blocking messages
 			0,    //Minimum Filter Msg Value - We are not filtering for specific messages, but the min/max could be used to filter only mouse messages for example.
 			0,    //Maximum Filter Msg Value
 			PM_REMOVE))//Remove message after capturing it via PeekMessage. For more argument options, see: https://msdn.microsoft.com/en-us/library/windows/desktop/ms644943(v=vs.85).aspx
 		{
 			TranslateMessage(&msg); //Translate message from virtual key messages into character messages so we can dispatch the message. See: https://msdn.microsoft.com/en-us/library/windows/desktop/ms644955(v=vs.85).aspx
 			DispatchMessage(&msg); //Dispatch message to our Window Proc for this window. See: https://msdn.microsoft.com/en-us/library/windows/desktop/ms644934(v=vs.85).aspx
+		}
+
+		if (m_IsSizeDirty)
+		{
+			m_IsSizeDirty = false;
+			WindowResizeEventArgs args(m_Width, m_Height);
+			WindowEvents::GetWindowResized().Invoke(args);
 		}
 
 		// Check if the window was closed
@@ -136,14 +156,28 @@ namespace Blueberry
 		return m_Height;
 	}
 
+	void WindowsWindow::SetCursor(bool visible)
+	{
+		if (m_IsCursorVisible != visible)
+		{
+			m_IsCursorVisible = visible;
+			ShowCursor(visible);
+		}
+	}
+
 	LRESULT CALLBACK HandleMsgRedirect(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
 		switch (uMsg)
 		{
 		case WM_CLOSE:
 		{
-			DestroyWindow(hwnd);
-			s_IsActive = false;
+			WindowClosingEventArgs args = {};
+			WindowEvents::GetWindowClosing().Invoke(args);
+			if (!args.IsCanceled())
+			{
+				DestroyWindow(hwnd);
+				s_IsActive = false;
+			}
 			return 0;
 			break;
 		}
@@ -180,6 +214,264 @@ namespace Blueberry
 		}
 	}
 
+	KeyCode s_KeyMapping[] = 
+	{
+		KeyCode::None,
+		KeyCode::MouseLeft,
+		KeyCode::MouseRight,
+		KeyCode::None,
+		KeyCode::MouseMiddle,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::Backspace,
+		KeyCode::Tab,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::Enter,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::Shift,
+		KeyCode::Control,
+		KeyCode::Alt,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::Escape,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::Space,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::LeftArrow,
+		KeyCode::UpArrow,
+		KeyCode::RightArrow,
+		KeyCode::DownArrow,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::Alpha0,
+		KeyCode::Alpha1,
+		KeyCode::Alpha2,
+		KeyCode::Alpha3,
+		KeyCode::Alpha4,
+		KeyCode::Alpha5,
+		KeyCode::Alpha6,
+		KeyCode::Alpha7,
+		KeyCode::Alpha8,
+		KeyCode::Alpha9,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::A,
+		KeyCode::B,
+		KeyCode::C,
+		KeyCode::D,
+		KeyCode::E,
+		KeyCode::F,
+		KeyCode::G,
+		KeyCode::H,
+		KeyCode::I,
+		KeyCode::J,
+		KeyCode::K,
+		KeyCode::L,
+		KeyCode::M,
+		KeyCode::N,
+		KeyCode::O,
+		KeyCode::P,
+		KeyCode::Q,
+		KeyCode::R,
+		KeyCode::S,
+		KeyCode::T,
+		KeyCode::U,
+		KeyCode::V,
+		KeyCode::W,
+		KeyCode::X,
+		KeyCode::Y,
+		KeyCode::Z,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::F1,
+		KeyCode::F2,
+		KeyCode::F3,
+		KeyCode::F4,
+		KeyCode::F5,
+		KeyCode::F6,
+		KeyCode::F7,
+		KeyCode::F8,
+		KeyCode::F9,
+		KeyCode::F10,
+		KeyCode::F11,
+		KeyCode::F12,
+		KeyCode::F13,
+		KeyCode::F14,
+		KeyCode::F15,
+		KeyCode::F16,
+		KeyCode::F17,
+		KeyCode::F18,
+		KeyCode::F19,
+		KeyCode::F20,
+		KeyCode::F21,
+		KeyCode::F22,
+		KeyCode::F23,
+		KeyCode::F24,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::LeftShift,
+		KeyCode::RightShift,
+		KeyCode::LeftControl,
+		KeyCode::RightControl,
+		KeyCode::LeftAlt,
+		KeyCode::RightAlt,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+		KeyCode::None,
+	};
+
 	LRESULT WindowsWindow::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
 		if (ImGui_ImplWin32_WndProcHandler(hwnd, uMsg, wParam, lParam))
@@ -187,54 +479,108 @@ namespace Blueberry
 
 		switch (uMsg)
 		{
+		case WM_LBUTTONDOWN:
+		{
+			KeyEventArgs args(KeyCode::MouseLeft);
+			InputEvents::GetKeyDown().Invoke(args);
+			return 0;
+		}
+		case WM_LBUTTONUP:
+		{
+			KeyEventArgs args(KeyCode::MouseLeft);
+			InputEvents::GetKeyUp().Invoke(args);
+			return 0;
+		}
+		case WM_MBUTTONDOWN:
+		{
+			KeyEventArgs args(KeyCode::MouseMiddle);
+			InputEvents::GetKeyDown().Invoke(args);
+			return 0;
+		}
+		case WM_MBUTTONUP:
+		{
+			KeyEventArgs args(KeyCode::MouseMiddle);
+			InputEvents::GetKeyUp().Invoke(args);
+			return 0;
+		}
+		case WM_RBUTTONDOWN:
+		{
+			KeyEventArgs args(KeyCode::MouseRight);
+			InputEvents::GetKeyDown().Invoke(args);
+			return 0;
+		}
+		case WM_RBUTTONUP:
+		{
+			KeyEventArgs args(KeyCode::MouseRight);
+			InputEvents::GetKeyUp().Invoke(args);
+			return 0;
+		}
 		case WM_KEYDOWN:
 		{
-			unsigned char key = static_cast<unsigned char>(wParam);
-			KeyEventArgs args(key);
-			InputEvents::GetKeyDown().Invoke(args);
+			if ((lParam & (1 << 30)) == 0)
+			{
+				unsigned char key = static_cast<unsigned char>(wParam);
+				KeyEventArgs args(s_KeyMapping[key]);
+				InputEvents::GetKeyDown().Invoke(args);
+			}
 			return 0;
 		}
 		case WM_KEYUP:
 		{
 			unsigned char key = static_cast<unsigned char>(wParam);
-			KeyEventArgs args(key);
+			KeyEventArgs args(s_KeyMapping[key]);
 			InputEvents::GetKeyUp().Invoke(args);
 			return 0;
 		}
 		case WM_CHAR:
 		{
-			unsigned char ch = static_cast<unsigned char>(wParam);
-			KeyEventArgs args(ch);
+			wchar_t ch = static_cast<wchar_t>(wParam);
+			KeyTypeEventArgs args(ch);
 			InputEvents::GetKeyTyped().Invoke(args);
 			return 0;
 		}
-		case WM_MOUSEMOVE:
+		case WM_INPUT:
 		{
-			int xPos = static_cast<int>(LOWORD(lParam));
-			int yPos = static_cast<int>(HIWORD(lParam));
-			int xDelta = 0;
-			int yDelta = 0;
-			if (Screen::IsAllowCursorLock() && Cursor::IsLocked())
+			UINT size = 0;
+			GetRawInputData((HRAWINPUT)lParam, RID_INPUT, nullptr, &size, sizeof(RAWINPUTHEADER));
+			List<BYTE> buffer(size);
+
+			if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, buffer.data(), &size, sizeof(RAWINPUTHEADER)) == size)
 			{
-				Rectangle viewport = Screen::GetGameViewport();
-				if (viewport.width > 0)
+				RAWINPUT* raw = (RAWINPUT*)buffer.data();
+				if (raw->header.dwType == RIM_TYPEMOUSE)
 				{
-					RECT rect;
-					if (GetClientRect(hwnd, &rect))
+					LONG xDelta = 0;
+					LONG yDelta = 0;
+
+					if (Screen::IsAllowCursorLock() && Cursor::IsLocked())
 					{
-						Vector2 viewportCenter = viewport.Center();
-						POINT point;
-						point.x = rect.left + static_cast<int>(viewportCenter.x);
-						point.y = rect.top + static_cast<int>(viewportCenter.y);
-						xDelta = xPos - point.x;
-						yDelta = yPos - point.y;
-						ClientToScreen(hwnd, &point);
-						SetCursorPos(point.x, point.y);
+						Rectangle viewport = Screen::GetGameViewport();
+						if (viewport.width > 0)
+						{
+							RECT rect;
+							if (GetClientRect(hwnd, &rect))
+							{
+								Vector2 viewportCenter = viewport.Center();
+								POINT point;
+								point.x = rect.left + static_cast<int>(viewportCenter.x);
+								point.y = rect.top + static_cast<int>(viewportCenter.y);
+								xDelta = raw->data.mouse.lLastX;
+								yDelta = raw->data.mouse.lLastY;
+								ClientToScreen(hwnd, &point);
+								SetCursorPos(point.x, point.y);
+							}
+						}
 					}
+
+					POINT p;
+					GetCursorPos(&p); 
+					ScreenToClient(m_Handle, &p);
+					MouseMoveEventArgs args(static_cast<float>(p.x), static_cast<float>(p.y), static_cast<float>(xDelta), static_cast<float>(yDelta));
+					InputEvents::GetMouseMoved().Invoke(args);
 				}
 			}
-			MouseMoveEventArgs args(static_cast<float>(xPos), static_cast<float>(yPos), static_cast<float>(xDelta), static_cast<float>(yDelta));
-			InputEvents::GetMouseMoved().Invoke(args);
+
 			return 0;
 		}
 		case WM_SIZE:
@@ -245,9 +591,7 @@ namespace Blueberry
 			{
 				m_Width = width;
 				m_Height = height;
-
-				WindowResizeEventArgs args(width, height);
-				WindowEvents::GetWindowResized().Invoke(args);
+				m_IsSizeDirty = true;
 			}
 			return 0;
 		}
@@ -259,9 +603,34 @@ namespace Blueberry
 		case WM_KILLFOCUS:
 		{
 			WindowEvents::GetWindowUnfocused().Invoke();
+			ImGuiIO& io = ImGui::GetIO();
+			io.ClearInputKeys();
+			io.ClearInputMouse();
 			return 0;
 		}
+		case WM_DROPFILES:
+		{
+			HDROP hDrop = (HDROP)wParam;
 
+			UINT count = DragQueryFileW(hDrop, 0xFFFFFFFF, nullptr, 0);
+
+			WindowDropFilesEventArgs args = {};
+			for (UINT i = 0; i < count; ++i)
+			{
+				wchar_t path[MAX_PATH];
+				DragQueryFileW(hDrop, i, path, MAX_PATH);
+				args.AddFile(WString(path));
+			}
+			WindowEvents::GetWindowDroppedFiles().Invoke(args);
+
+			DragFinish(hDrop);
+
+			// Force window focus
+			BringWindowToTop(hwnd);
+			SetActiveWindow(hwnd);
+
+			return 0;
+		}
 		default:
 			break;
 		}

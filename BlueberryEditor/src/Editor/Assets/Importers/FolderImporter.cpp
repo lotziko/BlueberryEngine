@@ -9,6 +9,16 @@ namespace Blueberry
 		DEFINE_BASE_FIELDS(FolderImporter, AssetImporter)
 	}
 
+	bool FolderImporter::IsRequiringReimport() const
+	{
+		return false;
+	}
+
+	bool FolderImporter::IsImportable() const
+	{
+		return false;
+	}
+
 	void FolderImporter::ImportData()
 	{
 	}

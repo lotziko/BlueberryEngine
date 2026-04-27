@@ -6,10 +6,12 @@
 
 namespace Blueberry
 {
+	std::priority_queue<Entity::OperationData, List<Entity::OperationData>, Entity::CompareOperations> Entity::s_Operations;
+
 	OBJECT_DEFINITION(Entity, Object)
 	{
 		DEFINE_BASE_FIELDS(Entity, Object)
-		DEFINE_FIELD(Entity, m_Components, BindingType::ObjectPtrList, FieldOptions().SetObjectType(Component::Type).SetVisibility(VisibilityType::Hidden))
+		DEFINE_FIELD(Entity, m_Components, BindingType::ObjectPtrList, FieldOptions().SetObjectType(&Component::Type).SetVisibility(VisibilityType::Hidden))
 		DEFINE_FIELD(Entity, m_IsActive, BindingType::Bool, FieldOptions().SetUpdateCallback(MethodBind::Create(&Entity::UpdateHierarchy)))
 	}
 
@@ -20,39 +22,108 @@ namespace Blueberry
 
 	void Entity::OnCreate()
 	{
-		for (auto&& componentSlot : m_Components)
-		{
-			componentSlot->OnCreate();
-		}
 	}
 
 	void Entity::OnDestroy()
 	{
-		for (auto && componentSlot : m_Components)
+		if (!m_IsDestroyed)
 		{
-			if (componentSlot.IsValid())
+			for (auto& componentSlot : m_Components)
 			{
-				//BB_INFO(componentSlot->GetTypeName() << " is destroyed.");
-				//RemoveComponentFromScene(componentSlot.Get());
-				componentSlot->OnDisable();
-				componentSlot->OnDestroy();
-				Object::Destroy(componentSlot.Get());
+				if (componentSlot.IsValid())
+				{
+					Component* component = componentSlot.Get();
+					if (component->CanExecute())
+					{
+						if (component->m_IsActive)
+						{
+							s_Operations.push({ 3000, Operation::DisableComponent, component });
+							component->m_IsActive = false;
+						}
+						if (!component->m_IsDestroyed)
+						{
+							s_Operations.push({ 4000, Operation::DestroyComponent, component });
+							component->m_IsDestroyed = true;
+						}
+					}
+				}
+			}
+			m_Components.clear();
+			s_Operations.push({ 5000, Operation::DestroyEntity, this });
+			m_IsDestroyed = true;
+		}
+	}
+
+	void Entity::AddComponent(Component* component)
+	{
+		int index = 0;
+		for (auto& componentSlot : m_Components)
+		{
+			if (!componentSlot.IsValid())
+			{
+				componentSlot = component;
+				break;
+			}
+			++index;
+		}
+
+		component->m_Entity = this;
+		if (index >= m_Components.size())
+		{
+			m_Components.push_back(component);
+		}
+		if (IsActiveInHierarchy())
+		{
+			if (component->CanExecute())
+			{
+				if (!component->m_IsCreated)
+				{
+					s_Operations.push({ 1000, Operation::CreateComponent, component });
+					component->m_IsCreated = true;
+				}
+				if (!component->m_IsActive)
+				{
+					s_Operations.push({ 2000, Operation::EnableComponent, component });
+					component->m_IsActive = true;
+				}
 			}
 		}
 	}
 
-	Component* Entity::GetComponent(const uint32_t& index)
+	Component* Entity::GetComponentAt(size_t index) const
 	{
-		if (index >= 0 && index < static_cast<uint32_t>(m_Components.size()))
+		if (index >= 0 && index < m_Components.size())
 		{
 			return m_Components[index].Get();
 		}
 		return nullptr;
 	}
 
-	const uint32_t Entity::GetComponentCount()
+	const size_t Entity::GetComponentCount()
 	{
-		return static_cast<uint32_t>(m_Components.size());
+		return m_Components.size();
+	}
+
+	void Entity::RemoveComponent(Component* component)
+	{
+		if (component->m_Entity == this)
+		{
+			if (component->CanExecute())
+			{
+				if (component->m_IsActive)
+				{
+					s_Operations.push({ 3000, Operation::DisableComponent, component });
+					component->m_IsActive = false;
+				}
+				if (!component->m_IsDestroyed)
+				{
+					s_Operations.push({ 4000, Operation::DestroyComponent, component });
+					component->m_IsDestroyed = true;
+				}
+			}
+			auto& index = std::find(m_Components.begin(), m_Components.end(), component);
+			m_Components.erase(index);
+		}
 	}
 
 	Transform* Entity::GetTransform()
@@ -64,17 +135,17 @@ namespace Blueberry
 		return m_Transform;
 	}
 
-	Scene* Entity::GetScene()
+	Scene* Entity::GetScene() const
 	{
 		return m_Scene;
 	}
 
-	const bool& Entity::IsActive()
+	bool Entity::IsActive() const
 	{
 		return m_IsActive;
 	}
 
-	void Entity::SetActive(const bool& active)
+	void Entity::SetActive(bool active)
 	{
 		if (active != m_IsActive)
 		{
@@ -85,92 +156,234 @@ namespace Blueberry
 
 	bool Entity::IsActiveInHierarchy()
 	{
-		if (m_IsActiveInHierarchy == -1)
-		{
-			Transform* parent = GetTransform()->GetParent();
-			if (parent == nullptr)
-			{
-				m_IsActiveInHierarchy = m_IsActive;
-				return m_IsActiveInHierarchy;
-			}
-			m_IsActiveInHierarchy = parent->GetEntity()->IsActiveInHierarchy();
-			return m_IsActiveInHierarchy;
-		}
-		else
-		{
-			return m_IsActiveInHierarchy == 1;
-		}
-	}
-
-	void Entity::AddToCreatedComponents(Component* component)
-	{
-		if (m_Scene == nullptr)
-		{
-			return;
-		}
-		m_Scene->m_CreatedComponents.emplace_back(component);
-	}
-
-	void Entity::AddComponentToScene(Component* component, const size_t& type)
-	{
-		if (m_Scene == nullptr)
-		{
-			return;
-		}
-		m_Scene->m_ComponentManager.AddComponent(component, type);
-	}
-
-	void Entity::RemoveComponentFromScene(Component* component, const size_t& type)
-	{
-		if (m_Scene == nullptr)
-		{
-			return;
-		}
-		m_Scene->m_ComponentManager.RemoveComponent(component, type);
+		return m_IsActiveInHierarchy;
 	}
 
 	void Entity::UpdateHierarchy()
 	{
-		UpdateHierarchy(m_IsActive);
+		if (m_Scene == nullptr)
+		{
+			return;
+		}
+		Transform* parent = GetTransform()->GetParent();
+		if (parent != nullptr)
+		{
+			UpdateHierarchy(parent->GetEntity()->m_IsActiveInHierarchy);
+		}
+		else
+		{
+			UpdateHierarchy(true);
+		}
 	}
 
-	void Entity::UpdateHierarchy(const bool& active)
+	void Entity::Poll()
 	{
-		m_IsActiveInHierarchy = active;
+		if (s_Operations.size() > 0)
+		{
+			while (!s_Operations.empty())
+			{
+				OperationData data = s_Operations.top();
+				s_Operations.pop();
+				Object* object = data.object.Get();
+				if (object != nullptr)
+				{
+					switch (data.operation)
+					{
+					case Operation::CreateComponent:
+						(static_cast<Component*>(object))->OnCreate();
+						break;
+					case Operation::EnableComponent:
+					{
+						Component* component = static_cast<Component*>(object);
+						Scene* scene = component->GetEntity()->GetScene();
+						if (scene != nullptr)
+						{
+							for (TypeId* type : ClassDB::GetInfo(component->GetType())->iterators)
+							{
+								scene->m_ComponentManager.AddComponent(component, *type);
+							}
+						}
+						component->OnEnable();
+					}
+					break;
+					case Operation::DisableComponent:
+					{
+						Component* component = static_cast<Component*>(object);
+						Scene* scene = component->GetEntity()->GetScene();
+						if (scene != nullptr)
+						{
+							for (TypeId* type : ClassDB::GetInfo(component->GetType())->iterators)
+							{
+								scene->m_ComponentManager.RemoveComponent(component, *type);
+							}
+						}
+						component->OnDisable();
+					}
+					break;
+					case Operation::DestroyComponent:
+						(static_cast<Component*>(object))->OnDestroy();
+						Object::Destroy(object);
+						break;
+					case Operation::DestroyEntity:
+						Object::Destroy(object);
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	bool Entity::HasComponent(TypeId type)
+	{
+		for (auto& component : m_Components)
+		{
+			if (component.IsValid() && component->IsClassType(type))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	Component* Entity::GetComponent(TypeId type)
+	{
+		for (auto& component : m_Components)
+		{
+			if (component.IsValid() && component->IsClassType(type))
+			{
+				return component.Get();
+			}
+		}
+		return nullptr;
+	}
+
+	Component* Entity::GetComponentInParent(TypeId type)
+	{
+		Entity* entity = this;
+		while (entity != nullptr)
+		{
+			for (auto& component : entity->m_Components)
+			{
+				if (component.IsValid() && component->IsClassType(type))
+				{
+					return component.Get();
+				}
+			}
+			Transform* parent = entity->GetTransform()->GetParent();
+			if (parent == nullptr)
+			{
+				break;
+			}
+			entity = parent->GetEntity();
+		}
+		return nullptr;
+	}
+
+	Component* Entity::GetComponentInChildren(TypeId type)
+	{
+		List<Entity*> stack;
+		stack.push_back(this);
+		while (stack.size() > 0)
+		{
+			Entity* entity = stack[stack.size() - 1];
+			Component* component = entity->GetComponent(type);
+			if (component != nullptr)
+			{
+				return component;
+			}
+			stack.pop_back();
+			for (auto& child : entity->GetTransform()->GetChildren())
+			{
+				stack.push_back(child.Get()->GetEntity());
+			}
+		}
+		return nullptr;
+	}
+
+	List<Component*> Entity::GetComponentsInChildren(TypeId type)
+	{
+		List<Component*> result;
+		List<Entity*> stack;
+		stack.push_back(this);
+		while (stack.size() > 0)
+		{
+			Entity* entity = stack[stack.size() - 1];
+			for (size_t i = 0; i < entity->GetComponentCount(); ++i)
+			{
+				Component* component = entity->GetComponentAt(i);
+				if (component->IsClassType(type))
+				{
+					result.push_back(component);
+				}
+			}
+			stack.pop_back();
+			for (auto& child : entity->GetTransform()->GetChildren())
+			{
+				stack.push_back(child.Get()->GetEntity());
+			}
+		}
+		return result;
+	}
+
+	void Entity::UpdateHierarchy(bool active)
+	{
+		bool newActive = m_IsActive && active;
+		if (m_IsActiveInHierarchy != newActive)
+		{
+			m_IsActiveInHierarchy = newActive;
+			UpdateComponents();
+		}
 		if (GetTransform()->GetChildrenCount() > 0)
 		{
 			for (auto& child : GetTransform()->GetChildren())
 			{
-				child.Get()->GetEntity()->UpdateHierarchy(active);
+				child.Get()->GetEntity()->UpdateHierarchy(newActive);
 			}
 		}
-		UpdateComponents();
 	}
 
 	void Entity::UpdateComponents()
 	{
 		if (m_IsActiveInHierarchy)
 		{
-			for (auto&& componentSlot : m_Components)
-			{
-				Component* component = componentSlot.Get();
-				if (!component->m_IsActive)
-				{
-					component->m_IsActive = true;
-					component->OnEnable();
-				}
-			}
+			EnableComponents();
 		}
 		else
 		{
-			for (auto&& componentSlot : m_Components)
+			DisableComponents();
+		}
+	}
+
+	void Entity::EnableComponents()
+	{
+		for (auto&& componentSlot : m_Components)
+		{
+			Component* component = componentSlot.Get();
+			if (component->CanExecute())
 			{
-				Component* component = componentSlot.Get();
-				if (component->m_IsActive)
+				if (!component->m_IsCreated)
 				{
-					component->m_IsActive = false;
-					component->OnDisable();
+					s_Operations.push({ 1000, Operation::CreateComponent, component });
+					component->m_IsCreated = true;
 				}
+				if (!component->m_IsActive)
+				{
+					s_Operations.push({ 2000, Operation::EnableComponent, component });
+					component->m_IsActive = true;
+				}
+			}
+		}
+	}
+
+	void Entity::DisableComponents()
+	{
+		for (auto&& componentSlot : m_Components)
+		{
+			Component* component = componentSlot.Get();
+			if (component->m_IsActive && component->CanExecute())
+			{
+				s_Operations.push({ 3000, Operation::DisableComponent, component });
+				component->m_IsActive = false;
 			}
 		}
 	}

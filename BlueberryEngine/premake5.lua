@@ -23,6 +23,8 @@ project "BlueberryEngine"
 		"vendor/rpmalloc/**.cpp",
 		"vendor/xatlas/**.h",
 		"vendor/xatlas/**.cpp",
+		"vendor/miniaudio/**.h",
+		"vendor/miniaudio/**.c",
 	}
 
 	includedirs
@@ -35,15 +37,20 @@ project "BlueberryEngine"
 		"%{IncludeDir.openxr}",
 		"%{IncludeDir.flathashmap}",
 		"%{IncludeDir.rpmalloc}",
+		"%{IncludeDir.miniaudio}",
+		"%{IncludeDir.rmlui}",
 	}
 
 	links
 	{
 		"Imgui",
 		"Jolt",
+		"RmlUi",
 		"%{Library.hbao}",
 		"%{Library.openxr}",
 	}
+
+	defines { "RMLUI_CORE_EXPORTS" }
 
 	filter "system:windows"
 

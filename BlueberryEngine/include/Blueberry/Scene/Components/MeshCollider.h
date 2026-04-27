@@ -11,12 +11,14 @@ namespace Blueberry
 		OBJECT_DECLARATION(MeshCollider)
 
 	public:
-		const float& GetRadius();
+		MeshCollider() = default;
+		virtual ~MeshCollider() = default;
 
 	private:
 		virtual JPH::Shape* GetShape() override;
 
 	private:
 		ObjectPtr<Mesh> m_Mesh;
+		bool m_IsConvex = false;
 	};
 }

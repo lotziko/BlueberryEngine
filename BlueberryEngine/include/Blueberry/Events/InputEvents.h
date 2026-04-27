@@ -2,11 +2,10 @@
 
 #include "Blueberry\Core\Base.h"
 #include "Blueberry\Events\Event.h"
+#include "Blueberry\Input\KeyCode.h"
 
 namespace Blueberry
 {
-	using KeyCode = unsigned char;
-
 	class KeyEventArgs
 	{
 	public:
@@ -14,10 +13,23 @@ namespace Blueberry
 		{
 		}
 
-		const KeyCode& GetKeyCode() const;
+		KeyCode GetKeyCode() const;
 
 	private:
 		KeyCode m_KeyCode;
+	};
+
+	class KeyTypeEventArgs
+	{
+	public:
+		KeyTypeEventArgs(wchar_t key) : m_Key(key)
+		{
+		}
+
+		wchar_t GetKey() const;
+
+	private:
+		wchar_t m_Key;
 	};
 
 	class MouseMoveEventArgs
@@ -35,10 +47,10 @@ namespace Blueberry
 		Vector2 m_Delta;
 	};
 
-	using KeyDownEvent = Event<KeyEventArgs>;
-	using KeyUpEvent = Event<KeyEventArgs>;
-	using KeyTypeEvent = Event<KeyEventArgs>;
-	using MouseMoveEvent = Event<MouseMoveEventArgs>;
+	using KeyDownEvent = Event<const KeyEventArgs&>;
+	using KeyUpEvent = Event<const KeyEventArgs&>;
+	using KeyTypeEvent = Event<const KeyTypeEventArgs&>;
+	using MouseMoveEvent = Event<const MouseMoveEventArgs&>;
 
 	class InputEvents
 	{

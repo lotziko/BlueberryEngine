@@ -10,30 +10,38 @@
 
 namespace Blueberry
 {
-	static const uint32_t MAX_LINES = 1024;
+	Material* Gizmos::s_GizmosMaterial = nullptr;
+	Color Gizmos::s_CurrentColor = Color();
+
+	GfxBuffer* Gizmos::s_LineVertexBuffer = nullptr;
+	GfxBuffer* Gizmos::s_ArcVertexBuffer = nullptr;
+
+	float* Gizmos::s_LineVertexData = nullptr;
+	float* Gizmos::s_LineVertexDataPtr = nullptr;
+	Gizmos::Line* Gizmos::s_Lines = nullptr;
+	float* Gizmos::s_ArcVertexData = nullptr;
+	float* Gizmos::s_ArcVertexDataPtr = nullptr;
+	Gizmos::Arc* Gizmos::s_Arcs = nullptr;
+	uint32_t Gizmos::s_LineCount = 0;
+	uint32_t Gizmos::s_ArcCount = 0;
+
+	static const uint32_t MAX_LINES = 16384;
 	static const uint32_t MAX_VERTICES = MAX_LINES * 2;
 	static const uint32_t MAX_INDICES = MAX_LINES * 2;
 
 	static VertexLayout s_LineLayout;
 	static VertexLayout s_ArcLayout;
+	static VertexLayout s_MeshLayout;
 
 	bool Gizmos::Initialize()
 	{
-		Shader* lineShader = static_cast<Shader*>(AssetLoader::Load("assets/shaders/Line.shader"));
-		if (lineShader == nullptr)
+		Shader* gizmosShader = static_cast<Shader*>(AssetLoader::Load("assets/shaders/Gizmos.shader"));
+		if (gizmosShader == nullptr)
 		{
-			BB_ERROR("Failed to load gizmo line shader.")
-				return false;
+			BB_ERROR("Failed to load gizmos shader.");
+			return false;
 		}
-		s_LineMaterial = Material::Create(lineShader);
-
-		Shader* arcShader = static_cast<Shader*>(AssetLoader::Load("assets/shaders/ArcLine.shader"));
-		if (arcShader == nullptr)
-		{
-			BB_ERROR("Failed to load gizmo arc shader.")
-				return false;
-		}
-		s_ArcMaterial = Material::Create(arcShader);
+		s_GizmosMaterial = Material::Create(gizmosShader);
 
 		s_LineLayout = VertexLayout{}
 			.Append(VertexAttribute::Position, 12)
@@ -44,10 +52,9 @@ namespace Blueberry
 		s_LineVertexData = new float[MAX_VERTICES * lineSize / sizeof(float)];
 
 		BufferProperties lineBufferProperties = {};
-		lineBufferProperties.type = BufferType::Vertex;
 		lineBufferProperties.elementCount = MAX_VERTICES;
 		lineBufferProperties.elementSize = lineSize;
-		lineBufferProperties.isWritable = true;
+		lineBufferProperties.usageFlags = BufferUsageFlags::VertexBuffer | BufferUsageFlags::CPUWritable;
 
 		if (!GfxDevice::CreateBuffer(lineBufferProperties, s_LineVertexBuffer))
 		{
@@ -67,10 +74,9 @@ namespace Blueberry
 		s_ArcVertexData = new float[MAX_VERTICES * arcSize / sizeof(float)];
 
 		BufferProperties arcBufferProperties = {};
-		arcBufferProperties.type = BufferType::Vertex;
 		arcBufferProperties.elementCount = MAX_VERTICES;
 		arcBufferProperties.elementSize = arcSize;
-		arcBufferProperties.isWritable = true;
+		arcBufferProperties.usageFlags = BufferUsageFlags::VertexBuffer | BufferUsageFlags::CPUWritable;
 
 		if (!GfxDevice::CreateBuffer(arcBufferProperties, s_ArcVertexBuffer))
 		{
@@ -79,16 +85,19 @@ namespace Blueberry
 
 		s_Arcs = new Arc[MAX_LINES];
 
+		s_MeshLayout = VertexLayout{}
+			.Append(VertexAttribute::Position, 12)
+			.Apply();
+
 		return true;
 	}
 
 	void Gizmos::Shutdown()
 	{
-		Material::Destroy(s_LineMaterial);
+		Material::Destroy(s_GizmosMaterial);
 		delete s_LineVertexData;
 		delete s_Lines;
 		delete s_LineVertexBuffer;
-		Material::Destroy(s_ArcMaterial);
 		delete s_ArcVertexData;
 		delete s_Arcs;
 		delete s_ArcVertexBuffer;
@@ -115,6 +124,12 @@ namespace Blueberry
 
 	void Gizmos::SetMatrix(const Matrix& matrix)
 	{
+		if (s_LineCount > 0)
+			FlushLines();
+
+		if (s_ArcCount > 0)
+			FlushArcs();
+
 		PerDrawDataConstantBuffer::BindData(matrix);
 	}
 
@@ -127,7 +142,7 @@ namespace Blueberry
 		++s_LineCount;
 	}
 
-	void Gizmos::DrawArc(const Vector3& center, const Vector3& normal, const Vector3& from, const float& angle, const float& radius)
+	void Gizmos::DrawArc(const Vector3& center, const Vector3& normal, const Vector3& from, float angle, float radius)
 	{
 		if (s_ArcCount + 1 >= MAX_LINES)
 			FlushArcs();
@@ -170,7 +185,7 @@ namespace Blueberry
 		s_Lines[s_LineCount++] = { center + c3, center + c7, s_CurrentColor };
 	}
 
-	void Gizmos::DrawCapsule(const Vector3& center, const float& height, const float& radius)
+	void Gizmos::DrawCapsule(const Vector3& center, float height, float radius)
 	{
 		float halfHeight = height / 2;
 		float topHeight = center.y + halfHeight;
@@ -190,7 +205,7 @@ namespace Blueberry
 		DrawDisc(Vector3(center.x, bottomHeight, center.z), Vector3::UnitY, radius);
 	}
 
-	void Gizmos::DrawSphere(const Vector3& center, const float& radius)
+	void Gizmos::DrawSphere(const Vector3& center, float radius)
 	{
 		if (s_ArcCount + 3 >= MAX_LINES)
 			FlushArcs();
@@ -200,7 +215,7 @@ namespace Blueberry
 		s_Arcs[s_ArcCount++] = { center, Vector3(1, 0, 0), Vector3::UnitZ, radius, 360, s_CurrentColor };
 	}
 
-	void Gizmos::DrawDisc(const Vector3& center, const Vector3& normal, const float& radius)
+	void Gizmos::DrawDisc(const Vector3& center, const Vector3& normal, float radius)
 	{
 		if (s_ArcCount + 1 >= MAX_LINES)
 			FlushArcs();
@@ -235,6 +250,13 @@ namespace Blueberry
 		s_Lines[s_LineCount++] = { corners[1], corners[5], s_CurrentColor };
 		s_Lines[s_LineCount++] = { corners[2], corners[6], s_CurrentColor };
 		s_Lines[s_LineCount++] = { corners[3], corners[7], s_CurrentColor };
+	}
+
+	void Gizmos::DrawMesh(GfxBuffer* vertexBuffer, GfxBuffer* indexBuffer)
+	{
+		uint32_t indexCount = indexBuffer == nullptr ? 0 : indexBuffer->GetElementCount();
+		GfxDevice::Draw(GfxDrawingOperation(vertexBuffer, indexBuffer, s_GizmosMaterial, &s_MeshLayout, indexCount, 0, vertexBuffer->GetElementCount(), Topology::TriangleList, 4, nullptr, 0, 1, false, false));
+		GfxDevice::Draw(GfxDrawingOperation(vertexBuffer, indexBuffer, s_GizmosMaterial, &s_MeshLayout, indexCount, 0, vertexBuffer->GetElementCount(), Topology::TriangleList, 5, nullptr, 0, 1, false, false));
 	}
 
 	void Gizmos::FlushLines()
@@ -274,8 +296,8 @@ namespace Blueberry
 
 		s_LineVertexBuffer->SetData(s_LineVertexData, s_LineCount * 2 * s_LineVertexBuffer->GetElementSize());
 
-		GfxDevice::Draw(GfxDrawingOperation(s_LineVertexBuffer, nullptr, s_LineMaterial, &s_LineLayout, 0, 0, s_LineCount * 2, Topology::LineList, 0));
-		GfxDevice::Draw(GfxDrawingOperation(s_LineVertexBuffer, nullptr, s_LineMaterial, &s_LineLayout, 0, 0, s_LineCount * 2, Topology::LineList, 1));
+		GfxDevice::Draw(GfxDrawingOperation(s_LineVertexBuffer, nullptr, s_GizmosMaterial, &s_LineLayout, 0, 0, s_LineCount * 2, Topology::LineList, 0));
+		GfxDevice::Draw(GfxDrawingOperation(s_LineVertexBuffer, nullptr, s_GizmosMaterial, &s_LineLayout, 0, 0, s_LineCount * 2, Topology::LineList, 1));
 		
 		s_LineCount = 0;
 		s_LineVertexDataPtr = s_LineVertexData;
@@ -322,7 +344,10 @@ namespace Blueberry
 
 		s_ArcVertexBuffer->SetData(s_ArcVertexData, s_ArcCount * s_ArcVertexBuffer->GetElementSize());
 
-		GfxDevice::Draw(GfxDrawingOperation(s_ArcVertexBuffer, nullptr, s_ArcMaterial, &s_ArcLayout, 0, 0, s_ArcCount, Topology::PointList, 0));
-		GfxDevice::Draw(GfxDrawingOperation(s_ArcVertexBuffer, nullptr, s_ArcMaterial, &s_ArcLayout, 0, 1, s_ArcCount, Topology::PointList, 1));
+		GfxDevice::Draw(GfxDrawingOperation(s_ArcVertexBuffer, nullptr, s_GizmosMaterial, &s_ArcLayout, 0, 0, s_ArcCount, Topology::PointList, 2));
+		GfxDevice::Draw(GfxDrawingOperation(s_ArcVertexBuffer, nullptr, s_GizmosMaterial, &s_ArcLayout, 0, 1, s_ArcCount, Topology::PointList, 3));
+	
+		s_ArcCount = 0;
+		s_ArcVertexDataPtr = s_ArcVertexData;
 	}
 }

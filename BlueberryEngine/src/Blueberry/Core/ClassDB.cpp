@@ -2,41 +2,116 @@
 
 namespace Blueberry
 {
-	Dictionary<size_t, ClassInfo> ClassDB::s_Classes = {};
+	List<ClassInfo> ClassDB::s_Classes = {};
+	Dictionary<size_t, TypeId> ClassDB::s_NameToTypeId = {};
 	List<FieldInfo> ClassDB::s_CurrentFieldInfos = {};
+	ClassInfo ClassDB::s_CurrentClassInfo = {};
 	uint32_t ClassDB::s_CurrentOffset = 0;
 
-	const ClassInfo& ClassDB::GetInfo(const size_t& id)
+	const TypeId ClassDB::GetTypeId(const String& name)
 	{
-		return s_Classes.find(id)->second;
+		auto it = s_NameToTypeId.find(TO_HASH(name));
+		if (it != s_NameToTypeId.end())
+		{
+			return it->second;
+		}
+		return 0;
 	}
 
-	Dictionary<size_t, ClassInfo>& ClassDB::GetInfos()
+	const TypeId ClassDB::GetTypeId(const size_t& nameHash)
+	{
+		auto it = s_NameToTypeId.find(nameHash);
+		if (it != s_NameToTypeId.end())
+		{
+			return it->second;
+		}
+		return 0;
+	}
+
+	const ClassInfo* ClassDB::GetInfo(const String& name)
+	{
+		auto it = s_NameToTypeId.find(TO_HASH(name));
+		if (it != s_NameToTypeId.end())
+		{
+			return &s_Classes[it->second];
+		}
+		return nullptr;
+	}
+
+	const ClassInfo* ClassDB::GetInfo(const size_t& nameHash)
+	{
+		auto it = s_NameToTypeId.find(nameHash);
+		if (it != s_NameToTypeId.end())
+		{
+			return &s_Classes[it->second];
+		}
+		return nullptr;
+	}
+
+	const ClassInfo* ClassDB::GetInfo(const TypeId& id)
+	{
+		if (id > 0 && id < s_Classes.size())
+		{
+			return &s_Classes[id];
+		}
+		return nullptr;
+	}
+
+	List<ClassInfo>& ClassDB::GetInfos()
 	{
 		return s_Classes;
 	}
 
-	bool ClassDB::IsParent(const size_t& id, const size_t& parentId)
+	bool ClassDB::IsParent(const TypeId& id, const TypeId& parentId)
 	{
-		size_t inheritsId = id;
-			
-		while (s_Classes.count(inheritsId) > 0)
+		TypeId inheritsId = id;
+		while (true)
 		{
 			if (inheritsId == parentId)
 			{
 				return true;
 			}
-
-			inheritsId = s_Classes.find(inheritsId)->second.parentId;
+			ClassInfo& info = s_Classes[inheritsId];
+			if (info.parentId == 0)
+			{
+				return false;
+			}
+			inheritsId = info.parentId;
 		}
-
 		return false;
 	}
 
 	void ClassDB::DefineField(FieldInfo info)
 	{
 		info.offset += s_CurrentOffset;
-		s_CurrentFieldInfos.emplace_back(std::move(info));
+		s_CurrentFieldInfos.push_back(std::move(info));
+	}
+
+	void ClassDB::DefineIterator(TypeId* type)
+	{
+		s_CurrentClassInfo.iterators.push_back(type);
+	}
+
+	void ClassDB::DefinePreferBinary()
+	{
+		s_CurrentClassInfo.preferBinary = true;
+	}
+
+	void ClassDB::DefineExecuteAlways()
+	{
+		s_CurrentClassInfo.executeAlways = true;
+	}
+
+	TypeId ClassDB::GetOrCreateTypeId(const String& name)
+	{
+		static TypeId maxId = 0;
+		auto it = s_NameToTypeId.find(TO_HASH(name));
+		if (it != s_NameToTypeId.end())
+		{
+			return it->second;
+		}
+		maxId += 1;
+		return maxId;
 	}
 
 	FieldOptions& FieldOptions::SetEnumHint(char* hintData)
@@ -47,21 +122,27 @@ namespace Blueberry
 		return *this;
 	}
 
-	FieldOptions& FieldOptions::SetObjectType(const size_t& type)
+	FieldOptions& FieldOptions::SetObjectType(TypeId* type)
 	{
 		this->objectType = type;
 		return *this;
 	}
 
-	FieldOptions& FieldOptions::SetSize(const uint32_t& size)
+	FieldOptions& FieldOptions::SetSize(uint32_t size)
 	{
 		this->size = size;
 		return *this;
 	}
 
-	FieldOptions& FieldOptions::SetVisibility(const VisibilityType& visibility)
+	FieldOptions& FieldOptions::SetVisibility(VisibilityType visibility)
 	{
 		this->visibility = visibility;
+		return *this;
+	}
+
+	FieldOptions& FieldOptions::SetSerializationFlags(SerializationFlags serializationFlags)
+	{
+		this->serializationFlags = serializationFlags;
 		return *this;
 	}
 

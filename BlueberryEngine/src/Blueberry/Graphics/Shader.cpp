@@ -11,54 +11,57 @@ namespace Blueberry
 {
 	DATA_DEFINITION(PropertyData)
 	{
-		DEFINE_FIELD(PropertyData, m_Name, BindingType::String, {})
-		DEFINE_FIELD(PropertyData, m_Type, BindingType::Enum, {})
-		DEFINE_FIELD(PropertyData, m_DefaultTextureName, BindingType::String, {})
-		DEFINE_FIELD(PropertyData, m_TextureDimension, BindingType::Enum, {})
+		DEFINE_FIELD(PropertyData, m_Name, BindingType::String, FieldOptions())
+		DEFINE_FIELD(PropertyData, m_Type, BindingType::Enum, FieldOptions())
+		DEFINE_FIELD(PropertyData, m_DefaultTextureName, BindingType::String, FieldOptions())
+		DEFINE_FIELD(PropertyData, m_TextureDimension, BindingType::Enum, FieldOptions())
 	}
 
 	DATA_DEFINITION(PassData)
 	{
-		DEFINE_FIELD(PassData, m_CullMode, BindingType::Enum, {})
-		DEFINE_FIELD(PassData, m_SrcBlendColor, BindingType::Enum, {})
-		DEFINE_FIELD(PassData, m_SrcBlendAlpha, BindingType::Enum, {})
-		DEFINE_FIELD(PassData, m_DstBlendColor, BindingType::Enum, {})
-		DEFINE_FIELD(PassData, m_DstBlendAlpha, BindingType::Enum, {})
-		DEFINE_FIELD(PassData, m_ZTest, BindingType::Enum, {})
-		DEFINE_FIELD(PassData, m_ZWrite, BindingType::Enum, {})
-		DEFINE_FIELD(PassData, m_VertexKeywords, BindingType::StringList, {})
-		DEFINE_FIELD(PassData, m_FragmentKeywords, BindingType::StringList, {})
-		DEFINE_FIELD(PassData, m_VertexOffset, BindingType::Int, {})
-		DEFINE_FIELD(PassData, m_GeometryOffset, BindingType::Int, {})
-		DEFINE_FIELD(PassData, m_FragmentOffset, BindingType::Int, {})
+		DEFINE_FIELD(PassData, m_CullMode, BindingType::Enum, FieldOptions())
+		DEFINE_FIELD(PassData, m_SrcBlendColor, BindingType::Enum, FieldOptions())
+		DEFINE_FIELD(PassData, m_SrcBlendAlpha, BindingType::Enum, FieldOptions())
+		DEFINE_FIELD(PassData, m_DstBlendColor, BindingType::Enum, FieldOptions())
+		DEFINE_FIELD(PassData, m_DstBlendAlpha, BindingType::Enum, FieldOptions())
+		DEFINE_FIELD(PassData, m_ZTest, BindingType::Enum, FieldOptions())
+		DEFINE_FIELD(PassData, m_ZWrite, BindingType::Enum, FieldOptions())
+		DEFINE_FIELD(PassData, m_VertexKeywords, BindingType::StringList, FieldOptions())
+		DEFINE_FIELD(PassData, m_FragmentKeywords, BindingType::StringList, FieldOptions())
+		DEFINE_FIELD(PassData, m_VertexOffset, BindingType::Int, FieldOptions())
+		DEFINE_FIELD(PassData, m_GeometryOffset, BindingType::Int, FieldOptions())
+		DEFINE_FIELD(PassData, m_FragmentOffset, BindingType::Int, FieldOptions())
 	}
 
 	DATA_DEFINITION(ShaderData)
 	{
-		DEFINE_FIELD(ShaderData, m_Passes, BindingType::DataList, FieldOptions().SetObjectType(PassData::Type))
-		DEFINE_FIELD(ShaderData, m_Properties, BindingType::DataList, FieldOptions().SetObjectType(PropertyData::Type))
+		DEFINE_FIELD(ShaderData, m_Passes, BindingType::DataList, FieldOptions().SetObjectType(&PassData::Type))
+		DEFINE_FIELD(ShaderData, m_Properties, BindingType::DataList, FieldOptions().SetObjectType(&PropertyData::Type))
 	}
 
 	OBJECT_DEFINITION(Shader, Object)
 	{
 		DEFINE_BASE_FIELDS(Shader, Object)
-		DEFINE_FIELD(Shader, m_Data, BindingType::Data, FieldOptions().SetObjectType(ShaderData::Type))
+		DEFINE_FIELD(Shader, m_Data, BindingType::Data, FieldOptions().SetObjectType(&ShaderData::Type))
 	}
 
-	HashSet<size_t> Shader::s_ActiveKeywords = {};
+	List<size_t> Shader::s_ActiveKeywords = {};
 	uint32_t Shader::s_ActiveKeywordsMask = 0;
 	KeywordDB Shader::s_GlobalKeywords = {};
 
-	const uint32_t KeywordDB::GetMask(const size_t& id)
+	const uint32_t KeywordDB::GetMask(size_t id)
 	{
-		auto it = m_KeywordMask.find(id);
-		if (it != m_KeywordMask.end())
+		for (size_t i = 0; i < m_KeywordMask.size(); ++i)
 		{
-			return it->second;
+			auto& pair = m_KeywordMask[i];
+			if (pair.first == id)
+			{
+				return pair.second;
+			}
 		}
 		uint32_t mask = m_MaxMask;
 		m_MaxMask = m_MaxMask << 1;
-		m_KeywordMask.insert({ id, mask });
+		m_KeywordMask.push_back({ id, mask });
 		return mask;
 	}
 
@@ -72,12 +75,12 @@ namespace Blueberry
 		m_Name = name;
 	}
 
-	const PropertyData::PropertyType& PropertyData::GetType() const
+	PropertyData::PropertyType PropertyData::GetType() const
 	{
 		return m_Type;
 	}
 
-	void PropertyData::SetType(const PropertyType& type)
+	void PropertyData::SetType(PropertyType type)
 	{
 		m_Type = type;
 	}
@@ -92,86 +95,86 @@ namespace Blueberry
 		m_DefaultTextureName = name;
 	}
 
-	const TextureDimension& PropertyData::GetTextureDimension() const
+	TextureDimension PropertyData::GetTextureDimension() const
 	{
 		return m_TextureDimension;
 	}
 
-	void PropertyData::SetTextureDimension(const TextureDimension& dimension)
+	void PropertyData::SetTextureDimension(TextureDimension dimension)
 	{
 		m_TextureDimension = dimension;
 	}
 
-	const CullMode& PassData::GetCullMode() const
+	CullMode PassData::GetCullMode() const
 	{
 		return m_CullMode;
 	}
 
-	void PassData::SetCullMode(const CullMode& cullMode)
+	void PassData::SetCullMode(CullMode cullMode)
 	{
 		m_CullMode = cullMode;
 	}
 
-	const BlendMode& PassData::GetBlendSrcColor() const
+	BlendMode PassData::GetBlendSrcColor() const
 	{
 		return m_SrcBlendColor;
 	}
 
-	const BlendMode& PassData::GetBlendSrcAlpha() const
+	BlendMode PassData::GetBlendSrcAlpha() const
 	{
 		return m_SrcBlendAlpha;
 	}
 
-	void PassData::SetBlendSrc(const BlendMode& blendSrc)
+	void PassData::SetBlendSrc(BlendMode blendSrc)
 	{
 		m_SrcBlendColor = blendSrc;
 		m_SrcBlendAlpha = blendSrc;
 	}
 
-	void PassData::SetBlendSrc(const BlendMode& blendSrcColor, const BlendMode& blendSrcAlpha)
+	void PassData::SetBlendSrc(BlendMode blendSrcColor, BlendMode blendSrcAlpha)
 	{
 		m_SrcBlendColor = blendSrcColor;
 		m_SrcBlendAlpha = blendSrcAlpha;
 	}
 
-	const BlendMode& PassData::GetBlendDstColor() const
+	BlendMode PassData::GetBlendDstColor() const
 	{
 		return m_DstBlendColor;
 	}
 
-	const BlendMode& PassData::GetBlendDstAlpha() const
+	BlendMode PassData::GetBlendDstAlpha() const
 	{
 		return m_DstBlendAlpha;
 	}
 
-	void PassData::SetBlendDst(const BlendMode& blendDst)
+	void PassData::SetBlendDst(BlendMode blendDst)
 	{
 		m_DstBlendColor = blendDst;
 		m_DstBlendAlpha = blendDst;
 	}
 
-	void PassData::SetBlendDst(const BlendMode& blendDstColor, const BlendMode& blendDstAlpha)
+	void PassData::SetBlendDst(BlendMode blendDstColor, BlendMode blendDstAlpha)
 	{
 		m_DstBlendColor = blendDstColor;
 		m_DstBlendAlpha = blendDstAlpha;
 	}
 
-	const ZTest& PassData::GetZTest() const
+	ZTest PassData::GetZTest() const
 	{
 		return m_ZTest;
 	}
 
-	void PassData::SetZTest(const ZTest& zTest)
+	void PassData::SetZTest(ZTest zTest)
 	{
 		m_ZTest = zTest;
 	}
 
-	const ZWrite& PassData::GetZWrite() const
+	ZWrite PassData::GetZWrite() const
 	{
 		return m_ZWrite;
 	}
 
-	void PassData::SetZWrite(const ZWrite& zWrite)
+	void PassData::SetZWrite(ZWrite zWrite)
 	{
 		m_ZWrite = zWrite;
 	}
@@ -196,37 +199,37 @@ namespace Blueberry
 		m_FragmentKeywords = keywords;
 	}
 
-	const uint32_t& PassData::GetVertexOffset() const
+	uint32_t PassData::GetVertexOffset() const
 	{
 		return m_VertexOffset;
 	}
 
-	void PassData::SetVertexOffset(const uint32_t& offset)
+	void PassData::SetVertexOffset(uint32_t offset)
 	{
 		m_VertexOffset = offset;
 	}
 
-	const uint32_t& PassData::GetGeometryOffset() const
+	uint32_t PassData::GetGeometryOffset() const
 	{
 		return m_GeometryOffset;
 	}
 
-	void PassData::SetGeometryOffset(const uint32_t& offset)
+	void PassData::SetGeometryOffset(uint32_t offset)
 	{
 		m_GeometryOffset = offset;
 	}
 
-	const uint32_t& PassData::GetFragmentOffset() const
+	uint32_t PassData::GetFragmentOffset() const
 	{
 		return m_FragmentOffset;
 	}
 
-	void PassData::SetFragmentOffset(const uint32_t& offset)
+	void PassData::SetFragmentOffset(uint32_t offset)
 	{
 		m_FragmentOffset = offset;
 	}
 
-	const PassData& ShaderData::GetPass(const uint32_t& index) const
+	const PassData& ShaderData::GetPass(uint32_t index) const
 	{
 		return m_Passes[index];
 	}
@@ -336,6 +339,7 @@ namespace Blueberry
 			GfxDevice::CreateFragmentShader(variantsData.shaders[variantsData.fragmentShaderIndices[i]], fragmentShader);
 			m_FragmentShaders[i] = fragmentShader;
 		}
+		IncrementUpdateCount();
 	}
 
 	void Shader::Initialize(const VariantsData& variantsData, const ShaderData& data)
@@ -344,31 +348,41 @@ namespace Blueberry
 		m_Data = data;
 	}
 
-	Shader* Shader::Create(const VariantsData& variantsData, const ShaderData& shaderData, Shader* existingShader)
+	Shader* Shader::Create(const VariantsData& variantsData, const ShaderData& shaderData)
 	{
-		Shader* shader = nullptr;
-		if (existingShader != nullptr)
-		{
-			shader = existingShader;
-			shader->IncrementUpdateCount();
-		}
-		else
-		{
-			shader = Object::Create<Shader>();
-		}
+		Shader* shader = Object::Create<Shader>();
 		shader->Initialize(variantsData, shaderData);
 		return shader;
 	}
 
-	void Shader::SetKeyword(const size_t& id, const bool& enabled)
+	void Shader::SetKeyword(size_t id, bool enabled)
 	{
 		if (enabled)
 		{
-			s_ActiveKeywords.insert(id);
+			bool isActive = false;
+			for (size_t i = 0; i < s_ActiveKeywords.size(); ++i)
+			{
+				if (s_ActiveKeywords[i] == id)
+				{
+					isActive = true;
+					break;
+				}
+			}
+			if (!isActive)
+			{
+				s_ActiveKeywords.push_back(id);
+			}
 		}
 		else
 		{
-			s_ActiveKeywords.erase(id);
+			for (size_t i = 0; i < s_ActiveKeywords.size(); ++i)
+			{
+				if (s_ActiveKeywords[i] == id)
+				{
+					s_ActiveKeywords.erase(s_ActiveKeywords.begin() + i);
+					break;
+				}
+			}
 		}
 		s_ActiveKeywordsMask = 0;
 		for (auto keyword : s_ActiveKeywords)
@@ -377,12 +391,12 @@ namespace Blueberry
 		}
 	}
 
-	const uint32_t& Shader::GetActiveKeywordsMask()
+	uint32_t Shader::GetActiveKeywordsMask()
 	{
 		return s_ActiveKeywordsMask;
 	}
 
-	const ShaderVariant Shader::GetVariant(const uint32_t& vertexKeywordFlags, const uint32_t& fragmentKeywordFlags, const uint8_t& passIndex)
+	const ShaderVariant Shader::GetVariant(uint32_t vertexKeywordFlags, uint32_t fragmentKeywordFlags, uint8_t passIndex)
 	{
 		if (m_PassesOffsets.size() == 0)
 		{
@@ -406,7 +420,7 @@ namespace Blueberry
 			Object* object = ObjectDB::GetObject(dependency);
 			if (object != nullptr)
 			{
-				dynamic_cast<Notifyable*>(object)->OnNotify();
+				dynamic_cast<Notifyable*>(object)->OnNotify(static_cast<Object*>(this));
 			}
 		}
 	}

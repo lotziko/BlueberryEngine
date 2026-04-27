@@ -4,14 +4,17 @@
 #include "Editor\EditorSceneManager.h"
 #include "Editor\Menu\EditorMenuManager.h"
 
+#include "Blueberry\Core\Application.h"
 #include "Blueberry\Core\Screen.h"
 #include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Graphics\Concrete\DefaultRenderer.h"
 #include "Blueberry\Graphics\GfxTexture.h"
-#include "Blueberry\Graphics\GfxRenderTexturePool.h"
+#include "Blueberry\Graphics\GfxTexturePool.h"
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Input\Cursor.h"
+#include "Blueberry\Input\Input.h"
+#include "Blueberry\Tools\CameraHelper.h"
 
 #include <imgui\imgui.h>
 
@@ -35,19 +38,23 @@ namespace Blueberry
 		ImVec2 pos = ImGui::GetCursorScreenPos();
 		ImVec2 size = ImGui::GetContentRegionAvail();
 
-		if (ImGui::IsWindowFocused())
+		if (Application::IsRunning())
 		{
-			Screen::SetAllowCursorLock(true);
-			Screen::SetGameViewport(Rectangle(0, 0, size.x, size.y));
-			if (Cursor::IsHidden())
+			if (ImGui::IsWindowFocused())
 			{
-				ImGui::SetMouseCursor(ImGuiMouseCursor_None);
+				Input::SetEnabled(true);
+				Screen::SetAllowCursorLock(true);
+				if (Cursor::IsHidden())
+				{
+					ImGui::SetMouseCursor(ImGuiMouseCursor_None);
+				}
 			}
-		}
-		if (ImGui::IsKeyDown(ImGuiKey_Escape))
-		{
-			Screen::SetAllowCursorLock(false);
-			ImGui::SetWindowFocus(nullptr);
+			if (ImGui::IsKeyDown(ImGuiKey_Escape))
+			{
+				Input::SetEnabled(false);
+				Screen::SetAllowCursorLock(false);
+				ImGui::SetWindowFocus(nullptr);
+			}
 		}
 
 		Scene* scene = EditorSceneManager::GetScene();
@@ -66,42 +73,21 @@ namespace Blueberry
 			{
 				EditorLayer::RequestFrameUpdate();
 				Camera::SetCurrent(camera);
-
-				float areaAspectRatio = size.x / size.y;
-				float cameraAspectRatio = camera->GetAspectRatio();
-
-				float x, y, width, height;
-
-				if (areaAspectRatio > cameraAspectRatio)
-				{
-					width = size.y * cameraAspectRatio;
-					x = pos.x + (size.x - width) / 2.0f;
-					y = pos.y;
-					height = size.y;
-				}
-				else
-				{
-					height = size.x / cameraAspectRatio;
-					y = pos.y + (size.y - height) / 2.0f;
-					x = pos.x;
-					width = size.x;
-				}
-
-				// TODO viewport change
-				Vector2 viewport = Vector2(size.x, size.y);
-
+				RectangleFloat viewport = CameraHelper::CalculateViewport(camera, Rectangle(static_cast<long>(pos.x), static_cast<long>(pos.y), static_cast<long>(size.x), static_cast<long>(size.y)));
+				Screen::SetGameViewport(Rectangle(static_cast<long>(viewport.x), static_cast<long>(viewport.y), static_cast<long>(viewport.width), static_cast<long>(viewport.height)));
+				
 				if (m_RenderTarget == nullptr || viewport.x != m_RenderTarget->GetWidth() || viewport.y != m_RenderTarget->GetHeight())
 				{
 					if (m_RenderTarget != nullptr)
 					{
-						GfxRenderTexturePool::Release(m_RenderTarget);
+						GfxTexturePool::Release(m_RenderTarget);
 					}
-					m_RenderTarget = GfxRenderTexturePool::Get(viewport.x, viewport.y, 1, 1, 1, TextureFormat::R8G8B8A8_UNorm);
-					camera->SetPixelSize(Vector2(width, height));
+					m_RenderTarget = GfxTexturePool::Get(static_cast<uint32_t>(viewport.width), static_cast<uint32_t>(viewport.height), 1, TextureUsageFlags::RenderTarget, 1, 1, TextureFormat::R8G8B8A8_UNorm);
+					camera->SetPixelSize(Vector2(viewport.width, viewport.height));
 				}
 
-				DefaultRenderer::Draw(scene, camera, Rectangle(0, 0, viewport.x, viewport.y), Color(0, 0, 0, 1), m_RenderTarget);
-				ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(m_RenderTarget->GetHandle()), ImVec2(x, y), ImVec2(x + width, y + height), ImVec2(0, 0), ImVec2(viewport.x / m_RenderTarget->GetWidth(), viewport.y / m_RenderTarget->GetHeight()));
+				DefaultRenderer::Draw(scene, camera, Rectangle(0l, 0l, static_cast<long>(viewport.width), static_cast<long>(viewport.height)), m_RenderTarget);
+				ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(m_RenderTarget->GetHandle()), ImVec2(viewport.x, viewport.y), ImVec2(viewport.x + viewport.width, viewport.y + viewport.height), ImVec2(0.0f, 0.0f), ImVec2(viewport.width / m_RenderTarget->GetWidth(), viewport.height / m_RenderTarget->GetHeight()));
 			}
 		}
 	}

@@ -11,8 +11,8 @@ namespace Blueberry
 {
 	DATA_DEFINITION(SubMeshData)
 	{
-		DEFINE_FIELD(SubMeshData, m_IndexStart, BindingType::Int, {})
-		DEFINE_FIELD(SubMeshData, m_IndexCount, BindingType::Int, {})
+		DEFINE_FIELD(SubMeshData, m_IndexStart, BindingType::Int, FieldOptions())
+		DEFINE_FIELD(SubMeshData, m_IndexCount, BindingType::Int, FieldOptions())
 	}
 
 	OBJECT_DEFINITION(Mesh, Object)
@@ -20,29 +20,30 @@ namespace Blueberry
 		DEFINE_BASE_FIELDS(Mesh, Object)
 		DEFINE_FIELD(Mesh, m_VertexData, BindingType::FloatList, FieldOptions().SetVisibility(VisibilityType::NonExposed))
 		DEFINE_FIELD(Mesh, m_IndexData, BindingType::IntList, FieldOptions().SetVisibility(VisibilityType::NonExposed))
-		DEFINE_FIELD(Mesh, m_VertexCount, BindingType::Int, {})
-		DEFINE_FIELD(Mesh, m_IndexCount, BindingType::Int, {})
-		DEFINE_FIELD(Mesh, m_SubMeshes, BindingType::DataList, FieldOptions().SetObjectType(SubMeshData::Type).SetVisibility(VisibilityType::NonExposed))
+		DEFINE_FIELD(Mesh, m_BindPoses, BindingType::MatrixList, FieldOptions().SetVisibility(VisibilityType::NonExposed))
+		DEFINE_FIELD(Mesh, m_VertexCount, BindingType::Int, FieldOptions())
+		DEFINE_FIELD(Mesh, m_IndexCount, BindingType::Int, FieldOptions())
+		DEFINE_FIELD(Mesh, m_SubMeshes, BindingType::DataList, FieldOptions().SetObjectType(&SubMeshData::Type).SetVisibility(VisibilityType::NonExposed))
 		DEFINE_FIELD(Mesh, m_Layout, BindingType::Raw, FieldOptions().SetSize(sizeof(VertexLayout)).SetVisibility(VisibilityType::NonExposed))
 		DEFINE_FIELD(Mesh, m_Bounds, BindingType::AABB, FieldOptions().SetVisibility(VisibilityType::NonExposed))
 	}
 
-	const uint32_t& SubMeshData::GetIndexStart() const
+	uint32_t SubMeshData::GetIndexStart() const
 	{
 		return m_IndexStart;
 	}
 
-	void SubMeshData::SetIndexStart(const uint32_t& indexStart)
+	void SubMeshData::SetIndexStart(uint32_t indexStart)
 	{
 		m_IndexStart = indexStart;
 	}
 
-	const uint32_t& SubMeshData::GetIndexCount() const
+	uint32_t SubMeshData::GetIndexCount() const
 	{
 		return m_IndexCount;
 	}
 
-	void SubMeshData::SetIndexCount(const uint32_t& indexCount)
+	void SubMeshData::SetIndexCount(uint32_t indexCount)
 	{
 		m_IndexCount = indexCount;
 	}
@@ -64,22 +65,32 @@ namespace Blueberry
 		}
 	}
 
-	const uint32_t& Mesh::GetVertexCount()
+	uint32_t Mesh::GetVertexCount() const
 	{
 		return m_VertexCount;
 	}
 
-	const uint32_t& Mesh::GetIndexCount()
+	uint32_t Mesh::GetIndexCount() const
 	{
 		return m_IndexCount;
 	}
 
-	const uint32_t Mesh::GetSubMeshCount()
+	size_t Mesh::GetBindPoseCount() const
+	{
+		return m_BindPoses.size();
+	}
+
+	const Matrix& Mesh::GetBindPose(size_t index) const
+	{
+		return m_BindPoses[index];
+	}
+
+	uint32_t Mesh::GetSubMeshCount() const
 	{
 		return static_cast<uint32_t>(m_SubMeshes.size());
 	}
 
-	const SubMeshData& Mesh::GetSubMesh(const uint32_t& index)
+	const SubMeshData& Mesh::GetSubMesh(size_t index) const
 	{
 		return m_SubMeshes[index];
 	}
@@ -168,12 +179,56 @@ namespace Blueberry
 		return m_Colors.data();
 	}
 
+	Vector4* Mesh::GetBoneWeights()
+	{
+		if (!m_Layout.Has(VertexAttribute::BoneWeight))
+		{
+			return nullptr;
+		}
+		if (m_BoneWeights.size() == 0 && m_VertexData.size() > 0)
+		{
+			m_BoneWeights.resize(m_VertexCount);
+			uint32_t vertexSize = m_Layout.GetSize() / sizeof(float);
+			float* bufferPtr = m_VertexData.data() + m_Layout.GetOffset(VertexAttribute::BoneWeight) / sizeof(float);
+			Vector4* boneWeightsPtr = m_BoneWeights.data();
+			for (uint32_t i = 0; i < m_VertexCount; ++i)
+			{
+				memcpy(boneWeightsPtr, bufferPtr, sizeof(Vector4));
+				bufferPtr += vertexSize;
+				boneWeightsPtr += 1;
+			}
+		}
+		return m_BoneWeights.data();
+	}
+
+	Vector4Uint* Mesh::GetBoneIndices()
+	{
+		if (!m_Layout.Has(VertexAttribute::BoneIndex))
+		{
+			return nullptr;
+		}
+		if (m_BoneIndices.size() == 0 && m_VertexData.size() > 0)
+		{
+			m_BoneIndices.resize(m_VertexCount);
+			uint32_t vertexSize = m_Layout.GetSize() / sizeof(float);
+			float* bufferPtr = m_VertexData.data() + m_Layout.GetOffset(VertexAttribute::BoneIndex) / sizeof(float);
+			Vector4Uint* boneIndicesPtr = m_BoneIndices.data();
+			for (uint32_t i = 0; i < m_VertexCount; ++i)
+			{
+				memcpy(boneIndicesPtr, bufferPtr, sizeof(Vector4Uint));
+				bufferPtr += vertexSize;
+				boneIndicesPtr += 1;
+			}
+		}
+		return m_BoneIndices.data();
+	}
+
 	uint32_t* Mesh::GetIndices()
 	{
 		return m_IndexData.data();
 	}
 
-	float* Mesh::GetUVs(const int& channel)
+	float* Mesh::GetUVs(int channel)
 	{
 		VertexAttribute attribute = static_cast<VertexAttribute>(4 + channel);
 		if (!m_Layout.Has(attribute))
@@ -199,16 +254,16 @@ namespace Blueberry
 		return uvs.data();
 	}
 
-	uint32_t Mesh::GetUVSize(const int& channel)
+	uint32_t Mesh::GetUVSize(int channel)
 	{
 		if (channel < 0 || channel >= 4)
 		{
 			return 0;
 		}
-		return m_UVs[channel].size() / m_VertexCount;
+		return static_cast<uint32_t>(m_UVs[channel].size() / m_VertexCount);
 	}
 
-	void Mesh::SetVertices(const Vector3* vertices, const uint32_t& vertexCount)
+	void Mesh::SetVertices(const Vector3* vertices, uint32_t vertexCount)
 	{
 		m_VertexCount = vertexCount;
 		m_Vertices.resize(vertexCount);
@@ -217,7 +272,7 @@ namespace Blueberry
 		m_BufferIsDirty = true;
 	}
 
-	void Mesh::SetNormals(const Vector3* normals, const uint32_t& vertexCount)
+	void Mesh::SetNormals(const Vector3* normals, uint32_t vertexCount)
 	{
 		m_Normals.resize(vertexCount);
 		memcpy(m_Normals.data(), normals, sizeof(Vector3) * vertexCount);
@@ -225,7 +280,7 @@ namespace Blueberry
 		m_BufferIsDirty = true;
 	}
 
-	void Mesh::SetTangents(const Vector4* tangents, const uint32_t& vertexCount)
+	void Mesh::SetTangents(const Vector4* tangents, uint32_t vertexCount)
 	{
 		m_Tangents.resize(vertexCount);
 		memcpy(m_Tangents.data(), tangents, sizeof(Vector4) * vertexCount);
@@ -233,7 +288,7 @@ namespace Blueberry
 		m_BufferIsDirty = true;
 	}
 
-	void Mesh::SetColors(const Color* colors, const uint32_t& vertexCount)
+	void Mesh::SetColors(const Color* colors, uint32_t vertexCount)
 	{
 		m_Colors.resize(vertexCount);
 		memcpy(m_Colors.data(), colors, sizeof(Color) * vertexCount);
@@ -241,7 +296,7 @@ namespace Blueberry
 		m_BufferIsDirty = true;
 	}
 
-	void Mesh::SetIndices(const uint32_t* indices, const uint32_t& indexCount)
+	void Mesh::SetIndices(const uint32_t* indices, uint32_t indexCount)
 	{
 		m_IndexCount = indexCount;
 		m_IndexData.resize(indexCount);
@@ -249,7 +304,7 @@ namespace Blueberry
 		m_BufferIsDirty = true;
 	}
 
-	void Mesh::SetUVs(const int& channel, const Vector2* uvs, const uint32_t& uvCount)
+	void Mesh::SetUVs(const int& channel, const Vector2* uvs, uint32_t uvCount)
 	{
 		if (channel < 0 || channel >= 4)
 		{
@@ -261,7 +316,7 @@ namespace Blueberry
 		m_BufferIsDirty = true;
 	}
 
-	void Mesh::SetUVs(const int& channel, const Vector3* uvs, const uint32_t& uvCount)
+	void Mesh::SetUVs(const int& channel, const Vector3* uvs, uint32_t uvCount)
 	{
 		if (channel < 0 || channel >= 4)
 		{
@@ -273,7 +328,7 @@ namespace Blueberry
 		m_BufferIsDirty = true;
 	}
 
-	void Mesh::SetUVs(const int& channel, const Vector4* uvs, const uint32_t& uvCount)
+	void Mesh::SetUVs(const int& channel, const Vector4* uvs, uint32_t uvCount)
 	{
 		if (channel < 0 || channel >= 4)
 		{
@@ -285,7 +340,28 @@ namespace Blueberry
 		m_BufferIsDirty = true;
 	}
 
-	void Mesh::SetSubMesh(const uint32_t& index, const SubMeshData& data)
+	void Mesh::SetBoneWeights(const Vector4* weights, uint32_t vertexCount)
+	{
+		m_BoneWeights.resize(vertexCount);
+		memcpy(m_BoneWeights.data(), weights, sizeof(Vector4) * vertexCount);
+		m_Layout.Append(VertexAttribute::BoneWeight, sizeof(Vector4));
+		m_BufferIsDirty = true;
+	}
+
+	void Mesh::SetBoneIndices(const Vector4Uint* indices, uint32_t vertexCount)
+	{
+		m_BoneIndices.resize(vertexCount);
+		memcpy(m_BoneIndices.data(), indices, sizeof(Vector4Uint) * vertexCount);
+		m_Layout.Append(VertexAttribute::BoneIndex, sizeof(Vector4Uint));
+		m_BufferIsDirty = true;
+	}
+
+	void Mesh::SetBindPoses(const List<Matrix>& bindPoses)
+	{
+		m_BindPoses = bindPoses;
+	}
+
+	void Mesh::SetSubMesh(uint32_t index, const SubMeshData& data)
 	{
 		if (index >= m_SubMeshes.size())
 		{
@@ -383,23 +459,28 @@ namespace Blueberry
 		m_BufferIsDirty = true;
 	}
 
-	const Topology& Mesh::GetTopology()
+	Topology Mesh::GetTopology() const
 	{
 		return m_Topology;
 	}
 
-	void Mesh::SetTopology(const Topology& topology)
+	void Mesh::SetTopology(Topology topology)
 	{
 		m_Topology = topology;
 	}
 
-	const AABB& Mesh::GetBounds()
+	const AABB& Mesh::GetBounds() const
 	{
 		return m_Bounds;
 	}
 
 	void Mesh::Apply()
 	{
+		if (m_VertexCount == 0)
+		{
+			return;
+		}
+
 		if (m_SubMeshes.size() == 0)
 		{
 			SubMeshData subMesh = {};
@@ -491,6 +572,35 @@ namespace Blueberry
 					vertexOffset += uvChannelCount;
 				}
 			}
+
+			if (m_Layout.Has(VertexAttribute::BoneWeight) && m_Layout.Has(VertexAttribute::BoneIndex))
+			{
+				if (m_BoneWeights.size() > 0)
+				{
+					bufferPtr = m_VertexData.data() + vertexOffset;
+					Vector4* boneWeightsPtr = m_BoneWeights.data();
+					for (uint32_t i = 0; i < m_VertexCount; ++i)
+					{
+						memcpy(bufferPtr, boneWeightsPtr, sizeof(Vector4));
+						bufferPtr += vertexSize;
+						boneWeightsPtr += 1;
+					}
+				}
+				vertexOffset += sizeof(Vector4) / sizeof(float);
+
+				if (m_BoneIndices.size() > 0)
+				{
+					bufferPtr = m_VertexData.data() + vertexOffset;
+					Vector4Uint* boneIndicesPtr = m_BoneIndices.data();
+					for (uint32_t i = 0; i < m_VertexCount; ++i)
+					{
+						memcpy(bufferPtr, boneIndicesPtr, sizeof(Vector4Uint));
+						bufferPtr += vertexSize;
+						boneIndicesPtr += 1;
+					}
+				}
+				vertexOffset += sizeof(Vector4Uint) / sizeof(float);
+			}
 		}
 
 		if (m_VertexBuffer != nullptr)
@@ -503,27 +613,50 @@ namespace Blueberry
 		}
 
 		BufferProperties vertexBufferProperties = {};
-		vertexBufferProperties.type = BufferType::Vertex;
+		vertexBufferProperties.format = BufferFormat::R32_Float;
 		vertexBufferProperties.elementCount = m_VertexCount;
 		vertexBufferProperties.elementSize = m_Layout.GetSize();
 		vertexBufferProperties.data = m_VertexData.data();
 		vertexBufferProperties.dataSize = m_VertexCount * vertexBufferProperties.elementSize;
-		vertexBufferProperties.isWritable = false;
+		if ((m_Layout.Has(VertexAttribute::BoneWeight) && m_Layout.Has(VertexAttribute::BoneIndex)))
+		{
+			vertexBufferProperties.usageFlags = BufferUsageFlags::VertexBuffer | BufferUsageFlags::ByteAdressBuffer | BufferUsageFlags::ShaderResource;
+		}
+		else
+		{
+			vertexBufferProperties.usageFlags = BufferUsageFlags::VertexBuffer;
+		}
 		GfxDevice::CreateBuffer(vertexBufferProperties, m_VertexBuffer);
 
 		BufferProperties indexBufferProperties = {};
-		indexBufferProperties.type = BufferType::Index;
 		indexBufferProperties.elementCount = m_IndexCount;
 		indexBufferProperties.elementSize = sizeof(uint32_t);
 		indexBufferProperties.data = m_IndexData.data();
 		indexBufferProperties.dataSize = m_IndexCount * indexBufferProperties.elementSize;
-		indexBufferProperties.isWritable = false;
+		indexBufferProperties.usageFlags = BufferUsageFlags::IndexBuffer;
 		GfxDevice::CreateBuffer(indexBufferProperties, m_IndexBuffer);
+
+		++m_UpdateCount;
 	}
 
-	const VertexLayout& Mesh::GetLayout()
+	GfxBuffer* Mesh::GetVertexBuffer() const
+	{
+		return m_VertexBuffer;
+	}
+
+	GfxBuffer* Mesh::GetIndexBuffer() const
+	{
+		return m_IndexBuffer;
+	}
+
+	const VertexLayout& Mesh::GetLayout() const
 	{
 		return m_Layout;
+	}
+
+	uint32_t Mesh::GetUpdateCount() const
+	{
+		return m_UpdateCount;
 	}
 
 	Mesh* Mesh::Create()

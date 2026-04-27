@@ -1,18 +1,20 @@
 #pragma once
 
+#include "Blueberry\Core\Base.h"
+
 namespace Blueberry
 {
-	class Cursor
+	class BB_API Cursor
 	{
 	public:
-		static const bool& IsLocked();
-		static void SetLocked(const bool& locked);
+		static bool IsLocked();
+		static void SetLocked(bool locked);
 
-		static const bool& IsHidden();
-		static void SetHidden(const bool& hidden);
+		static bool IsHidden();
+		static void SetHidden(bool hidden);
 
 	private:
-		static inline bool s_Locked = false;
-		static inline bool s_Hidden = false;
+		static bool s_Locked;
+		static bool s_Hidden;
 	};
 }

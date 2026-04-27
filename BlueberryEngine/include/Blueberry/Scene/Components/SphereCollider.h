@@ -9,7 +9,7 @@ namespace Blueberry
 		OBJECT_DECLARATION(SphereCollider)
 
 	public:
-		const float& GetRadius();
+		float GetRadius() const;
 
 	private:
 		virtual JPH::Shape* GetShape() override;

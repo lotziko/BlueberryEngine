@@ -1,6 +1,7 @@
 #include "NativeAssetImporter.h"
 
-#include "Editor\Serialization\YamlSerializer.h"
+#include "Editor\Assets\AssetDB.h"
+#include "Editor\Serialization\EditorSerializer.h"
 #include "Blueberry\Core\ObjectDB.h"
 
 namespace Blueberry
@@ -13,43 +14,38 @@ namespace Blueberry
 	void NativeAssetImporter::ImportData()
 	{
 		Guid guid = GetGuid();
-
-		if (IsImported())
+		List<Object*> objects;
+		String path = GetFilePath();
+		EditorSerializer serializer = {};
+		for (auto& object : ObjectDB::GetObjectsFromGuid(guid))
 		{
-			// TODO think how to deserialize into existing object
-			BB_INFO("Asset \"" << GetName() << "\" is already imported.");
-			return;
-		}
-		else
-		{
-			YamlSerializer serializer;
-			for (auto& object : ObjectDB::GetObjectsFromGuid(guid))
+			Object* importedObject = ObjectDB::GetObject(object.second);
+			if (importedObject != nullptr)
 			{
-				Object* importedObject = ObjectDB::GetObject(object.second);
-				if (importedObject != nullptr)
-				{
-					serializer.AddObject(importedObject, object.first);
-				}
+				serializer.AddObject(importedObject, object.first);
 			}
-			serializer.Deserialize(GetFilePath());
+		}
+		serializer.SetGuid(guid);
+		serializer.Deserialize(path, SerializationFlags::EditorOnly | SerializationFlags::HasHeaders);
+		auto& deserializedObjects = serializer.GetDeserializedObjects();
 
-			bool mainObjectIsSet = false;
-			auto& deserializedObjects = serializer.GetDeserializedObjects();
-			for (auto pair : deserializedObjects)
+		bool mainObjectIsSet = false;
+		for (auto& pair : deserializedObjects)
+		{
+			Object* importedObject = ObjectDB::GetObject(pair.first);
+			objects.push_back(importedObject);
+			FileId fileId = pair.second;
+
+			ObjectDB::AllocateIdToGuid(importedObject, guid, fileId);
+			importedObject->SetState(ObjectState::Default);
+			if (!mainObjectIsSet)
 			{
-				Object* importedObject = pair.first;
-				FileId fileId = pair.second;
-
-				ObjectDB::AllocateIdToGuid(importedObject, guid, fileId);
 				importedObject->SetName(GetName());
-				importedObject->SetState(ObjectState::Default);
-				if (!mainObjectIsSet)
-				{
-					SetMainObject(fileId);
-					mainObjectIsSet = true;
-				}
+				SetMainObject(fileId);
+				mainObjectIsSet = true;
 			}
-			//BB_INFO("NativeAsset \"" << GetName() << "\" imported.");
 		}
+		AssetDB::SaveAssetObjectsToCache(objects);
+		serializer.FinalizeObjects();
 	}
 }

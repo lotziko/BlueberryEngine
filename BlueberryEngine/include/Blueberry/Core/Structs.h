@@ -5,11 +5,15 @@
 
 namespace Blueberry
 {
-	using ByteData = Blueberry::List<uint8_t>;
-
 	struct ObjectPtrData
 	{
 		FileId fileId;
 		Guid guid;
+	};
+
+	template <typename T>
+	struct DataWrapper
+	{
+		T& reference;
 	};
 }

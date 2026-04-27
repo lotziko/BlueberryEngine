@@ -1,7 +1,10 @@
 #include "Path.h"
 
+#include "Blueberry\Tools\StringHelper.h"
+
 namespace Blueberry
 {
+	std::filesystem::path Path::s_ProjectPath = "";
 	std::filesystem::path Path::s_AssetsPath = "Assets";
 	std::filesystem::path Path::s_DataPath = "Data";
 	std::filesystem::path Path::s_AssemblyPath = "Source";
@@ -9,7 +12,9 @@ namespace Blueberry
 	std::filesystem::path Path::s_ShaderCachePath = "Data\\ShaderCache";
 	std::filesystem::path Path::s_TextureCachePath = "Data\\TextureCache";
 	std::filesystem::path Path::s_PhysicsShapeCachePath = "Data\\PhysicsShapeCache";
+	std::filesystem::path Path::s_AudioCachePath = "Data\\AudioCache";
 	std::filesystem::path Path::s_ThumbnailCachePath = "Data\\ThumbnailCache";
+	std::filesystem::path Path::s_BuildPath = "Build";
 
 	const std::filesystem::path& Path::GetAssetsPath()
 	{
@@ -46,36 +51,79 @@ namespace Blueberry
 		return s_PhysicsShapeCachePath;
 	}
 
+	const std::filesystem::path& Path::GetAudioCachePath()
+	{
+		return s_AudioCachePath;
+	}
+
 	const std::filesystem::path& Path::GetThumbnailCachePath()
 	{
 		return s_ThumbnailCachePath;
 	}
 
-	void Path::SetProjectPath(const std::wstring& path)
+	const std::filesystem::path& Path::GetBuildPath()
 	{
-		auto assetsPath = path;
-		assetsPath.append(L"\\Assets");
+		return s_BuildPath;
+	}
+
+	const std::filesystem::path& Path::GetProjectPath()
+	{
+		return s_ProjectPath;
+	}
+
+	void Path::SetProjectPath(const WString& path)
+	{
+		s_ProjectPath = path;
+		std::filesystem::path assetsPath = path;
+		assetsPath += "\\Assets";
 		s_AssetsPath = assetsPath;
-		auto dataPath = path;
-		dataPath.append(L"\\Data");
+		std::filesystem::path dataPath = path;
+		dataPath += "\\Data";
 		s_DataPath = dataPath;
-		auto assemblyPath = path;
-		assemblyPath.append(L"\\Source");
+		std::filesystem::path assemblyPath = path;
+		assemblyPath += "\\Source";
 		s_AssemblyPath = assemblyPath;
-		auto assetCachePath = dataPath;
-		assetCachePath.append(L"\\AssetCache");
+		std::filesystem::path assetCachePath = dataPath;
+		assetCachePath += "\\AssetCache";
 		s_AssetCachePath = assetCachePath;
-		auto shaderCachePath = dataPath;
-		shaderCachePath.append(L"\\ShaderCache");
+		std::filesystem::path shaderCachePath = dataPath;
+		shaderCachePath += "\\ShaderCache";
 		s_ShaderCachePath = shaderCachePath;
-		auto textureCachePath = dataPath;
-		textureCachePath.append(L"\\TextureCache");
+		std::filesystem::path textureCachePath = dataPath;
+		textureCachePath += "\\TextureCache";
 		s_TextureCachePath = textureCachePath;
-		auto physicsShapeCachePath = dataPath;
-		physicsShapeCachePath.append(L"\\PhysicsShapeCache");
+		std::filesystem::path physicsShapeCachePath = dataPath;
+		physicsShapeCachePath += "\\PhysicsShapeCache";
 		s_PhysicsShapeCachePath = physicsShapeCachePath;
-		auto thumbnailCachePath = dataPath;
-		thumbnailCachePath.append(L"\\ThumbnailCache");
+		std::filesystem::path audioCachePath = dataPath;
+		audioCachePath += "\\AudioCache";
+		s_AudioCachePath = audioCachePath;
+		std::filesystem::path thumbnailCachePath = dataPath;
+		thumbnailCachePath += "\\ThumbnailCache";
 		s_ThumbnailCachePath = thumbnailCachePath;
+		std::filesystem::path buildPath = path;
+		buildPath += "\\Build";
+		s_BuildPath = buildPath;
+	}
+
+	std::filesystem::path Path::GetAssetPath(const String& relativePath)
+	{
+		std::filesystem::path assetPath = s_AssetsPath;
+		assetPath.append(relativePath);
+		return assetPath;
+	}
+
+	String Path::GetAssetsPath(const String& relativePath)
+	{
+		std::filesystem::path dataPath = s_AssetsPath;
+		dataPath.append(relativePath);
+		return StringHelper::ToString(dataPath);
+	}
+
+	String Path::GetAssetCachePath(const String& relativePath)
+	{
+		std::filesystem::path dataPath = s_AssetCachePath;
+		dataPath.append(relativePath);
+		return StringHelper::ToString(dataPath);
 	}
 }

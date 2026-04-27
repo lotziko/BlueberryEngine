@@ -11,6 +11,8 @@ namespace Blueberry
 		uint64_t keywordsMask; // global + material
 		ObjectId materialId;
 		uint8_t passIndex;
+		bool isCounterClockwise;
+		bool isSolid;
 
 		bool operator==(const GfxRenderStateKeyDX11& other) const;
 		bool operator!=(const GfxRenderStateKeyDX11& other) const;
@@ -43,9 +45,9 @@ namespace Blueberry
 		ID3D11GeometryShader* geometryShader;
 		ID3D11PixelShader* pixelShader;
 
-		ID3D11ShaderResourceView* vertexShaderResourceViews[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT / 8];
+		ID3D11ShaderResourceView* vertexShaderResourceViews[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT / 4];
 		ID3D11SamplerState* vertexSamplerStates[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT];
-		ID3D11ShaderResourceView* pixelShaderResourceViews[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT / 8];
+		ID3D11ShaderResourceView* pixelShaderResourceViews[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT / 4];
 		ID3D11SamplerState* pixelSamplerStates[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT];
 
 		ID3D11Buffer* vertexConstantBuffers[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT];
@@ -92,7 +94,7 @@ namespace Blueberry
 		GfxRenderStateCacheDX11() = default;
 		GfxRenderStateCacheDX11(GfxDeviceDX11* device);
 
-		const GfxRenderStateDX11 GetState(Material* material, const uint8_t& passIndex);
+		const GfxRenderStateDX11 GetState(Material* material, uint8_t passIndex, bool isCounterClockwise, bool isSolid);
 		
 	private:
 		void FillRenderState(Material* material, GfxRenderStateDX11& renderState, const GfxBindingStateDX11& bindingState);

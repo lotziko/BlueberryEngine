@@ -19,8 +19,11 @@ namespace Blueberry
 		ObjectEditor() = default;
 		virtual ~ObjectEditor() = default;
 
+		virtual bool IsInspectorPadded();
 		virtual Texture* GetIcon(Object* object);
 		void DrawScene(Object* object);
+
+		SerializedObject* GetSerializedObject();
 
 		void Enable();
 		void DrawInspector();
@@ -40,14 +43,11 @@ namespace Blueberry
 		virtual void OnDrawSceneSelected();
 
 	private:
-		void DrawField(Object* object, FieldInfo& info);
-
 		static Dictionary<ObjectId, ObjectEditor*> s_Editors;
 		static Dictionary<size_t, ObjectEditor*> s_DefaultEditors;
 
 	protected:
 		std::shared_ptr<SerializedObject> m_SerializedObject;
 		Object* m_Object;
-		bool m_HasPadding = true;
 	};
 }

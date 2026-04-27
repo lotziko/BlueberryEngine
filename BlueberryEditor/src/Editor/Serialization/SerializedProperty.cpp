@@ -6,114 +6,179 @@
 
 namespace Blueberry
 {
+	size_t SerializedProperty::GetId()
+	{
+		return m_Id;
+	}
+
 	const String& SerializedProperty::GetName()
 	{
-		return m_TreeNode->name;
+		return Get()->name;
 	}
 
-	const BindingType SerializedProperty::GetType()
+	const String& SerializedProperty::GetDisplayName()
 	{
-		return m_TreeNode->bindingType;
+		return Get()->displayName;
 	}
 
-	const bool SerializedProperty::IsMixedValue()
+	BindingType SerializedProperty::GetType()
 	{
-		return (m_TreeNode->mixedMask[0] || m_TreeNode->mixedMask[1] || m_TreeNode->mixedMask[2] || m_TreeNode->mixedMask[3]);
+		return Get()->bindingType;
 	}
 
-	const bool* SerializedProperty::GetMixedMask()
+	bool SerializedProperty::IsMixedValue()
 	{
-		return m_TreeNode->mixedMask;
+		PropertyTreeNode* node = Get();
+		return (node->mixedMask[0] || node->mixedMask[1] || node->mixedMask[2] || node->mixedMask[3]);
+	}
+
+	bool* SerializedProperty::GetMixedMask()
+	{
+		return Get()->mixedMask;
 	}
 
 	void* SerializedProperty::GetHintData()
 	{
-		return m_TreeNode->fieldInfo->options.hintData;
+		return Get()->fieldInfo->options.hintData;
 	}
 
-	const uint32_t SerializedProperty::GetArraySize()
+	size_t SerializedProperty::GetListSize()
 	{
-		if (m_TreeNode->type == PropertyType::List)
+		PropertyTreeNode* node = Get();
+		if (node->type == PropertyType::List)
 		{
-			return static_cast<uint32_t>(m_TreeNode->children.size());
+			return node->children.size();
 		}
 		return 0;
 	}
 
-	SerializedProperty SerializedProperty::GetArrayElement(const uint32_t& index)
+	SerializedProperty SerializedProperty::GetListElement(size_t index)
 	{
-		return SerializedProperty(m_SerializedObject, m_TreeNode->children[index].get());
+		size_t id = m_SerializedObject->Get(m_Id)->children[index];
+		SerializedProperty elementProperty = SerializedProperty(m_SerializedObject, id);
+		elementProperty.m_Depth = m_Depth + 1;
+		return elementProperty;
 	}
 
-	const bool& SerializedProperty::GetBool()
+	void SerializedProperty::InsertListElement(size_t index)
 	{
-		return std::get<bool>(m_TreeNode->values[0]);
+		m_SerializedObject->InsertListElement(m_Id, index);
 	}
 
-	void SerializedProperty::SetBool(const bool& value)
+	void SerializedProperty::DeleteListElement(size_t index)
 	{
-		for (size_t i = 0; i < m_TreeNode->values.size(); ++i)
+		m_SerializedObject->DeleteListElement(m_Id, index);
+	}
+
+	void SerializedProperty::MoveListElement(size_t fromIndex, size_t toIndex)
+	{
+		m_SerializedObject->MoveListElement(m_Id, fromIndex, toIndex);
+	}
+
+	void SerializedProperty::ClearList()
+	{
+		m_SerializedObject->ClearList(m_Id);
+	}
+
+	bool SerializedProperty::IsOverriden()
+	{
+		return m_SerializedObject->Get(m_Id)->isOverriden;
+	}
+
+	void SerializedProperty::ClearOverride()
+	{
+		m_SerializedObject->AddModifiedProperty(m_Id, PropertyModificationType::ClearOverride);
+	}
+
+	bool SerializedProperty::GetBool()
+	{
+		return std::get<bool>(Get()->values[0]);
+	}
+
+	void SerializedProperty::SetBool(bool value)
+	{
+		PropertyTreeNode* node = Get();
+		for (size_t i = 0; i < node->values.size(); ++i)
 		{
-			m_TreeNode->values[i] = value;
+			node->values[i] = value;
 		}
-		m_SerializedObject->AddModifiedProperty(this);
+		m_SerializedObject->AddModifiedProperty(m_Id);
 	}
 
-	const int& SerializedProperty::GetInt()
+	int SerializedProperty::GetInt()
 	{
-		return std::get<int>(m_TreeNode->values[0]);
+		return std::get<int>(Get()->values[0]);
 	}
 
-	void SerializedProperty::SetInt(const int& value)
+	void SerializedProperty::SetInt(int value)
 	{
-		for (size_t i = 0; i < m_TreeNode->values.size(); ++i)
+		PropertyTreeNode* node = Get();
+		for (size_t i = 0; i < node->values.size(); ++i)
 		{
-			m_TreeNode->values[i] = value;
+			node->values[i] = value;
 		}
-		m_SerializedObject->AddModifiedProperty(this);
+		m_SerializedObject->AddModifiedProperty(m_Id);
 	}
 
-	const float& SerializedProperty::GetFloat()
+	uint32_t SerializedProperty::GetUint()
 	{
-		return std::get<float>(m_TreeNode->values[0]);
+		return std::get<uint32_t>(Get()->values[0]);
 	}
 
-	void SerializedProperty::SetFloat(const float& value)
+	void SerializedProperty::SetUint(uint32_t value)
 	{
-		for (size_t i = 0; i < m_TreeNode->values.size(); ++i)
+		PropertyTreeNode* node = Get();
+		for (size_t i = 0; i < node->values.size(); ++i)
 		{
-			m_TreeNode->values[i] = value;
+			node->values[i] = value;
 		}
-		m_SerializedObject->AddModifiedProperty(this);
+		m_SerializedObject->AddModifiedProperty(m_Id);
+	}
+
+	float SerializedProperty::GetFloat()
+	{
+		return std::get<float>(Get()->values[0]);
+	}
+
+	void SerializedProperty::SetFloat(float value)
+	{
+		PropertyTreeNode* node = Get();
+		for (size_t i = 0; i < node->values.size(); ++i)
+		{
+			node->values[i] = value;
+		}
+		m_SerializedObject->AddModifiedProperty(m_Id);
 	}
 
 	const String& SerializedProperty::GetString()
 	{
-		return std::get<String>(m_TreeNode->values[0]);
+		return std::get<String>(Get()->values[0]);
 	}
 
 	void SerializedProperty::SetString(const String& value)
 	{
-		for (size_t i = 0; i < m_TreeNode->values.size(); ++i)
+		PropertyTreeNode* node = Get();
+		for (size_t i = 0; i < node->values.size(); ++i)
 		{
-			m_TreeNode->values[i] = value;
+			node->values[i] = value;
 		}
-		m_SerializedObject->AddModifiedProperty(this);
+		m_SerializedObject->AddModifiedProperty(m_Id);
 	}
 
 	const Vector2& SerializedProperty::GetVector2()
 	{
-		return std::get<Vector2>(m_TreeNode->values[0]);
+		return std::get<Vector2>(Get()->values[0]);
 	}
 
 	void SerializedProperty::SetVector2(const Vector2& value)
 	{
-		Vector2 targetValue = std::get<Vector2>(m_TreeNode->values[0]);
-		bool* mask = m_TreeNode->mixedMask;
-		m_TreeNode->values[0] = value;
-		for (size_t i = 1; i < m_TreeNode->values.size(); ++i)
+		PropertyTreeNode* node = Get();
+		Vector2 targetValue = std::get<Vector2>(node->values[0]);
+		bool* mask = node->mixedMask;
+		node->values[0] = value;
+		for (size_t i = 1; i < node->values.size(); ++i)
 		{
-			Vector2 nodeValue = std::get<Vector2>(m_TreeNode->values[i]);
+			Vector2 nodeValue = std::get<Vector2>(node->values[i]);
 			if (mask[0])
 			{
 				nodeValue.x = value.x;
@@ -122,24 +187,25 @@ namespace Blueberry
 			{
 				nodeValue.y = value.y;
 			}
-			m_TreeNode->values[i] = nodeValue;
+			node->values[i] = nodeValue;
 		}
-		m_SerializedObject->AddModifiedProperty(this);
+		m_SerializedObject->AddModifiedProperty(m_Id);
 	}
 
 	const Vector3& SerializedProperty::GetVector3()
 	{
-		return std::get<Vector3>(m_TreeNode->values[0]);
+		return std::get<Vector3>(Get()->values[0]);
 	}
 
 	void SerializedProperty::SetVector3(const Vector3& value)
 	{
-		Vector3 targetValue = std::get<Vector3>(m_TreeNode->values[0]);
-		bool* mask = m_TreeNode->mixedMask;
-		m_TreeNode->values[0] = value;
-		for (size_t i = 1; i < m_TreeNode->values.size(); ++i)
+		PropertyTreeNode* node = Get();
+		Vector3 targetValue = std::get<Vector3>(node->values[0]);
+		bool* mask = node->mixedMask;
+		node->values[0] = value;
+		for (size_t i = 1; i < node->values.size(); ++i)
 		{
-			Vector3 nodeValue = std::get<Vector3>(m_TreeNode->values[i]);
+			Vector3 nodeValue = std::get<Vector3>(node->values[i]);
 			if (mask[0])
 			{
 				nodeValue.x = value.x;
@@ -152,24 +218,25 @@ namespace Blueberry
 			{
 				nodeValue.z = value.z;
 			}
-			m_TreeNode->values[i] = nodeValue;
+			node->values[i] = nodeValue;
 		}
-		m_SerializedObject->AddModifiedProperty(this);
+		m_SerializedObject->AddModifiedProperty(m_Id);
 	}
 
 	const Vector4& SerializedProperty::GetVector4()
 	{
-		return std::get<Vector4>(m_TreeNode->values[0]);
+		return std::get<Vector4>(Get()->values[0]);
 	}
 
 	void SerializedProperty::SetVector4(const Vector4& value)
 	{
-		Vector4 targetValue = std::get<Vector4>(m_TreeNode->values[0]);
-		bool* mask = m_TreeNode->mixedMask;
-		m_TreeNode->values[0] = value;
-		for (size_t i = 1; i < m_TreeNode->values.size(); ++i)
+		PropertyTreeNode* node = Get();
+		Vector4 targetValue = std::get<Vector4>(node->values[0]);
+		bool* mask = node->mixedMask;
+		node->values[0] = value;
+		for (size_t i = 1; i < node->values.size(); ++i)
 		{
-			Vector4 nodeValue = std::get<Vector4>(m_TreeNode->values[i]);
+			Vector4 nodeValue = std::get<Vector4>(node->values[i]);
 			if (mask[0])
 			{
 				nodeValue.x = value.x;
@@ -186,24 +253,25 @@ namespace Blueberry
 			{
 				nodeValue.w = value.w;
 			}
-			m_TreeNode->values[i] = nodeValue;
+			node->values[i] = nodeValue;
 		}
-		m_SerializedObject->AddModifiedProperty(this);
+		m_SerializedObject->AddModifiedProperty(m_Id);
 	}
 
 	const Quaternion& SerializedProperty::GetQuaternion()
 	{
-		return std::get<Quaternion>(m_TreeNode->values[0]);
+		return std::get<Quaternion>(Get()->values[0]);
 	}
 
 	void SerializedProperty::SetQuaternion(const Quaternion& value)
 	{
-		Quaternion targetValue = std::get<Quaternion>(m_TreeNode->values[0]);
-		bool* mask = m_TreeNode->mixedMask;
-		m_TreeNode->values[0] = value;
-		for (size_t i = 1; i < m_TreeNode->values.size(); ++i)
+		PropertyTreeNode* node = Get();
+		Quaternion targetValue = std::get<Quaternion>(node->values[0]);
+		bool* mask = node->mixedMask;
+		node->values[0] = value;
+		for (size_t i = 1; i < node->values.size(); ++i)
 		{
-			Quaternion nodeValue = std::get<Quaternion>(m_TreeNode->values[i]);
+			Quaternion nodeValue = std::get<Quaternion>(node->values[i]);
 			if (mask[0])
 			{
 				nodeValue.x = value.x;
@@ -220,73 +288,101 @@ namespace Blueberry
 			{
 				nodeValue.w = value.w;
 			}
-			m_TreeNode->values[i] = nodeValue;
+			node->values[i] = nodeValue;
 		}
-		m_SerializedObject->AddModifiedProperty(this);
+		m_SerializedObject->AddModifiedProperty(m_Id);
 	}
 
 	const Color& SerializedProperty::GetColor()
 	{
-		return std::get<Color>(m_TreeNode->values[0]);
+		return std::get<Color>(Get()->values[0]);
 	}
 
 	void SerializedProperty::SetColor(const Color& value)
 	{
-		for (size_t i = 0; i < m_TreeNode->values.size(); ++i)
+		PropertyTreeNode* node = Get();
+		for (size_t i = 0; i < node->values.size(); ++i)
 		{
-			m_TreeNode->values[i] = value;
+			node->values[i] = value;
 		}
-		m_SerializedObject->AddModifiedProperty(this);
+		m_SerializedObject->AddModifiedProperty(m_Id);
 	}
 
 	const ObjectPtr<Object>& SerializedProperty::GetObjectPtr()
 	{
-		return std::get<ObjectPtr<Object>>(m_TreeNode->values[0]);
+		return std::get<ObjectPtr<Object>>(Get()->values[0]);
 	}
 
 	void SerializedProperty::SetObjectPtr(const ObjectPtr<Object>& value)
 	{
-		for (size_t i = 0; i < m_TreeNode->values.size(); ++i)
+		PropertyTreeNode* node = Get();
+		for (size_t i = 0; i < node->values.size(); ++i)
 		{
-			m_TreeNode->values[i] = value;
+			node->values[i] = value;
 		}
-		m_SerializedObject->AddModifiedProperty(this);
+		m_SerializedObject->AddModifiedProperty(m_Id);
 	}
 
-	const size_t& SerializedProperty::GetObjectPtrType()
+	TypeId SerializedProperty::GetObjectPtrType()
 	{
-		return m_TreeNode->fieldInfo->options.objectType;
+		return *Get()->fieldInfo->options.objectType;
 	}
 
-	SerializedProperty::SerializedProperty(SerializedObject* serializedObject, PropertyTreeNode* treeNode)
+	size_t SerializedProperty::GetDepth()
+	{
+		return m_Depth;
+	}
+
+	SerializedProperty::SerializedProperty(SerializedObject* serializedObject, size_t id)
 	{
 		m_SerializedObject = serializedObject;
-		m_TreeNode = treeNode;
+		m_Id = id;
 	}
 
-	bool SerializedProperty::Next()
+	PropertyTreeNode* SerializedProperty::Get()
 	{
-		while (!m_Stack.empty())
+		return m_SerializedObject->Get(m_Id);
+	}
+
+	bool SerializedProperty::Next(bool enterChildren)
+	{
+		while (true)
 		{
-			std::pair<PropertyTreeNode*, uint32_t>& pair = m_Stack.top();
-			if (pair.second < pair.first->children.size())
+			PropertyTreeNode* node = Get();
+			if (enterChildren)
 			{
-				PropertyTreeNode* child = pair.first->children[pair.second++].get();
-				if (child->isVisible)
+				for (size_t i = 0; i < node->children.size(); ++i)
 				{
-					m_TreeNode = child;
-					m_Stack.push(std::make_pair(child, 0));
-					return true;
+					size_t child = node->children[i];
+					PropertyTreeNode* childNode = m_SerializedObject->Get(child);
+					if (childNode->isVisible && !childNode->isDeleted)
+					{
+						m_Id = child;
+						++m_Depth;
+						return true;
+					}
 				}
 			}
-			else
+
+			while (true)
 			{
-				m_Stack.pop();
-				if (!m_Stack.empty())
+				if (node->parent == UINT64_MAX)
 				{
-					return Next();
+					return false;
 				}
-				return false;
+				PropertyTreeNode* parentNode = m_SerializedObject->Get(node->parent);
+				for (size_t i = node->index + 1; i < parentNode->children.size(); ++i)
+				{
+					size_t child = parentNode->children[i];
+					PropertyTreeNode* childNode = m_SerializedObject->Get(child);
+					if (childNode->isVisible && !childNode->isDeleted)
+					{
+						m_Id = child;
+						return true;
+					}
+				}
+				node = parentNode;
+				--m_Depth;
 			}
 		}
 		return false;
@@ -294,13 +390,19 @@ namespace Blueberry
 
 	SerializedProperty SerializedProperty::FindProperty(const String& name)
 	{
-		for (auto& child : m_TreeNode->children)
+		for (auto& child : Get()->children)
 		{
-			if (child->name == name)
+			PropertyTreeNode* childNode = m_SerializedObject->Get(child);
+			if (childNode->name == name)
 			{
-				return SerializedProperty(m_SerializedObject, child.get());
+				return SerializedProperty(m_SerializedObject, child);
 			}
 		}
 		return {};
+	}
+
+	SerializedObject* SerializedProperty::GetSerializedObject()
+	{
+		return m_SerializedObject;
 	}
 }

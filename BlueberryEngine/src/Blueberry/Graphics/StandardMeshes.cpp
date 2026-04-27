@@ -1,9 +1,21 @@
 #include "Blueberry\Graphics\StandardMeshes.h"
 
+#include "Blueberry\Core\ObjectDB.h"
 #include "Blueberry\Graphics\Mesh.h"
 
 namespace Blueberry
 {
+	Mesh* StandardMeshes::s_FullscreenMesh = nullptr;
+	Mesh* StandardMeshes::s_BlitMesh = nullptr;
+	Mesh* StandardMeshes::s_PlaneMesh = nullptr;
+	Mesh* StandardMeshes::s_SphereMesh = nullptr;
+	Mesh* StandardMeshes::s_CubeMesh = nullptr;
+
+	void StandardMeshes::Initialize()
+	{
+		GetPlane();
+	}
+
 	Mesh* StandardMeshes::GetFullscreen()
 	{
 		if (s_FullscreenMesh == nullptr)
@@ -24,10 +36,10 @@ namespace Blueberry
 			};
 			Vector2 uvs[] =
 			{
-				{ 0.0f, 1.0f }, // fullscreen meshes are flipped vertically
+				{ 0.0f, 1.0f }, // fullscreen mesh is flipped vertically to avoid NDC inversion
 				{ 0.0f, 0.0f },
 				{ 1.0f, 0.0f },
-				{ 1.0f, 1.0f },
+				{ 1.0f, 1.0f }
 			};
 			uint32_t indices[] = { 0, 1, 2, 2, 3, 0 };
 			s_FullscreenMesh = Mesh::Create();
@@ -66,7 +78,7 @@ namespace Blueberry
 				{ 0.0f, 0.0f },
 				{ 0.0f, 1.0f },
 				{ 1.0f, 1.0f },
-				{ 1.0f, 0.0f },
+				{ 1.0f, 0.0f }
 			};
 			uint32_t indices[] = { 0, 1, 2, 2, 3, 0 };
 			s_PlaneMesh = Mesh::Create();
@@ -77,6 +89,7 @@ namespace Blueberry
 			s_PlaneMesh->SetUVs(0, uvs, 4);
 			s_PlaneMesh->GenerateTangents();
 			s_PlaneMesh->Apply();
+			ObjectDB::AllocateIdToGuid(s_PlaneMesh, Guid(TO_HASH("Plane"), 0), 1);
 		}
 
 		return s_PlaneMesh;
@@ -92,26 +105,26 @@ namespace Blueberry
 			const int vertexCount = (latitudeSegments + 1) * (longitudeSegments + 1);
 			const int indexCount = latitudeSegments * longitudeSegments * 6;
 
-			Vector3 vertices[vertexCount];
-			Vector3 normals[vertexCount];
-			Vector2 uvs[vertexCount];
-			uint32_t indices[indexCount];
+			List<Vector3> vertices(vertexCount);
+			List<Vector3> normals(vertexCount);
+			List<Vector2> uvs(vertexCount);
+			List<uint32_t> indices(indexCount);
 
-			Vector3* verticesPtr = vertices;
-			Vector3* normalsPtr = normals;
-			Vector2* uvsPtr = uvs;
-			uint32_t* indicesPtr = indices;
+			Vector3* verticesPtr = vertices.data();
+			Vector3* normalsPtr = normals.data();
+			Vector2* uvsPtr = uvs.data();
+			uint32_t* indicesPtr = indices.data();
 
 			uint32_t offset = 0;
 			for (int lat = 0; lat <= latitudeSegments; ++lat)
 			{
-				float theta = lat * Pi / latitudeSegments;
+				float theta = lat * Math::Pi / latitudeSegments;
 				float sinTheta = sin(theta);
 				float cosTheta = cos(theta);
 
 				for (int lon = 0; lon <= longitudeSegments; ++lon)
 				{
-					float phi = lon * 2 * Pi / longitudeSegments;
+					float phi = lon * 2 * Math::Pi / longitudeSegments;
 					float sinPhi = sin(phi);
 					float cosPhi = cos(phi);
 
@@ -148,10 +161,10 @@ namespace Blueberry
 
 			s_SphereMesh = Mesh::Create();
 			s_SphereMesh->SetName("Sphere");
-			s_SphereMesh->SetVertices(vertices, vertexCount);
-			s_SphereMesh->SetNormals(normals, vertexCount);
-			s_SphereMesh->SetIndices(indices, indexCount);
-			s_SphereMesh->SetUVs(0, uvs, vertexCount);
+			s_SphereMesh->SetVertices(vertices.data(), vertexCount);
+			s_SphereMesh->SetNormals(normals.data(), vertexCount);
+			s_SphereMesh->SetIndices(indices.data(), indexCount);
+			s_SphereMesh->SetUVs(0, uvs.data(), vertexCount);
 			s_SphereMesh->GenerateTangents();
 			s_SphereMesh->Apply();
 		}
@@ -225,7 +238,7 @@ namespace Blueberry
 				{ 1.0f, 0.0f, 0.0f },
 				{ 1.0f, 0.0f, 0.0f },
 				{ 1.0f, 0.0f, 0.0f },
-				{ 1.0f, 0.0f, 0.0f },
+				{ 1.0f, 0.0f, 0.0f }
 			};
 			Vector2 uvs[] =
 			{
@@ -257,7 +270,7 @@ namespace Blueberry
 				{ 0.0f, 0.0f },
 				{ 0.0f, 1.0f },
 				{ 1.0f, 1.0f },
-				{ 1.0f, 0.0f },
+				{ 1.0f, 0.0f }
 			};
 			uint32_t indices[] = 
 			{ 

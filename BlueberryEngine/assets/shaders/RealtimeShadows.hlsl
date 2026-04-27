@@ -30,7 +30,7 @@ bool IsOutOfBounds(float4 position, float4 bounds)
 
 float4 TransformWorldToShadow(float3 positionWS, float4x4 worldToShadow)
 {
-	float4 positionSS = mul(float4(positionWS, 1.0), worldToShadow);
+	float4 positionSS = mul(worldToShadow, float4(positionWS, 1.0));
 	positionSS.xyz /= positionSS.w;
 	return float4(positionSS.xy, positionSS.zw);
 }
@@ -84,6 +84,11 @@ float ComputeShadowPCF3x3(float4 positionSS, Texture2D shadowmap, SamplerCompari
 	attenuation += SAMPLE_TEXTURE2D_SHADOW(shadowmap, shadowmapSampler, positionSS.xy, positionSS.z).r * shadowTerm0.z;
 
 	return attenuation;
+}
+
+float SampleShadowAtlas(float4 positionSS)
+{
+	return ComputeShadowPCF3x3(positionSS, _ShadowTexture, _ShadowTexture_Sampler, _Shadow3x3PCFTermC0, _Shadow3x3PCFTermC1, _Shadow3x3PCFTermC2, _Shadow3x3PCFTermC3);
 }
 
 #endif

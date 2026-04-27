@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Blueberry\Core\Base.h"
+
 #include <filesystem>
 
 namespace Blueberry
@@ -14,10 +16,18 @@ namespace Blueberry
 		static const std::filesystem::path& GetShaderCachePath();
 		static const std::filesystem::path& GetTextureCachePath();
 		static const std::filesystem::path& GetPhysicsShapeCachePath();
+		static const std::filesystem::path& GetAudioCachePath();
 		static const std::filesystem::path& GetThumbnailCachePath();
-		static void SetProjectPath(const std::wstring& path);
+		static const std::filesystem::path& GetBuildPath();
+		static const std::filesystem::path& GetProjectPath();
+		static void SetProjectPath(const WString& path);
+
+		static std::filesystem::path GetAssetPath(const String& relativePath);
+		static String GetAssetsPath(const String& relativePath);
+		static String GetAssetCachePath(const String& relativePath);
 
 	private:
+		static std::filesystem::path s_ProjectPath;
 		static std::filesystem::path s_AssetsPath;
 		static std::filesystem::path s_DataPath;
 		static std::filesystem::path s_AssemblyPath;
@@ -25,6 +35,8 @@ namespace Blueberry
 		static std::filesystem::path s_ShaderCachePath;
 		static std::filesystem::path s_TextureCachePath;
 		static std::filesystem::path s_PhysicsShapeCachePath;
+		static std::filesystem::path s_AudioCachePath;
 		static std::filesystem::path s_ThumbnailCachePath;
+		static std::filesystem::path s_BuildPath;
 	};
 }

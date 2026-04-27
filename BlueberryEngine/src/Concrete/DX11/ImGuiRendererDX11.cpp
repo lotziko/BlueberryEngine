@@ -52,6 +52,7 @@ namespace Blueberry
 	void ImGuiRendererDX11::EndImpl()
 	{
 		// Rendering
+		GfxDevice::SetRenderTarget(nullptr);
 		ImGui::Render();
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 	}

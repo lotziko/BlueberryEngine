@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Blueberry\Core\Base.h"
+#include "Blueberry\Core\ClassDB.h"
 
 namespace Blueberry
 {
@@ -14,11 +15,11 @@ namespace Blueberry
 	class ObjectEditorDB
 	{
 	public:
-		static Dictionary<size_t, ObjectEditorInfo>& GetInfos();
-		static const ObjectEditorInfo& GetInfo(const size_t& type);
+		static Dictionary<TypeId, ObjectEditorInfo>& GetInfos();
+		static const ObjectEditorInfo* GetInfo(TypeId type);
 
 		template<class ObjectEditorType>
-		static void Register(const size_t& type);
+		static void Register(size_t typeHash);
 
 	private:
 		template<class ObjectEditorType>
@@ -28,16 +29,16 @@ namespace Blueberry
 		}
 
 	private:
-		static Dictionary<size_t, ObjectEditorInfo> s_ObjectEditors;
+		static Dictionary<TypeId, ObjectEditorInfo> s_ObjectEditors;
 	};
 
 	template<class ObjectEditorType>
-	inline void ObjectEditorDB::Register(const size_t& type)
+	inline void ObjectEditorDB::Register(size_t typeHash)
 	{
 		ObjectEditorInfo info;
 		info.createInstance = &ObjectEditorDB::CreateObjectEditor<ObjectEditorType>;
-		s_ObjectEditors.insert_or_assign(type, info);
+		s_ObjectEditors.insert_or_assign(ClassDB::GetTypeId(typeHash), info);
 	}
 
-	#define REGISTER_OBJECT_EDITOR( inspectorType, objectType ) ObjectEditorDB::Register<inspectorType>(TO_OBJECT_TYPE(TO_STRING(objectType)));
+	#define REGISTER_OBJECT_EDITOR( inspectorType, objectType ) ObjectEditorDB::Register<inspectorType>(TO_HASH(TO_STRING(objectType)));
 }

@@ -6,12 +6,14 @@
 namespace fbxsdk
 {
 	class FbxNode;
+	class FbxScene;
 }
 
 namespace Blueberry
 {
 	class Material;
 	class Transform;
+	class Entity;
 
 	class ModelMaterialData : public Data
 	{
@@ -32,6 +34,36 @@ namespace Blueberry
 		ObjectPtr<Material> m_Material;
 	};
 
+	class ModelAnimationClipData : public Data
+	{
+		DATA_DECLARATION(ModelAnimationClipData)
+
+	public:
+		ModelAnimationClipData() = default;
+		virtual ~ModelAnimationClipData() = default;
+
+		const String& GetName() const;
+		void SetName(const String& name);
+
+		const String& GetReplaceName() const;
+		void SetReplaceName(const String& replaceName);
+
+		uint32_t GetFirstFrame() const;
+		void SetFirstFrame(uint32_t firstFrame);
+
+		uint32_t GetLastFrame() const;
+		void SetLastFrame(uint32_t lastFrame);
+
+		bool IsLoop() const;
+		void SetLoop(bool loop);
+
+		String m_Name;
+		String m_ReplaceName;
+		uint32_t m_FirstFrame = 0;
+		uint32_t m_LastFrame = 0;
+		bool m_IsLoop = false;
+	};
+
 	class ModelImporter : public AssetImporter
 	{
 		OBJECT_DECLARATION(ModelImporter)
@@ -41,24 +73,34 @@ namespace Blueberry
 
 		List<ModelMaterialData>& GetMaterials();
 		
-		const float& GetScale();
-		void SetScale(const float& scale);
+		float GetScale() const;
+		void SetScale(float scale);
 
-		const bool& GetGenerateLightmapUV();
-		void SetGenerateLightmapUV(const bool& generate);
+		bool GetGenerateLightmapUV() const;
+		void SetGenerateLightmapUV(bool generate);
 
-		const bool& GetGeneratePhysicsShape();
-		void SetGeneratePhysicsShape(const bool& generate);
+		bool GetGeneratePhysicsShape() const;
+		void SetGeneratePhysicsShape(bool generate);
 
 	protected:
-		virtual void ImportData() override;
+		virtual void ImportData() final;
 
 	private:
-		void CreateMeshEntity(Transform* parent, fbxsdk::FbxNode* node, List<Object*>& objects);
-		std::string GetPhysicsShapePath(const size_t& fileId);
+		struct NodeData
+		{
+			Entity* entity;
+			Transform* transform;
+			String nodeName;
+			String entityName;
+		};
 
+		void CreateHierarchy(Transform* parent, fbxsdk::FbxNode* node, List<Object*>& objects, Dictionary<fbxsdk::FbxNode*, NodeData>& nodeToData, float globalScale);
+		void CreateMesh(fbxsdk::FbxNode* node, List<Object*>& objects, Dictionary<fbxsdk::FbxNode*, NodeData>& nodeToData, float globalScale);
+		void CreateAnimationClips(fbxsdk::FbxScene* scene, List<Object*>& objects, float globalScale);
+		
 	private:
 		List<ModelMaterialData> m_Materials;
+		List<ModelAnimationClipData> m_AnimationClips;
 		float m_Scale = 1.0f;
 		bool m_GenerateLightmapUV = false;
 		bool m_GeneratePhysicsShape = true;

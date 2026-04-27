@@ -7,8 +7,11 @@
 #include "Concrete\CameraEditor.h"
 #include "Concrete\SpriteRendererEditor.h"
 #include "Concrete\MeshRendererEditor.h"
+#include "Concrete\SkinnedMeshRendererEditor.h"
 #include "Concrete\SkyRendererEditor.h"
 #include "Concrete\LightEditor.h"
+#include "Concrete\ProbeVolumeEditor.h"
+#include "Concrete\ReflectionProbeEditor.h"
 #include "Concrete\SphereColliderEditor.h"
 #include "Concrete\BoxColliderEditor.h"
 #include "Concrete\CharacterControllerEditor.h"
@@ -16,7 +19,11 @@
 #include "Concrete\AssetImporterEditor.h"
 #include "Concrete\TextureImporterEditor.h"
 #include "Concrete\ModelImporterEditor.h"
+#include "Concrete\NativeAssetImporterEditor.h"
+#include "Concrete\PrefabImporterEditor.h"
 #include "Concrete\MeshEditor.h"
+#include "Concrete\AnimationGraphEditor.h"
+#include "Concrete\AnimationTransitionEditor.h"
 
 namespace Blueberry
 {
@@ -27,8 +34,11 @@ namespace Blueberry
 		REGISTER_OBJECT_EDITOR(CameraEditor, Camera);
 		REGISTER_OBJECT_EDITOR(SpriteRendererEditor, SpriteRenderer);
 		REGISTER_OBJECT_EDITOR(MeshRendererEditor, MeshRenderer);
+		REGISTER_OBJECT_EDITOR(SkinnedMeshRendererEditor, SkinnedMeshRenderer);
 		REGISTER_OBJECT_EDITOR(SkyRendererEditor, SkyRenderer);
 		REGISTER_OBJECT_EDITOR(LightEditor, Light);
+		REGISTER_OBJECT_EDITOR(ProbeVolumeEditor, ProbeVolume);
+		REGISTER_OBJECT_EDITOR(ReflectionProbeEditor, ReflectionProbe);
 		REGISTER_OBJECT_EDITOR(SphereColliderEditor, SphereCollider);
 		REGISTER_OBJECT_EDITOR(BoxColliderEditor, BoxCollider);
 		REGISTER_OBJECT_EDITOR(CharacterControllerEditor, CharacterController);
@@ -36,7 +46,11 @@ namespace Blueberry
 		REGISTER_OBJECT_EDITOR(AssetImporterEditor, AssetImporter);
 		REGISTER_OBJECT_EDITOR(TextureImporterEditor, TextureImporter);
 		REGISTER_OBJECT_EDITOR(ModelImporterEditor, ModelImporter);
+		REGISTER_OBJECT_EDITOR(NativeAssetImporterEditor, NativeAssetImporter);
+		REGISTER_OBJECT_EDITOR(PrefabImporterEditor, PrefabImporter);
 		REGISTER_OBJECT_EDITOR(MeshEditor, Mesh);
+		REGISTER_OBJECT_EDITOR(AnimationGraphEditor, AnimationGraph);
+		REGISTER_OBJECT_EDITOR(AnimationTransitionEditor, AnimationTransition);
 		REGISTER_OBJECT_EDITOR(ObjectEditor, Object);
 	}
 }

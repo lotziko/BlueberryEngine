@@ -9,13 +9,22 @@
 #include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\ComputeShader.h"
-#include "Blueberry\Graphics\GfxRenderTexturePool.h"
+#include "Blueberry\Graphics\GfxTexturePool.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\DefaultMaterials.h"
+#include "Blueberry\Scene\Components\Camera.h"
 
 namespace Blueberry
 {
+	ComputeShader* PostProcessing::s_ResolveMSAABloomShader = nullptr;
+	Material* PostProcessing::s_BloomMaterial = nullptr;
+	GfxBuffer* PostProcessing::s_ResolveMSAABloomData = nullptr;
+	GfxBuffer* PostProcessing::s_PostProcessingData = nullptr;
+	GfxBuffer* PostProcessing::s_BloomData = nullptr;
+	Texture2D* PostProcessing::s_BlueNoiseLUT = nullptr;
+	Texture2D* PostProcessing::s_BRDFIntegrationLUT = nullptr;
+
 	struct PostProcessingData
 	{
 		Vector4 exposureTime;
@@ -55,32 +64,31 @@ namespace Blueberry
 		s_BloomMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/Bloom.shader")));
 
 		BufferProperties postProcessingBufferProperties = {};
-		postProcessingBufferProperties.type = BufferType::Constant;
 		postProcessingBufferProperties.elementCount = 1;
 		postProcessingBufferProperties.elementSize = sizeof(PostProcessingData) * 1;
-		postProcessingBufferProperties.isWritable = true;
+		postProcessingBufferProperties.usageFlags = BufferUsageFlags::ConstantBuffer;
 
 		GfxDevice::CreateBuffer(postProcessingBufferProperties, s_PostProcessingData);
 		
 		BufferProperties resolveMSAABloomBufferProperties = {};
-		resolveMSAABloomBufferProperties.type = BufferType::Constant;
 		resolveMSAABloomBufferProperties.elementCount = 1;
 		resolveMSAABloomBufferProperties.elementSize = sizeof(ResolveMSAABloomData);
-		resolveMSAABloomBufferProperties.isWritable = true;
+		resolveMSAABloomBufferProperties.usageFlags = BufferUsageFlags::ConstantBuffer;
 
 		GfxDevice::CreateBuffer(resolveMSAABloomBufferProperties, s_ResolveMSAABloomData);
 
 		BufferProperties bloomBufferProperties = {};
 
-		bloomBufferProperties.type = BufferType::Constant;
 		bloomBufferProperties.elementCount = 1;
 		bloomBufferProperties.elementSize = sizeof(BloomData);
-		bloomBufferProperties.isWritable = true;
+		bloomBufferProperties.usageFlags = BufferUsageFlags::ConstantBuffer;
 
 		GfxDevice::CreateBuffer(bloomBufferProperties, s_BloomData);
 
-		s_BlueNoiseLUT = static_cast<Texture2D*>(AssetLoader::Load("assets/textures/BlueNoiseLUT.png"));
-		s_BRDFIntegrationLUT = static_cast<Texture2D*>(AssetLoader::Load("assets/textures/BRDFIntegrationLUT.png"));
+		auto blueNoiseParameters = std::make_pair(false, WrapMode::Repeat); // TODO remove sampler from texture
+		auto brdfParameters = std::make_pair(false, WrapMode::Clamp);
+		s_BlueNoiseLUT = static_cast<Texture2D*>(AssetLoader::Load("assets/textures/BlueNoiseLUT.png", &blueNoiseParameters));
+		s_BRDFIntegrationLUT = static_cast<Texture2D*>(AssetLoader::Load("assets/textures/BRDFIntegrationLUT.png", &brdfParameters));
 		GfxDevice::SetGlobalTexture(s_BlueNoiseLUTId, s_BlueNoiseLUT->Get());
 		GfxDevice::SetGlobalTexture(s_BRDFIntegrationLUTId, s_BRDFIntegrationLUT->Get());
 		AutoExposure::Initialize();
@@ -98,13 +106,12 @@ namespace Blueberry
 		AutoExposure::Shutdown();
 	}
 
-	void PostProcessing::Draw(GfxTexture* msaaColor, GfxTexture* color, GfxTexture* output, const Rectangle& viewport, const Vector2Int& size, const bool& simplified)
+	void PostProcessing::Draw(Camera* camera, GfxTexture* msaaColor, GfxTexture* color, GfxTexture* output, const Rectangle& viewport, const Vector2Int& size, const CameraType& cameraType)
 	{
-		if (simplified)
+		if (cameraType == CameraType::Preview)
 		{
 			// Resolve color
 			GfxDevice::SetRenderTarget(color);
-			//GfxDevice::ClearColor(background);
 			GfxDevice::SetGlobalTexture(s_ScreenColorTextureId, msaaColor);
 			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetResolveMSAA(), 1));
 			GfxDevice::SetRenderTarget(nullptr);
@@ -114,12 +121,12 @@ namespace Blueberry
 			GfxDevice::SetRenderTarget(output);
 			GfxDevice::SetViewport(0, 0, size.x, size.y);
 			GfxDevice::SetGlobalTexture(s_ScreenColorTextureId, color);
-			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetPostProcessing(), simplified ? 1 : 0));
+			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetPostProcessing(), 2));
 			GfxDevice::SetRenderTarget(nullptr);
 		}
 		else
 		{
-			float exposure = 0.2f / AutoExposure::GetExposure();
+			float exposure = 0.2f / AutoExposure::GetExposure(camera);
 			PostProcessingData postProcessingConstants = {};
 			postProcessingConstants.exposureTime = Vector4(exposure, Time::GetFrameCount() / 60.0f / 10, 0, 0);
 
@@ -139,37 +146,36 @@ namespace Blueberry
 
 			uint32_t textureWidth = color->GetWidth() / 4;
 			uint32_t textureHeight = color->GetHeight() / 4;
-			uint32_t textureWidth2 = NextPowerOfTwo(textureWidth);
-			uint32_t textureHeight2 = NextPowerOfTwo(textureHeight);
+			uint32_t textureWidth2 = Math::NextPowerOfTwo(textureWidth);
+			uint32_t textureHeight2 = Math::NextPowerOfTwo(textureHeight);
 
-			TextureProperties properties = {};
+			TextureProperties textureProperties = {};
 
-			properties.width = textureWidth;
-			properties.height = textureHeight;
-			properties.depth = 1;
-			properties.antiAliasing = 1;
-			properties.mipCount = 1;
-			properties.format = TextureFormat::R16G16B16A16_Float;
-			properties.dimension = TextureDimension::Texture2D;
-			properties.wrapMode = WrapMode::Clamp;
-			properties.filterMode = FilterMode::Bilinear;
-			properties.isRenderTarget = true;
-			properties.isUnorderedAccess = true;
+			textureProperties.width = textureWidth;
+			textureProperties.height = textureHeight;
+			textureProperties.depth = 1;
+			textureProperties.antiAliasing = 1;
+			textureProperties.mipCount = 1;
+			textureProperties.format = TextureFormat::R16G16B16A16_Float;
+			textureProperties.dimension = TextureDimension::Texture2D;
+			textureProperties.wrapMode = WrapMode::Clamp;
+			textureProperties.filterMode = FilterMode::Bilinear;
+			textureProperties.usageFlags = TextureUsageFlags::RenderTarget | TextureUsageFlags::UnorderedAccess;
 
-			GfxTexture* bloom = GfxRenderTexturePool::Get(properties);
-			properties.width = textureWidth2;
-			properties.height = textureHeight2;
-			properties.isUnorderedAccess = false;
-			GfxTexture* bloom4 = GfxRenderTexturePool::Get(properties);
-			properties.width = textureWidth2 / 2;
-			properties.height = textureHeight2 / 2;
-			GfxTexture* bloom8 = GfxRenderTexturePool::Get(properties);
-			properties.width = textureWidth2 / 4;
-			properties.height = textureHeight2 / 4;
-			GfxTexture* bloom16 = GfxRenderTexturePool::Get(properties);
-			properties.width = textureWidth2 / 8;
-			properties.height = textureHeight2 / 8;
-			GfxTexture* bloom32 = GfxRenderTexturePool::Get(properties);
+			GfxTexture* bloom = GfxTexturePool::Get(textureProperties);
+			textureProperties.width = textureWidth2;
+			textureProperties.height = textureHeight2;
+			textureProperties.usageFlags = TextureUsageFlags::RenderTarget;
+			GfxTexture* bloom4 = GfxTexturePool::Get(textureProperties);
+			textureProperties.width = textureWidth2 / 2;
+			textureProperties.height = textureHeight2 / 2;
+			GfxTexture* bloom8 = GfxTexturePool::Get(textureProperties);
+			textureProperties.width = textureWidth2 / 4;
+			textureProperties.height = textureHeight2 / 4;
+			GfxTexture* bloom16 = GfxTexturePool::Get(textureProperties);
+			textureProperties.width = textureWidth2 / 8;
+			textureProperties.height = textureHeight2 / 8;
+			GfxTexture* bloom32 = GfxTexturePool::Get(textureProperties);
 
 			GfxDevice::SetRenderTarget(bloom);
 			GfxDevice::ClearColor({});
@@ -179,7 +185,7 @@ namespace Blueberry
 			GfxDevice::SetGlobalTexture(s_ColorOutputTextureId, color);
 			GfxDevice::SetGlobalTexture(s_BloomOutputTextureId, bloom);
 			GfxDevice::Dispatch(s_ResolveMSAABloomShader->GetKernel(0), threadWidth, threadHeight, 1);
-			AutoExposure::Calculate(color, viewport);
+			AutoExposure::Calculate(camera, color, viewport);
 
 			BloomData bloomConstants = {};
 			bloomConstants.texelSize = Vector2(1.0f / textureWidth, 1.0f / textureHeight);
@@ -220,20 +226,20 @@ namespace Blueberry
 			bloomConstants.texelSize = Vector2(1.0f / (textureWidth2 / 2), 1.0f / (textureHeight2 / 2));
 			s_BloomData->SetData(reinterpret_cast<char*>(&bloomConstants), sizeof(BloomData));
 
-			// Horizontal blur
+			// Vertical blur
 			GfxDevice::SetRenderTarget(bloom);
 			GfxDevice::SetViewport(0, 0, textureWidth2 / 2, textureHeight2 / 2);
 			GfxDevice::SetGlobalTexture(s_SourceTextureId, bloom8);
-			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_BloomMaterial, 2));
+			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_BloomMaterial, 3));
 
 			bloomConstants.texelSize = Vector2(1.0f / textureWidth, 1.0f / textureHeight);
 			s_BloomData->SetData(reinterpret_cast<char*>(&bloomConstants), sizeof(BloomData));
 
-			// Vertical blur
+			// Horizontal blur
 			GfxDevice::SetRenderTarget(bloom8);
 			GfxDevice::SetViewport(0, 0, textureWidth, textureHeight);
 			GfxDevice::SetGlobalTexture(s_SourceTextureId, bloom);
-			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_BloomMaterial, 3));
+			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_BloomMaterial, 2));
 
 			// Downscale 2
 			GfxDevice::SetRenderTarget(bloom16);
@@ -243,21 +249,21 @@ namespace Blueberry
 
 			bloomConstants.texelSize = Vector2(1.0f / (textureWidth2 / 4), 1.0f / (textureHeight2 / 4));
 			s_BloomData->SetData(reinterpret_cast<char*>(&bloomConstants), sizeof(BloomData));
-
-			// Horizontal blur
+			
+			// Vertical blur
 			GfxDevice::SetRenderTarget(bloom);
 			GfxDevice::SetViewport(0, 0, textureWidth2 / 4, textureHeight2 / 4);
 			GfxDevice::SetGlobalTexture(s_SourceTextureId, bloom16);
-			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_BloomMaterial, 2));
+			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_BloomMaterial, 3));
 
 			bloomConstants.texelSize = Vector2(1.0f / textureWidth, 1.0f / textureHeight);
 			s_BloomData->SetData(reinterpret_cast<char*>(&bloomConstants), sizeof(BloomData));
 
-			// Vertical blur
+			// Horizontal blur
 			GfxDevice::SetRenderTarget(bloom16);
 			GfxDevice::SetViewport(0, 0, textureWidth, textureHeight);
 			GfxDevice::SetGlobalTexture(s_SourceTextureId, bloom);
-			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_BloomMaterial, 3));
+			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_BloomMaterial, 2));
 
 			// Downscale 3
 			GfxDevice::SetRenderTarget(bloom32);
@@ -268,20 +274,20 @@ namespace Blueberry
 			bloomConstants.texelSize = Vector2(1.0f / (textureWidth2 / 8), 1.0f / (textureHeight2 / 8));
 			s_BloomData->SetData(reinterpret_cast<char*>(&bloomConstants), sizeof(BloomData));
 
-			// Horizontal blur
+			// Vertical blur
 			GfxDevice::SetRenderTarget(bloom);
 			GfxDevice::SetViewport(0, 0, textureWidth2 / 8, textureHeight2 / 8);
 			GfxDevice::SetGlobalTexture(s_SourceTextureId, bloom32);
-			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_BloomMaterial, 2));
+			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_BloomMaterial, 3));
 
 			bloomConstants.texelSize = Vector2(1.0f / textureWidth, 1.0f / textureHeight);
 			s_BloomData->SetData(reinterpret_cast<char*>(&bloomConstants), sizeof(BloomData));
 
-			// Vertical blur
+			// Horizontal blur
 			GfxDevice::SetRenderTarget(bloom32);
 			GfxDevice::SetViewport(0, 0, textureWidth, textureHeight);
 			GfxDevice::SetGlobalTexture(s_SourceTextureId, bloom);
-			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_BloomMaterial, 3));
+			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_BloomMaterial, 2));
 
 			bloomConstants.texelSize = Vector2(1.0f / (textureWidth2 / 8), 1.0f / (textureHeight2 / 8));
 			s_BloomData->SetData(reinterpret_cast<char*>(&bloomConstants), sizeof(BloomData));
@@ -317,14 +323,14 @@ namespace Blueberry
 			GfxDevice::SetRenderTarget(output);
 			GfxDevice::SetViewport(0, 0, size.x, size.y);
 			GfxDevice::SetGlobalTexture(s_ScreenColorTextureId, color);
-			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetPostProcessing(), simplified ? 1 : 0));
+			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetPostProcessing(), cameraType == CameraType::Reflection ? 1 : 0));
 			GfxDevice::SetRenderTarget(nullptr);
 
-			GfxRenderTexturePool::Release(bloom);
-			GfxRenderTexturePool::Release(bloom4);
-			GfxRenderTexturePool::Release(bloom8);
-			GfxRenderTexturePool::Release(bloom16);
-			GfxRenderTexturePool::Release(bloom32);
+			GfxTexturePool::Release(bloom);
+			GfxTexturePool::Release(bloom4);
+			GfxTexturePool::Release(bloom8);
+			GfxTexturePool::Release(bloom16);
+			GfxTexturePool::Release(bloom32);
 		}
 	}
 }

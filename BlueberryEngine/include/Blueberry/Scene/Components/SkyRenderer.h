@@ -15,20 +15,13 @@ namespace Blueberry
 		SkyRenderer() = default;
 		virtual ~SkyRenderer() = default;
 
-		virtual void OnEnable() final;
-		virtual void OnDisable() final;
+		Material* GetMaterial() const;
 
-		Material* GetMaterial();
-
-		const Color& GetAmbientColor();
+		const Color& GetAmbientColor() const;
 		void SetAmbientColor(const Color& color);
-
-		TextureCube* GetReflectionTexture();
-		void SetReflectionTexture(TextureCube* texture);
 
 	private:
 		ObjectPtr<Material> m_Material;
 		Color m_AmbientColor;
-		ObjectPtr<TextureCube> m_ReflectionTexture;
 	};
 }

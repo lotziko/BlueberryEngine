@@ -17,10 +17,10 @@ namespace Blueberry
 		KeywordDB() = default;
 		virtual ~KeywordDB() = default;
 
-		const uint32_t GetMask(const size_t& id);
+		const uint32_t GetMask(size_t id);
 
 	private:
-		Dictionary<size_t, uint32_t> m_KeywordMask = {};
+		List<std::pair<size_t, uint32_t>> m_KeywordMask = {};
 		uint32_t m_MaxMask = 1;
 	};
 
@@ -45,14 +45,14 @@ namespace Blueberry
 		const String& GetName() const;
 		void SetName(const String& name);
 
-		const PropertyType& GetType() const;
-		void SetType(const PropertyType& type);
+		PropertyType GetType() const;
+		void SetType(PropertyType type);
 
 		const String& GetDefaultTextureName() const;
 		void SetDefaultTextureName(const String& name);
 
-		const TextureDimension& GetTextureDimension() const;
-		void SetTextureDimension(const TextureDimension& dimension);
+		TextureDimension GetTextureDimension() const;
+		void SetTextureDimension(TextureDimension dimension);
 
 	private:
 		String m_Name;
@@ -70,24 +70,24 @@ namespace Blueberry
 		PassData() = default;
 		virtual ~PassData() = default;
 
-		const CullMode& GetCullMode() const;
-		void SetCullMode(const CullMode& cullMode);
+		CullMode GetCullMode() const;
+		void SetCullMode(CullMode cullMode);
 
-		const BlendMode& GetBlendSrcColor() const;
-		const BlendMode& GetBlendSrcAlpha() const;
-		void SetBlendSrc(const BlendMode& blendSrc);
-		void SetBlendSrc(const BlendMode& blendSrcColor, const BlendMode& blendSrcAlpha);
+		BlendMode GetBlendSrcColor() const;
+		BlendMode GetBlendSrcAlpha() const;
+		void SetBlendSrc(BlendMode blendSrc);
+		void SetBlendSrc(BlendMode blendSrcColor, BlendMode blendSrcAlpha);
 
-		const BlendMode& GetBlendDstColor() const;
-		const BlendMode& GetBlendDstAlpha() const;
-		void SetBlendDst(const BlendMode& blendDst);
-		void SetBlendDst(const BlendMode& blendDstColor, const BlendMode& blendDstAlpha);
+		BlendMode GetBlendDstColor() const;
+		BlendMode GetBlendDstAlpha() const;
+		void SetBlendDst(BlendMode blendDst);
+		void SetBlendDst(BlendMode blendDstColor, BlendMode blendDstAlpha);
 
-		const ZTest& GetZTest() const;
-		void SetZTest(const ZTest& zTest);
+		ZTest GetZTest() const;
+		void SetZTest(ZTest zTest);
 
-		const ZWrite& GetZWrite() const;
-		void SetZWrite(const ZWrite& zWrite);
+		ZWrite GetZWrite() const;
+		void SetZWrite(ZWrite zWrite);
 
 		const List<String>& GetVertexKeywords() const;
 		void SetVertexKeywords(const List<String>& keywords);
@@ -95,14 +95,14 @@ namespace Blueberry
 		const List<String>& GetFragmentKeywords() const;
 		void SetFragmentKeywords(const List<String>& keywords);
 
-		const uint32_t& GetVertexOffset() const;
-		void SetVertexOffset(const uint32_t& offset);
+		uint32_t GetVertexOffset() const;
+		void SetVertexOffset(uint32_t offset);
 
-		const uint32_t& GetGeometryOffset() const;
-		void SetGeometryOffset(const uint32_t& offset);
+		uint32_t GetGeometryOffset() const;
+		void SetGeometryOffset(uint32_t offset);
 
-		const uint32_t& GetFragmentOffset() const;
-		void SetFragmentOffset(const uint32_t& offset);
+		uint32_t GetFragmentOffset() const;
+		void SetFragmentOffset(uint32_t offset);
 
 	private:
 		CullMode m_CullMode = CullMode::Front;
@@ -129,7 +129,7 @@ namespace Blueberry
 		ShaderData() = default;
 		virtual ~ShaderData() = default;
 
-		const PassData& GetPass(const uint32_t& index) const;
+		const PassData& GetPass(uint32_t index) const;
 		const size_t GetPassCount() const;
 		void SetPasses(const List<PassData>& passes);
 
@@ -171,13 +171,13 @@ namespace Blueberry
 		void Initialize(const VariantsData& variantsData);
 		void Initialize(const VariantsData& variantsData, const ShaderData& data);
 
-		static Shader* Create(const VariantsData& variantsData, const ShaderData& shaderData, Shader* existingShader = nullptr);
+		static Shader* Create(const VariantsData& variantsData, const ShaderData& shaderData);
 
-		static void SetKeyword(const size_t& id, const bool& enabled);
-		static const uint32_t& GetActiveKeywordsMask();
+		static void SetKeyword(size_t id, bool enabled);
+		static uint32_t GetActiveKeywordsMask();
 
 	private:
-		const Shader::ShaderVariant GetVariant(const uint32_t& vertexKeywordFlags, const uint32_t& fragmentKeywordFlags, const uint8_t& passIndex);
+		const Shader::ShaderVariant GetVariant(uint32_t vertexKeywordFlags, uint32_t fragmentKeywordFlags, uint8_t passIndex);
 		void IncrementUpdateCount();
 
 	private:
@@ -191,7 +191,7 @@ namespace Blueberry
 		uint32_t m_UpdateCount = 0;
 		HashSet<ObjectId> m_Dependencies;
 
-		static HashSet<size_t> s_ActiveKeywords;
+		static List<size_t> s_ActiveKeywords;
 		static uint32_t s_ActiveKeywordsMask;
 		static KeywordDB s_GlobalKeywords;
 

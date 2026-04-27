@@ -6,7 +6,9 @@
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\Mesh.h"
 #include "Blueberry\Graphics\Texture2D.h"
+#include "Blueberry\Graphics\Texture3D.h"
 #include "Blueberry\Scene\Components\MeshRenderer.h"
+#include "Blueberry\Scene\Components\ProbeVolume.h"
 #include "Blueberry\Scene\Scene.h"
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Assets\Importers\TextureImporter.h"
@@ -27,11 +29,14 @@ namespace Blueberry
 	OBJECT_DEFINITION(LightmappingWindow, EditorWindow)
 	{
 		DEFINE_BASE_FIELDS(LightmappingWindow, EditorWindow)
-		DEFINE_FIELD(LightmappingWindow, m_TileSize, BindingType::Int, {})
-		DEFINE_FIELD(LightmappingWindow, m_TexelPerUnit, BindingType::Float, {})
-		DEFINE_FIELD(LightmappingWindow, m_SamplePerTexel, BindingType::Int, {})
-		DEFINE_FIELD(LightmappingWindow, m_PreferredSize, BindingType::Int, {})
-		DEFINE_FIELD(LightmappingWindow, m_Denoise, BindingType::Bool, {})
+		DEFINE_FIELD(LightmappingWindow, m_TileSize, BindingType::Int, FieldOptions())
+		DEFINE_FIELD(LightmappingWindow, m_TexelPerUnit, BindingType::Float, FieldOptions())
+		DEFINE_FIELD(LightmappingWindow, m_SamplePerTexel, BindingType::Int, FieldOptions())
+		DEFINE_FIELD(LightmappingWindow, m_PreferredSize, BindingType::Int, FieldOptions())
+		DEFINE_FIELD(LightmappingWindow, m_DistanceBetweenProbes, BindingType::Float, FieldOptions())
+		DEFINE_FIELD(LightmappingWindow, m_Denoise, BindingType::Bool, FieldOptions())
+		DEFINE_FIELD(LightmappingWindow, m_GenerateLightmap, BindingType::Bool, FieldOptions())
+		DEFINE_FIELD(LightmappingWindow, m_GenerateProbes, BindingType::Bool, FieldOptions())
 		EditorMenuManager::AddItem("Window/Lightmapping", &LightmappingWindow::Open);
 	}
 
@@ -44,9 +49,8 @@ namespace Blueberry
 
 	void LightmappingWindow::OnDrawUI()
 	{
+		ImGui::BeginPaddedArea(ImVec2(10, 5), ImVec2(10, 5));
 		Scene* scene = EditorSceneManager::GetScene();
-		SceneSettings* settings = EditorSceneManager::GetSettings();
-		LightingData* lightingData = settings->GetLightingData();
 
 		if (scene != nullptr)
 		{
@@ -54,8 +58,21 @@ namespace Blueberry
 			ImGui::FloatEdit("Texel per unit", &m_TexelPerUnit);
 			ImGui::IntEdit("Sample per texel", &m_SamplePerTexel);
 			ImGui::IntEdit("Preferred size", &m_PreferredSize);
+			ImGui::FloatEdit("Distance between probes", &m_DistanceBetweenProbes);
 			ImGui::BoolEdit("Denoise", &m_Denoise);
+			ImGui::BoolEdit("Generate lightmap", &m_GenerateLightmap);
+			ImGui::BoolEdit("Generate probes", &m_GenerateProbes);
 
+			SceneSettings* settings = EditorSceneManager::GetSettings();
+			LightingData* lightingData = settings->GetLightingData();
+
+			if (lightingData == nullptr || lightingData->GetState() != ObjectState::Default)
+			{
+				lightingData = Object::Create<LightingData>();
+				settings->SetLightingData(lightingData);
+			}
+
+			ImGui::EditorStyle& style = ImGui::GetEditorStyle();
 			switch (LightmappingManager::GetLightmappingState())
 			{
 				case LightmappingState::None:
@@ -69,7 +86,10 @@ namespace Blueberry
 							params.texelPerUnit = m_TexelPerUnit;
 							params.samplePerTexel = m_SamplePerTexel;
 							params.maxSize = m_PreferredSize;
+							params.distanceBetweenProbes = m_DistanceBetweenProbes;
 							params.denoise = m_Denoise;
+							params.generateLightmap = m_GenerateLightmap;
+							params.generateProbes = m_GenerateProbes;
 
 							LightmappingManager::Calculate(EditorSceneManager::GetScene(), params);
 						}
@@ -84,7 +104,8 @@ namespace Blueberry
 					ImGui::SliderFloat("Zoom", &newZoom, 1, 300);
 					ImGui::Checkbox("Draw all", &drawAll);
 
-					ImGui::BeginChild("Zoom");
+					ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 10);
+					ImGui::BeginChild("Zoom", ImVec2(ImGui::GetContentRegionAvail().x + 10, 0));
 
 					ImGuiWindow* window = ImGui::GetCurrentWindow();
 					window->ScrollTarget = window->Scroll * newZoom / zoom;
@@ -96,7 +117,7 @@ namespace Blueberry
 					size.y *= zoom;
 					ImDrawList* list = ImGui::GetWindowDrawList();
 
-					if (lightingData != nullptr && lightingData->GetState() == ObjectState::Default)
+					if (lightingData != nullptr)
 					{
 						Texture2D* lightmap = lightingData->GetLightmap();
 						if (lightmap != nullptr)
@@ -105,7 +126,7 @@ namespace Blueberry
 						}
 
 						list->PushClipRect(pos, pos + size, true);
-						Vector4* chartScaleOffset = lightingData->GetChartScaleOffset();
+						const List<Vector4>& chartScaleOffset = lightingData->GetChartOffsetScale();
 						for (auto& component : scene->GetIterator<MeshRenderer>())
 						{
 							MeshRenderer* meshRenderer = static_cast<MeshRenderer*>(component.second);
@@ -161,50 +182,78 @@ namespace Blueberry
 				case LightmappingState::Waiting:
 				{
 					CalculationResult& result = LightmappingManager::GetCalculationResult();
-					DirectX::ScratchImage image = {};
-					image.Initialize2D(DXGI_FORMAT_R32G32B32A32_FLOAT, result.outputSize.x, result.outputSize.y, 1, 1);
-					memcpy(image.GetPixels(), result.output.data(), result.outputSize.x * result.outputSize.y * sizeof(Vector4));
-					TextureHelper::Flip(image);
-
-					String path = EditorSceneManager::GetPath();
-					path.replace(path.find(".scene"), 6, "\\Lightmap.hdr");
-
-					std::filesystem::create_directories(std::filesystem::path(path).parent_path());
-					HRESULT hr = DirectX::SaveToHDRFile(*image.GetImages(), WString(path.begin(), path.end()).c_str());
-					if (FAILED(hr))
+					
+					if (m_GenerateLightmap)
 					{
-						BB_ERROR("Failed to save texture.");
+						if (result.output.size() > 0)
+						{
+							DirectX::ScratchImage image = {};
+							image.Initialize2D(DXGI_FORMAT_R32G32B32A32_FLOAT, result.outputSize.x, result.outputSize.y, 1, 1);
+							memcpy(image.GetPixels(), result.output.data(), result.outputSize.x * result.outputSize.y * sizeof(Vector4));
+
+							String lightmapPath = EditorSceneManager::GetPath();
+							lightmapPath.replace(lightmapPath.find(".scene"), 6, "\\Lightmap.hdr");
+
+							std::filesystem::create_directories(std::filesystem::path(lightmapPath).parent_path());
+							HRESULT hr = DirectX::SaveToHDRFile(*image.GetImages(), WString(lightmapPath.begin(), lightmapPath.end()).c_str());
+							if (FAILED(hr))
+							{
+								BB_ERROR("Failed to save texture.");
+							}
+
+							auto relativePath = std::filesystem::relative(lightmapPath, Path::GetAssetsPath());
+							TextureImporter* importer = static_cast<TextureImporter*>(AssetDB::GetImporter(StringHelper::ToString(relativePath)));
+							importer->SetTextureShape(TextureImporter::TextureShape::Texture2D);
+							importer->SetTextureFormat(TextureImporter::TextureFormat::BC6H);
+							importer->SetFilterMode(FilterMode::Bilinear);
+							importer->SetGenerateMipMaps(false);
+							importer->SaveAndReimport();
+							AssetDB::Refresh();
+							Texture2D* lightmap = static_cast<Texture2D*>(ObjectDB::GetObjectFromGuid(importer->GetGuid(), importer->GetMainObject()));
+
+							lightingData->SetLightmapData(lightmap, result.chartOffsetScale, result.chartInstanceOffset);
+							lightingData->ApplyLightmap();
+						}
+					}
+					if (m_GenerateProbes)
+					{
+						if (result.probeOutput.size() > 0)
+						{
+							String probeVolumePath = EditorSceneManager::GetPath();
+							probeVolumePath.replace(probeVolumePath.find(".scene"), 6, "\\ProbeVolume.asset");
+
+							std::filesystem::create_directories(std::filesystem::path(probeVolumePath).parent_path());
+
+							Texture3D* probeVolume = Texture3D::Create(result.probeOutputSize.x, result.probeOutputSize.y, result.probeOutputSize.z, TextureFormat::R11G11B10_Float, WrapMode::Clamp, FilterMode::Trilinear);
+							probeVolume->SetReadable(true);	// Keep data on build
+							probeVolume->SetData(result.probeOutput.data(), result.probeOutput.size());
+							lightingData->SetProbeVolumeData(probeVolume);
+
+							auto relativePath = std::filesystem::relative(probeVolumePath, Path::GetAssetsPath());
+							AssetDB::CreateAsset(probeVolume, StringHelper::ToString(relativePath));
+							AssetDB::Refresh();
+							lightingData->ApplyProbeVolume();
+
+							for (auto& component : scene->GetIterator<ProbeVolume>())
+							{
+								ProbeVolume* probeVolume = static_cast<ProbeVolume*>(component.second);
+								probeVolume->SetBounds(result.probeBounds);
+								probeVolume->SetSize(result.probeOutputSize);
+							}
+						}
 					}
 
-					auto relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
-					TextureImporter* importer = static_cast<TextureImporter*>(AssetDB::GetImporter(relativePath.string().data()));
-					importer->SetTextureShape(TextureImporter::TextureShape::Texture2D);
-					importer->SetTextureFormat(TextureImporter::TextureFormat::BC6H);
-					importer->SetFilterMode(FilterMode::Bilinear);
-					importer->SetGenerateMipMaps(false);
-					importer->SaveAndReimport();
-					AssetDB::Refresh();
-					Texture2D* lightmap = static_cast<Texture2D*>(ObjectDB::GetObjectFromGuid(importer->GetGuid(), importer->GetMainObject()));
+					String lightingDataPath = EditorSceneManager::GetPath();
+					lightingDataPath.replace(lightingDataPath.find(".scene"), 6, "\\LightingData.asset");
+					auto relativeLightingDataPath = std::filesystem::relative(lightingDataPath, Path::GetAssetsPath());
+					AssetDB::CreateAsset(lightingData, StringHelper::ToString(relativeLightingDataPath));
 
-					if (lightingData == nullptr || lightingData->GetState() != ObjectState::Default)
-					{
-						lightingData = Object::Create<LightingData>();
-						settings->SetLightingData(lightingData);
-					}
-					lightingData->SetLightmap(lightmap);
-					lightingData->SetChartScaleOffset(result.chartOffsetScale);
-					lightingData->SetInstanceOffset(result.chartInstanceOffset);
-					lightingData->Apply(scene);
-
-					path = EditorSceneManager::GetPath();
-					path.replace(path.find(".scene"), 6, "\\LightingData.asset");
-					relativePath = std::filesystem::relative(path, Path::GetAssetsPath());
-					AssetDB::CreateAsset(lightingData, relativePath.string().data());
 					EditorSceneManager::Save();
 					LightmappingManager::Shutdown();
 				}
 				break;
 			}
 		}
+		ImGui::EndPaddedArea();
 	}
 }

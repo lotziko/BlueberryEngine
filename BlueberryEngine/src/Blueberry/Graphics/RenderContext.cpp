@@ -4,16 +4,22 @@
 #include "Blueberry\Core\Time.h"
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Scene\Components\MeshRenderer.h"
+#include "Blueberry\Scene\Components\SkinnedMeshRenderer.h"
 #include "Blueberry\Scene\Components\SkyRenderer.h"
+#include "Blueberry\Scene\Components\ProbeVolume.h"
+#include "Blueberry\Scene\Components\ReflectionProbe.h"
 #include "Blueberry\Graphics\Texture.h"
 #include "Blueberry\Scene\Components\Light.h"
+#include "Blueberry\Scene\Components\Canvas.h"
 #include "Blueberry\Scene\Components\Transform.h"
 
 #include "Blueberry\Graphics\Mesh.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\DefaultTextures.h"
+#include "Blueberry\Graphics\DefaultMaterials.h"
 #include "Blueberry\Graphics\Renderer2D.h"
+#include "Blueberry\Graphics\Skinning.h"
 #include "LightHelper.h"
 #include "Blueberry\Graphics\RendererTree.h"
 #include "Blueberry\Graphics\GfxDevice.h"
@@ -26,8 +32,14 @@
 
 namespace Blueberry
 {
+
+	GfxBuffer* RenderContext::s_IndexBuffer = nullptr;
+	size_t RenderContext::s_LastCullingFrame = 0;
+
 	const uint32_t INSTANCE_BUFFER_SIZE = 8192;
-	
+	const uint32_t SKINNING_BUFFER_SIZE = 128;
+	const uint8_t SHADOW_CASTER_PASS = 2;
+
 	struct DrawingOperation
 	{
 		Matrix matrix;
@@ -39,14 +51,35 @@ namespace Blueberry
 		uint8_t instanceCount;
 		float distance;
 		uint32_t lightmapChartOffset;
+		GfxBuffer* vertexBufferOverride;
+		bool isCounterClockwise;
+	};
+
+	struct CullerInfo
+	{
+		Object* cullerObject;
+		uint32_t index;
+		SortingMode sortingMode;
+		ObjectsFilter objectsFilter;
+	};
+
+	enum class Keyword
+	{
+		None,
+		Lightmap,
+		Probes
 	};
 	
 	static List<DrawingOperation> s_DrawingOperations = {};
-	static List<MeshRenderer*> s_MeshRenderers = {};
-	static std::tuple<Object*, uint8_t, SortingMode> s_LastCullerInfo = {};
+	static CullerInfo s_LastCullerInfo = {};
 	static Object* s_CurrentCuller = nullptr;
-	static uint8_t s_CurrentCullerIndex = 0;
+	static uint32_t s_CurrentCullerIndex = 0;
+	static Keyword s_CurrentKeyword = Keyword::None;
 	static List<std::pair<Matrix, Vector4>> s_PerDrawData = {};
+	static uint32_t s_Indices[INSTANCE_BUFFER_SIZE];
+
+	static size_t s_LightmapId = TO_HASH("LIGHTMAP");
+	static size_t s_ProbesId = TO_HASH("PROBES");
 
 	bool CompareOperationsDefault(const DrawingOperation& o1, const DrawingOperation& o2)
 	{
@@ -77,21 +110,24 @@ namespace Blueberry
 		for (uint32_t i = 0; i < operationCount; ++i)
 		{
 			auto& operation = s_DrawingOperations[i];
-			s_PerDrawData.push_back(std::move(std::make_pair(GfxDevice::GetGPUMatrix(operation.matrix), Vector4(operation.lightmapChartOffset, 0, 0, 0))));
+			s_PerDrawData.push_back(std::move(std::make_pair(GfxDevice::GetGPUMatrix(operation.matrix), Vector4(static_cast<float>(operation.lightmapChartOffset), 0.0f, 0.0f, 0.0f))));
 		}
 		PerDrawDataConstantBuffer::BindDataInstanced(s_PerDrawData.data(), operationCount);
 	}
 
-	void GatherOperations(const CullingResults& results, Object* cullerObject, const uint8_t& index = 0, const SortingMode& sortingMode = SortingMode::Default)
+	void GatherOperations(const CullingResults& results, Object* cullerObject, uint32_t index, SortingMode sortingMode, ObjectsFilter objectsFilter, uint8_t passIndex)
 	{
+		bool isAll = objectsFilter == ObjectsFilter::All;
+		bool isStatic = objectsFilter == ObjectsFilter::Static;
+
 		// TODO store data of frame instead of s_LastCullerInfo
-		if (std::get<0>(s_LastCullerInfo) == cullerObject && std::get<1>(s_LastCullerInfo) == index && std::get<2>(s_LastCullerInfo) == sortingMode)
+		if (s_LastCullerInfo.cullerObject == cullerObject && s_LastCullerInfo.index == index && s_LastCullerInfo.sortingMode == sortingMode && s_LastCullerInfo.objectsFilter == objectsFilter)
 		{
 			return;
 		}
 		else
 		{
-			s_LastCullerInfo = std::make_tuple(cullerObject, index, sortingMode);
+			s_LastCullerInfo = { cullerObject, index, sortingMode, objectsFilter };
 		}
 
 		s_DrawingOperations.clear();
@@ -115,18 +151,32 @@ namespace Blueberry
 		for (auto it = begin; it < end; ++it)
 		{
 			Renderer* renderer = static_cast<Renderer*>(ObjectDB::GetObject(*it));
+			if (passIndex == SHADOW_CASTER_PASS)
+			{
+				if (!renderer->IsCastingShadows())
+				{
+					continue;
+				}
+			}
 			if (renderer->GetType() == MeshRenderer::Type)
 			{
-				auto meshRenderer = static_cast<MeshRenderer*>(renderer);
+				MeshRenderer* meshRenderer = static_cast<MeshRenderer*>(renderer);
+				Transform* transform = meshRenderer->GetTransform();
+				if (!isAll && isStatic != transform->IsStatic())
+				{
+					continue;
+				}
 				Mesh* mesh = meshRenderer->GetMesh();
 				if (mesh == nullptr)
 				{
 					continue;
 				}
-				Matrix matrix = meshRenderer->GetTransform()->GetLocalToWorldMatrix();
+				Matrix matrix = renderer->GetLocalToWorldMatrix();
 				float distance = Vector3::Transform(meshRenderer->GetBounds().Center, cullerViewMatrix).z;
 				uint32_t lightmapChartOffset = meshRenderer->GetLightmapChartOffset();
 				uint32_t subMeshCount = mesh->GetSubMeshCount();
+				Vector3 scale = transform->GetScale();
+				bool isCounterClockwise = (scale.x * scale.y * scale.z) < 0.0f;
 				if (subMeshCount > 1)
 				{
 					for (uint32_t i = 0; i < subMeshCount; ++i)
@@ -134,7 +184,18 @@ namespace Blueberry
 						Material* material = GfxDrawingOperation::GetValidMaterial(meshRenderer->GetMaterial(i));
 						if (material != nullptr)
 						{
-							s_DrawingOperations.push_back(std::move(DrawingOperation{ matrix, mesh, mesh->GetObjectId(), static_cast<uint8_t>(i), material, material->GetObjectId(), 1, distance, lightmapChartOffset }));
+							DrawingOperation operation = {};
+							operation.matrix = matrix;
+							operation.mesh = mesh;
+							operation.meshId = mesh->GetObjectId();
+							operation.submeshIndex = static_cast<uint8_t>(i);
+							operation.material = material;
+							operation.materialId = material->GetObjectId();
+							operation.instanceCount = 1;
+							operation.distance = distance;
+							operation.lightmapChartOffset = lightmapChartOffset;
+							operation.isCounterClockwise = isCounterClockwise;
+							s_DrawingOperations.push_back(std::move(operation));
 						}
 					}
 				}
@@ -143,7 +204,87 @@ namespace Blueberry
 					Material* material = GfxDrawingOperation::GetValidMaterial(meshRenderer->GetMaterial());
 					if (material != nullptr)
 					{
-						s_DrawingOperations.push_back(std::move(DrawingOperation{ matrix, mesh, mesh->GetObjectId(), 255, material, material->GetObjectId(), 1, distance, lightmapChartOffset }));
+						DrawingOperation operation = {};
+						operation.matrix = matrix;
+						operation.mesh = mesh;
+						operation.meshId = mesh->GetObjectId();
+						operation.submeshIndex = 255;
+						operation.material = material;
+						operation.materialId = material->GetObjectId();
+						operation.instanceCount = 1;
+						operation.distance = distance;
+						operation.lightmapChartOffset = lightmapChartOffset;
+						operation.isCounterClockwise = isCounterClockwise;
+						s_DrawingOperations.push_back(std::move(operation));
+					}
+				}
+			}
+			else if (renderer->GetType() == SkinnedMeshRenderer::Type)
+			{
+				SkinnedMeshRenderer* skinnedMeshRenderer = static_cast<SkinnedMeshRenderer*>(renderer);
+				if (isStatic)
+				{
+					continue;
+				}
+				if (!skinnedMeshRenderer->HasRoot())
+				{
+					continue;
+				}
+				Mesh* mesh = skinnedMeshRenderer->GetMesh();
+				if (mesh == nullptr)
+				{
+					continue;
+				}
+				Transform* transform = skinnedMeshRenderer->GetTransform();
+				Matrix matrix = renderer->GetLocalToWorldMatrix();
+				float distance = Vector3::Transform(skinnedMeshRenderer->GetBounds().Center, cullerViewMatrix).z;
+				uint32_t subMeshCount = mesh->GetSubMeshCount();
+				GfxBuffer* vertexBuffer = Skinning::GetVertexBuffer(skinnedMeshRenderer);
+				Vector3 scale = transform->GetScale();
+				bool isCounterClockwise = (scale.x * scale.y * scale.z) < 0.0f;
+				if (vertexBuffer == nullptr)
+				{
+					vertexBuffer = mesh->GetVertexBuffer();
+				}
+				if (subMeshCount > 1)
+				{
+					for (uint32_t i = 0; i < subMeshCount; ++i)
+					{
+						Material* material = GfxDrawingOperation::GetValidMaterial(skinnedMeshRenderer->GetMaterial(i));
+						if (material != nullptr)
+						{
+							DrawingOperation operation = {};
+							operation.matrix = matrix;
+							operation.mesh = mesh;
+							operation.meshId = mesh->GetObjectId();
+							operation.submeshIndex = static_cast<uint8_t>(i);
+							operation.material = material;
+							operation.materialId = material->GetObjectId();
+							operation.instanceCount = 1;
+							operation.distance = distance;
+							operation.vertexBufferOverride = vertexBuffer;
+							operation.isCounterClockwise = isCounterClockwise;
+							s_DrawingOperations.push_back(std::move(operation));
+						}
+					}
+				}
+				else
+				{
+					Material* material = GfxDrawingOperation::GetValidMaterial(skinnedMeshRenderer->GetMaterial());
+					if (material != nullptr)
+					{
+						DrawingOperation operation = {};
+						operation.matrix = matrix;
+						operation.mesh = mesh;
+						operation.meshId = mesh->GetObjectId();
+						operation.submeshIndex = 255;
+						operation.material = material;
+						operation.materialId = material->GetObjectId();
+						operation.instanceCount = 1;
+						operation.distance = distance;
+						operation.vertexBufferOverride = vertexBuffer;
+						operation.isCounterClockwise = isCounterClockwise;
+						s_DrawingOperations.push_back(std::move(operation));
 					}
 				}
 			}
@@ -169,13 +310,15 @@ namespace Blueberry
 		}
 
 		results.camera = camera;
+		results.reflectionProbes.clear();
 		results.lights.clear();
+		results.canvases.clear();
 		results.cullerInfos.clear();
 
 		Matrix view = cameraData.isMultiview ? cameraData.multiviewViewMatrix[0].Invert() : camera->GetInverseViewMatrix();
 		Matrix projection = cameraData.isMultiview ? cameraData.multiviewProjectionMatrix[0] : camera->GetProjectionMatrix();
 		Frustum cameraFrustum;
-		cameraFrustum.CreateFromMatrix(cameraFrustum, projection, false);
+		cameraFrustum.CreateFromMatrix(cameraFrustum, projection);
 		cameraFrustum.Transform(cameraFrustum, view);
 
 		CullingResults::CullerInfo cameraFrustumInfo = {};
@@ -185,26 +328,59 @@ namespace Blueberry
 		results.cullerInfos.push_back(cameraFrustumInfo);
 
 		results.skyRenderer = nullptr;
-		for (auto component : scene->GetIterator<SkyRenderer>())
+		for (auto& component : scene->GetIterator<SkyRenderer>())
 		{
 			results.skyRenderer = static_cast<SkyRenderer*>(component.second);
+			break;
+		}
+
+		results.probeVolume = nullptr;
+		for (auto& component : scene->GetIterator<ProbeVolume>())
+		{
+			results.probeVolume = static_cast<ProbeVolume*>(component.second);
+			break;
+		}
+
+		// TODO culling
+		for (auto& component : scene->GetIterator<ReflectionProbe>())
+		{
+			results.reflectionProbes.push_back(static_cast<ReflectionProbe*>(component.second));
+		}
+
+		for (auto& component : scene->GetIterator<Canvas>())
+		{
+			Canvas* canvas = static_cast<Canvas*>(component.second);
+			if (canvas->GetCamera() == camera)
+			{
+				results.canvases.push_back(canvas);
+			}
 		}
 
 		if (s_LastCullingFrame < Time::GetFrameCount())
 		{
 			// TODO move to frame start or find the other away to react on the transform movement
-			for (auto component : scene->GetIterator<MeshRenderer>())
+			for (auto& component : scene->GetIterator<MeshRenderer>())
 			{
-				auto meshRenderer = static_cast<MeshRenderer*>(component.second);
+				MeshRenderer* meshRenderer = static_cast<MeshRenderer*>(component.second);
 				meshRenderer->OnPreCull();
+			}
+			for (auto& component : scene->GetIterator<SkinnedMeshRenderer>())
+			{
+				SkinnedMeshRenderer* skinnedMeshRenderer = static_cast<SkinnedMeshRenderer*>(component.second);
+				skinnedMeshRenderer->OnPreCull();
+			}
+			for (auto& component : scene->GetIterator<Light>())
+			{
+				Light* light = static_cast<Light*>(component.second);
+				light->OnPreCull();
 			}
 			s_LastCullingFrame = Time::GetFrameCount();
 		}
 
-		for (auto component : scene->GetIterator<Light>())
+		for (auto& component : scene->GetIterator<Light>())
 		{
-			auto light = static_cast<Light*>(component.second);
-			auto transform = light->GetTransform();
+			Light* light = static_cast<Light*>(component.second);
+			Transform* transform = light->GetTransform();
 			// TODO light types
 			Sphere bounds = Sphere(transform->GetPosition(), light->GetRange());
 			LightType type = light->GetType();
@@ -220,96 +396,152 @@ namespace Blueberry
 					LightType type = light->GetType();
 					if (type == LightType::Directional)
 					{
-						float planes[] = { 0.01f, 5.0f, 15.0f, 43.0f };//{ 0.01f, 5.0f, 20.0f, 100.0f };
-
 						Quaternion rotation = transform->GetRotation();
 						Vector3 forward = Vector3::Transform(Vector3::Forward, rotation);
-						Vector3 right = Vector3::Transform(Vector3::Right, rotation);
 						Vector3 up = Vector3::Transform(Vector3::Up, rotation);
+						const float shadowSize = static_cast<float>(LightHelper::GetShadowSize(LightType::Directional));
 
-						for (int i = 0; i < 3; ++i)
+						if (light->m_IsCached)
 						{
-							float nearPlane = planes[i];
-							float farPlane = planes[i + 1];
+							float planes[] = { 10.0f, 25.0f, 60.0f };
+							float grid[] = { 1.0f, 5.0f, 12.0f };
 
-							Frustum cameraSliceFrustum;
-							cameraSliceFrustum.CreateFromMatrix(cameraSliceFrustum, Matrix::CreatePerspectiveFieldOfView(ToRadians(camera->GetFieldOfView()), camera->GetAspectRatio(), nearPlane, farPlane), false);
-							cameraSliceFrustum.Transform(cameraSliceFrustum, view);
+							Vector3 center = camera->GetTransform()->GetPosition();
+							float zRange = 100.0f;
 
-							// Find near and far planes
-
-							Vector3 corners[8];
-							cameraSliceFrustum.GetCorners(corners);
-
-							float minZ = FLT_MAX;
-							float maxZ = FLT_MIN;
-
-							for (int j = 0; j < 8; ++j)
+							for (int i = 0; i < 3; ++i)
 							{
-								Vector3 trf = Vector3::Transform(corners[j], view);
-								minZ = std::min(minZ, trf.z);
-								maxZ = std::max(maxZ, trf.z);
-							}
+								float radius = planes[i];
+								Vector3 currentCascadeCenter = camera->m_ShadowCascades[i];
+								Vector3 cascadeCenter = center;
+								float cascadeGrid = grid[i];
 
-							constexpr float zMult = 10.0f;
-							if (minZ < 0)
+								cascadeCenter.x = std::roundf(cascadeCenter.x * cascadeGrid) / cascadeGrid;
+								cascadeCenter.y = std::roundf(cascadeCenter.y * cascadeGrid) / cascadeGrid;
+								cascadeCenter.z = std::roundf(cascadeCenter.z * cascadeGrid) / cascadeGrid;
+
+								Vector3 origin = cascadeCenter - forward * (zRange / 2.0f);
+								Matrix projection = Matrix::CreateOrthographicOffCenter(-radius, radius, -radius, radius, 0.001f, zRange);
+								Matrix view = Matrix::CreateLookAt(origin, cascadeCenter, up);
+								Matrix viewProjection = view * projection;
+
+								Vector3 centerLS = Vector3(0, 0, 0);
+								centerLS = Vector3::Transform(centerLS, viewProjection);
+								float texCoordX = centerLS.x * shadowSize * 0.5f;
+								float texCoordY = centerLS.y * shadowSize * 0.5f;
+
+								float texCoordRoundedX = std::round(texCoordX);
+								float texCoordRoundedY = std::round(texCoordY);
+
+								float dx = texCoordRoundedX - texCoordX;
+								float dy = texCoordRoundedY - texCoordY;
+
+								dx /= shadowSize * 0.5f;
+								dy /= shadowSize * 0.5f;
+
+								viewProjection *= Matrix::CreateTranslation(dx, dy, 0);
+
+								if (Vector3::Distance(currentCascadeCenter, cascadeCenter) > cascadeGrid * 0.5f)
+								{
+									light->m_WorldToShadow[i] = viewProjection;
+									light->m_ShadowCascades[i] = Vector4(cascadeCenter.x, cascadeCenter.y, cascadeCenter.z, std::powf(radius, 2));
+									light->m_IsDirty[i] = true;
+								}
+
+								Math::GetOrthographicPlanes(viewProjection.Invert(), &lightCullerInfo.planes[0], &lightCullerInfo.planes[1], &lightCullerInfo.planes[2], &lightCullerInfo.planes[3], &lightCullerInfo.planes[4], &lightCullerInfo.planes[5]);
+
+								lightCullerInfo.index = i;
+								lightCullerInfo.viewMatrix = view;
+								results.cullerInfos.push_back(std::move(lightCullerInfo));
+							}
+						}
+						else
+						{
+							float planes[] = { 0.01f, 5.0f, 15.0f, 43.0f };//{ 0.01f, 5.0f, 20.0f, 100.0f };
+
+							for (int i = 0; i < 3; ++i)
 							{
-								minZ *= zMult;
+								float nearPlane = planes[i];
+								float farPlane = planes[i + 1];
+
+								Frustum cameraSliceFrustum;
+								cameraSliceFrustum.CreateFromMatrix(cameraSliceFrustum, Matrix::CreatePerspectiveFieldOfView(Math::ToRadians(camera->GetFieldOfView()), camera->GetAspectRatio(), nearPlane, farPlane));
+								cameraSliceFrustum.Transform(cameraSliceFrustum, view);
+
+								// Find near and far planes
+
+								Vector3 corners[8];
+								cameraSliceFrustum.GetCorners(corners);
+
+								float minZ = FLT_MAX;
+								float maxZ = FLT_MIN;
+
+								for (int j = 0; j < 8; ++j)
+								{
+									Vector3 trf = Vector3::Transform(corners[j], view);
+									minZ = std::min(minZ, trf.z);
+									maxZ = std::max(maxZ, trf.z);
+								}
+
+								constexpr float zMult = 10.0f;
+								if (minZ < 0)
+								{
+									minZ *= zMult;
+								}
+								else
+								{
+									minZ /= zMult;
+								}
+								if (maxZ < 0)
+								{
+									maxZ /= zMult;
+								}
+								else
+								{
+									maxZ *= zMult;
+								}
+								float zRange = maxZ - minZ;
+
+								// Create frustum
+
+								Sphere frustumSphere;
+								Sphere::CreateFromFrustum(frustumSphere, cameraSliceFrustum);
+
+								float radius = frustumSphere.Radius;
+								Vector3 center = frustumSphere.Center;
+
+								// https://www.gamedev.net/forums/topic/497259-stable-cascaded-shadow-maps/
+
+								Matrix projection = Matrix::CreateOrthographicOffCenter(-radius, radius, -radius, radius, 0.001f, zRange);
+								Vector3 origin = center - forward * (zRange / 2.0f);
+								Matrix view = Matrix::CreateLookAt(origin, center, up);
+								Matrix viewProjection = view * projection;
+
+								Vector3 centerLS = Vector3(0, 0, 0);
+								centerLS = Vector3::Transform(centerLS, viewProjection);
+								float texCoordX = centerLS.x * shadowSize * 0.5f;
+								float texCoordY = centerLS.y * shadowSize * 0.5f;
+
+								float texCoordRoundedX = std::round(texCoordX);
+								float texCoordRoundedY = std::round(texCoordY);
+
+								float dx = texCoordRoundedX - texCoordX;
+								float dy = texCoordRoundedY - texCoordY;
+
+								dx /= shadowSize * 0.5f;
+								dy /= shadowSize * 0.5f;
+
+								viewProjection *= Matrix::CreateTranslation(dx, dy, 0);
+
+								light->m_WorldToShadow[i] = viewProjection;
+								light->m_ShadowCascades[i] = Vector4(center.x, center.y, center.z, std::powf(radius, 2));
+
+								Math::GetOrthographicPlanes(viewProjection.Invert(), &lightCullerInfo.planes[0], &lightCullerInfo.planes[1], &lightCullerInfo.planes[2], &lightCullerInfo.planes[3], &lightCullerInfo.planes[4], &lightCullerInfo.planes[5]);
+
+								lightCullerInfo.index = i;
+								lightCullerInfo.viewMatrix = view;
+								results.cullerInfos.push_back(std::move(lightCullerInfo));
 							}
-							else
-							{
-								minZ /= zMult;
-							}
-							if (maxZ < 0)
-							{
-								maxZ /= zMult;
-							}
-							else
-							{
-								maxZ *= zMult;
-							}
-							float zRange = maxZ - minZ;
-
-							// Create frustum
-
-							Sphere frustumSphere;
-							Sphere::CreateFromFrustum(frustumSphere, cameraSliceFrustum);
-
-							float radius = frustumSphere.Radius;
-							Vector3 center = frustumSphere.Center;
-							const float shadowSize = 2048;
-
-							// https://www.gamedev.net/forums/topic/497259-stable-cascaded-shadow-maps/
-
-							Matrix projection = Matrix::CreateOrthographicOffCenter(-radius, radius, -radius, radius, 0.001f, zRange);
-							Vector3 origin = center - forward * (zRange / 2.0f);
-							Matrix view = Matrix::CreateLookAt(origin, center, up);
-							Matrix viewProjection = view * projection;
-
-							Vector3 centerLS = Vector3(0, 0, 0);
-							centerLS = Vector3::Transform(centerLS, viewProjection);
-							float texCoordX = centerLS.x * shadowSize * 0.5f;
-							float texCoordY = centerLS.y * shadowSize * 0.5f;
-
-							float texCoordRoundedX = std::round(texCoordX);
-							float texCoordRoundedY = std::round(texCoordY);
-
-							float dx = texCoordRoundedX - texCoordX;
-							float dy = texCoordRoundedY - texCoordY;
-
-							dx /= shadowSize * 0.5f;
-							dy /= shadowSize * 0.5f;
-
-							viewProjection *= Matrix::CreateTranslation(dx, dy, 0);
-
-							light->m_WorldToShadow[i] = viewProjection;
-							light->m_ShadowCascades[i] = Vector4(center.x, center.y, center.z, std::pow(radius, 2));
-
-							GetOrthographicPlanes(viewProjection.Invert(), &lightCullerInfo.planes[0], &lightCullerInfo.planes[1], &lightCullerInfo.planes[2], &lightCullerInfo.planes[3], &lightCullerInfo.planes[4], &lightCullerInfo.planes[5]);
-
-							lightCullerInfo.index = i;
-							lightCullerInfo.viewMatrix = view;
-							results.cullerInfos.push_back(std::move(lightCullerInfo));
 						}
 					}
 					else if (type == LightType::Spot)
@@ -318,7 +550,7 @@ namespace Blueberry
 						Matrix projection = LightHelper::GetProjectionMatrix(light);
 
 						Frustum lightFrustum;
-						lightFrustum.CreateFromMatrix(lightFrustum, projection, false);
+						lightFrustum.CreateFromMatrix(lightFrustum, projection);
 						lightFrustum.Transform(lightFrustum, transform->GetLocalToWorldMatrix());
 
 						lightFrustum.GetPlanes(&lightCullerInfo.planes[0], &lightCullerInfo.planes[1], &lightCullerInfo.planes[2], &lightCullerInfo.planes[3], &lightCullerInfo.planes[4], &lightCullerInfo.planes[5]);
@@ -334,7 +566,7 @@ namespace Blueberry
 						{
 							Matrix view = LightHelper::GetViewMatrix(light, transform, i);
 							Frustum lightFrustum;
-							lightFrustum.CreateFromMatrix(lightFrustum, projection, false);
+							lightFrustum.CreateFromMatrix(lightFrustum, projection);
 							lightFrustum.Transform(lightFrustum, view.Invert());
 
 							lightFrustum.GetPlanes(&lightCullerInfo.planes[0], &lightCullerInfo.planes[1], &lightCullerInfo.planes[2], &lightCullerInfo.planes[3], &lightCullerInfo.planes[4], &lightCullerInfo.planes[5]);
@@ -355,7 +587,7 @@ namespace Blueberry
 		});
 		JobSystem::Wait();
 
-		s_LastCullerInfo = std::make_tuple(nullptr, 0, SortingMode::Default);
+		s_LastCullerInfo = { nullptr, 0, SortingMode::Default, ObjectsFilter::All };
 	}
 
 	void RenderContext::BindCamera(CullingResults& results, CameraData& cameraData)
@@ -373,16 +605,12 @@ namespace Blueberry
 			Material* material = results.skyRenderer->GetMaterial();
 			if (material != nullptr)
 			{
-				// Generate IBL 128x128 texture and store in project or in scene (in sky renderer) instead
-				// Also generate same IBL for reflection probes
-				// Can generate IBLs in engine method similar to Unity
-				TextureCube* reflectionTexture = results.skyRenderer->GetReflectionTexture();
-				if (reflectionTexture != nullptr)
-				{
-					GfxDevice::SetGlobalTexture(TO_HASH("_ReflectionTexture"), reflectionTexture->Get());
-				}
 				GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetCube(), material, 0));
 			}
+		}
+		else
+		{
+			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetSkybox(), 1));
 		}
 	}
 
@@ -395,8 +623,9 @@ namespace Blueberry
 		s_CurrentCullerIndex = shadowDrawingSettings.sliceIndex;
 
 		DrawingSettings drawingSettings = {};
-		drawingSettings.passIndex = 2; // Shadow caster
+		drawingSettings.passIndex = SHADOW_CASTER_PASS;
 		drawingSettings.sortingMode = SortingMode::FrontToBack;
+		drawingSettings.objectsFilter = shadowDrawingSettings.objectsFilter;
 		DrawRenderers(results, drawingSettings);
 	}
 
@@ -406,40 +635,61 @@ namespace Blueberry
 
 		if (s_IndexBuffer == nullptr)
 		{
-			uint32_t indices[INSTANCE_BUFFER_SIZE];
 			for (uint32_t i = 0; i < INSTANCE_BUFFER_SIZE; ++i)
 			{
-				indices[i] = i;
+				s_Indices[i] = i;
 			}
 
-			BufferProperties vertexBufferProperties = {};
-			vertexBufferProperties.type = BufferType::Vertex;
-			vertexBufferProperties.elementCount = INSTANCE_BUFFER_SIZE;
-			vertexBufferProperties.elementSize = sizeof(uint32_t);
-			vertexBufferProperties.data = indices;
-			vertexBufferProperties.dataSize = INSTANCE_BUFFER_SIZE * sizeof(uint32_t);
-			vertexBufferProperties.isWritable = false;
+			BufferProperties indexBufferProperties = {};
+			indexBufferProperties.elementCount = INSTANCE_BUFFER_SIZE;
+			indexBufferProperties.elementSize = sizeof(uint32_t);
+			indexBufferProperties.data = s_Indices;
+			indexBufferProperties.dataSize = INSTANCE_BUFFER_SIZE * sizeof(uint32_t);
+			indexBufferProperties.usageFlags = BufferUsageFlags::VertexBuffer;
 
-			GfxDevice::CreateBuffer(vertexBufferProperties, s_IndexBuffer);
+			GfxDevice::CreateBuffer(indexBufferProperties, s_IndexBuffer);
 		}
 
-		GatherOperations(results, s_CurrentCuller, s_CurrentCullerIndex, drawingSettings.sortingMode);
+		GatherOperations(results, s_CurrentCuller, s_CurrentCullerIndex, drawingSettings.sortingMode, drawingSettings.objectsFilter, passIndex);
 
 		// Draw meshes
 		uint32_t operationCount = static_cast<uint32_t>(s_DrawingOperations.size());
 		for (uint32_t i = 0; i < operationCount;)
 		{
 			auto& operation = s_DrawingOperations[i];
+			Keyword keyword = operation.lightmapChartOffset > 0 ? Keyword::Lightmap : Keyword::Probes;
+			if (keyword != s_CurrentKeyword)
+			{
+				s_CurrentKeyword = keyword;
+				if (keyword == Keyword::Lightmap)
+				{
+					Shader::SetKeyword(s_LightmapId, true);
+					Shader::SetKeyword(s_ProbesId, false);
+				}
+				else
+				{
+					Shader::SetKeyword(s_LightmapId, false);
+					Shader::SetKeyword(s_ProbesId, true);
+				}
+			}
 			if (operation.submeshIndex == 255)
 			{
-				GfxDevice::Draw(GfxDrawingOperation(operation.mesh, operation.material, passIndex, s_IndexBuffer, i, operation.instanceCount));
+				GfxDevice::Draw(GfxDrawingOperation(operation.mesh, operation.vertexBufferOverride, operation.material, passIndex, s_IndexBuffer, i, operation.instanceCount, operation.isCounterClockwise));
 			}
 			else
 			{
 				auto& subMesh = operation.mesh->GetSubMesh(operation.submeshIndex);
-				GfxDevice::Draw(GfxDrawingOperation(operation.mesh, operation.material, subMesh.GetIndexCount(), subMesh.GetIndexStart(), operation.mesh->GetVertexCount(), passIndex, s_IndexBuffer, i, operation.instanceCount));
+				GfxDevice::Draw(GfxDrawingOperation(operation.mesh, operation.vertexBufferOverride, operation.material, subMesh.GetIndexCount(), subMesh.GetIndexStart(), operation.mesh->GetVertexCount(), passIndex, s_IndexBuffer, i, operation.instanceCount, operation.isCounterClockwise));
 			}
 			i += operation.instanceCount;
+		}
+	}
+
+	void RenderContext::DrawCanvases(CullingResults& results)
+	{
+		for (Canvas* canvas : results.canvases)
+		{
+			canvas->Draw();
 		}
 	}
 }

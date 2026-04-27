@@ -2,24 +2,30 @@
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Core\ClassDB.h"
-#include "Blueberry\Core\Time.h"
 
 namespace Blueberry
 {
+	static const uint8_t DIRTY_LOCAL = 1;
+	static const uint8_t DIRTY_WORLD = 2;
+	static const uint8_t DIRTY_WORLD_TO_LOCAL = 4;
+	static const uint8_t DIRTY_ALL = 7;
+
 	OBJECT_DEFINITION(Transform, Component)
 	{
 		DEFINE_BASE_FIELDS(Transform, Component)
 		DEFINE_FIELD(Transform, m_LocalPosition, BindingType::Vector3, FieldOptions().SetUpdateCallback(MethodBind::Create(&Transform::InvalidateHierarchy)))
 		DEFINE_FIELD(Transform, m_LocalRotation, BindingType::Quaternion, FieldOptions().SetUpdateCallback(MethodBind::Create(&Transform::InvalidateHierarchy)))
 		DEFINE_FIELD(Transform, m_LocalScale, BindingType::Vector3, FieldOptions().SetUpdateCallback(MethodBind::Create(&Transform::InvalidateHierarchy)))
-		DEFINE_FIELD(Transform, m_LocalRotationEulerHint, BindingType::Vector3, FieldOptions().SetVisibility(VisibilityType::Hidden))
-		DEFINE_FIELD(Transform, m_Parent, BindingType::ObjectPtr, FieldOptions().SetObjectType(Transform::Type).SetVisibility(VisibilityType::Hidden))
-		DEFINE_FIELD(Transform, m_Children, BindingType::ObjectPtrList, FieldOptions().SetObjectType(Transform::Type).SetVisibility(VisibilityType::Hidden))
+		DEFINE_FIELD(Transform, m_IsStatic, BindingType::Bool, FieldOptions().SetUpdateCallback(MethodBind::Create(&Transform::InvalidateHierarchy)))
+		DEFINE_FIELD(Transform, m_LocalRotationEulerHint, BindingType::Vector3, FieldOptions().SetVisibility(VisibilityType::Hidden).SetSerializationFlags(SerializationFlags::EditorOnly))
+		DEFINE_FIELD(Transform, m_Parent, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Transform::Type).SetVisibility(VisibilityType::Hidden))
+		DEFINE_FIELD(Transform, m_Children, BindingType::ObjectPtrList, FieldOptions().SetObjectType(&Transform::Type).SetVisibility(VisibilityType::Hidden))
+		DEFINE_EXECUTE_ALWAYS()
 	}
 
 	void Transform::OnEnable()
 	{
-		if (m_IsDirty)
+		if (m_DirtyFlags)
 		{
 			RecalculateHierarchy();
 		}
@@ -40,7 +46,7 @@ namespace Blueberry
 
 	const Matrix& Transform::GetLocalToWorldMatrix()
 	{
-		if (m_IsDirty)
+		if (m_DirtyFlags & DIRTY_WORLD)
 		{
 			RecalculateHierarchy();
 		}
@@ -50,12 +56,30 @@ namespace Blueberry
 
 	const Matrix& Transform::GetWorldToLocalMatrix()
 	{
-		if (m_IsDirty)
+		if (m_DirtyFlags & DIRTY_WORLD)
 		{
 			RecalculateHierarchy();
 		}
 
+		if (m_DirtyFlags & DIRTY_WORLD_TO_LOCAL)
+		{
+			m_LocalToWorldMatrix.Invert(m_WorldToLocalMatrix);
+			m_DirtyFlags &= ~DIRTY_WORLD_TO_LOCAL;
+		}
+
 		return m_WorldToLocalMatrix;
+	}
+
+	const Matrix& Transform::GetLocalMatrix()
+	{
+		if (m_DirtyFlags & DIRTY_LOCAL)
+		{
+			m_LocalMatrix = Math::CreateTRS(m_LocalPosition, m_LocalRotation, m_LocalScale);
+			m_DirtyFlags &= ~DIRTY_LOCAL;
+			++m_UpdateCount;
+		}
+
+		return m_LocalMatrix;
 	}
 
 	const Vector3& Transform::GetLocalPosition()
@@ -85,7 +109,7 @@ namespace Blueberry
 
 	const Vector3 Transform::GetPosition()
 	{
-		if (m_IsDirty)
+		if (m_DirtyFlags & DIRTY_WORLD)
 		{
 			RecalculateHierarchy();
 		}
@@ -95,12 +119,22 @@ namespace Blueberry
 
 	const Quaternion Transform::GetRotation()
 	{
-		if (m_IsDirty)
+		if (m_DirtyFlags & DIRTY_WORLD)
 		{
 			RecalculateHierarchy();
 		}
 
 		return m_Rotation;
+	}
+
+	const Vector3 Transform::GetScale()
+	{
+		if (m_DirtyFlags & DIRTY_WORLD)
+		{
+			RecalculateHierarchy();
+		}
+
+		return m_Scale;
 	}
 
 	Transform* Transform::GetParent() const
@@ -113,12 +147,17 @@ namespace Blueberry
 		return m_Children;
 	}
 
-	const size_t Transform::GetChildrenCount() const
+	Transform* Transform::GetChild(size_t index)
+	{
+		return m_Children[index].Get();
+	}
+
+	size_t Transform::GetChildrenCount() const
 	{
 		return m_Children.size();
 	}
 
-	const uint32_t Transform::GetSiblingIndex()
+	size_t Transform::GetSiblingIndex()
 	{
 		if (m_Parent.IsValid())
 		{
@@ -130,6 +169,10 @@ namespace Blueberry
 					return i;
 				}
 			}
+		}
+		else
+		{
+			return GetScene()->GetRootIndex(m_Entity.Get());
 		}
 		return 0;
 	}
@@ -143,6 +186,7 @@ namespace Blueberry
 	void Transform::SetLocalRotation(const Quaternion& rotation)
 	{
 		m_LocalRotation = rotation;
+		m_LocalRotationEulerHint = Math::ToDegrees(m_LocalRotation.ToEuler());
 		InvalidateHierarchy();
 	}
 
@@ -155,7 +199,7 @@ namespace Blueberry
 	void Transform::SetLocalEulerRotationHint(const Vector3& euler)
 	{
 		m_LocalRotationEulerHint = euler;
-		m_LocalRotation = Quaternion::CreateFromYawPitchRoll(ToRadians(m_LocalRotationEulerHint.y), ToRadians(m_LocalRotationEulerHint.x), ToRadians(m_LocalRotationEulerHint.z));
+		m_LocalRotation = Quaternion::CreateFromYawPitchRoll(Math::ToRadians(m_LocalRotationEulerHint.y), Math::ToRadians(m_LocalRotationEulerHint.x), Math::ToRadians(m_LocalRotationEulerHint.z));
 		m_LocalRotation.Normalize();
 		InvalidateHierarchy();
 	}
@@ -174,7 +218,7 @@ namespace Blueberry
 		}
 		else
 		{
-			m_LocalPosition = Vector3::Transform(position, m_Parent->m_WorldToLocalMatrix);
+			m_LocalPosition = Vector3::Transform(position, m_Parent->GetWorldToLocalMatrix());
 		}
 		InvalidateHierarchy();
 	}
@@ -187,13 +231,30 @@ namespace Blueberry
 		}
 		else
 		{
-			m_LocalRotation = Quaternion::CreateFromRotationMatrix(Matrix::Transform(m_Parent->m_WorldToLocalMatrix, rotation));
+			Quaternion parentRotation;
+			m_Parent->GetRotation().Inverse(parentRotation);
+			m_LocalRotation = rotation * parentRotation;
 		}
+		m_LocalRotationEulerHint = Math::ToDegrees(m_LocalRotation.ToEuler());
 		InvalidateHierarchy();
 	}
 
-	void Transform::SetParent(Transform* parent)
+	void Transform::SetLocalTRS(const TRS& trs)
 	{
+		m_LocalPosition = trs.position;
+		m_LocalRotation = trs.rotation;
+		m_LocalScale = trs.scale;
+		m_LocalRotationEulerHint = Math::ToDegrees(m_LocalRotation.ToEuler());
+		InvalidateHierarchy();
+	}
+
+	void Transform::SetParent(Transform* parent, bool worldPositionStays)
+	{
+		if (m_Parent == parent)
+		{
+			return;
+		}
+
 		Scene* scene = GetScene();
 		if (scene != nullptr && (parent != nullptr) != m_Parent.IsValid())
 		{
@@ -207,7 +268,14 @@ namespace Blueberry
 			}
 		}
 
-		// TODO worldTransformStays
+		Vector3 previousPosition;
+		Quaternion previousRotation;
+		if (worldPositionStays)
+		{
+			previousPosition = GetPosition();
+			previousRotation = GetRotation();
+		}
+
 		if (m_Parent.IsValid())
 		{
 			if (m_Parent->m_Children.size() > 0)
@@ -218,58 +286,105 @@ namespace Blueberry
 		m_Parent = parent;
 		if (parent != nullptr)
 		{
-			m_Parent->m_Children.emplace_back(this);
+			m_Parent->m_Children.push_back(this);
 		}
-		// Reset activity
-		m_Entity->UpdateHierarchy(true);
+
+		if (worldPositionStays)
+		{
+			SetPosition(previousPosition);
+			SetRotation(previousRotation);
+		}
+		else
+		{
+			InvalidateHierarchy();
+		}
+		m_Entity->UpdateHierarchy();
 	}
 
-	void Transform::SetSiblingIndex(const uint32_t& index)
+	void Transform::SetSiblingIndex(size_t index)
 	{
 		if (m_Parent.IsValid())
 		{
-			m_Parent->m_Children.erase(std::find_if(m_Parent->m_Children.begin(), m_Parent->m_Children.end(), [this](ObjectPtr<Transform> const& i) { return i.Get() == this; }));
-			m_Parent->m_Children.insert(m_Parent->m_Children.begin() + index, this);
+			size_t oldIndex = 0;
+			auto& children = m_Parent->m_Children;
+			for (size_t i = 0; i < children.size(); ++i)
+			{
+				if (children[i].Get() == this)
+				{
+					oldIndex = i;
+					break;
+				}
+			}
+			children.move_element(oldIndex, index);
+		}
+		else
+		{
+			GetScene()->SetRootIndex(m_Entity.Get(), index);
 		}
 	}
 
-	const bool& Transform::IsDirty() const
+	const size_t& Transform::GetUpdateCount()
 	{
-		return m_IsDirty;
+		if (m_DirtyFlags & (DIRTY_LOCAL | DIRTY_WORLD))
+		{
+			RecalculateHierarchy();
+		}
+
+		return m_UpdateCount;
 	}
 
-	const size_t& Transform::GetRecalculationFrame() const
+	bool Transform::IsStatic() const
 	{
-		return m_RecalculationFrame;
+		return m_IsStatic;
+	}
+
+	void Transform::SetStatic(bool isStatic)
+	{
+		m_IsStatic = isStatic;
+		InvalidateHierarchy();
 	}
 
 	void Transform::InvalidateHierarchy()
 	{
-		m_IsDirty = true;
-		for (auto& child : m_Children)
+		if (m_DirtyFlags ^ DIRTY_ALL)
 		{
-			child->InvalidateHierarchy();
+			m_DirtyFlags = DIRTY_ALL;
+			for (auto& child : m_Children)
+			{
+				child->InvalidateHierarchy();
+			}
 		}
 	}
 
 	void Transform::RecalculateHierarchy()
 	{
-		m_LocalMatrix = CreateTRS(m_LocalPosition, m_LocalRotation, m_LocalScale);
-		m_IsDirty = false;
-		if (m_Parent.IsValid())
+		if (m_DirtyFlags & DIRTY_LOCAL)
 		{
-			m_Parent.Get()->RecalculateHierarchy();
-			m_LocalToWorldMatrix = m_LocalMatrix * (m_Parent->m_LocalToWorldMatrix);
-			m_LocalToWorldMatrix.Decompose(m_Scale, m_Rotation, m_Position);
+			m_LocalMatrix = Math::CreateTRS(m_LocalPosition, m_LocalRotation, m_LocalScale);
+			m_DirtyFlags &= ~DIRTY_LOCAL;
 		}
-		else
+		if (m_DirtyFlags & DIRTY_WORLD)
 		{
-			m_LocalToWorldMatrix = m_LocalMatrix;
-			m_Position = m_LocalPosition;
-			m_Rotation = m_LocalRotation;
-			m_Scale = m_LocalScale;
+			if (m_Parent.IsValid())
+			{
+				if (m_Parent->m_DirtyFlags)
+				{
+					m_Parent.Get()->RecalculateHierarchy();
+				}
+				m_LocalToWorldMatrix = m_LocalMatrix * m_Parent->m_LocalToWorldMatrix;
+				m_Position = Vector3::Transform(m_Parent->m_Scale * m_LocalPosition, m_Parent->m_Rotation) + m_Parent->m_Position;
+				m_Rotation = m_LocalRotation * m_Parent->m_Rotation;
+				m_Scale = m_LocalScale * m_Parent->m_Scale;
+			}
+			else
+			{
+				m_LocalToWorldMatrix = m_LocalMatrix;
+				m_Position = m_LocalPosition;
+				m_Rotation = m_LocalRotation;
+				m_Scale = m_LocalScale;
+			}
+			m_DirtyFlags &= ~DIRTY_WORLD;
 		}
-		m_LocalToWorldMatrix.Invert(m_WorldToLocalMatrix);
-		m_RecalculationFrame = Time::GetFrameCount();
+		++m_UpdateCount;
 	}
 }

@@ -8,7 +8,7 @@
 
 namespace Blueberry
 {
-	GfxDrawingOperation::GfxDrawingOperation(GfxBuffer* vertexBuffer, GfxBuffer* indexBuffer, Material* material, VertexLayout* layout, const uint32_t& indexCount, const uint32_t& indexOffset, const uint32_t& vertexCount, const Topology& topology, const uint8_t& passIndex, GfxBuffer* instanceBuffer, const uint32_t& instanceOffset, const uint32_t& instanceCount)
+	GfxDrawingOperation::GfxDrawingOperation(GfxBuffer* vertexBuffer, GfxBuffer* indexBuffer, Material* material, VertexLayout* layout, uint32_t indexCount, uint32_t indexOffset, uint32_t vertexCount, Topology topology, uint8_t passIndex, GfxBuffer* instanceBuffer, uint32_t instanceOffset, uint32_t instanceCount, bool isCounterClockwise, bool isSolid)
 	{
 		// TODO move into pipeline state
 		if (vertexBuffer == nullptr || topology == Topology::Unknown)
@@ -35,13 +35,23 @@ namespace Blueberry
 		this->layout = layout;
 		this->material = material;
 		this->passIndex = passIndex;
+		this->isCounterClockwise = isCounterClockwise;
+		this->isSolid = isSolid;
 	}
 
-	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material, const uint32_t& indexCount, const uint32_t& indexOffset, const uint32_t& vertexCount, const uint8_t& passIndex, GfxBuffer* instanceBuffer, const uint32_t& instanceOffset, const uint32_t& instanceCount) : GfxDrawingOperation(mesh->m_VertexBuffer, mesh->m_IndexBuffer, material, &mesh->m_Layout, indexCount, indexOffset, vertexCount, mesh->GetTopology(), passIndex, instanceBuffer, instanceOffset, instanceCount)
+	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material, uint32_t indexCount, uint32_t indexOffset, uint32_t vertexCount, uint8_t passIndex, GfxBuffer* instanceBuffer, uint32_t instanceOffset, uint32_t instanceCount, bool isCounterClockwise, bool isSolid) : GfxDrawingOperation(mesh->m_VertexBuffer, mesh->m_IndexBuffer, material, &mesh->m_Layout, indexCount, indexOffset, vertexCount, mesh->m_Topology, passIndex, instanceBuffer, instanceOffset, instanceCount, isCounterClockwise, isSolid)
 	{
 	}
 
-	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material, const uint8_t& passIndex, GfxBuffer* instanceBuffer, const uint32_t& instanceOffset, const uint32_t& instanceCount) : GfxDrawingOperation(mesh != nullptr && mesh->GetState() != ObjectState::Missing ? mesh->m_VertexBuffer : nullptr, mesh->m_IndexBuffer, material, &mesh->m_Layout, mesh->m_IndexCount, 0, mesh->m_VertexCount, mesh->GetTopology(), passIndex, instanceBuffer, instanceOffset, instanceCount)
+	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, GfxBuffer* vertexBufferOverride, Material* material, uint32_t indexCount, uint32_t indexOffset, uint32_t vertexCount, uint8_t passIndex, GfxBuffer* instanceBuffer, uint32_t instanceOffset, uint32_t instanceCount, bool isCounterClockwise, bool isSolid) : GfxDrawingOperation(vertexBufferOverride == nullptr ? mesh->m_VertexBuffer : vertexBufferOverride, mesh->m_IndexBuffer, material, &mesh->m_Layout, indexCount, indexOffset, vertexCount, mesh->m_Topology, passIndex, instanceBuffer, instanceOffset, instanceCount, isCounterClockwise, isSolid)
+	{
+	}
+
+	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, Material* material, uint8_t passIndex, GfxBuffer* instanceBuffer, uint32_t instanceOffset, uint32_t instanceCount, bool isCounterClockwise, bool isSolid) : GfxDrawingOperation(mesh->m_VertexBuffer, mesh->m_IndexBuffer, material, &mesh->m_Layout, mesh->m_IndexCount, 0, mesh->m_VertexCount, mesh->m_Topology, passIndex, instanceBuffer, instanceOffset, instanceCount, isCounterClockwise, isSolid)
+	{
+	}
+
+	GfxDrawingOperation::GfxDrawingOperation(Mesh* mesh, GfxBuffer* vertexBufferOverride, Material* material, uint8_t passIndex, GfxBuffer* instanceBuffer, uint32_t instanceOffset, uint32_t instanceCount, bool isCounterClockwise, bool isSolid) : GfxDrawingOperation(vertexBufferOverride == nullptr ? mesh->m_VertexBuffer : vertexBufferOverride, mesh->m_IndexBuffer, material, &mesh->m_Layout, mesh->m_IndexCount, 0, mesh->m_VertexCount, mesh->m_Topology, passIndex, instanceBuffer, instanceOffset, instanceCount, isCounterClockwise, isSolid)
 	{
 	}
 

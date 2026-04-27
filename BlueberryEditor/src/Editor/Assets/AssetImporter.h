@@ -14,30 +14,37 @@ namespace Blueberry
 	public:
 		AssetImporter() = default;
 
-		const Guid& GetGuid();
+		const Guid& GetGuid() const;
 		String GetFilePath();
 		String GetMetaFilePath();
 		const String& GetRelativeFilePath();
 		const String& GetRelativeMetaFilePath();
-		const FileId& GetMainObject();
+		FileId GetMainObject() const;
 		const Dictionary<FileId, ObjectId>& GetAssetObjects();
-		const bool IsImported();
-		const bool& IsRequiringSave();
+		bool IsImported();
+		virtual bool IsRequiringReimport() const;
+		bool IsRequiringSave() const;
 
 		void ResetImport();
 		void ImportDataIfNeeded();
 		void Save();
 		void SaveAndReimport();
+		void Rename(const std::filesystem::path& relativePath);
+		long long GetLastWrite() const;
 		// TODO need a way to determine count of not imported assets in this importer
 		
-		static AssetImporter* CreateNew(const size_t& type, const std::filesystem::path& relativePath, const std::filesystem::path& relativeMetaPath);
-		static AssetImporter* CreateFromMeta(const std::filesystem::path& relativePath, const std::filesystem::path& relativeMetaPath);
+		static AssetImporter* CreateNew(const TypeId& type, const std::filesystem::path& relativePath);
+		static AssetImporter* CreateFromMeta(const std::filesystem::path& relativePath);
 		static void LoadFromMeta(AssetImporter* importer);
 		
 	protected:
+		virtual bool IsImportable() const;
 		virtual void ImportData() = 0;
+		void LoadData();
 		void AddAssetObject(Object* object, const FileId& fileId);
 		void SetMainObject(const FileId& id);
+		template<class ObjectType>
+		ObjectType* GetOrCreateAssetObject(const FileId& fileId);
 
 	private:
 		Guid m_Guid;
@@ -45,9 +52,37 @@ namespace Blueberry
 		String m_RelativeMetaPath;
 		FileId m_MainObject;
 		Dictionary<FileId, ObjectId> m_AssetObjects = {};
-		//Texture2D* m_Icon = nullptr;
 		bool m_RequireSave = false;
+		long long m_LastWrite = 0;
 
 		friend class ImporterInfoCache;
 	};
+
+	template<class ObjectType>
+	inline ObjectType* AssetImporter::GetOrCreateAssetObject(const FileId& fileId)
+	{
+		Guid guid = GetGuid();
+		ObjectType* result;
+		auto& objects = ObjectDB::GetObjectsFromGuid(guid);
+		auto it = objects.find(fileId);
+		if (it != objects.end())
+		{
+			Object* object = ObjectDB::GetObject(it->second);
+			if (object != nullptr)
+			{
+				result = static_cast<ObjectType*>(object);
+				result->SetState(ObjectState::Default);
+			}
+			else
+			{
+				result = Object::Create<ObjectType>();
+			}
+		}
+		else
+		{
+			result = Object::Create<ObjectType>();
+		}
+		ObjectDB::AllocateIdToGuid(result, guid, fileId);
+		return result;
+	}
 }

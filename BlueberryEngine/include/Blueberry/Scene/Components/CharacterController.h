@@ -14,25 +14,32 @@ namespace Blueberry
 		CharacterController();
 		virtual ~CharacterController() = default;
 
+		virtual void OnCreate() final;
+		virtual void OnDestroy() final;
 		virtual void OnEnable() final;
 		virtual void OnDisable() final;
 		virtual void OnUpdate() final;
 
-		const float& GetHeight();
-		const float& GetRadius();
+		float GetHeight() const;
+		float GetRadius() const;
+
+		void Move(const Vector3& velocity);
+
+		const Vector3& GetVelocity() const;
+		bool IsGrounded() const;
+		const Vector3& GetGroundNormal() const;
 
 	private:
-		ObjectPtr<Transform> m_CameraTransform;
 		float m_Height = 2.0f;
 		float m_Radius = 0.3f;
 
 		struct PrivateData;
 
-		Transform* m_Transform;
 		PrivateData* m_PrivateData;
-		alignas(8) char m_PrivateStorage[24];
-		bool m_IsInitialized = false;
-		Vector2 m_Rotation;
+		alignas(8) char m_PrivateStorage[48];
+		Transform* m_Transform = nullptr;
 		Vector3 m_Velocity;
+		bool m_IsGrounded = false;
+		Vector3 m_GroundNormal;
 	};
 }

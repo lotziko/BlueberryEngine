@@ -20,7 +20,7 @@ namespace Blueberry
 
 		static void Begin();
 		static void End();
-		static void Draw(const Matrix& transform, Texture2D* texture, Material* material, const Color& color, const int& sortingOrder);
+		static void Draw(const Matrix& transform, Texture2D* texture, Material* material, const Color& color, int sortingOrder);
 		static void DrawImmediate(const Vector3& position, const Vector2& size, Texture2D* texture, Material* material, const Color& color);
 		static void Flush();
 
@@ -37,13 +37,13 @@ namespace Blueberry
 		static bool SortBySortingOrder(DrawingData first, DrawingData second);
 
 	private:
-		static inline GfxBuffer* s_VertexBuffer = nullptr;
-		static inline GfxBuffer* s_IndexBuffer = nullptr;
+		static GfxBuffer* s_VertexBuffer;
+		static GfxBuffer* s_IndexBuffer;
 
-		static inline float* s_VertexData = nullptr;
-		static inline float* s_VertexDataPtr = nullptr;
-		static inline DrawingData* s_DrawingDatas = nullptr;
-		static inline uint32_t s_QuadIndexCount = 0;
-		static inline uint32_t s_DrawingDataCount = 0;
+		static float* s_VertexData;
+		static float* s_VertexDataPtr;
+		static DrawingData* s_DrawingDatas;
+		static uint32_t s_QuadIndexCount;
+		static uint32_t s_DrawingDataCount;
 	};
 }

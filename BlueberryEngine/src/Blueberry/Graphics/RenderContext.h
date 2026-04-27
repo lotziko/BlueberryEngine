@@ -10,7 +10,10 @@ namespace Blueberry
 	class Renderer;
 	class Camera;
 	class SkyRenderer;
+	class ProbeVolume;
+	class ReflectionProbe;
 	class Light;
+	class Canvas;
 	class Material;
 	class MeshRenderer;
 
@@ -38,7 +41,10 @@ namespace Blueberry
 
 		Camera* camera;
 		SkyRenderer* skyRenderer;
+		ProbeVolume* probeVolume;
+		List<ReflectionProbe*> reflectionProbes;
 		List<Light*> lights;
+		List<Canvas*> canvases;
 		List<CullerInfo> cullerInfos;
 	};
 
@@ -48,16 +54,25 @@ namespace Blueberry
 		FrontToBack
 	};
 
+	enum class ObjectsFilter
+	{
+		All,
+		Dynamic,
+		Static
+	};
+
 	struct DrawingSettings
 	{
 		uint8_t passIndex;
 		SortingMode sortingMode;
+		ObjectsFilter objectsFilter;
 	};
 
 	struct ShadowDrawingSettings
 	{
 		Light* light;
-		uint8_t sliceIndex;
+		uint32_t sliceIndex;
+		ObjectsFilter objectsFilter;
 	};
 
 	class RenderContext
@@ -68,9 +83,10 @@ namespace Blueberry
 		void DrawSky(CullingResults& results);
 		void DrawShadows(CullingResults& results, ShadowDrawingSettings& shadowDrawingSettings);
 		void DrawRenderers(CullingResults& results, DrawingSettings& drawingSettings);
+		void DrawCanvases(CullingResults& results);
 
 	private:
-		static inline GfxBuffer* s_IndexBuffer = nullptr;
-		static inline size_t s_LastCullingFrame = 0;
+		static GfxBuffer* s_IndexBuffer;
+		static size_t s_LastCullingFrame;
 	};
 }

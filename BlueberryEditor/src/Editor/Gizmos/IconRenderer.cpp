@@ -19,6 +19,7 @@
 
 namespace Blueberry
 {
+	Material* IconRenderer::s_IconMaterial = nullptr;
 	List<IconRenderer::IconInfo> IconRenderer::s_IconsCache = {};
 
 	bool IconRenderer::Initialize()
@@ -33,15 +34,17 @@ namespace Blueberry
 		EditorSceneManager::GetSceneLoaded().AddCallback<&IconRenderer::ClearCache>();
 		EditorObjectManager::GetEntityCreated().AddCallback<&IconRenderer::ClearCache>();
 		EditorObjectManager::GetEntityDestroyed().AddCallback<&IconRenderer::ClearCache>();
+		EditorObjectManager::GetEntityUpdated().AddCallback<&IconRenderer::ClearCache>();
 		return true;
 	}
 
 	void IconRenderer::Shutdown()
 	{
 		EditorSceneManager::GetSceneLoaded().RemoveCallback<&IconRenderer::ClearCache>();
-		EditorObjectManager::GetEntityCreated().RemoveCallback<&IconRenderer::ClearCache>(); // TODO component created/destroyed instead
+		EditorObjectManager::GetEntityCreated().RemoveCallback<&IconRenderer::ClearCache>();
 		EditorObjectManager::GetEntityDestroyed().RemoveCallback<&IconRenderer::ClearCache>();
-		delete s_IconMaterial;
+		EditorObjectManager::GetEntityUpdated().RemoveCallback<&IconRenderer::ClearCache>();
+		Material::Destroy(s_IconMaterial);
 	}
 
 	bool CompareOperations(const IconRenderer::IconInfo& i1, const IconRenderer::IconInfo& i2)
@@ -69,7 +72,7 @@ namespace Blueberry
 			if (info.component->GetEntity()->IsActiveInHierarchy())
 			{
 				Vector3 position = info.transform->GetPosition();
-				Matrix modelMatrix = Matrix::CreateBillboard(position, position + cameraDirection, Vector3(0, -1, 0));
+				Matrix modelMatrix = Matrix::CreateScale(-0.75f, 0.75f, 0.75f) * Matrix::CreateBillboard(position, position + cameraDirection, Vector3(0, 1, 0));
 
 				Texture* icon = info.editor->GetIcon(info.component.Get());
 				if (icon != nullptr)
@@ -95,7 +98,7 @@ namespace Blueberry
 			Entity* entity = pair.second.Get();
 			for (uint32_t i = 0; i < entity->GetComponentCount(); ++i)
 			{
-				Component* component = entity->GetComponent(i);
+				Component* component = entity->GetComponentAt(i);
 				ObjectEditor* editor = ObjectEditor::GetDefaultEditor(component);
 				if (editor != nullptr)
 				{
@@ -105,7 +108,7 @@ namespace Blueberry
 						info.transform = entity->GetTransform();
 						info.component = component;
 						info.editor = editor;
-						s_IconsCache.emplace_back(std::move(info));
+						s_IconsCache.push_back(std::move(info));
 					}
 				}
 			}

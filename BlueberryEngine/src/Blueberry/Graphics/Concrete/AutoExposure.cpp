@@ -5,9 +5,16 @@
 #include "Blueberry\Graphics\GfxBuffer.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\GfxTexture.h"
+#include "Blueberry\Scene\Components\Camera.h"
 
 namespace Blueberry
 {
+	ComputeShader* AutoExposure::s_ExposureShader = nullptr;
+	GfxBuffer* AutoExposure::s_ExposureData = nullptr;
+	GfxBuffer* AutoExposure::s_Histogram = nullptr;
+	GfxBuffer* AutoExposure::s_Result = nullptr;
+	Dictionary<ObjectId, PerCameraExposureData> AutoExposure::s_PerCameraData = {};
+
 	struct ExposureData
 	{
 		float minLogLuminance;
@@ -23,37 +30,28 @@ namespace Blueberry
 	static size_t s_HistogramId = TO_HASH("_Histogram");
 	static size_t s_ResultId = TO_HASH("_Result");
 
-	float Lerp(float a, float b, float t)
-	{
-		return a + (b - a) * t;
-	}
-
 	void AutoExposure::Initialize()
 	{
 		s_ExposureShader = static_cast<ComputeShader*>(AssetLoader::Load("assets/shaders/Exposure.compute"));
 
 		BufferProperties constantBufferProperties = {};
-		constantBufferProperties.type = BufferType::Constant;
 		constantBufferProperties.elementCount = 1;
 		constantBufferProperties.elementSize = sizeof(ExposureData);
-		constantBufferProperties.isWritable = true;
+		constantBufferProperties.usageFlags = BufferUsageFlags::ConstantBuffer;
 		GfxDevice::CreateBuffer(constantBufferProperties, s_ExposureData);
 
 		BufferProperties histogramBufferProperties = {};
-		histogramBufferProperties.type = BufferType::Raw;
 		histogramBufferProperties.elementCount = 256;
 		histogramBufferProperties.elementSize = sizeof(uint32_t);
-		histogramBufferProperties.isUnorderedAccess = true;
 		histogramBufferProperties.format = BufferFormat::R32_UInt;
+		histogramBufferProperties.usageFlags = BufferUsageFlags::UnorderedAccess;
 		GfxDevice::CreateBuffer(histogramBufferProperties, s_Histogram);
 
 		BufferProperties resultBufferProperties = {};
-		resultBufferProperties.type = BufferType::Raw;
 		resultBufferProperties.elementCount = 1;
 		resultBufferProperties.elementSize = sizeof(float);
-		resultBufferProperties.isReadable = true;
-		resultBufferProperties.isUnorderedAccess = true;
 		resultBufferProperties.format = BufferFormat::R32_Float;
+		resultBufferProperties.usageFlags = BufferUsageFlags::UnorderedAccess | BufferUsageFlags::CPUReadable;
 		GfxDevice::CreateBuffer(resultBufferProperties, s_Result);
 	}
 
@@ -64,11 +62,13 @@ namespace Blueberry
 		delete s_Result;
 	}
 
-	void AutoExposure::Calculate(GfxTexture* color, const Rectangle& viewport)
+	void AutoExposure::Calculate(Camera* camera, GfxTexture* color, const Rectangle& viewport)
 	{
-		if (s_RecalculateTimer == 0)
+		PerCameraExposureData& perCameraData = s_PerCameraData[camera->GetObjectId()];
+		
+		if (perCameraData.recalculateTimer == 0)
 		{
-			s_RecalculateTimer = 60;
+			perCameraData.recalculateTimer = 60;
 			float minLogLum = -8.0f / 2;
 			float maxLogLum = 3.5f / 2;
 
@@ -90,20 +90,21 @@ namespace Blueberry
 			uint32_t groupsY = (static_cast<uint32_t>(viewport.height + 15)) / 16;
 			GfxDevice::Dispatch(s_ExposureShader->GetKernel(0), groupsX, groupsY, 1);
 			GfxDevice::Dispatch(s_ExposureShader->GetKernel(1), 1, 1, 1);
-			s_Result->GetData(&s_TargetExposure);
+			s_Result->GetData(&perCameraData.targetExposure);
 		}
 		else
 		{
-			--s_RecalculateTimer;
+			--perCameraData.recalculateTimer;
 		}
 		float adaptationSpeed = 1.0f;
 		float deltaTime = 1.0f / 60.0f;
 		float t = 1.0f - std::expf(-adaptationSpeed * deltaTime);
-		s_CurrentExposure = Lerp(s_CurrentExposure, s_TargetExposure, t);
+		perCameraData.currentExposure = Math::Lerp(perCameraData.currentExposure, perCameraData.targetExposure, t);
 	}
 
-	float AutoExposure::GetExposure()
+	float AutoExposure::GetExposure(Camera* camera)
 	{
-		return s_CurrentExposure;
+		PerCameraExposureData& perCameraData = s_PerCameraData[camera->GetObjectId()];
+		return perCameraData.currentExposure;
 	}
 }

@@ -14,11 +14,12 @@ namespace Blueberry
 		Transform() = default;
 		~Transform() = default;
 
-		virtual void OnEnable() override;
-		virtual void OnDestroy() override;
+		virtual void OnEnable() final;
+		virtual void OnDestroy() final;
 		
 		const Matrix& GetLocalToWorldMatrix();
 		const Matrix& GetWorldToLocalMatrix();
+		const Matrix& GetLocalMatrix();
 		const Vector3& GetLocalPosition();
 		const Quaternion& GetLocalRotation();
 		const Vector3& GetLocalScale();
@@ -26,13 +27,15 @@ namespace Blueberry
 		const Vector3 GetLocalEulerRotationHint() const;
 		const Vector3 GetPosition();
 		const Quaternion GetRotation();
+		const Vector3 GetScale();
 
 		Transform* GetParent() const;
 
 		const List<ObjectPtr<Transform>>& GetChildren() const;
-		const size_t GetChildrenCount() const;
+		Transform* GetChild(size_t index);
+		size_t GetChildrenCount() const;
 
-		const uint32_t GetSiblingIndex();
+		size_t GetSiblingIndex();
 
 		void SetLocalPosition(const Vector3& position);
 		void SetLocalRotation(const Quaternion& rotation);
@@ -42,20 +45,23 @@ namespace Blueberry
 
 		void SetPosition(const Vector3& position);
 		void SetRotation(const Quaternion& rotation);
+		void SetLocalTRS(const TRS& trs);
 
-		void SetParent(Transform* parent);
-		void SetSiblingIndex(const uint32_t& index);
+		void SetParent(Transform* parent, bool worldPositionStays = true);
+		void SetSiblingIndex(size_t index);
 
-		const bool& IsDirty() const;
-		const size_t& GetRecalculationFrame() const;
+		const size_t& GetUpdateCount();
+
+		bool IsStatic() const;
+		void SetStatic(bool isStatic);
 
 	private:
 		void InvalidateHierarchy();
 		void RecalculateHierarchy();
 
 	private:
-		bool m_IsDirty = true;
-		size_t m_RecalculationFrame = 0;
+		uint8_t m_DirtyFlags = 7;
+		size_t m_UpdateCount = 0;
 
 		ObjectPtr<Transform> m_Parent = nullptr;
 		List<ObjectPtr<Transform>> m_Children;
@@ -68,6 +74,7 @@ namespace Blueberry
 		Quaternion m_LocalRotation;
 		Vector3 m_LocalScale = Vector3(1, 1, 1);
 		Vector3 m_LocalRotationEulerHint;
+		bool m_IsStatic = false;
 
 		Vector3 m_Position;
 		Quaternion m_Rotation;

@@ -4,12 +4,22 @@
 #include "Blueberry\Graphics\Texture.h"
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\TextureCube.h"
+#include "Blueberry\Graphics\TextureCubeArray.h"
 #include "Blueberry\Graphics\Texture3D.h"
 #include "Blueberry\Assets\AssetLoader.h"
 
 namespace Blueberry
 {
-	Texture* DefaultTextures::GetTexture(const String& name, const TextureDimension& dimension)
+	Texture2D* DefaultTextures::s_WhiteTexture2D = nullptr;
+	Texture2D* DefaultTextures::s_BlackTexture2D = nullptr;
+	Texture2D* DefaultTextures::s_NormalTexture2D = nullptr;
+	TextureCube* DefaultTextures::s_WhiteTextureCube = nullptr;
+	TextureCube* DefaultTextures::s_BlackTextureCube = nullptr;
+	TextureCubeArray* DefaultTextures::s_BlackTextureCubeArray = nullptr;
+	Texture3D* DefaultTextures::s_WhiteTexture3D = nullptr;
+	Texture3D* DefaultTextures::s_BlackTexture3D = nullptr;
+
+	Texture* DefaultTextures::GetTexture(const String& name, TextureDimension dimension)
 	{
 		if (dimension == TextureDimension::Texture2D)
 		{
@@ -130,6 +140,24 @@ namespace Blueberry
 			s_BlackTextureCube->Apply();
 		}
 		return s_BlackTextureCube;
+	}
+
+	TextureCubeArray* DefaultTextures::GetBlackCubeArray()
+	{
+		if (s_BlackTextureCubeArray == nullptr)
+		{
+			const uint32_t size = 6 * 4;
+			uint8_t data[size];
+			for (int i = 0; i < size; ++i)
+			{
+				data[i] = 0;
+			}
+			s_BlackTextureCubeArray = TextureCubeArray::Create(1, 1, 1, 1, TextureFormat::R8G8B8A8_UNorm, WrapMode::Repeat, FilterMode::Point);
+			s_BlackTextureCubeArray->SetName("Black");
+			s_BlackTextureCubeArray->SetData(data, size);
+			s_BlackTextureCubeArray->Apply();
+		}
+		return s_BlackTextureCubeArray;
 	}
 
 	Texture3D* DefaultTextures::GetWhite3D()

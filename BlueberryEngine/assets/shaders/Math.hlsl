@@ -24,27 +24,27 @@ float2 GetNormalizedScreenSpaceUV(float4 positionCS)
 
 float3 TransformObjectToWorld(float3 positionOS)
 {
-	return mul(float4(positionOS, 1.0f), OBJECT_TO_WORLD_MATRIX).xyz;
+	return mul(OBJECT_TO_WORLD_MATRIX, float4(positionOS, 1.0f)).xyz;
 }
 
 float4 TransformWorldToClip(float3 positionWS)
 {
-	return mul(float4(positionWS, 1.0f), VIEW_PROJECTION_MATRIX);
+	return mul(VIEW_PROJECTION_MATRIX, float4(positionWS, 1.0f));
 }
 
 float3 TransformWorldToView(float3 positionWS)
 {
-	return mul(float4(positionWS, 1.0f), VIEW_MATRIX).xyz;
+	return mul(VIEW_MATRIX, float4(positionWS, 1.0f)).xyz;
 }
 
 float4 TransformObjectToClip(float3 positionOS)
 {
-	return mul(mul(float4(positionOS, 1.0f), OBJECT_TO_WORLD_MATRIX), VIEW_PROJECTION_MATRIX);
+	return mul(VIEW_PROJECTION_MATRIX, mul(OBJECT_TO_WORLD_MATRIX, float4(positionOS, 1.0f)));
 }
 
 float3 TransformObjectToWorldNormal(float3 normalOS)
 {
-	return normalize(mul(float4(normalOS, 0.0f), OBJECT_TO_WORLD_MATRIX).xyz);
+	return normalize(mul(OBJECT_TO_WORLD_MATRIX, float4(normalOS, 0.0f)).xyz);
 }
 
 float Linearize01Depth(float depth, float2 params)
@@ -55,6 +55,11 @@ float Linearize01Depth(float depth, float2 params)
 float3 ReconstructNormal(float3 normal)
 {
 	return normalize(float3(normal.x, normal.y, sqrt(saturate(1 - dot(normal.xy, normal.xy)))));
+}
+
+bool IsInsideAABB(float3 position, float3 min, float3 max)
+{
+	return (position.x > min.x && position.x < max.x && position.y > min.y && position.y < max.y && position.z > min.z && position.z < max.z);
 }
 
 #endif

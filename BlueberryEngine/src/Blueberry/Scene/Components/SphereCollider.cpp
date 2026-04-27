@@ -11,10 +11,10 @@ namespace Blueberry
 	OBJECT_DEFINITION(SphereCollider, Collider)
 	{
 		DEFINE_BASE_FIELDS(SphereCollider, Collider)
-		DEFINE_FIELD(SphereCollider, m_Radius, BindingType::Float, {})
+		DEFINE_FIELD(SphereCollider, m_Radius, BindingType::Float, FieldOptions())
 	}
 
-	const float& SphereCollider::GetRadius()
+	float SphereCollider::GetRadius() const
 	{
 		return m_Radius;
 	}

@@ -25,7 +25,29 @@ namespace Blueberry
 		Vector3::Up, Vector3::Up, Vector3::Backward, Vector3::Forward, Vector3::Up, Vector3::Up
 	};
 
-	Matrix LightHelper::GetViewMatrix(Light* light, Transform* transform, const uint8_t& slice)
+	uint32_t LightHelper::GetShadowSize(LightType type)
+	{
+		if (type == LightType::Spot)
+			return 512;
+		if (type == LightType::Directional)
+			return 1024;
+		if (type == LightType::Point)
+			return 256;
+		return 0;
+	}
+
+	uint32_t LightHelper::GetSliceCount(LightType type)
+	{
+		if (type == LightType::Spot)
+			return 1;
+		if (type == LightType::Directional)
+			return 3;
+		if (type == LightType::Point)
+			return 6;
+		return 0;
+	}
+
+	Matrix LightHelper::GetViewMatrix(Light* light, Transform* transform, uint8_t slice)
 	{
 		switch (light->GetType())
 		{
@@ -42,7 +64,7 @@ namespace Blueberry
 		}
 	}
 
-	Matrix LightHelper::GetInverseViewMatrix(Light* light, Transform* transform, const uint8_t& slice)
+	Matrix LightHelper::GetInverseViewMatrix(Light* light, Transform* transform, uint8_t slice)
 	{
 		switch (light->GetType())
 		{
@@ -56,14 +78,14 @@ namespace Blueberry
 		}
 	}
 
-	Matrix LightHelper::GetProjectionMatrix(Light* light, const float& guardAngle)
+	Matrix LightHelper::GetProjectionMatrix(Light* light, float guardAngle)
 	{
 		switch (light->GetType())
 		{
 		case LightType::Spot:
-			return Matrix::CreatePerspectiveFieldOfView(ToRadians(light->GetOuterSpotAngle()), 1, 0.01f, light->GetRange());
+			return Matrix::CreatePerspectiveFieldOfView(Math::ToRadians(light->GetOuterSpotAngle()), 1, 0.01f, light->GetRange());
 		case LightType::Point:
-			return Matrix::CreatePerspectiveFieldOfView(ToRadians(90 + guardAngle), 1, 0.01f, light->GetRange());
+			return Matrix::CreatePerspectiveFieldOfView(Math::ToRadians(90 + guardAngle), 1, 0.01f, light->GetRange());
 		default:
 			return Matrix::Identity;
 		}
@@ -87,8 +109,8 @@ namespace Blueberry
 
 		if (type == LightType::Spot)
 		{
-			float cosOuterAngle = cos(ToRadians(spotOuterAngle) * 0.5f);
-			float cosInnerAngle = cos(ToRadians(spotInnerAngle) * 0.5f);
+			float cosOuterAngle = cos(Math::ToRadians(spotOuterAngle) * 0.5f);
+			float cosInnerAngle = cos(Math::ToRadians(spotInnerAngle) * 0.5f);
 			float smoothAngleRange = std::max(0.001f, cosInnerAngle - cosOuterAngle);
 			float invAngleRange = 1.0f / smoothAngleRange;
 			float add = -cosOuterAngle * invAngleRange;

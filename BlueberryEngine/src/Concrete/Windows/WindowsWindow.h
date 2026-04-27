@@ -20,6 +20,7 @@ namespace Blueberry
 
 		virtual int GetWidth() const final;
 		virtual int GetHeight() const final;
+		virtual void SetCursor(bool visible) final;
 
 		LRESULT WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
@@ -35,5 +36,7 @@ namespace Blueberry
 		WString m_WindowClassWide = L""; //Wide string representation of window class name
 		int m_Width = 0;
 		int m_Height = 0;
+		bool m_IsSizeDirty = false;
+		bool m_IsCursorVisible = true;
 	};
 }

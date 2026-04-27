@@ -11,10 +11,10 @@ namespace Blueberry
 	class ThumbnailRenderer
 	{
 	public:
-		static bool CanDraw(const size_t& type);
+		static bool CanDraw(const TypeId& type);
 		static bool Draw(unsigned char* output, const uint32_t& size, Object* asset);
 
 	private:
-		static inline GfxTexture* s_ThumbnailRenderTarget = nullptr;
+		static GfxTexture* s_ThumbnailRenderTarget;
 	};
 }

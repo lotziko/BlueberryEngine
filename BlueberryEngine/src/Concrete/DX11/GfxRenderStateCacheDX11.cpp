@@ -14,7 +14,7 @@ namespace Blueberry
 {
 	bool GfxRenderStateKeyDX11::operator==(const GfxRenderStateKeyDX11& other) const
 	{
-		return keywordsMask == other.keywordsMask && materialId == other.materialId && passIndex == other.passIndex;
+		return keywordsMask == other.keywordsMask && materialId == other.materialId && passIndex == other.passIndex && isCounterClockwise == other.isCounterClockwise && isSolid == other.isSolid;
 	}
 
 	bool GfxRenderStateKeyDX11::operator!=(const GfxRenderStateKeyDX11& other) const
@@ -27,14 +27,14 @@ namespace Blueberry
 		m_RenderStates.reserve(4096);
 	}
 
-	const GfxRenderStateDX11 GfxRenderStateCacheDX11::GetState(Material* material, const uint8_t& passIndex)
+	const GfxRenderStateDX11 GfxRenderStateCacheDX11::GetState(Material* material, uint8_t passIndex, bool isCounterClockwise, bool isSolid)
 	{
 		uint64_t keywordMask = static_cast<uint64_t>(Shader::GetActiveKeywordsMask()) | (static_cast<uint64_t>(material->GetActiveKeywordsMask()) << 32);
 		ObjectId objectId = material->GetObjectId(); // Maybe also use shader id to be able to switch it
 		uint32_t crc = material->GetCRC();
 
 		GfxRenderStateDX11 renderState;
-		GfxRenderStateKeyDX11 key = { keywordMask, objectId, passIndex };
+		GfxRenderStateKeyDX11 key = { keywordMask, objectId, passIndex, isCounterClockwise, isSolid };
 		auto it = m_RenderStates.find(key);
 		if (it != m_RenderStates.end() && crc == it->second.first.crc)
 		{
@@ -201,7 +201,7 @@ namespace Blueberry
 				}
 			}
 
-			renderState.rasterizerState = m_Device->GetRasterizerState(passData.cullMode);
+			renderState.rasterizerState = m_Device->GetRasterizerState(passData.cullMode, isCounterClockwise, isSolid);
 			renderState.depthStencilState = m_Device->GetDepthStencilState(passData.zTest, passData.zWrite);
 			renderState.blendState = m_Device->GetBlendState(passData.blendSrcColor, passData.blendSrcAlpha, passData.blendDstColor, passData.blendDstAlpha);
 			
@@ -261,17 +261,34 @@ namespace Blueberry
 			renderState.vertexShaderResourceViews[texture.srvSlot] = dxTexture->m_ShaderResourceView.Get();
 			if (texture.samplerSlot != UINT8_MAX)
 			{
-				renderState.vertexSamplerStates[texture.samplerSlot] = dxTexture->m_SamplerState.Get();
+				ID3D11SamplerState* samplerState = dxTexture->m_SamplerState.Get();
+				if (samplerState == nullptr)
+				{
+					samplerState = m_Device->GetSamplerState(dxTexture->m_WrapMode, dxTexture->m_FilterMode);
+					dxTexture->m_SamplerState = samplerState;
+				}
+				renderState.vertexSamplerStates[texture.samplerSlot] = samplerState;
 			}
 		}
 
 		for (auto& texture : bindingState.pixelTextures)
 		{
 			GfxTextureDX11* dxTexture = GfxTextureDX11::s_PointerCache.Get(texture.isGlobal ? m_Device->m_BindedTextures[texture.bindingIndex].second : GetTextureIndex(material, texture.bindingIndex));
+			if (dxTexture == nullptr)
+			{
+				BB_ERROR("Texture is missing.");
+				continue;
+			}
 			renderState.pixelShaderResourceViews[texture.srvSlot] = dxTexture->m_ShaderResourceView.Get();
 			if (texture.samplerSlot != UINT8_MAX)
 			{
-				renderState.pixelSamplerStates[texture.samplerSlot] = dxTexture->m_SamplerState.Get();
+				ID3D11SamplerState* samplerState = dxTexture->m_SamplerState.Get();
+				if (samplerState == nullptr)
+				{
+					samplerState = m_Device->GetSamplerState(dxTexture->m_WrapMode, dxTexture->m_FilterMode);
+					dxTexture->m_SamplerState = samplerState;
+				}
+				renderState.pixelSamplerStates[texture.samplerSlot] = samplerState;
 			}
 		}
 	}

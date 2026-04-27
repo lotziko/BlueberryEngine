@@ -4,7 +4,7 @@
 #define XR_USE_PLATFORM_WIN32
 #define XR_USE_GRAPHICS_API_D3D11
 
-#include "Blueberry\Core\Engine.h"
+#include "Blueberry\Core\Application.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "..\..\Blueberry\Graphics\RenderContext.h"
 #include "..\DX11\GfxDeviceDX11.h"
@@ -41,7 +41,7 @@ namespace Blueberry
 		uint32_t imgId;
 	} s_CompositionData;
 
-	static Engine* s_Engine;
+	static Application* s_Application;
 	static ID3D11Device* s_Device;
 	static ID3D11DeviceContext* s_DeviceContext;
 
@@ -129,7 +129,7 @@ namespace Blueberry
 	bool OpenXRRendererDX11::InitializeImpl()
 	{
 		GfxDeviceDX11* dxDevice = static_cast<GfxDeviceDX11*>(GfxDevice::GetInstance());
-		s_Engine = Engine::GetInstance();
+		s_Application = Application::GetInstance();
 		s_Device = dxDevice->GetDevice();
 		s_DeviceContext = dxDevice->GetDeviceContext();
 
@@ -249,7 +249,7 @@ namespace Blueberry
 		{
 			return false;
 		}
-		s_Engine->AddWaitFrameCallback(&WaitForFrame);
+		s_Application->AddWaitForFrameCallback(&WaitForFrame);
 
 		// OpenXR uses a couple different types of reference frames for positioning content, we need to choose one for
 		// displaying our content! STAGE would be relative to the center of your guardian system's bounds, and LOCAL
@@ -333,7 +333,7 @@ namespace Blueberry
 			xrDestroySwapchain(swapchain.handle);
 		}
 		s_XrSwapchains.clear();
-		s_Engine->RemoveWaitFrameCallback(&WaitForFrame);
+		s_Application->RemoveWaitForFrameCallback();
 		s_XrRunning = false;
 		s_XrSessionState = XR_SESSION_STATE_UNKNOWN;
 		s_XrSystemId = XR_NULL_SYSTEM_ID;

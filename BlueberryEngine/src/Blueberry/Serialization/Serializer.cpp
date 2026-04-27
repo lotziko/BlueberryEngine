@@ -1,73 +1,177 @@
 #include "Blueberry\Serialization\Serializer.h"
 
+#include "Blueberry\Core\ObjectPtr.h"
 #include "Blueberry\Core\ObjectDB.h"
+#include "Blueberry\Core\Variant.h"
 #include "Blueberry\Assets\AssetLoader.h"
+#include "Blueberry\Serialization\YamlWriter.h"
+#include "Blueberry\Serialization\YamlReader.h"
+#include "Blueberry\Serialization\BinaryWriter.h"
+#include "Blueberry\Serialization\BinaryReader.h"
 
+#include <fstream>
 #include <iomanip>
 #include <random>
+#include <filesystem>
 
 namespace Blueberry
 {
-	void Serializer::AddObject(Object* object)
+	void Serializer::Serialize(const String& path, SerializationFlags flags)
 	{
-		FileId fileId = GetFileId(object);
-		m_FileIdToObject.insert({ fileId, object });
-		m_ObjectsToSerialize.emplace_back(object);
+		bool isText = (flags & SerializationFlags::Text) != SerializationFlags::None;
+		bool hasHeaders = (flags & SerializationFlags::HasHeaders) != SerializationFlags::None;
+		bool hasGuids = (flags & SerializationFlags::HasGuids) != SerializationFlags::None;
+
+		if (hasGuids)
+		{
+			m_FileIdToObjectId.clear();
+		}
+
+		std::ofstream stream("temp", std::ios::out | std::ofstream::binary);
+		if (stream.is_open())
+		{
+			while ((m_CurrentObject = GetNextObjectToSerialize()) != nullptr)
+			{
+				SerializationTree tree = {};
+				TypeId typeId = m_CurrentObject->GetType();
+				ObjectId objectId = m_CurrentObject->GetObjectId();
+				tree.typeId = typeId;
+				tree.fileId = GetFileId(objectId);
+				if (hasGuids)
+				{
+					tree.guid = GetGuid(objectId);
+				}
+				tree.objectId = objectId;
+				tree.isText = isText;
+				SerializeNode(tree.GetRoot(), Context::Create(m_CurrentObject, typeId), flags);
+				m_Trees.push_back(std::move(tree));
+			}
+			if (isText)
+			{
+				YamlWriter::Write(m_Trees, stream, hasHeaders);
+			}
+			else
+			{
+				BinaryWriter::Write(m_Trees, stream, hasGuids);
+			}
+			stream.close();
+			std::filesystem::copy_file("temp", path, std::filesystem::copy_options::overwrite_existing);
+			std::filesystem::remove("temp");
+		}
 	}
 
-	void Serializer::AddObject(Object* object, const FileId& fileId)
+	void Serializer::Deserialize(const String& path, SerializationFlags flags)
 	{
-		m_FileIdToObject.insert({ fileId, object });
+		bool hasHeaders = (flags & SerializationFlags::HasHeaders) != SerializationFlags::None;
+		bool hasGuids = (flags & SerializationFlags::HasGuids) != SerializationFlags::None;
+
+		std::ifstream stream(path.data(), std::ios::in | std::ofstream::binary);
+		if (stream.is_open())
+		{
+			m_Trees.clear();
+			switch (stream.peek())
+			{
+			case '%':
+				YamlReader::Read(m_Trees, stream, hasHeaders);
+				break;
+			case 'B':
+				BinaryReader::Read(m_Trees, stream, hasGuids);
+				break;
+			}
+			Guid invalidGuid = {};
+			for (auto& tree : m_Trees)
+			{
+				Object* instance = nullptr;
+				auto it = m_FileIdToObjectId.find(tree.fileId);
+				if (it == m_FileIdToObjectId.end())
+				{
+					const ClassInfo* info = ClassDB::GetInfo(tree.typeId);
+					if (info == nullptr)
+					{
+						BB_ERROR("Class not exists.");
+						continue;
+					}
+					instance = info->Create();
+				}
+				else
+				{
+					instance = ObjectDB::GetObject(it->second);
+				}
+				tree.objectId = instance->GetObjectId();
+				AddDeserializedObject(instance->GetObjectId(), hasGuids ? tree.guid : invalidGuid, tree.fileId);
+			}
+			for (auto& tree : m_Trees)
+			{
+				Object* object = ObjectDB::GetObject(tree.objectId);
+				DeserializeNode(tree.GetConstRoot(), Context::Create(object, object->GetType()));
+			}
+			stream.close();
+		}
 	}
 
-	List<std::pair<Object*, FileId>>& Serializer::GetDeserializedObjects()
+	const Guid& Serializer::GetGuid()
+	{
+		return m_Guid;
+	}
+
+	void Serializer::SetGuid(const Guid& guid)
+	{
+		m_Guid = guid;
+	}
+
+	List<std::pair<ObjectId, FileId>>& Serializer::GetDeserializedObjects()
 	{
 		return m_DeserializedObjects;
 	}
 
-	void Serializer::AddAdditionalObject(Object* object)
+	void Serializer::AddObject(Object* object)
 	{
-		auto it = std::find(m_ObjectsToSerialize.begin(), m_ObjectsToSerialize.end(), object);
-		if (it != m_ObjectsToSerialize.end())
-		{
-			return;
-		}
-
-		FileId fileId = GetFileId(object);
-		if (m_AdditionalObjectsIds.count(fileId) == 0)
-		{
-			m_AdditionalObjectsIds.insert(fileId);
-			m_FileIdToObject.insert_or_assign(fileId, object);
-			m_AdditionalObjectsToSerialize.emplace_back(object);
-		}
+		ObjectId objectId = object->GetObjectId();
+		FileId fileId = GetFileId(objectId);
+		m_FileIdToObjectId.insert({ fileId, objectId });
+		m_ObjectsToSerialize.push_back(objectId);
 	}
 
-	void Serializer::AddDeserializedObject(Object* object, const FileId& fileId)
+	void Serializer::AddObject(Object* object, FileId fileId)
 	{
-		ObjectDB::AllocateIdToFileId(object, fileId);
-		m_FileIdToObject.insert_or_assign(fileId, object);
-		m_DeserializedObjects.emplace_back(std::make_pair(object, fileId));
+		m_FileIdToObjectId.insert({ fileId, object->GetObjectId() });
 	}
 
-	FileId Serializer::GetFileId(Object* object)
+	Guid Serializer::GetGuid(ObjectId objectId)
 	{
-		if (ObjectDB::HasFileId(object))
+		if (ObjectDB::HasGuid(objectId))
 		{
-			return ObjectDB::GetFileIdFromObject(object);
+			return ObjectDB::GetGuidFromObjectId(objectId);
+		}
+		return m_Guid;
+	}
+
+	FileId Serializer::GetFileId(ObjectId objectId)
+	{
+		if (ObjectDB::HasFileId(objectId))
+		{
+			return ObjectDB::GetFileIdFromObjectId(objectId);
 		}
 
 		FileId fileId = GenerateFileId();
-		m_FileIdToObject.insert_or_assign(fileId, object);
-		ObjectDB::AllocateIdToFileId(object, fileId);
+		m_FileIdToObjectId.insert_or_assign(fileId, objectId);
+		if (m_Guid.IsValid())
+		{
+			ObjectDB::AllocateIdToGuid(objectId, m_Guid, fileId);
+		}
+		else
+		{
+			ObjectDB::AllocateIdToFileId(objectId, fileId);
+		}
 		return fileId;
 	}
 
-	Object* Serializer::GetObjectRef(const FileId& fileId)
+	Object* Serializer::GetObjectRef(FileId fileId)
 	{
-		auto idIt = m_FileIdToObject.find(fileId);
-		if (idIt != m_FileIdToObject.end())
+		auto idIt = m_FileIdToObjectId.find(fileId);
+		if (idIt != m_FileIdToObjectId.end())
 		{
-			return idIt->second;
+			return ObjectDB::GetObject(idIt->second);
 		}
 		return nullptr;
 	}
@@ -79,15 +183,15 @@ namespace Blueberry
 			return nullptr;
 		}
 
-		Object* object;
+		Object* object = nullptr;
 		if (m_AdditionalObjectsToSerialize.size() > 0)
 		{
-			object = m_AdditionalObjectsToSerialize.front();
+			object = ObjectDB::GetObject(m_AdditionalObjectsToSerialize.front());
 			m_AdditionalObjectsToSerialize.erase(m_AdditionalObjectsToSerialize.begin());
 		}
 		else
 		{
-			object = m_ObjectsToSerialize[0];
+			object = ObjectDB::GetObject(m_ObjectsToSerialize[0]);
 			m_ObjectsToSerialize.erase(m_ObjectsToSerialize.begin());
 		}
 		return object;
@@ -95,10 +199,9 @@ namespace Blueberry
 
 	Object* Serializer::GetPtrObject(const ObjectPtrData& data)
 	{
-		Object* result;
+		Object* result = nullptr;
 		if (data.guid.data[0] > 0)
 		{
-			String guid1 = data.guid.ToString();
 			result = ObjectDB::GetObjectFromGuid(data.guid, data.fileId);
 			if (result == nullptr || result->GetState() == ObjectState::AwaitingLoading)
 			{
@@ -126,19 +229,20 @@ namespace Blueberry
 
 	ObjectPtrData Serializer::GetPtrData(Object* object)
 	{
+		ObjectId objectId = object->GetObjectId();
 		ObjectPtrData result = {};
 		if (ObjectDB::HasGuid(object))
 		{
 			auto pair = ObjectDB::GetGuidAndFileIdFromObject(object);
-			auto fileIdIt = m_FileIdToObject.find(pair.second);
-			if (fileIdIt != m_FileIdToObject.end() && fileIdIt->second == object)
+			auto fileIdIt = m_FileIdToObjectId.find(pair.second);
+			if (fileIdIt != m_FileIdToObjectId.end() && fileIdIt->second == objectId)
 			{
 				result.fileId = pair.second;
 			}
-			else if (m_AssetGuid == pair.first)
+			else if (m_Guid == pair.first)
 			{
 				result.fileId = pair.second;
-				AddAdditionalObject(object);
+				AddAdditionalObject(objectId);
 			}
 			else
 			{
@@ -151,15 +255,15 @@ namespace Blueberry
 			FileId fileId;
 			if (!ObjectDB::HasFileId(object))
 			{
-				fileId = GetFileId(object);
-				AddAdditionalObject(object);
+				fileId = GetFileId(objectId);
+				AddAdditionalObject(objectId);
 			}
 			else
 			{
 				fileId = ObjectDB::GetFileIdFromObject(object);
-				if (m_FileIdToObject.count(fileId) == 0)
+				if (m_FileIdToObjectId.count(fileId) == 0)
 				{
-					AddAdditionalObject(object);
+					AddAdditionalObject(objectId);
 				}
 			}
 			result.fileId = fileId;
@@ -171,12 +275,708 @@ namespace Blueberry
 	{
 		static std::random_device rd;
 		static std::mt19937 gen(rd());
-
-		static std::uniform_int_distribution<unsigned long long> dis(
-			(std::numeric_limits<std::uint64_t>::min)(),
-			(std::numeric_limits<std::uint64_t>::max)()
-		);
+		static std::uniform_int_distribution<unsigned long long> dis((std::numeric_limits<std::uint64_t>::min)(), (std::numeric_limits<std::uint64_t>::max)());
 
 		return dis(gen);
+	}
+
+	void Serializer::SerializeNode(SerializationNodeRef node, Context context, SerializationFlags flags)
+	{
+		for (auto& field : context.info->fields)
+		{
+			if ((field.options.serializationFlags & flags) == SerializationFlags::None)
+			{
+				continue;
+			}
+
+			void* ptr = context.ptr;
+			SerializationNodeRef fieldNode = node[field.name.c_str()];
+
+			switch (field.type)
+			{
+			case BindingType::Bool:
+				fieldNode << *field.Get<bool>(ptr);
+				break;
+			case BindingType::Int:
+				fieldNode << *field.Get<int>(ptr);
+				break;
+			case BindingType::Uint:
+				fieldNode << *field.Get<unsigned int>(ptr);
+				break;
+			case BindingType::Float:
+				fieldNode << *field.Get<float>(ptr);
+				break;
+			case BindingType::String:
+				fieldNode << *field.Get<String>(ptr);
+				break;
+			case BindingType::ByteData:
+			{
+				ByteData* data = field.Get<ByteData>(ptr);
+				if (data->size() > 0)
+				{
+					DataWrapper<ByteData> wrapper = { *data };
+					fieldNode << wrapper;
+				}
+			}
+			break;
+			case BindingType::IntList:
+			{
+				List<int>* data = field.Get<List<int>>(ptr);
+				DataWrapper<List<int>> wrapper = { *data };
+				fieldNode << wrapper;
+			}
+			break;
+			case BindingType::FloatList:
+			{
+				List<float>* data = field.Get<List<float>>(ptr);
+				DataWrapper<List<float>> wrapper = { *data };
+				fieldNode << wrapper;
+			}
+			break;
+			case BindingType::StringList:
+			{
+				fieldNode |= SerializationTreeFlags::SEQUENCE;
+				List<String>* arrayValue = field.Get<List<String>>(ptr);
+				if (arrayValue->size() > 0)
+				{
+					for (size_t i = 0; i < arrayValue->size(); ++i)
+					{
+						fieldNode.AppendChild() << arrayValue->at(i);
+					}
+				}
+			}
+			break;
+			case BindingType::Enum:
+				fieldNode << *field.Get<int>(ptr);
+				break;
+			case BindingType::Vector2:
+				fieldNode << *field.Get<Vector2>(ptr);
+				break;
+			case BindingType::Vector2Int:
+				fieldNode << *field.Get<Vector2Int>(ptr);
+				break;
+			case BindingType::Vector3:
+				fieldNode << *field.Get<Vector3>(ptr);
+				break;
+			case BindingType::Vector3Int:
+				fieldNode << *field.Get<Vector3Int>(ptr);
+				break;
+			case BindingType::Vector4:
+				fieldNode << *field.Get<Vector4>(ptr);
+				break;
+			case BindingType::Vector4Int:
+				fieldNode << *field.Get<Vector4Int>(ptr);
+				break;
+			case BindingType::Quaternion:
+				fieldNode << *field.Get<Quaternion>(ptr);
+				break;
+			case BindingType::Color:
+				fieldNode << *field.Get<Color>(ptr);
+				break;
+			case BindingType::AABB:
+				fieldNode << *field.Get<AABB>(ptr);
+				break;
+			case BindingType::Matrix:
+				fieldNode << *field.Get<Matrix>(ptr);
+				break;
+			case BindingType::Vector2List:
+			{
+				fieldNode |= SerializationTreeFlags::SEQUENCE;
+				List<Vector2>* arrayValue = field.Get<List<Vector2>>(ptr);
+				for (size_t i = 0; i < arrayValue->size(); ++i)
+				{
+					SerializationNodeRef childNode = fieldNode.AppendChild();
+					childNode |= SerializationTreeFlags::FLOWMAP;
+					childNode << arrayValue->at(i);
+				}
+			}
+			break;
+			case BindingType::Vector3List:
+			{
+				fieldNode |= SerializationTreeFlags::SEQUENCE;
+				List<Vector3>* arrayValue = field.Get<List<Vector3>>(ptr);
+				for (size_t i = 0; i < arrayValue->size(); ++i)
+				{
+					SerializationNodeRef childNode = fieldNode.AppendChild();
+					childNode |= SerializationTreeFlags::FLOWMAP;
+					childNode << arrayValue->at(i);
+				}
+			}
+			break;
+			case BindingType::Vector4List:
+			{
+				fieldNode |= SerializationTreeFlags::SEQUENCE;
+				List<Vector4>* arrayValue = field.Get<List<Vector4>>(ptr);
+				for (size_t i = 0; i < arrayValue->size(); ++i)
+				{
+					SerializationNodeRef childNode = fieldNode.AppendChild();
+					childNode |= SerializationTreeFlags::FLOWMAP;
+					childNode << arrayValue->at(i);
+				}
+			}
+			break;
+			case BindingType::QuaternionList:
+			{
+				fieldNode |= SerializationTreeFlags::SEQUENCE;
+				List<Quaternion>* arrayValue = field.Get<List<Quaternion>>(ptr);
+				for (size_t i = 0; i < arrayValue->size(); ++i)
+				{
+					SerializationNodeRef childNode = fieldNode.AppendChild();
+					childNode |= SerializationTreeFlags::FLOWMAP;
+					childNode << arrayValue->at(i);
+				}
+			}
+			break;
+			case BindingType::MatrixList:
+			{
+				fieldNode |= SerializationTreeFlags::SEQUENCE;
+				List<Matrix>* arrayValue = field.Get<List<Matrix>>(ptr);
+				for (size_t i = 0; i < arrayValue->size(); ++i)
+				{
+					SerializationNodeRef childNode = fieldNode.AppendChild();
+					childNode << arrayValue->at(i);
+				}
+			}
+			break;
+			case BindingType::Raw:
+			{
+				ByteData byteData(field.options.size);
+				memcpy(byteData.data(), field.Get<uint8_t>(ptr), field.options.size);
+				DataWrapper<ByteData> wrapper = { byteData };
+				fieldNode << wrapper;
+			}
+			break;
+			case BindingType::ObjectPtr:
+			{
+				ObjectPtr<Object> objectRefValue = *field.Get<ObjectPtr<Object>>(ptr);
+				ObjectPtrData data = {};
+				if (objectRefValue.IsValid())
+				{
+					data = GetPtrData(objectRefValue.Get());
+				}
+				else
+				{
+					data.fileId = 0;
+				}
+				fieldNode << data;
+			}
+			break;
+			case BindingType::ObjectPtrList:
+			{
+				fieldNode |= SerializationTreeFlags::SEQUENCE;
+				List<ObjectPtr<Object>>* arrayValue = field.Get<List<ObjectPtr<Object>>>(ptr);
+				for (size_t i = 0; i < arrayValue->size(); ++i)
+				{
+					ObjectPtr<Object> objectRefValue = arrayValue->at(i);
+					ObjectPtrData data = {};
+					if (objectRefValue.IsValid())
+					{
+						data = GetPtrData(objectRefValue.Get());
+					}
+					else
+					{
+						data.fileId = 0;
+					}
+					fieldNode.AppendChild() << data;
+				}
+			}
+			break;
+			case BindingType::Data:
+			{
+				fieldNode |= SerializationTreeFlags::MAP;
+				Data* data = field.Get<Data>(ptr);
+				const ClassInfo* info = ClassDB::GetInfo(*field.options.objectType);
+				if (info != nullptr)
+				{
+					Context context = Context::CreateNoOffset(data, info);
+					SerializeNode(fieldNode, context, flags);
+				}
+				else
+				{
+					BB_ERROR("Data class not exists.");
+				}
+			}
+			break;
+			case BindingType::DataList:
+			{
+				fieldNode |= SerializationTreeFlags::SEQUENCE;
+				ListBase* dataArrayPointer = field.Get<ListBase>(ptr);
+				const ClassInfo* info = ClassDB::GetInfo(*field.options.objectType);
+				if (info != nullptr)
+				{
+					size_t dataSize = dataArrayPointer->size_base();
+					for (size_t i = 0; i < dataSize; ++i)
+					{
+						void* data = dataArrayPointer->get_base(i);
+						Context context = Context::CreateNoOffset(data, info);
+						SerializationNodeRef dataNode = fieldNode.AppendChild();
+						dataNode |= SerializationTreeFlags::MAP;
+						SerializeNode(dataNode, context, flags);
+					}
+				}
+				else
+				{
+					BB_ERROR("Data class not exists.");
+				}
+			}
+			break;
+			case BindingType::Variant:
+			{
+				Variant variant = *field.Get<Variant>(ptr);
+				size_t type = variant.index();
+				fieldNode |= SerializationTreeFlags::FLOWMAP;
+
+				SerializationNodeRef typeNode = fieldNode["type"];
+				SerializationNodeRef dataNode = fieldNode["data"];
+				typeNode << type;
+
+				switch (type)
+				{
+				case 0:
+					dataNode << std::get<bool>(variant);
+					break;
+				case 1:
+					dataNode << std::get<int32_t>(variant);
+					break;
+				case 2:
+					dataNode << std::get<uint32_t>(variant);
+					break;
+				case 3:
+					dataNode << std::get<int64_t>(variant);
+					break;
+				case 4:
+					dataNode << std::get<uint64_t>(variant);
+					break;
+				case 5:
+					dataNode << std::get<float>(variant);
+					break;
+				case 6:
+					dataNode << std::get<String>(variant);
+					break;
+				case 7:
+					dataNode << std::get<Vector2>(variant);
+					break;
+				case 8:
+					dataNode << std::get<Vector2Int>(variant);
+					break;
+				case 9:
+					dataNode << std::get<Vector3>(variant);
+					break;
+				case 10:
+					dataNode << std::get<Vector3Int>(variant);
+					break;
+				case 11:
+					dataNode << std::get<Vector4>(variant);
+					break;
+				case 12:
+					dataNode << std::get<Vector4Int>(variant);
+					break;
+				case 13:
+					dataNode << std::get<Quaternion>(variant);
+					break;
+				case 14:
+					dataNode << std::get<Color>(variant);
+					break;
+				case 15:
+					dataNode << GetPtrData(std::get<Blueberry::ObjectPtr<Object>>(variant).Get());
+					break;
+				default:
+					BB_INFO("Can't serialize field " << field.name);
+					break;
+				}
+			}
+			break;
+			default:
+				BB_INFO("Can't serialize field " << field.name);
+				continue;
+			}
+		}
+	}
+
+	void Serializer::DeserializeNode(SerializationNodeConstRef node, Context context)
+	{
+		for (auto& fieldNode : node.GetChildren())
+		{
+			void* ptr = context.ptr;
+			const FieldInfo* field = context.info->GetField(fieldNode.Get().key);
+			if (field != nullptr)
+			{
+				switch (field->type)
+				{
+				case BindingType::Bool:
+					fieldNode >> *field->Get<bool>(ptr);
+					break;
+				case BindingType::Int:
+					fieldNode >> *field->Get<int>(ptr);
+					break;
+				case BindingType::Uint:
+					fieldNode >> *field->Get<unsigned int>(ptr);
+					break;
+				case BindingType::Float:
+					fieldNode >> *field->Get<float>(ptr);
+					break;
+				case BindingType::String:
+					fieldNode >> *field->Get<String>(ptr);
+					break;
+				case BindingType::ByteData:
+				{
+					ByteData data;
+					DataWrapper<ByteData> wrapper = { data };
+					fieldNode >> wrapper;
+					*field->Get<ByteData>(ptr) = std::move(data);
+				}
+				break;
+				case BindingType::IntList:
+				{
+					List<int> data;
+					DataWrapper<List<int>> wrapper = { data };
+					fieldNode >> wrapper;
+					*field->Get<List<int>>(ptr) = std::move(data);
+				}
+				break;
+				case BindingType::FloatList:
+				{
+					List<float> data;
+					DataWrapper<List<float>> wrapper = { data };
+					fieldNode >> wrapper;
+					*field->Get<List<float>>(ptr) = std::move(data);
+				}
+				break;
+				case BindingType::StringList:
+				{
+					List<String>* arrayPointer = field->Get<List<String>>(ptr);
+					arrayPointer->clear_base();
+					for (auto& child : fieldNode.GetChildren())
+					{
+						String stringValue;
+						child >> stringValue;
+						arrayPointer->push_back(stringValue);
+					}
+				}
+				break;
+				case BindingType::Enum:
+					fieldNode >> *field->Get<int>(ptr);
+					break;
+				case BindingType::Vector2:
+					fieldNode >> *field->Get<Vector2>(ptr);
+					break;
+				case BindingType::Vector2Int:
+					fieldNode >> *field->Get<Vector2Int>(ptr);
+					break;
+				case BindingType::Vector3:
+					fieldNode >> *field->Get<Vector3>(ptr);
+					break;
+				case BindingType::Vector3Int:
+					fieldNode >> *field->Get<Vector3Int>(ptr);
+					break;
+				case BindingType::Vector4:
+					fieldNode >> *field->Get<Vector4>(ptr);
+					break;
+				case BindingType::Vector4Int:
+					fieldNode >> *field->Get<Vector4Int>(ptr);
+					break;
+				case BindingType::Quaternion:
+					fieldNode >> *field->Get<Quaternion>(ptr);
+					break;
+				case BindingType::Color:
+					fieldNode >> *field->Get<Color>(ptr);
+					break;
+				case BindingType::AABB:
+					fieldNode >> *field->Get<AABB>(ptr);
+					break;
+				case BindingType::Matrix:
+					fieldNode >> *field->Get<Matrix>(ptr);
+					break;
+				case BindingType::Vector2List:
+				{
+					List<Vector2>* arrayPointer = field->Get<List<Vector2>>(ptr);
+					arrayPointer->clear_base();
+					for (auto& child : fieldNode.GetChildren())
+					{
+						Vector2 data;
+						child >> data;
+						arrayPointer->push_back(data);
+					}
+				}
+				break;
+				case BindingType::Vector3List:
+				{
+					List<Vector3>* arrayPointer = field->Get<List<Vector3>>(ptr);
+					arrayPointer->clear_base();
+					for (auto& child : fieldNode.GetChildren())
+					{
+						Vector3 data;
+						child >> data;
+						arrayPointer->push_back(data);
+					}
+				}
+				break;
+				case BindingType::Vector4List:
+				{
+					List<Vector4>* arrayPointer = field->Get<List<Vector4>>(ptr);
+					arrayPointer->clear_base();
+					for (auto& child : fieldNode.GetChildren())
+					{
+						Vector4 data;
+						child >> data;
+						arrayPointer->push_back(data);
+					}
+				}
+				break;
+				case BindingType::QuaternionList:
+				{
+					List<Quaternion>* arrayPointer = field->Get<List<Quaternion>>(ptr);
+					arrayPointer->clear_base();
+					for (auto& child : fieldNode.GetChildren())
+					{
+						Quaternion data;
+						child >> data;
+						arrayPointer->push_back(data);
+					}
+				}
+				break;
+				case BindingType::MatrixList:
+				{
+					List<Matrix>* arrayPointer = field->Get<List<Matrix>>(ptr);
+					arrayPointer->clear_base();
+					for (auto& child : fieldNode.GetChildren())
+					{
+						Matrix data;
+						child >> data;
+						arrayPointer->push_back(data);
+					}
+				}
+				break;
+				case BindingType::Raw:
+				{
+					ByteData byteData;
+					DataWrapper<ByteData> wrapper = { byteData };
+					fieldNode >> wrapper;
+					memcpy(field->Get<uint8_t>(ptr), byteData.data(), byteData.size());
+				}
+				break;
+				case BindingType::ObjectPtr:
+				{
+					ObjectPtrData data = {};
+					fieldNode >> data;
+					Object* obj = GetPtrObject(data);
+					*field->Get<ObjectPtr<Object>>(ptr) = obj;
+				}
+				break;
+				case BindingType::ObjectPtrList:
+				{
+					List<ObjectPtr<Object>>* refArrayPointer = field->Get<List<ObjectPtr<Object>>>(ptr);
+					refArrayPointer->clear_base();
+					for (auto& child : fieldNode.GetChildren())
+					{
+						ObjectPtrData data = {};
+						child >> data;
+						refArrayPointer->push_back(GetPtrObject(data));
+					}
+				}
+				break;
+				case BindingType::Data:
+				{
+					Data* data = field->Get<Data>(ptr);
+					Context context = Context::CreateNoOffset(data, *field->options.objectType);
+					if (context.info != nullptr)
+					{
+						DeserializeNode(fieldNode, context);
+					}
+					else
+					{
+						BB_ERROR("Data class not exists.");
+					}
+				}
+				break;
+				case BindingType::DataList:
+				{
+					ListBase* dataArrayPointer = field->Get<ListBase>(ptr);
+					dataArrayPointer->clear_base();
+					for (auto& child : fieldNode.GetChildren())
+					{
+						void* data = dataArrayPointer->emplace_back_base();
+						Context context = Context::CreateNoOffset(data, *field->options.objectType);
+						if (context.info != nullptr)
+						{
+							DeserializeNode(child, context);
+						}
+						else
+						{
+							BB_ERROR("Data class not exists.");
+						}
+					}
+				}
+				break;
+				case BindingType::Variant:
+				{
+					SerializationNodeConstRef typeNode = fieldNode["type"];
+					SerializationNodeConstRef dataNode = fieldNode["data"];
+
+					if (typeNode.IsValid() && dataNode.IsValid())
+					{
+						Variant* variant = field->Get<Variant>(ptr);
+						size_t index;
+						typeNode >> index;
+
+						switch (index)
+						{
+						case 0:
+						{
+							bool value;
+							dataNode >> value;
+							*variant = value;
+						}
+						break;
+						case 1:
+						{
+							int32_t value;
+							dataNode >> value;
+							*variant = value;
+						}
+						break;
+						case 2:
+						{
+							uint32_t value;
+							dataNode >> value;
+							*variant = value;
+						}
+						break;
+						case 3:
+						{
+							int64_t value;
+							dataNode >> value;
+							*variant = value;
+						}
+						break;
+						case 4:
+						{
+							uint64_t value;
+							dataNode >> value;
+							*variant = value;
+						}
+						break;
+						case 5:
+						{
+							float value;
+							dataNode >> value;
+							*variant = value;
+						}
+						break;
+						case 6:
+						{
+							String value;
+							dataNode >> value;
+							*variant = value;
+						}
+						break;
+						case 7:
+						{
+							Vector2 value;
+							dataNode >> value;
+							*variant = value;
+						}
+						break;
+						case 8:
+						{
+							Vector2Int value;
+							dataNode >> value;
+							*variant = value;
+						}
+						break;
+						case 9:
+						{
+							Vector3 value;
+							dataNode >> value;
+							*variant = value;
+						}
+						break;
+						case 10:
+						{
+							Vector3Int value;
+							dataNode >> value;
+							*variant = value;
+						}
+						break;
+						case 11:
+						{
+							Vector4 value;
+							dataNode >> value;
+							*variant = value;
+						}
+						break;
+						case 12:
+						{
+							Vector4Int value;
+							dataNode >> value;
+							*variant = value;
+						}
+						break;
+						case 13:
+						{
+							Quaternion value;
+							dataNode >> value;
+							*variant = value;
+						}
+						break;
+						case 14:
+						{
+							Color value;
+							dataNode >> value;
+							*variant = value;
+						}
+						break;
+						case 15:
+						{
+							ObjectPtrData data = {};
+							dataNode >> data;
+							Object* obj = GetPtrObject(data);
+							*variant = ObjectPtr<Object>(obj);
+						}
+						break;
+						default:
+							BB_INFO("Can't deserialize field " << field->name);
+							break;
+						}
+					}
+				}
+				break;
+				default:
+					BB_INFO("Can't deserialize field " << field->name);
+					continue;
+				}
+			}
+		}
+	}
+
+	void Serializer::AddAdditionalObject(ObjectId objectId)
+	{
+		auto it = std::find(m_ObjectsToSerialize.begin(), m_ObjectsToSerialize.end(), objectId);
+		if (it != m_ObjectsToSerialize.end())
+		{
+			return;
+		}
+
+		FileId fileId = GetFileId(objectId);
+		if (m_AdditionalObjectsFileIds.count(fileId) == 0)
+		{
+			m_AdditionalObjectsFileIds.insert(fileId);
+			m_FileIdToObjectId.insert_or_assign(fileId, objectId);
+			m_AdditionalObjectsToSerialize.push_back(objectId);
+		}
+	}
+
+	void Serializer::AddDeserializedObject(ObjectId objectId, const Guid& guid, FileId fileId)
+	{
+		if (guid.IsValid())
+		{
+			ObjectDB::AllocateIdToGuid(objectId, guid, fileId);
+		}
+		else
+		{
+			ObjectDB::AllocateIdToFileId(objectId, fileId);
+			m_FileIdToObjectId.insert_or_assign(fileId, objectId);
+		}
+		m_DeserializedObjects.push_back(std::make_pair(objectId, fileId));
 	}
 }

@@ -2,22 +2,25 @@
 
 namespace Blueberry
 {
-	const bool& Cursor::IsLocked()
+	bool Cursor::s_Locked = false;
+	bool Cursor::s_Hidden = false;
+
+	bool Cursor::IsLocked()
 	{
 		return s_Locked;
 	}
 
-	void Cursor::SetLocked(const bool& locked)
+	void Cursor::SetLocked(bool locked)
 	{
 		s_Locked = locked;
 	}
 
-	const bool& Cursor::IsHidden()
+	bool Cursor::IsHidden()
 	{
 		return s_Hidden;
 	}
 
-	void Cursor::SetHidden(const bool& hidden)
+	void Cursor::SetHidden(bool hidden)
 	{
 		s_Hidden = hidden;
 	}

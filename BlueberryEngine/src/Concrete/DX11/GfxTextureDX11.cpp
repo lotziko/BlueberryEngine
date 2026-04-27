@@ -214,6 +214,10 @@ namespace Blueberry
 		{
 			return 1;
 		}
+		else if (dimension == TextureDimension::TextureCubeArray)
+		{
+			return 6 * depth;
+		}
 		else if (dimension == TextureDimension::TextureCube)
 		{
 			return 6;
@@ -244,6 +248,8 @@ namespace Blueberry
 		m_Width = properties.width;
 		m_Height = properties.height;
 		m_Depth = properties.depth;
+		m_FilterMode = properties.filterMode;
+		m_WrapMode = properties.wrapMode;
 
 		if (properties.data != nullptr)
 		{
@@ -253,7 +259,7 @@ namespace Blueberry
 			uint32_t size = arraySize * mipLevels;
 			D3D11_SUBRESOURCE_DATA* subresourceDatas = BB_MALLOC_ARRAY(D3D11_SUBRESOURCE_DATA, size);
 
-			uint8_t* ptr = static_cast<uint8_t*>(properties.data);
+			const uint8_t* ptr = static_cast<const uint8_t*>(properties.data);
 			if (IsCompressed(m_Format))
 			{
 				uint32_t blockSize = bitsPerPixel * 16 / 8;
@@ -333,6 +339,11 @@ namespace Blueberry
 		return m_Height;
 	}
 
+	TextureFormat GfxTextureDX11::GetFormat() const
+	{
+		return static_cast<TextureFormat>(m_Format);
+	}
+
 	void* GfxTextureDX11::GetHandle()
 	{
 		return m_ShaderResourceView.Get();
@@ -408,74 +419,94 @@ namespace Blueberry
 		}
 	}
 
-	void GfxTextureDX11::SetData(void* data, const size_t& size)
+	void GfxTextureDX11::SetData(void* data, size_t size)
 	{
 		if (m_StagingTexture.Get() == nullptr)
 		{
 			BB_ERROR("The texture cannot be writed.");
 			return;
 		}
-		D3D11_MAPPED_SUBRESOURCE mappedBuffer;
-		ZeroMemory(&mappedBuffer, sizeof(D3D11_MAPPED_SUBRESOURCE));
+		D3D11_MAPPED_SUBRESOURCE mappedTexture;
+		ZeroMemory(&mappedTexture, sizeof(D3D11_MAPPED_SUBRESOURCE));
 
-		m_DeviceContext->Map(m_StagingTexture.Get(), 0, D3D11_MAP_WRITE, 0, &mappedBuffer);
-		memcpy(mappedBuffer.pData, data, size);
+		m_DeviceContext->Map(m_StagingTexture.Get(), 0, D3D11_MAP_WRITE, 0, &mappedTexture);
+		memcpy(mappedTexture.pData, data, size);
 		m_DeviceContext->Unmap(m_StagingTexture.Get(), 0);
 
 		m_DeviceContext->CopyResource(m_Texture.Get(), m_StagingTexture.Get());
 	}
 
+	void GfxTextureDX11::SetData(void* data, size_t size, uint32_t slice)
+	{
+		if (m_StagingTexture.Get() == nullptr)
+		{
+			BB_ERROR("The texture cannot be writed.");
+			return;
+		}
+		uint32_t bytesPerPixel = GetBitsPerPixel(m_Format) / 8;
+		uint32_t bytesPerBlock = IsCompressed(m_Format) ? 4 : 1;
+		uint8_t* src = static_cast<uint8_t*>(data);
+		D3D11_MAPPED_SUBRESOURCE mappedTexture;
+		ZeroMemory(&mappedTexture, sizeof(D3D11_MAPPED_SUBRESOURCE));
+
+		uint32_t subSliceCount = std::max(1u, m_ArraySize / m_Depth);
+
+		for (uint32_t i = 0; i < subSliceCount; ++i)
+		{
+			uint32_t width = m_Width * bytesPerBlock;
+			uint32_t height = m_Height / bytesPerBlock;
+			for (uint32_t j = 0; j < m_MipLevels; ++j)
+			{
+				UINT subresource = D3D11CalcSubresource(j, slice * subSliceCount + i, m_MipLevels);
+				HRESULT hr = m_DeviceContext->Map(m_StagingTexture.Get(), subresource, D3D11_MAP_WRITE, 0, &mappedTexture);
+				if (FAILED(hr))
+				{
+					BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to get texture data."));
+					return;
+				}
+				uint8_t* ptr = static_cast<uint8_t*>(mappedTexture.pData);
+				uint32_t dataSize = width * bytesPerPixel;
+				for (uint32_t k = 0; k < height; ++k)
+				{
+					memcpy(ptr, src, dataSize);
+					src += dataSize;
+					ptr += mappedTexture.RowPitch;
+				}
+				m_DeviceContext->Unmap(m_StagingTexture.Get(), subresource);
+				width /= 2;
+				height /= 2;
+			}
+		}
+		
+		m_DeviceContext->CopyResource(m_Texture.Get(), m_StagingTexture.Get());
+	}
+
+	void GfxTextureDX11::SetWrapMode(WrapMode wrapMode)
+	{
+		if (m_WrapMode != wrapMode)
+		{
+			m_WrapMode = wrapMode;
+			m_SamplerState.Reset();
+		}
+	}
+
+	void GfxTextureDX11::SetFilterMode(FilterMode filterMode)
+	{
+		if (m_FilterMode != filterMode)
+		{
+			m_FilterMode = filterMode;
+			m_SamplerState.Reset();
+		}
+	}
+
+	void GfxTextureDX11::SetName(const String& name)
+	{
+		m_Texture->SetPrivateData(WKPDID_D3DDebugObjectName, name.size(), name.data());
+	}
+
 	void GfxTextureDX11::GenerateMipMaps()
 	{
 		m_DeviceContext->GenerateMips(m_ShaderResourceView.Get());
-	}
-
-	D3D11_TEXTURE_ADDRESS_MODE GetAdressMode(const WrapMode& wrapMode)
-	{
-		if (wrapMode == WrapMode::Clamp)
-		{
-			return D3D11_TEXTURE_ADDRESS_CLAMP;
-		}
-		return D3D11_TEXTURE_ADDRESS_WRAP;
-	}
-
-	D3D11_FILTER GetFilter(const FilterMode& filterMode)
-	{
-		switch (filterMode)
-		{
-		case FilterMode::Point:
-			return D3D11_FILTER_MIN_MAG_MIP_POINT;
-		case FilterMode::Bilinear:
-			return D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-		case FilterMode::Trilinear:
-			return D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		case FilterMode::Anisotropic:
-			return D3D11_FILTER_ANISOTROPIC;
-		case FilterMode::CompareDepth:
-			return D3D11_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
-		default:
-			return D3D11_FILTER_MIN_MAG_MIP_POINT;
-		}
-	}
-
-	D3D11_COMPARISON_FUNC GetComparison(const FilterMode& filterMode)
-	{
-		if (filterMode == FilterMode::CompareDepth)
-		{
-			return D3D11_COMPARISON_LESS;
-		}
-		return D3D11_COMPARISON_NEVER;
-	}
-
-	uint32_t GfxTextureDX11::GetQualityLevel(const DXGI_FORMAT& format, const uint32_t& antiAliasing)
-	{
-		if (antiAliasing > 1)
-		{
-			uint32_t qualityLevels;
-			HRESULT hr = m_Device->CheckMultisampleQualityLevels(format, antiAliasing, &qualityLevels);
-			return qualityLevels - 1;
-		}
-		return 0;
 	}
 
 	DXGI_FORMAT GetTextureFormat(const DXGI_FORMAT& format)
@@ -508,19 +539,27 @@ namespace Blueberry
 		return format;
 	}
 
-	bool GfxTextureDX11::Initialize(D3D11_SUBRESOURCE_DATA* subresourceData, const uint32_t& subresourceCount, const TextureProperties& properties)
+	bool HasFlag(TextureUsageFlags usageFlags, TextureUsageFlags flag)
+	{
+		return (usageFlags & flag) != TextureUsageFlags::None;
+	}
+
+	bool GfxTextureDX11::Initialize(D3D11_SUBRESOURCE_DATA* subresourceData, uint32_t subresourceCount, const TextureProperties& properties)
 	{
 		uint32_t antiAliasing = std::max(1u, properties.antiAliasing);
 		uint32_t arraySize = GetArraySize(properties.dimension, properties.depth);
 		uint32_t mipLevels = std::max(1u, properties.mipCount);
 		bool isCubemap = properties.dimension == TextureDimension::TextureCube;
-		bool isArray = !isCubemap && arraySize > 1;
+		bool isCubemapArray = properties.dimension == TextureDimension::TextureCubeArray;
+		bool isArray = !isCubemapArray && !isCubemap && arraySize > 1;
 		bool isVolume = properties.dimension == TextureDimension::Texture3D;
 		
 		bool useDSV = IsDepth(m_Format);
-		bool useRTV = !useDSV && properties.isRenderTarget;
-		bool useUAV = properties.isUnorderedAccess;
-		bool useStaging = properties.isReadable || properties.isWritable;
+		bool useRTV = !useDSV && HasFlag(properties.usageFlags, TextureUsageFlags::RenderTarget);
+		bool useUAV = HasFlag(properties.usageFlags, TextureUsageFlags::UnorderedAccess);
+		bool isReadable = HasFlag(properties.usageFlags, TextureUsageFlags::CPUReadable);
+		bool isWritable = HasFlag(properties.usageFlags, TextureUsageFlags::CPUWritable);
+		bool useStaging = isReadable || isWritable;
 		bool isResource = !useDSV && !useRTV && !useUAV && !useStaging;
 		bool useSampler = isResource || antiAliasing <= 1;
 
@@ -593,7 +632,7 @@ namespace Blueberry
 			{
 				textureDesc.BindFlags |= D3D11_BIND_UNORDERED_ACCESS;
 			}
-			if (isCubemap)
+			if (isCubemap || isCubemapArray)
 			{
 				textureDesc.MiscFlags |= D3D11_RESOURCE_MISC_TEXTURECUBE;
 			}
@@ -633,6 +672,14 @@ namespace Blueberry
 				resourceViewDesc.Texture2DArray.FirstArraySlice = 0;
 				resourceViewDesc.Texture2DArray.MostDetailedMip = 0;
 			}
+		}
+		else if (isCubemapArray)
+		{
+			resourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBEARRAY;
+			resourceViewDesc.TextureCubeArray.MipLevels = mipLevels;
+			resourceViewDesc.TextureCubeArray.MostDetailedMip = 0;
+			resourceViewDesc.TextureCubeArray.First2DArrayFace = 0;
+			resourceViewDesc.TextureCubeArray.NumCubes = arraySize / 6;
 		}
 		else if (isCubemap)
 		{
@@ -694,7 +741,6 @@ namespace Blueberry
 			}
 			else if (isArray)
 			{
-				m_SlicesRenderTargetViews.resize(arraySize);
 				if (antiAliasing > 1)
 				{
 					renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DMSARRAY;
@@ -854,7 +900,7 @@ namespace Blueberry
 
 			textureDesc.Usage = D3D11_USAGE_STAGING;
 			textureDesc.BindFlags = 0;
-			textureDesc.CPUAccessFlags = (properties.isReadable ? D3D11_CPU_ACCESS_READ : 0) | (properties.isWritable ? D3D11_CPU_ACCESS_WRITE : 0);
+			textureDesc.CPUAccessFlags = (isReadable ? D3D11_CPU_ACCESS_READ : 0) | (isWritable ? D3D11_CPU_ACCESS_WRITE : 0);
 
 			if (isCubemap)
 			{
@@ -869,33 +915,6 @@ namespace Blueberry
 			}
 		}
 
-		// Sampler
-		if (useSampler)
-		{
-			D3D11_SAMPLER_DESC samplerDesc;
-			ZeroMemory(&samplerDesc, sizeof(D3D11_SAMPLER_DESC));
-
-			D3D11_TEXTURE_ADDRESS_MODE adress = GetAdressMode(properties.wrapMode);
-			D3D11_FILTER filter = GetFilter(properties.filterMode);
-
-			samplerDesc.Filter = filter;
-			samplerDesc.AddressU = adress;
-			samplerDesc.AddressV = adress;
-			samplerDesc.AddressW = adress;
-			samplerDesc.MipLODBias = 0.0f;
-			samplerDesc.MaxAnisotropy = filter == D3D11_FILTER_ANISOTROPIC ? 8 : 1;
-			samplerDesc.ComparisonFunc = GetComparison(properties.filterMode);
-			samplerDesc.MinLOD = -FLT_MAX;
-			samplerDesc.MaxLOD = FLT_MAX;
-
-			hr = m_Device->CreateSamplerState(&samplerDesc, m_SamplerState.GetAddressOf());
-			if (FAILED(hr))
-			{
-				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create sampler state."));
-				return false;
-			}
-		}
-		
 		return true;
 	}
 }

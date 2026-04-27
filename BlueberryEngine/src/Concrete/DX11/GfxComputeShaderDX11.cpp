@@ -57,6 +57,12 @@ namespace Blueberry
 			case D3D_SIT_STRUCTURED:
 				m_SRVSlots.insert(m_SRVSlots.begin() + inputBindDesc.BindPoint, TO_HASH(String(inputBindDesc.Name)));
 				break;
+			case D3D_SIT_BYTEADDRESS:
+				m_SRVSlots.insert(m_SRVSlots.begin() + inputBindDesc.BindPoint, TO_HASH(String(inputBindDesc.Name)));
+				break;
+			case D3D_SIT_UAV_RWBYTEADDRESS:
+				m_UAVSlots.insert(m_UAVSlots.begin() + inputBindDesc.BindPoint, TO_HASH(String(inputBindDesc.Name)));
+				break;
 			case D3D_SIT_UAV_RWTYPED:
 				m_UAVSlots.insert(m_UAVSlots.begin() + inputBindDesc.BindPoint, TO_HASH(String(inputBindDesc.Name)));
 				break;

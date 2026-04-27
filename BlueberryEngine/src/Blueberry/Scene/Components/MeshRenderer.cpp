@@ -5,8 +5,6 @@
 #include "Blueberry\Graphics\RendererTree.h"
 #include "Blueberry\Graphics\Mesh.h"
 #include "Blueberry\Graphics\Material.h"
-#include "Blueberry\Scene\Entity.h"
-
 #include "Blueberry\Scene\Components\Transform.h"
 
 namespace Blueberry
@@ -14,15 +12,16 @@ namespace Blueberry
 	OBJECT_DEFINITION(MeshRenderer, Renderer)
 	{
 		DEFINE_BASE_FIELDS(MeshRenderer, Renderer)
-		DEFINE_FIELD(MeshRenderer, m_Mesh, BindingType::ObjectPtr, FieldOptions().SetObjectType(Mesh::Type).SetUpdateCallback(MethodBind::Create(&MeshRenderer::InvalidateBounds)))
-		DEFINE_FIELD(MeshRenderer, m_Materials, BindingType::ObjectPtrList, FieldOptions().SetObjectType(Material::Type))
-		DEFINE_FIELD(MeshRenderer, m_IsBakeable, BindingType::Bool, {});
+		DEFINE_FIELD(MeshRenderer, m_Mesh, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Mesh::Type).SetUpdateCallback(MethodBind::Create(&MeshRenderer::InvalidateBounds)))
+		DEFINE_FIELD(MeshRenderer, m_Materials, BindingType::ObjectPtrList, FieldOptions().SetObjectType(&Material::Type))
+		DEFINE_FIELD(MeshRenderer, m_IsBakeable, BindingType::Bool, FieldOptions())
+		DEFINE_FIELD(MeshRenderer, m_LightmapChartOffset, BindingType::Uint, FieldOptions().SetVisibility(VisibilityType::Hidden).SetSerializationFlags(SerializationFlags::RuntimeOnly))
+		DEFINE_ITERATOR(MeshRenderer)
+		DEFINE_EXECUTE_ALWAYS()
 	}
 
 	void MeshRenderer::OnEnable()
 	{
-		AddToSceneComponents(MeshRenderer::Type);
-		// TODO handle prefabs
 		Scene* scene = GetScene();
 		if (scene != nullptr)
 		{
@@ -34,7 +33,6 @@ namespace Blueberry
 
 	void MeshRenderer::OnDisable()
 	{
-		RemoveFromSceneComponents(MeshRenderer::Type);
 		Scene* scene = GetScene();
 		if (scene != nullptr)
 		{
@@ -63,7 +61,7 @@ namespace Blueberry
 		InvalidateBounds();
 	}
 
-	Material* MeshRenderer::GetMaterial(const uint32_t& index)
+	Material* MeshRenderer::GetMaterial(uint32_t index) const
 	{
 		if (index >= m_Materials.size())
 		{
@@ -86,11 +84,11 @@ namespace Blueberry
 		m_Materials.clear();
 		for (Material* material : materials)
 		{
-			m_Materials.emplace_back(material);
+			m_Materials.push_back(material);
 		}
 	}
 
-	uint32_t MeshRenderer::GetMaterialCount()
+	uint32_t MeshRenderer::GetMaterialCount() const
 	{
 		return static_cast<uint32_t>(m_Materials.size());
 	}
@@ -106,52 +104,60 @@ namespace Blueberry
 		return m_Bounds;
 	}
 
+	const Matrix& MeshRenderer::GetLocalToWorldMatrix()
+	{
+		return GetTransform()->GetLocalToWorldMatrix();
+	}
+
 	const bool& MeshRenderer::IsBakeable()
 	{
 		return m_IsBakeable;
 	}
 
-	const uint32_t& MeshRenderer::GetLightmapChartOffset()
+	uint32_t MeshRenderer::GetLightmapChartOffset() const
 	{
 		return m_LightmapChartOffset;
 	}
 
-	void MeshRenderer::SetLightmapChartOffset(const uint32_t& offset)
+	void MeshRenderer::SetLightmapChartOffset(uint32_t offset)
 	{
 		m_LightmapChartOffset = offset;
 	}
 
 	void MeshRenderer::UpdateBounds()
 	{
-		Transform* transform = GetTransform();
-		size_t transformRecalculationFrame = transform->GetRecalculationFrame();
-		if (m_RecalculationFrame < transformRecalculationFrame)
+		if (m_Mesh.IsValid())
 		{
-			AABB bounds = m_Mesh->GetBounds();
-			Matrix matrix = transform->GetLocalToWorldMatrix();
-
-			Vector3 corners[8];
-			bounds.GetCorners(corners);
-
-			for (int i = 0; i < 8; i++)
+			Transform* transform = GetTransform();
+			size_t transformUpdateCount = transform->GetUpdateCount();
+			if (m_UpdateCount != transformUpdateCount)
 			{
-				Vector3 corner = corners[i];
-				Vector3::Transform(corner, matrix, corners[i]);
-			}
+				AABB bounds = m_Mesh->GetBounds();
+				Matrix matrix = transform->GetLocalToWorldMatrix();
 
-			AABB::CreateFromPoints(bounds, 8, corners, sizeof(Vector3));
-			if (!m_CullingDirty)
-			{
-				m_PreviousBounds = m_Bounds;
-				m_CullingDirty = true;
+				Vector3 corners[8];
+				bounds.GetCorners(corners);
+
+				for (int i = 0; i < 8; i++)
+				{
+					Vector3 corner = corners[i];
+					Vector3::Transform(corner, matrix, corners[i]);
+				}
+
+				AABB::CreateFromPoints(bounds, 8, corners, sizeof(Vector3));
+				if (!m_CullingDirty)
+				{
+					m_PreviousBounds = m_Bounds;
+					m_CullingDirty = true;
+				}
+				m_Bounds = bounds;
+				m_UpdateCount = transformUpdateCount;
 			}
-			m_Bounds = bounds;
-			m_RecalculationFrame = transformRecalculationFrame;
 		}
 	}
 
 	void MeshRenderer::InvalidateBounds()
 	{
-		m_RecalculationFrame = 0;
+		m_UpdateCount = 0;
 	}
 }

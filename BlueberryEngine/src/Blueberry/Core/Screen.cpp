@@ -8,37 +8,37 @@ namespace Blueberry
 	Rectangle Screen::s_GameViewport = {};
 	bool Screen::s_AllowCursorLock = false;
 
-	const uint32_t& Screen::GetWidth()
+	uint32_t Screen::GetWidth()
 	{
 		return s_Width;
 	}
 
-	const uint32_t& Screen::GetHeight()
+	uint32_t Screen::GetHeight()
 	{
 		return s_Height;
 	}
 
-	const float& Screen::GetScale()
+	float Screen::GetScale()
 	{
 		return s_Scale;
 	}
 
-	const Rectangle& Screen::GetGameViewport()
+	Rectangle Screen::GetGameViewport()
 	{
 		return s_GameViewport;
 	}
 
-	void Screen::SetGameViewport(const Rectangle& viewport)
+	void Screen::SetGameViewport(Rectangle viewport)
 	{
 		s_GameViewport = viewport;
 	}
 
-	const bool& Screen::IsAllowCursorLock()
+	bool Screen::IsAllowCursorLock()
 	{
 		return s_AllowCursorLock;
 	}
 
-	void Screen::SetAllowCursorLock(const bool& allow)
+	void Screen::SetAllowCursorLock(bool allow)
 	{
 		s_AllowCursorLock = allow;
 	}

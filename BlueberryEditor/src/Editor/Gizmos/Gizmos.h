@@ -18,12 +18,13 @@ namespace Blueberry
 		static void SetColor(const Color& color);
 		static void SetMatrix(const Matrix& matrix);
 		static void DrawLine(const Vector3& start, const Vector3& end);
-		static void DrawArc(const Vector3& center, const Vector3& normal, const Vector3& from, const float& angle, const float& radius);
+		static void DrawArc(const Vector3& center, const Vector3& normal, const Vector3& from, float angle, float radius);
 		static void DrawBox(const Vector3& center, const Vector3& size);
-		static void DrawCapsule(const Vector3& center, const float& height, const float& radius);
-		static void DrawSphere(const Vector3& center, const float& radius);
-		static void DrawDisc(const Vector3& center, const Vector3& normal, const float& radius);
+		static void DrawCapsule(const Vector3& center, float height, float radius);
+		static void DrawSphere(const Vector3& center, float radius);
+		static void DrawDisc(const Vector3& center, const Vector3& normal, float radius);
 		static void DrawFrustum(const Frustum& frustum);
+		static void DrawMesh(GfxBuffer* vertexBuffer, GfxBuffer* indexBuffer);
 
 	private:
 		static void FlushLines();
@@ -48,20 +49,19 @@ namespace Blueberry
 		};
 
 	private:
-		static inline Material* s_LineMaterial = nullptr;
-		static inline Material* s_ArcMaterial = nullptr;
-		static inline Color s_CurrentColor = Color();
+		static Material* s_GizmosMaterial;
+		static Color s_CurrentColor;
 
-		static inline GfxBuffer* s_LineVertexBuffer = nullptr;
-		static inline GfxBuffer* s_ArcVertexBuffer = nullptr;
+		static GfxBuffer* s_LineVertexBuffer;
+		static GfxBuffer* s_ArcVertexBuffer;
 
-		static inline float* s_LineVertexData = nullptr;
-		static inline float* s_LineVertexDataPtr = nullptr;
-		static inline Line* s_Lines = nullptr;
-		static inline float* s_ArcVertexData = nullptr;
-		static inline float* s_ArcVertexDataPtr = nullptr;
-		static inline Arc* s_Arcs = nullptr;
-		static inline uint32_t s_LineCount = 0;
-		static inline uint32_t s_ArcCount = 0;
+		static float* s_LineVertexData;
+		static float* s_LineVertexDataPtr;
+		static Line* s_Lines;
+		static float* s_ArcVertexData;
+		static float* s_ArcVertexDataPtr;
+		static Arc* s_Arcs;
+		static uint32_t s_LineCount;
+		static uint32_t s_ArcCount;
 	};
 }

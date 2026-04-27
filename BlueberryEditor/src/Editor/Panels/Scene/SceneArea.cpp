@@ -3,8 +3,9 @@
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Components\Camera.h"
 #include "Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\GfxBuffer.h"
 #include "Blueberry\Graphics\GfxTexture.h"
-#include "Blueberry\Graphics\GfxRenderTexturePool.h"
+#include "Blueberry\Graphics\GfxTexturePool.h"
 
 #include "Editor\Preferences.h"
 #include "Editor\EditorLayer.h"
@@ -16,7 +17,11 @@
 #include "Editor\Gizmos\GizmoRenderer.h"
 #include "Editor\Gizmos\IconRenderer.h"
 #include "Editor\Menu\EditorMenuManager.h"
+#include "Editor\Serialization\SerializedObject.h"
+#include "Editor\Assets\AssetDB.h"
 
+#include "Blueberry\Core\Application.h"
+#include "Blueberry\Core\Time.h"
 #include "Blueberry\Core\Screen.h"
 #include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Scene\Scene.h"
@@ -34,6 +39,8 @@
 
 namespace Blueberry
 {
+	uint32_t SceneArea::s_SceneRedrawRequestsCount = 0;
+
 	OBJECT_DEFINITION(SceneArea, EditorWindow)
 	{
 		DEFINE_BASE_FIELDS(SceneArea, EditorWindow)
@@ -47,40 +54,46 @@ namespace Blueberry
 
 		// TODO save to config instead
 		m_Position = Vector3(0, 10, 0);
-		m_Rotation = Quaternion::CreateFromYawPitchRoll(ToRadians(180), ToRadians(45), 0);
+		m_Rotation = Quaternion::CreateFromYawPitchRoll(Math::ToRadians(180), Math::ToRadians(45), 0);
 
 		Entity* cameraEntity = Object::Create<Entity>();
 		cameraEntity->AddComponent<Transform>();
 		m_Camera = cameraEntity->AddComponent<Camera>();
-		m_Camera->m_IsVR = false;
+		m_Camera->SetBackgroundColor(Color(0.117f, 0.117f, 0.117f, 1.0f));
 		cameraEntity->OnCreate();
 
-		m_ColorRenderTarget = GfxRenderTexturePool::Get(Screen::GetWidth(), Screen::GetHeight(), 1, 1, 1, TextureFormat::R8G8B8A8_UNorm);
-		m_DepthStencilRenderTarget = GfxRenderTexturePool::Get(Screen::GetWidth(), Screen::GetHeight(), 1, 1, 1, TextureFormat::D24_UNorm);
+		m_ColorRenderTarget = GfxTexturePool::Get(Screen::GetWidth(), Screen::GetHeight(), 1, TextureUsageFlags::RenderTarget, 1, 1, TextureFormat::R8G8B8A8_UNorm);
+		m_DepthStencilRenderTarget = GfxTexturePool::Get(Screen::GetWidth(), Screen::GetHeight(), 1, TextureUsageFlags::RenderTarget, 1, 1, TextureFormat::D24_UNorm);
 
-		Selection::GetSelectionChanged().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
-		EditorSceneManager::GetSceneLoaded().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
-		WindowEvents::GetWindowFocused().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
-		EditorObjectManager::GetEntityCreated().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
-		EditorObjectManager::GetEntityDestroyed().AddCallback<SceneArea, &SceneArea::RequestRedraw>(this);
+		Selection::GetSelectionChanged().AddCallback<&SceneArea::RequestRedrawAll>();
+		EditorSceneManager::GetSceneLoaded().AddCallback<&SceneArea::RequestRedrawAll>();
+		WindowEvents::GetWindowFocused().AddCallback<&SceneArea::RequestRedrawAll>();
+		EditorObjectManager::GetEntityCreated().AddCallback<SceneArea, &SceneArea::OnEntityUpdate>(this);
+		EditorObjectManager::GetEntityDestroyed().AddCallback<SceneArea, &SceneArea::OnEntityUpdate>(this);
+		EditorObjectManager::GetEntityUpdated().AddCallback<SceneArea, &SceneArea::OnEntityUpdate>(this);
+		SerializedObject::GetObjectUpdated().AddCallback<SceneArea, &SceneArea::OnObjectUpdate>(this);
 	}
 
 	SceneArea::~SceneArea()
 	{
 		delete m_ObjectPicker;
 
-		GfxRenderTexturePool::Release(m_ColorRenderTarget);
-		GfxRenderTexturePool::Release(m_DepthStencilRenderTarget);
+		GfxTexturePool::Release(m_ColorRenderTarget);
+		GfxTexturePool::Release(m_DepthStencilRenderTarget);
 
-		Selection::GetSelectionChanged().RemoveCallback<SceneArea, &SceneArea::RequestRedraw>(this);
-		EditorSceneManager::GetSceneLoaded().RemoveCallback<SceneArea, &SceneArea::RequestRedraw>(this);
-		WindowEvents::GetWindowFocused().RemoveCallback<SceneArea, &SceneArea::RequestRedraw>(this);
-		EditorObjectManager::GetEntityCreated().RemoveCallback<SceneArea, &SceneArea::RequestRedraw>(this);
-		EditorObjectManager::GetEntityDestroyed().RemoveCallback<SceneArea, &SceneArea::RequestRedraw>(this);
+		Selection::GetSelectionChanged().RemoveCallback<&SceneArea::RequestRedrawAll>();
+		EditorSceneManager::GetSceneLoaded().RemoveCallback<&SceneArea::RequestRedrawAll>();
+		WindowEvents::GetWindowFocused().RemoveCallback<&SceneArea::RequestRedrawAll>();
+		EditorObjectManager::GetEntityCreated().RemoveCallback<SceneArea, &SceneArea::OnEntityUpdate>(this);
+		EditorObjectManager::GetEntityDestroyed().RemoveCallback<SceneArea, &SceneArea::OnEntityUpdate>(this);
+		EditorObjectManager::GetEntityUpdated().RemoveCallback<SceneArea, &SceneArea::OnEntityUpdate>(this);
+		SerializedObject::GetObjectUpdated().RemoveCallback<SceneArea, &SceneArea::OnObjectUpdate>(this);
 	}
 
 	Vector3 GetMotion(const Quaternion& rotation)
 	{
+		float flySpeed = 9.0f;
+
 		Vector3 motion = Vector3::Zero;
 		if (ImGui::IsKeyDown(ImGuiKey_D))
 		{
@@ -108,14 +121,12 @@ namespace Blueberry
 		}
 		motion.Normalize();
 
+		motion *= flySpeed;
 		if (ImGui::IsKeyDown(ImGuiKey_LeftShift))
 		{
-			motion *= 1;
+			motion *= 5.0f;
 		}
-		else
-		{
-			motion *= 0.25;
-		}
+		motion *= Time::GetDeltaTime();
 		return motion;
 	}
 
@@ -201,15 +212,18 @@ namespace Blueberry
 				Blueberry::ObjectId* id = static_cast<Blueberry::ObjectId*>(payload->Data);
 				Blueberry::Object* object = Blueberry::ObjectDB::GetObject(*id);
 
-				if (object != nullptr && object->IsClassType(Entity::Type) && ImGui::AcceptDragDropPayload("OBJECT_ID"))
+				if (object != nullptr && object->IsClassType(Entity::Type) && Blueberry::ObjectDB::HasGuid(object) && ImGui::AcceptDragDropPayload("OBJECT_ID"))
 				{
-					Scene* scene = EditorSceneManager::GetScene();
-					if (scene != nullptr)
+					if (EditorSceneManager::HasScene() || EditorSceneManager::HasPrefabScene())
 					{
-						if (Blueberry::ObjectDB::HasGuid(object))
+						Guid guid = Blueberry::ObjectDB::GetGuidFromObject(object);
+						AssetDB::LoadAsset(guid);
+						PrefabInstance* instance = static_cast<PrefabInstance*>(ObjectDB::GetObjectFromGuid(guid, TO_HASH("PrefabInstance")));
+						if (instance != nullptr)
 						{
-							AssetLoader::Load(Blueberry::ObjectDB::GetGuidFromObject(object));
-							scene->AddEntity(PrefabManager::CreateInstance(static_cast<Entity*>(object))->GetEntity());
+							Entity* entity = PrefabManager::CreateInstance(instance)->GetEntity();
+							EditorObjectManager::AddEntity(entity);
+							Selection::SetActiveObject(entity);
 						}
 					}
 				}
@@ -225,6 +239,24 @@ namespace Blueberry
 			if (ImGui::IsMouseClicked(0) && mousePos.x >= pos.x && mousePos.y >= pos.y && mousePos.x <= pos.x + size.x && mousePos.y <= pos.y + size.y)
 			{
 				Object* pickedObject = m_ObjectPicker->Pick(EditorSceneManager::GetScene(), m_Camera, static_cast<int>(mousePos.x - pos.x), static_cast<int>(mousePos.y - pos.y));
+				if (PrefabManager::IsPartOfPrefabInstance(pickedObject))
+				{
+					// Avoid locking on prefab root
+					bool isPrefabSelected = false;
+					PrefabInstance* instance = PrefabManager::GetInstance(pickedObject);
+					for (Object* object : Selection::GetActiveObjects())
+					{
+						if (PrefabManager::GetInstance(object) == instance)
+						{
+							isPrefabSelected = true;
+							break;
+						}
+					}
+					if (!isPrefabSelected)
+					{
+						pickedObject = instance->GetEntity();
+					}
+				}
 				if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_LeftShift))
 				{
 					Selection::AddActiveObject(pickedObject);
@@ -244,25 +276,45 @@ namespace Blueberry
 
 		SetupCamera(size.x, size.y);
 
-		if (s_SceneRedrawRequested)
+		if (s_SceneRedrawRequestsCount > 0)
 		{
 			DrawScene(size.x, size.y);
 
 			m_ObjectPicker->DrawOutline(EditorSceneManager::GetScene(), m_Camera, m_ColorRenderTarget);
-			s_SceneRedrawRequested = false;
+			--s_SceneRedrawRequestsCount;
 		}
 
-		ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(m_ColorRenderTarget->GetHandle()), ImVec2(pos.x, pos.y), ImVec2(pos.x + size.x, pos.y + size.y), ImVec2(0, 0), ImVec2(size.x / Screen::GetWidth(), size.y / Screen::GetHeight()));
+		ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(m_ColorRenderTarget->GetHandle()), pos, ImVec2(pos.x + size.x, pos.y + size.y), ImVec2(0, 0), ImVec2(size.x / Screen::GetWidth(), size.y / Screen::GetHeight()));
 		DrawControls();
-		DrawGizmos(Rectangle(pos.x, pos.y, size.x, size.y));
+		DrawGizmos(Rectangle(static_cast<long>(pos.x), static_cast<long>(pos.y), static_cast<long>(size.x), static_cast<long>(size.y)));
 	}
 
-	float SceneArea::GetPerspectiveDistance(const float objectSize, const float fov)
+	void SceneArea::OnSaveChanges()
 	{
-		return objectSize / sin(ToRadians(fov * 0.5f));
+		EditorSceneManager::Save();
+		SetHasUnsavedChanges(false);
 	}
 
-	float SceneArea::GetCameraDistance()
+	void SceneArea::OnDiscardChanges()
+	{
+		SetHasUnsavedChanges(false);
+	}
+
+	String SceneArea::GetSaveChangesMessage()
+	{
+		if (EditorSceneManager::HasPrefabScene())
+		{
+			return "Current prefab has unsaved changes.";
+		}
+		return "Current scene has unsaved changes.";
+	}
+
+	float SceneArea::GetPerspectiveDistance(float objectSize, float fov) const
+	{
+		return objectSize / sin(Math::ToRadians(fov * 0.5f));
+	}
+
+	float SceneArea::GetCameraDistance() const
 	{
 		if (m_Camera->IsOrthographic())
 		{
@@ -274,12 +326,12 @@ namespace Blueberry
 		}
 	}
 
-	Camera* SceneArea::GetCamera()
+	Camera* SceneArea::GetCamera() const
 	{
 		return m_Camera;
 	}
 
-	Vector3 SceneArea::GetPosition()
+	const Vector3& SceneArea::GetPosition() const
 	{
 		return m_Position;
 	}
@@ -289,7 +341,7 @@ namespace Blueberry
 		m_Position = position;
 	}
 
-	Quaternion SceneArea::GetRotation()
+	const Quaternion& SceneArea::GetRotation() const
 	{
 		return m_Rotation;
 	}
@@ -299,27 +351,27 @@ namespace Blueberry
 		m_Rotation = rotation;
 	}
 
-	float SceneArea::GetSize()
+	float SceneArea::GetSize() const
 	{
 		return m_Size;
 	}
 
-	void SceneArea::SetSize(const float& size)
+	void SceneArea::SetSize(float size)
 	{
 		m_Size = size;
 	}
 
-	bool SceneArea::IsOrthographic()
+	bool SceneArea::IsOrthographic() const
 	{
 		return m_IsOrthographic;
 	}
 
-	bool SceneArea::Is2DMode()
+	bool SceneArea::Is2DMode() const
 	{
 		return m_Is2DMode;
 	}
 
-	void SceneArea::Set2DMode(const bool& is2DMode)
+	void SceneArea::Set2DMode(bool is2DMode)
 	{
 		m_Is2DMode = is2DMode;
 		if (m_Is2DMode)
@@ -334,33 +386,33 @@ namespace Blueberry
 
 	void SceneArea::RequestRedrawAll()
 	{
-		s_SceneRedrawRequested = true;
+		s_SceneRedrawRequestsCount = 2;
 		EditorLayer::RequestFrameUpdate();
 	}
 
-	Vector3 SceneArea::GetCameraPosition()
+	Vector3 SceneArea::GetCameraPosition() const
 	{
 		// GetCameraDistance() is inverted because of right handed coordinate system
 		return m_Position + Vector3::Transform(Vector3(0, 0, -GetCameraDistance()), m_Camera->GetTransform()->GetRotation());
 	}
 
-	Quaternion SceneArea::GetCameraRotation()
+	Quaternion SceneArea::GetCameraRotation() const
 	{
 		return m_Is2DMode ? Quaternion::Identity : m_Rotation;
 	}
 
-	Vector3 SceneArea::GetCameraTargetPosition()
+	Vector3 SceneArea::GetCameraTargetPosition() const
 	{
 		// GetCameraDistance() is inverted because of right handed coordinate system
 		return m_Position + Vector3::Transform(Vector3(0, 0, -GetCameraDistance()), m_Rotation);
 	}
 
-	Quaternion SceneArea::GetCameraTargetRotation()
+	const Quaternion& SceneArea::GetCameraTargetRotation() const
 	{
 		return m_Rotation;
 	}
 
-	float SceneArea::GetCameraOrthographicSize()
+	float SceneArea::GetCameraOrthographicSize() const
 	{
 		float result = m_Size;
 		if (m_Camera->GetAspectRatio() < 1.0f)
@@ -370,7 +422,7 @@ namespace Blueberry
 		return result;
 	}
 
-	void SceneArea::SetupCamera(const float& width, const float& height)
+	void SceneArea::SetupCamera(float width, float height)
 	{
 		Transform* transform = m_Camera->GetTransform();
 		// avoid changing this when there is no motion
@@ -415,62 +467,76 @@ namespace Blueberry
 
 		ImGui::BeginGroup();
 
-		if (EditorSceneManager::GetScene() != nullptr && !EditorSceneManager::IsRunning())
+		if (EditorSceneManager::GetScene() != nullptr)
 		{
-			if (ImGui::Button("Save"))
+			if (!Application::IsRunning())
 			{
-				EditorSceneManager::Save();
-			}
-			ImGui::SameLine();
-		}
+				if (ImGui::Button("Save"))
+				{
+					EditorSceneManager::Save();
+					SetHasUnsavedChanges(false);
+				}
+				ImGui::SameLine();
 
-		if (Is2DMode())
-		{
-			if (ImGui::Button("3D"))
-			{
-				Set2DMode(false);
+				if (EditorSceneManager::HasPrefabScene() && ImGui::Button("Close"))
+				{
+					if (EditorWindow::Save(SceneArea::Type))
+					{
+						Selection::SetActiveObject(nullptr);
+						EditorSceneManager::ClosePrefab(false);
+					}
+				}
+				ImGui::SameLine();
 			}
-			ImGui::SameLine();
-		}
-		else
-		{
-			if (ImGui::Button("2D"))
+			
+			if (Is2DMode())
 			{
-				Set2DMode(true);
+				if (ImGui::Button("3D"))
+				{
+					Set2DMode(false);
+				}
+				ImGui::SameLine();
 			}
-			ImGui::SameLine();
-		}
-
-		// Snapping
-		{
-			const char* popId = "Snap";
-			if (ImGui::Button("Snapping"))
+			else
 			{
-				ImGui::OpenPopup(popId);
-			}
-			ImGui::SameLine();
-
-			if (ImGui::BeginPopup(popId))
-			{
-				ImGui::InputFloat("##positionSnap", Preferences::GetGizmoSnapping());
-				ImGui::InputFloat("##rotationSnap", Preferences::GetGizmoSnapping() + 1);
-				ImGui::InputFloat("##scaleSnap", Preferences::GetGizmoSnapping() + 2);
-				ImGui::EndPopup();
+				if (ImGui::Button("2D"))
+				{
+					Set2DMode(true);
+				}
+				ImGui::SameLine();
 			}
 
-			if (ImGui::Button("Position"))
+			// Snapping
 			{
-				Preferences::SetGizmoOperation(ImGuizmo::OPERATION::TRANSLATE);
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("Rotation"))
-			{
-				Preferences::SetGizmoOperation(ImGuizmo::OPERATION::ROTATE);
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("Scale"))
-			{
-				Preferences::SetGizmoOperation(ImGuizmo::OPERATION::SCALE);
+				const char* popId = "Snap";
+				if (ImGui::Button("Snapping"))
+				{
+					ImGui::OpenPopup(popId);
+				}
+				ImGui::SameLine();
+
+				if (ImGui::BeginPopup(popId))
+				{
+					ImGui::InputFloat("##positionSnap", Preferences::GetGizmoSnapping());
+					ImGui::InputFloat("##rotationSnap", Preferences::GetGizmoSnapping() + 1);
+					ImGui::InputFloat("##scaleSnap", Preferences::GetGizmoSnapping() + 2);
+					ImGui::EndPopup();
+				}
+
+				if (ImGui::Button("Position"))
+				{
+					Preferences::SetGizmoOperation(ImGuizmo::OPERATION::TRANSLATE);
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Rotation"))
+				{
+					Preferences::SetGizmoOperation(ImGuizmo::OPERATION::ROTATE);
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Scale"))
+				{
+					Preferences::SetGizmoOperation(ImGuizmo::OPERATION::SCALE);
+				}
 			}
 		}
 
@@ -483,9 +549,9 @@ namespace Blueberry
 	void SceneArea::DrawGizmos(const Rectangle& viewport)
 	{
 		ImDrawList* drawList = ImGui::GetWindowDrawList();
-		drawList->PushClipRect(ImVec2(viewport.x, viewport.y), ImVec2(viewport.x + viewport.width, viewport.y + viewport.height));
+		drawList->PushClipRect(ImVec2(static_cast<float>(viewport.x), static_cast<float>(viewport.y)), ImVec2(static_cast<float>(viewport.x + viewport.width), static_cast<float>(viewport.y + viewport.height)));
 		ImGuizmo::SetDrawlist(drawList);
-		ImGuizmo::SetRect(viewport.x, viewport.y, viewport.width, viewport.height);
+		ImGuizmo::SetRect(static_cast<float>(viewport.x), static_cast<float>(viewport.y), static_cast<float>(viewport.width), static_cast<float>(viewport.height));
 		ImGuizmo::Enable(!ImGui::IsPopupOpen(NULL, ImGuiPopupFlags_AnyPopup));
 
 		Scene* scene = EditorSceneManager::GetScene();
@@ -499,22 +565,18 @@ namespace Blueberry
 		drawList->PopClipRect();
 	}
 
-	void SceneArea::DrawScene(const float width, const float height)
+	void SceneArea::DrawScene(float width, float height)
 	{
 		int viewportWidth = static_cast<int>(width);
 		int viewportHeight = static_cast<int>(height);
-		Color background = { 0.117f, 0.117f, 0.117f, 1 };
 
 		Scene* scene = EditorSceneManager::GetScene();
 		if (scene == nullptr)
 		{
-			GfxDevice::SetRenderTarget(m_ColorRenderTarget);
-			GfxDevice::ClearColor(background);
-			GfxDevice::SetRenderTarget(nullptr);
 			return;
 		}
 		BB_PROFILE_BEGIN("Scene draw");
-		DefaultRenderer::Draw(scene, m_Camera, Rectangle(0, 0, viewportWidth, viewportHeight), background, m_ColorRenderTarget, m_DepthStencilRenderTarget);
+		DefaultRenderer::Draw(scene, m_Camera, Rectangle(0, 0, viewportWidth, viewportHeight), m_ColorRenderTarget, m_DepthStencilRenderTarget);
 		BB_PROFILE_END();
 		GfxDevice::SetRenderTarget(m_ColorRenderTarget, m_DepthStencilRenderTarget);
 		GfxDevice::SetViewport(0, 0, viewportWidth, viewportHeight);
@@ -523,7 +585,7 @@ namespace Blueberry
 		GfxDevice::SetRenderTarget(nullptr);
 	}
 
-	void SceneArea::LookAt(const Vector3& point, const Quaternion& direction, const float& newSize, const bool& isOrthographic)
+	void SceneArea::LookAt(const Vector3& point, const Quaternion& direction, float newSize, bool isOrthographic)
 	{
 		m_Position = point;
 		m_Rotation = direction;
@@ -531,8 +593,46 @@ namespace Blueberry
 		m_IsOrthographic = isOrthographic;
 	}
 
-	void SceneArea::RequestRedraw()
+	void SceneArea::OnSelectionChange()
 	{
 		RequestRedrawAll();
+	}
+
+	void SceneArea::OnEntityUpdate()
+	{
+		if (!Application::IsRunning())
+		{
+			SetHasUnsavedChanges(true);
+			RequestRedrawAll();
+		}
+	}
+
+	void SceneArea::OnObjectUpdate(const ObjectUpdateEventArgs& args)
+	{
+		if (!Application::IsRunning())
+		{
+			Scene* scene = EditorSceneManager::GetScene();
+			if (scene != nullptr)
+			{
+				Object* target = args.GetObject();
+				if (target->IsClassType(Entity::Type))
+				{
+					Entity* entity = static_cast<Entity*>(target);
+					if (entity->GetScene() == scene)
+					{
+						SetHasUnsavedChanges(true);
+					}
+				}
+				else if (target->IsClassType(Component::Type))
+				{
+					Component* component = static_cast<Component*>(target);
+					if (component->GetScene() == scene)
+					{
+						SetHasUnsavedChanges(true);
+					}
+				}
+				RequestRedrawAll();
+			}
+		}
 	}
 }

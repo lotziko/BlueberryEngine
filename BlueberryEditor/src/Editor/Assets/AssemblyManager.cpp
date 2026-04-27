@@ -4,8 +4,8 @@
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Path.h"
 #include "Editor\Misc\PathHelper.h"
+#include "Blueberry\Tools\FileHelper.h"
 
-#include <sstream>
 #include <fstream>
 
 namespace Blueberry
@@ -44,7 +44,17 @@ namespace Blueberry
 
 	String GetAssemblyPath()
 	{
-		return String(Path::GetAssemblyPath().string());
+		return StringHelper::ToString(Path::GetAssemblyPath());
+	}
+
+	String GetProjectPath()
+	{
+		return StringHelper::ToString(Path::GetProjectPath());
+	}
+
+	String GetProjectName()
+	{
+		return StringHelper::ToString(Path::GetProjectPath().filename());
 	}
 
 	void AssemblyManager::Unload()
@@ -102,7 +112,7 @@ namespace Blueberry
 			return;
 		}
 
-		String dllDirectory = GetAssemblyPath().append("\\bin\\").append(GetDebugReleaseFolder()).append("\\GameAssembly\\");
+		String dllDirectory = GetAssemblyDirectory();
 		String dllPath = String(dllDirectory).append(GetDLLName()).append(".dll");
 		
 		if (std::filesystem::exists(String(dllDirectory).append("GameAssembly.dll")))
@@ -111,18 +121,177 @@ namespace Blueberry
 
 			using EntryFunc = void(*)();
 			s_GameAssembly = LoadLibraryA(dllPath.c_str());
-			EntryFunc entryFunc = (EntryFunc)GetProcAddress(s_GameAssembly, "Entry");
-			if (entryFunc != nullptr)
+			if (s_GameAssembly != nullptr)
 			{
-				entryFunc();
+				EntryFunc entryFunc = (EntryFunc)GetProcAddress(s_GameAssembly, "Entry");
+				if (entryFunc != nullptr)
+				{
+					entryFunc();
+				}
 			}
 		}
+	}
+
+	String AssemblyManager::GetAssemblyDirectory()
+	{
+		return GetAssemblyPath().append("\\bin\\").append(GetDebugReleaseFolder()).append("\\GameAssembly\\");
+	}
+
+	bool CreateSolutionPremakeFile()
+	{
+		String projectName = GetProjectName();
+
+		StringStream ss;
+		ss << "workspace \"" << projectName << "\"\n";
+		ss << "	architecture \"x64\"\n";
+		ss << "	startproject \"" << projectName << "\"\n";
+		ss << "\n";
+		ss << "	configurations\n";
+		ss << "	{\n";
+		ss << "		\"Debug\",\n";
+		ss << "		\"Release\"\n";
+		ss << "	}\n";
+		ss << "\n";
+		ss << "	flags\n";
+		ss << "	{\n";
+		ss << "		\"MultiProcessorCompile\"\n";
+		ss << "	}\n";
+		ss << "\n";
+		ss << "outputdir = \"%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}\"\n";
+		ss << "\n";
+		ss << "include \"Source\"";
+
+		String path = GetProjectPath().append("\\premake5.lua");
+		bool isModified = false;
+		if (std::filesystem::exists(path))
+		{
+			String existingConfig;
+			FileHelper::Load(existingConfig, path);
+			if (existingConfig != ss.str())
+			{
+				isModified = true;
+			}
+		}
+		else
+		{
+			isModified = true;
+		}
+		if (isModified)
+		{
+			std::ofstream output;
+			output.open(path.c_str(), std::ofstream::binary);
+			output << ss.rdbuf();
+			output.close();
+		}
+		return isModified;
+	}
+
+	String GetEditorPath()
+	{
+		return StringHelper::ToString(std::filesystem::current_path());
+	}
+
+	String GetEditorGenericPath()
+	{
+		return StringHelper::ToGenericString(std::filesystem::current_path());
+	}
+
+	bool CreateProjectPremakeFile()
+	{
+		String editorPath = GetEditorGenericPath();
+
+		StringStream ss;
+		ss << "project \"GameAssembly\"\n";
+		ss << "	kind \"SharedLib\"\n";
+		ss << "	language \"C++\"\n";
+		ss << "	cppdialect \"C++17\"\n";
+		ss << "	systemversion \"latest\"\n";
+		ss << "\n";
+		ss << "	defines \"BUILD_DLL\"\n";
+		ss << "\n";
+		ss << "	targetdir (\"bin/\" .. outputdir .. \"/%{prj.name}\")\n";
+		ss << "	objdir (\"bin-int/\" .. outputdir .. \"/%{prj.name}\")\n";
+		ss << "\n";
+		ss << "	files\n";
+		ss << "	{\n";
+		ss << "		\"src/**.h\",\n";
+		ss << "		\"src/**.cpp\",\n";
+		ss << "	}\n";
+		ss << "\n";
+		ss << "	includedirs\n";
+		ss << "	{\n";
+		ss << "		\"src\",\n";
+		ss << "		\"" << editorPath << "/include\"\n";
+		ss << "	}\n";
+		ss << "\n";
+		ss << "	links\n";
+		ss << "	{\n";
+		ss << "		\"" << editorPath << "/BlueberryEditor.lib\"\n";
+		ss << "	}\n";
+		ss << "\n";
+		ss << "	filter \"system:windows\"\n";
+		ss << "\n";
+		ss << "	filter \"system:linux\"\n";
+		ss << "		pic \"On\"\n";
+		ss << "\n";
+		ss << "	filter \"configurations:Debug\"\n";
+		ss << "		staticruntime \"off\"\n";
+		ss << "		runtime \"Debug\"\n";
+		ss << "\n";
+		ss << "	filter \"configurations:Release\"\n";
+		ss << "		staticruntime \"off\"\n";
+		ss << "		runtime \"Release\"";
+
+		String path = GetAssemblyPath().append("\\premake5.lua");
+		bool isModified = false;
+		if (std::filesystem::exists(path))
+		{
+			String existingConfig;
+			FileHelper::Load(existingConfig, path);
+			if (existingConfig != ss.str())
+			{
+				isModified = true;
+			}
+		}
+		else
+		{
+			isModified = true;
+		}
+		if (isModified)
+		{
+			std::ofstream output;
+			output.open(path.c_str(), std::ofstream::binary);
+			output << ss.rdbuf();
+			output.close();
+		}
+		return isModified;
+	}
+
+	bool AssemblyManager::CreateSolution()
+	{
+		bool solutionModified = CreateSolutionPremakeFile();
+		bool projectModified = CreateProjectPremakeFile();
+		if (solutionModified || projectModified)
+		{
+			String command = String("\"").append(GetEditorPath()).append("\\premake5.exe\" vs2017");
+
+			STARTUPINFOA si = { sizeof(si) };
+			PROCESS_INFORMATION pi;
+
+			if (!CreateProcessA(nullptr, command.data(), nullptr, nullptr, false, 0, nullptr, GetProjectPath().c_str(), &si, &pi))
+			{
+				DWORD dwErrorCode = GetLastError();
+				BB_ERROR("Failed to create the solution. " << String(std::system_category().message(dwErrorCode)));
+				return false;
+			}
+		}
+		return true;
 	}
 
 	String GetMVCSPath()
 	{
 		String command = "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe\" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath";
-		Array<char, 512> buffer;
+		Array<char, 512> buffer = {};
 		String kitsPath;
 
 		FILE* pipe = _popen(command.c_str(), "r");
@@ -145,7 +314,7 @@ namespace Blueberry
 		{
 			if (entry.is_directory())
 			{
-				versions.push_back(String(entry.path().filename().string()));
+				versions.push_back(StringHelper::ToString(entry.path().filename()));
 			}
 		}
 
@@ -166,7 +335,7 @@ namespace Blueberry
 		{
 			if (entry.is_directory()) 
 			{
-				versions.push_back(String(entry.path().filename().string()));
+				versions.push_back(StringHelper::ToString(entry.path().filename()));
 			}
 		}
 
@@ -187,7 +356,7 @@ namespace Blueberry
 		{
 			if (entry.is_directory())
 			{
-				versions.push_back(String(entry.path().filename().string()));
+				versions.push_back(StringHelper::ToString(entry.path().filename()));
 			}
 		}
 
@@ -199,19 +368,15 @@ namespace Blueberry
 		return "";
 	}
 
-	String GetEditorPath()
-	{
-		return String(std::filesystem::current_path().string());
-	}
-
-	void CreateCompileAndLinkConfig()
+	void CreateCompileAndLinkConfig(bool isRuntime)
 	{
 		String msvcPath = GetMVCSPath();
 		String windowsSDKIncludePath = GetWindowsSDKIncludePath();
 		String windowsSDKLibPath = GetWindowsSDKLibPath();
 		String editorPath = GetEditorPath();
+		String importLibraryName = isRuntime ? "BlueberryRuntime" : "BlueberryEditor";
 
-		std::stringstream ss;
+		StringStream ss;
 		ss << ".VSBasePath				= '" << msvcPath << "'\n";
 		ss << ".WindowsSDKIncludePath	= '" << windowsSDKIncludePath << "'\n";
 		ss << ".WindowsSDKLibPath		= '" << windowsSDKLibPath << "'\n";
@@ -246,6 +411,7 @@ namespace Blueberry
 		ss << "{\n";
 		ss << "    .CompilerInputPath	= 'src\\'\n";
 		ss << "    .CompilerOutputPath	= 'bin-int\\" << GetDebugReleaseFolder() << "\\GameAssembly\\'\n";
+		ss << "    .CompilerOptions + \' /Isrc\'";
 		ss << "}\n";
 		ss << "\n";
 		ss << "DLL( 'GameAssembly' )\n";
@@ -253,7 +419,7 @@ namespace Blueberry
 		ss << "    .Libraries			= { \"GameAssembly-Obj\" }\n";
 		ss << "    .LinkerOutput		= 'bin\\" << GetDebugReleaseFolder() << "\\GameAssembly\\GameAssembly.dll'\n";
 		ss << "    .LinkerOptions		+ ' uuid.lib'\n";
-		ss << "						+ ' $EditorBasePath$\\BlueberryEditor.lib'\n";
+		ss << "						+ ' $EditorBasePath$\\" << importLibraryName << ".lib'\n";
 		ss << "}\n";
 		ss << "\n";
 		ss << "Alias( 'all' ) { .Targets = { 'GameAssembly' } }";
@@ -276,6 +442,7 @@ namespace Blueberry
 		if (!CreateProcessA(nullptr, command.data(), nullptr, nullptr, false, 0, nullptr, GetAssemblyPath().c_str(), &si, &pi))
 		{
 			DWORD dwErrorCode = GetLastError();
+			BB_ERROR("Failed to compile and link the project. " << String(std::system_category().message(dwErrorCode)));
 			return false;
 		}
 
@@ -284,7 +451,7 @@ namespace Blueberry
 		return GetLastDllWriteTime() > writeTime;
 	}
 
-	bool AssemblyManager::Build(const bool& incrementCount)
+	bool AssemblyManager::BuildEditor(const bool& incrementCount)
 	{
 		if (!std::filesystem::exists(GetAssemblyPath()))
 		{
@@ -299,13 +466,23 @@ namespace Blueberry
 		{
 			s_SourceLastWriteTime = lastWriteTime;
 		}
-		CreateCompileAndLinkConfig();
+		CreateCompileAndLinkConfig(false);
 		if (CompileAndLinkProject())
 		{
 			if (incrementCount)
 			{
 				++s_ReloadCount;
 			}
+			return true;
+		}
+		return false;
+	}
+
+	bool AssemblyManager::BuildRuntime()
+	{
+		CreateCompileAndLinkConfig(true);
+		if (CompileAndLinkProject())
+		{
 			return true;
 		}
 		return false;

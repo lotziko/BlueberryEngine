@@ -11,6 +11,8 @@ namespace Blueberry
 		FolderImporter() = default;
 
 	protected:
-		virtual void ImportData() override;
+		virtual bool IsRequiringReimport() const final;
+		virtual bool IsImportable() const final;
+		virtual void ImportData() final;
 	};
 }

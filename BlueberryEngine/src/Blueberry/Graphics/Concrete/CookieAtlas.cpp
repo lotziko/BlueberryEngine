@@ -2,8 +2,9 @@
 
 #include "..\RenderContext.h"
 #include "..\LightHelper.h"
-#include "Blueberry\Graphics\GfxRenderTexturePool.h"
+#include "Blueberry\Graphics\GfxTexturePool.h"
 #include "Blueberry\Graphics\GfxDevice.h"
+#include "Blueberry\Graphics\GfxBuffer.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\DefaultMaterials.h"
 #include "Blueberry\Graphics\Texture.h"
@@ -12,11 +13,12 @@
 namespace Blueberry
 {
 	static uint32_t s_MaxCookies = 16;
+	GfxTexture* CookieAtlas::s_AtlasTexture = nullptr;
 	List<ObjectId> CookieAtlas::s_Cookies = {};
 
 	void CookieAtlas::Initialize()
 	{
-		s_AtlasTexture = GfxRenderTexturePool::Get(512, 512, s_MaxCookies, 1, 1, TextureFormat::R8G8B8A8_UNorm_SRGB, TextureDimension::Texture3D, WrapMode::Clamp, FilterMode::Point);
+		s_AtlasTexture = GfxTexturePool::Get(512, 512, s_MaxCookies, TextureUsageFlags::RenderTarget, 1, 1, TextureFormat::R8G8B8A8_UNorm_SRGB, TextureDimension::Texture3D, WrapMode::Clamp, FilterMode::Point);
 		GfxDevice::SetRenderTarget(s_AtlasTexture);
 		GfxDevice::ClearColor(Color(1, 1, 1, 1));
 		GfxDevice::SetRenderTarget(nullptr);
@@ -25,7 +27,7 @@ namespace Blueberry
 
 	void CookieAtlas::Shutdown()
 	{
-		GfxRenderTexturePool::Release(s_AtlasTexture);
+		GfxTexturePool::Release(s_AtlasTexture);
 	}
 
 	void CookieAtlas::PrepareCookies(CullingResults& results)
@@ -35,32 +37,23 @@ namespace Blueberry
 			switch (light->GetType())
 			{
 			case LightType::Directional:
-				continue;
 			case LightType::Point:
+				continue;
 			case LightType::Spot:
 				Texture* cookie = light->GetCookie();
-				for (uint32_t i = 0; i < light->m_SliceCount; ++i)
+				uint32_t index = GetIndex(cookie);
+
+				Matrix scaleBiasTransform = Matrix::Identity;
+				scaleBiasTransform._11 = 0.5f;
+				scaleBiasTransform._22 = -0.5f;
+				scaleBiasTransform._33 = 0.0f;
+				scaleBiasTransform._41 = 0.5f;
+				scaleBiasTransform._42 = 0.5f;
+				scaleBiasTransform._43 = (1.0f / (s_MaxCookies * 2)) + (float)index / s_MaxCookies;
+
+				if (light->IsCastingShadows() && light->GetType() == LightType::Spot)
 				{
-					uint32_t index = GetIndex(cookie);
-
-					Matrix scaleBiasTransform = Matrix::Identity;
-					scaleBiasTransform._11 = 0.5f;
-					scaleBiasTransform._22 = -0.5f;
-					scaleBiasTransform._33 = 0.0f;
-					scaleBiasTransform._41 = 0.5f;
-					scaleBiasTransform._42 = 0.5f;
-					scaleBiasTransform._43 = (1.0f / (s_MaxCookies * 2)) + (float)index / s_MaxCookies;
-
-					if (light->IsCastingShadows() && light->GetType() != LightType::Point)
-					{
-						light->m_WorldToCookie[i] = light->m_WorldToShadow[i] * scaleBiasTransform;
-					}
-					else
-					{
-						Matrix view = LightHelper::GetViewMatrix(light, light->GetTransform(), i);
-						Matrix projection = LightHelper::GetProjectionMatrix(light);
-						light->m_WorldToCookie[i] = view * projection * scaleBiasTransform;
-					}
+					light->m_WorldToCookie = light->m_WorldToShadow[0] * scaleBiasTransform;
 				}
 				break;
 			}
