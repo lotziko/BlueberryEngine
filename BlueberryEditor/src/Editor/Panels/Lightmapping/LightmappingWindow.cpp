@@ -225,6 +225,7 @@ namespace Blueberry
 							std::filesystem::create_directories(std::filesystem::path(probeVolumePath).parent_path());
 
 							Texture3D* probeVolume = Texture3D::Create(result.probeOutputSize.x, result.probeOutputSize.y, result.probeOutputSize.z, TextureFormat::R11G11B10_Float, WrapMode::Clamp, FilterMode::Trilinear);
+							probeVolume->SetReadable(true);	// Keep data on build
 							probeVolume->SetData(result.probeOutput.data(), result.probeOutput.size());
 							lightingData->SetProbeVolumeData(probeVolume);
 

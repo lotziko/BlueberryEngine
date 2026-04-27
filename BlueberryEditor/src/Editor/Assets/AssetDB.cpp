@@ -384,6 +384,11 @@ namespace Blueberry
 			std::filesystem::path path = it->path();
 			if (path.extension() == ".meta")
 			{
+				std::filesystem::path assetPath = path.replace_extension();
+				if (!std::filesystem::exists(assetPath))
+				{
+					PlatformHelper::MoveToRecycleBin(StringHelper::ToString(path));
+				}
 				continue;
 			}
 
