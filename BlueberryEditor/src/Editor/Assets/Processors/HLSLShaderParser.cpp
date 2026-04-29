@@ -305,8 +305,7 @@ namespace Blueberry
 
 	bool HLSLShaderParser::Parse(const String& path, ShaderData& shaderData, ShaderCompilationData& compilationData)
 	{
-		String shader;
-		FileHelper::Load(shader, path);
+		String shader = FileHelper::LoadText(path);
 
 		String shaderBlock;
 		if (ParseBlock(shader, "Shader", "{", "}", shaderBlock))

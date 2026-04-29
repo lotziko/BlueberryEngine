@@ -41,7 +41,7 @@ namespace Blueberry
 		uint32_t rootIndex = CreateNode();
 		BVHNode root = {};
 
-		float4 rootBounds = make_float4(FLT_MAX, FLT_MAX, FLT_MIN, FLT_MIN);
+		float4 rootBounds = make_float4(FLT_MAX, FLT_MAX, -FLT_MAX, -FLT_MAX);
 		for (size_t i = 0; i < s_Triangles.size(); ++i)
 		{
 			Grow(rootBounds, s_Triangles[i]);
@@ -75,8 +75,8 @@ namespace Blueberry
 
 		if (cost < nodeCost && depth < s_MaxDepth && triangleCount > 1)
 		{
-			float4 boundsA = make_float4(FLT_MAX, FLT_MAX, FLT_MIN, FLT_MIN);
-			float4 boundsB = make_float4(FLT_MAX, FLT_MAX, FLT_MIN, FLT_MIN);
+			float4 boundsA = make_float4(FLT_MAX, FLT_MAX, -FLT_MAX, -FLT_MAX);
+			float4 boundsB = make_float4(FLT_MAX, FLT_MAX, -FLT_MAX, -FLT_MAX);
 
 			uint32_t countOnA = 0;
 			for (uint32_t i = triangleStart; i < triangleStart + triangleCount; i++)
@@ -129,7 +129,7 @@ namespace Blueberry
 
 	float4 CUDABVH::CalculateBounds(BVHNode* node)
 	{
-		float4 bounds = make_float4(FLT_MAX, FLT_MAX, FLT_MIN, FLT_MIN);
+		float4 bounds = make_float4(FLT_MAX, FLT_MAX, -FLT_MAX, -FLT_MAX);
 		BVHTriangle* ptr = &s_Triangles[node->triangleStart];
 		BVHTriangle* end = ptr + node->triangleCount;
 		for (; ptr != end; ++ptr)
@@ -176,8 +176,8 @@ namespace Blueberry
 
 	float CUDABVH::EvaluateSplit(const uint32_t& splitAxis, const float& splitPos, const uint32_t& triangleStart, const uint32_t& triangleCount)
 	{
-		float4 boundsA = make_float4(FLT_MAX, FLT_MAX, FLT_MIN, FLT_MIN);
-		float4 boundsB = make_float4(FLT_MAX, FLT_MAX, FLT_MIN, FLT_MIN);
+		float4 boundsA = make_float4(FLT_MAX, FLT_MAX, -FLT_MAX, -FLT_MAX);
+		float4 boundsB = make_float4(FLT_MAX, FLT_MAX, -FLT_MAX, -FLT_MAX);
 
 		uint32_t numOnA = 0;
 		uint32_t numOnB = 0;

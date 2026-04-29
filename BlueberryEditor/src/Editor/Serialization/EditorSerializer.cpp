@@ -303,8 +303,7 @@ namespace Blueberry
 			String texturePath = TextureImporter::GetTexturePath(guid);
 			if (std::filesystem::exists(texturePath))
 			{
-				List<uint8_t> data;
-				FileHelper::Load(data, texturePath);
+				List<uint8_t> data = FileHelper::LoadBinary(texturePath);
 				texture->SetData(data.data(), data.size());
 			}
 			texture->Apply();
@@ -315,8 +314,7 @@ namespace Blueberry
 			String texturePath = TextureImporter::GetTexturePath(guid);
 			if (std::filesystem::exists(texturePath))
 			{
-				List<uint8_t> data;
-				FileHelper::Load(data, texturePath);
+				List<uint8_t> data = FileHelper::LoadBinary(texturePath);
 				texture->SetData(data.data(), data.size());
 			}
 			texture->Apply();
@@ -327,8 +325,7 @@ namespace Blueberry
 			String texturePath = TextureImporter::GetTexturePath(guid);
 			if (std::filesystem::exists(texturePath))
 			{
-				List<uint8_t> data;
-				FileHelper::Load(data, texturePath);
+				List<uint8_t> data = FileHelper::LoadBinary(texturePath);
 				texture->SetData(data.data(), data.size());
 			}
 			texture->Apply();
@@ -357,8 +354,7 @@ namespace Blueberry
 		{
 			AudioClip* audioClip = static_cast<AudioClip*>(object);
 			String audioClipPath = AudioImporter::GetAudioPath(guid);
-			List<uint8_t> data;
-			FileHelper::Load(data, audioClipPath);
+			List<uint8_t> data = FileHelper::LoadBinary(audioClipPath);
 			audioClip->Initialize(data);
 		}
 		object->SetState(ObjectState::Default);

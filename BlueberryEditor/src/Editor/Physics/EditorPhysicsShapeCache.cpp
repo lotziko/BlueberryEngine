@@ -51,7 +51,7 @@ namespace Blueberry
 		String physicsShapePath = GetPhysicsShapePath(pair.first, pair.second, GetKey(isConvex, scale));
 		if (std::filesystem::exists(physicsShapePath))
 		{
-			FileHelper::Load(data, physicsShapePath);
+			data = FileHelper::LoadBinary(physicsShapePath);
 			return true;
 		}
 		return false;

@@ -508,9 +508,8 @@ namespace Blueberry
 				state.pass.pipelineCompileOptions.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE; // should be OPTIX_EXCEPTION_FLAG_STACK_OVERFLOW;
 				state.pass.pipelineCompileOptions.pipelineLaunchParamsVariableName = "params";
 
-				String ptx;
-				FileHelper::Load(ptx, "assets\\ptx\\Lightmapping.ptx");
-
+				String ptx = FileHelper::LoadText("assets\\ptx\\Lightmapping.ptx");
+				
 				char log[2048];
 				size_t sizeofLog = sizeof(log);
 				OPTIX_CHECK_LOG(optixModuleCreateFromPTX(
@@ -948,7 +947,7 @@ namespace Blueberry
 			for (uint32_t i = 0; i < data.chartCount; ++i)
 			{
 				float chartIndex = static_cast<float>(i);
-				Vector4 chartBounds = { FLT_MAX, FLT_MAX, FLT_MIN, FLT_MIN };
+				Vector4 chartBounds = { FLT_MAX, FLT_MAX, -FLT_MAX, -FLT_MAX };
 				for (uint32_t j = 0; j < mesh->GetVertexCount(); ++j)
 				{
 					Vector3 uv = uvs[j];
@@ -1015,7 +1014,7 @@ namespace Blueberry
 					Vector4 meshChartBounds = charts[i];
 					Vector2 chartCenter = (Vector2(meshChartBounds.x, meshChartBounds.y) + Vector2(meshChartBounds.z, meshChartBounds.w)) / 2;
 					List<Vector2> atlasVertices = {};
-					Vector4 atlasChartBounds = { FLT_MAX, FLT_MAX, FLT_MIN, FLT_MIN };
+					Vector4 atlasChartBounds = { FLT_MAX, FLT_MAX, -FLT_MAX, -FLT_MAX };
 
 					for (uint32_t j = 0; j < indexCount; ++j)
 					{
@@ -1198,7 +1197,7 @@ namespace Blueberry
 	void InitializeProbes(LightmapperState& state, Scene* scene)
 	{
 		Vector3 minPosition = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
-		Vector3 maxPosition = Vector3(FLT_MIN, FLT_MIN, FLT_MIN);
+		Vector3 maxPosition = Vector3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
 		for (auto& component : scene->GetIterator<MeshRenderer>())
 		{

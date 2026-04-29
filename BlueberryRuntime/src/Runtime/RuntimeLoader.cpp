@@ -14,6 +14,7 @@
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\LightingSettings.h"
+#include "Blueberry\Tools\CompressionHelper.h"
 
 #include "Concrete\DX11\DX11.h"
 #include "Concrete\Windows\ComPtr.h"
@@ -26,7 +27,7 @@ namespace Blueberry
 {
 	static HMODULE s_GameAssembly = nullptr;
 
-	void ReadAssetResource(std::ifstream& resourcesStream, Object* object, List<uint8_t>& data)
+	void ReadAssetResource(std::ifstream& resourcesStream, Object* object, List<uint8_t>& data, List<uint8_t>& compressedData)
 	{
 		TypeId type = object->GetType();
 		if (type == Texture2D::Type)
@@ -168,9 +169,13 @@ namespace Blueberry
 		{
 			AudioClip* audioClip = static_cast<AudioClip*>(object);
 			size_t size;
+			size_t compressedSize;
 			resourcesStream.read(reinterpret_cast<char*>(&size), sizeof(size_t));
+			resourcesStream.read(reinterpret_cast<char*>(&compressedSize), sizeof(size_t));
+			compressedData.resize(compressedSize);
 			data.resize(size);
-			resourcesStream.read(reinterpret_cast<char*>(data.data()), size);
+			resourcesStream.read(reinterpret_cast<char*>(compressedData.data()), compressedSize);
+			CompressionHelper::Decompress(compressedData, data);
 			audioClip->Initialize(data);
 		}
 	}
@@ -192,6 +197,7 @@ namespace Blueberry
 
 		// Assets
 		Dictionary<Guid, Object*> assets;
+		LightingSettings* lightingSettings = nullptr;
 		{
 			String assetsPath = "Assets";;
 			Serializer assetsSerializer = {};
@@ -208,12 +214,16 @@ namespace Blueberry
 					Mesh* mesh = static_cast<Mesh*>(object);
 					mesh->Apply();
 				}
+				else if (object->GetType() == LightingSettings::Type)
+				{
+					lightingSettings = static_cast<LightingSettings*>(object);
+				}
 			}
 		}
 
 		// Resources
 		{
-			List<uint8_t> buffer;
+			List<uint8_t> buffer, compressedBuffer;
 			String resourcesPath = "Resources";
 			std::ifstream resourcesStream(resourcesPath.data(), std::ios::in | std::ifstream::binary);
 			if (resourcesStream.is_open())
@@ -229,10 +239,48 @@ namespace Blueberry
 					auto it = assets.find(guid);
 					if (it != assets.end())
 					{
-						ReadAssetResource(resourcesStream, it->second, buffer);
+						ReadAssetResource(resourcesStream, it->second, buffer, compressedBuffer);
 					}
 				}
 				resourcesStream.close();
+			}
+		}
+
+		if (lightingSettings != nullptr)
+		{
+			// Lightmap
+			{
+				Texture2D* lightmap = lightingSettings->GetLightmap();
+				Guid guid = ObjectDB::GetGuidFromObject(lightmap);
+				GfxDevice::SetGlobalTexture(TO_HASH("_LightmapTexture"), lightmap->Get());
+			}
+
+			// Probe volume
+			{
+				Texture3D* probeVolume = lightingSettings->GetProbeVolume();
+				GfxDevice::SetGlobalTexture(TO_HASH("_ProbeVolumeTexture"), probeVolume->Get());
+			}
+
+			// Charts
+			{
+				List<Vector4>& chartOffsetScale = lightingSettings->GetChartOffsetScale();
+				GfxBuffer* scaleOffsetBuffer;
+				BufferProperties properties = {};
+
+				properties.elementCount = static_cast<uint32_t>(chartOffsetScale.size());
+				properties.elementSize = sizeof(Vector4);
+				properties.data = chartOffsetScale.data();
+				properties.dataSize = chartOffsetScale.size() * sizeof(Vector4);
+				properties.usageFlags = BufferUsageFlags::StructuredBuffer | BufferUsageFlags::ShaderResource;
+
+				GfxDevice::CreateBuffer(properties, scaleOffsetBuffer);
+				GfxDevice::SetGlobalBuffer(TO_HASH("_PerLightmapInstanceData"), scaleOffsetBuffer);
+			}
+
+			// Reflection probes
+			{
+				TextureCubeArray* reflectionProbes = lightingSettings->GetReflectionProbes();
+				GfxDevice::SetGlobalTexture(TO_HASH("_ReflectionTexture"), reflectionProbes->Get());
 			}
 		}
 	}
@@ -243,6 +291,7 @@ namespace Blueberry
 		Serializer sceneSerializer = {};
 		sceneSerializer.Deserialize(scenePath, SerializationFlags::RuntimeOnly);
 
+		LightingSettings* lightingSettings = nullptr;
 		for (auto& pair : sceneSerializer.GetDeserializedObjects())
 		{
 			Object* object = ObjectDB::GetObject(pair.first);
@@ -252,44 +301,6 @@ namespace Blueberry
 				if (entity->GetTransform()->GetParent() == nullptr)
 				{
 					scene->AddEntity(entity);
-				}
-			}
-			else if (object->GetType() == LightingSettings::Type)
-			{
-				LightingSettings* lightingSettings = static_cast<LightingSettings*>(object);
-
-				// Lightmap
-				{
-					Texture2D* lightmap = lightingSettings->GetLightmap();
-					GfxDevice::SetGlobalTexture(TO_HASH("_LightmapTexture"), lightmap->Get());
-				}
-
-				// Probe volume
-				{
-					Texture3D* probeVolume = lightingSettings->GetProbeVolume();
-					GfxDevice::SetGlobalTexture(TO_HASH("_ProbeVolumeTexture"), probeVolume->Get());
-				}
-
-				// Charts
-				{
-					List<Vector4>& chartOffsetScale = lightingSettings->GetChartOffsetScale();
-					GfxBuffer* scaleOffsetBuffer;
-					BufferProperties properties = {};
-
-					properties.elementCount = static_cast<uint32_t>(chartOffsetScale.size());
-					properties.elementSize = sizeof(Vector4);
-					properties.data = chartOffsetScale.data();
-					properties.dataSize = chartOffsetScale.size() * sizeof(Vector4);
-					properties.usageFlags = BufferUsageFlags::StructuredBuffer | BufferUsageFlags::ShaderResource;
-
-					GfxDevice::CreateBuffer(properties, scaleOffsetBuffer);
-					GfxDevice::SetGlobalBuffer(TO_HASH("_PerLightmapInstanceData"), scaleOffsetBuffer);
-				}
-
-				// Reflection probes
-				{
-					TextureCubeArray* reflectionProbes = lightingSettings->GetReflectionProbes();
-					GfxDevice::SetGlobalTexture(TO_HASH("_ReflectionTexture"), reflectionProbes->Get());
 				}
 			}
 		}

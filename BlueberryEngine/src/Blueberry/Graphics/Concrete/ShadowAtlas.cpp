@@ -77,7 +77,7 @@ namespace Blueberry
 
 		for (uint32_t i = 0; i < sliceCount; ++i)
 		{
-			ShadowRequest request = { size, 0u, 0u, light, i, sliceCount };
+			ShadowRequest request = { size, 0u, 0u, light, i, sliceCount, LightHelper::GetShadowSlopeBias(type, i) };
 			s_Requests.push_back(request);
 		}
 	}
@@ -86,13 +86,13 @@ namespace Blueberry
 	{
 		PackRequests();
 
-		GfxDevice::SetDepthBias(0, 2.5f);
 		GfxDevice::SetRenderTarget(nullptr, s_AtlasTexture);
 		GfxDevice::ClearDepth(1.0f);
 
 		// If has dirty flag render cached slices
 		// Switching isStatic should update shadows
 
+		float currentSlopeBias = 0.0f;
 		for (size_t i = 0; i < s_Requests.size(); ++i)
 		{
 			ShadowRequest request = s_Requests[i];
@@ -100,11 +100,17 @@ namespace Blueberry
 			float sliceScale = 1.0f / static_cast<float>(request.sliceCount);
 			uint32_t size = request.size;
 			uint32_t offset = size * sliceIndex;
+			float slopeBias = request.slopeBias;
 			Light* light = request.light;
 
 			ShadowDrawingSettings shadowDrawingSettings = {};
 			shadowDrawingSettings.light = light;
 			shadowDrawingSettings.sliceIndex = request.sliceIndex;
+
+			if (currentSlopeBias != slopeBias)
+			{
+				GfxDevice::SetDepthBias(4194, slopeBias);
+			}
 
 			if (light->m_IsCached)
 			{

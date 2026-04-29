@@ -14,6 +14,7 @@ IncludeDir["optix"] = "%{wks.location}/BlueberryBaking/vendor/optix/include"
 IncludeDir["xatlas"] = "%{wks.location}/BlueberryEngine/vendor/xatlas"
 IncludeDir["miniaudio"] = "%{wks.location}/BlueberryEngine/vendor/miniaudio"
 IncludeDir["rmlui"] = "%{wks.location}/BlueberryEngine/vendor/rmlui/include"
+IncludeDir["lz4"] = "%{wks.location}/BlueberryEngine/vendor/lz4"
 
 Library = {}
 Library["hbao"] = "%{wks.location}/BlueberryEngine/vendor/hbao/lib/GFSDK_SSAO_D3D11.win64.lib"

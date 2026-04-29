@@ -8,8 +8,7 @@ namespace Blueberry
 {
 	bool HLSLComputeShaderParser::Parse(const String& path, ComputeShaderData& shaderData, ComputeShaderCompilationData& compilationData)
 	{
-		String shader;
-		FileHelper::Load(shader, path);
+		String shader = FileHelper::LoadText(path);
 
 		std::regex variantRegex("#pragma\\s*compute\\s*([\\w-]+)[\r?\n]");
 		auto variantsStart = std::sregex_iterator(shader.begin(), shader.end(), variantRegex);

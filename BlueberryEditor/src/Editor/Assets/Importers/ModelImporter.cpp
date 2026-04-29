@@ -792,7 +792,14 @@ namespace Blueberry
 							vertices.push_back(oldVertices[index]);
 							normals.push_back(oldNormals[index]);
 							uvs0.push_back(oldUvs0[index]);
-							uvs1.push_back(Vector3(vertex.uv[0] / atlas->width, vertex.uv[1] / atlas->height, static_cast<float>(chartOffset + vertex.chartIndex)));
+							if (vertex.atlasIndex == -1)
+							{
+								uvs1.push_back(Vector3(0, 0, -1));
+							}
+							else
+							{
+								uvs1.push_back(Vector3(vertex.uv[0] / atlas->width, vertex.uv[1] / atlas->height, static_cast<float>(chartOffset + vertex.chartIndex)));
+							}
 						}
 						for (uint32_t j = 0; j < atlasMesh.indexCount; ++j)
 						{

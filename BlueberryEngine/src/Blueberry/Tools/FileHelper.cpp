@@ -16,19 +16,9 @@ namespace Blueberry
 		fclose(file);
 	}
 
-	void FileHelper::Load(uint8_t*& data, size_t& length, const String& path)
+	List<uint8_t> FileHelper::LoadBinary(const String& path)
 	{
-		auto file = fopen(path.c_str(), "rb");
-		fseek(file, 0, SEEK_END);
-		length = ftell(file);
-		rewind(file);
-		data = BB_MALLOC_ARRAY(uint8_t, length);
-		fread(data, sizeof(uint8_t) * length, 1, file);
-		fclose(file);
-	}
-
-	void FileHelper::Load(List<uint8_t>& data, const String& path)
-	{
+		List<uint8_t> data;
 		auto file = fopen(path.c_str(), "rb");
 		fseek(file, 0, SEEK_END);
 		long length = ftell(file);
@@ -36,17 +26,19 @@ namespace Blueberry
 		data.resize(length);
 		fread(data.data(), sizeof(uint8_t) * length, 1, file);
 		fclose(file);
+		return data;
 	}
 
-	void FileHelper::Load(String& data, const String& path)
+	String FileHelper::LoadText(const String& path)
 	{
 		size_t length;
 		auto file = fopen(path.c_str(), "rb");
 		fseek(file, 0, SEEK_END);
 		length = ftell(file);
 		rewind(file);
-		data = String(length, ' ');
+		String data = String(length, ' ');
 		fread(data.data(), sizeof(uint8_t) * length, 1, file);
 		fclose(file);
+		return data;
 	}
 }

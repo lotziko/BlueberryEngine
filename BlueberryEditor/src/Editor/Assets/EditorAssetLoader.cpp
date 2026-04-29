@@ -179,8 +179,7 @@ namespace Blueberry
 
 			if (needImport)
 			{
-				List<uint8_t> data;
-				FileHelper::Load(data, path);
+				List<uint8_t> data = FileHelper::LoadBinary(path);
 				font = Object::Create<Font>();
 				ObjectDB::AllocateIdToGuid(font, guid, 1);
 				font->SetData(data);

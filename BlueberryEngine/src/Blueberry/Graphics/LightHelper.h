@@ -13,6 +13,7 @@ namespace Blueberry
 	{
 	public:
 		static uint32_t GetShadowSize(LightType type);
+		static float GetShadowSlopeBias(LightType type, uint8_t slice);
 		static uint32_t GetSliceCount(LightType type);
 		static Matrix GetViewMatrix(Light* light, Transform* transform, uint8_t slice = 0);
 		static Matrix GetInverseViewMatrix(Light* light, Transform* transform, uint8_t slice = 0);

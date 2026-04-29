@@ -31,9 +31,8 @@ namespace Blueberry
 		String path = GetFilePath();
 
 		// TODO compression
-		List<uint8_t> data;
-		FileHelper::Load(data, path);
-
+		List<uint8_t> data = FileHelper::LoadBinary(path);
+		
 		size_t audioClipFileId = TO_HASH("AudioClip");
 		AudioClip* audioClip = GetOrCreateAssetObject<AudioClip>(audioClipFileId);
 		SetMainObject(audioClipFileId);

@@ -165,8 +165,7 @@ namespace Blueberry
 		bool isModified = false;
 		if (std::filesystem::exists(path))
 		{
-			String existingConfig;
-			FileHelper::Load(existingConfig, path);
+			String existingConfig = FileHelper::LoadText(path);
 			if (existingConfig != ss.str())
 			{
 				isModified = true;
@@ -246,8 +245,7 @@ namespace Blueberry
 		bool isModified = false;
 		if (std::filesystem::exists(path))
 		{
-			String existingConfig;
-			FileHelper::Load(existingConfig, path);
+			String existingConfig = FileHelper::LoadText(path);
 			if (existingConfig != ss.str())
 			{
 				isModified = true;

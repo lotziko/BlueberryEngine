@@ -19,8 +19,7 @@ namespace Blueberry
 		List<Object*> objects;
 		String path = GetFilePath();
 
-		List<uint8_t> data;
-		FileHelper::Load(data, path);
+		List<uint8_t> data = FileHelper::LoadBinary(path);
 
 		size_t fontFileId = TO_HASH("Font");
 		Font* font = GetOrCreateAssetObject<Font>(fontFileId);

@@ -24,6 +24,7 @@ namespace Blueberry
 			Light* light;
 			uint32_t sliceIndex;
 			uint32_t sliceCount;
+			float slopeBias;
 		};
 
 	public:

@@ -13,6 +13,7 @@
 #include "Blueberry\Graphics\Mesh.h"
 #include "Blueberry\Audio\AudioClip.h"
 #include "Blueberry\Scene\LightingSettings.h"
+#include "Blueberry\Tools\CompressionHelper.h"
 
 #include "Editor\Assets\EditorAssetLoader.h"
 #include "Editor\Assets\Importers\ShaderImporter.h"
@@ -43,7 +44,7 @@ namespace Blueberry
 			Texture* texture = static_cast<Texture*>(object);
 			if (texture->HasData())
 			{
-				const ByteData& data = texture->GetData();
+				List<uint8_t> data = texture->GetData();
 				size_t size = data.size();
 				context.resourceBlobOffsets.insert_or_assign(guid, context.resourcesStream.tellp());
 				context.resourcesStream.write(reinterpret_cast<char*>(&guid), sizeof(Guid));
@@ -55,8 +56,7 @@ namespace Blueberry
 				String texturePath = TextureImporter::GetTexturePath(guid);
 				if (std::filesystem::exists(texturePath))
 				{
-					List<uint8_t> data;
-					FileHelper::Load(data, texturePath);
+					List<uint8_t> data = FileHelper::LoadBinary(texturePath);
 					size_t size = data.size();
 					context.resourceBlobOffsets.insert_or_assign(guid, context.resourcesStream.tellp());
 					context.resourcesStream.write(reinterpret_cast<char*>(&guid), sizeof(Guid));
@@ -71,8 +71,7 @@ namespace Blueberry
 			if (std::filesystem::exists(shaderFolder))
 			{
 				String indexesPath = shaderFolder + "\\indexes";
-				List<uint8_t> data;
-				FileHelper::Load(data, indexesPath);
+				List<uint8_t> data = FileHelper::LoadBinary(indexesPath);
 				size_t size = data.size();
 				context.resourceBlobOffsets.insert_or_assign(guid, context.resourcesStream.tellp());
 				context.resourcesStream.write(reinterpret_cast<char*>(&guid), sizeof(Guid));
@@ -84,8 +83,7 @@ namespace Blueberry
 					String blobPath = shaderFolder + "\\" + String(std::to_string(i));
 					if (std::filesystem::exists(blobPath))
 					{
-						data.clear();
-						FileHelper::Load(data, blobPath);
+						data = FileHelper::LoadBinary(blobPath);
 						size = data.size();
 						context.resourcesStream.write(reinterpret_cast<char*>(&size), sizeof(size_t));
 						context.resourcesStream.write(reinterpret_cast<char*>(data.data()), size);
@@ -99,8 +97,7 @@ namespace Blueberry
 			if (std::filesystem::exists(shaderFolder))
 			{
 				String indexesPath = shaderFolder + "\\indexes";
-				List<uint8_t> data;
-				FileHelper::Load(data, indexesPath);
+				List<uint8_t> data = FileHelper::LoadBinary(indexesPath);
 				context.resourceBlobOffsets.insert_or_assign(guid, context.resourcesStream.tellp());
 				context.resourcesStream.write(reinterpret_cast<char*>(&guid), sizeof(Guid));
 
@@ -111,8 +108,7 @@ namespace Blueberry
 					String blobPath = shaderFolder + "\\" + String(std::to_string(i));
 					if (std::filesystem::exists(blobPath))
 					{
-						data.clear();
-						FileHelper::Load(data, blobPath);
+						data = FileHelper::LoadBinary(blobPath);
 						size_t size = data.size();
 						context.resourcesStream.write(reinterpret_cast<char*>(&size), sizeof(size_t));
 						context.resourcesStream.write(reinterpret_cast<char*>(data.data()), size);
@@ -125,13 +121,15 @@ namespace Blueberry
 			String audioClipPath = AudioImporter::GetAudioPath(guid);
 			if (std::filesystem::exists(audioClipPath))
 			{
-				List<uint8_t> data;
-				FileHelper::Load(data, audioClipPath);
+				List<uint8_t> data = FileHelper::LoadBinary(audioClipPath);
+				List<uint8_t> compressedData = CompressionHelper::Compress(data);
 				size_t size = data.size();
+				size_t compressedSize = compressedData.size();
 				context.resourceBlobOffsets.insert_or_assign(guid, context.resourcesStream.tellp());
 				context.resourcesStream.write(reinterpret_cast<char*>(&guid), sizeof(Guid));
 				context.resourcesStream.write(reinterpret_cast<char*>(&size), sizeof(size_t));
-				context.resourcesStream.write(reinterpret_cast<char*>(data.data()), size);
+				context.resourcesStream.write(reinterpret_cast<char*>(&compressedSize), sizeof(size_t));
+				context.resourcesStream.write(reinterpret_cast<char*>(compressedData.data()), compressedSize);
 			}
 		}
 	}
@@ -240,9 +238,11 @@ namespace Blueberry
 		std::filesystem::copy_file("BlueberryRuntime.exe", path + "\\BlueberryRuntime.exe", std::filesystem::copy_options::overwrite_existing);
 		std::filesystem::copy_file("GFSDK_SSAO_D3D11.win64.dll", path + "\\GFSDK_SSAO_D3D11.win64.dll", std::filesystem::copy_options::overwrite_existing);
 
+		Serializer sceneSerializer = {};
+		Serializer assetSerializer = {};
+
 		// Scene
 		List<Object*> assetStack;
-		Serializer sceneSerializer = {};
 		LightingSettings* lightingSettings = nullptr;
 		TextureCubeArray* reflectionProbes = nullptr;
 		LightingData* lightingData = EditorSceneManager::GetSettings()->GetLightingData();
@@ -254,7 +254,7 @@ namespace Blueberry
 			lightingSettings->SetReflectionProbes(reflectionProbes = CreateReflectionAtlas(lightingData));
 			ObjectDB::AllocateIdToGuid(reflectionProbes, Guid(TO_HASH("ReflectionProbes"), 0), 1);
 			lightingSettings->SetChartOffsetScale(lightingData->GetChartOffsetScale());
-			sceneSerializer.AddObject(lightingSettings);
+			assetSerializer.AddObject(lightingSettings);
 			assetStack.push_back(lightingSettings);
 		}
 
@@ -267,7 +267,6 @@ namespace Blueberry
 		sceneSerializer.Serialize(path + "\\Scene", SerializationFlags::RuntimeOnly);
 
 		// Assets
-		Serializer assetSerializer = {};
 		HashSet<Object*> resourceObjects;
 		HashSet<Object*> visitedAssets;
 		while (assetStack.size() > 0)

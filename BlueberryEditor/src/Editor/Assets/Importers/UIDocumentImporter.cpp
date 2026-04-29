@@ -24,9 +24,8 @@ namespace Blueberry
 		SetMainObject(uiDocumentId);
 		document->SetName(GetName());
 
-		String data;
-		FileHelper::Load(data, path);
-
+		String data = FileHelper::LoadText(path);
+		
 		size_t i = 0;
 		while (i < data.size())
 		{

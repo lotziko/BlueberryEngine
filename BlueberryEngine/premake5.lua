@@ -25,6 +25,8 @@ project "BlueberryEngine"
 		"vendor/xatlas/**.cpp",
 		"vendor/miniaudio/**.h",
 		"vendor/miniaudio/**.c",
+		"vendor/lz4/**.h",
+		"vendor/lz4/**.c",
 	}
 
 	includedirs
@@ -38,6 +40,7 @@ project "BlueberryEngine"
 		"%{IncludeDir.rpmalloc}",
 		"%{IncludeDir.miniaudio}",
 		"%{IncludeDir.rmlui}",
+		"%{IncludeDir.lz4}",
 	}
 
 	links

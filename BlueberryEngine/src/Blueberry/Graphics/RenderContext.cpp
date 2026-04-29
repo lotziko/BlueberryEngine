@@ -474,7 +474,7 @@ namespace Blueberry
 								cameraSliceFrustum.GetCorners(corners);
 
 								float minZ = FLT_MAX;
-								float maxZ = FLT_MIN;
+								float maxZ = -FLT_MAX;
 
 								for (int j = 0; j < 8; ++j)
 								{

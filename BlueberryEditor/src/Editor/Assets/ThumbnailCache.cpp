@@ -68,12 +68,10 @@ namespace Blueberry
 			return nullptr;
 		}
 
-		unsigned char* data;
-		size_t length;
-		FileHelper::Load(data, length, StringHelper::ToString(thumbnailPath));
+		List<uint8_t> data = FileHelper::LoadBinary(StringHelper::ToString(thumbnailPath));
 
 		Texture2D* thumbnail = Texture2D::Create(THUMBNAIL_SIZE, THUMBNAIL_SIZE);
-		thumbnail->SetData(data, THUMBNAIL_DATA_SIZE);
+		thumbnail->SetData(data.data(), data.size());
 		thumbnail->Apply();
 
 		return thumbnail;
@@ -103,13 +101,13 @@ namespace Blueberry
 
 				if (importer->IsImported())
 				{
-					unsigned char data[THUMBNAIL_DATA_SIZE];
-					if (ThumbnailRenderer::Draw(data, THUMBNAIL_SIZE, asset))
+					List<uint8_t> data(THUMBNAIL_DATA_SIZE);
+					if (ThumbnailRenderer::Draw(data.data(), THUMBNAIL_SIZE, asset))
 					{
 						Texture2D* thumbnail = Texture2D::Create(THUMBNAIL_SIZE, THUMBNAIL_SIZE);
-						thumbnail->SetData(data, THUMBNAIL_DATA_SIZE);
+						thumbnail->SetData(data.data(), THUMBNAIL_DATA_SIZE);
 						thumbnail->Apply();
-						Save(asset, data);
+						Save(asset, data.data());
 						return thumbnail;
 					}
 				}
