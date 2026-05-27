@@ -4,7 +4,7 @@
 #include "Blueberry\Graphics\GfxBuffer.h"
 #include "Concrete\Windows\ComPtr.h"
 #include "Concrete\DX11\DX11.h"
-#include "GfxPointerCacheDX11.h"
+#include "..\..\Blueberry\Graphics\GfxPointerCache.h"
 
 namespace Blueberry
 {
@@ -15,9 +15,6 @@ namespace Blueberry
 		virtual ~GfxBufferDX11() final;
 
 		bool Initialize(const BufferProperties& properties);
-
-		virtual void* Map() final;
-		virtual void Unmap() final;
 
 		virtual void GetData(void* data) final;
 		virtual void SetData(const void* data, size_t size) final;
@@ -41,9 +38,10 @@ namespace Blueberry
 		uint32_t m_ElementCount = 0;
 		bool m_IsConstant = false;
 
+		static GfxPointerCache<GfxBufferDX11> s_PointerCache;
+
 		friend class GfxDeviceDX11;
 		friend class GfxRenderStateCacheDX11;
-
-		static GfxPointerCacheDX11<GfxBufferDX11> s_PointerCache;
+		friend class GfxComputeRenderStateCacheDX11;
 	};
 }

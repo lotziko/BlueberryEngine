@@ -31,6 +31,8 @@ namespace Blueberry
 		~RmlUiRenderData();
 
 	private:
+		List<RmlUiVertex> m_VertexData;
+		List<int> m_IndexData;
 		GfxBuffer* m_VertexBuffer = nullptr;
 		GfxBuffer* m_IndexBuffer = nullptr;
 		size_t m_VertexCount = 0;

@@ -117,7 +117,6 @@ namespace Blueberry
 
 	void Material::SetKeyword(const String& keyword, bool enabled)
 	{
-		// TODO use an unordered_map
 		auto it = std::find(m_ActiveKeywords.begin(), m_ActiveKeywords.end(), keyword);
 		if (it != m_ActiveKeywords.end() && !enabled)
 		{
@@ -125,17 +124,17 @@ namespace Blueberry
 		}
 		else if (enabled)
 		{
-			m_ActiveKeywords.emplace_back(keyword);
+			m_ActiveKeywords.push_back(keyword);
 		}
-		m_ActiveKeywordsMask = 0;
-		for (auto keyword : m_ActiveKeywords)
-		{
-			m_ActiveKeywordsMask |= m_Shader->m_LocalKeywords.GetMask(TO_HASH(keyword));
-		}
+		m_ActiveKeywordsMask = UINT32_MAX;
 	}
 
-	uint32_t Material::GetActiveKeywordsMask() const
+	uint32_t Material::GetActiveKeywordsMask()
 	{
+		if (m_ActiveKeywordsMask == UINT32_MAX)
+		{
+			CalculateKeywordMask();
+		}
 		return m_ActiveKeywordsMask;
 	}
 
@@ -218,6 +217,15 @@ namespace Blueberry
 					tex->m_Dependencies.emplace(m_ObjectId);
 				}
 			}
+		}
+	}
+
+	void Material::CalculateKeywordMask()
+	{
+		m_ActiveKeywordsMask = 0;
+		for (auto& keyword : m_ActiveKeywords)
+		{
+			m_ActiveKeywordsMask |= m_Shader->m_LocalKeywords.GetMask(TO_HASH(keyword));
 		}
 	}
 

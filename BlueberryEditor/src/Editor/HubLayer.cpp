@@ -40,11 +40,11 @@ namespace Blueberry
 
 	void HubLayer::OnDraw()
 	{
-		GfxDevice::ClearColor({ 0, 0, 0, 1 });
+		GfxDevice::SetRenderTarget(nullptr);
+		GfxDevice::ClearColor(Color(0.0f, 0.0f, 0.0f, 0.0f));
 		ImGuiRenderer::Begin();
 		DrawHub();
 		ImGuiRenderer::End();
-		GfxDevice::SwapBuffers();
 	}
 
 	void HubLayer::OnWindowResize(const WindowResizeEventArgs& args)

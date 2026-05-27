@@ -2,6 +2,7 @@
 
 #include "GraphicsAPI.h"
 #include "..\..\Concrete\DX11\HBAORendererDX11.h"
+#include "..\..\Concrete\DX12\HBAORendererDX12.h"
 
 namespace Blueberry
 {
@@ -16,6 +17,10 @@ namespace Blueberry
 			return false;
 		case GraphicsAPI::API::DX11:
 			s_Instance = new HBAORendererDX11();
+			break;
+		case GraphicsAPI::API::DX12:
+			s_Instance = new HBAORendererDX12();
+			break;
 		}
 		return s_Instance->InitializeImpl();
 	}
@@ -25,8 +30,8 @@ namespace Blueberry
 		s_Instance->ShutdownImpl();
 	}
 
-	void HBAORenderer::Draw(GfxTexture* depthStencil, GfxTexture* normals, const Matrix& view, const Matrix& projection, const Rectangle& viewport, GfxTexture* output)
+	void HBAORenderer::Draw(GfxTexture* depthStencil, GfxTexture* normals, const Matrix& view, const Matrix& projection, const Rectangle& viewport, GfxTexture* outputColor)
 	{
-		s_Instance->DrawImpl(depthStencil, normals, view, projection, viewport, output);
+		s_Instance->DrawImpl(depthStencil, normals, view, projection, viewport, outputColor);
 	}
 }

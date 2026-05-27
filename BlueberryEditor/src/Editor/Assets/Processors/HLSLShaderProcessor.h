@@ -16,7 +16,7 @@ namespace Blueberry
 	{
 	public:
 		HLSLShaderProcessor() = default;
-		~HLSLShaderProcessor();
+		~HLSLShaderProcessor() = default;
 
 		bool Compile(const String& path);
 		void SaveVariants(const String& folderPath);
@@ -31,6 +31,5 @@ namespace Blueberry
 	private:
 		ShaderData m_ShaderData;
 		VariantsData m_VariantsData;
-		List<ComPtr<ID3DBlob>> m_Blobs;
 	};
 }

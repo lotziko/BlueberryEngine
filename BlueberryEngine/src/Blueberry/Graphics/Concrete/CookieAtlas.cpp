@@ -20,7 +20,7 @@ namespace Blueberry
 	{
 		s_AtlasTexture = GfxTexturePool::Get(512, 512, s_MaxCookies, TextureUsageFlags::RenderTarget, 1, 1, TextureFormat::R8G8B8A8_UNorm_SRGB, TextureDimension::Texture3D, WrapMode::Clamp, FilterMode::Point);
 		GfxDevice::SetRenderTarget(s_AtlasTexture);
-		GfxDevice::ClearColor(Color(1, 1, 1, 1));
+		GfxDevice::ClearColor(Color(0.0f, 0.0f, 0.0f, 0.0f));
 		GfxDevice::SetRenderTarget(nullptr);
 		s_Cookies.emplace_back(0);
 	}
@@ -83,7 +83,7 @@ namespace Blueberry
 		}
 
 		s_Cookies.emplace_back(id);
-		GfxDevice::SetRenderTarget(s_AtlasTexture, nullptr, cookieCount);
+		GfxDevice::SetRenderTarget(s_AtlasTexture, nullptr, cookieCount, 0);
 		GfxDevice::SetViewport(0, 0, 512, 512);
 		GfxDevice::SetGlobalTexture(TO_HASH("_BlitTexture"), cookie->Get());
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetBlit()));

@@ -77,7 +77,7 @@ namespace Blueberry
 
 		GfxDevice::SetRenderTarget(m_SceneRenderTarget, m_SceneDepthStencil);
 		GfxDevice::SetViewport(0, 0, static_cast<int>(camera->GetPixelSize().x), static_cast<int>(camera->GetPixelSize().y));
-		GfxDevice::ClearColor({ 0, 0, 0, 0 });
+		GfxDevice::ClearColor(Color(0.0f, 0.0f, 0.0f, 0.0f));
 		GfxDevice::ClearDepth(1.0f);
 		Renderer2D::Begin();
 		for (auto& pair : scene->GetIterator<SpriteRenderer>())
@@ -180,7 +180,7 @@ namespace Blueberry
 
 		GfxDevice::SetRenderTarget(m_SceneRenderTarget);
 		GfxDevice::SetViewport(0, 0, static_cast<int>(camera->GetPixelSize().x), static_cast<int>(camera->GetPixelSize().y));
-		GfxDevice::ClearColor({ 0, 0, 0, 0 });
+		GfxDevice::ClearColor(Color(0.0f, 0.0f, 0.0f, 0.0f));
 		GfxDevice::ClearDepth(1.0f);
 
 		Renderer2D::Begin();

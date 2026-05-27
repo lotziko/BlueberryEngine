@@ -42,7 +42,7 @@ namespace Blueberry
 		textureProperties.dimension = TextureDimension::Texture3D;
 		textureProperties.wrapMode = WrapMode::Clamp;
 		textureProperties.filterMode = FilterMode::Bilinear;
-		textureProperties.usageFlags = TextureUsageFlags::UnorderedAccess;
+		textureProperties.usageFlags = TextureUsageFlags::RenderTarget | TextureUsageFlags::UnorderedAccess;
 
 		GfxDevice::CreateTexture(textureProperties, s_FrustumVolume0);
 		GfxDevice::CreateTexture(textureProperties, s_FrustumVolume1);
@@ -63,9 +63,11 @@ namespace Blueberry
 		if (cameraId != s_CameraId)
 		{
 			GfxDevice::SetRenderTarget(s_FrustumVolume0);
-			GfxDevice::ClearColor(Color(0.0f, 0.0f, 0.0f, 0.0f));
+			GfxDevice::ClearColor(Color(0.0f, 0.0f, 0.0f, 1.0f));
 			GfxDevice::SetRenderTarget(s_FrustumVolume1);
-			GfxDevice::ClearColor(Color(0.0f, 0.0f, 0.0f, 0.0f));
+			GfxDevice::ClearColor(Color(0.0f, 0.0f, 0.0f, 1.0f));
+			GfxDevice::SetRenderTarget(s_FrustumVolume2);
+			GfxDevice::ClearColor(Color(0.0f, 0.0f, 0.0f, 1.0f));
 			GfxDevice::SetRenderTarget(nullptr);
 			s_CameraId = cameraId;
 		}

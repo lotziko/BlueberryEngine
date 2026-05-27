@@ -606,12 +606,10 @@ namespace Blueberry
 			if (material != nullptr)
 			{
 				GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetCube(), material, 0));
+				return;
 			}
 		}
-		else
-		{
-			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetSkybox(), 1));
-		}
+		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetSkybox(), 1));
 	}
 
 	void RenderContext::DrawShadows(CullingResults& results, ShadowDrawingSettings& shadowDrawingSettings)
@@ -652,13 +650,25 @@ namespace Blueberry
 
 		GatherOperations(results, s_CurrentCuller, s_CurrentCullerIndex, drawingSettings.sortingMode, drawingSettings.objectsFilter, passIndex);
 
+		if (!drawingSettings.useGI)
+		{
+			Shader::SetKeyword(s_LightmapId, false);
+			Shader::SetKeyword(s_ProbesId, false);
+		}
+
+		if (!drawingSettings.useGI)
+		{
+			Shader::SetKeyword(s_LightmapId, false);
+			Shader::SetKeyword(s_ProbesId, false);
+		}
+
 		// Draw meshes
 		uint32_t operationCount = static_cast<uint32_t>(s_DrawingOperations.size());
 		for (uint32_t i = 0; i < operationCount;)
 		{
 			auto& operation = s_DrawingOperations[i];
 			Keyword keyword = operation.lightmapChartOffset > 0 ? Keyword::Lightmap : Keyword::Probes;
-			if (keyword != s_CurrentKeyword)
+			if (drawingSettings.useGI && keyword != s_CurrentKeyword)
 			{
 				s_CurrentKeyword = keyword;
 				if (keyword == Keyword::Lightmap)

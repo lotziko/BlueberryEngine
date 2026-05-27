@@ -5,6 +5,7 @@
 #include "Blueberry\Graphics\Mesh.h"
 
 #include "..\..\Concrete\DX11\GfxDeviceDX11.h"
+#include "..\..\Concrete\DX12\GfxDeviceDX12.h"
 
 namespace Blueberry
 {
@@ -19,6 +20,10 @@ namespace Blueberry
 			return false;
 		case GraphicsAPI::API::DX11:
 			s_Instance = new GfxDeviceDX11();
+			break;
+		case GraphicsAPI::API::DX12:
+			s_Instance = new GfxDeviceDX12();
+			break;
 		}
 		
 		return s_Instance->InitializeImpl(width, height, data);
@@ -83,22 +88,22 @@ namespace Blueberry
 		s_Instance->SetDepthBiasImpl(bias, slopeBias);
 	}
 
-	bool GfxDevice::CreateVertexShader(void* vertexData, GfxVertexShader*& shader)
+	bool GfxDevice::CreateVertexShader(const ByteData& vertexData, GfxVertexShader*& shader)
 	{
 		return s_Instance->CreateVertexShaderImpl(vertexData, shader);
 	}
 
-	bool GfxDevice::CreateGeometryShader(void* geometryData, GfxGeometryShader*& shader)
+	bool GfxDevice::CreateGeometryShader(const ByteData& geometryData, GfxGeometryShader*& shader)
 	{
 		return s_Instance->CreateGeometryShaderImpl(geometryData, shader);
 	}
 
-	bool GfxDevice::CreateFragmentShader(void* fragmentData, GfxFragmentShader*& shader)
+	bool GfxDevice::CreateFragmentShader(const ByteData& fragmentData, GfxFragmentShader*& shader)
 	{
 		return s_Instance->CreateFragmentShaderImpl(fragmentData, shader);
 	}
 
-	bool GfxDevice::CreateComputeShader(void* computeData, GfxComputeShader*& shader)
+	bool GfxDevice::CreateComputeShader(const ByteData& computeData, GfxComputeShader*& shader)
 	{
 		return s_Instance->CreateComputeShaderImpl(computeData, shader);
 	}
@@ -135,22 +140,22 @@ namespace Blueberry
 
 	void GfxDevice::SetRenderTarget(GfxTexture* renderTexture)
 	{
-		s_Instance->SetRenderTargetImpl(renderTexture, nullptr);
+		s_Instance->SetRenderTargetImpl(renderTexture, nullptr, 0, 0);
 	}
 
 	void GfxDevice::SetRenderTarget(GfxTexture* renderTexture, GfxTexture* depthStencilTexture)
 	{
-		s_Instance->SetRenderTargetImpl(renderTexture, depthStencilTexture);
+		s_Instance->SetRenderTargetImpl(renderTexture, depthStencilTexture, 0, 0);
 	}
 
-	void GfxDevice::SetRenderTarget(GfxTexture* renderTexture, uint32_t slice)
+	void GfxDevice::SetRenderTarget(GfxTexture* renderTexture, uint32_t arraySlice, uint32_t mipLevel)
 	{
-		s_Instance->SetRenderTargetImpl(renderTexture, nullptr, slice);
+		s_Instance->SetRenderTargetImpl(renderTexture, nullptr, arraySlice, mipLevel);
 	}
 
-	void GfxDevice::SetRenderTarget(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, uint32_t slice)
+	void GfxDevice::SetRenderTarget(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, uint32_t arraySlice, uint32_t mipLevel)
 	{
-		s_Instance->SetRenderTargetImpl(renderTexture, depthStencilTexture, slice);
+		s_Instance->SetRenderTargetImpl(renderTexture, depthStencilTexture, arraySlice, mipLevel);
 	}
 
 	void GfxDevice::SetGlobalBuffer(size_t id, GfxBuffer* buffer)

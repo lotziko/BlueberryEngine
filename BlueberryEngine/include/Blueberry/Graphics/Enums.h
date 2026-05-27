@@ -2,6 +2,12 @@
 
 namespace Blueberry
 {
+	template<typename T>
+	bool HasFlag(T usageFlags, T flag)
+	{
+		return (usageFlags & flag) != T::None;
+	}
+
 	enum class TextureUsageFlags
 	{
 		None = 0,

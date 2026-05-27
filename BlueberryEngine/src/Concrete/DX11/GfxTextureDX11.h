@@ -4,7 +4,7 @@
 #include "Blueberry\Graphics\GfxTexture.h"
 #include "Concrete\Windows\ComPtr.h"
 #include "Concrete\DX11\DX11.h"
-#include "GfxPointerCacheDX11.h"
+#include "..\..\Blueberry\Graphics\GfxPointerCache.h"
 
 namespace Blueberry
 {
@@ -19,26 +19,22 @@ namespace Blueberry
 		ID3D11Resource* GetTexture() const;
 		ID3D11ShaderResourceView* GetSRV() const;
 		ID3D11RenderTargetView* GetRTV() const;
-		ID3D11RenderTargetView* GetRTV(const uint32_t& slice);
+		ID3D11RenderTargetView* GetRTV(uint32_t arraySlice, uint32_t mipSlice);
 
 		virtual uint32_t GetWidth() const override;
 		virtual uint32_t GetHeight() const override;
 		virtual TextureFormat GetFormat() const override;
 		virtual void* GetHandle() override;
 
-		virtual void GetData(void* target, const Rectangle& area) override;
-		virtual void GetData(void* target) override;
+		virtual void GetData(void* data, const Rectangle& area) override;
+		virtual void GetData(void* data) override;
 		virtual void SetData(void* data, size_t size) override;
-		virtual void SetData(void* data, size_t size, uint32_t slice) override;
 
 		virtual void SetWrapMode(WrapMode wrapMode) override;
 		virtual void SetFilterMode(FilterMode filterMode) override;
 		virtual void SetName(const String& name) override;
 
-		virtual void GenerateMipMaps() override;
-
 	private:
-		uint32_t GetQualityLevel(const DXGI_FORMAT& format, uint32_t antiAliasing);
 		bool Initialize(D3D11_SUBRESOURCE_DATA* subresourceData, uint32_t subresourceCount, const TextureProperties& properties);
 
 	private:
@@ -53,20 +49,23 @@ namespace Blueberry
 		List<ComPtr<ID3D11RenderTargetView>> m_SlicesRenderTargetViews;
 
 		DXGI_FORMAT m_Format = DXGI_FORMAT_UNKNOWN;
+		TextureDimension m_Dimension = TextureDimension::Texture2D;
 		uint32_t m_Width = 0;
 		uint32_t m_Height = 0;
 		uint32_t m_Depth = 0;
+		uint32_t m_AntiAliasing = 1;
 		uint32_t m_ArraySize = 0;
 		uint32_t m_MipLevels = 1;
-		WrapMode m_WrapMode;
-		FilterMode m_FilterMode;
+		WrapMode m_WrapMode = WrapMode::Clamp;
+		FilterMode m_FilterMode = FilterMode::Bilinear;
 
 		ID3D11Device* m_Device;
 		ID3D11DeviceContext* m_DeviceContext;
 
+		static GfxPointerCache<GfxTextureDX11> s_PointerCache;
+
 		friend class GfxDeviceDX11;
 		friend class GfxRenderStateCacheDX11;
-
-		static GfxPointerCacheDX11<GfxTextureDX11> s_PointerCache;
+		friend class GfxComputeRenderStateCacheDX11;
 	};
 }

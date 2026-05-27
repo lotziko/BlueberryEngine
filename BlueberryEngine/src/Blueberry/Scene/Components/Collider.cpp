@@ -26,7 +26,7 @@ namespace Blueberry
 
 	Collider::Collider()
 	{
-		ZeroMemory(m_PrivateStorage, sizeof(PrivateData));
+		memset(m_PrivateStorage, 0, sizeof(PrivateData));
 		m_PrivateData = reinterpret_cast<PrivateData*>(&m_PrivateStorage);
 	}
 

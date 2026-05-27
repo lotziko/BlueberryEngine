@@ -4,7 +4,7 @@
 
 namespace Blueberry
 {
-	GfxPointerCacheDX11<GfxBufferDX11> GfxBufferDX11::s_PointerCache = {};
+	GfxPointerCache<GfxBufferDX11> GfxBufferDX11::s_PointerCache = {};
 
 	GfxBufferDX11::GfxBufferDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext) : m_Device(device), m_DeviceContext(deviceContext)
 	{
@@ -20,7 +20,7 @@ namespace Blueberry
 	{
 		if (properties.dataSize > 0)
 		{
-			D3D11_SUBRESOURCE_DATA subresourceData;
+			D3D11_SUBRESOURCE_DATA subresourceData = {};
 			subresourceData.pSysMem = properties.data;
 			subresourceData.SysMemPitch = static_cast<UINT>(properties.dataSize);
 			subresourceData.SysMemSlicePitch = 0;
@@ -32,32 +32,11 @@ namespace Blueberry
 		}
 	}
 
-	void* GfxBufferDX11::Map()
-	{
-		D3D11_MAPPED_SUBRESOURCE mappedBuffer;
-		ZeroMemory(&mappedBuffer, sizeof(D3D11_MAPPED_SUBRESOURCE));
-
-		HRESULT hr = m_DeviceContext->Map(m_Buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
-		if (FAILED(hr))
-		{
-			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to map the buffer."));
-			return nullptr;
-		}
-		return mappedBuffer.pData;
-	}
-
-	void GfxBufferDX11::Unmap()
-	{
-		m_DeviceContext->Unmap(m_Buffer.Get(), 0);
-	}
-
 	void GfxBufferDX11::GetData(void* data)
 	{
 		m_DeviceContext->CopyResource(m_StagingBuffer.Get(), m_Buffer.Get());
 
-		D3D11_MAPPED_SUBRESOURCE mappedBuffer;
-		ZeroMemory(&mappedBuffer, sizeof(D3D11_MAPPED_SUBRESOURCE));
-
+		D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
 		HRESULT hr = m_DeviceContext->Map(m_StagingBuffer.Get(), 0, D3D11_MAP_READ, 0, &mappedBuffer);
 		if (FAILED(hr))
 		{
@@ -70,9 +49,7 @@ namespace Blueberry
 
 	void GfxBufferDX11::SetData(const void* data, size_t size)
 	{
-		D3D11_MAPPED_SUBRESOURCE mappedBuffer;
-		ZeroMemory(&mappedBuffer, sizeof(D3D11_MAPPED_SUBRESOURCE));
-
+		D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
 		HRESULT hr = m_DeviceContext->Map(m_Buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
 		if (FAILED(hr))
 		{
@@ -91,11 +68,6 @@ namespace Blueberry
 	uint32_t GfxBufferDX11::GetElementCount() const
 	{
 		return m_ElementCount;
-	}
-
-	bool HasFlag(BufferUsageFlags usageFlags, BufferUsageFlags flag)
-	{
-		return (usageFlags & flag) != BufferUsageFlags::None;
 	}
 
 	UINT GetBindFlags(const BufferUsageFlags& usageFlags)
@@ -131,18 +103,25 @@ namespace Blueberry
 		m_IsConstant = HasFlag(properties.usageFlags, BufferUsageFlags::ConstantBuffer);
 		uint32_t byteCount = m_ElementCount * m_ElementSize;
 
+		bool useSRV = HasFlag(properties.usageFlags, BufferUsageFlags::ShaderResource);
+		bool useUAV = HasFlag(properties.usageFlags, BufferUsageFlags::UnorderedAccess);
+		bool isReadable = HasFlag(properties.usageFlags, BufferUsageFlags::CPUReadable);
 		bool isWritable = m_IsConstant || HasFlag(properties.usageFlags, BufferUsageFlags::CPUWritable);
+		bool isStructured = HasFlag(properties.usageFlags, BufferUsageFlags::StructuredBuffer);
 		bool isRaw = HasFlag(properties.usageFlags, BufferUsageFlags::ByteAdressBuffer);
 
-		D3D11_BUFFER_DESC bufferDesc;
-		ZeroMemory(&bufferDesc, sizeof(D3D11_BUFFER_DESC));
+		if (isStructured)
+		{
+			byteCount = Math::NextDivisableBy(byteCount, 16u);
+		}
 
+		D3D11_BUFFER_DESC bufferDesc = {};
 		bufferDesc.Usage = isWritable ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
-		bufferDesc.ByteWidth = HasFlag(properties.usageFlags, BufferUsageFlags::StructuredBuffer) && byteCount % 16 > 0 ? ((byteCount / 16) + 1) * 16 : byteCount;
+		bufferDesc.ByteWidth = byteCount;
 		bufferDesc.BindFlags = GetBindFlags(properties.usageFlags);
 		bufferDesc.CPUAccessFlags = isWritable ? D3D11_CPU_ACCESS_WRITE : 0;
 		
-		if (HasFlag(properties.usageFlags, BufferUsageFlags::StructuredBuffer))
+		if (isStructured)
 		{
 			bufferDesc.MiscFlags |= D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 			bufferDesc.StructureByteStride = properties.elementSize;
@@ -159,27 +138,27 @@ namespace Blueberry
 			return false;
 		}
 
-		if (HasFlag(properties.usageFlags, BufferUsageFlags::ShaderResource))
+		if (useSRV)
 		{
-			D3D11_SHADER_RESOURCE_VIEW_DESC resourceViewDesc;
+			D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc = {};
 			
 			if (isRaw)
 			{
-				resourceViewDesc.Format = DXGI_FORMAT_R32_TYPELESS;
-				resourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
-				resourceViewDesc.BufferEx.FirstElement = 0;
-				resourceViewDesc.BufferEx.NumElements = byteCount / sizeof(uint32_t);
-				resourceViewDesc.BufferEx.Flags = D3D11_BUFFEREX_SRV_FLAG_RAW;
+				shaderResourceViewDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+				shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
+				shaderResourceViewDesc.BufferEx.FirstElement = 0;
+				shaderResourceViewDesc.BufferEx.NumElements = byteCount / sizeof(uint32_t);
+				shaderResourceViewDesc.BufferEx.Flags = D3D11_BUFFEREX_SRV_FLAG_RAW;
 			}
 			else
 			{
-				resourceViewDesc.Format = static_cast<DXGI_FORMAT>(properties.format);
-				resourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-				resourceViewDesc.Buffer.FirstElement = 0;
-				resourceViewDesc.Buffer.NumElements = m_ElementCount;
+				shaderResourceViewDesc.Format = static_cast<DXGI_FORMAT>(properties.format);
+				shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+				shaderResourceViewDesc.Buffer.FirstElement = 0;
+				shaderResourceViewDesc.Buffer.NumElements = m_ElementCount;
 			}
 
-			hr = m_Device->CreateShaderResourceView(m_Buffer.Get(), &resourceViewDesc, m_ShaderResourceView.GetAddressOf());
+			hr = m_Device->CreateShaderResourceView(m_Buffer.Get(), &shaderResourceViewDesc, m_ShaderResourceView.GetAddressOf());
 			if (FAILED(hr))
 			{
 				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create shader resource view."));
@@ -187,24 +166,21 @@ namespace Blueberry
 			}
 		}
 		
-		if (HasFlag(properties.usageFlags, BufferUsageFlags::UnorderedAccess))
+		if (useUAV)
 		{
-			D3D11_UNORDERED_ACCESS_VIEW_DESC unorderedAccessViewDesc;
-			ZeroMemory(&unorderedAccessViewDesc, sizeof(D3D11_UNORDERED_ACCESS_VIEW_DESC));
-
+			D3D11_UNORDERED_ACCESS_VIEW_DESC unorderedAccessViewDesc = {};
 			unorderedAccessViewDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+			unorderedAccessViewDesc.Buffer.FirstElement = 0;
 
 			if (isRaw)
 			{
 				unorderedAccessViewDesc.Format = DXGI_FORMAT_R32_TYPELESS;
-				unorderedAccessViewDesc.Buffer.FirstElement = 0;
 				unorderedAccessViewDesc.Buffer.NumElements = byteCount / sizeof(uint32_t);
 				unorderedAccessViewDesc.Buffer.Flags = D3D11_BUFFER_UAV_FLAG_RAW;
 			}
 			else
 			{
 				unorderedAccessViewDesc.Format = static_cast<DXGI_FORMAT>(properties.format);
-				unorderedAccessViewDesc.Buffer.FirstElement = 0;
 				unorderedAccessViewDesc.Buffer.NumElements = m_ElementCount;
 			}
 
@@ -216,11 +192,9 @@ namespace Blueberry
 			}
 		}
 
-		if (HasFlag(properties.usageFlags, BufferUsageFlags::CPUReadable))
+		if (isReadable)
 		{
-			D3D11_BUFFER_DESC stagingBufferDesc;
-			ZeroMemory(&stagingBufferDesc, sizeof(D3D11_BUFFER_DESC));
-
+			D3D11_BUFFER_DESC stagingBufferDesc = {};
 			stagingBufferDesc.Usage = D3D11_USAGE_STAGING;
 			stagingBufferDesc.ByteWidth = bufferDesc.ByteWidth;
 			stagingBufferDesc.BindFlags = 0;

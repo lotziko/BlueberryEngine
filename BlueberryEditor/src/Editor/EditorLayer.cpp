@@ -83,7 +83,6 @@ namespace Blueberry
 
 		WindowEvents::GetWindowResized().AddCallback<EditorLayer, &EditorLayer::OnWindowResize>(this);
 		WindowEvents::GetWindowFocused().AddCallback<EditorLayer, &EditorLayer::OnWindowFocus>(this);
-		WindowEvents::GetWindowUnfocused().AddCallback<EditorLayer, &EditorLayer::OnWindowUnfocus>(this);
 	}
 
 	void EditorLayer::OnDetach()
@@ -108,61 +107,53 @@ namespace Blueberry
 		}*/
 		WindowEvents::GetWindowResized().RemoveCallback<EditorLayer, &EditorLayer::OnWindowResize>(this);
 		WindowEvents::GetWindowFocused().RemoveCallback<EditorLayer, &EditorLayer::OnWindowFocus>(this);
-		WindowEvents::GetWindowUnfocused().RemoveCallback<EditorLayer, &EditorLayer::OnWindowUnfocus>(this);
 	}
 
 	void EditorLayer::OnUpdate()
 	{
-		if (m_Focused)
+		if (Application::IsRunning())
 		{
-			if (Application::IsRunning())
+			Scene* scene = EditorSceneManager::GetScene();
+			if (scene != nullptr)
 			{
-				Scene* scene = EditorSceneManager::GetScene();
-				if (scene != nullptr)
-				{
-					scene->FixedUpdate();
-					Physics::Update(Time::GetFixedDeltaTime());
-				}
+				scene->FixedUpdate();
+				Physics::Update(Time::GetFixedDeltaTime());
 			}
-			Audio::Update();
 		}
+		Audio::Update();
 	}
 
 	void EditorLayer::OnDraw()
 	{
-		if (m_Focused)
+		Scene* scene = EditorSceneManager::GetScene();
+		if (Application::IsRunning())
 		{
-			Scene* scene = EditorSceneManager::GetScene();
-			if (Application::IsRunning())
+			if (scene != nullptr)
 			{
-				if (scene != nullptr)
-				{
-					scene->Update();
-				}
-
-				SceneArea::RequestRedrawAll();
+				scene->Update();
 			}
 
-			GfxDevice::ClearColor({ 0, 0, 0, 1 });
-
-			//OpenXRRenderer::BeginFrame();
-			ImGuiRenderer::Begin();
-			DrawMenuBar();
-			DrawDockSpace();
-			ImGuiRenderer::End();
-			//OpenXRRenderer::EndFrame();
-
-			GfxDevice::SwapBuffers();
-			
-			if (s_FrameUpdateRequested)
-			{
-				Time::EndFrame();
-				Timer::Update();
-				GfxTexturePool::Update();
-				s_FrameUpdateRequested = false;
-			}
-			EngineLayer::Update();
+			SceneArea::RequestRedrawAll();
 		}
+		
+		GfxDevice::SetRenderTarget(nullptr);
+		GfxDevice::ClearColor(Color(0.0f, 0.0f, 0.0f, 0.0f));
+
+		//OpenXRRenderer::BeginFrame();
+		ImGuiRenderer::Begin();
+		DrawMenuBar();
+		DrawDockSpace();
+		ImGuiRenderer::End();
+		//OpenXRRenderer::EndFrame();
+
+		if (s_FrameUpdateRequested)
+		{
+			Time::EndFrame();
+			Timer::Update();
+			GfxTexturePool::Update();
+			s_FrameUpdateRequested = false;
+		}
+		EngineLayer::Update();
 	}
 
 	void EditorLayer::OnWindowResize(const WindowResizeEventArgs& args)
@@ -180,13 +171,6 @@ namespace Blueberry
 		{
 			s_AssetsRefreshRequested = true;
 		}
-
-		m_Focused = true;
-	}
-
-	void EditorLayer::OnWindowUnfocus()
-	{
-		m_Focused = false;
 	}
 
 	void EditorLayer::RequestFrameUpdate()

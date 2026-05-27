@@ -4,21 +4,13 @@
 #include "HLSLShaderProcessor.h"
 
 #include "Blueberry\Tools\StringHelper.h"
+#include "Blueberry\Tools\FileHelper.h"
 
 #include <filesystem>
 #include <fstream>
 
 namespace Blueberry
 {
-	HLSLComputeShaderProcessor::~HLSLComputeShaderProcessor()
-	{
-		for (auto& blob : m_Blobs)
-		{
-			blob.Reset();
-		}
-		m_Blobs.clear();
-	}
-
 	bool HLSLComputeShaderProcessor::Compile(const String& path)
 	{
 		ComputeShaderCompilationData compilationData = {};
@@ -29,12 +21,11 @@ namespace Blueberry
 				ComPtr<ID3DBlob> computeBlob;
 				if (!Compile(compilationData.shaderCode, compilationData.computeEntryPoints[i].c_str(), "cs_5_0", computeBlob))
 				{
-					m_Blobs.push_back(nullptr);
-					m_Shaders.push_back(nullptr);
-					continue;
+					return false;
 				}
-				m_Blobs.push_back(computeBlob);
-				m_Shaders.push_back(computeBlob.Get());
+				ByteData data(computeBlob->GetBufferSize());
+				memcpy(data.data(), computeBlob->GetBufferPointer(), computeBlob->GetBufferSize());
+				m_Shaders.push_back(std::move(data));
 			}
 			m_ComputeShaderData.SetKernels(compilationData.dataKernels);
 		}
@@ -50,21 +41,17 @@ namespace Blueberry
 		std::filesystem::path indexesPath = folderPath;
 		indexesPath.append("indexes");
 
-		uint32_t blobsCount = static_cast<uint32_t>(m_Blobs.size());
+		uint32_t blobsCount = static_cast<uint32_t>(m_Shaders.size());
 		std::ofstream output;
 		output.open(indexesPath, std::ofstream::binary);
 		output.write(reinterpret_cast<char*>(&blobsCount), sizeof(uint32_t));
 		output.close();
 
-		for (size_t i = 0; i < m_Blobs.size(); ++i)
+		for (size_t i = 0; i < m_Shaders.size(); ++i)
 		{
 			std::filesystem::path path = folderPath;
 			path.append(std::to_string(i));
-			ComPtr<ID3DBlob> blob = m_Blobs[i];
-			if (blob != nullptr && blob->GetBufferSize() > 0)
-			{
-				D3DWriteBlobToFile(blob.Get(), StringHelper::StringToWide(StringHelper::ToString(path)).c_str(), true);
-			}
+			FileHelper::Save(m_Shaders[i], StringHelper::ToString(path));
 		}
 	}
 
@@ -87,14 +74,13 @@ namespace Blueberry
 				std::filesystem::path path = folderPath;
 				path.append(std::to_string(i));
 				String stringPath = StringHelper::ToString(path);
-				HRESULT hr = D3DReadFileToBlob(StringHelper::StringToWide(stringPath).c_str(), blob.GetAddressOf());
-				if (FAILED(hr))
+				if (!std::filesystem::exists(path))
 				{
-					BB_ERROR("Failed to load shader: " + String(stringPath.begin(), stringPath.end()));
+					BB_ERROR("Failed to load shader: " << stringPath);
 					return false;
 				}
-				m_Blobs.push_back(blob);
-				m_Shaders.push_back(blob.Get());
+				ByteData data = FileHelper::LoadBinary(stringPath);
+				m_Shaders.push_back(std::move(data));
 			}
 			return true;
 		}
@@ -106,7 +92,7 @@ namespace Blueberry
 		return m_ComputeShaderData;
 	}
 
-	const List<void*>& HLSLComputeShaderProcessor::GetShaders()
+	const List<ByteData>& HLSLComputeShaderProcessor::GetShaders()
 	{
 		return m_Shaders;
 	}

@@ -21,6 +21,7 @@ namespace Blueberry
 		virtual int GetWidth() const final;
 		virtual int GetHeight() const final;
 		virtual void SetCursor(bool visible) final;
+		virtual bool IsFocused() const final;
 
 		LRESULT WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
@@ -38,5 +39,6 @@ namespace Blueberry
 		int m_Height = 0;
 		bool m_IsSizeDirty = false;
 		bool m_IsCursorVisible = true;
+		bool m_IsFocused = true;
 	};
 }

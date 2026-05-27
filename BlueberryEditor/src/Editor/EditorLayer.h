@@ -18,7 +18,6 @@ namespace Blueberry
 
 		void OnWindowResize(const WindowResizeEventArgs& args);
 		void OnWindowFocus();
-		void OnWindowUnfocus();
 
 		static void RequestFrameUpdate();
 
@@ -28,8 +27,6 @@ namespace Blueberry
 		void Refresh();
 
 	private:
-		bool m_Focused = true;
-
 		static bool s_FrameUpdateRequested;
 		static bool s_AssetsRefreshRequested;
 	};

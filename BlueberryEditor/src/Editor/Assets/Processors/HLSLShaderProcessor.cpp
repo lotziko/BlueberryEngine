@@ -44,15 +44,6 @@ namespace Blueberry
 		return S_OK;
 	}
 
-	HLSLShaderProcessor::~HLSLShaderProcessor()
-	{
-		for (auto& blob : m_Blobs)
-		{
-			blob.Reset();
-		}
-		m_Blobs.clear();
-	}
-
 	bool HLSLShaderProcessor::Compile(const String& path)
 	{
 		ShaderCompilationData compilationData = {};
@@ -91,9 +82,10 @@ namespace Blueberry
 						{
 							return false;
 						}
-						m_VariantsData.shaders.push_back(vertexBlob.Get());
-						m_VariantsData.vertexShaderIndices.push_back(static_cast<uint32_t>(m_Blobs.size()));
-						m_Blobs.push_back(vertexBlob);
+						ByteData data(vertexBlob->GetBufferSize());
+						memcpy(data.data(), vertexBlob->GetBufferPointer(), vertexBlob->GetBufferSize());
+						m_VariantsData.vertexShaderIndices.push_back(static_cast<uint32_t>(m_VariantsData.shaders.size()));
+						m_VariantsData.shaders.push_back(std::move(data));
 					}
 				}
 				else
@@ -110,9 +102,10 @@ namespace Blueberry
 					{
 						return false;
 					}
-					m_VariantsData.shaders.push_back(geometryBlob.Get());
-					m_VariantsData.geometryShaderIndices.push_back(static_cast<uint32_t>(m_Blobs.size()));
-					m_Blobs.push_back(geometryBlob);
+					ByteData data(geometryBlob->GetBufferSize());
+					memcpy(data.data(), geometryBlob->GetBufferPointer(), geometryBlob->GetBufferSize());
+					m_VariantsData.geometryShaderIndices.push_back(static_cast<uint32_t>(m_VariantsData.shaders.size()));
+					m_VariantsData.shaders.push_back(std::move(data));
 				}
 				else
 				{
@@ -145,9 +138,10 @@ namespace Blueberry
 						{
 							return false;
 						}
-						m_VariantsData.shaders.push_back(fragmentBlob.Get());
-						m_VariantsData.fragmentShaderIndices.push_back(static_cast<uint32_t>(m_Blobs.size()));
-						m_Blobs.push_back(fragmentBlob);
+						ByteData data(fragmentBlob->GetBufferSize());
+						memcpy(data.data(), fragmentBlob->GetBufferPointer(), fragmentBlob->GetBufferSize());
+						m_VariantsData.fragmentShaderIndices.push_back(static_cast<uint32_t>(m_VariantsData.shaders.size()));
+						m_VariantsData.shaders.push_back(std::move(data));
 					}
 				}
 				else
@@ -168,7 +162,7 @@ namespace Blueberry
 		uint32_t vertexShaderCount = static_cast<uint32_t>(m_VariantsData.vertexShaderIndices.size());
 		uint32_t geometryShaderCount = static_cast<uint32_t>(m_VariantsData.geometryShaderIndices.size());
 		uint32_t fragmentShaderCount = static_cast<uint32_t>(m_VariantsData.fragmentShaderIndices.size());
-		uint32_t blobsCount = static_cast<uint32_t>(m_Blobs.size());
+		uint32_t blobsCount = static_cast<uint32_t>(m_VariantsData.shaders.size());
 		std::ofstream output;
 		output.open(indexesPath, std::ofstream::binary);
 		output.write(reinterpret_cast<char*>(&vertexShaderCount), sizeof(uint32_t));
@@ -180,15 +174,11 @@ namespace Blueberry
 		output.write(reinterpret_cast<char*>(&blobsCount), sizeof(uint32_t));
 		output.close();
 
-		for (size_t i = 0; i < m_Blobs.size(); ++i)
+		for (size_t i = 0; i < m_VariantsData.shaders.size(); ++i)
 		{
 			std::filesystem::path path = folderPath;
 			path.append(std::to_string(i));
-			ComPtr<ID3DBlob> blob = m_Blobs[i];
-			if (blob->GetBufferSize() > 0)
-			{
-				D3DWriteBlobToFile(blob.Get(), StringHelper::StringToWide(StringHelper::ToString(path)).c_str(), true);
-			}
+			FileHelper::Save(m_VariantsData.shaders[i], StringHelper::ToString(path));
 		}
 	}
 
@@ -219,18 +209,16 @@ namespace Blueberry
 
 			for (uint32_t i = 0; i < blobsCount; ++i)
 			{
-				ComPtr<ID3DBlob> blob;
 				std::filesystem::path path = folderPath;
 				path.append(std::to_string(i));
 				String stringPath = StringHelper::ToString(path);
-				HRESULT hr = D3DReadFileToBlob(StringHelper::StringToWide(stringPath).c_str(), blob.GetAddressOf());
-				if (FAILED(hr))
+				if (!std::filesystem::exists(path))
 				{
-					BB_ERROR("Failed to load shader: " + String(stringPath.begin(), stringPath.end()));
+					BB_ERROR("Failed to load shader: " << stringPath);
 					return false;
 				}
-				m_Blobs.push_back(blob);
-				m_VariantsData.shaders.push_back(blob.Get());
+				ByteData data = FileHelper::LoadBinary(stringPath);
+				m_VariantsData.shaders.push_back(std::move(data));
 			}
 			return true;
 		}

@@ -2,7 +2,7 @@ Shader
 {
 	Pass
 	{
-		Blend SrcAlpha OneMinusSrcAlpha One Zero
+		Blend SrcAlpha OneMinusSrcAlpha One OneMinusSrcAlpha
 		ZWrite Off
 		ZTest Always
 		Cull None

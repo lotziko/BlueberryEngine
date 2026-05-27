@@ -12,7 +12,7 @@ namespace Blueberry
 
 	struct PerCameraExposureData
 	{
-		uint32_t recalculateTimer = 0;
+		float recalculateTimer = 0.0f;
 		float targetExposure = 0.15f;
 		float currentExposure = 0.15f;
 	};

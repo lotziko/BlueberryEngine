@@ -10,22 +10,22 @@ namespace Blueberry
 	class GfxComputeShaderDX11 : public GfxComputeShader
 	{
 	public:
-		GfxComputeShaderDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
-		virtual ~GfxComputeShaderDX11() final = default;
+		GfxComputeShaderDX11() = default;
+		virtual ~GfxComputeShaderDX11() = default;
 
-		bool Initialize(void* computeData);
+		bool Initialize(ID3D11Device* device, const ByteData& computeData);
 
 	private:
 		ComPtr<ID3D11ComputeShader> m_ComputeShader = nullptr;
 
-		ID3D11Device* m_Device;
-		ID3D11DeviceContext* m_DeviceContext;
+		List<std::pair<size_t, uint32_t>> m_ConstantBufferSlots = {};
+		List<std::pair<size_t, uint32_t>> m_TextureSRVSlots = {};
+		List<std::pair<size_t, uint32_t>> m_BufferSRVSlots = {};
+		List<std::pair<size_t, uint32_t>> m_TextureUAVSlots = {};
+		List<std::pair<size_t, uint32_t>> m_BufferUAVSlots = {};
+		List<std::pair<size_t, uint32_t>> m_SamplerSlots = {};
 
 		friend class GfxDeviceDX11;
-
-		List<size_t> m_SRVSlots = {};
-		List<size_t> m_UAVSlots = {};
-		List<size_t> m_ConstantBufferSlots = {};
-		List<size_t> m_SamplerSlots = {};
+		friend class GfxComputeRenderStateCacheDX11;
 	};
 }

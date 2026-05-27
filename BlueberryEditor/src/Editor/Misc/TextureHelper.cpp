@@ -404,7 +404,7 @@ namespace Blueberry
 			constantBuffer->SetData(reinterpret_cast<char*>(&constants), sizeof(constants));
 			GfxDevice::SetGlobalBuffer(TO_HASH("_ReflectionGenerationData"), constantBuffer);
 
-			GfxDevice::SetRenderTarget(temporaryTexture1, nullptr, i);
+			GfxDevice::SetRenderTarget(temporaryTexture1, nullptr, i, 0);
 			GfxDevice::SetViewport(0, 0, viewportSize, viewportSize);
 			GfxDevice::SetGlobalTexture(TO_HASH("_SourceTexture"), temporaryTexture0);
 			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_GenerateReflectionMaterial, 0));

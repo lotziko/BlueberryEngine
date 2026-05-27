@@ -52,7 +52,7 @@ namespace Blueberry
 		m_ComputeShaders.clear();
 	}
 
-	void ComputeShader::Initialize(const List<void*>& shaders)
+	void ComputeShader::Initialize(const List<ByteData>& shaders)
 	{
 		if (m_ComputeShaders.size() > 0)
 		{
@@ -67,10 +67,11 @@ namespace Blueberry
 		m_ComputeShaders.resize(computeShadersCount);
 		for (size_t i = 0; i < computeShadersCount; ++i)
 		{
-			if (shaders[i] != nullptr)
+			const ByteData& data = shaders[i];
+			if (data.size() > 0)
 			{
 				GfxComputeShader* computeShader;
-				GfxDevice::CreateComputeShader(shaders[i], computeShader);
+				GfxDevice::CreateComputeShader(data, computeShader);
 				m_ComputeShaders[i] = computeShader;
 			}
 			else
@@ -80,13 +81,13 @@ namespace Blueberry
 		}
 	}
 
-	void ComputeShader::Initialize(const List<void*>& shaders, const ComputeShaderData& data)
+	void ComputeShader::Initialize(const List<ByteData>& shaders, const ComputeShaderData& data)
 	{
 		Initialize(shaders);
 		m_Data = data;
 	}
 
-	ComputeShader* ComputeShader::Create(const List<void*>& shaders, const ComputeShaderData& shaderData)
+	ComputeShader* ComputeShader::Create(const List<ByteData>& shaders, const ComputeShaderData& shaderData)
 	{
 		ComputeShader* shader = Object::Create<ComputeShader>();
 		shader->Initialize(shaders, shaderData);

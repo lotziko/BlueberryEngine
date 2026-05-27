@@ -8,6 +8,7 @@
 #include "Blueberry\Scene\Components\SkyRenderer.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\DefaultMaterials.h"
+#include "Blueberry\Graphics\DefaultShaders.h"
 #include "Blueberry\Graphics\Concrete\DefaultRenderer.h"
 #include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Graphics\Material.h"
@@ -45,12 +46,20 @@ namespace Blueberry
 			m_Camera->SetFieldOfView(15.0f);
 			m_Camera->SetPixelSize(Vector2(static_cast<float>(target->GetWidth()), static_cast<float>(target->GetHeight())));
 			m_Camera->SetCameraType(CameraType::Preview);
+			m_Camera->SetBackgroundColor(Color(0.0f, 0.0f, 0.0f, 1.0f));
 
 			Entity* skyEntity = m_Scene->CreateEntity("Sky");
 			SkyRenderer* skyRenderer = skyEntity->AddComponent<SkyRenderer>();
 			skyRenderer->SetAmbientColor(Color(0.01f, 0.01f, 0.01f, 1));
 		}
-		m_Renderer->SetMaterial(material);
-		DefaultRenderer::Draw(m_Scene, m_Camera, Rectangle(0, 0, target->GetWidth(), target->GetHeight()), target, nullptr);
+		if (material->GetShader() == DefaultShaders::GetSkybox())
+		{
+			// TODO
+		}
+		else
+		{
+			m_Renderer->SetMaterial(material);
+			DefaultRenderer::Draw(m_Scene, m_Camera, Rectangle(0, 0, target->GetWidth(), target->GetHeight()), target, nullptr);
+		}
 	}
 }

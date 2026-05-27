@@ -18,9 +18,8 @@ namespace Blueberry
 
 	GfxDeviceDX11::~GfxDeviceDX11()
 	{
-		m_LayoutCache.Shutdown();
 		m_SwapChain = nullptr;
-		m_RenderTargetView = nullptr;
+		m_BackbufferRenderTargetView = nullptr;
 		m_DeviceContext = nullptr;
 		m_FrameLatencyWaitHandle = nullptr;
 	}
@@ -31,17 +30,17 @@ namespace Blueberry
 			return false;
 
 		m_StateCache = GfxRenderStateCacheDX11(this);
-		m_LayoutCache = GfxInputLayoutCacheDX11();
+		m_ComputeStateCache = GfxComputeRenderStateCacheDX11(this);
 		m_BindedTextures.reserve(64);
 
 		return true;
 	}
 
-	void GfxDeviceDX11::ClearColorImpl(const Color& color) const
+	void GfxDeviceDX11::ClearColorImpl(const Color& color)
 	{
 		if (m_BindedRenderTarget == nullptr)
 		{
-			m_DeviceContext->ClearRenderTargetView(m_RenderTargetView.Get(), color);
+			m_DeviceContext->ClearRenderTargetView(m_BackbufferRenderTargetView.Get(), color);
 		}
 		else
 		{
@@ -49,7 +48,7 @@ namespace Blueberry
 		}
 	}
 
-	void GfxDeviceDX11::ClearDepthImpl(float depth) const
+	void GfxDeviceDX11::ClearDepthImpl(float depth)
 	{
 		if (m_BindedDepthStencil != nullptr)
 		{
@@ -57,7 +56,7 @@ namespace Blueberry
 		}
 	}
 
-	void GfxDeviceDX11::WaitForFrameImpl() const
+	void GfxDeviceDX11::WaitForFrameImpl()
 	{
 		if (BUFFER_COUNT > 1)
 		{
@@ -73,9 +72,7 @@ namespace Blueberry
 
 	void GfxDeviceDX11::SetViewportImpl(int x, int y, int width, int height)
 	{
-		D3D11_VIEWPORT viewport;
-		ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
-
+		D3D11_VIEWPORT viewport = {};
 		viewport.TopLeftX = static_cast<FLOAT>(x);
 		viewport.TopLeftY = static_cast<FLOAT>(y);
 		viewport.Width = static_cast<FLOAT>(width);
@@ -90,8 +87,7 @@ namespace Blueberry
 	{
 		if (width > 0)
 		{
-			D3D11_RECT rect;
-
+			D3D11_RECT rect = {};
 			rect.left = x;
 			rect.right = x + width;
 			rect.top = y;
@@ -108,46 +104,31 @@ namespace Blueberry
 	void GfxDeviceDX11::ResizeBackbufferImpl(int width, int height)
 	{
 		m_DeviceContext->OMSetRenderTargets(0, 0, 0);
-		m_RenderTargetView->Release();
+		m_BackbufferRenderTargetView->Release();
 
-		HRESULT hr;
-
-		hr = m_SwapChain->ResizeBuffers(BUFFER_COUNT, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, BUFFER_COUNT > 1 ? DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT : 0);
+		HRESULT hr = m_SwapChain->ResizeBuffers(BUFFER_COUNT, width, height, DXGI_FORMAT_R8G8B8A8_UNORM, BUFFER_COUNT > 1 ? DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT : 0);
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "ResizeBuffers failed."));
 			return;
 		}
 
-		ID3D11Texture2D* backBuffer;
-		hr = m_SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&backBuffer));
+		ComPtr<ID3D11Texture2D> backBuffer;
+		hr = m_SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(backBuffer.GetAddressOf()));
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "GetBuffer failed."));
 			return;
 		}
 
-		hr = m_Device->CreateRenderTargetView(backBuffer, NULL, m_RenderTargetView.GetAddressOf());
+		hr = m_Device->CreateRenderTargetView(backBuffer.Get(), NULL, m_BackbufferRenderTargetView.GetAddressOf());
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create render target view."));
 			return;
 		}
-		backBuffer->Release();
 
-		m_DeviceContext->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), NULL);
-		
-		D3D11_VIEWPORT viewport;
-		ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
-
-		viewport.TopLeftX = 0;
-		viewport.TopLeftY = 0;
-		viewport.Width = static_cast<FLOAT>(width);
-		viewport.Height = static_cast<FLOAT>(height);
-		viewport.MinDepth = 0.0f;
-		viewport.MaxDepth = 1.0f;
-
-		m_DeviceContext->RSSetViewports(1, &viewport);
+		m_DeviceContext->OMSetRenderTargets(1, m_BackbufferRenderTargetView.GetAddressOf(), NULL);
 	}
 
 	uint32_t GfxDeviceDX11::GetViewCountImpl()
@@ -166,7 +147,7 @@ namespace Blueberry
 		m_SlopeDepthBias = slopeBias;
 	}
 
-	bool GfxDeviceDX11::CreateVertexShaderImpl(void* vertexData, GfxVertexShader*& shader)
+	bool GfxDeviceDX11::CreateVertexShaderImpl(const ByteData& vertexData, GfxVertexShader*& shader)
 	{
 		auto dxShader = new GfxVertexShaderDX11();
 		if (!dxShader->Initialize(m_Device.Get(), vertexData))
@@ -177,7 +158,7 @@ namespace Blueberry
 		return true;
 	}
 
-	bool GfxDeviceDX11::CreateGeometryShaderImpl(void* geometryData, GfxGeometryShader*& shader)
+	bool GfxDeviceDX11::CreateGeometryShaderImpl(const ByteData& geometryData, GfxGeometryShader*& shader)
 	{
 		auto dxShader = new GfxGeometryShaderDX11();
 		if (!dxShader->Initialize(m_Device.Get(), geometryData))
@@ -188,7 +169,7 @@ namespace Blueberry
 		return true;
 	}
 
-	bool GfxDeviceDX11::CreateFragmentShaderImpl(void* fragmentData, GfxFragmentShader*& shader)
+	bool GfxDeviceDX11::CreateFragmentShaderImpl(const ByteData& fragmentData, GfxFragmentShader*& shader)
 	{
 		auto dxShader = new GfxFragmentShaderDX11();
 		if (!dxShader->Initialize(m_Device.Get(), fragmentData))
@@ -199,10 +180,10 @@ namespace Blueberry
 		return true;
 	}
 
-	bool GfxDeviceDX11::CreateComputeShaderImpl(void* computeData, GfxComputeShader*& shader)
+	bool GfxDeviceDX11::CreateComputeShaderImpl(const ByteData& computeData, GfxComputeShader*& shader)
 	{
-		auto dxShader = new GfxComputeShaderDX11(m_Device.Get(), m_DeviceContext.Get());
-		if (!dxShader->Initialize(computeData))
+		auto dxShader = new GfxComputeShaderDX11();
+		if (!dxShader->Initialize(m_Device.Get(), computeData))
 		{
 			return false;
 		}
@@ -221,7 +202,7 @@ namespace Blueberry
 		return true;
 	}
 
-	bool GfxDeviceDX11::CreateTextureImpl(const TextureProperties& properties, GfxTexture*& texture) const
+	bool GfxDeviceDX11::CreateTextureImpl(const TextureProperties& properties, GfxTexture*& texture)
 	{
 		GfxTextureDX11* dxTexture = new GfxTextureDX11(m_Device.Get(), m_DeviceContext.Get());
 		if (!dxTexture->Initialize(properties))
@@ -232,14 +213,14 @@ namespace Blueberry
 		return true;
 	}
 
-	void GfxDeviceDX11::CopyImpl(GfxTexture* source, GfxTexture* target) const
+	void GfxDeviceDX11::CopyImpl(GfxTexture* source, GfxTexture* target)
 	{
 		m_DeviceContext->CopyResource(static_cast<GfxTextureDX11*>(target)->m_Texture.Get(), static_cast<GfxTextureDX11*>(source)->m_Texture.Get());
 	}
 
-	void GfxDeviceDX11::CopyImpl(GfxTexture* source, GfxTexture* target, const Rectangle& area) const
+	void GfxDeviceDX11::CopyImpl(GfxTexture* source, GfxTexture* target, const Rectangle& area)
 	{
-		D3D11_BOX src;
+		D3D11_BOX src = {};
 		src.left = static_cast<UINT>(area.x);
 		src.top = static_cast<UINT>(area.y);
 		src.right = static_cast<UINT>(area.x + area.width);
@@ -250,9 +231,9 @@ namespace Blueberry
 		m_DeviceContext->CopySubresourceRegion(static_cast<GfxTextureDX11*>(target)->m_Texture.Get(), 0, 0, 0, 0, static_cast<GfxTextureDX11*>(source)->m_Texture.Get(), 0, &src);
 	}
 
-	void GfxDeviceDX11::CopyImpl(GfxTexture* source, GfxTexture* target, const Vector2Int& offset, const Rectangle& area) const
+	void GfxDeviceDX11::CopyImpl(GfxTexture* source, GfxTexture* target, const Vector2Int& offset, const Rectangle& area)
 	{
-		D3D11_BOX src;
+		D3D11_BOX src = {};
 		src.left = static_cast<UINT>(area.x);
 		src.top = static_cast<UINT>(area.y);
 		src.right = static_cast<UINT>(area.x + area.width);
@@ -263,7 +244,7 @@ namespace Blueberry
 		m_DeviceContext->CopySubresourceRegion(static_cast<GfxTextureDX11*>(target)->m_Texture.Get(), static_cast<UINT>(offset.x), static_cast<UINT>(offset.y), 0, 0, static_cast<GfxTextureDX11*>(source)->m_Texture.Get(), 0, &src);
 	}
 
-	void GfxDeviceDX11::CopyImpl(GfxTexture* source, GfxTexture* target, uint32_t sourceSlice, uint32_t targetSlice, uint32_t mipLevel) const
+	void GfxDeviceDX11::CopyImpl(GfxTexture* source, GfxTexture* target, uint32_t sourceSlice, uint32_t targetSlice, uint32_t mipLevel)
 	{
 		GfxTextureDX11* dxSource = static_cast<GfxTextureDX11*>(source);
 		GfxTextureDX11* dxTarget = static_cast<GfxTextureDX11*>(target);
@@ -274,20 +255,22 @@ namespace Blueberry
 		m_DeviceContext->CopySubresourceRegion(dxTarget->m_Texture.Get(), targetSubresource, 0, 0, 0, dxSource->m_Texture.Get(), sourceSubresource, NULL);
 	}
 
-	void GfxDeviceDX11::SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture)
-	{
-		SetRenderTargetImpl(renderTexture, depthStencilTexture, UINT32_MAX);
-	}
-
-	void GfxDeviceDX11::SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, uint32_t slice)
+	void GfxDeviceDX11::SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, uint32_t arraySlice, uint32_t mipLevel)
 	{
 		Clear();
 
-		ID3D11RenderTargetView** renderTarget = nullptr;
+		ID3D11RenderTargetView* renderTargets[1] = {};
 		if (renderTexture != nullptr)
 		{
 			GfxTextureDX11* dxRenderTarget = static_cast<GfxTextureDX11*>(renderTexture);
-			renderTarget = slice == UINT32_MAX ? dxRenderTarget->m_RenderTargetView.GetAddressOf() : dxRenderTarget->m_SlicesRenderTargetViews[slice].GetAddressOf();
+			if (arraySlice || mipLevel)
+			{
+				renderTargets[0] = dxRenderTarget->GetRTV(arraySlice, mipLevel);
+			}
+			else
+			{
+				renderTargets[0] = dxRenderTarget->GetRTV();
+			}
 			m_BindedRenderTarget = dxRenderTarget;
 		}
 		else
@@ -306,13 +289,13 @@ namespace Blueberry
 			m_BindedDepthStencil = nullptr;
 		}
 
-		if (renderTarget == nullptr && depthStencil == nullptr)
+		if (renderTargets[0] == nullptr && depthStencil == nullptr)
 		{
-			m_DeviceContext->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), NULL);
+			m_DeviceContext->OMSetRenderTargets(1, m_BackbufferRenderTargetView.GetAddressOf(), NULL);
 		}
 		else
 		{
-			m_DeviceContext->OMSetRenderTargets(renderTarget == nullptr ? 0 : 1, renderTarget, depthStencil);
+			m_DeviceContext->OMSetRenderTargets(renderTargets[0] == nullptr ? 0 : 1, renderTargets, depthStencil);
 		}
 	}
 
@@ -324,12 +307,10 @@ namespace Blueberry
 			if (pair.first == id)
 			{
 				pair.second = dxBuffer->m_Index;
-				m_CurrentCrc = UINT32_MAX;
 				return;
 			}
 		}
 		m_BindedBuffers.push_back(std::make_pair(id, dxBuffer->m_Index));
-		m_CurrentCrc = UINT32_MAX;
 	}
 
 	void GfxDeviceDX11::SetGlobalTextureImpl(size_t id, GfxTexture* texture)
@@ -340,24 +321,22 @@ namespace Blueberry
 			if (pair.first == id)
 			{
 				pair.second = dxTexture->m_Index;
-				m_CurrentCrc = UINT32_MAX;
 				return;
 			}
 		}
 		m_BindedTextures.push_back(std::make_pair(id, dxTexture->m_Index));
-		m_CurrentCrc = UINT32_MAX;
 	}
 
-	D3D11_PRIMITIVE_TOPOLOGY GetPrimitiveTopology(const Topology& topology)
+	D3D11_PRIMITIVE_TOPOLOGY GetPrimitiveTopologyD3D11(const Topology& topology)
 	{
 		switch (topology)
 		{
-		case Topology::Unknown:			return D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
-		case Topology::PointList:		return D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
-		case Topology::LineList:		return D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
-		case Topology::LineStrip:		return D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP;
-		case Topology::TriangleList:	return D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		default:						return D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
+		case Topology::Unknown: return D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
+		case Topology::PointList: return D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
+		case Topology::LineList: return D3D_PRIMITIVE_TOPOLOGY_LINELIST;
+		case Topology::LineStrip: return D3D_PRIMITIVE_TOPOLOGY_LINESTRIP;
+		case Topology::TriangleList: return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+		default: return D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
 		}
 	}
 
@@ -368,19 +347,17 @@ namespace Blueberry
 			return;
 		}
 
-		const GfxRenderStateDX11 renderState = m_StateCache.GetState(operation.material, operation.passIndex, operation.isCounterClockwise, operation.isSolid);
+		const GfxRenderStateDX11 renderState = m_StateCache.GetState(operation.material, operation.passIndex, operation.layout, operation.isCounterClockwise, operation.isSolid);
 		
 		if (!renderState.isValid)
 		{
 			return;
 		}
 
-		ID3D11InputLayout* inputLayout = m_LayoutCache.GetLayout(renderState.dxVertexShader, operation.layout);
-
-		if (inputLayout != m_InputLayout)
+		if (renderState.inputLayout != m_InputLayout)
 		{
-			m_DeviceContext->IASetInputLayout(inputLayout);
-			m_InputLayout = inputLayout;
+			m_DeviceContext->IASetInputLayout(renderState.inputLayout);
+			m_InputLayout = renderState.inputLayout;
 		}
 		if (renderState.vertexShader != m_RenderState.vertexShader)
 		{
@@ -449,7 +426,7 @@ namespace Blueberry
 		if (m_Topology != operation.topology)
 		{
 			m_Topology = operation.topology;
-			m_DeviceContext->IASetPrimitiveTopology(GetPrimitiveTopology(operation.topology));
+			m_DeviceContext->IASetPrimitiveTopology(GetPrimitiveTopologyD3D11(operation.topology));
 		}
 
 		auto dxVertexBuffer = static_cast<GfxBufferDX11*>(operation.vertexBuffer);
@@ -506,99 +483,40 @@ namespace Blueberry
 
 	void GfxDeviceDX11::DispatchImpl(GfxComputeShader* shader, uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ)
 	{
-		auto dxShader = static_cast<GfxComputeShaderDX11*>(shader);
-		if (dxShader == nullptr)
+		const GfxComputeRenderStateDX11 renderState = m_ComputeStateCache.GetRenderState(shader);
+
+		if (!renderState.isValid)
 		{
 			return;
 		}
-		for (auto& pair : m_BindedBuffers)
+
+		if (renderState.computeShader != m_ComputeRenderState.computeShader)
 		{
-			size_t id = pair.first;
-			auto dxBuffer = GfxBufferDX11::s_PointerCache.Get(pair.second);
-			if (dxBuffer == nullptr)
-			{
-				continue;
-			}
-			if (dxBuffer->m_IsConstant)
-			{
-				for (uint32_t i = 0; i < dxShader->m_ConstantBufferSlots.size(); ++i)
-				{
-					size_t slotId = dxShader->m_ConstantBufferSlots[i];
-					if (id == slotId)
-					{
-						m_DeviceContext->CSSetConstantBuffers(i, 1, dxBuffer->m_Buffer.GetAddressOf());
-						break;
-					}
-				}
-				continue;
-			}
-			if (dxBuffer->m_ShaderResourceView != nullptr)
-			{
-				for (uint32_t i = 0; i < dxShader->m_SRVSlots.size(); ++i)
-				{
-					size_t slotId = dxShader->m_SRVSlots[i];
-					if (id == slotId)
-					{
-						m_DeviceContext->CSSetShaderResources(i, 1, dxBuffer->m_ShaderResourceView.GetAddressOf());
-						break;
-					}
-				}
-			}
-			if (dxBuffer->m_UnorderedAccessView != nullptr)
-			{
-				for (uint32_t i = 0; i < dxShader->m_UAVSlots.size(); ++i)
-				{
-					size_t slotId = dxShader->m_UAVSlots[i];
-					if (id == slotId)
-					{
-						m_DeviceContext->CSSetUnorderedAccessViews(i, 1, dxBuffer->m_UnorderedAccessView.GetAddressOf(), NULL);
-						break;
-					}
-				}
-			}
+			m_DeviceContext->CSSetShader(renderState.computeShader, NULL, 0);
 		}
 		
-		for (auto& pair : m_BindedTextures)
+		if (renderState.constantBuffersCount > 0)
 		{
-			size_t id = pair.first;
-			auto dxTexture = GfxTextureDX11::s_PointerCache.Get(pair.second);
-			for (uint32_t i = 0; i < dxShader->m_SRVSlots.size(); ++i)
-			{
-				size_t slotId = dxShader->m_SRVSlots[i];
-				if (id == slotId)
-				{
-					m_DeviceContext->CSSetShaderResources(i, 1, dxTexture->m_ShaderResourceView.GetAddressOf());
-				}
-			}
-			for (uint32_t i = 0; i < dxShader->m_UAVSlots.size(); ++i)
-			{
-				size_t slotId = dxShader->m_UAVSlots[i];
-				if (id == slotId)
-				{
-					m_DeviceContext->CSSetUnorderedAccessViews(i, 1, dxTexture->m_UnorderedAccessView.GetAddressOf(), NULL);
-				}
-			}
-			for (uint32_t i = 0; i < dxShader->m_SamplerSlots.size(); ++i)
-			{
-				size_t slotId = dxShader->m_SamplerSlots[i];
-				if (id == slotId)
-				{
-					ID3D11SamplerState* samplerState = dxTexture->m_SamplerState.Get();
-					if (samplerState == nullptr)
-					{
-						samplerState = GetSamplerState(dxTexture->m_WrapMode, dxTexture->m_FilterMode);
-						dxTexture->m_SamplerState = samplerState;
-					}
-					m_DeviceContext->CSSetSamplers(i, 1, &samplerState);
-				}
-			}
+			m_DeviceContext->CSSetConstantBuffers(0, renderState.constantBuffersCount, renderState.constantBuffers);
 		}
-		m_DeviceContext->CSSetShader(dxShader->m_ComputeShader.Get(), NULL, 0);
+		if (renderState.shaderResourceViewsCount > 0)
+		{
+			m_DeviceContext->CSSetShaderResources(0, renderState.shaderResourceViewsCount, renderState.shaderResourceViews);
+		}
+		if (renderState.unorderedAccessViewsCount > 0)
+		{
+			m_DeviceContext->CSSetUnorderedAccessViews(0, renderState.unorderedAccessViewsCount, renderState.unorderedAccessViews, nullptr);
+		}
+		if (renderState.samplerStatesCount > 0)
+		{
+			m_DeviceContext->CSSetSamplers(0, renderState.samplerStatesCount, renderState.samplerStates);
+		}
+		
 		m_DeviceContext->Dispatch(threadGroupsX, threadGroupsY, threadGroupsZ);
-
 		m_DeviceContext->CSSetShaderResources(0, 16, m_EmptyShaderResourceViews);
 		m_DeviceContext->CSSetSamplers(0, 16, m_EmptySamplers);
 		m_DeviceContext->CSSetUnorderedAccessViews(0, 8, m_EmptyUnorderedAccessViews, NULL);
+		m_ComputeRenderState = renderState;
 	}
 
 	Matrix GfxDeviceDX11::GetGPUMatrixImpl(const Matrix& matrix) const
@@ -625,7 +543,7 @@ namespace Blueberry
 	{
 		m_Hwnd = hwnd;
 
-		IDXGIFactory6* dxgiFactory;
+		ComPtr<IDXGIFactory6> dxgiFactory;
 		HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(&dxgiFactory));
 
 		if (FAILED(hr))
@@ -650,38 +568,34 @@ namespace Blueberry
 			break;
 		}
 
-		dxgiFactory->Release();
+		DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
+		swapChainDesc.BufferDesc.Width = width;
+		swapChainDesc.BufferDesc.Height = height;
+		swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
+		swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
+		swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		swapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+		swapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
 
-		DXGI_SWAP_CHAIN_DESC scd;
-		ZeroMemory(&scd, sizeof(DXGI_SWAP_CHAIN_DESC));
+		swapChainDesc.SampleDesc.Count = 1;
+		swapChainDesc.SampleDesc.Quality = 0;
 
-		scd.BufferDesc.Width = width;
-		scd.BufferDesc.Height = height;
-		scd.BufferDesc.RefreshRate.Numerator = 60;
-		scd.BufferDesc.RefreshRate.Denominator = 1;
-		scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		scd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-		scd.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-
-		scd.SampleDesc.Count = 1;
-		scd.SampleDesc.Quality = 0;
-
-		scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		scd.BufferCount = BUFFER_COUNT;
-		scd.OutputWindow = hwnd;
-		scd.Windowed = TRUE;
-		scd.SwapEffect = BUFFER_COUNT > 1 ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_DISCARD;
-		scd.Flags = (BUFFER_COUNT > 1 ? DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT : 0) | DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+		swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+		swapChainDesc.BufferCount = BUFFER_COUNT;
+		swapChainDesc.OutputWindow = hwnd;
+		swapChainDesc.Windowed = TRUE;
+		swapChainDesc.SwapEffect = BUFFER_COUNT > 1 ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_DISCARD;
+		swapChainDesc.Flags = (BUFFER_COUNT > 1 ? DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT : 0) | DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
 		hr = D3D11CreateDeviceAndSwapChain(
 			adapter,
 			adapter == NULL ? D3D_DRIVER_TYPE_HARDWARE : D3D_DRIVER_TYPE_UNKNOWN, //hardware driver
 			NULL, //software driver
-			0, //no flags	// D3D11_CREATE_DEVICE_DEBUG does not work in runtime
+			D3D11_CREATE_DEVICE_DEBUG, //no flags	// D3D11_CREATE_DEVICE_DEBUG does not work in runtime
 			NULL, //feature levels
 			0, //no feature levels
 			D3D11_SDK_VERSION,
-			&scd, //swapchain description
+			&swapChainDesc, //swapchain description
 			m_SwapChain.GetAddressOf(), //m_SwapChain address
 			m_Device.GetAddressOf(), //m_Device address
 			NULL, //supported feature level
@@ -696,7 +610,7 @@ namespace Blueberry
 
 		if (BUFFER_COUNT > 1)
 		{
-			IDXGISwapChain2* swapChain2;
+			ComPtr<IDXGISwapChain2> swapChain2;
 			hr = m_SwapChain->QueryInterface(__uuidof(IDXGISwapChain2), (void**)&swapChain2);
 			if (FAILED(hr))
 			{
@@ -706,38 +620,24 @@ namespace Blueberry
 			swapChain2->SetMaximumFrameLatency(1);
 
 			m_FrameLatencyWaitHandle = swapChain2->GetFrameLatencyWaitableObject();
-			swapChain2->Release();
 		}
 		
-		ID3D11Texture2D* backBuffer;
-		hr = m_SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&backBuffer));
+		ComPtr<ID3D11Texture2D> backBuffer;
+		hr = m_SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(backBuffer.GetAddressOf()));
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "GetBuffer failed."));
 			return false;
 		}
 
-		hr = m_Device->CreateRenderTargetView(backBuffer, NULL, m_RenderTargetView.GetAddressOf());
+		hr = m_Device->CreateRenderTargetView(backBuffer.Get(), NULL, m_BackbufferRenderTargetView.GetAddressOf());
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create render target view."));
 			return false;
 		}
-		backBuffer->Release();
 
-		m_DeviceContext->OMSetRenderTargets(1, m_RenderTargetView.GetAddressOf(), NULL);
-
-		D3D11_VIEWPORT viewport;
-		ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
-
-		viewport.TopLeftX = 0;
-		viewport.TopLeftY = 0;
-		viewport.Width = static_cast<FLOAT>(width);
-		viewport.Height = static_cast<FLOAT>(height);
-		viewport.MinDepth = 0.0f;
-		viewport.MaxDepth = 1.0f;
-
-		m_DeviceContext->RSSetViewports(1, &viewport);
+		m_DeviceContext->OMSetRenderTargets(1, m_BackbufferRenderTargetView.GetAddressOf(), NULL);
 
 		m_BindedRenderTarget = nullptr;
 		m_BindedDepthStencil = nullptr;
@@ -789,10 +689,8 @@ namespace Blueberry
 			}
 		}
 
-		D3D11_RASTERIZER_DESC rasterizerDesc;
-		ZeroMemory(&rasterizerDesc, sizeof(D3D11_RASTERIZER_DESC));
-
-		rasterizerDesc.FillMode = isSolid ? D3D11_FILL_MODE::D3D11_FILL_SOLID : D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
+		D3D11_RASTERIZER_DESC rasterizerDesc = {};
+		rasterizerDesc.FillMode = isSolid ? D3D11_FILL_SOLID : D3D11_FILL_WIREFRAME;
 		rasterizerDesc.CullMode = static_cast<D3D11_CULL_MODE>(static_cast<uint32_t>(mode) + 1);
 		rasterizerDesc.FrontCounterClockwise = isCounterClockwise;
 		rasterizerDesc.MultisampleEnable = true;
@@ -815,11 +713,11 @@ namespace Blueberry
 	{
 		switch (blend)
 		{
-		case BlendMode::One: return D3D11_BLEND::D3D11_BLEND_ONE;
-		case BlendMode::Zero: return D3D11_BLEND::D3D11_BLEND_ZERO;
-		case BlendMode::SrcAlpha: return D3D11_BLEND::D3D11_BLEND_SRC_ALPHA;
-		case BlendMode::OneMinusSrcAlpha: return D3D11_BLEND::D3D11_BLEND_INV_SRC_ALPHA;
-		default: return D3D11_BLEND::D3D11_BLEND_ONE;
+		case BlendMode::One: return D3D11_BLEND_ONE;
+		case BlendMode::Zero: return D3D11_BLEND_ZERO;
+		case BlendMode::SrcAlpha: return D3D11_BLEND_SRC_ALPHA;
+		case BlendMode::OneMinusSrcAlpha: return D3D11_BLEND_INV_SRC_ALPHA;
+		default: return D3D11_BLEND_ONE;
 		}
 	}
 
@@ -834,14 +732,12 @@ namespace Blueberry
 			}
 		}
 
-		D3D11_BLEND_DESC blendDesc;
-		ZeroMemory(&blendDesc, sizeof(D3D11_BLEND_DESC));
-
 		D3D11_BLEND srcColor = GetBlend(blendSrcColor);
 		D3D11_BLEND srcAlpha = GetBlend(blendSrcAlpha);
-		D3D11_BLEND dstColor = GetBlend(blendDstAlpha);
+		D3D11_BLEND dstColor = GetBlend(blendDstColor);
 		D3D11_BLEND dstAlpha = GetBlend(blendDstAlpha);
 
+		D3D11_BLEND_DESC blendDesc = {};
 		blendDesc.AlphaToCoverageEnable = false;
 		blendDesc.RenderTarget[0].BlendEnable = true;
 		blendDesc.RenderTarget[0].SrcBlend = srcColor;
@@ -874,12 +770,10 @@ namespace Blueberry
 			}
 		}
 		
-		D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
-		ZeroMemory(&depthStencilDesc, sizeof(D3D11_DEPTH_STENCIL_DESC));
-
+		D3D11_DEPTH_STENCIL_DESC depthStencilDesc = {};
 		depthStencilDesc.DepthEnable = true;
 		depthStencilDesc.DepthWriteMask = zWrite == ZWrite::On ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
-		depthStencilDesc.DepthFunc = (D3D11_COMPARISON_FUNC)(static_cast<uint32_t>(zTest) + 1);
+		depthStencilDesc.DepthFunc = static_cast<D3D11_COMPARISON_FUNC>(static_cast<uint32_t>(zTest) + 1);
 
 		ComPtr<ID3D11DepthStencilState> state;
 		HRESULT hr = m_Device->CreateDepthStencilState(&depthStencilDesc, state.GetAddressOf());
@@ -923,17 +817,6 @@ namespace Blueberry
 		return D3D11_COMPARISON_NEVER;
 	}
 
-	uint32_t GfxTextureDX11::GetQualityLevel(const DXGI_FORMAT& format, uint32_t antiAliasing)
-	{
-		if (antiAliasing > 1)
-		{
-			uint32_t qualityLevels;
-			HRESULT hr = m_Device->CheckMultisampleQualityLevels(format, antiAliasing, &qualityLevels);
-			return qualityLevels - 1;
-		}
-		return 0;
-	}
-
 	ID3D11SamplerState* GfxDeviceDX11::GetSamplerState(WrapMode wrapMode, FilterMode filterMode)
 	{
 		size_t key = static_cast<size_t>(wrapMode) << 8 | static_cast<size_t>(filterMode) << 16;
@@ -945,12 +828,10 @@ namespace Blueberry
 			}
 		}
 
-		D3D11_SAMPLER_DESC samplerDesc;
-		ZeroMemory(&samplerDesc, sizeof(D3D11_SAMPLER_DESC));
-
 		D3D11_TEXTURE_ADDRESS_MODE adress = GetAdressMode(wrapMode);
 		D3D11_FILTER filter = GetFilter(filterMode);
 
+		D3D11_SAMPLER_DESC samplerDesc = {};
 		samplerDesc.Filter = filter;
 		samplerDesc.AddressU = adress;
 		samplerDesc.AddressV = adress;
@@ -970,22 +851,5 @@ namespace Blueberry
 		}
 		m_SamplerStates.push_back(std::make_pair(key, state));
 		return state.Get();
-	}
-
-	uint32_t GfxDeviceDX11::GetCRC()
-	{
-		if (m_CurrentCrc == UINT32_MAX)
-		{
-			m_CurrentCrc = 0;
-			for (auto& pair : m_BindedTextures)
-			{
-				m_CurrentCrc = CRCHelper::Calculate(&pair.second, sizeof(uint32_t), m_CurrentCrc);
-			}
-			for (auto& pair : m_BindedBuffers)
-			{
-				m_CurrentCrc = CRCHelper::Calculate(&pair.second, sizeof(uint32_t), m_CurrentCrc);
-			}
-		}
-		return m_CurrentCrc;
 	}
 }

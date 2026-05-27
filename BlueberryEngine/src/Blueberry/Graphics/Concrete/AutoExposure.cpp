@@ -1,5 +1,6 @@
 #include "AutoExposure.h"
 
+#include "Blueberry\Core\Time.h"
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Graphics\ComputeShader.h"
 #include "Blueberry\Graphics\GfxBuffer.h"
@@ -65,10 +66,11 @@ namespace Blueberry
 	void AutoExposure::Calculate(Camera* camera, GfxTexture* color, const Rectangle& viewport)
 	{
 		PerCameraExposureData& perCameraData = s_PerCameraData[camera->GetObjectId()];
-		
-		if (perCameraData.recalculateTimer == 0)
+
+		float deltaTime = Time::GetDeltaTime();
+		if (perCameraData.recalculateTimer <= 0.0f)
 		{
-			perCameraData.recalculateTimer = 60;
+			perCameraData.recalculateTimer = 1.0f;
 			float minLogLum = -8.0f / 2;
 			float maxLogLum = 3.5f / 2;
 
@@ -94,10 +96,9 @@ namespace Blueberry
 		}
 		else
 		{
-			--perCameraData.recalculateTimer;
+			perCameraData.recalculateTimer -= deltaTime;
 		}
 		float adaptationSpeed = 1.0f;
-		float deltaTime = 1.0f / 60.0f;
 		float t = 1.0f - std::expf(-adaptationSpeed * deltaTime);
 		perCameraData.currentExposure = Math::Lerp(perCameraData.currentExposure, perCameraData.targetExposure, t);
 	}

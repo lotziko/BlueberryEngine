@@ -314,7 +314,8 @@ namespace Blueberry
 		for (size_t i = 0; i < vertexShadersCount; ++i)
 		{
 			GfxVertexShader* vertexShader;
-			GfxDevice::CreateVertexShader(variantsData.shaders[variantsData.vertexShaderIndices[i]], vertexShader);
+			const ByteData& data = variantsData.shaders[variantsData.vertexShaderIndices[i]];
+			GfxDevice::CreateVertexShader(data, vertexShader);
 			m_VertexShaders[i] = vertexShader;
 		}
 
@@ -326,7 +327,8 @@ namespace Blueberry
 			uint32_t index = variantsData.geometryShaderIndices[i];
 			if (index != -1)
 			{
-				GfxDevice::CreateGeometryShader(variantsData.shaders[index], geometryShader);
+				const ByteData& data = variantsData.shaders[index];
+				GfxDevice::CreateGeometryShader(data, geometryShader);
 			}
 			m_GeometryShaders[i] = geometryShader;
 		}
@@ -336,7 +338,8 @@ namespace Blueberry
 		for (size_t i = 0; i < fragmentShadersCount; ++i)
 		{
 			GfxFragmentShader* fragmentShader;
-			GfxDevice::CreateFragmentShader(variantsData.shaders[variantsData.fragmentShaderIndices[i]], fragmentShader);
+			const ByteData& data = variantsData.shaders[variantsData.fragmentShaderIndices[i]];
+			GfxDevice::CreateFragmentShader(data, fragmentShader);
 			m_FragmentShaders[i] = fragmentShader;
 		}
 		IncrementUpdateCount();

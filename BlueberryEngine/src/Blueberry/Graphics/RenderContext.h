@@ -66,6 +66,7 @@ namespace Blueberry
 		uint8_t passIndex;
 		SortingMode sortingMode;
 		ObjectsFilter objectsFilter;
+		bool useGI;
 	};
 
 	struct ShadowDrawingSettings

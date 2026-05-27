@@ -77,41 +77,56 @@ namespace Blueberry
 		RmlUiRenderData* renderData = RmlUiRenderer::s_CurrentData;
 		if (renderData->m_IsDirty)
 		{
-			if (renderData->m_VertexBuffer == nullptr)
+			if (renderData->m_VertexBuffer == nullptr || renderData->m_VertexBuffer->GetElementCount() < renderData->m_VertexCount)
 			{
+				if (renderData->m_VertexBuffer != nullptr)
+				{
+					delete renderData->m_VertexBuffer;
+				}
+
+				uint32_t elementCount = Math::NextDivisableBy(std::max(static_cast<uint32_t>(renderData->m_VertexCount), 1u), 2048u);
 				BufferProperties vertexBufferProperties = {};
-				vertexBufferProperties.elementCount = 2048;
+				vertexBufferProperties.elementCount = elementCount;
 				vertexBufferProperties.elementSize = sizeof(RmlUiVertex);
 				vertexBufferProperties.usageFlags = BufferUsageFlags::VertexBuffer | BufferUsageFlags::CPUWritable;
 				GfxDevice::CreateBuffer(vertexBufferProperties, renderData->m_VertexBuffer);
+				renderData->m_VertexData.resize(elementCount);
+			}
 
+			if (renderData->m_IndexBuffer == nullptr || renderData->m_IndexBuffer->GetElementCount() < renderData->m_IndexCount)
+			{
+				if (renderData->m_IndexBuffer != nullptr)
+				{
+					delete renderData->m_IndexBuffer;
+				}
+
+				uint32_t elementCount = Math::NextDivisableBy(std::max(static_cast<uint32_t>(renderData->m_IndexCount), 1u), 2048u);
 				BufferProperties indexBufferProperties = {};
-				indexBufferProperties.elementCount = 2048;
+				indexBufferProperties.elementCount = elementCount;
 				indexBufferProperties.elementSize = sizeof(int);
 				indexBufferProperties.usageFlags = BufferUsageFlags::IndexBuffer | BufferUsageFlags::CPUWritable;
 				GfxDevice::CreateBuffer(indexBufferProperties, renderData->m_IndexBuffer);
+				renderData->m_IndexData.resize(elementCount);
 			}
 
-			char* vertexPtr = static_cast<char*>(renderData->m_VertexBuffer->Map());
-			if (vertexPtr != nullptr)
+			char* vertexPtr = reinterpret_cast<char*>(renderData->m_VertexData.data());
+			size_t vertexOffset = 0;
+			for (size_t i = 0; i < renderData->m_Geometry.size(); ++i)
 			{
-				size_t vertexOffset = 0;
-				for (size_t i = 0; i < renderData->m_Geometry.size(); ++i)
+				RmlUiGeometryData& data = renderData->m_Geometry[i];
+				if (data.isValid)
 				{
-					RmlUiGeometryData& data = renderData->m_Geometry[i];
-					if (data.isValid)
-					{
-						data.vertexOffset = vertexOffset;
-						size_t dataSize = data.vertices.size() * sizeof(RmlUiVertex);
-						memcpy(vertexPtr, data.vertices.data(), dataSize);
-						vertexPtr += dataSize;
-						vertexOffset += data.vertices.size();
-					}
+					data.vertexOffset = vertexOffset;
+					size_t dataSize = data.vertices.size() * sizeof(RmlUiVertex);
+					memcpy(vertexPtr, data.vertices.data(), dataSize);
+					vertexPtr += dataSize;
+					vertexOffset += data.vertices.size();
 				}
-				renderData->m_VertexBuffer->Unmap();
 			}
+			renderData->m_VertexBuffer->SetData(renderData->m_VertexData.data(), renderData->m_VertexCount * sizeof(RmlUiVertex));
 
-			int* indexPtr = static_cast<int*>(renderData->m_IndexBuffer->Map());
+			int* indexPtr = reinterpret_cast<int*>(renderData->m_IndexData.data());
+			size_t indexDataSize = 0;
 			if (indexPtr != nullptr)
 			{
 				size_t indexOffset = 0;
@@ -129,9 +144,8 @@ namespace Blueberry
 						}
 					}
 				}
-				renderData->m_IndexBuffer->Unmap();
 			}
-
+			renderData->m_IndexBuffer->SetData(renderData->m_IndexData.data(), renderData->m_IndexCount * sizeof(int));
 			renderData->m_IsDirty = false;
 		}
 

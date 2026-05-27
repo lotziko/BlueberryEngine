@@ -2,6 +2,7 @@
 
 #include "GraphicsAPI.h"
 #include "..\..\Concrete\DX11\ImGuiRendererDX11.h"
+#include "..\..\Concrete\DX12\ImGuiRendererDX12.h"
 
 namespace Blueberry
 {
@@ -20,6 +21,10 @@ namespace Blueberry
 			return false;
 		case GraphicsAPI::API::DX11:
 			s_Instance = new ImGuiRendererDX11();
+			break;
+		case GraphicsAPI::API::DX12:
+			s_Instance = new ImGuiRendererDX12();
+			break;
 		}
 		return s_Instance->InitializeImpl();
 	}

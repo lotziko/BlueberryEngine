@@ -4,7 +4,7 @@
 #include "Concrete\Windows\ComPtr.h"
 
 #include "GfxRenderStateCacheDX11.h"
-#include "GfxInputLayoutCacheDX11.h"
+#include "GfxComputeRenderStateCacheDX11.h"
 #include "Concrete\DX11\DX11.h"
 
 namespace Blueberry
@@ -25,9 +25,9 @@ namespace Blueberry
 	protected:
 		virtual bool InitializeImpl(int width, int height, void* data) final;
 
-		virtual void ClearColorImpl(const Color& color) const final;
-		virtual void ClearDepthImpl(float depth) const final;
-		virtual void WaitForFrameImpl() const final;
+		virtual void ClearColorImpl(const Color& color) final;
+		virtual void ClearDepthImpl(float depth) final;
+		virtual void WaitForFrameImpl() final;
 		virtual void SwapBuffersImpl() final;
 
 		virtual void SetViewportImpl(int x, int y, int width, int height) final;
@@ -38,20 +38,19 @@ namespace Blueberry
 		virtual void SetViewCountImpl(uint32_t count) final;
 		virtual void SetDepthBiasImpl(uint32_t bias, float slopeBias) final;
 
-		virtual bool CreateVertexShaderImpl(void* vertexData, GfxVertexShader*& shader) final;
-		virtual bool CreateGeometryShaderImpl(void* geometryData, GfxGeometryShader*& shader) final;
-		virtual bool CreateFragmentShaderImpl(void* fragmentData, GfxFragmentShader*& shader) final;
-		virtual bool CreateComputeShaderImpl(void* computeData, GfxComputeShader*& shader) final;
+		virtual bool CreateVertexShaderImpl(const ByteData& vertexData, GfxVertexShader*& shader) final;
+		virtual bool CreateGeometryShaderImpl(const ByteData& geometryData, GfxGeometryShader*& shader) final;
+		virtual bool CreateFragmentShaderImpl(const ByteData& fragmentData, GfxFragmentShader*& shader) final;
+		virtual bool CreateComputeShaderImpl(const ByteData& computeData, GfxComputeShader*& shader) final;
 		virtual bool CreateBufferImpl(const BufferProperties& properties, GfxBuffer*& buffer) final;
-		virtual bool CreateTextureImpl(const TextureProperties& properties, GfxTexture*& texture) const final;
+		virtual bool CreateTextureImpl(const TextureProperties& properties, GfxTexture*& texture) final;
 
-		virtual void CopyImpl(GfxTexture* source, GfxTexture* target) const final;
-		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Rectangle& area) const final;
-		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Vector2Int& offset, const Rectangle& area) const final;
-		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, uint32_t sourceSlice, uint32_t targetSlice, uint32_t mipLevel) const final;
+		virtual void CopyImpl(GfxTexture* source, GfxTexture* target) final;
+		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Rectangle& area) final;
+		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Vector2Int& offset, const Rectangle& area) final;
+		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, uint32_t sourceSlice, uint32_t targetSlice, uint32_t mipLevel) final;
 
-		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture) final;
-		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, uint32_t slice) final;
+		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, uint32_t arraySlice, uint32_t mipLevel) final;
 		virtual void SetGlobalBufferImpl(size_t id, GfxBuffer* buffer) final;
 		virtual void SetGlobalTextureImpl(size_t id, GfxTexture* texture) final;
 		virtual void DrawImpl(const GfxDrawingOperation& operation) final;
@@ -75,14 +74,12 @@ namespace Blueberry
 		ID3D11DepthStencilState* GetDepthStencilState(ZTest zTest, ZWrite zWrite);
 		ID3D11SamplerState* GetSamplerState(WrapMode wrapMode, FilterMode filterMode);
 
-		uint32_t GetCRC();
-
 		HWND m_Hwnd;
 
 		ComPtr<ID3D11Device> m_Device;
 		ComPtr<ID3D11DeviceContext> m_DeviceContext;
 		ComPtr<IDXGISwapChain> m_SwapChain;
-		ComPtr<ID3D11RenderTargetView> m_RenderTargetView;
+		ComPtr<ID3D11RenderTargetView> m_BackbufferRenderTargetView;
 		HANDLE m_FrameLatencyWaitHandle;
 
 		List<std::pair<size_t, ComPtr<ID3D11RasterizerState>>> m_RasterizerStates;
@@ -98,11 +95,11 @@ namespace Blueberry
 		ID3D11SamplerState* m_EmptySamplers[16];
 		ID3D11UnorderedAccessView* m_EmptyUnorderedAccessViews[8];
 
-		uint32_t m_CurrentCrc = UINT32_MAX;
 		ID3D11InputLayout* m_InputLayout = nullptr;
 		GfxRenderStateDX11 m_RenderState = {};
 		GfxRenderStateCacheDX11 m_StateCache;
-		GfxInputLayoutCacheDX11 m_LayoutCache;
+		GfxComputeRenderStateDX11 m_ComputeRenderState = {};
+		GfxComputeRenderStateCacheDX11 m_ComputeStateCache;
 
 		GfxBufferDX11* m_VertexBuffer = nullptr;
 		GfxBufferDX11* m_IndexBuffer = nullptr;
@@ -115,6 +112,6 @@ namespace Blueberry
 		Topology m_Topology = (Topology)-1;
 
 		friend class GfxRenderStateCacheDX11;
-		friend class GfxInputLayoutCacheDX11;
+		friend class GfxComputeRenderStateCacheDX11;
 	};
 }

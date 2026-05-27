@@ -147,7 +147,7 @@ namespace Blueberry
 		List<uint32_t> geometryShaderIndices;
 		List<uint32_t> fragmentShaderIndices;
 
-		List<void*> shaders;
+		List<ByteData> shaders;
 	};
 
 	struct ShaderVariant

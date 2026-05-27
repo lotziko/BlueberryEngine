@@ -48,7 +48,8 @@ project "BlueberryEngine"
 		"Imgui",
 		"Jolt",
 		"RmlUi",
-		"%{Library.hbao}",
+		"%{Library.hbao11}",
+		"%{Library.hbao12}",
 		"%{Library.openxr}",
 	}
 

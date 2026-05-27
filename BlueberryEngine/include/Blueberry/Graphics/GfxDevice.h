@@ -37,10 +37,10 @@ namespace Blueberry
 		static void SetViewCount(uint32_t count);
 		static void SetDepthBias(uint32_t bias, float slopeBias);
 
-		static bool CreateVertexShader(void* vertexData, GfxVertexShader*& shader);
-		static bool CreateGeometryShader(void* geometryData, GfxGeometryShader*& shader);
-		static bool CreateFragmentShader(void* fragmentData, GfxFragmentShader*& shader);
-		static bool CreateComputeShader(void* computeData, GfxComputeShader*& shader);
+		static bool CreateVertexShader(const ByteData& vertexData, GfxVertexShader*& shader);
+		static bool CreateGeometryShader(const ByteData& geometryData, GfxGeometryShader*& shader);
+		static bool CreateFragmentShader(const ByteData& fragmentData, GfxFragmentShader*& shader);
+		static bool CreateComputeShader(const ByteData& computeData, GfxComputeShader*& shader);
 		static bool CreateBuffer(const BufferProperties& properties, GfxBuffer*& buffer);
 		static bool CreateTexture(const TextureProperties& properties, GfxTexture*& texture);
 
@@ -51,8 +51,8 @@ namespace Blueberry
 
 		static void SetRenderTarget(GfxTexture* renderTexture);
 		static void SetRenderTarget(GfxTexture* renderTexture, GfxTexture* depthStencilTexture);
-		static void SetRenderTarget(GfxTexture* renderTexture, uint32_t slice);
-		static void SetRenderTarget(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, uint32_t slice);
+		static void SetRenderTarget(GfxTexture* renderTexture, uint32_t arraySlice, uint32_t mipLevel);
+		static void SetRenderTarget(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, uint32_t arraySlice, uint32_t mipLevel);
 		static void SetGlobalBuffer(size_t id, GfxBuffer* buffer);
 		static void SetGlobalTexture(size_t id, GfxTexture* texture);
 		static void Draw(const GfxDrawingOperation& operation);
@@ -66,9 +66,9 @@ namespace Blueberry
 	protected:
 		virtual bool InitializeImpl(int width, int height, void* data) = 0;
 
-		virtual void ClearColorImpl(const Color& color) const = 0;
-		virtual void ClearDepthImpl(float depth) const = 0;
-		virtual void WaitForFrameImpl() const = 0;
+		virtual void ClearColorImpl(const Color& color) = 0;
+		virtual void ClearDepthImpl(float depth) = 0;
+		virtual void WaitForFrameImpl() = 0;
 		virtual void SwapBuffersImpl() = 0;
 
 		virtual void SetViewportImpl(int x, int y, int width, int height) = 0;
@@ -79,20 +79,19 @@ namespace Blueberry
 		virtual void SetViewCountImpl(uint32_t count) = 0;
 		virtual void SetDepthBiasImpl(uint32_t depthBias, float depthSlopeBias) = 0;
 
-		virtual bool CreateVertexShaderImpl(void* vertexData, GfxVertexShader*& shader) = 0;
-		virtual bool CreateGeometryShaderImpl(void* geometryData, GfxGeometryShader*& shader) = 0;
-		virtual bool CreateFragmentShaderImpl(void* fragmentData, GfxFragmentShader*& shader) = 0;
-		virtual bool CreateComputeShaderImpl(void* computeData, GfxComputeShader*& shader) = 0;
+		virtual bool CreateVertexShaderImpl(const ByteData& vertexData, GfxVertexShader*& shader) = 0;
+		virtual bool CreateGeometryShaderImpl(const ByteData& geometryData, GfxGeometryShader*& shader) = 0;
+		virtual bool CreateFragmentShaderImpl(const ByteData& fragmentData, GfxFragmentShader*& shader) = 0;
+		virtual bool CreateComputeShaderImpl(const ByteData& computeData, GfxComputeShader*& shader) = 0;
 		virtual bool CreateBufferImpl(const BufferProperties& properties, GfxBuffer*& buffer) = 0;
-		virtual bool CreateTextureImpl(const TextureProperties& properties, GfxTexture*& texture) const = 0;
+		virtual bool CreateTextureImpl(const TextureProperties& properties, GfxTexture*& texture) = 0;
 		
-		virtual void CopyImpl(GfxTexture* source, GfxTexture* target) const = 0;
-		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Rectangle& area) const = 0;
-		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Vector2Int& offset, const Rectangle& area) const = 0;
-		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, uint32_t sourceSlice, uint32_t targetSlice, uint32_t mipLevel) const = 0;
+		virtual void CopyImpl(GfxTexture* source, GfxTexture* target) = 0;
+		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Rectangle& area) = 0;
+		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Vector2Int& offset, const Rectangle& area) = 0;
+		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, uint32_t sourceSlice, uint32_t targetSlice, uint32_t mipLevel) = 0;
 
-		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture) = 0;
-		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, uint32_t slice) = 0;
+		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, uint32_t arraySlice, uint32_t mipLevel) = 0;
 		virtual void SetGlobalBufferImpl(size_t id, GfxBuffer* buffer) = 0;
 		virtual void SetGlobalTextureImpl(size_t id, GfxTexture* texture) = 0;
 		virtual void DrawImpl(const GfxDrawingOperation& operation) = 0;

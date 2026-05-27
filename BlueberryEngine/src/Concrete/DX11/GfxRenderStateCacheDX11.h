@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Blueberry\Core\Object.h"
+#include "Blueberry\Core\Base.h"
 #include "..\..\Blueberry\Graphics\GfxRenderStateCache.h"
 #include "Concrete\DX11\DX11.h"
 
@@ -34,6 +34,7 @@ namespace Blueberry
 	class GfxDeviceDX11;
 	class GfxTextureDX11;
 	class GfxVertexShaderDX11;
+	class VertexLayout;
 
 	// store current state in gfxDevice and compare it with new, and modify if they are different
 	// also can do loop check for samplers, SRV and buffers
@@ -41,6 +42,7 @@ namespace Blueberry
 	{
 		GfxVertexShaderDX11* dxVertexShader;
 
+		ID3D11InputLayout* inputLayout;
 		ID3D11VertexShader* vertexShader;
 		ID3D11GeometryShader* geometryShader;
 		ID3D11PixelShader* pixelShader;
@@ -62,7 +64,7 @@ namespace Blueberry
 		uint32_t crc;
 	};
 
-	struct GfxTextureBinding
+	struct GfxTextureBindingDX11
 	{
 		uint32_t bindingIndex;
 		bool isGlobal;
@@ -70,7 +72,7 @@ namespace Blueberry
 		uint8_t samplerSlot;
 	};
 
-	struct GfxBufferBinding
+	struct GfxBufferBindingDX11
 	{
 		uint32_t bindingIndex;
 		bool isGlobal;
@@ -80,12 +82,12 @@ namespace Blueberry
 
 	struct GfxBindingStateDX11
 	{
-		List<GfxTextureBinding> vertexTextures;
-		List<GfxTextureBinding> pixelTextures;
+		List<GfxTextureBindingDX11> vertexTextures;
+		List<GfxTextureBindingDX11> pixelTextures;
 
-		List<GfxBufferBinding> vertexBuffers;
-		List<GfxBufferBinding> geometryBuffers;
-		List<GfxBufferBinding> pixelBuffers;
+		List<GfxBufferBindingDX11> vertexBuffers;
+		List<GfxBufferBindingDX11> geometryBuffers;
+		List<GfxBufferBindingDX11> pixelBuffers;
 	};
 
 	class GfxRenderStateCacheDX11 : public GfxRenderStateCache
@@ -93,14 +95,17 @@ namespace Blueberry
 	public:
 		GfxRenderStateCacheDX11() = default;
 		GfxRenderStateCacheDX11(GfxDeviceDX11* device);
+		~GfxRenderStateCacheDX11();
 
-		const GfxRenderStateDX11 GetState(Material* material, uint8_t passIndex, bool isCounterClockwise, bool isSolid);
+		const GfxRenderStateDX11 GetState(Material* material, uint8_t passIndex, VertexLayout* meshLayout, bool isCounterClockwise, bool isSolid);
 		
 	private:
 		void FillRenderState(Material* material, GfxRenderStateDX11& renderState, const GfxBindingStateDX11& bindingState);
+		ID3D11InputLayout* GetLayout(GfxVertexShaderDX11* shader, VertexLayout* meshLayout);
 
 	private:
 		GfxDeviceDX11* m_Device;
 		Dictionary<GfxRenderStateKeyDX11, std::pair<GfxRenderStateDX11, GfxBindingStateDX11>> m_RenderStates;
+		Dictionary<size_t, ID3D11InputLayout*> m_InputLayouts;
 	};
 }

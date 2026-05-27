@@ -20,7 +20,6 @@ namespace Blueberry
 		WrapMode wrapMode;
 		FilterMode filterMode;
 		uint8_t slices;
-		bool generateMipMaps;
 		TextureUsageFlags usageFlags;
 	};
 

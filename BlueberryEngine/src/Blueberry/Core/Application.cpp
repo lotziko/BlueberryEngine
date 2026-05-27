@@ -23,11 +23,15 @@ namespace Blueberry
 
 		if (!GfxDevice::Initialize(properties.width, properties.height, m_Window->GetHandle()))
 		{
+			BB_ERROR("Failed to initialize GfxDevice.");
 			return false;
 		}
 
+		GfxDevice::WaitForFrame();
+
 		if (!Renderer2D::Initialize())
 		{
+			BB_ERROR("Failed to initialize Renderer2D.");
 			return false;
 		}
 
@@ -50,8 +54,15 @@ namespace Blueberry
 		auto prev = std::chrono::steady_clock::now();
 		std::chrono::steady_clock::duration sum{ 0 };
 
+		GfxDevice::SwapBuffers();
 		while (ProcessMessages())
 		{
+			if (!m_Window->IsFocused())
+			{
+				Sleep(10);
+				prev = std::chrono::steady_clock::now();
+				continue;
+			}
 			bool hasCallbacks = m_WaitForFrameCallback != nullptr;
 			if (hasCallbacks)
 			{
@@ -76,6 +87,7 @@ namespace Blueberry
 				sum -= targetUpdateRate;
 			}
 			Draw();
+			GfxDevice::SwapBuffers();
 		}
 	}
 

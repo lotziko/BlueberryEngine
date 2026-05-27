@@ -14,12 +14,12 @@ namespace Blueberry
 		static bool Initialize();
 		static void Shutdown();
 
-		static void Draw(GfxTexture* depthStencil, GfxTexture* normals, const Matrix& view, const Matrix& projection, const Rectangle& viewport, GfxTexture* output);
+		static void Draw(GfxTexture* depthStencil, GfxTexture* normals, const Matrix& view, const Matrix& projection, const Rectangle& viewport, GfxTexture* outputColor);
 
 	protected:
 		virtual bool InitializeImpl() = 0;
 		virtual void ShutdownImpl() = 0;
-		virtual void DrawImpl(GfxTexture* depthStencil, GfxTexture* normals, const Matrix& view, const Matrix& projection, const Rectangle& viewport, GfxTexture* output) = 0;
+		virtual void DrawImpl(GfxTexture* depthStencil, GfxTexture* normals, const Matrix& view, const Matrix& projection, const Rectangle& viewport, GfxTexture* outputColor) = 0;
 	
 	private:
 		static HBAORenderer* s_Instance;

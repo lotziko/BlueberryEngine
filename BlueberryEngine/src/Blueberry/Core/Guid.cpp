@@ -14,12 +14,12 @@ namespace Blueberry
 
 	bool Guid::operator==(const Guid& other) const
 	{
-		return std::memcmp(this, &other, sizeof(Guid)) == 0;
+		return memcmp(this, &other, sizeof(Guid)) == 0;
 	}
 
 	bool Guid::operator!=(const Guid& other) const
 	{
-		return std::memcmp(this, &other, sizeof(Guid)) != 0;
+		return memcmp(this, &other, sizeof(Guid)) != 0;
 	}
 
 	bool Guid::operator<(const Guid &other) const

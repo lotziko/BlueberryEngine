@@ -10,21 +10,20 @@ namespace Blueberry
 	{
 	public:
 		HLSLComputeShaderProcessor() = default;
-		~HLSLComputeShaderProcessor();
+		~HLSLComputeShaderProcessor() = default;
 
 		bool Compile(const String& path);
 		void SaveKernels(const String& folderPath);
 		bool LoadKernels(const String& folderPath);
 
 		const ComputeShaderData& GetComputeShaderData();
-		const List<void*>& GetShaders();
+		const List<ByteData>& GetShaders();
 
 	private:
 		bool Compile(const String& shaderCode, const char* entryPoint, const char* model, ComPtr<ID3DBlob>& blob);
 
 	private:
 		ComputeShaderData m_ComputeShaderData;
-		List<void*> m_Shaders;
-		List<ComPtr<ID3DBlob>> m_Blobs;
+		List<ByteData> m_Shaders;
 	};
 }

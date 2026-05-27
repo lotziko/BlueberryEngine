@@ -178,7 +178,7 @@ namespace Blueberry
 			GfxTexture* bloom32 = GfxTexturePool::Get(textureProperties);
 
 			GfxDevice::SetRenderTarget(bloom);
-			GfxDevice::ClearColor({});
+			GfxDevice::ClearColor(Color(0.0f, 0.0f, 0.0f, 0.0f));
 			GfxDevice::SetRenderTarget(nullptr);
 
 			GfxDevice::SetGlobalTexture(s_MSAASourceTextureId, msaaColor);

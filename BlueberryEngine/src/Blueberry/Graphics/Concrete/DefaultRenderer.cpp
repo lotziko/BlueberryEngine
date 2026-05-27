@@ -151,6 +151,7 @@ namespace Blueberry
 		DrawingSettings drawingSettings = {};
 		drawingSettings.passIndex = 1;
 		drawingSettings.sortingMode = SortingMode::FrontToBack;
+		drawingSettings.useGI = cameraType != CameraType::Reflection && cameraType != CameraType::Preview;
 		s_DefaultContext.DrawRenderers(s_Results, drawingSettings);
 		BB_PROFILE_END();
 
@@ -175,7 +176,7 @@ namespace Blueberry
 		BB_PROFILE_BEGIN("Forward");
 		RealtimeLights::CalculateClusters();
 		GfxDevice::SetRenderTarget(colorMSAARenderTarget, depthStencilMSAARenderTarget);
-		GfxDevice::ClearColor({ 0.0f, 0.0f, 0.0f, 0.0f });
+		GfxDevice::ClearColor(Color(0.0f, 0.0f, 0.0f, 0.0f));
 		s_DefaultContext.DrawSky(s_Results);
 		drawingSettings.passIndex = 0;
 		drawingSettings.sortingMode = SortingMode::Default;
@@ -195,7 +196,7 @@ namespace Blueberry
 			Rectangle eyeViewport = Rectangle(0, 0, static_cast<long>(aspectRatio * colorOutput->GetHeight()), static_cast<long>(colorOutput->GetHeight()));
 
 			GfxDevice::SetRenderTarget(colorOutput);
-			GfxDevice::ClearColor({ 0.0f, 0.0f, 0.0f, 0.0f });
+			GfxDevice::ClearColor(Color(0.0f, 0.0f, 0.0f, 0.0f));
 			GfxDevice::SetViewport(eyeViewport.x, eyeViewport.y, eyeViewport.width, eyeViewport.height);
 			GfxDevice::SetGlobalTexture(s_ScreenColorTextureId, resultRenderTarget);
 			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetVRMirrorView(), 0));

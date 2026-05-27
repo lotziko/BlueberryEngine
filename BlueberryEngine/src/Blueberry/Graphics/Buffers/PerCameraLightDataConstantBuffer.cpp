@@ -323,7 +323,7 @@ namespace Blueberry
 		constants.shadow3x3PCFTermC2 = Vector4(texelEpsilonX, texelEpsilonY, 0.0f, 0.0f);
 		constants.shadow3x3PCFTermC3 = Vector4(-texelEpsilonX, -texelEpsilonY, 0.0f, 0.0f);
 
-		s_ConstantBuffer->SetData(reinterpret_cast<char*>(&constants), sizeof(constants));
+		s_ConstantBuffer->SetData(reinterpret_cast<char*>(&constants), sizeof(PerCameraLightData));
 		s_PointLightsBuffer->SetData(reinterpret_cast<char*>(&pointDatas), sizeof(PointLightBufferData) * pointOffset);
 		s_SpotLightsBuffer->SetData(reinterpret_cast<char*>(&spotDatas), sizeof(SpotLightBufferData) * spotOffset);
 		s_ShadowsBuffer->SetData(reinterpret_cast<char*>(&shadowDatas), sizeof(ShadowBufferData) * shadowOffset);

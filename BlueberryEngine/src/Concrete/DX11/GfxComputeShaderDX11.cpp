@@ -4,28 +4,23 @@
 
 namespace Blueberry
 {
-	GfxComputeShaderDX11::GfxComputeShaderDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext) : m_Device(device), m_DeviceContext(deviceContext)
+	bool GfxComputeShaderDX11::Initialize(ID3D11Device* device, const ByteData& computeData)
 	{
-	}
-
-	bool GfxComputeShaderDX11::Initialize(void* computeData)
-	{
-		if (computeData == nullptr)
+		if (computeData.size() == 0)
 		{
 			BB_ERROR("Compute data is empty.");
 			return false;
 		}
 
-		ID3DBlob* blob = static_cast<ID3DBlob*>(computeData);
-		HRESULT hr = m_Device->CreateComputeShader(blob->GetBufferPointer(), blob->GetBufferSize(), NULL, m_ComputeShader.GetAddressOf());
+		HRESULT hr = device->CreateComputeShader(computeData.data(), computeData.size(), NULL, m_ComputeShader.GetAddressOf());
 		if (FAILED(hr))
 		{
 			BB_ERROR("Failed to create compute shader from data.");
 			return false;
 		}
 
-		ID3D11ShaderReflection* computeShaderReflection;
-		hr = D3DReflect(blob->GetBufferPointer(), blob->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&computeShaderReflection);
+		ComPtr<ID3D11ShaderReflection> computeShaderReflection;
+		hr = D3DReflect(computeData.data(), computeData.size(), IID_ID3D11ShaderReflection, (void**)computeShaderReflection.GetAddressOf());
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to get compute shader reflection."));
@@ -37,11 +32,6 @@ namespace Blueberry
 
 		unsigned int resourceBindingCount = computeShaderDesc.BoundResources;
 
-		m_SRVSlots.reserve(16);
-		m_ConstantBufferSlots.reserve(14);
-		m_UAVSlots.reserve(8);
-		m_SamplerSlots.reserve(16);
-
 		for (uint32_t i = 0; i < resourceBindingCount; i++)
 		{
 			D3D11_SHADER_INPUT_BIND_DESC inputBindDesc;
@@ -49,24 +39,31 @@ namespace Blueberry
 			switch (inputBindDesc.Type)
 			{
 			case D3D_SIT_TEXTURE:
-				m_SRVSlots.insert(m_SRVSlots.begin() + inputBindDesc.BindPoint, TO_HASH(String(inputBindDesc.Name)));
+				m_TextureSRVSlots.push_back(std::make_pair(TO_HASH(String(inputBindDesc.Name)), inputBindDesc.BindPoint));
 				break;
 			case D3D_SIT_CBUFFER:
-				m_ConstantBufferSlots.insert(m_ConstantBufferSlots.begin() + inputBindDesc.BindPoint, TO_HASH(String(inputBindDesc.Name)));
+				m_ConstantBufferSlots.push_back(std::make_pair(TO_HASH(String(inputBindDesc.Name)), inputBindDesc.BindPoint));
 				break;
 			case D3D_SIT_STRUCTURED:
-				m_SRVSlots.insert(m_SRVSlots.begin() + inputBindDesc.BindPoint, TO_HASH(String(inputBindDesc.Name)));
+				m_BufferSRVSlots.push_back(std::make_pair(TO_HASH(String(inputBindDesc.Name)), inputBindDesc.BindPoint));
 				break;
 			case D3D_SIT_BYTEADDRESS:
-				m_SRVSlots.insert(m_SRVSlots.begin() + inputBindDesc.BindPoint, TO_HASH(String(inputBindDesc.Name)));
+				m_BufferSRVSlots.push_back(std::make_pair(TO_HASH(String(inputBindDesc.Name)), inputBindDesc.BindPoint));
 				break;
 			case D3D_SIT_UAV_RWBYTEADDRESS:
-				m_UAVSlots.insert(m_UAVSlots.begin() + inputBindDesc.BindPoint, TO_HASH(String(inputBindDesc.Name)));
+				m_BufferUAVSlots.push_back(std::make_pair(TO_HASH(String(inputBindDesc.Name)), inputBindDesc.BindPoint));
 				break;
 			case D3D_SIT_UAV_RWTYPED:
-				m_UAVSlots.insert(m_UAVSlots.begin() + inputBindDesc.BindPoint, TO_HASH(String(inputBindDesc.Name)));
+				if (inputBindDesc.Dimension == D3D_SRV_DIMENSION_BUFFER)
+				{
+					m_BufferUAVSlots.push_back(std::make_pair(TO_HASH(String(inputBindDesc.Name)), inputBindDesc.BindPoint));
+				}
+				else
+				{
+					m_TextureUAVSlots.push_back(std::make_pair(TO_HASH(String(inputBindDesc.Name)), inputBindDesc.BindPoint));
+				}
 				break;
-			case D3D10_SIT_SAMPLER:
+			case D3D_SIT_SAMPLER:
 			{
 				String samplerName = String(inputBindDesc.Name);
 				auto pos = samplerName.find("_Sampler");
@@ -78,7 +75,7 @@ namespace Blueberry
 				{
 					BB_ERROR("Wrong sampler name.");
 				}
-				m_SamplerSlots.insert(m_SamplerSlots.begin() + inputBindDesc.BindPoint, TO_HASH(samplerName));
+				m_SamplerSlots.push_back(std::make_pair(TO_HASH(samplerName), inputBindDesc.BindPoint));
 			}
 			break;
 			default:

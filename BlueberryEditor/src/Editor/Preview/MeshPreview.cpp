@@ -32,6 +32,7 @@ namespace Blueberry
 			m_Camera->SetFieldOfView(60.0f);
 			m_Camera->SetPixelSize(Vector2(static_cast<float>(target->GetWidth()), static_cast<float>(target->GetHeight())));
 			m_Camera->SetCameraType(CameraType::Preview);
+			m_Camera->SetBackgroundColor(Color(0.0f, 0.0f, 0.0f, 1.0f));
 		}
 		m_Renderer->SetMesh(mesh);
 		AABB bounds = m_Renderer->GetBounds();

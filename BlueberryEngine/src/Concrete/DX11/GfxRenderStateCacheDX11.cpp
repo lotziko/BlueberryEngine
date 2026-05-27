@@ -3,23 +3,23 @@
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\Texture.h"
-#include "..\DX11\GfxDeviceDX11.h"
+#include "Blueberry\Graphics\VertexLayout.h"
 
-#include "..\..\Blueberry\Graphics\GfxShader.h"
-#include "..\DX11\GfxShaderDX11.h"
-#include "..\DX11\GfxTextureDX11.h"
-#include "..\DX11\GfxBufferDX11.h"
+#include "GfxDeviceDX11.h"
+#include "GfxShaderDX11.h"
+#include "GfxTextureDX11.h"
+#include "GfxBufferDX11.h"
 
 namespace Blueberry
 {
 	bool GfxRenderStateKeyDX11::operator==(const GfxRenderStateKeyDX11& other) const
 	{
-		return keywordsMask == other.keywordsMask && materialId == other.materialId && passIndex == other.passIndex && isCounterClockwise == other.isCounterClockwise && isSolid == other.isSolid;
+		return memcmp(this, &other, sizeof(GfxRenderStateKeyDX11)) == 0;
 	}
 
 	bool GfxRenderStateKeyDX11::operator!=(const GfxRenderStateKeyDX11& other) const
 	{
-		return !(*this == other);
+		return memcmp(this, &other, sizeof(GfxRenderStateKeyDX11)) != 0;
 	}
 
 	GfxRenderStateCacheDX11::GfxRenderStateCacheDX11(GfxDeviceDX11* device) : m_Device(device)
@@ -27,7 +27,16 @@ namespace Blueberry
 		m_RenderStates.reserve(4096);
 	}
 
-	const GfxRenderStateDX11 GfxRenderStateCacheDX11::GetState(Material* material, uint8_t passIndex, bool isCounterClockwise, bool isSolid)
+	GfxRenderStateCacheDX11::~GfxRenderStateCacheDX11()
+	{
+		for (auto& pair : m_InputLayouts)
+		{
+			pair.second->Release();
+		}
+		m_InputLayouts.clear();
+	}
+
+	const GfxRenderStateDX11 GfxRenderStateCacheDX11::GetState(Material* material, uint8_t passIndex, VertexLayout* meshLayout, bool isCounterClockwise, bool isSolid)
 	{
 		uint64_t keywordMask = static_cast<uint64_t>(Shader::GetActiveKeywordsMask()) | (static_cast<uint64_t>(material->GetActiveKeywordsMask()) << 32);
 		ObjectId objectId = material->GetObjectId(); // Maybe also use shader id to be able to switch it
@@ -83,7 +92,7 @@ namespace Blueberry
 			}
 
 			// Vertex global structured buffers
-			for (auto it = dxVertexShader->m_StructuredBufferSlots.begin(); it != dxVertexShader->m_StructuredBufferSlots.end(); it++)
+			for (auto it = dxVertexShader->m_BufferSRVSlots.begin(); it != dxVertexShader->m_BufferSRVSlots.end(); it++)
 			{
 				uint32_t offset = 0;
 				for (auto it1 = m_Device->m_BindedBuffers.begin(); it1 < m_Device->m_BindedBuffers.end(); ++it1, ++offset)
@@ -97,7 +106,7 @@ namespace Blueberry
 			}
 
 			// Vertex material textures
-			for (auto it = dxVertexShader->m_TextureSlots.begin(); it != dxVertexShader->m_TextureSlots.end(); it++)
+			for (auto it = dxVertexShader->m_TextureSRVSamplerSlots.begin(); it != dxVertexShader->m_TextureSRVSamplerSlots.end(); it++)
 			{
 				uint32_t offset = GetTextureIndex(material, it->first);
 				if (offset != UINT32_MAX)
@@ -108,7 +117,7 @@ namespace Blueberry
 			}
 
 			// Vertex global textures
-			for (auto it = dxVertexShader->m_TextureSlots.begin(); it != dxVertexShader->m_TextureSlots.end(); it++)
+			for (auto it = dxVertexShader->m_TextureSRVSamplerSlots.begin(); it != dxVertexShader->m_TextureSRVSamplerSlots.end(); it++)
 			{
 				uint32_t offset = 0;
 				for (auto it1 = m_Device->m_BindedTextures.begin(); it1 < m_Device->m_BindedTextures.end(); ++it1, ++offset)
@@ -160,7 +169,7 @@ namespace Blueberry
 			}
 
 			// Fragment global structured buffers
-			for (auto it = dxFragmentShader->m_StructuredBufferSlots.begin(); it != dxFragmentShader->m_StructuredBufferSlots.end(); it++)
+			for (auto it = dxFragmentShader->m_BufferSRVSlots.begin(); it != dxFragmentShader->m_BufferSRVSlots.end(); it++)
 			{
 				uint32_t offset = 0;
 				for (auto it1 = m_Device->m_BindedBuffers.begin(); it1 < m_Device->m_BindedBuffers.end(); ++it1, ++offset)
@@ -174,7 +183,7 @@ namespace Blueberry
 			}
 
 			// Fragment material textures
-			for (auto it = dxFragmentShader->m_TextureSlots.begin(); it != dxFragmentShader->m_TextureSlots.end(); it++)
+			for (auto it = dxFragmentShader->m_TextureSRVSamplerSlots.begin(); it != dxFragmentShader->m_TextureSRVSamplerSlots.end(); it++)
 			{
 				uint32_t offset = GetTextureIndex(material, it->first);
 				if (offset != UINT32_MAX)
@@ -185,7 +194,7 @@ namespace Blueberry
 			}
 
 			// Fragment global textures
-			for (auto it = dxFragmentShader->m_TextureSlots.begin(); it != dxFragmentShader->m_TextureSlots.end(); it++)
+			for (auto it = dxFragmentShader->m_TextureSRVSamplerSlots.begin(); it != dxFragmentShader->m_TextureSRVSamplerSlots.end(); it++)
 			{
 				uint32_t offset = 0;
 				for (auto it1 = m_Device->m_BindedTextures.begin(); it1 < m_Device->m_BindedTextures.end(); ++it1, ++offset)
@@ -208,6 +217,7 @@ namespace Blueberry
 			m_RenderStates.insert_or_assign(key, std::make_pair(renderState, bindingState));
 			FillRenderState(material, renderState, bindingState);
 		}
+		renderState.inputLayout = GetLayout(renderState.dxVertexShader, meshLayout);
 		return renderState;
 	}
 
@@ -290,6 +300,31 @@ namespace Blueberry
 				}
 				renderState.pixelSamplerStates[texture.samplerSlot] = samplerState;
 			}
+		}
+	}
+
+	ID3D11InputLayout* GfxRenderStateCacheDX11::GetLayout(GfxVertexShaderDX11* shader, VertexLayout* meshLayout)
+	{
+		size_t key = static_cast<uint64_t>(shader->m_Crc) | (static_cast<uint64_t>(meshLayout->GetCrc()) << 32);
+		auto it = m_InputLayouts.find(key);
+		if (it != m_InputLayouts.end())
+		{
+			return it->second;
+		}
+		else
+		{
+			for (uint32_t i = 0; i < RENDERABLE_VERTEX_ATTRIBUTE_COUNT; ++i)
+			{
+				uint32_t offset = meshLayout->GetOffset(i);
+				uint8_t index = shader->m_LayoutIndices[i];
+				if (index != UINT8_MAX)
+				{
+					shader->m_InputElementDescs[index].AlignedByteOffset = offset;
+				}
+			}
+			ID3D11InputLayout* layout = shader->CreateLayout();
+			m_InputLayouts.insert_or_assign(key, layout);
+			return layout;
 		}
 	}
 }

@@ -165,6 +165,11 @@ namespace Blueberry
 		}
 	}
 
+	bool WindowsWindow::IsFocused() const
+	{
+		return m_IsFocused;
+	}
+
 	LRESULT CALLBACK HandleMsgRedirect(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
 		switch (uMsg)
@@ -597,11 +602,13 @@ namespace Blueberry
 		}
 		case WM_SETFOCUS:
 		{
+			m_IsFocused = true;
 			WindowEvents::GetWindowFocused().Invoke();
 			return 0;
 		}
 		case WM_KILLFOCUS:
 		{
+			m_IsFocused = false;
 			WindowEvents::GetWindowUnfocused().Invoke();
 			ImGuiIO& io = ImGui::GetIO();
 			io.ClearInputKeys();

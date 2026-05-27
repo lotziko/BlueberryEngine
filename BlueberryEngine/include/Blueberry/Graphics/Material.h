@@ -53,7 +53,7 @@ namespace Blueberry
 		void AddTextureData(const TextureData& data);
 
 		void SetKeyword(const String& keyword, bool enabled);
-		uint32_t GetActiveKeywordsMask() const;
+		uint32_t GetActiveKeywordsMask();
 
 		uint32_t GetCRC();
 		Texture* GetTexture(size_t id);
@@ -62,6 +62,7 @@ namespace Blueberry
 
 	private:
 		void FillTextureMap();
+		void CalculateKeywordMask();
 		void ApplyTextureBinding(size_t id, Texture* texture);
 
 	private:
@@ -79,7 +80,7 @@ namespace Blueberry
 		List<TextureBinding> m_BindedTextures;
 
 		uint32_t m_Crc = UINT32_MAX;
-		uint32_t m_ActiveKeywordsMask = 0;
+		uint32_t m_ActiveKeywordsMask = UINT32_MAX;
 
 		friend struct GfxDrawingOperation;
 		friend class GfxRenderStateCache;

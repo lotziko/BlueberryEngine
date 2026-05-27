@@ -95,11 +95,11 @@ namespace Blueberry
 	void Gizmos::Shutdown()
 	{
 		Material::Destroy(s_GizmosMaterial);
-		delete s_LineVertexData;
-		delete s_Lines;
+		delete[] s_LineVertexData;
+		delete[] s_Lines;
 		delete s_LineVertexBuffer;
-		delete s_ArcVertexData;
-		delete s_Arcs;
+		delete[] s_ArcVertexData;
+		delete[] s_Arcs;
 		delete s_ArcVertexBuffer;
 	}
 
@@ -345,7 +345,7 @@ namespace Blueberry
 		s_ArcVertexBuffer->SetData(s_ArcVertexData, s_ArcCount * s_ArcVertexBuffer->GetElementSize());
 
 		GfxDevice::Draw(GfxDrawingOperation(s_ArcVertexBuffer, nullptr, s_GizmosMaterial, &s_ArcLayout, 0, 0, s_ArcCount, Topology::PointList, 2));
-		GfxDevice::Draw(GfxDrawingOperation(s_ArcVertexBuffer, nullptr, s_GizmosMaterial, &s_ArcLayout, 0, 1, s_ArcCount, Topology::PointList, 3));
+		GfxDevice::Draw(GfxDrawingOperation(s_ArcVertexBuffer, nullptr, s_GizmosMaterial, &s_ArcLayout, 0, 0, s_ArcCount, Topology::PointList, 3));
 	
 		s_ArcCount = 0;
 		s_ArcVertexDataPtr = s_ArcVertexData;

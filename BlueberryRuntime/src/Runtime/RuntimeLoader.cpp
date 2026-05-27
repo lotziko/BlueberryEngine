@@ -16,9 +16,6 @@
 #include "Blueberry\Scene\LightingSettings.h"
 #include "Blueberry\Tools\CompressionHelper.h"
 
-#include "Concrete\DX11\DX11.h"
-#include "Concrete\Windows\ComPtr.h"
-
 #include "Blueberry\Graphics\GfxDevice.h"
 
 #include <fstream>
@@ -101,7 +98,6 @@ namespace Blueberry
 		else if (type == Shader::Type)
 		{
 			Shader* shader = static_cast<Shader*>(object);
-			List<ComPtr<ID3DBlob>> blobs;
 			VariantsData variantsData = {};
 			uint32_t vertexShaderCount;
 			uint32_t geometryShaderCount;
@@ -123,26 +119,16 @@ namespace Blueberry
 			{
 				size_t size;
 				resourcesStream.read(reinterpret_cast<char*>(&size), sizeof(size_t));
-				ComPtr<ID3DBlob> blob;
-				HRESULT hr = D3DCreateBlob(size, &blob);
-				if (SUCCEEDED(hr))
-				{
-					resourcesStream.read(reinterpret_cast<char*>(blob->GetBufferPointer()), size);
-				}
-				blobs.push_back(blob);
-				variantsData.shaders.push_back(blob.Get());
+				ByteData data(size);
+				resourcesStream.read(reinterpret_cast<char*>(data.data()), size);
+				variantsData.shaders.push_back(std::move(data));
 			}
 			shader->Initialize(variantsData);
-			for (auto& blob : blobs)
-			{
-				blob.Reset();
-			}
 		}
 		else if (type == ComputeShader::Type)
 		{
 			ComputeShader* computeShader = static_cast<ComputeShader*>(object);
-			List<ComPtr<ID3DBlob>> blobs;
-			List<void*> shaders;
+			List<ByteData> shaders;
 			uint32_t blobCount;
 			resourcesStream.read(reinterpret_cast<char*>(&blobCount), sizeof(uint32_t));
 
@@ -150,20 +136,11 @@ namespace Blueberry
 			{
 				size_t size;
 				resourcesStream.read(reinterpret_cast<char*>(&size), sizeof(size_t));
-				ComPtr<ID3DBlob> blob;
-				HRESULT hr = D3DCreateBlob(size, &blob);
-				if (SUCCEEDED(hr))
-				{
-					resourcesStream.read(reinterpret_cast<char*>(blob->GetBufferPointer()), size);
-				}
-				blobs.push_back(blob);
-				shaders.push_back(blob.Get());
+				ByteData data(size);
+				resourcesStream.read(reinterpret_cast<char*>(data.data()), size);
+				shaders.push_back(std::move(data));
 			}
 			computeShader->Initialize(shaders);
-			for (auto& blob : blobs)
-			{
-				blob.Reset();
-			}
 		}
 		else if (type == AudioClip::Type)
 		{

@@ -83,10 +83,10 @@ namespace Blueberry
 		Application::GetInstance()->GetWindow()->SetCursor(!(Screen::IsAllowCursorLock() && Cursor::IsHidden()));
 
 		m_Scene->Update();
-		GfxDevice::ClearColor({ 0, 0, 0, 1 });
+		GfxDevice::SetRenderTarget(nullptr);
+		GfxDevice::ClearColor(Color(0.0f, 0.0f, 0.0f, 0.0f));
 		
 		GameViewRenderer::Draw(m_Scene);
-		GfxDevice::SwapBuffers();
 
 		Time::EndFrame();
 		Timer::Update();

@@ -38,6 +38,7 @@ namespace Blueberry
 				offset += element.m_Size;
 			}
 			m_Crc = CRCHelper::Calculate(element.m_Offset, m_Crc);
+			m_Crc = CRCHelper::Calculate(element.m_Size, m_Crc);
 		}
 		m_Size = offset;
 		return *this;

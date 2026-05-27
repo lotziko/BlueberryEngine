@@ -220,10 +220,24 @@ namespace Blueberry
 			return value;
 		}
 
+		static inline int32_t NextDivisableBy(int32_t value, int32_t by)
+		{
+			return (value + by - 1) & ~(by - 1);
+		}
+
 		static inline uint32_t NextDivisableBy(uint32_t value, uint32_t by)
 		{
-			uint32_t mod = value % by;
-			return mod == 0 ? value : (value + by - mod);
+			return (value + by - 1) & ~(by - 1);
+		}
+
+		static inline int64_t NextDivisableBy(int64_t value, int64_t by)
+		{
+			return (value + by - 1) & ~(by - 1);
+		}
+
+		static inline uint64_t NextDivisableBy(uint64_t value, uint64_t by)
+		{
+			return (value + by - 1) & ~(by - 1);
 		}
 
 		static inline bool Approximately(float a, float b)

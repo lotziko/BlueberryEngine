@@ -1,5 +1,4 @@
 #include "GfxShaderDX11.h"
-#include "GfxDeviceDX11.h"
 
 #include "Blueberry\Tools\CRCHelper.h"
 #include "..\Windows\WindowsHelper.h"
@@ -13,24 +12,25 @@ namespace Blueberry
 		return (static_cast<uint32_t>(s[3]) << 24) | (static_cast<uint32_t>(s[2]) << 16) | (static_cast<uint32_t>(s[1]) << 8) |	static_cast<uint32_t>(s[0]);
 	}
 
-	bool GfxVertexShaderDX11::Initialize(ID3D11Device* device, void* vertexData)
+	bool GfxVertexShaderDX11::Initialize(ID3D11Device* device, const ByteData& vertexData)
 	{
-		if (vertexData == nullptr)
+		if (vertexData.size() == 0)
 		{
 			BB_ERROR("Vertex data is empty.");
 			return false;
 		}
 
-		m_ShaderBuffer = static_cast<ID3DBlob*>(vertexData);
-		HRESULT hr = device->CreateVertexShader(m_ShaderBuffer->GetBufferPointer(), m_ShaderBuffer->GetBufferSize(), NULL, m_Shader.GetAddressOf());
+		m_Blob = vertexData;
+
+		HRESULT hr = device->CreateVertexShader(m_Blob.data(), m_Blob.size(), NULL, m_Shader.GetAddressOf());
 		if (FAILED(hr))
 		{
 			BB_ERROR("Failed to create vertex shader from data.");
 			return false;
 		}
 
-		ID3D11ShaderReflection* vertexShaderReflection;
-		hr = D3DReflect(m_ShaderBuffer->GetBufferPointer(), m_ShaderBuffer->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&vertexShaderReflection);
+		ComPtr<ID3D11ShaderReflection> vertexShaderReflection;
+		hr = D3DReflect(m_Blob.data(), m_Blob.size(), IID_ID3D11ShaderReflection, (void**)vertexShaderReflection.GetAddressOf());
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to get vertex shader reflection."));
@@ -41,49 +41,76 @@ namespace Blueberry
 		D3D11_SHADER_DESC vertexShaderDesc;
 		vertexShaderReflection->GetDesc(&vertexShaderDesc);
 
-		uint32_t constantBufferCount = vertexShaderDesc.ConstantBuffers;
-
-		for (uint32_t i = 0; i < constantBufferCount; i++)
-		{
-			ID3D11ShaderReflectionConstantBuffer* constantBufferReflection = vertexShaderReflection->GetConstantBufferByIndex(i);
-			D3D11_SHADER_BUFFER_DESC shaderBufferDesc;
-			constantBufferReflection->GetDesc(&shaderBufferDesc);
-			if (shaderBufferDesc.Type == D3D_CT_CBUFFER)
-			{
-				m_ConstantBufferSlots.insert({ TO_HASH(String(shaderBufferDesc.Name)), i });
-			}
-		}
-
 		unsigned int resourceBindingCount = vertexShaderDesc.BoundResources;
 
 		for (uint32_t i = 0; i < resourceBindingCount; i++)
 		{
 			D3D11_SHADER_INPUT_BIND_DESC inputBindDesc;
 			vertexShaderReflection->GetResourceBindingDesc(i, &inputBindDesc);
-			if (inputBindDesc.Type == D3D_SIT_TEXTURE)
+			uint8_t bindPoint = static_cast<uint8_t>(inputBindDesc.BindPoint);
+			switch (inputBindDesc.Type)
 			{
-				uint32_t samplerSlot = -1;
-				if (inputBindDesc.NumSamples > 8)
+			case D3D_SIT_TEXTURE:
+			{
+				size_t textureHash = TO_HASH(String(inputBindDesc.Name));
+				size_t texturePairIndex = UINT64_MAX;
+				for (size_t i = 0; i < m_TextureSRVSamplerSlots.size(); ++i)
 				{
-					for (uint32_t j = 0; j < resourceBindingCount; j++)
+					if (m_TextureSRVSamplerSlots[i].first == textureHash)
 					{
-						D3D11_SHADER_INPUT_BIND_DESC samplerInputBindDesc;
-						vertexShaderReflection->GetResourceBindingDesc(j, &samplerInputBindDesc);
-						if (samplerInputBindDesc.Type == D3D10_SIT_SAMPLER)
-						{
-							if (strncmp(samplerInputBindDesc.Name, inputBindDesc.Name, strlen(inputBindDesc.Name)) == 0)
-							{
-								samplerSlot = samplerInputBindDesc.BindPoint;
-								break;
-							}
-						}
+						texturePairIndex = i;
+						break;
 					}
 				}
-				m_TextureSlots.insert({ TO_HASH(String(inputBindDesc.Name)), std::make_pair(inputBindDesc.BindPoint, samplerSlot) });
+				if (texturePairIndex == UINT64_MAX)
+				{
+					m_TextureSRVSamplerSlots.push_back(std::make_pair(textureHash, std::make_pair(bindPoint, UINT8_MAX)));
+				}
+				else
+				{
+					m_TextureSRVSamplerSlots[texturePairIndex].second.first = bindPoint;
+				}
 			}
-			else if (inputBindDesc.Type == D3D_SIT_STRUCTURED)
+			break;
+			case D3D_SIT_CBUFFER:
+				m_ConstantBufferSlots.push_back(std::make_pair(TO_HASH(String(inputBindDesc.Name)), bindPoint));
+				break;
+			case D3D_SIT_STRUCTURED:
+				m_BufferSRVSlots.push_back(std::make_pair(TO_HASH(String(inputBindDesc.Name)), bindPoint));
+				break;
+			case D3D_SIT_SAMPLER:
 			{
-				m_StructuredBufferSlots.insert({ TO_HASH(String(inputBindDesc.Name)), inputBindDesc.BindPoint });
+				String samplerName = String(inputBindDesc.Name);
+				auto pos = samplerName.find("_Sampler");
+				if (pos != std::string::npos)
+				{
+					samplerName.replace(pos, samplerName.length() - pos, "");
+				}
+				else
+				{
+					BB_ERROR("Wrong sampler name.");
+					continue;
+				}
+				size_t samplerHash = TO_HASH(samplerName);
+				size_t texturePairIndex = UINT64_MAX;
+				for (size_t i = 0; i < m_TextureSRVSamplerSlots.size(); ++i)
+				{
+					if (m_TextureSRVSamplerSlots[i].first == samplerHash)
+					{
+						texturePairIndex = i;
+						break;
+					}
+				}
+				if (texturePairIndex == UINT64_MAX)
+				{
+					m_TextureSRVSamplerSlots.push_back(std::make_pair(samplerHash, std::make_pair(UINT8_MAX, bindPoint)));
+				}
+				else
+				{
+					m_TextureSRVSamplerSlots[texturePairIndex].second.second = bindPoint;
+				}
+			}
+			break;
 			}
 		}
 
@@ -95,6 +122,7 @@ namespace Blueberry
 		}
 
 		m_Crc = 0;
+		m_SemanticNames.resize(parameterCount);
 		for (unsigned int i = 0; i < parameterCount; ++i)
 		{
 			D3D11_SIGNATURE_PARAMETER_DESC paramDesc;
@@ -102,7 +130,8 @@ namespace Blueberry
 
 			D3D11_INPUT_ELEMENT_DESC inputElementDesc = {};
 
-			inputElementDesc.SemanticName = paramDesc.SemanticName;
+			m_SemanticNames[i] = paramDesc.SemanticName;
+			inputElementDesc.SemanticName = m_SemanticNames[i].c_str();
 			inputElementDesc.SemanticIndex = paramDesc.SemanticIndex;
 			
 			uint32_t size;
@@ -199,13 +228,14 @@ namespace Blueberry
 			m_InputElementDescs.push_back(inputElementDesc);
 		}
 		m_Device = device;
+
 		return true;
 	}
 
 	ID3D11InputLayout* GfxVertexShaderDX11::CreateLayout()
 	{
 		ID3D11InputLayout* layout;
-		HRESULT hr = m_Device->CreateInputLayout(m_InputElementDescs.data(), static_cast<UINT>(m_InputElementDescs.size()), m_ShaderBuffer->GetBufferPointer(), m_ShaderBuffer->GetBufferSize(), &layout);
+		HRESULT hr = m_Device->CreateInputLayout(m_InputElementDescs.data(), static_cast<UINT>(m_InputElementDescs.size()), m_Blob.data(), m_Blob.size(), &layout);
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error creating input layout."));
@@ -214,16 +244,15 @@ namespace Blueberry
 		return layout;
 	}
 
-	bool GfxGeometryShaderDX11::Initialize(ID3D11Device* device, void* geometryData)
+	bool GfxGeometryShaderDX11::Initialize(ID3D11Device* device, const ByteData& geometryData)
 	{
-		if (geometryData == nullptr)
+		if (geometryData.size() == 0)
 		{
 			BB_ERROR("Geometry data is empty.");
 			return false;
 		}
 
-		m_ShaderBuffer = static_cast<ID3DBlob*>(geometryData);
-		HRESULT hr = device->CreateGeometryShader(m_ShaderBuffer->GetBufferPointer(), m_ShaderBuffer->GetBufferSize(), NULL, m_Shader.GetAddressOf());
+		HRESULT hr = device->CreateGeometryShader(geometryData.data(), geometryData.size(), NULL, m_Shader.GetAddressOf());
 		if (FAILED(hr))
 		{
 			BB_ERROR("Failed to create geometry shader from data.");
@@ -231,8 +260,8 @@ namespace Blueberry
 		}
 
 		// Slots
-		ID3D11ShaderReflection* geometryShaderReflection;
-		hr = D3DReflect(m_ShaderBuffer->GetBufferPointer(), m_ShaderBuffer->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&geometryShaderReflection);
+		ComPtr<ID3D11ShaderReflection> geometryShaderReflection;
+		hr = D3DReflect(geometryData.data(), geometryData.size(), IID_ID3D11ShaderReflection, (void**)geometryShaderReflection.GetAddressOf());
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to get geometry shader reflection."));
@@ -246,25 +275,27 @@ namespace Blueberry
 
 		for (uint32_t i = 0; i < constantBufferCount; i++)
 		{
-			ID3D11ShaderReflectionConstantBuffer* constantBufferReflection = geometryShaderReflection->GetConstantBufferByIndex(i);
-			D3D11_SHADER_BUFFER_DESC shaderBufferDesc;
-			constantBufferReflection->GetDesc(&shaderBufferDesc);
-			m_ConstantBufferSlots.insert({ TO_HASH(String(shaderBufferDesc.Name)), i });
+			D3D11_SHADER_INPUT_BIND_DESC inputBindDesc;
+			geometryShaderReflection->GetResourceBindingDesc(i, &inputBindDesc);
+			uint8_t bindPoint = static_cast<uint8_t>(inputBindDesc.BindPoint);
+			if (inputBindDesc.Type == D3D_SIT_CBUFFER)
+			{
+				m_ConstantBufferSlots.push_back(std::make_pair(TO_HASH(String(inputBindDesc.Name)), bindPoint));
+			}
 		}
 
 		return true;
 	}
 
-	bool GfxFragmentShaderDX11::Initialize(ID3D11Device* device, void* fragmentData)
+	bool GfxFragmentShaderDX11::Initialize(ID3D11Device* device, const ByteData& fragmentData)
 	{
-		if (fragmentData == nullptr)
+		if (fragmentData.size() == 0)
 		{
 			BB_ERROR("Fragment data is empty.");
 			return false;
 		}
 
-		m_ShaderBuffer = static_cast<ID3DBlob*>(fragmentData);
-		HRESULT hr = device->CreatePixelShader(m_ShaderBuffer->GetBufferPointer(), m_ShaderBuffer->GetBufferSize(), NULL, m_Shader.GetAddressOf());
+		HRESULT hr = device->CreatePixelShader(fragmentData.data(), fragmentData.size(), NULL, m_Shader.GetAddressOf());
 		if (FAILED(hr))
 		{
 			BB_ERROR("Failed to create fragment shader from data.");
@@ -272,8 +303,8 @@ namespace Blueberry
 		}
 
 		// Slots
-		ID3D11ShaderReflection* pixelShaderReflection;
-		hr = D3DReflect(m_ShaderBuffer->GetBufferPointer(), m_ShaderBuffer->GetBufferSize(), IID_ID3D11ShaderReflection, (void**)&pixelShaderReflection);
+		ComPtr<ID3D11ShaderReflection> pixelShaderReflection;
+		hr = D3DReflect(fragmentData.data(), fragmentData.size(), IID_ID3D11ShaderReflection, (void**)pixelShaderReflection.GetAddressOf());
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to get pixel shader reflection."));
@@ -283,49 +314,76 @@ namespace Blueberry
 		D3D11_SHADER_DESC pixelShaderDesc;
 		pixelShaderReflection->GetDesc(&pixelShaderDesc);
 
-		uint32_t constantBufferCount = pixelShaderDesc.ConstantBuffers;
-
-		for (uint32_t i = 0; i < constantBufferCount; i++)
-		{
-			ID3D11ShaderReflectionConstantBuffer* constantBufferReflection = pixelShaderReflection->GetConstantBufferByIndex(i);
-			D3D11_SHADER_BUFFER_DESC shaderBufferDesc;
-			constantBufferReflection->GetDesc(&shaderBufferDesc);
-			if (shaderBufferDesc.Type == D3D_CT_CBUFFER)
-			{
-				m_ConstantBufferSlots.insert({ TO_HASH(String(shaderBufferDesc.Name)), i });
-			}
-		}
-
 		unsigned int resourceBindingCount = pixelShaderDesc.BoundResources;
 
 		for (uint32_t i = 0; i < resourceBindingCount; i++)
 		{
 			D3D11_SHADER_INPUT_BIND_DESC inputBindDesc;
 			pixelShaderReflection->GetResourceBindingDesc(i, &inputBindDesc);
-			if (inputBindDesc.Type == D3D_SIT_TEXTURE)
+			uint8_t bindPoint = static_cast<uint8_t>(inputBindDesc.BindPoint);
+			switch (inputBindDesc.Type)
 			{
-				uint32_t samplerSlot = -1;
-				if (inputBindDesc.NumSamples > 8)
+			case D3D_SIT_TEXTURE:
+			{
+				size_t textureHash = TO_HASH(String(inputBindDesc.Name));
+				size_t texturePairIndex = UINT64_MAX;
+				for (size_t i = 0; i < m_TextureSRVSamplerSlots.size(); ++i)
 				{
-					for (uint32_t j = 0; j < resourceBindingCount; j++)
+					if (m_TextureSRVSamplerSlots[i].first == textureHash)
 					{
-						D3D11_SHADER_INPUT_BIND_DESC samplerInputBindDesc;
-						pixelShaderReflection->GetResourceBindingDesc(j, &samplerInputBindDesc);
-						if (samplerInputBindDesc.Type == D3D10_SIT_SAMPLER)
-						{
-							if (strncmp(samplerInputBindDesc.Name, inputBindDesc.Name, strlen(inputBindDesc.Name)) == 0)
-							{
-								samplerSlot = samplerInputBindDesc.BindPoint;
-								break;
-							}
-						}
+						texturePairIndex = i;
+						break;
 					}
 				}
-				m_TextureSlots.insert({ TO_HASH(String(inputBindDesc.Name)), std::make_pair(inputBindDesc.BindPoint, samplerSlot) });
+				if (texturePairIndex == UINT64_MAX)
+				{
+					m_TextureSRVSamplerSlots.push_back(std::make_pair(textureHash, std::make_pair(bindPoint, UINT8_MAX)));
+				}
+				else
+				{
+					m_TextureSRVSamplerSlots[texturePairIndex].second.first = bindPoint;
+				}
 			}
-			else if (inputBindDesc.Type == D3D_SIT_STRUCTURED)
+			break;
+			case D3D_SIT_CBUFFER:
+				m_ConstantBufferSlots.push_back(std::make_pair(TO_HASH(String(inputBindDesc.Name)), bindPoint));
+				break;
+			case D3D_SIT_STRUCTURED:
+				m_BufferSRVSlots.push_back(std::make_pair(TO_HASH(String(inputBindDesc.Name)), bindPoint));
+				break;
+			case D3D_SIT_SAMPLER:
 			{
-				m_StructuredBufferSlots.insert({ TO_HASH(String(inputBindDesc.Name)), inputBindDesc.BindPoint });
+				String samplerName = String(inputBindDesc.Name);
+				auto pos = samplerName.find("_Sampler");
+				if (pos != std::string::npos)
+				{
+					samplerName.replace(pos, samplerName.length() - pos, "");
+				}
+				else
+				{
+					BB_ERROR("Wrong sampler name.");
+					continue;
+				}
+				size_t samplerHash = TO_HASH(samplerName);
+				size_t texturePairIndex = UINT64_MAX;
+				for (size_t i = 0; i < m_TextureSRVSamplerSlots.size(); ++i)
+				{
+					if (m_TextureSRVSamplerSlots[i].first == samplerHash)
+					{
+						texturePairIndex = i;
+						break;
+					}
+				}
+				if (texturePairIndex == UINT64_MAX)
+				{
+					m_TextureSRVSamplerSlots.push_back(std::make_pair(samplerHash, std::make_pair(UINT8_MAX, bindPoint)));
+				}
+				else
+				{
+					m_TextureSRVSamplerSlots[texturePairIndex].second.second = bindPoint;
+				}
+			}
+			break;
 			}
 		}
 

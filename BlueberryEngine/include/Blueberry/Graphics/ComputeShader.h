@@ -45,10 +45,10 @@ namespace Blueberry
 		ComputeShader() = default;
 		virtual ~ComputeShader();
 
-		void Initialize(const List<void*>& shaders);
-		void Initialize(const List<void*>& shaders, const ComputeShaderData& data);
+		void Initialize(const List<ByteData>& shaders);
+		void Initialize(const List<ByteData>& shaders, const ComputeShaderData& data);
 
-		static ComputeShader* Create(const List<void*>& shaders, const ComputeShaderData& shaderData);
+		static ComputeShader* Create(const List<ByteData>& shaders, const ComputeShaderData& shaderData);
 		
 		GfxComputeShader* GetKernel(uint8_t index) const;
 

@@ -22,6 +22,8 @@ namespace Blueberry
 	class FileWatch
 	{
 	public:
+		BB_OVERRIDE_NEW_DELETE;
+
 		virtual const List<FileOperationInfo>& GetFileOperations() = 0;
 		virtual void ClearFileOperations() = 0;
 

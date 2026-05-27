@@ -222,7 +222,7 @@ Shader
 				float v = sin(radians(i / segments * angle)) * radius;
 
 				FragmentVaryings p1;
-				p1.positionCS = mul(mul(float4(center + tangentOS * u + bitangentOS * v, 1.0), _ModelMatrix), VIEW_PROJECTION_MATRIX);
+				p1.positionCS = mul(VIEW_PROJECTION_MATRIX, mul(_ModelMatrix, float4(center + tangentOS * u + bitangentOS * v, 1.0)));
 				p1.color = color;
 				lineStream.Append(p1);
 			}
