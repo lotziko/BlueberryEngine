@@ -34,7 +34,7 @@ namespace Blueberry
 	class GfxRenderStateCache
 	{
 	protected:
-		GfxPassData GetPassData(Material* material, uint8_t passIndex) const;
+		GfxPassData GetPassData(Material* material, uint64_t passId);
 		uint32_t GetTextureIndex(Material* material, size_t id) const;
 		uint32_t GetTextureIndex(Material* material, uint32_t slotIndex) const;
 	};

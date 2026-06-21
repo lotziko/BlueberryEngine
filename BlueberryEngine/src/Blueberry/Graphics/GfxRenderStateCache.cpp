@@ -4,14 +4,18 @@
 
 namespace Blueberry
 {
-	GfxPassData GfxRenderStateCache::GetPassData(Material* material, uint8_t passIndex) const
+	GfxPassData GfxRenderStateCache::GetPassData(Material* material, uint64_t passId)
 	{
 		GfxPassData data = {};
 		Shader* shader = material->GetShader();
 		auto& shaderData = shader->GetData();
-		if (passIndex >= 0 && passIndex < shaderData.GetPassCount())
+		if (passId > 32)
 		{
-			auto& shaderPass = shaderData.GetPass(passIndex);
+			passId = shaderData.FindPassIndex(passId);
+		}
+		if (passId >= 0 && passId < shaderData.GetPassCount())
+		{
+			auto& shaderPass = shaderData.GetPass(passId);
 			uint32_t vertexFlags = 0;
 			uint32_t fragmentFlags = 0;
 			const List<String>& vertexKeywords = shaderPass.GetVertexKeywords();
@@ -64,7 +68,7 @@ namespace Blueberry
 					}
 				}
 			}
-			const ShaderVariant variant = shader->GetVariant(vertexFlags, fragmentFlags, passIndex);
+			const ShaderVariant variant = shader->GetVariant(vertexFlags, fragmentFlags, passId);
 			data.vertexShader = variant.vertexShader;
 			data.geometryShader = variant.geometryShader;
 			data.fragmentShader = variant.fragmentShader;

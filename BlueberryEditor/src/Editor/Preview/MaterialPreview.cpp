@@ -22,8 +22,8 @@ namespace Blueberry
 			m_Scene = new Scene();
 
 			Entity* sphereEntity = m_Scene->CreateEntity("Sphere");
-			m_Renderer = sphereEntity->AddComponent<MeshRenderer>();
-			m_Renderer->SetMesh(StandardMeshes::GetSphere());
+			m_MeshRenderer = sphereEntity->AddComponent<MeshRenderer>();
+			m_MeshRenderer->SetMesh(StandardMeshes::GetSphere());
 
 			Entity* lightEntity = m_Scene->CreateEntity("Light");
 			lightEntity->GetTransform()->SetPosition(Vector3(4, 3, 3));
@@ -49,17 +49,23 @@ namespace Blueberry
 			m_Camera->SetBackgroundColor(Color(0.0f, 0.0f, 0.0f, 1.0f));
 
 			Entity* skyEntity = m_Scene->CreateEntity("Sky");
-			SkyRenderer* skyRenderer = skyEntity->AddComponent<SkyRenderer>();
-			skyRenderer->SetAmbientColor(Color(0.01f, 0.01f, 0.01f, 1));
+			m_SkyRenderer = skyEntity->AddComponent<SkyRenderer>();
+			m_SkyRenderer->SetAmbientColor(Color(0.01f, 0.01f, 0.01f, 1));
 		}
-		if (material->GetShader() == DefaultShaders::GetSkybox())
+		if (m_Material.Get() != material)
 		{
-			// TODO
+			m_Material = material;
+			if (material->GetShader() == DefaultShaders::GetSkybox())
+			{
+				m_SkyRenderer->SetMaterial(material);
+				m_MeshRenderer->GetEntity()->SetActive(false);
+			}
+			else
+			{
+				m_MeshRenderer->SetMaterial(material);
+				m_MeshRenderer->GetEntity()->SetActive(true);
+			}
 		}
-		else
-		{
-			m_Renderer->SetMaterial(material);
-			DefaultRenderer::Draw(m_Scene, m_Camera, Rectangle(0, 0, target->GetWidth(), target->GetHeight()), target, nullptr);
-		}
+		DefaultRenderer::Draw(m_Scene, m_Camera, Rectangle(0, 0, target->GetWidth(), target->GetHeight()), target, nullptr);
 	}
 }

@@ -24,18 +24,21 @@ float2 CalculateFresnelResponse(float NdotV, float roughness)
 	return pow(SAMPLE_TEXTURE2D(_BRDFIntegrationLUT, _BRDFIntegrationLUT_Sampler, float2(NdotV, roughness)).rg, 2);
 }
 
-void RoughnessEllipseToScaleAndExp(float roughness, out float2 diffuseExponent, out float2 specularExponent, out float2 specularScale)
+float3 CalculateDirectDiffuse(float3 normalWS, float3 viewDirectionWS, float3 lightDirectionWS, float3 lightColor, float attenuation, float falloff, float roughness)
 {
-	diffuseExponent = ((1.0 - roughness.xx) * 0.8) + 0.6; // 0.8 and 0.6 are magic numbers
-	specularExponent.xy = exp2(pow(float2(1.0, 1.0) - roughness.xx, float2(1.5, 1.5)) * float2(14.0, 14.0)); // Outputs 1-16384
-	specularScale.xy = 1.0 - saturate(roughness.xx * 0.5); // This is an energy conserving scalar for the roughness exponent.
-}
+	float NdotL = saturate(dot(normalWS, lightDirectionWS));
+	float NdotV = saturate(dot(normalWS, viewDirectionWS));
+	float LdotH = saturate(dot(lightDirectionWS, normalize(lightDirectionWS.xyz + viewDirectionWS.xyz)));
 
-float3 CalculateDirectDiffuse(float3 normalWS, float3 lightDirectionWS, float3 lightColor, float attenuation, float falloff, float2 diffuseExponent)
-{
-	float diffuseExponentScalar = (diffuseExponent.x + diffuseExponent.y) * 0.5;
-	float NdotL = max(0, dot(normalWS, lightDirectionWS));
-	return lightColor * pow(NdotL, diffuseExponent.x) * diffuseExponentScalar * attenuation * falloff;
+	float FD90 = 0.5 + 2.0 * roughness * LdotH * LdotH;
+	float lightScatter = 1.0 + (FD90 - 1.0) * pow(1.0 - NdotL, 5);
+	float viewScatter = 1.0 + (FD90 - 1.0) * pow(1.0 - NdotV, 5);
+
+	return (lightColor * attenuation * falloff) * (lightScatter * viewScatter) * (1.0 / PI) * NdotL;
+
+	//float diffuseExponentScalar = (diffuseExponent.x + diffuseExponent.y) * 0.5;
+	//float NdotL = max(0, dot(normalWS, lightDirectionWS));
+	//return lightColor * pow(NdotL, diffuseExponent.x) * diffuseExponentScalar * attenuation * falloff;
 }
 
 float CalculateDistributionGGX(float3 NDotH, float roughness)
@@ -130,15 +133,12 @@ float3 CalculateIndirectSpecular(float3 normalWS, float3 positionWS, float3 view
 float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 {
 	float2 diffuseExponent;
-	float2 specularExponent;
-	float2 specularScale;
 	float geometricRoughness = AdjustRoughnessByGeometricNormal(surfaceData.roughness, inputData.normalGS);
-	RoughnessEllipseToScaleAndExp(geometricRoughness, diffuseExponent, specularExponent, specularScale);
 
 	float3 albedo = (1 - surfaceData.metallic) * surfaceData.albedo;
 	float3 reflectance = 0.04;
 	reflectance = lerp(reflectance, surfaceData.albedo.rgb, surfaceData.metallic);
-	
+
 	float3 directDiffuseTerm = (float3)0;
 	float3 directSpecularTerm = (float3)0;
 
@@ -153,7 +153,7 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 		{
 			if (!IsOutOfBounds(positionSS, _MainShadowBounds[cascadeIndex]))
 			{
-				shadowAttenuation = SampleShadowAtlas(positionSS);
+				shadowAttenuation = SampleShadowAtlas(positionSS, false);
 			}
 		}
 #endif
@@ -161,7 +161,7 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 		float3 lightDirectionWS = _MainLightDirection.xyz;
 		float3 lightColor = _MainLightColor.rgb;
 
-		directDiffuseTerm += CalculateDirectDiffuse(inputData.normalWS, lightDirectionWS, lightColor, shadowAttenuation, falloff, diffuseExponent);
+		directDiffuseTerm += CalculateDirectDiffuse(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, shadowAttenuation, falloff, geometricRoughness);
 		directSpecularTerm += CalculateDirectSpecular(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, shadowAttenuation, falloff, reflectance, geometricRoughness);
 	}
 
@@ -201,11 +201,11 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 			float4 positionSS = ApplyShadowBias(TransformWorldToShadow(inputData.positionWS, shadowData.worldToShadow));
 			if (!IsOutOfBounds(positionSS, shadowData.shadowBounds))
 			{
-				shadowAttenuation = SampleShadowAtlas(positionSS);
+				shadowAttenuation = SampleShadowAtlas(positionSS, false);
 			}
 		}
 #endif
-		directDiffuseTerm += CalculateDirectDiffuse(inputData.normalWS, lightDirectionWS, lightColor, distanceAttenuation * shadowAttenuation, falloff, diffuseExponent);
+		directDiffuseTerm += CalculateDirectDiffuse(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, distanceAttenuation * shadowAttenuation, falloff, geometricRoughness);
 		directSpecularTerm += CalculateDirectSpecular(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, distanceAttenuation * shadowAttenuation, falloff, reflectance, geometricRoughness);
 	}
 
@@ -219,7 +219,7 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 			break;
 		}
 		spotCluster.x += 1;
-		
+
 		SpotLightData data = _SpotLightsData[i];
 
 		float3 lightPositionWS = data.positionWS;
@@ -249,12 +249,12 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 			float4 positionSS = ApplyShadowBias(TransformWorldToShadow(inputData.positionWS, shadowData.worldToShadow));
 			if (!IsOutOfBounds(positionSS, shadowData.shadowBounds))
 			{
-				shadowAttenuation = SampleShadowAtlas(positionSS);
+				shadowAttenuation = SampleShadowAtlas(positionSS, false);
 			}
 		}
 #endif
 
-		directDiffuseTerm += CalculateDirectDiffuse(inputData.normalWS, lightDirectionWS, lightColor, distanceAttenuation * spotAttenuation * cookieAttenuation * shadowAttenuation, falloff, diffuseExponent);
+		directDiffuseTerm += CalculateDirectDiffuse(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, distanceAttenuation * spotAttenuation * cookieAttenuation * shadowAttenuation, falloff, geometricRoughness);
 		directSpecularTerm += CalculateDirectSpecular(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, distanceAttenuation * spotAttenuation * cookieAttenuation * shadowAttenuation, falloff, reflectance, geometricRoughness);
 	}
 

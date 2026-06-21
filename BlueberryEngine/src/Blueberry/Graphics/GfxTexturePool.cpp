@@ -85,7 +85,6 @@ namespace Blueberry
 		if (texture == nullptr)
 		{
 			TextureProperties textureProperties = {};
-
 			textureProperties.width = width;
 			textureProperties.height = height;
 			textureProperties.depth = depth;

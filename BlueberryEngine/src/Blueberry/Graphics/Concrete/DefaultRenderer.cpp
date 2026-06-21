@@ -40,6 +40,8 @@ namespace Blueberry
 	static size_t s_MultiviewKeywordId = TO_HASH("MULTIVIEW");
 	static size_t s_ShadowsKeywordId = TO_HASH("SHADOWS");
 	static size_t s_ReflectionsKeywordId = TO_HASH("REFLECTIONS");
+	static size_t s_DepthPassId = TO_HASH("Depth");
+	static size_t s_ForwardPassId = TO_HASH("Forward");
 
 	void DefaultRenderer::Initialize()
 	{
@@ -149,7 +151,7 @@ namespace Blueberry
 		GfxDevice::SetViewport(viewport.x, viewport.y, viewport.width, viewport.height);
 		GfxDevice::ClearDepth(1.0f);
 		DrawingSettings drawingSettings = {};
-		drawingSettings.passIndex = 1;
+		drawingSettings.passId = s_DepthPassId;
 		drawingSettings.sortingMode = SortingMode::FrontToBack;
 		drawingSettings.useGI = cameraType != CameraType::Reflection && cameraType != CameraType::Preview;
 		s_DefaultContext.DrawRenderers(s_Results, drawingSettings);
@@ -178,7 +180,7 @@ namespace Blueberry
 		GfxDevice::SetRenderTarget(colorMSAARenderTarget, depthStencilMSAARenderTarget);
 		GfxDevice::ClearColor(Color(0.0f, 0.0f, 0.0f, 0.0f));
 		s_DefaultContext.DrawSky(s_Results);
-		drawingSettings.passIndex = 0;
+		drawingSettings.passId = s_ForwardPassId;
 		drawingSettings.sortingMode = SortingMode::Default;
 		s_DefaultContext.DrawRenderers(s_Results, drawingSettings);
 		BB_PROFILE_END();

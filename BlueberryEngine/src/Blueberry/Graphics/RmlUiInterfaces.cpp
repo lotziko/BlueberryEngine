@@ -152,7 +152,7 @@ namespace Blueberry
 		size_t index = static_cast<size_t>(geometry);
 		RmlUiGeometryData& geometryData = renderData->m_Geometry[index];
 		PerDrawDataConstantBuffer::BindData(Matrix::CreateTranslation(translation.x, translation.y, 0.0f));
-		uint8_t passIndex = 0;
+		uint64_t passId = 0;
 		if (texture != 0)
 		{
 			RmlTextureData* textureData = reinterpret_cast<RmlTextureData*>(texture);
@@ -173,9 +173,9 @@ namespace Blueberry
 				uiTexture = textureData->gfxTexture;
 			}
 			GfxDevice::SetGlobalTexture(s_UiTextureId, uiTexture);
-			passIndex = 1;
+			passId = 1;
 		}
-		GfxDevice::Draw(GfxDrawingOperation(renderData->m_VertexBuffer, renderData->m_IndexBuffer, RmlUiRenderer::s_Material, RmlUiRenderer::s_VertexLayout, static_cast<uint32_t>(geometryData.indices.size()), static_cast<uint32_t>(geometryData.indexOffset), static_cast<uint32_t>(geometryData.vertices.size()), Topology::TriangleList, passIndex));
+		GfxDevice::Draw(GfxDrawingOperation(renderData->m_VertexBuffer, renderData->m_IndexBuffer, RmlUiRenderer::s_Material, RmlUiRenderer::s_VertexLayout, static_cast<uint32_t>(geometryData.indices.size()), static_cast<uint32_t>(geometryData.indexOffset), static_cast<uint32_t>(geometryData.vertices.size()), Topology::TriangleList, passId));
 	}
 
 	void RmlUiRenderInterface::ReleaseGeometry(Rml::CompiledGeometryHandle geometry)

@@ -19,6 +19,7 @@ namespace Blueberry
 
 	DATA_DEFINITION(PassData)
 	{
+		DEFINE_FIELD(PassData, m_Name, BindingType::String, FieldOptions())
 		DEFINE_FIELD(PassData, m_CullMode, BindingType::Enum, FieldOptions())
 		DEFINE_FIELD(PassData, m_SrcBlendColor, BindingType::Enum, FieldOptions())
 		DEFINE_FIELD(PassData, m_SrcBlendAlpha, BindingType::Enum, FieldOptions())
@@ -103,6 +104,27 @@ namespace Blueberry
 	void PropertyData::SetTextureDimension(TextureDimension dimension)
 	{
 		m_TextureDimension = dimension;
+	}
+
+	const String& PassData::GetName() const
+	{
+		return m_Name;
+	}
+
+	void PassData::SetName(const String& name)
+	{
+		m_Name = name;
+		m_NameHash = 0;
+	}
+
+	const size_t& PassData::GetNameHash() const
+	{
+		return m_NameHash;
+	}
+
+	void PassData::CalculateNameHash()
+	{
+		m_NameHash = TO_HASH(m_Name);
 	}
 
 	CullMode PassData::GetCullMode() const
@@ -229,9 +251,29 @@ namespace Blueberry
 		m_FragmentOffset = offset;
 	}
 
-	const PassData& ShaderData::GetPass(uint32_t index) const
+	void ShaderData::Initialize()
+	{
+		for (auto& pass : m_Passes)
+		{
+			pass.CalculateNameHash();
+		}
+	}
+
+	const PassData& ShaderData::GetPass(size_t index) const
 	{
 		return m_Passes[index];
+	}
+
+	const size_t ShaderData::FindPassIndex(size_t passId) const
+	{
+		for (size_t i = 0; i < m_Passes.size(); ++i)
+		{
+			if (m_Passes[i].GetNameHash() == passId)
+			{
+				return i;
+			}
+		}
+		return UINT64_MAX;
 	}
 
 	const size_t ShaderData::GetPassCount() const
@@ -343,12 +385,13 @@ namespace Blueberry
 			m_FragmentShaders[i] = fragmentShader;
 		}
 		IncrementUpdateCount();
+		m_Data.Initialize();
 	}
 
 	void Shader::Initialize(const VariantsData& variantsData, const ShaderData& data)
 	{
-		Initialize(variantsData);
 		m_Data = data;
+		Initialize(variantsData);
 	}
 
 	Shader* Shader::Create(const VariantsData& variantsData, const ShaderData& shaderData)
@@ -362,29 +405,30 @@ namespace Blueberry
 	{
 		if (enabled)
 		{
-			bool isActive = false;
 			for (size_t i = 0; i < s_ActiveKeywords.size(); ++i)
 			{
 				if (s_ActiveKeywords[i] == id)
 				{
-					isActive = true;
-					break;
+					return;
 				}
 			}
-			if (!isActive)
-			{
-				s_ActiveKeywords.push_back(id);
-			}
+			s_ActiveKeywords.push_back(id);
 		}
 		else
 		{
+			bool keywordFound = false;
 			for (size_t i = 0; i < s_ActiveKeywords.size(); ++i)
 			{
 				if (s_ActiveKeywords[i] == id)
 				{
 					s_ActiveKeywords.erase(s_ActiveKeywords.begin() + i);
+					keywordFound = true;
 					break;
 				}
+			}
+			if (!keywordFound)
+			{
+				return;
 			}
 		}
 		s_ActiveKeywordsMask = 0;
@@ -399,7 +443,7 @@ namespace Blueberry
 		return s_ActiveKeywordsMask;
 	}
 
-	const ShaderVariant Shader::GetVariant(uint32_t vertexKeywordFlags, uint32_t fragmentKeywordFlags, uint8_t passIndex)
+	const ShaderVariant Shader::GetVariant(uint32_t vertexKeywordFlags, uint32_t fragmentKeywordFlags, size_t index)
 	{
 		if (m_PassesOffsets.size() == 0)
 		{
@@ -411,7 +455,7 @@ namespace Blueberry
 			}
 		}
 
-		auto offsets = m_PassesOffsets[passIndex];
+		auto& offsets = m_PassesOffsets[index];
 		return { m_VertexShaders[std::get<0>(offsets) + vertexKeywordFlags], m_GeometryShaders[std::get<1>(offsets)], m_FragmentShaders[std::get<2>(offsets) + fragmentKeywordFlags] };
 	}
 

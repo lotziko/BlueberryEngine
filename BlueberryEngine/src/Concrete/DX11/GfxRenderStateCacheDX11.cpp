@@ -36,14 +36,14 @@ namespace Blueberry
 		m_InputLayouts.clear();
 	}
 
-	const GfxRenderStateDX11 GfxRenderStateCacheDX11::GetState(Material* material, uint8_t passIndex, VertexLayout* meshLayout, bool isCounterClockwise, bool isSolid)
+	const GfxRenderStateDX11 GfxRenderStateCacheDX11::GetState(Material* material, uint64_t passId, VertexLayout* meshLayout, uint32_t depthBias, float slopeDepthBias, bool isCounterClockwise, bool isSolid)
 	{
 		uint64_t keywordMask = static_cast<uint64_t>(Shader::GetActiveKeywordsMask()) | (static_cast<uint64_t>(material->GetActiveKeywordsMask()) << 32);
 		ObjectId objectId = material->GetObjectId(); // Maybe also use shader id to be able to switch it
 		uint32_t crc = material->GetCRC();
 
 		GfxRenderStateDX11 renderState;
-		GfxRenderStateKeyDX11 key = { keywordMask, objectId, passIndex, isCounterClockwise, isSolid };
+		GfxRenderStateKeyDX11 key = { keywordMask, passId, objectId, depthBias, slopeDepthBias, isCounterClockwise, isSolid };
 		auto it = m_RenderStates.find(key);
 		if (it != m_RenderStates.end() && crc == it->second.first.crc)
 		{
@@ -58,7 +58,7 @@ namespace Blueberry
 				m_RenderStates.clear();
 			}
 			renderState = {};
-			GfxPassData passData = GetPassData(material, passIndex);
+			GfxPassData passData = GetPassData(material, passId);
 			renderState.isValid = passData.isValid;
 			renderState.crc = crc;
 
@@ -210,7 +210,7 @@ namespace Blueberry
 				}
 			}
 
-			renderState.rasterizerState = m_Device->GetRasterizerState(passData.cullMode, isCounterClockwise, isSolid);
+			renderState.rasterizerState = m_Device->GetRasterizerState(passData.cullMode, depthBias, slopeDepthBias, isCounterClockwise, isSolid);
 			renderState.depthStencilState = m_Device->GetDepthStencilState(passData.zTest, passData.zWrite);
 			renderState.blendState = m_Device->GetBlendState(passData.blendSrcColor, passData.blendSrcAlpha, passData.blendDstColor, passData.blendDstAlpha);
 			

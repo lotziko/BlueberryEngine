@@ -36,6 +36,17 @@ namespace Blueberry
 		return 0;
 	}
 
+	uint32_t LightHelper::GetShadowBias(LightType type, uint8_t slice)
+	{
+		if (type == LightType::Spot)
+			return 0;
+		if (type == LightType::Directional)
+			return 4149;
+		if (type == LightType::Point)
+			return 0;
+		return 0;
+	}
+
 	float LightHelper::GetShadowSlopeBias(LightType type, uint8_t slice)
 	{
 		if (type == LightType::Spot)
@@ -43,7 +54,7 @@ namespace Blueberry
 		if (type == LightType::Directional)
 			return 0.5f;
 		if (type == LightType::Point)
-			return 1.5f;
+			return 0.5f;
 		return 0.0f;
 	}
 

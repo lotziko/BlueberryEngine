@@ -9,8 +9,10 @@ namespace Blueberry
 	struct GfxRenderStateKeyDX11
 	{
 		uint64_t keywordsMask; // global + material
+		uint64_t passId;
 		ObjectId materialId;
-		uint8_t passIndex;
+		uint32_t depthBias;
+		float slopeDepthBias;
 		bool isCounterClockwise;
 		bool isSolid;
 
@@ -24,7 +26,7 @@ struct std::hash<Blueberry::GfxRenderStateKeyDX11>
 {
 	size_t operator()(const Blueberry::GfxRenderStateKeyDX11& key) const
 	{
-		return std::hash<uint64_t>()(key.keywordsMask) ^ (std::hash<uint32_t>()(key.materialId) << 1) ^ (std::hash<uint8_t>()(key.passIndex) << 2);
+		return std::hash<uint64_t>()(key.keywordsMask) ^ (std::hash<uint64_t>()(key.passId) << 1) ^ (std::hash<uint32_t>()(key.materialId) << 2);
 	}
 };
 
@@ -97,7 +99,7 @@ namespace Blueberry
 		GfxRenderStateCacheDX11(GfxDeviceDX11* device);
 		~GfxRenderStateCacheDX11();
 
-		const GfxRenderStateDX11 GetState(Material* material, uint8_t passIndex, VertexLayout* meshLayout, bool isCounterClockwise, bool isSolid);
+		const GfxRenderStateDX11 GetState(Material* material, uint64_t passId, VertexLayout* meshLayout, uint32_t depthBias, float slopeDepthBias, bool isCounterClockwise, bool isSolid);
 		
 	private:
 		void FillRenderState(Material* material, GfxRenderStateDX11& renderState, const GfxBindingStateDX11& bindingState);

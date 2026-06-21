@@ -63,7 +63,7 @@ namespace Blueberry
 
 	struct DrawingSettings
 	{
-		uint8_t passIndex;
+		uint64_t passId;
 		SortingMode sortingMode;
 		ObjectsFilter objectsFilter;
 		bool useGI;

@@ -150,7 +150,6 @@ namespace Blueberry
 			uint32_t textureHeight2 = Math::NextPowerOfTwo(textureHeight);
 
 			TextureProperties textureProperties = {};
-
 			textureProperties.width = textureWidth;
 			textureProperties.height = textureHeight;
 			textureProperties.depth = 1;

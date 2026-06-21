@@ -11,6 +11,8 @@
 
 namespace Blueberry
 {
+	#define SHADER_RESOURCE_STATE (D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
+
 	bool GfxPipelineStateKeyDX12::operator==(const GfxPipelineStateKeyDX12& other) const
 	{
 		return memcmp(this, &other, sizeof(GfxPipelineStateKeyDX12)) == 0;
@@ -60,7 +62,7 @@ namespace Blueberry
 		}
 	}
 
-	GfxRenderStateDX12 GfxRenderStateCacheDX12::GetRenderState(Material* material, uint8_t passIndex, VertexLayout* meshLayout, GfxTargetInfoDX12& targetInfo, Topology topology, uint32_t depthBias, float slopeDepthBias, bool isCounterClockwise, bool isSolid)
+	GfxRenderStateDX12 GfxRenderStateCacheDX12::GetRenderState(Material* material, uint64_t passId, VertexLayout* meshLayout, GfxTargetInfoDX12& targetInfo, Topology topology, uint32_t depthBias, float slopeDepthBias, bool isCounterClockwise, bool isSolid)
 	{
 		uint64_t keywordMask = static_cast<uint64_t>(Shader::GetActiveKeywordsMask()) | (static_cast<uint64_t>(material->GetActiveKeywordsMask()) << 32);
 		ObjectId shaderObjectId = material->GetShader()->GetObjectId();
@@ -70,8 +72,8 @@ namespace Blueberry
 		
 		GfxRenderStateDX12 renderState = {};
 		GfxPassData passData = {};
-		GfxPipelineStateKeyDX12 pipelineStateKey = { keywordMask, shaderObjectId, meshLayoutCrc, targetInfo, static_cast<uint32_t>(topology), depthBias, slopeDepthBias, passIndex, isCounterClockwise, isSolid };
-		GfxRenderStateKeyDX12 bindingStateKey = { keywordMask, materialObjectId, passIndex };
+		GfxPipelineStateKeyDX12 pipelineStateKey = { keywordMask, passId, shaderObjectId, meshLayoutCrc, targetInfo, static_cast<uint32_t>(topology), depthBias, slopeDepthBias, isCounterClockwise, isSolid };
+		GfxRenderStateKeyDX12 bindingStateKey = { keywordMask, passId, materialObjectId };
 		auto psIt = m_PipelineStates.find(pipelineStateKey);
 		auto bsIt = m_BindingStates.find(bindingStateKey);
 		bool hasPipelineState = psIt != m_PipelineStates.end();
@@ -79,7 +81,7 @@ namespace Blueberry
 
 		if (!hasPipelineState || !hasBindingState)
 		{
-			passData = GetPassData(material, passIndex);
+			passData = GetPassData(material, passId);
 		}
 
 		if (hasBindingState)
@@ -345,6 +347,11 @@ namespace Blueberry
 			}
 			if (buffer.srvSlot != UINT8_MAX)
 			{
+				if (dxBuffer->m_State != SHADER_RESOURCE_STATE)
+				{
+					m_Device->TransitionBarrier(dxBuffer->m_Resource.Get(), dxBuffer->m_State, SHADER_RESOURCE_STATE);
+					dxBuffer->m_State = SHADER_RESOURCE_STATE;
+				}
 				renderState.vertexShaderResourceViews[buffer.srvSlot] = dxBuffer->m_ShaderResourceView.GetCPU();
 				renderState.vertexShaderResourceViewsCount = std::max(renderState.vertexShaderResourceViewsCount, buffer.srvSlot + 1u);
 			}
@@ -360,6 +367,11 @@ namespace Blueberry
 			}
 			if (buffer.srvSlot != UINT8_MAX)
 			{
+				/*if (dxBuffer->m_State != SHADER_RESOURCE_STATE)
+				{
+					m_Device->TransitionBarrier(dxBuffer->m_Resource.Get(), dxBuffer->m_State, SHADER_RESOURCE_STATE);
+					dxBuffer->m_State = SHADER_RESOURCE_STATE;
+				}*/
 				//renderState.geometryShaderResourceViews[buffer.srvSlot] = dxBuffer->m_ShaderResourceView.GetCPU();
 				//renderState.geometryShaderResourceViewsCount = std::max(renderState.geometryShaderResourceViewsCount, buffer.srvSlot);
 			}
@@ -375,6 +387,11 @@ namespace Blueberry
 			}
 			if (buffer.srvSlot != UINT8_MAX)
 			{
+				if (dxBuffer->m_State != SHADER_RESOURCE_STATE)
+				{
+					m_Device->TransitionBarrier(dxBuffer->m_Resource.Get(), dxBuffer->m_State, SHADER_RESOURCE_STATE);
+					dxBuffer->m_State = SHADER_RESOURCE_STATE;
+				}
 				renderState.pixelShaderResourceViews[buffer.srvSlot] = dxBuffer->m_ShaderResourceView.GetCPU();
 				renderState.pixelShaderResourceViewsCount = std::max(renderState.pixelShaderResourceViewsCount, buffer.srvSlot + 1u);
 			}
@@ -383,6 +400,16 @@ namespace Blueberry
 		for (auto& texture : bindingState.vertexTextures)
 		{
 			GfxTextureDX12* dxTexture = GfxTextureDX12::s_PointerCache.Get(texture.isGlobal ? m_Device->m_BindedTextures[texture.bindingIndex].second : GetTextureIndex(material, texture.bindingIndex));
+			if (dxTexture == nullptr)
+			{
+				BB_ERROR("Texture is missing.");
+				continue;
+			}
+			if (dxTexture->m_State != SHADER_RESOURCE_STATE)
+			{
+				m_Device->TransitionBarrier(dxTexture->m_Resource.Get(), dxTexture->m_State, SHADER_RESOURCE_STATE);
+				dxTexture->m_State = SHADER_RESOURCE_STATE;
+			}
 			renderState.vertexShaderResourceViews[texture.srvSlot] = dxTexture->m_ShaderResourceView.GetCPU();
 			renderState.vertexShaderResourceViewsCount = std::max(renderState.vertexShaderResourceViewsCount, texture.srvSlot + 1u);
 			if (texture.samplerSlot != UINT8_MAX)
@@ -405,6 +432,11 @@ namespace Blueberry
 			{
 				BB_ERROR("Texture is missing.");
 				continue;
+			}
+			if (dxTexture->m_State != SHADER_RESOURCE_STATE)
+			{
+				m_Device->TransitionBarrier(dxTexture->m_Resource.Get(), dxTexture->m_State, SHADER_RESOURCE_STATE);
+				dxTexture->m_State = SHADER_RESOURCE_STATE;
 			}
 			renderState.pixelShaderResourceViews[texture.srvSlot] = dxTexture->m_ShaderResourceView.GetCPU();
 			renderState.pixelShaderResourceViewsCount = std::max(renderState.pixelShaderResourceViewsCount, texture.srvSlot + 1u);

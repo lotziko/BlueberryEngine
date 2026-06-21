@@ -38,7 +38,6 @@ namespace Blueberry
 
 	const uint32_t INSTANCE_BUFFER_SIZE = 8192;
 	const uint32_t SKINNING_BUFFER_SIZE = 128;
-	const uint8_t SHADOW_CASTER_PASS = 2;
 
 	struct DrawingOperation
 	{
@@ -63,7 +62,7 @@ namespace Blueberry
 		ObjectsFilter objectsFilter;
 	};
 
-	enum class Keyword
+	enum class GIType
 	{
 		None,
 		Lightmap,
@@ -74,12 +73,13 @@ namespace Blueberry
 	static CullerInfo s_LastCullerInfo = {};
 	static Object* s_CurrentCuller = nullptr;
 	static uint32_t s_CurrentCullerIndex = 0;
-	static Keyword s_CurrentKeyword = Keyword::None;
+	static GIType s_CurrentGIType = GIType::None;
 	static List<std::pair<Matrix, Vector4>> s_PerDrawData = {};
 	static uint32_t s_Indices[INSTANCE_BUFFER_SIZE];
 
 	static size_t s_LightmapId = TO_HASH("LIGHTMAP");
 	static size_t s_ProbesId = TO_HASH("PROBES");
+	static size_t s_ShadowPassId = TO_HASH("Shadow");
 
 	bool CompareOperationsDefault(const DrawingOperation& o1, const DrawingOperation& o2)
 	{
@@ -115,7 +115,7 @@ namespace Blueberry
 		PerDrawDataConstantBuffer::BindDataInstanced(s_PerDrawData.data(), operationCount);
 	}
 
-	void GatherOperations(const CullingResults& results, Object* cullerObject, uint32_t index, SortingMode sortingMode, ObjectsFilter objectsFilter, uint8_t passIndex)
+	void GatherOperations(const CullingResults& results, Object* cullerObject, uint32_t index, SortingMode sortingMode, ObjectsFilter objectsFilter, uint64_t passId)
 	{
 		bool isAll = objectsFilter == ObjectsFilter::All;
 		bool isStatic = objectsFilter == ObjectsFilter::Static;
@@ -151,7 +151,7 @@ namespace Blueberry
 		for (auto it = begin; it < end; ++it)
 		{
 			Renderer* renderer = static_cast<Renderer*>(ObjectDB::GetObject(*it));
-			if (passIndex == SHADOW_CASTER_PASS)
+			if (passId == s_ShadowPassId)
 			{
 				if (!renderer->IsCastingShadows())
 				{
@@ -413,12 +413,12 @@ namespace Blueberry
 							{
 								float radius = planes[i];
 								Vector3 currentCascadeCenter = camera->m_ShadowCascades[i];
-								Vector3 cascadeCenter = center;
 								float cascadeGrid = grid[i];
 
-								cascadeCenter.x = std::roundf(cascadeCenter.x * cascadeGrid) / cascadeGrid;
-								cascadeCenter.y = std::roundf(cascadeCenter.y * cascadeGrid) / cascadeGrid;
-								cascadeCenter.z = std::roundf(cascadeCenter.z * cascadeGrid) / cascadeGrid;
+								Vector3 cascadeCenter;
+								cascadeCenter.x = std::roundf(center.x * cascadeGrid) / cascadeGrid;
+								cascadeCenter.y = std::roundf(center.y * cascadeGrid) / cascadeGrid;
+								cascadeCenter.z = std::roundf(center.z * cascadeGrid) / cascadeGrid;
 
 								Vector3 origin = cascadeCenter - forward * (zRange / 2.0f);
 								Matrix projection = Matrix::CreateOrthographicOffCenter(-radius, radius, -radius, radius, 0.001f, zRange);
@@ -441,8 +441,10 @@ namespace Blueberry
 
 								viewProjection *= Matrix::CreateTranslation(dx, dy, 0);
 
-								if (Vector3::Distance(currentCascadeCenter, cascadeCenter) > cascadeGrid * 0.5f)
+								float distance = Vector3::Distance(currentCascadeCenter, cascadeCenter);
+								if (distance > cascadeGrid * 0.5f)
 								{
+									camera->m_ShadowCascades[i] = Vector4(cascadeCenter.x, cascadeCenter.y, cascadeCenter.z, 0.0f);
 									light->m_WorldToShadow[i] = viewProjection;
 									light->m_ShadowCascades[i] = Vector4(cascadeCenter.x, cascadeCenter.y, cascadeCenter.z, std::powf(radius, 2));
 									light->m_IsDirty[i] = true;
@@ -621,7 +623,7 @@ namespace Blueberry
 		s_CurrentCullerIndex = shadowDrawingSettings.sliceIndex;
 
 		DrawingSettings drawingSettings = {};
-		drawingSettings.passIndex = SHADOW_CASTER_PASS;
+		drawingSettings.passId = s_ShadowPassId;
 		drawingSettings.sortingMode = SortingMode::FrontToBack;
 		drawingSettings.objectsFilter = shadowDrawingSettings.objectsFilter;
 		DrawRenderers(results, drawingSettings);
@@ -629,8 +631,6 @@ namespace Blueberry
 
 	void RenderContext::DrawRenderers(CullingResults& results, DrawingSettings& drawingSettings)
 	{
-		uint8_t passIndex = drawingSettings.passIndex;
-
 		if (s_IndexBuffer == nullptr)
 		{
 			for (uint32_t i = 0; i < INSTANCE_BUFFER_SIZE; ++i)
@@ -648,18 +648,16 @@ namespace Blueberry
 			GfxDevice::CreateBuffer(indexBufferProperties, s_IndexBuffer);
 		}
 
-		GatherOperations(results, s_CurrentCuller, s_CurrentCullerIndex, drawingSettings.sortingMode, drawingSettings.objectsFilter, passIndex);
+		GatherOperations(results, s_CurrentCuller, s_CurrentCullerIndex, drawingSettings.sortingMode, drawingSettings.objectsFilter, drawingSettings.passId);
 
 		if (!drawingSettings.useGI)
 		{
 			Shader::SetKeyword(s_LightmapId, false);
 			Shader::SetKeyword(s_ProbesId, false);
 		}
-
-		if (!drawingSettings.useGI)
+		else
 		{
-			Shader::SetKeyword(s_LightmapId, false);
-			Shader::SetKeyword(s_ProbesId, false);
+			s_CurrentGIType = GIType::None;
 		}
 
 		// Draw meshes
@@ -667,29 +665,32 @@ namespace Blueberry
 		for (uint32_t i = 0; i < operationCount;)
 		{
 			auto& operation = s_DrawingOperations[i];
-			Keyword keyword = operation.lightmapChartOffset > 0 ? Keyword::Lightmap : Keyword::Probes;
-			if (drawingSettings.useGI && keyword != s_CurrentKeyword)
+			if (drawingSettings.useGI)
 			{
-				s_CurrentKeyword = keyword;
-				if (keyword == Keyword::Lightmap)
+				GIType giType = operation.lightmapChartOffset > 0 ? GIType::Lightmap : GIType::Probes;
+				if (giType != s_CurrentGIType)
 				{
-					Shader::SetKeyword(s_LightmapId, true);
-					Shader::SetKeyword(s_ProbesId, false);
-				}
-				else
-				{
-					Shader::SetKeyword(s_LightmapId, false);
-					Shader::SetKeyword(s_ProbesId, true);
+					s_CurrentGIType = giType;
+					if (giType == GIType::Lightmap)
+					{
+						Shader::SetKeyword(s_LightmapId, true);
+						Shader::SetKeyword(s_ProbesId, false);
+					}
+					else
+					{
+						Shader::SetKeyword(s_LightmapId, false);
+						Shader::SetKeyword(s_ProbesId, true);
+					}
 				}
 			}
 			if (operation.submeshIndex == 255)
 			{
-				GfxDevice::Draw(GfxDrawingOperation(operation.mesh, operation.vertexBufferOverride, operation.material, passIndex, s_IndexBuffer, i, operation.instanceCount, operation.isCounterClockwise));
+				GfxDevice::Draw(GfxDrawingOperation(operation.mesh, operation.vertexBufferOverride, operation.material, drawingSettings.passId, s_IndexBuffer, i, operation.instanceCount, operation.isCounterClockwise));
 			}
 			else
 			{
 				auto& subMesh = operation.mesh->GetSubMesh(operation.submeshIndex);
-				GfxDevice::Draw(GfxDrawingOperation(operation.mesh, operation.vertexBufferOverride, operation.material, subMesh.GetIndexCount(), subMesh.GetIndexStart(), operation.mesh->GetVertexCount(), passIndex, s_IndexBuffer, i, operation.instanceCount, operation.isCounterClockwise));
+				GfxDevice::Draw(GfxDrawingOperation(operation.mesh, operation.vertexBufferOverride, operation.material, subMesh.GetIndexCount(), subMesh.GetIndexStart(), operation.mesh->GetVertexCount(), drawingSettings.passId, s_IndexBuffer, i, operation.instanceCount, operation.isCounterClockwise));
 			}
 			i += operation.instanceCount;
 		}

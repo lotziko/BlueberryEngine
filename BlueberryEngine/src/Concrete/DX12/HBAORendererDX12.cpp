@@ -91,9 +91,12 @@ namespace Blueberry
 		output.pRenderTargetView = &rtv;
 		output.Blend.Mode = GFSDK_SSAO_OVERWRITE_RGB;
 
-		m_CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(colorOutputTexture->GetResource(), colorOutputTexture->GetState(), D3D12_RESOURCE_STATE_RENDER_TARGET));
+		D3D12_RESOURCE_BARRIER preBarriers[] = { CD3DX12_RESOURCE_BARRIER::Transition(depthStencilTexture->GetResource(), depthStencilTexture->GetState(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE), CD3DX12_RESOURCE_BARRIER::Transition(colorOutputTexture->GetResource(), colorOutputTexture->GetState(), D3D12_RESOURCE_STATE_RENDER_TARGET) };
+		D3D12_RESOURCE_BARRIER postBarriers[] = { CD3DX12_RESOURCE_BARRIER::Transition(depthStencilTexture->GetResource(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, depthStencilTexture->GetState()), CD3DX12_RESOURCE_BARRIER::Transition(colorOutputTexture->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, colorOutputTexture->GetState()) };
+		
+		m_CommandList->ResourceBarrier(2, preBarriers);
 		GFSDK_SSAO_Status status = m_AOContext->RenderAO(m_CommandQueue, m_CommandList, input, params, output);
-		m_CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(colorOutputTexture->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, colorOutputTexture->GetState()));
+		m_CommandList->ResourceBarrier(2, postBarriers);
 		assert(status == GFSDK_SSAO_OK);
 		m_GfxDevice->Reset();
 	}

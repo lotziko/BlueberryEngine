@@ -86,9 +86,49 @@ float ComputeShadowPCF3x3(float4 positionSS, Texture2D shadowmap, SamplerCompari
 	return attenuation;
 }
 
-float SampleShadowAtlas(float4 positionSS)
+float ComputeShadowPCFPoisson(float4 positionSS, Texture2D shadowmap, SamplerComparisonState shadowmapSampler, float2 texelSize)
 {
-	return ComputeShadowPCF3x3(positionSS, _ShadowTexture, _ShadowTexture_Sampler, _Shadow3x3PCFTermC0, _Shadow3x3PCFTermC1, _Shadow3x3PCFTermC2, _Shadow3x3PCFTermC3);
+	float2 kPoissonDisk[16] = 
+	{
+		{-0.8526,-0.8526},
+		{ 0.2176,-0.2126},
+		{-0.4983,-0.4870},
+		{-0.3932,-0.0658},
+		{ 0.0332, 0.1793},
+		{ 0.2593, 0.3865},
+		{ 0.2580,-0.4496},
+		{-0.3709, 0.9091},
+		{-0.1090, 0.6120},
+		{ 0.8635,-0.4948},
+		{ 0.2439, 0.0685},
+		{-0.6065, 0.2775},
+		{-0.1337,-0.0917},
+		{-0.0568,-0.3167},
+		{ 0.0779, 0.4930},
+		{ 0.0819,-0.0129}
+	};
+
+	float pcfSize = 2.0;
+	float attenuation = 0;
+	[unroll]
+	for (int i = 0; i < 16; i++)
+	{
+		float2 uv = positionSS.xy + kPoissonDisk[i] * pcfSize * texelSize;
+		attenuation += SAMPLE_TEXTURE2D_SHADOW(shadowmap, shadowmapSampler, uv, positionSS.z).r;
+	}
+	return attenuation / 16.0;
+}
+
+float SampleShadowAtlas(float4 positionSS, bool simplified)
+{
+	if (simplified)
+	{
+		return ComputeShadowPCF3x3(positionSS, _ShadowTexture, _ShadowTexture_Sampler, _Shadow3x3PCFTermC0, _Shadow3x3PCFTermC1, _Shadow3x3PCFTermC2, _Shadow3x3PCFTermC3);
+	}
+	else
+	{
+		return ComputeShadowPCFPoisson(positionSS, _ShadowTexture, _ShadowTexture_Sampler, _Shadow3x3PCFTermC1.xy);
+	}
 }
 
 #endif

@@ -17,9 +17,6 @@ namespace Blueberry
 		D3D12_CPU_DESCRIPTOR_HANDLE unorderedAccessViews[8];
 		uint8_t samplers[16];
 
-		ID3D12Resource* resources[8];
-		D3D12_RESOURCE_STATES states[8];
-
 		UINT constantBuffersCount;
 		UINT shaderResourceViewsCount;
 		UINT unorderedAccessViewsCount;

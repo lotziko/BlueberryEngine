@@ -382,7 +382,6 @@ namespace Blueberry
 		if (probeCount > 0)
 		{
 			TextureProperties textureProperties = {};
-
 			textureProperties.width = REFLECTION_SIZE;
 			textureProperties.height = REFLECTION_SIZE;
 			textureProperties.depth = static_cast<uint32_t>(probeCount);

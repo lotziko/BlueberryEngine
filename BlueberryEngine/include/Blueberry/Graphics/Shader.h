@@ -56,10 +56,10 @@ namespace Blueberry
 
 	private:
 		String m_Name;
-		PropertyType m_Type;
+		PropertyType m_Type = PropertyType::Float;
 
 		String m_DefaultTextureName;
-		TextureDimension m_TextureDimension;
+		TextureDimension m_TextureDimension = TextureDimension::Texture2D;
 	};
 
 	class BB_API PassData : public Data
@@ -69,6 +69,12 @@ namespace Blueberry
 	public:
 		PassData() = default;
 		virtual ~PassData() = default;
+
+		const String& GetName() const;
+		void SetName(const String& name);
+
+		const size_t& GetNameHash() const;
+		void CalculateNameHash();
 
 		CullMode GetCullMode() const;
 		void SetCullMode(CullMode cullMode);
@@ -105,6 +111,8 @@ namespace Blueberry
 		void SetFragmentOffset(uint32_t offset);
 
 	private:
+		String m_Name;
+		size_t m_NameHash = 0;
 		CullMode m_CullMode = CullMode::Front;
 		BlendMode m_SrcBlendColor = BlendMode::One;
 		BlendMode m_DstBlendColor = BlendMode::Zero;
@@ -114,9 +122,9 @@ namespace Blueberry
 		ZWrite m_ZWrite = ZWrite::On;
 		List<String> m_VertexKeywords;
 		List<String> m_FragmentKeywords;
-		uint32_t m_VertexOffset;
-		uint32_t m_GeometryOffset;
-		uint32_t m_FragmentOffset;
+		uint32_t m_VertexOffset = 0;
+		uint32_t m_GeometryOffset = 0;
+		uint32_t m_FragmentOffset = 0;
 	};
 
 	class Texture2D;
@@ -129,7 +137,10 @@ namespace Blueberry
 		ShaderData() = default;
 		virtual ~ShaderData() = default;
 
-		const PassData& GetPass(uint32_t index) const;
+		void Initialize();
+
+		const PassData& GetPass(size_t index) const;
+		const size_t FindPassIndex(size_t passId) const;
 		const size_t GetPassCount() const;
 		void SetPasses(const List<PassData>& passes);
 
@@ -177,7 +188,7 @@ namespace Blueberry
 		static uint32_t GetActiveKeywordsMask();
 
 	private:
-		const Shader::ShaderVariant GetVariant(uint32_t vertexKeywordFlags, uint32_t fragmentKeywordFlags, uint8_t passIndex);
+		const Shader::ShaderVariant GetVariant(uint32_t vertexKeywordFlags, uint32_t fragmentKeywordFlags, size_t index);
 		void IncrementUpdateCount();
 
 	private:

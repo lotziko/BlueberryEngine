@@ -40,7 +40,7 @@ float3 CalculateLight(float3 positionWS)
 		{
 			if (!IsOutOfBounds(positionSS, _MainShadowBounds[cascadeIndex]))
 			{
-				shadowAttenuation = SampleShadowAtlas(positionSS);
+				shadowAttenuation = SampleShadowAtlas(positionSS, true);
 			}
 		}
 		float3 lightColor = _MainLightColor.rgb;
@@ -76,7 +76,7 @@ float3 CalculateLight(float3 positionWS)
 			float4 positionSS = TransformWorldToShadow(positionWS, shadowData.worldToShadow);
 			if (!IsOutOfBounds(positionSS, shadowData.shadowBounds))
 			{
-				shadowAttenuation = SampleShadowAtlas(positionSS);
+				shadowAttenuation = SampleShadowAtlas(positionSS, true);
 			}
 		}
 
@@ -134,7 +134,7 @@ float3 CalculateLight(float3 positionWS)
 			float4 positionSS = TransformWorldToShadow(positionWS, shadowData.worldToShadow);
 			if (!IsOutOfBounds(positionSS, shadowData.shadowBounds))
 			{
-				shadowAttenuation = SampleShadowAtlas(positionSS);
+				shadowAttenuation = SampleShadowAtlas(positionSS, true);
 			}
 		}
 

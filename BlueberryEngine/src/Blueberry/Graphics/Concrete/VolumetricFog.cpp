@@ -32,7 +32,6 @@ namespace Blueberry
 		s_VolumetricFogShader = static_cast<ComputeShader*>(AssetLoader::Load("assets/shaders/VolumetricFog.compute"));
 
 		TextureProperties textureProperties = {};
-
 		textureProperties.width = s_FrustumVolumeSize.x;
 		textureProperties.height = s_FrustumVolumeSize.y;
 		textureProperties.depth = s_FrustumVolumeSize.z;

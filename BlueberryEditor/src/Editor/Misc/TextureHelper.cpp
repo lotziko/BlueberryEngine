@@ -301,7 +301,6 @@ namespace Blueberry
 		if (temporaryTexture == nullptr)
 		{
 			TextureProperties textureProperties = {};
-
 			textureProperties.width = size;
 			textureProperties.height = size;
 			textureProperties.depth = 1;
@@ -375,7 +374,6 @@ namespace Blueberry
 		if (temporaryTexture0 == nullptr)
 		{
 			TextureProperties textureProperties = {};
-
 			textureProperties.width = size;
 			textureProperties.height = size;
 			textureProperties.depth = 1;

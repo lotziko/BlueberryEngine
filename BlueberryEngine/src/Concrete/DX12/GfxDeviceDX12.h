@@ -85,14 +85,16 @@ namespace Blueberry
 		void CreateRTV(ID3D12Resource* resource, D3D12_RENDER_TARGET_VIEW_DESC* rtvDesc, GfxHandleDX12* handle);
 		void CreateDSV(ID3D12Resource* resource, D3D12_DEPTH_STENCIL_VIEW_DESC* dsvDesc, GfxHandleDX12* handle);
 		void CreateSampler(D3D12_SAMPLER_DESC* samplerDesc, GfxHandleDX12* handle);
-
+		
 	private:
 		bool InitializeDirectX(HWND hwnd, int width, int height);
 
 		uint32_t GetSampler(WrapMode wrapMode, FilterMode filterMode);
 		uint32_t GetSamplersOffset(const uint8_t* indexes, uint32_t size);
 		void ResizeBackbufferIfNeeded();
-		
+		void TransitionBarrier(ID3D12Resource* resource, D3D12_RESOURCE_STATES fromState, D3D12_RESOURCE_STATES toState);
+		void UAVBarrier(ID3D12Resource* resource);
+
 		static const uint32_t BUFFER_COUNT = 2;
 
 		struct FrameContext

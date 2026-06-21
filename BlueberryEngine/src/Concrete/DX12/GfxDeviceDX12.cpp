@@ -465,7 +465,7 @@ namespace Blueberry
 			return;
 		}
 
-		const GfxRenderStateDX12 renderState = m_StateCache.GetRenderState(operation.material, operation.passIndex, operation.layout, m_TargetInfo, operation.topology, m_DepthBias, m_SlopeDepthBias, operation.isCounterClockwise, operation.isSolid);
+		const GfxRenderStateDX12 renderState = m_StateCache.GetRenderState(operation.material, operation.passId, operation.layout, m_TargetInfo, operation.topology, m_DepthBias, m_SlopeDepthBias, operation.isCounterClockwise, operation.isSolid);
 		
 		if (!renderState.isValid)
 		{
@@ -528,6 +528,11 @@ namespace Blueberry
 		}
 
 		auto dxVertexBuffer = static_cast<GfxBufferDX12*>(operation.vertexBuffer);
+		if (dxVertexBuffer->m_State != D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER)
+		{
+			m_CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(dxVertexBuffer->m_Resource.Get(), dxVertexBuffer->m_State, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
+			dxVertexBuffer->m_State = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+		}
 		if (dxVertexBuffer != m_VertexBuffer)
 		{
 			m_VertexBuffer = dxVertexBuffer;
@@ -606,11 +611,6 @@ namespace Blueberry
 
 		if (renderState.unorderedAccessViewsCount > 0)
 		{
-			for (UINT i = 0; i < renderState.unorderedAccessViewsCount; ++i)
-			{
-				m_CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(renderState.resources[i], renderState.states[i], D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
-			}
-
 			auto uavDestHandle = m_CbvSrvUavRingHeap.AllocateTemporary(renderState.unorderedAccessViewsCount);
 			m_Device->CopyDescriptors(1, &uavDestHandle.GetCPU(), &renderState.unorderedAccessViewsCount, renderState.unorderedAccessViewsCount, renderState.unorderedAccessViews, nullptr, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 			m_CommandList->SetComputeRootDescriptorTable(2, uavDestHandle.GetGPU());
@@ -623,15 +623,6 @@ namespace Blueberry
 		}
 		
 		m_CommandList->Dispatch(threadGroupsX, threadGroupsY, threadGroupsZ);
-
-		if (renderState.unorderedAccessViewsCount > 0)
-		{
-			for (UINT i = 0; i < renderState.unorderedAccessViewsCount; ++i)
-			{
-				D3D12_RESOURCE_BARRIER barriers[] = { CD3DX12_RESOURCE_BARRIER::UAV(renderState.resources[i]), CD3DX12_RESOURCE_BARRIER::Transition(renderState.resources[i], D3D12_RESOURCE_STATE_UNORDERED_ACCESS, renderState.states[i]) };
-				m_CommandList->ResourceBarrier(2, barriers);
-			}
-		}
 	}
 
 	Matrix GfxDeviceDX12::GetGPUMatrixImpl(const Matrix& matrix) const
@@ -814,10 +805,11 @@ namespace Blueberry
 		}
 
 #if DEBUG_LAYER
-		ID3D12Debug* debug = nullptr;
+		ID3D12Debug1* debug = nullptr;
 		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug))))
 		{
 			debug->EnableDebugLayer();
+			debug->SetEnableGPUBasedValidation(true);
 		}
 #endif
 
@@ -1308,5 +1300,15 @@ namespace Blueberry
 			m_BackbufferIndex = m_SwapChain->GetCurrentBackBufferIndex();
 			m_BackbufferResizeRequest = {};
 		}
+	}
+
+	void GfxDeviceDX12::TransitionBarrier(ID3D12Resource* resource, D3D12_RESOURCE_STATES fromState, D3D12_RESOURCE_STATES toState)
+	{
+		m_CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(resource, fromState, toState));
+	}
+
+	void GfxDeviceDX12::UAVBarrier(ID3D12Resource* resource)
+	{
+		m_CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(resource));
 	}
 }

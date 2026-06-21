@@ -28,7 +28,6 @@ namespace Blueberry
 		s_ClusteringShader = static_cast<ComputeShader*>(AssetLoader::Load("assets/shaders/Clustering.compute"));
 		
 		TextureProperties textureProperties = {};
-
 		textureProperties.width = CLUSTERS_X * MAX_LIGHTS;
 		textureProperties.height = CLUSTERS_Y * CLUSTERS_Z * LIGHT_TYPE_COUNT;
 		textureProperties.depth = 1;

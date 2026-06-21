@@ -57,7 +57,6 @@ namespace Blueberry
 		}
 
 		TextureProperties textureProperties = {};
-
 		textureProperties.width = m_Width;
 		textureProperties.height = m_Height;
 		textureProperties.data = m_RawData.data();
@@ -86,7 +85,6 @@ namespace Blueberry
 		}
 
 		TextureProperties textureProperties = {};
-
 		textureProperties.width = m_Width;
 		textureProperties.height = m_Height;
 		textureProperties.data = data;

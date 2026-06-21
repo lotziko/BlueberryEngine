@@ -132,12 +132,12 @@ namespace Blueberry
 		
 		if (isVertex || isConstant)
 		{
-			targetState |= D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+			targetState = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
 		}
 
 		if (isIndex)
 		{
-			targetState |= D3D12_RESOURCE_STATE_INDEX_BUFFER;
+			targetState = D3D12_RESOURCE_STATE_INDEX_BUFFER;
 		}
 
 		D3D12_RESOURCE_STATES initialState = subresourceData == nullptr ? targetState : D3D12_RESOURCE_STATE_COPY_DEST;

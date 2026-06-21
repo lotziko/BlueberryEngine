@@ -347,7 +347,7 @@ namespace Blueberry
 			return;
 		}
 
-		const GfxRenderStateDX11 renderState = m_StateCache.GetState(operation.material, operation.passIndex, operation.layout, operation.isCounterClockwise, operation.isSolid);
+		const GfxRenderStateDX11 renderState = m_StateCache.GetState(operation.material, operation.passId, operation.layout, m_DepthBias, m_SlopeDepthBias, operation.isCounterClockwise, operation.isSolid);
 		
 		if (!renderState.isValid)
 		{
@@ -591,7 +591,7 @@ namespace Blueberry
 			adapter,
 			adapter == NULL ? D3D_DRIVER_TYPE_HARDWARE : D3D_DRIVER_TYPE_UNKNOWN, //hardware driver
 			NULL, //software driver
-			D3D11_CREATE_DEVICE_DEBUG, //no flags	// D3D11_CREATE_DEVICE_DEBUG does not work in runtime
+			0, //no flags	// D3D11_CREATE_DEVICE_DEBUG does not work in runtime
 			NULL, //feature levels
 			0, //no feature levels
 			D3D11_SDK_VERSION,
@@ -678,9 +678,9 @@ namespace Blueberry
 		}
 	}
 
-	ID3D11RasterizerState* GfxDeviceDX11::GetRasterizerState(CullMode mode, bool isCounterClockwise, bool isSolid)
+	ID3D11RasterizerState* GfxDeviceDX11::GetRasterizerState(CullMode mode, uint32_t depthBias, float slopeDepthBias, bool isCounterClockwise, bool isSolid)
 	{
-		size_t key = static_cast<size_t>(mode) | static_cast<size_t>(m_DepthBias) << 8 | *(reinterpret_cast<size_t*>(&m_SlopeDepthBias)) << 16 | (isCounterClockwise ? 1ull : 0ull) << 24 | (isSolid ? 1ull : 0ull) << 25;
+		size_t key = static_cast<size_t>(mode) | static_cast<size_t>(depthBias) << 8 | *(reinterpret_cast<size_t*>(&slopeDepthBias)) << 16 | (isCounterClockwise ? 1ull : 0ull) << 24 | (isSolid ? 1ull : 0ull) << 25;
 		for (auto& pair : m_RasterizerStates)
 		{
 			if (pair.first == key)
@@ -695,8 +695,8 @@ namespace Blueberry
 		rasterizerDesc.FrontCounterClockwise = isCounterClockwise;
 		rasterizerDesc.MultisampleEnable = true;
 		rasterizerDesc.AntialiasedLineEnable = true;
-		rasterizerDesc.DepthBias = m_DepthBias;
-		rasterizerDesc.SlopeScaledDepthBias = m_SlopeDepthBias;
+		rasterizerDesc.DepthBias = depthBias;
+		rasterizerDesc.SlopeScaledDepthBias = slopeDepthBias;
 
 		ComPtr<ID3D11RasterizerState> state;
 		HRESULT hr = m_Device->CreateRasterizerState(&rasterizerDesc, state.GetAddressOf());

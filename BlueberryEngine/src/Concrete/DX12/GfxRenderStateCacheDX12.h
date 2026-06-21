@@ -17,13 +17,13 @@ namespace Blueberry
 	struct GfxPipelineStateKeyDX12
 	{
 		uint64_t keywordsMask; // global + material
+		uint64_t passId;
 		ObjectId shaderId;
 		uint32_t meshLayoutCrc;
 		GfxTargetInfoDX12 targetInfo;
 		uint32_t topology;
 		uint32_t depthBias;
 		float slopeDepthBias;
-		uint8_t passIndex;
 		bool isCounterClockwise;
 		bool isSolid;
 
@@ -34,8 +34,8 @@ namespace Blueberry
 	struct GfxRenderStateKeyDX12
 	{
 		uint64_t keywordsMask; // global + material
+		uint64_t passId;
 		ObjectId materialId;
-		uint8_t passIndex;
 
 		bool operator==(const GfxRenderStateKeyDX12& other) const;
 		bool operator!=(const GfxRenderStateKeyDX12& other) const;
@@ -47,7 +47,7 @@ struct std::hash<Blueberry::GfxPipelineStateKeyDX12>
 {
 	size_t operator()(const Blueberry::GfxPipelineStateKeyDX12& key) const
 	{
-		return std::hash<uint64_t>()(key.keywordsMask) ^ (std::hash<uint32_t>()(key.shaderId) << 1) ^ (std::hash<uint8_t>()(key.passIndex) << 2) ^ (std::hash<uint32_t>()(key.meshLayoutCrc) << 3) ^ (std::hash<uint32_t>()(key.topology) << 5);
+		return std::hash<uint64_t>()(key.keywordsMask) ^ (std::hash<uint64_t>()(key.passId) << 1) ^ (std::hash<uint32_t>()(key.shaderId) << 2) ^ (std::hash<uint32_t>()(key.meshLayoutCrc) << 3) ^ (std::hash<uint32_t>()(key.topology) << 5);
 	}
 };
 
@@ -56,7 +56,7 @@ struct std::hash<Blueberry::GfxRenderStateKeyDX12>
 {
 	size_t operator()(const Blueberry::GfxRenderStateKeyDX12& key) const
 	{
-		return std::hash<uint64_t>()(key.keywordsMask) ^ (std::hash<uint32_t>()(key.materialId) << 1) ^ (std::hash<uint8_t>()(key.passIndex) << 2);
+		return std::hash<uint64_t>()(key.keywordsMask) ^ (std::hash<uint64_t>()(key.passId) << 1 ^ (std::hash<uint32_t>()(key.materialId) << 2));
 	}
 };
 
@@ -132,7 +132,7 @@ namespace Blueberry
 		GfxRenderStateCacheDX12(GfxDeviceDX12* device);
 		~GfxRenderStateCacheDX12() = default;
 
-		GfxRenderStateDX12 GetRenderState(Material* material, uint8_t passIndex, VertexLayout* meshLayout, GfxTargetInfoDX12& targetInfo, Topology topology, uint32_t depthBias, float slopeDepthBias, bool isCounterClockwise, bool isSolid);
+		GfxRenderStateDX12 GetRenderState(Material* material, uint64_t passId, VertexLayout* meshLayout, GfxTargetInfoDX12& targetInfo, Topology topology, uint32_t depthBias, float slopeDepthBias, bool isCounterClockwise, bool isSolid);
 	
 	private:
 		void FillRenderState(Material* material, GfxRenderStateDX12& renderState, const GfxBindingStateDX12& bindingState);

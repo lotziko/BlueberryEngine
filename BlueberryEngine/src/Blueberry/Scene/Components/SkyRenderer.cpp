@@ -23,6 +23,11 @@ namespace Blueberry
 		return m_Material.Get();
 	}
 
+	void SkyRenderer::SetMaterial(Material* material)
+	{
+		m_Material = material;
+	}
+
 	const Color& SkyRenderer::GetAmbientColor() const
 	{
 		return m_AmbientColor;

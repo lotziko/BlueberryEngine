@@ -217,6 +217,13 @@ namespace Blueberry
 	void ParseRenderingParameters(const String& passBlock, PassData& passData)
 	{
 		std::smatch match;
+		std::regex nameRegex("Name\\s*\"([\\w-]+)\"[\r?\n]");
+		if (std::regex_search(passBlock, match, nameRegex))
+		{
+			std::string name = match[1];
+			passData.SetName(String(name));
+		}
+
 		std::regex cullRegex("Cull\\s*([\\w-]+)[\r?\n]");
 		if (std::regex_search(passBlock, match, cullRegex))
 		{
