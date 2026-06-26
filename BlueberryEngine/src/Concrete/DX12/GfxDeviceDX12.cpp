@@ -10,6 +10,7 @@
 namespace Blueberry
 {
 	#define DEBUG_LAYER false
+	#define GPU_VALIDATION false
 
 	bool GfxDeviceDX12::InitializeImpl(int width, int height, void* data)
 	{
@@ -472,7 +473,11 @@ namespace Blueberry
 			return;
 		}
 		
-		m_CommandList->SetPipelineState(renderState.pipelineState);
+		if (renderState.pipelineState != m_PipelineState)
+		{
+			m_PipelineState = renderState.pipelineState;
+			m_CommandList->SetPipelineState(renderState.pipelineState);
+		}
 		
 		if (renderState.vertexConstantBuffersCount > 0)
 		{
@@ -521,7 +526,7 @@ namespace Blueberry
 			m_CommandList->SetGraphicsRootDescriptorTable(6, m_SamplerRingHeap.GetGPU(offset));
 		}
 		
-		if (m_Topology != operation.topology)
+		if (operation.topology != m_Topology)
 		{
 			m_Topology = operation.topology;
 			m_CommandList->IASetPrimitiveTopology(GetPrimitiveTopologyD3D12(operation.topology));
@@ -593,7 +598,11 @@ namespace Blueberry
 			return;
 		}
 		
-		m_CommandList->SetPipelineState(renderState.pipelineState);
+		if (renderState.pipelineState != m_PipelineState)
+		{
+			m_PipelineState = renderState.pipelineState;
+			m_CommandList->SetPipelineState(renderState.pipelineState);
+		}
 
 		if (renderState.constantBuffersCount > 0)
 		{
@@ -723,6 +732,7 @@ namespace Blueberry
 		{
 			m_CommandList->RSSetScissorRects(1, &m_ScissorRect);
 		}
+		m_PipelineState = nullptr;
 		m_VertexBuffer = nullptr;
 		m_IndexBuffer = nullptr;
 		m_IndexBuffer = nullptr;
@@ -809,7 +819,9 @@ namespace Blueberry
 		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug))))
 		{
 			debug->EnableDebugLayer();
+#if GPU_VALIDATION
 			debug->SetEnableGPUBasedValidation(true);
+#endif
 		}
 #endif
 

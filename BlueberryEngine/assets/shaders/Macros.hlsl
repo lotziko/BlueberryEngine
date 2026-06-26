@@ -33,8 +33,8 @@ static uint _RenderInstanceId;
 #define VIEW_PROJECTION_MATRIX				_ViewProjectionMatrix[_ViewIndex]
 #define INVERSE_VIEW_PROJECTION_MATRIX		_InverseViewProjectionMatrix[_ViewIndex]
 #define INVERSE_PROJECTION_MATRIX			_InverseProjectionMatrix[_ViewIndex]
-#define CAMERA_POSITION_WS					_CameraPositionWS
-#define CAMERA_FORWARD_DIRECTION_WS			_CameraForwardDirectionWS
+#define CAMERA_POSITION_WS					_CameraPositionWS.xyz
+#define CAMERA_FORWARD_DIRECTION_WS			_CameraForwardDirectionWS.xyz
 #define CAMERA_SIZE_INV_SIZE				_CameraSizeInvSize
 #define CAMERA_COLOR						_CameraColor
 #define RENDER_TARGET_SIZE_INV_SIZE			_RenderTargetSizeInvSize

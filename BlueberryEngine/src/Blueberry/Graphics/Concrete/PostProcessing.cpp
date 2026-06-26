@@ -138,7 +138,7 @@ namespace Blueberry
 
 			ResolveMSAABloomData resolveMSAABloomConstants = {};
 			resolveMSAABloomConstants.bloomThreshold = Vector3(0, 1, 0);
-			resolveMSAABloomConstants.bloomScale = 1;
+			resolveMSAABloomConstants.bloomScale = 0.125f;
 			resolveMSAABloomConstants.exposure = exposure;
 
 			s_ResolveMSAABloomData->SetData(reinterpret_cast<char*>(&resolveMSAABloomConstants), sizeof(ResolveMSAABloomData));

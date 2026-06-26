@@ -1,7 +1,6 @@
 #include "Blueberry\Graphics\GfxDevice.h"
 
-#include "GraphicsAPI.h"
-
+#include "Blueberry\Graphics\GraphicsAPI.h"
 #include "Blueberry\Graphics\Mesh.h"
 
 #include "..\..\Concrete\DX11\GfxDeviceDX11.h"

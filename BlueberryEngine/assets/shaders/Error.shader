@@ -2,6 +2,7 @@ Shader
 {
 	Pass
 	{
+		Name "Forward"
 		Blend One Zero
 		ZWrite On
 		Cull None
@@ -49,6 +50,7 @@ Shader
 	}
 	Pass
 	{
+		Name "Depth"
 		Blend One Zero
 		ZWrite On
 		Cull Front

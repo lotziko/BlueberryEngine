@@ -284,7 +284,7 @@ namespace Blueberry
 
 	void GfxTextureDX11::SetName(const String& name)
 	{
-		m_Texture->SetPrivateData(WKPDID_D3DDebugObjectName, name.size(), name.data());
+		m_Texture->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(name.size()), name.data());
 	}
 
 	DXGI_FORMAT GetTextureFormat(DXGI_FORMAT format)

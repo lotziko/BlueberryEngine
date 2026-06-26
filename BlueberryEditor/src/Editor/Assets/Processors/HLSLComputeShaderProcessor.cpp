@@ -1,8 +1,9 @@
 #include "HLSLComputeShaderProcessor.h"
 
 #include "HLSLComputeShaderParser.h"
-#include "HLSLShaderProcessor.h"
+#include "HLSLShaderCompiler.h"
 
+#include "Blueberry\Graphics\GraphicsAPI.h"
 #include "Blueberry\Tools\StringHelper.h"
 #include "Blueberry\Tools\FileHelper.h"
 
@@ -16,15 +17,23 @@ namespace Blueberry
 		ComputeShaderCompilationData compilationData = {};
 		if (HLSLComputeShaderParser::Parse(path, m_ComputeShaderData, compilationData))
 		{
+			std::unique_ptr<HLSLShaderCompiler> compiler;
+			if (GraphicsAPI::GetAPI() == GraphicsAPI::API::DX11)
+			{
+				compiler = std::make_unique<HLSLShaderCompilerFXC>(compilationData.shaderCode);
+			}
+			else
+			{
+				compiler = std::make_unique<HLSLShaderCompilerDXC>(compilationData.shaderCode);
+			}
+
 			for (int i = 0; i < compilationData.computeEntryPoints.size(); ++i)
 			{
-				ComPtr<ID3DBlob> computeBlob;
-				if (!Compile(compilationData.shaderCode, compilationData.computeEntryPoints[i].c_str(), "cs_5_0", computeBlob))
+				ByteData data;
+				if (!compiler->Compile(compilationData.computeEntryPoints[i], HLSLShaderCompilerProfile::Compute, 0, data))
 				{
 					return false;
 				}
-				ByteData data(computeBlob->GetBufferSize());
-				memcpy(data.data(), computeBlob->GetBufferPointer(), computeBlob->GetBufferSize());
 				m_Shaders.push_back(std::move(data));
 			}
 			m_ComputeShaderData.SetKernels(compilationData.dataKernels);
@@ -95,34 +104,5 @@ namespace Blueberry
 	const List<ByteData>& HLSLComputeShaderProcessor::GetShaders()
 	{
 		return m_Shaders;
-	}
-
-	bool HLSLComputeShaderProcessor::Compile(const String& shaderCode, const char* entryPoint, const char* model, ComPtr<ID3DBlob>& blob)
-	{
-		uint32_t flags = D3DCOMPILE_ENABLE_STRICTNESS;
-
-		HLSLShaderProcessorInclude include = {};
-		ComPtr<ID3DBlob> temporaryBlob;
-		ComPtr<ID3DBlob> error;
-
-		HRESULT hr = D3DCompile2(shaderCode.data(), shaderCode.size(), nullptr, nullptr, &include, entryPoint, model, flags, 0, 0, nullptr, 0, temporaryBlob.GetAddressOf(), error.GetAddressOf());
-
-		if (FAILED(hr))
-		{
-			BB_ERROR("Failed to compile compute shader.");
-			BB_ERROR(static_cast<char*>(error->GetBufferPointer()));
-			error->Release();
-			return false;
-		}
-
-		hr = D3DStripShader(temporaryBlob->GetBufferPointer(), temporaryBlob->GetBufferSize(), D3DCOMPILER_STRIP_DEBUG_INFO | D3DCOMPILER_STRIP_TEST_BLOBS, blob.GetAddressOf());
-
-		if (FAILED(hr))
-		{
-			BB_ERROR("Failed to strip compute shader.");
-			return false;
-		}
-
-		return true;
 	}
 }

@@ -26,6 +26,7 @@ namespace Blueberry
 		float slopeDepthBias;
 		bool isCounterClockwise;
 		bool isSolid;
+		uint16_t padding = 0;
 
 		bool operator==(const GfxPipelineStateKeyDX12& other) const;
 		bool operator!=(const GfxPipelineStateKeyDX12& other) const;
@@ -36,6 +37,7 @@ namespace Blueberry
 		uint64_t keywordsMask; // global + material
 		uint64_t passId;
 		ObjectId materialId;
+		uint32_t padding = 0;
 
 		bool operator==(const GfxRenderStateKeyDX12& other) const;
 		bool operator!=(const GfxRenderStateKeyDX12& other) const;
@@ -123,6 +125,8 @@ namespace Blueberry
 		List<GfxBufferBindingDX12> vertexBuffers;
 		List<GfxBufferBindingDX12> geometryBuffers;
 		List<GfxBufferBindingDX12> pixelBuffers;
+
+		uint32_t crc;
 	};
 
 	class GfxRenderStateCacheDX12 : GfxRenderStateCache

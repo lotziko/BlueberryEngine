@@ -41,6 +41,7 @@ project "BlueberryEngine"
 		"%{IncludeDir.miniaudio}",
 		"%{IncludeDir.rmlui}",
 		"%{IncludeDir.lz4}",
+		"%{IncludeDir.dxc}",
 	}
 
 	links
@@ -51,6 +52,7 @@ project "BlueberryEngine"
 		"%{Library.hbao11}",
 		"%{Library.hbao12}",
 		"%{Library.openxr}",
+		"%{Library.dxc}",
 	}
 
 	defines { "RMLUI_CORE_EXPORTS" }

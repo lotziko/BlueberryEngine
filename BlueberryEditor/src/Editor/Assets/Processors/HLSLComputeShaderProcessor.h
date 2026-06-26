@@ -20,9 +20,6 @@ namespace Blueberry
 		const List<ByteData>& GetShaders();
 
 	private:
-		bool Compile(const String& shaderCode, const char* entryPoint, const char* model, ComPtr<ID3DBlob>& blob);
-
-	private:
 		ComputeShaderData m_ComputeShaderData;
 		List<ByteData> m_Shaders;
 	};

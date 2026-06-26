@@ -76,8 +76,8 @@ namespace Blueberry
 		GfxRenderStateKeyDX12 bindingStateKey = { keywordMask, passId, materialObjectId };
 		auto psIt = m_PipelineStates.find(pipelineStateKey);
 		auto bsIt = m_BindingStates.find(bindingStateKey);
-		bool hasPipelineState = psIt != m_PipelineStates.end();
-		bool hasBindingState = bsIt != m_BindingStates.end();
+		bool hasPipelineState = psIt != m_PipelineStates.end() && materialCrc == psIt->second.crc;
+		bool hasBindingState = bsIt != m_BindingStates.end() && materialCrc == bsIt->second.crc;
 
 		if (!hasPipelineState || !hasBindingState)
 		{
@@ -102,6 +102,7 @@ namespace Blueberry
 			auto dxFragmentShader = static_cast<GfxFragmentShaderDX12*>(passData.fragmentShader);
 
 			GfxBindingStateDX12 bindingState = {};
+			bindingState.crc = materialCrc;
 			List<size_t> usedTextures = {};
 
 			// Vertex global constant buffers

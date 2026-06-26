@@ -15,6 +15,7 @@ namespace Blueberry
 		float slopeDepthBias;
 		bool isCounterClockwise;
 		bool isSolid;
+		uint16_t padding = 0;
 
 		bool operator==(const GfxRenderStateKeyDX11& other) const;
 		bool operator!=(const GfxRenderStateKeyDX11& other) const;

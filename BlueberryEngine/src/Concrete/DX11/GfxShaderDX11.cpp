@@ -3,8 +3,6 @@
 #include "Blueberry\Tools\CRCHelper.h"
 #include "..\Windows\WindowsHelper.h"
 
-#include <d3dcompiler.h>
-
 namespace Blueberry
 {
 	constexpr uint32_t String4ToInt(const char* s)
@@ -259,7 +257,6 @@ namespace Blueberry
 			return false;
 		}
 
-		// Slots
 		ComPtr<ID3D11ShaderReflection> geometryShaderReflection;
 		hr = D3DReflect(geometryData.data(), geometryData.size(), IID_ID3D11ShaderReflection, (void**)geometryShaderReflection.GetAddressOf());
 		if (FAILED(hr))
@@ -268,6 +265,7 @@ namespace Blueberry
 			return false;
 		}
 
+		// Slots
 		D3D11_SHADER_DESC geometryShaderDesc;
 		geometryShaderReflection->GetDesc(&geometryShaderDesc);
 
@@ -302,7 +300,6 @@ namespace Blueberry
 			return false;
 		}
 
-		// Slots
 		ComPtr<ID3D11ShaderReflection> pixelShaderReflection;
 		hr = D3DReflect(fragmentData.data(), fragmentData.size(), IID_ID3D11ShaderReflection, (void**)pixelShaderReflection.GetAddressOf());
 		if (FAILED(hr))
@@ -311,6 +308,7 @@ namespace Blueberry
 			return false;
 		}
 
+		// Slots
 		D3D11_SHADER_DESC pixelShaderDesc;
 		pixelShaderReflection->GetDesc(&pixelShaderDesc);
 

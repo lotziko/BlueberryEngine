@@ -1,6 +1,7 @@
 #include "HBAORenderer.h"
 
-#include "GraphicsAPI.h"
+#include "Blueberry\Graphics\GraphicsAPI.h"
+
 #include "..\..\Concrete\DX11\HBAORendererDX11.h"
 #include "..\..\Concrete\DX12\HBAORendererDX12.h"
 

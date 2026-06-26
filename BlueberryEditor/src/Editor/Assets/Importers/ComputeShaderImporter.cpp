@@ -1,7 +1,7 @@
 #include "ComputeShaderImporter.h"
 
-#include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Graphics\ComputeShader.h"
+#include "Blueberry\Graphics\GraphicsAPI.h"
 
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Assets\Processors\HLSLComputeShaderProcessor.h"
@@ -18,6 +18,7 @@ namespace Blueberry
 	String ComputeShaderImporter::GetShaderFolder(const Guid& guid)
 	{
 		std::filesystem::path dataPath = Path::GetShaderCachePath();
+		dataPath.append(GraphicsAPI::GetAPI() == GraphicsAPI::API::DX11 ? "DX11" : "DX12");
 		dataPath.append(guid.ToString());
 		if (!std::filesystem::exists(dataPath))
 		{

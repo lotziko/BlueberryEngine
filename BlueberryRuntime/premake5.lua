@@ -28,6 +28,8 @@ project "BlueberryRuntime"
 	postbuildcommands
 	{
 		"{COPYFILE} %{wks.location}/BlueberryEngine/vendor/hbao/lib/GFSDK_SSAO_D3D11.win64.dll %{cfg.targetdir}/GFSDK_SSAO_D3D11.win64.dll",
+		"{COPYFILE} %{wks.location}/BlueberryEngine/vendor/hbao/lib/GFSDK_SSAO_D3D12.win64.dll %{cfg.targetdir}/GFSDK_SSAO_D3D12.win64.dll",
+		"{COPYFILE} %{wks.location}/BlueberryEngine/vendor/dxc/bin/x64/dxcompiler.dll %{cfg.targetdir}/dxcompiler.dll",
 	}
 
 	filter "system:windows"

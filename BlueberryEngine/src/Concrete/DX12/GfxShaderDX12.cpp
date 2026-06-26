@@ -1,9 +1,10 @@
 #include "GfxShaderDX12.h"
 
 #include "Blueberry\Tools\CRCHelper.h"
+#include "Concrete\Windows\DxcHelper.h"
 #include "..\Windows\WindowsHelper.h"
 
-#include <d3dcompiler.h>
+#include <d3d12shader.h>
 
 namespace Blueberry
 {
@@ -22,8 +23,18 @@ namespace Blueberry
 
 		m_Blob = vertexData;
 
+		ComPtr<IDxcBlobEncoding> blob;
+		HRESULT hr = DxcHelper::GetLibrary()->CreateBlobWithEncodingFromPinned(vertexData.data(), static_cast<UINT32>(vertexData.size()), CP_UTF8, blob.GetAddressOf());
+
+		if (FAILED(hr))
+		{
+			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create vertex shader blob."));
+			return false;
+		}
+
 		ComPtr<ID3D12ShaderReflection> vertexShaderReflection;
-		HRESULT hr = D3DReflect(m_Blob.data(), m_Blob.size(), IID_ID3D12ShaderReflection, (void**)vertexShaderReflection.GetAddressOf());
+		hr = DxcHelper::Reflect(blob.Get(), IID_PPV_ARGS(&vertexShaderReflection));
+
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to get vertex shader reflection."));
@@ -234,15 +245,25 @@ namespace Blueberry
 
 		m_Blob = geometryData;
 
-		// Slots
+		ComPtr<IDxcBlobEncoding> blob;
+		HRESULT hr = DxcHelper::GetLibrary()->CreateBlobWithEncodingFromPinned(geometryData.data(), static_cast<UINT32>(geometryData.size()), CP_UTF8, blob.GetAddressOf());
+
+		if (FAILED(hr))
+		{
+			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create geometry shader blob."));
+			return false;
+		}
+
 		ComPtr<ID3D12ShaderReflection> geometryShaderReflection;
-		HRESULT hr = D3DReflect(m_Blob.data(), m_Blob.size(), IID_ID3D12ShaderReflection, (void**)geometryShaderReflection.GetAddressOf());
+		hr = DxcHelper::Reflect(blob.Get(), IID_PPV_ARGS(&geometryShaderReflection));
+
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to get geometry shader reflection."));
 			return false;
 		}
 
+		// Slots
 		D3D12_SHADER_DESC geometryShaderDesc;
 		geometryShaderReflection->GetDesc(&geometryShaderDesc);
 
@@ -271,15 +292,25 @@ namespace Blueberry
 
 		m_Blob = fragmentData;
 
-		// Slots
+		ComPtr<IDxcBlobEncoding> blob;
+		HRESULT hr = DxcHelper::GetLibrary()->CreateBlobWithEncodingFromPinned(fragmentData.data(), static_cast<UINT32>(fragmentData.size()), CP_UTF8, blob.GetAddressOf());
+
+		if (FAILED(hr))
+		{
+			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create pixel shader blob."));
+			return false;
+		}
+
 		ComPtr<ID3D12ShaderReflection> pixelShaderReflection;
-		HRESULT hr = D3DReflect(m_Blob.data(), m_Blob.size(), IID_ID3D12ShaderReflection, (void**)pixelShaderReflection.GetAddressOf());
+		hr = DxcHelper::Reflect(blob.Get(), IID_PPV_ARGS(&pixelShaderReflection));
+
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to get pixel shader reflection."));
 			return false;
 		}
-
+		
+		// Slots
 		D3D12_SHADER_DESC pixelShaderDesc;
 		pixelShaderReflection->GetDesc(&pixelShaderDesc);
 

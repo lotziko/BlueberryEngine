@@ -41,7 +41,7 @@ float3 CalculateDirectDiffuse(float3 normalWS, float3 viewDirectionWS, float3 li
 	//return lightColor * pow(NdotL, diffuseExponent.x) * diffuseExponentScalar * attenuation * falloff;
 }
 
-float CalculateDistributionGGX(float3 NDotH, float roughness)
+float CalculateDistributionGGX(float NDotH, float roughness)
 {
 	float a = roughness * roughness;
 	float a2 = a * a;
@@ -82,7 +82,7 @@ float3 CalculateDirectSpecular(float3 normalWS, float3 viewDirectionWS, float3 l
 	float G = CalculateGeometrySchlickGGX(NDotV, roughness) * CalculateGeometrySchlickGGX(NDotL, roughness);
 	float3 F = CalculateFresnelSchlick(LDotH, reflectance);
 
-	float numerator = NDF * G * F;
+	float3 numerator = NDF * G * F;
 	float denominator = 4.0 * NDotV * NDotL + 0.0001;
 
 	return (numerator / denominator) * NDotL * lightColor * attenuation * falloff;
@@ -169,9 +169,10 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 	uint2 spotCluster = OffsetCluster(pointCluster);
 	uint2 reflectionCluster = OffsetCluster(spotCluster);
 
+	int j;
 	// Point lights
 	[loop]
-	for (int j = 0; j < MAX_LIGHTS; j++)
+	for (j = 0; j < MAX_LIGHTS; j++)
 	{
 		uint i = LOAD_TEXTURE2D(_LightIndexTexture, pointCluster).r;
 		if (i == 0xFFFF)

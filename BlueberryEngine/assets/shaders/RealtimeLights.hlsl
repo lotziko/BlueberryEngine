@@ -85,7 +85,7 @@ float3 SampleProbeVolume(float3 positionWS, float3 normalWS)
 	return colorSum / weightSum;
 }
 
-float3 GetSphereProjectionDirection(float3 reflectionWS, float3 positionWS, float3 centerWS, float3 squareRange)
+float3 GetSphereProjectionDirection(float3 reflectionWS, float3 positionWS, float3 centerWS, float squareRange)
 {
 	float3 worldPos = positionWS - centerWS;
 	float B = dot(worldPos, reflectionWS);
@@ -97,7 +97,7 @@ float3 GetSphereProjectionDirection(float3 reflectionWS, float3 positionWS, floa
 
 float3 GetBoxProjectionDirection(float3 reflectionWS, float3 positionWS, float3 boxCenterWS, float3 boxMinWS, float3 boxMaxWS)
 {
-	float3 boxMinMax = (reflectionWS > 0.0f) ? boxMaxWS : boxMinWS;
+	float3 boxMinMax = float3(reflectionWS.x > 0.0f ? boxMaxWS.x : boxMinWS.x, reflectionWS.y > 0.0f ? boxMaxWS.y : boxMinWS.y, reflectionWS.z > 0.0f ? boxMaxWS.z : boxMinWS.z);
 	float3 rbMinMax = (boxMinMax - positionWS) / reflectionWS;
 	float fa = min(min(rbMinMax.x, rbMinMax.y), rbMinMax.z);
 	float3 worldPos = positionWS - boxCenterWS;

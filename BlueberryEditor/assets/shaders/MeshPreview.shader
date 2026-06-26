@@ -5,9 +5,10 @@ Shader
 	}
 	Pass
 	{
+		Name "Forward"
 		Blend One Zero
 		ZWrite On
-		Cull Back
+		Cull None
 
 		HLSLBEGIN
 		#pragma vertex MeshPreviewVertex

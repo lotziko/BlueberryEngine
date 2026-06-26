@@ -2,16 +2,11 @@
 
 #include "Blueberry\Graphics\Shader.h"
 #include "Concrete\Windows\ComPtr.h"
-#include "Concrete\DX11\DX11.h"
+
+#include <dxcapi.h>
 
 namespace Blueberry
 {
-	class HLSLShaderProcessorInclude : public ID3DInclude
-	{
-		HRESULT Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes) override;
-		HRESULT Close(LPCVOID pData) override;
-	};
-
 	class HLSLShaderProcessor
 	{
 	public:
@@ -25,9 +20,6 @@ namespace Blueberry
 		const ShaderData& GetShaderData();
 		const VariantsData& GetVariantsData();
 
-	private:
-		bool Compile(const String& shaderCode, const char* entryPoint, const char* model, D3D_SHADER_MACRO* keywords, ComPtr<ID3DBlob>& blob);
-	
 	private:
 		ShaderData m_ShaderData;
 		VariantsData m_VariantsData;

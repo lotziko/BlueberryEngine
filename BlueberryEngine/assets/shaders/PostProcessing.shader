@@ -28,7 +28,11 @@ Shader
 
 	float3 LinearToSRGB(float3 color)
 	{
-		return color <= 0.0031308f ? color * 12.92f : pow(color, 1.0f / 2.4f) * 1.055f - 0.055f;
+		return float3(
+			color.r <= 0.0031308f ? color.r * 12.92f : pow(color.r, 1.0f / 2.4f) * 1.055f - 0.055f,
+			color.g <= 0.0031308f ? color.g * 12.92f : pow(color.g, 1.0f / 2.4f) * 1.055f - 0.055f,
+			color.b <= 0.0031308f ? color.b * 12.92f : pow(color.b, 1.0f / 2.4f) * 1.055f - 0.055f
+			);
 	}
 	HLSLEND
 

@@ -54,6 +54,8 @@ Shader
 			SETUP_INPUT_VIEW_INDEX(input);
 
 			Output output;
+			output.depth = 0.0;
+
 			for (int i = 0; i < 4; ++i)
 			{
 				uint2 uv = uint2(input.texcoord.x * CAMERA_SIZE_INV_SIZE.x, input.texcoord.y * CAMERA_SIZE_INV_SIZE.y);
@@ -118,6 +120,8 @@ Shader
 			SETUP_INPUT_VIEW_INDEX(input);
 
 			Output output;
+			output.color = 0;
+
 			for (int i = 0; i < 4; ++i)
 			{
 				uint2 uv = uint2(input.texcoord.x * CAMERA_SIZE_INV_SIZE.x, input.texcoord.y * CAMERA_SIZE_INV_SIZE.y);

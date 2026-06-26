@@ -1,5 +1,8 @@
 #pragma once
 
+#include "Blueberry\Core\Base.h"
+#include "Blueberry\Core\ObjectPtr.h"
+
 namespace Blueberry
 {
 	class Mesh;
@@ -16,6 +19,7 @@ namespace Blueberry
 
 	private:
 		Scene* m_Scene;
+		ObjectPtr<Mesh> m_Mesh;
 		Material* m_MeshPreviewMaterial;
 		MeshRenderer* m_Renderer;
 		Camera* m_Camera;

@@ -15,12 +15,14 @@ IncludeDir["xatlas"] = "%{wks.location}/BlueberryEngine/vendor/xatlas"
 IncludeDir["miniaudio"] = "%{wks.location}/BlueberryEngine/vendor/miniaudio"
 IncludeDir["rmlui"] = "%{wks.location}/BlueberryEngine/vendor/rmlui/include"
 IncludeDir["lz4"] = "%{wks.location}/BlueberryEngine/vendor/lz4"
+IncludeDir["dxc"] = "%{wks.location}/BlueberryEngine/vendor/dxc/include"
 
 Library = {}
 Library["hbao11"] = "%{wks.location}/BlueberryEngine/vendor/hbao/lib/GFSDK_SSAO_D3D11.win64.lib"
 Library["hbao12"] = "%{wks.location}/BlueberryEngine/vendor/hbao/lib/GFSDK_SSAO_D3D12.win64.lib"
 Library["openxr"] = "%{wks.location}/BlueberryEngine/vendor/openxr/native/x64/release/lib/openxr_loader.lib"
 Library["fbxsdk"] = "%{wks.location}/BlueberryEditor/vendor/fbxsdk/lib/vs2017/x64/release/libfbxsdk.lib"
+Library["dxc"] = "%{wks.location}/BlueberryEngine/vendor/dxc/lib/x64/dxcompiler.lib"
 
 LibraryDir = {}
 LibraryDir["cuda"] = "%{wks.location}/BlueberryBaking/vendor/cuda/lib"

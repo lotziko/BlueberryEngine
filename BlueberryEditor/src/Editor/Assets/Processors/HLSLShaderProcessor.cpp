@@ -1,49 +1,17 @@
 #include "HLSLShaderProcessor.h"
 
+#include "Blueberry\Graphics\GraphicsAPI.h"
 #include "Blueberry\Tools\StringHelper.h"
 #include "Blueberry\Tools\FileHelper.h"
 
 #include "HLSLShaderParser.h"
+#include "HLSLShaderCompiler.h"
 
 #include <filesystem>
 #include <fstream>
-#include <d3dcompiler.h>
 
 namespace Blueberry
 {
-	HRESULT HLSLShaderProcessorInclude::Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes)
-	{
-		String filePath("assets/shaders/" + String(pFileName));
-		if (!std::filesystem::exists(filePath))
-		{
-			return E_FAIL;
-		}
-
-		// Based on https://github.com/holy-shit/clion-directx-example/blob/master/main.cpp
-		std::streampos dataSize;
-		char* buffer;
-
-		std::ifstream infile;
-		infile.open(filePath.data(), std::ios::binary);
-		infile.seekg(0, std::ios::end);
-		dataSize = infile.tellg();
-		infile.seekg(0, std::ios::beg);
-		buffer = static_cast<char*>(malloc(dataSize));
-		infile.read(buffer, dataSize);
-		infile.close();
-
-		*pBytes = static_cast<UINT>(dataSize);
-		*ppData = buffer;
-
-		return S_OK;
-	}
-
-	HRESULT HLSLShaderProcessorInclude::Close(LPCVOID pData)
-	{
-		std::free(const_cast<void*>(pData));
-		return S_OK;
-	}
-
 	bool HLSLShaderProcessor::Compile(const String& path)
 	{
 		ShaderCompilationData compilationData = {};
@@ -55,35 +23,28 @@ namespace Blueberry
 				PassData& pass = compilationData.dataPasses[i];
 				size_t vertexVariantCount = std::max(static_cast<int>(pow(2, compilationPass.vertexKeywords.size())), 1);
 				size_t fragmentVariantCount = std::max(static_cast<int>(pow(2, compilationPass.fragmentKeywords.size())), 1);
-
+				std::unique_ptr<HLSLShaderCompiler> compiler;
+				if (GraphicsAPI::GetAPI() == GraphicsAPI::API::DX11)
+				{
+					compiler = std::make_unique<HLSLShaderCompilerFXC>(compilationPass.shaderCode);
+				}
+				else
+				{
+					compiler = std::make_unique<HLSLShaderCompilerDXC>(compilationPass.shaderCode);
+				}
+				
 				if (!compilationPass.vertexEntryPoint.empty())
 				{
-					size_t keywordCount = compilationPass.vertexKeywords.size();
-					D3D_SHADER_MACRO keywords[256];
-					for (size_t j = 0; j < keywordCount; ++j)
-					{
-						keywords[j].Name = compilationPass.vertexKeywords[j].c_str();
-					}
-
-					keywords[keywordCount].Name = nullptr;
-					keywords[keywordCount].Definition = nullptr;
-
+					compiler->SetKeywords(compilationPass.vertexKeywords);
 					pass.SetVertexOffset(static_cast<uint32_t>(m_VariantsData.vertexShaderIndices.size()));
 
 					for (size_t j = 0; j < vertexVariantCount; ++j)
 					{
-						for (size_t k = 0; k < keywordCount; ++k)
-						{
-							keywords[k].Definition = (1ull << k) & j ? "1" : "0";
-						}
-
-						ComPtr<ID3DBlob> vertexBlob;
-						if (!Compile(compilationPass.shaderCode, compilationPass.vertexEntryPoint.c_str(), "vs_5_0", keywords, vertexBlob))
+						ByteData data;
+						if (!compiler->Compile(compilationPass.vertexEntryPoint.c_str(), HLSLShaderCompilerProfile::Vertex, j, data))
 						{
 							return false;
 						}
-						ByteData data(vertexBlob->GetBufferSize());
-						memcpy(data.data(), vertexBlob->GetBufferPointer(), vertexBlob->GetBufferSize());
 						m_VariantsData.vertexShaderIndices.push_back(static_cast<uint32_t>(m_VariantsData.shaders.size()));
 						m_VariantsData.shaders.push_back(std::move(data));
 					}
@@ -97,13 +58,11 @@ namespace Blueberry
 				{
 					pass.SetGeometryOffset(static_cast<uint32_t>(m_VariantsData.geometryShaderIndices.size()));
 
-					ComPtr<ID3DBlob> geometryBlob;
-					if (!Compile(compilationPass.shaderCode, compilationPass.geometryEntryPoint.c_str(), "gs_5_0", nullptr, geometryBlob))
+					ByteData data;
+					if (!compiler->Compile(compilationPass.geometryEntryPoint.c_str(), HLSLShaderCompilerProfile::Geometry, 0, data))
 					{
 						return false;
 					}
-					ByteData data(geometryBlob->GetBufferSize());
-					memcpy(data.data(), geometryBlob->GetBufferPointer(), geometryBlob->GetBufferSize());
 					m_VariantsData.geometryShaderIndices.push_back(static_cast<uint32_t>(m_VariantsData.shaders.size()));
 					m_VariantsData.shaders.push_back(std::move(data));
 				}
@@ -114,32 +73,16 @@ namespace Blueberry
 
 				if (!compilationPass.fragmentEntryPoint.empty())
 				{
-					size_t keywordCount = compilationPass.fragmentKeywords.size();
-					D3D_SHADER_MACRO keywords[256];
-					for (size_t j = 0; j < keywordCount; ++j)
-					{
-						keywords[j].Name = compilationPass.fragmentKeywords[j].c_str();
-					}
-
-					keywords[keywordCount].Name = nullptr;
-					keywords[keywordCount].Definition = nullptr;
-
+					compiler->SetKeywords(compilationPass.fragmentKeywords);
 					pass.SetFragmentOffset(static_cast<uint32_t>(m_VariantsData.fragmentShaderIndices.size()));
 
 					for (size_t j = 0; j < fragmentVariantCount; ++j)
 					{
-						for (uint32_t k = 0; k < keywordCount; ++k)
-						{
-							keywords[k].Definition = (1ull << k) & j ? "1" : "0";
-						}
-
-						ComPtr<ID3DBlob> fragmentBlob;
-						if (!Compile(compilationPass.shaderCode, compilationPass.fragmentEntryPoint.c_str(), "ps_5_0", keywords, fragmentBlob))
+						ByteData data;
+						if (!compiler->Compile(compilationPass.fragmentEntryPoint.c_str(), HLSLShaderCompilerProfile::Fragment, j, data))
 						{
 							return false;
 						}
-						ByteData data(fragmentBlob->GetBufferSize());
-						memcpy(data.data(), fragmentBlob->GetBufferPointer(), fragmentBlob->GetBufferSize());
 						m_VariantsData.fragmentShaderIndices.push_back(static_cast<uint32_t>(m_VariantsData.shaders.size()));
 						m_VariantsData.shaders.push_back(std::move(data));
 					}
@@ -233,34 +176,5 @@ namespace Blueberry
 	const VariantsData& HLSLShaderProcessor::GetVariantsData()
 	{
 		return m_VariantsData;
-	}
-
-	bool HLSLShaderProcessor::Compile(const String& shaderCode, const char* entryPoint, const char* model, D3D_SHADER_MACRO* keywords, ComPtr<ID3DBlob>& blob)
-	{
-		uint32_t flags = D3DCOMPILE_ENABLE_STRICTNESS;
-
-		HLSLShaderProcessorInclude include = {};
-		ComPtr<ID3DBlob> temporaryBlob;
-		ComPtr<ID3DBlob> error;
-
-		HRESULT hr = D3DCompile2(shaderCode.data(), shaderCode.size(), nullptr, keywords, &include, entryPoint, model, flags, 0, 0, nullptr, 0, temporaryBlob.GetAddressOf(), error.GetAddressOf());
-
-		if (FAILED(hr))
-		{
-			BB_ERROR("Failed to compile shader.");
-			BB_ERROR(static_cast<char*>(error->GetBufferPointer()));
-			error->Release();
-			return false;
-		}
-
-		hr = D3DStripShader(temporaryBlob->GetBufferPointer(), temporaryBlob->GetBufferSize(), D3DCOMPILER_STRIP_DEBUG_INFO | D3DCOMPILER_STRIP_TEST_BLOBS, blob.GetAddressOf());
-
-		if (FAILED(hr))
-		{
-			BB_ERROR("Failed to strip shader.");
-			return false;
-		}
-
-		return true;
 	}
 }

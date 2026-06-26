@@ -49,7 +49,7 @@ void CSSingleTexture(uint3 id : SV_DispatchThreadID, uint3 groupId : SV_GroupThr
 
 	GroupMemoryBarrierWithGroupSync();
 
-	if (groupId.y & 1 == 0)
+	if ((groupId.y & 1) == 0)
 	{
 		_RShared[groupIdFlattened] = _RShared[groupIdFlattened + 8] + _RShared[groupIdFlattened];
 		_GShared[groupIdFlattened] = _GShared[groupIdFlattened + 8] + _GShared[groupIdFlattened];

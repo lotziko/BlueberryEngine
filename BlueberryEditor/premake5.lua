@@ -32,6 +32,7 @@ project "BlueberryEditor"
 		"%{IncludeDir.directxmesh}",
 		"%{IncludeDir.flathashmap}",
 		"%{IncludeDir.xatlas}",
+		"%{IncludeDir.dxc}",
 	}
 	
 	links
@@ -53,6 +54,7 @@ project "BlueberryEditor"
 		"{COPYFILE} %{wks.location}/BlueberryEngine/vendor/hbao/lib/GFSDK_SSAO_D3D11.win64.dll %{cfg.targetdir}/GFSDK_SSAO_D3D11.win64.dll",
 		"{COPYFILE} %{wks.location}/BlueberryEngine/vendor/hbao/lib/GFSDK_SSAO_D3D12.win64.dll %{cfg.targetdir}/GFSDK_SSAO_D3D12.win64.dll",
 		"{COPYFILE} %{wks.location}/BlueberryEngine/vendor/openxr/native/x64/release/bin/openxr_loader.dll %{cfg.targetdir}/openxr_loader.dll",
+		"{COPYFILE} %{wks.location}/BlueberryEngine/vendor/dxc/bin/x64/dxcompiler.dll %{cfg.targetdir}/dxcompiler.dll",
 		"{COPYFILE} %{wks.location}/bin/" .. outputdir .. "/BlueberryRuntime/BlueberryRuntime.lib %{cfg.targetdir}/BlueberryRuntime.lib",
 		"{COPYFILE} %{wks.location}/bin/" .. outputdir .. "/BlueberryRuntime/BlueberryRuntime.exe %{cfg.targetdir}/BlueberryRuntime.exe",
 		"{COPYFILE} %{wks.location}/BlueberryEngine/vendor/rmlui/lib/rmlui.lib %{cfg.targetdir}/rmlui.lib",

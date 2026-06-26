@@ -1,6 +1,9 @@
 #include "GfxComputeShaderDX12.h"
 
+#include "Concrete\Windows\DxcHelper.h"
 #include "..\Windows\WindowsHelper.h"
+
+#include <d3d12shader.h>
 
 namespace Blueberry
 {
@@ -14,8 +17,18 @@ namespace Blueberry
 
 		m_Blob = computeData;
 
+		ComPtr<IDxcBlobEncoding> blob;
+		HRESULT hr = DxcHelper::GetLibrary()->CreateBlobWithEncodingFromPinned(computeData.data(), static_cast<UINT32>(computeData.size()), CP_UTF8, blob.GetAddressOf());
+
+		if (FAILED(hr))
+		{
+			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create compute shader blob."));
+			return false;
+		}
+
 		ComPtr<ID3D12ShaderReflection> computeShaderReflection;
-		HRESULT hr = D3DReflect(m_Blob.data(), m_Blob.size(), IID_ID3D12ShaderReflection, (void**)computeShaderReflection.GetAddressOf());
+		hr = DxcHelper::Reflect(blob.Get(), IID_PPV_ARGS(&computeShaderReflection));
+
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to get compute shader reflection."));

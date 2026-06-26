@@ -145,8 +145,8 @@ namespace Blueberry
 		List<std::pair<size_t, GfxHandleDX12>> m_Samplers;
 		List<SamplerOffsetData> m_SamplerHeapOffsets;
 
-		GfxTextureDX12* m_BindedRenderTarget;
-		GfxTextureDX12* m_BindedDepthStencil;
+		GfxTextureDX12* m_BindedRenderTarget = nullptr;
+		GfxTextureDX12* m_BindedDepthStencil = nullptr;
 		List<std::pair<size_t, uint32_t>> m_BindedBuffers;
 		List<std::pair<size_t, uint32_t>> m_BindedTextures;
 		GfxTargetInfoDX12 m_TargetInfo;
@@ -155,6 +155,7 @@ namespace Blueberry
 		GfxRenderStateCacheDX12 m_StateCache;
 		GfxComputeRenderStateCacheDX12 m_ComputeStateCache;
 
+		ID3D12PipelineState* m_PipelineState = nullptr;
 		GfxBufferDX12* m_VertexBuffer = nullptr;
 		GfxBufferDX12* m_IndexBuffer = nullptr;
 		GfxBufferDX12* m_InstanceBuffer = nullptr;
