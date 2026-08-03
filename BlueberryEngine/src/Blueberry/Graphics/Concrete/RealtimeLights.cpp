@@ -78,7 +78,7 @@ namespace Blueberry
 	void RealtimeLights::CalculateClusters()
 	{
 		GfxDevice::SetGlobalTexture(s_ClusteringLightIndexTextureId, s_LightIndexTexture);
-		GfxDevice::Dispatch(s_ClusteringShader->GetKernel(0), CLUSTERS_X, CLUSTERS_Y, CLUSTERS_Z);
+		GfxDevice::Dispatch(s_ClusteringShader, 0, CLUSTERS_X, CLUSTERS_Y, CLUSTERS_Z);
 		GfxDevice::SetGlobalTexture(s_LightIndexTextureId, s_LightIndexTexture);
 	}
 }

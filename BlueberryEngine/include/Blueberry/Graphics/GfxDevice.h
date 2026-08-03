@@ -7,10 +7,15 @@ namespace Blueberry
 {
 	class GfxBuffer;
 	class GfxTexture;
+	class GfxBottomLevelAccelerationStructure;
+	class GfxTopLevelAccelerationStructure;
 	class GfxVertexShader;
 	class GfxGeometryShader;
 	class GfxFragmentShader;
 	class GfxComputeShader;
+	class GfxRayTracingShader;
+	class ComputeShader;
+	class RayTracingShader;
 	class ImGuiRenderer;
 	class HBAORenderer;
 
@@ -41,8 +46,11 @@ namespace Blueberry
 		static bool CreateGeometryShader(const ByteData& geometryData, GfxGeometryShader*& shader);
 		static bool CreateFragmentShader(const ByteData& fragmentData, GfxFragmentShader*& shader);
 		static bool CreateComputeShader(const ByteData& computeData, GfxComputeShader*& shader);
+		static bool CreateRayTracingShader(const ByteData& rayTracingData, GfxRayTracingShader*& shader);
 		static bool CreateBuffer(const BufferProperties& properties, GfxBuffer*& buffer);
 		static bool CreateTexture(const TextureProperties& properties, GfxTexture*& texture);
+		static bool CreateBottomLevelAccelerationStructure(const BottomLevelAccelerationStructureProperties& properties, GfxBottomLevelAccelerationStructure*& accelerationStructure);
+		static bool CreateTopLevelAccelerationStructure(GfxTopLevelAccelerationStructure*& accelerationStructure);
 
 		static void Copy(GfxTexture* source, GfxTexture* target);
 		static void Copy(GfxTexture* source, GfxTexture* target, const Rectangle& area);
@@ -57,7 +65,8 @@ namespace Blueberry
 		static void SetGlobalTexture(size_t id, GfxTexture* texture);
 		static void Draw(const GfxDrawingOperation& operation);
 
-		static void Dispatch(GfxComputeShader* shader, uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ);
+		static void Dispatch(ComputeShader* shader, uint32_t kernelIndex, uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ);
+		static void DispatchRays(RayTracingShader* shader, GfxTopLevelAccelerationStructure* accelerationStructure, uint32_t width, uint32_t height, uint32_t depth);
 
 		static Matrix GetGPUMatrix(const Matrix& matrix);
 
@@ -83,8 +92,11 @@ namespace Blueberry
 		virtual bool CreateGeometryShaderImpl(const ByteData& geometryData, GfxGeometryShader*& shader) = 0;
 		virtual bool CreateFragmentShaderImpl(const ByteData& fragmentData, GfxFragmentShader*& shader) = 0;
 		virtual bool CreateComputeShaderImpl(const ByteData& computeData, GfxComputeShader*& shader) = 0;
+		virtual bool CreateRayTracingShaderImpl(const ByteData& rayTracingData, GfxRayTracingShader*& shader) = 0;
 		virtual bool CreateBufferImpl(const BufferProperties& properties, GfxBuffer*& buffer) = 0;
 		virtual bool CreateTextureImpl(const TextureProperties& properties, GfxTexture*& texture) = 0;
+		virtual bool CreateBottomLevelAccelerationStructureImpl(const BottomLevelAccelerationStructureProperties& properties, GfxBottomLevelAccelerationStructure*& accelerationStructure) = 0;
+		virtual bool CreateTopLevelAccelerationStructureImpl(GfxTopLevelAccelerationStructure*& accelerationStructure) = 0;
 		
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target) = 0;
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Rectangle& area) = 0;
@@ -96,8 +108,9 @@ namespace Blueberry
 		virtual void SetGlobalTextureImpl(size_t id, GfxTexture* texture) = 0;
 		virtual void DrawImpl(const GfxDrawingOperation& operation) = 0;
 
-		virtual void DispatchImpl(GfxComputeShader* shader, uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ) = 0;
-
+		virtual void DispatchImpl(ComputeShader* shader, uint32_t kernelIndex, uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ) = 0;
+		virtual void DispatchRaysImpl(RayTracingShader* shader, GfxTopLevelAccelerationStructure* accelerationStructure, uint32_t width, uint32_t height, uint32_t depth) = 0;
+		
 		virtual Matrix GetGPUMatrixImpl(const Matrix& matrix) const = 0;
 
 	private:

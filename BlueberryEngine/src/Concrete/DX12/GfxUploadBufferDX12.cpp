@@ -41,6 +41,13 @@ namespace Blueberry
 		m_CommandList->CopyBufferRegion(resource, 0, allocation.page->m_Resource.Get(), allocation.offset, size);
 	}
 
+	void GfxUploadBufferDX12::UploadBuffer(D3D12_GPU_VIRTUAL_ADDRESS& adress, const void* data, uint64_t size, uint64_t alignment)
+	{
+		GfxUploadBufferAllocationDX12 allocation = Allocate(size, alignment);
+		memcpy(allocation.ptr, data, size);
+		adress = allocation.page->m_Resource->GetGPUVirtualAddress() + allocation.offset;
+	}
+
 	void GfxUploadBufferDX12::UploadTexture(ID3D12Resource* resource, D3D12_SUBRESOURCE_DATA* subresourceData, UINT subresourceCount, uint64_t alignment)
 	{
 		List<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> layouts(subresourceCount);

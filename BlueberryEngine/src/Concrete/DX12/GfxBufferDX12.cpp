@@ -7,7 +7,7 @@ namespace Blueberry
 {
 	GfxPointerCache<GfxBufferDX12> GfxBufferDX12::s_PointerCache = {};
 
-	GfxBufferDX12::GfxBufferDX12(GfxDeviceDX12* device) : m_Device(device->GetDevice()), m_GfxDevice(device)
+	GfxBufferDX12::GfxBufferDX12(GfxDeviceDX12* device) : m_GfxDevice(device), m_Device(device->GetDevice())
 	{
 		m_Index = s_PointerCache.Allocate(this);
 	}
@@ -41,10 +41,8 @@ namespace Blueberry
 	{
 		if (data != nullptr)
 		{
-			ID3D12GraphicsCommandList* commandList = m_GfxDevice->GetCommandList();
-			commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), m_State, D3D12_RESOURCE_STATE_COPY_SOURCE));
+			SetState(D3D12_RESOURCE_STATE_COPY_SOURCE);
 			m_GfxDevice->GetReadbackBuffer().ReadBuffer(m_Resource.Get(), data, m_ElementCount * m_ElementSize);
-			commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, m_State));
 		}
 	}
 
@@ -52,11 +50,29 @@ namespace Blueberry
 	{
 		if (data != nullptr && size > 0)
 		{
-			ID3D12GraphicsCommandList* commandList = m_GfxDevice->GetCommandList();
-			commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), m_State, D3D12_RESOURCE_STATE_COPY_DEST));
+			SetState(D3D12_RESOURCE_STATE_COPY_DEST);
 			m_GfxDevice->GetUploadBuffer().UploadBuffer(m_Resource.Get(), data, size, m_IsConstant ? 256ull : 4ull);
-			commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, m_State));
 		}
+	}
+
+	ID3D12Resource* GfxBufferDX12::GetResource()
+	{
+		return m_Resource.Get();
+	}
+
+	const GfxHandleDX12& GfxBufferDX12::GetShaderResourceView() const
+	{
+		return m_ShaderResourceView;
+	}
+
+	const GfxHandleDX12& GfxBufferDX12::GetUnorderedAccessView() const
+	{
+		return m_UnorderedAccessView;
+	}
+
+	const GfxHandleDX12& GfxBufferDX12::GetConstantBufferView() const
+	{
+		return m_ConstantBufferView;
 	}
 
 	D3D12_VERTEX_BUFFER_VIEW GfxBufferDX12::GetVertexView()
@@ -77,14 +93,41 @@ namespace Blueberry
 		return indexBufferView;
 	}
 
-	uint32_t GfxBufferDX12::GetElementSize() const
+	D3D12_RESOURCE_STATES GfxBufferDX12::GetState() const
 	{
-		return m_ElementSize;
+		return m_State;
 	}
 
-	uint32_t GfxBufferDX12::GetElementCount() const
+	void GfxBufferDX12::SetState(D3D12_RESOURCE_STATES state)
 	{
-		return m_ElementCount;
+		if (m_State != state)
+		{
+			m_GfxDevice->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), m_State, state));
+			m_State = state;
+		}
+	}
+
+	void GfxBufferDX12::SetUAVState()
+	{
+		if (m_State == D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+		{
+			uint64_t generation = m_GfxDevice->GetGeneration();
+			if (m_Generation == generation)
+			{
+				m_GfxDevice->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(m_Resource.Get()));
+			}
+			m_Generation = generation;
+		}
+		else
+		{
+			m_GfxDevice->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), m_State, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+			m_State = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+		}
+	}
+
+	GfxBufferDX12* GfxBufferDX12::Get(uint32_t index)
+	{
+		return s_PointerCache.Get(index);
 	}
 
 	bool GfxBufferDX12::Initialize(D3D12_SUBRESOURCE_DATA* subresourceData, const BufferProperties& properties)
@@ -127,34 +170,19 @@ namespace Blueberry
 		{
 			resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 		}
-
-		D3D12_RESOURCE_STATES targetState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
 		
-		if (isVertex || isConstant)
-		{
-			targetState = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
-		}
-
-		if (isIndex)
-		{
-			targetState = D3D12_RESOURCE_STATE_INDEX_BUFFER;
-		}
-
-		D3D12_RESOURCE_STATES initialState = subresourceData == nullptr ? targetState : D3D12_RESOURCE_STATE_COPY_DEST;
-		HRESULT hr = m_Device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE, &resourceDesc, initialState, nullptr, IID_PPV_ARGS(&m_Resource));
+		m_State = subresourceData == nullptr ? D3D12_RESOURCE_STATE_COMMON : D3D12_RESOURCE_STATE_COPY_DEST;
+		HRESULT hr = m_Device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE, &resourceDesc, m_State, nullptr, IID_PPV_ARGS(&m_Resource));
 
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create buffer."));
 			return false;
 		}
-		m_State = targetState;
 
 		if (subresourceData != nullptr)
 		{
-			ID3D12GraphicsCommandList* commandList = m_GfxDevice->GetCommandList();
 			m_GfxDevice->GetUploadBuffer().UploadBuffer(m_Resource.Get(), subresourceData->pData, subresourceData->RowPitch, isConstant ? 256ull : 4ull);
-			commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), initialState, targetState));
 		}
 
 		if (useSRV)
@@ -178,7 +206,8 @@ namespace Blueberry
 				shaderResourceViewDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 			}
 
-			m_GfxDevice->CreateSRV(m_Resource.Get(), &shaderResourceViewDesc, &m_ShaderResourceView);
+			m_ShaderResourceView = m_GfxDevice->GetCbvSrvUavHeap().AllocatePersistent();
+			m_Device->CreateShaderResourceView(m_Resource.Get(), &shaderResourceViewDesc, m_ShaderResourceView.GetCPU());
 		}
 
 		if (useUAV)
@@ -200,7 +229,9 @@ namespace Blueberry
 				unorderedAccessViewDesc.Buffer.StructureByteStride = properties.elementSize;
 				unorderedAccessViewDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
 			}
-			m_GfxDevice->CreateUAV(m_Resource.Get(), &unorderedAccessViewDesc, &m_UnorderedAccessView);
+
+			m_UnorderedAccessView = m_GfxDevice->GetCbvSrvUavHeap().AllocatePersistent();
+			m_Device->CreateUnorderedAccessView(m_Resource.Get(), nullptr, &unorderedAccessViewDesc, m_UnorderedAccessView.GetCPU());
 		}
 
 		if (isConstant)
@@ -209,7 +240,8 @@ namespace Blueberry
 			constantBufferViewDesc.BufferLocation = m_Resource->GetGPUVirtualAddress();
 			constantBufferViewDesc.SizeInBytes = byteCount;
 
-			m_GfxDevice->CreateCBV(&constantBufferViewDesc, &m_ConstantBufferView);
+			m_ConstantBufferView = m_GfxDevice->GetCbvSrvUavHeap().AllocatePersistent();
+			m_Device->CreateConstantBufferView(&constantBufferViewDesc, m_ConstantBufferView.GetCPU());
 		}
 
 		return true;

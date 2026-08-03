@@ -2,6 +2,7 @@
 
 #include "Blueberry\Core\Base.h"
 #include "..\..\Blueberry\Graphics\GfxRenderStateCache.h"
+#include "Concrete\Windows\ComPtr.h"
 #include "Concrete\DX12\DX12.h"
 
 namespace Blueberry
@@ -82,6 +83,8 @@ namespace Blueberry
 		D3D12_CPU_DESCRIPTOR_HANDLE geometryConstantBuffers[8];
 		D3D12_CPU_DESCRIPTOR_HANDLE pixelConstantBuffers[8];
 
+		UINT bindlessIndexes[16];
+
 		UINT vertexShaderResourceViewsCount;
 		UINT vertexSamplersCount;
 		UINT pixelShaderResourceViewsCount;
@@ -89,13 +92,14 @@ namespace Blueberry
 		UINT vertexConstantBuffersCount;
 		UINT geometryConstantBuffersCount;
 		UINT pixelConstantBuffersCount;
+		UINT pixelBindlessIndexesCount;
 
 		bool isValid;
 	};
 
 	struct GfxPipelineStateDX12
 	{
-		ID3D12PipelineState* pipelineState;
+		ComPtr<ID3D12PipelineState> pipelineState;
 		uint32_t crc;
 
 		bool isValid;
@@ -125,6 +129,8 @@ namespace Blueberry
 		List<GfxBufferBindingDX12> vertexBuffers;
 		List<GfxBufferBindingDX12> geometryBuffers;
 		List<GfxBufferBindingDX12> pixelBuffers;
+
+		List<GfxTextureBindingDX12> pixelBindlessTextures;
 
 		uint32_t crc;
 	};

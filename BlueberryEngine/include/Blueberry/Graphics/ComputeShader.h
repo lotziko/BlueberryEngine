@@ -37,7 +37,7 @@ namespace Blueberry
 		List<KernelData> m_Kernels;
 	};
 
-	class ComputeShader : public Object
+	class BB_API ComputeShader : public Object
 	{
 		OBJECT_DECLARATION(ComputeShader)
 

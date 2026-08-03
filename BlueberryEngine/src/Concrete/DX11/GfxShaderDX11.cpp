@@ -39,9 +39,9 @@ namespace Blueberry
 		D3D11_SHADER_DESC vertexShaderDesc;
 		vertexShaderReflection->GetDesc(&vertexShaderDesc);
 
-		unsigned int resourceBindingCount = vertexShaderDesc.BoundResources;
+		UINT resourceBindingCount = vertexShaderDesc.BoundResources;
 
-		for (uint32_t i = 0; i < resourceBindingCount; i++)
+		for (UINT i = 0; i < resourceBindingCount; i++)
 		{
 			D3D11_SHADER_INPUT_BIND_DESC inputBindDesc;
 			vertexShaderReflection->GetResourceBindingDesc(i, &inputBindDesc);
@@ -52,11 +52,11 @@ namespace Blueberry
 			{
 				size_t textureHash = TO_HASH(String(inputBindDesc.Name));
 				size_t texturePairIndex = UINT64_MAX;
-				for (size_t i = 0; i < m_TextureSRVSamplerSlots.size(); ++i)
+				for (size_t j = 0; j < m_TextureSRVSamplerSlots.size(); ++j)
 				{
-					if (m_TextureSRVSamplerSlots[i].first == textureHash)
+					if (m_TextureSRVSamplerSlots[j].first == textureHash)
 					{
-						texturePairIndex = i;
+						texturePairIndex = j;
 						break;
 					}
 				}
@@ -91,11 +91,11 @@ namespace Blueberry
 				}
 				size_t samplerHash = TO_HASH(samplerName);
 				size_t texturePairIndex = UINT64_MAX;
-				for (size_t i = 0; i < m_TextureSRVSamplerSlots.size(); ++i)
+				for (size_t j = 0; j < m_TextureSRVSamplerSlots.size(); ++j)
 				{
-					if (m_TextureSRVSamplerSlots[i].first == samplerHash)
+					if (m_TextureSRVSamplerSlots[j].first == samplerHash)
 					{
-						texturePairIndex = i;
+						texturePairIndex = j;
 						break;
 					}
 				}
@@ -113,7 +113,7 @@ namespace Blueberry
 		}
 
 		// Input layout
-		uint32_t parameterCount = vertexShaderDesc.InputParameters;
+		UINT parameterCount = vertexShaderDesc.InputParameters;
 		for (uint8_t i = 0; i < VERTEX_ATTRIBUTE_COUNT; ++i)
 		{
 			m_LayoutIndices[i] = UINT8_MAX;
@@ -121,7 +121,7 @@ namespace Blueberry
 
 		m_Crc = 0;
 		m_SemanticNames.resize(parameterCount);
-		for (unsigned int i = 0; i < parameterCount; ++i)
+		for (UINT i = 0; i < parameterCount; ++i)
 		{
 			D3D11_SIGNATURE_PARAMETER_DESC paramDesc;
 			vertexShaderReflection->GetInputParameterDesc(i, &paramDesc);
@@ -269,9 +269,9 @@ namespace Blueberry
 		D3D11_SHADER_DESC geometryShaderDesc;
 		geometryShaderReflection->GetDesc(&geometryShaderDesc);
 
-		uint32_t constantBufferCount = geometryShaderDesc.ConstantBuffers;
+		UINT constantBufferCount = geometryShaderDesc.ConstantBuffers;
 
-		for (uint32_t i = 0; i < constantBufferCount; i++)
+		for (UINT i = 0; i < constantBufferCount; i++)
 		{
 			D3D11_SHADER_INPUT_BIND_DESC inputBindDesc;
 			geometryShaderReflection->GetResourceBindingDesc(i, &inputBindDesc);
@@ -312,9 +312,9 @@ namespace Blueberry
 		D3D11_SHADER_DESC pixelShaderDesc;
 		pixelShaderReflection->GetDesc(&pixelShaderDesc);
 
-		unsigned int resourceBindingCount = pixelShaderDesc.BoundResources;
+		UINT resourceBindingCount = pixelShaderDesc.BoundResources;
 
-		for (uint32_t i = 0; i < resourceBindingCount; i++)
+		for (UINT i = 0; i < resourceBindingCount; i++)
 		{
 			D3D11_SHADER_INPUT_BIND_DESC inputBindDesc;
 			pixelShaderReflection->GetResourceBindingDesc(i, &inputBindDesc);
@@ -325,11 +325,11 @@ namespace Blueberry
 			{
 				size_t textureHash = TO_HASH(String(inputBindDesc.Name));
 				size_t texturePairIndex = UINT64_MAX;
-				for (size_t i = 0; i < m_TextureSRVSamplerSlots.size(); ++i)
+				for (size_t j = 0; j < m_TextureSRVSamplerSlots.size(); ++j)
 				{
-					if (m_TextureSRVSamplerSlots[i].first == textureHash)
+					if (m_TextureSRVSamplerSlots[j].first == textureHash)
 					{
-						texturePairIndex = i;
+						texturePairIndex = j;
 						break;
 					}
 				}
@@ -364,11 +364,11 @@ namespace Blueberry
 				}
 				size_t samplerHash = TO_HASH(samplerName);
 				size_t texturePairIndex = UINT64_MAX;
-				for (size_t i = 0; i < m_TextureSRVSamplerSlots.size(); ++i)
+				for (size_t j = 0; j < m_TextureSRVSamplerSlots.size(); ++j)
 				{
-					if (m_TextureSRVSamplerSlots[i].first == samplerHash)
+					if (m_TextureSRVSamplerSlots[j].first == samplerHash)
 					{
-						texturePairIndex = i;
+						texturePairIndex = j;
 						break;
 					}
 				}

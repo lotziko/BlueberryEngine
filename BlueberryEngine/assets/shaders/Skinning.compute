@@ -1,5 +1,5 @@
-#pragma compute CSCopy
-#pragma compute CSPositionNormalTangent
+#pragma compute CopyCompute
+#pragma compute PositionNormalTangentCompute
 
 #include "Core.hlsl"
 
@@ -17,7 +17,7 @@ ByteAddressBuffer _VertexSource;
 RWByteAddressBuffer _VertexResult;
 
 [numthreads(64, 1, 1)]
-void CSCopy(uint3 id : SV_DispatchThreadID)
+void CopyCompute(uint3 id : SV_DispatchThreadID)
 {
 	if (id.x < _VertexCount)
 	{
@@ -31,7 +31,7 @@ void CSCopy(uint3 id : SV_DispatchThreadID)
 }
 
 [numthreads(64, 1, 1)]
-void CSPositionNormalTangent(uint3 id : SV_DispatchThreadID)
+void PositionNormalTangentCompute(uint3 id : SV_DispatchThreadID)
 {
 	if (id.x < _VertexCount)
 	{

@@ -21,6 +21,7 @@
 #include "RealtimeLights.h"
 #include "PostProcessing.h"
 #include "VolumetricFog.h"
+#include "RayTracing.h"
 #include "Blueberry\Scene\Components\Camera.h"
 
 #include "..\OpenXRRenderer.h"
@@ -34,8 +35,8 @@ namespace Blueberry
 	static size_t s_ScreenDepthStencilTextureId = TO_HASH("_ScreenDepthStencilTexture");
 	static size_t s_ShadowTextureId = TO_HASH("_ShadowTexture");
 	static size_t s_CookieTextureId = TO_HASH("_CookieTexture");
-	static size_t s_ReflectionTextureId = TO_HASH("_ReflectionTexture");
 	static size_t s_HBAOTextureId = TO_HASH("_ScreenOcclusionTexture");
+	static size_t s_ReflectionTextureId = TO_HASH("_ScreenReflectionTexture");
 	static size_t s_VolumetricFogTextureId = TO_HASH("_VolumetricFogTexture");
 	static size_t s_MultiviewKeywordId = TO_HASH("MULTIVIEW");
 	static size_t s_ShadowsKeywordId = TO_HASH("SHADOWS");
@@ -51,6 +52,7 @@ namespace Blueberry
 		VolumetricFog::Initialize();
 		RealtimeLights::Initialize();
 		ShadowAtlas::Initialize();
+		RayTracing::Initialize();
 	}
 
 	void DefaultRenderer::Shutdown()
@@ -61,6 +63,7 @@ namespace Blueberry
 		VolumetricFog::Shutdown();
 		RealtimeLights::Shutdown();
 		ShadowAtlas::Shutdown();
+		RayTracing::Shutdown();
 	}
 	
 	void DefaultRenderer::Draw(Scene* scene, Camera* camera, Rectangle viewport, GfxTexture* colorOutput, GfxTexture* depthOutput)
@@ -76,6 +79,7 @@ namespace Blueberry
 		GfxTexture* colorRenderTarget = nullptr;
 		GfxTexture* depthStencilRenderTarget = nullptr;
 		GfxTexture* HBAORenderTarget = nullptr;
+		GfxTexture* reflectionRenderTarget = nullptr;
 		GfxTexture* resultRenderTarget = nullptr;
 
 		bool isVr = OpenXRRenderer::IsActive() && cameraType == CameraType::VR;
@@ -140,6 +144,9 @@ namespace Blueberry
 
 		if (cameraType != CameraType::Preview)
 		{
+			reflectionRenderTarget = GfxTexturePool::Get(size.x, size.y, 1, TextureUsageFlags::UnorderedAccess);
+			RayTracing::Draw(scene, camera, reflectionRenderTarget, viewport, size);
+			GfxDevice::SetGlobalTexture(s_ReflectionTextureId, reflectionRenderTarget);
 			VolumetricFog::CalculateFrustum(s_Results, cameraData);
 			GfxDevice::SetGlobalTexture(s_VolumetricFogTextureId, VolumetricFog::GetFrustumTexture());
 		}
@@ -223,5 +230,10 @@ namespace Blueberry
 		GfxTexturePool::Release(depthStencilRenderTarget);
 		GfxTexturePool::Release(HBAORenderTarget);
 		GfxTexturePool::Release(resultRenderTarget);
+
+		if (cameraType != CameraType::Preview)
+		{
+			GfxTexturePool::Release(reflectionRenderTarget);
+		}
 	}
 }

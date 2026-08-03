@@ -1,7 +1,7 @@
-#pragma compute CSInject
-#pragma compute CSScatter
-#pragma compute CSBlurHorizontal
-#pragma compute CSBlurVertical
+#pragma compute InjectCompute
+#pragma compute ScatterCompute
+#pragma compute BlurHorizontalCompute
+#pragma compute BlurVerticalCompute
 
 #include "Core.hlsl"
 
@@ -238,7 +238,7 @@ float4 SamplePreviousColor(float3 positionWS, float4x4 previousViewProj, uint vi
 }
 
 [numthreads(16, 16, 1)]
-void CSInject(uint3 id : SV_DispatchThreadID)
+void InjectCompute(uint3 id : SV_DispatchThreadID)
 {
 	uint viewIndex = id.z;
 	uint3 positionFVS = uint3((uint)_FrustumVolumeSize.x * viewIndex + id.x, id.y, 0);
@@ -277,7 +277,7 @@ SamplerState _InjectedFogVolume_Sampler;
 RWTexture3D<float4> _ScatterFogVolume;
 
 [numthreads(8, 8, 1)]
-void CSScatter(uint3 id : SV_DispatchThreadID)
+void ScatterCompute(uint3 id : SV_DispatchThreadID)
 {
 	uint viewIndex = id.z;
 	uint3 pos = uint3((uint)_FrustumVolumeSize.x * viewIndex + id.x, id.y, 0);
@@ -309,7 +309,6 @@ void CSScatter(uint3 id : SV_DispatchThreadID)
 	}
 }
 
-
 Texture3D<float4> _ScatterNoBlurFogVolume;
 RWTexture3D<float4> _ScatterBlurFogVolume;
 
@@ -322,7 +321,7 @@ static const uint2 kBlurOffsets[5] = {
 };
 
 [numthreads(8, 8, 8)]
-void CSBlurHorizontal(uint3 id : SV_DispatchThreadID)
+void BlurHorizontalCompute(uint3 id : SV_DispatchThreadID)
 {
 	uint2 size = (uint2)_FrustumVolumeSize.xy - 1;
 	float4 result = 0;
@@ -340,7 +339,7 @@ void CSBlurHorizontal(uint3 id : SV_DispatchThreadID)
 }
 
 [numthreads(8, 8, 8)]
-void CSBlurVertical(uint3 id : SV_DispatchThreadID)
+void BlurVerticalCompute(uint3 id : SV_DispatchThreadID)
 {
 	uint2 size = (uint2)_FrustumVolumeSize.xy - 1;
 	float4 result = 0;

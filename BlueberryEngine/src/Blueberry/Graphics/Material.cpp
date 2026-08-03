@@ -115,6 +115,11 @@ namespace Blueberry
 		FillTextureMap();
 	}
 
+	bool Material::HasKeyword(const String& keyword)
+	{
+		return std::find(m_ActiveKeywords.begin(), m_ActiveKeywords.end(), keyword) != m_ActiveKeywords.end();
+	}
+
 	void Material::SetKeyword(const String& keyword, bool enabled)
 	{
 		auto it = std::find(m_ActiveKeywords.begin(), m_ActiveKeywords.end(), keyword);
@@ -127,6 +132,7 @@ namespace Blueberry
 			m_ActiveKeywords.push_back(keyword);
 		}
 		m_ActiveKeywordsMask = UINT32_MAX;
+		m_IsOpaque = 0;
 	}
 
 	uint32_t Material::GetActiveKeywordsMask()
@@ -166,6 +172,15 @@ namespace Blueberry
 		return nullptr;
 	}
 
+	bool Material::IsOpaque()
+	{
+		if (m_IsOpaque == 0)
+		{
+			m_IsOpaque = HasKeyword("ALPHACLIP") ? 2 : 1;
+		}
+		return m_IsOpaque == 1;
+	}
+
 	void Material::OnNotify(void* args)
 	{
 		Object* caller = static_cast<Object*>(args);
@@ -177,7 +192,7 @@ namespace Blueberry
 			{
 				if (binding.objectId == objectId)
 				{
-					binding.index = texture->Get()->m_Index;
+					binding.index = texture->Get()->GetIndex();
 					break;
 				}
 			}
@@ -237,10 +252,10 @@ namespace Blueberry
 			if (binding.id == id)
 			{
 				binding.objectId = texture->GetObjectId();
-				binding.index = texture->Get()->m_Index;
+				binding.index = texture->Get()->GetIndex();
 				return;
 			}
 		}
-		m_BindedTextures.push_back({ id, texture->GetObjectId(), texture->Get()->m_Index });
+		m_BindedTextures.push_back({ id, texture->GetObjectId(), texture->Get()->GetIndex() });
 	}
 }

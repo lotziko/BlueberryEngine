@@ -90,8 +90,8 @@ namespace Blueberry
 
 			uint32_t groupsX = (static_cast<uint32_t>(viewport.width + 15)) / 16;
 			uint32_t groupsY = (static_cast<uint32_t>(viewport.height + 15)) / 16;
-			GfxDevice::Dispatch(s_ExposureShader->GetKernel(0), groupsX, groupsY, 1);
-			GfxDevice::Dispatch(s_ExposureShader->GetKernel(1), 1, 1, 1);
+			GfxDevice::Dispatch(s_ExposureShader, 0, groupsX, groupsY, 1);
+			GfxDevice::Dispatch(s_ExposureShader, 1, 1, 1, 1);
 			s_Result->GetData(&perCameraData.targetExposure);
 		}
 		else

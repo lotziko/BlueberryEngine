@@ -116,7 +116,7 @@ Shader
 
 		#pragma keyword_global_vertex MULTIVIEW
 		#pragma keyword_global_fragment MULTIVIEW
-
+		
 		float4 BloomFragment(Varyings input) : SV_TARGET
 		{
 			SETUP_INPUT_VIEW_INDEX(input);
@@ -177,7 +177,7 @@ Shader
 
 		#pragma keyword_global_vertex MULTIVIEW
 		#pragma keyword_global_fragment MULTIVIEW
-
+		
 		float4 BloomFragment(Varyings input) : SV_TARGET
 		{
 			SETUP_INPUT_VIEW_INDEX(input);

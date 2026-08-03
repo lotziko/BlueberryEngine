@@ -88,12 +88,11 @@ namespace Blueberry
 		return data;
 	}
 
-	uint32_t GfxRenderStateCache::GetTextureIndex(Material* material, size_t id) const
+	uint32_t GfxRenderStateCache::GetTextureSlot(Material* material, size_t id) const
 	{
-		auto& bindedTextures = material->m_BindedTextures;
-		for (size_t i = 0; i < bindedTextures.size(); ++i)
+		for (size_t i = 0; i < material->m_BindedTextures.size(); ++i)
 		{
-			if (bindedTextures[i].id == id)
+			if (material->m_BindedTextures[i].id == id)
 			{
 				return static_cast<uint32_t>(i);
 			}

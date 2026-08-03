@@ -118,6 +118,9 @@ cbuffer PerCameraLightData
 TEXTURE2D_X(_ScreenOcclusionTexture);
 SAMPLER(_ScreenOcclusionTexture_Sampler);
 
+TEXTURE2D_X(_ScreenReflectionTexture);
+SAMPLER(_ScreenReflectionTexture_Sampler);
+
 TEXTURE2D(_ShadowTexture);
 SAMPLER_CMP(_ShadowTexture_Sampler);
 

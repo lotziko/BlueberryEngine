@@ -610,9 +610,12 @@ namespace Blueberry
 		{
 			m_IsFocused = false;
 			WindowEvents::GetWindowUnfocused().Invoke();
-			ImGuiIO& io = ImGui::GetIO();
-			io.ClearInputKeys();
-			io.ClearInputMouse();
+			if (ImGui::GetCurrentContext())
+			{
+				ImGuiIO& io = ImGui::GetIO();
+				io.ClearInputKeys();
+				io.ClearInputMouse();
+			}
 			return 0;
 		}
 		case WM_DROPFILES:

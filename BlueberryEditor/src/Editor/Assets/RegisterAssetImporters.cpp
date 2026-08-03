@@ -4,6 +4,7 @@
 #include "Editor\Assets\Importers\TextureImporter.h"
 #include "Editor\Assets\Importers\ShaderImporter.h"
 #include "Editor\Assets\Importers\ComputeShaderImporter.h"
+#include "Editor\Assets\Importers\RayTracingShaderImporter.h"
 #include "Editor\Assets\Importers\DefaultImporter.h"
 #include "Editor\Assets\Importers\NativeAssetImporter.h"
 #include "Editor\Assets\Importers\PrefabImporter.h"
@@ -22,6 +23,7 @@ namespace Blueberry
 		REGISTER_CLASS(TextureImporter);
 		REGISTER_CLASS(ShaderImporter);
 		REGISTER_CLASS(ComputeShaderImporter);
+		REGISTER_CLASS(RayTracingShaderImporter);
 		REGISTER_CLASS(DefaultImporter);
 		REGISTER_CLASS(NativeAssetImporter);
 		REGISTER_CLASS(PrefabImporter);
@@ -40,6 +42,7 @@ namespace Blueberry
 		REGISTER_ASSET_IMPORTER(".hdr", TextureImporter::Type);
 		REGISTER_ASSET_IMPORTER(".shader", ShaderImporter::Type);
 		REGISTER_ASSET_IMPORTER(".compute", ComputeShaderImporter::Type);
+		REGISTER_ASSET_IMPORTER(".raytrace", RayTracingShaderImporter::Type);
 		REGISTER_ASSET_IMPORTER(".scene", DefaultImporter::Type);
 		REGISTER_ASSET_IMPORTER(".material", NativeAssetImporter::Type);
 		REGISTER_ASSET_IMPORTER(".prefab", PrefabImporter::Type);

@@ -183,7 +183,7 @@ namespace Blueberry
 			GfxDevice::SetGlobalTexture(s_MSAASourceTextureId, msaaColor);
 			GfxDevice::SetGlobalTexture(s_ColorOutputTextureId, color);
 			GfxDevice::SetGlobalTexture(s_BloomOutputTextureId, bloom);
-			GfxDevice::Dispatch(s_ResolveMSAABloomShader->GetKernel(0), threadWidth, threadHeight, 1);
+			GfxDevice::Dispatch(s_ResolveMSAABloomShader, 0, threadWidth, threadHeight, 1);
 			AutoExposure::Calculate(camera, color, viewport);
 
 			BloomData bloomConstants = {};

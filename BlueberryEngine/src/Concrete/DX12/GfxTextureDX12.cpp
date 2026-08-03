@@ -9,7 +9,7 @@ namespace Blueberry
 {
 	GfxPointerCache<GfxTextureDX12> GfxTextureDX12::s_PointerCache = {};
 
-	GfxTextureDX12::GfxTextureDX12(GfxDeviceDX12* device) : m_Device(device->GetDevice()), m_GfxDevice(device)
+	GfxTextureDX12::GfxTextureDX12(GfxDeviceDX12* device) : m_GfxDevice(device), m_Device(m_GfxDevice->GetDevice())
 	{
 		m_Index = s_PointerCache.Allocate(this);
 	}
@@ -25,6 +25,7 @@ namespace Blueberry
 		{
 			sliceRenderTargetView.Free();
 		}
+		m_RingShaderResourceView.Free();
 		m_GfxDevice->Release(m_Resource);
 	}
 
@@ -46,7 +47,8 @@ namespace Blueberry
 
 	bool GfxTextureDX12::Initialize(const TextureProperties& properties)
 	{
-		m_Format = static_cast<DXGI_FORMAT>(properties.format);
+		m_Format = properties.format;
+		m_DxgiFormat = static_cast<DXGI_FORMAT>(properties.format);
 		m_Width = std::max(properties.width, 1u);
 		m_Height = std::max(properties.height, 1u);
 		m_Depth = properties.depth;
@@ -54,7 +56,7 @@ namespace Blueberry
 		m_FilterMode = properties.filterMode;
 		m_WrapMode = properties.wrapMode;
 		m_AntiAliasing = std::max(1u, properties.antiAliasing);
-		m_Quality = GetQualityLevel(m_Device, m_Format, m_AntiAliasing);
+		m_Quality = GetQualityLevel(m_Device, m_DxgiFormat, m_AntiAliasing);
 		m_ArraySize = DxgiHelper::GetArraySize(properties.dimension, properties.depth);
 		m_MipLevels = std::max(1u, properties.mipCount);
 
@@ -76,24 +78,24 @@ namespace Blueberry
 		return m_Resource.Get();
 	}
 
-	const GfxHandleDX12& GfxTextureDX12::GetSRV() const
+	const GfxHandleDX12& GfxTextureDX12::GetShaderResourceView() const
 	{
 		return m_ShaderResourceView;
 	}
 
-	const GfxHandleDX12& GfxTextureDX12::GetRTV() const
+	const GfxHandleDX12& GfxTextureDX12::GetRenderTargetView() const
 	{
 		return m_RenderTargetView;
 	}
 
-	const GfxHandleDX12& GfxTextureDX12::GetRTV(uint32_t arraySlice, uint32_t mipSlice)
+	const GfxHandleDX12& GfxTextureDX12::GetRenderTargetView(uint32_t arraySlice, uint32_t mipSlice)
 	{
 		uint32_t index = arraySlice * m_MipLevels + mipSlice;
 		const GfxHandleDX12& handle = m_SlicesRenderTargetViews[index];
 		if (handle.IsInvalid())
 		{
 			D3D12_RENDER_TARGET_VIEW_DESC renderTargetViewDesc = {};
-			renderTargetViewDesc.Format = m_Format;
+			renderTargetViewDesc.Format = m_DxgiFormat;
 
 			switch (m_Dimension)
 			{
@@ -136,53 +138,65 @@ namespace Blueberry
 				break;
 			}
 
-			m_GfxDevice->CreateRTV(m_Resource.Get(), &renderTargetViewDesc, &m_SlicesRenderTargetViews[index]);
+			GfxHandleDX12 handle = m_GfxDevice->GetRtvHeap().AllocatePersistent();
+			m_Device->CreateRenderTargetView(m_Resource.Get(), &renderTargetViewDesc, handle.GetCPU());
+			m_SlicesRenderTargetViews[index] = handle;
 			return m_SlicesRenderTargetViews[index];
 		}
 		return handle;
 	}
 
-	D3D12_RESOURCE_STATES GfxTextureDX12::GetState() const
+	const GfxHandleDX12& GfxTextureDX12::GetDepthStencilView() const
 	{
-		return m_State;
+		return m_DepthStencilView;
 	}
 
-	uint32_t GfxTextureDX12::GetWidth() const
+	const GfxHandleDX12& GfxTextureDX12::GetUnorderedAccessView() const
 	{
-		return m_Width;
+		return m_UnorderedAccessView;
 	}
 
-	uint32_t GfxTextureDX12::GetHeight() const
+	const GfxHandleDX12& GfxTextureDX12::GetRingShaderResourceView()
 	{
-		return m_Height;
+		if (m_RingShaderResourceView.IsInvalid())
+		{
+			m_RingShaderResourceView = m_GfxDevice->GetCbvSrvUavRingHeap().AllocatePersistent();
+			m_Device->CopyDescriptorsSimple(1, m_RingShaderResourceView.GetCPU(), m_ShaderResourceView.GetCPU(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		}
+		return m_RingShaderResourceView;
 	}
 
-	TextureFormat GfxTextureDX12::GetFormat() const
+	uint8_t GfxTextureDX12::GetSampler() const
 	{
-		return static_cast<TextureFormat>(m_Format);
+		return m_Sampler;
+	}
+
+	void GfxTextureDX12::SetSampler(uint8_t sampler)
+	{
+		m_Sampler = sampler;
+	}
+
+	const DXGI_FORMAT GfxTextureDX12::GetDxgiFormat() const
+	{
+		return m_DxgiFormat;
 	}
 
 	void* GfxTextureDX12::GetHandle()
 	{
-		uint64_t generation = m_GfxDevice->GetGeneration();
-		if (generation > m_HandleGeneration)
+		if (m_RingShaderResourceView.IsInvalid())
 		{
-			uint32_t descriptorCount = 1;
-			m_HandleShaderResourceView = m_GfxDevice->GetCbvSrvDsvRingHeap().AllocateTemporary(descriptorCount);
-			m_Device->CopyDescriptors(1, &m_HandleShaderResourceView.GetCPU(), &descriptorCount, descriptorCount, &m_ShaderResourceView.GetCPU(), nullptr, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-			m_HandleGeneration = generation;
+			m_RingShaderResourceView = m_GfxDevice->GetCbvSrvUavRingHeap().AllocatePersistent();
+			m_Device->CopyDescriptorsSimple(1, m_RingShaderResourceView.GetCPU(), m_ShaderResourceView.GetCPU(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		}
-		return reinterpret_cast<void*>(m_HandleShaderResourceView.GetGPU().ptr);
+		return reinterpret_cast<void*>(m_RingShaderResourceView.GetGPU().ptr);
 	}
 
 	void GfxTextureDX12::GetData(void* data, const Rectangle& area)
 	{
 		if (data != nullptr)
 		{
-			ID3D12GraphicsCommandList* commandList = m_GfxDevice->GetCommandList();
-			commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), m_State, D3D12_RESOURCE_STATE_COPY_SOURCE));
+			SetState(D3D12_RESOURCE_STATE_COPY_SOURCE);
 			m_GfxDevice->GetReadbackBuffer().ReadTexture(m_Resource.Get(), data, area);
-			commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, m_State));
 		}
 	}
 
@@ -190,10 +204,8 @@ namespace Blueberry
 	{
 		if (data != nullptr)
 		{
-			ID3D12GraphicsCommandList* commandList = m_GfxDevice->GetCommandList();
-			commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), m_State, D3D12_RESOURCE_STATE_COPY_SOURCE));
+			SetState(D3D12_RESOURCE_STATE_COPY_SOURCE);
 			m_GfxDevice->GetReadbackBuffer().ReadTexture(m_Resource.Get(), data, m_ArraySize * m_MipLevels);
-			commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, m_State));
 		}
 	}
 
@@ -201,10 +213,8 @@ namespace Blueberry
 	{
 		List<D3D12_SUBRESOURCE_DATA> subresourceDatas;
 		GatherSubresources(data, subresourceDatas);
-		ID3D12GraphicsCommandList* commandList = m_GfxDevice->GetCommandList();
-		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), m_State, D3D12_RESOURCE_STATE_COPY_DEST));
+		SetState(D3D12_RESOURCE_STATE_COPY_DEST);
 		m_GfxDevice->GetUploadBuffer().UploadTexture(m_Resource.Get(), subresourceDatas.data(), static_cast<UINT>(subresourceDatas.size()), 512ull);
-		commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, m_State));
 	}
 
 	void GfxTextureDX12::SetWrapMode(WrapMode wrapMode)
@@ -230,6 +240,43 @@ namespace Blueberry
 		m_Resource->SetName(StringHelper::StringToWide(name).c_str());
 	}
 
+	D3D12_RESOURCE_STATES GfxTextureDX12::GetState() const
+	{
+		return m_State;
+	}
+
+	void GfxTextureDX12::SetState(D3D12_RESOURCE_STATES state)
+	{
+		if (m_State != state)
+		{
+			m_GfxDevice->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), m_State, state));
+			m_State = state;
+		}
+	}
+
+	void GfxTextureDX12::SetUAVState()
+	{
+		if (m_State == D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+		{
+			uint64_t generation = m_GfxDevice->GetGeneration();
+			if (m_UnorderedAccessGeneration == generation)
+			{
+				m_GfxDevice->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(m_Resource.Get()));
+			}
+			m_UnorderedAccessGeneration = generation;
+		}
+		else
+		{
+			m_GfxDevice->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), m_State, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+			m_State = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+		}
+	}
+
+	GfxTextureDX12* GfxTextureDX12::Get(uint32_t index)
+	{
+		return s_PointerCache.Get(index);
+	}
+
 	D3D12_RESOURCE_DIMENSION GetResourceDimension(TextureDimension dimension)
 	{
 		switch (dimension)
@@ -248,12 +295,12 @@ namespace Blueberry
 	
 	void GfxTextureDX12::GatherSubresources(const void* data, List<D3D12_SUBRESOURCE_DATA>& subresourceDatas)
 	{
-		uint32_t bitsPerPixel = DxgiHelper::GetBitsPerPixel(m_Format);
+		uint32_t bitsPerPixel = DxgiHelper::GetBitsPerPixel(m_DxgiFormat);
 		uint32_t size = m_ArraySize * m_MipLevels;
 		subresourceDatas.resize(size);
 
 		const uint8_t* ptr = static_cast<const uint8_t*>(data);
-		if (DxgiHelper::IsCompressed(m_Format))
+		if (DxgiHelper::IsCompressed(m_DxgiFormat))
 		{
 			uint32_t blockSize = bitsPerPixel * 16 / 8;
 			for (uint32_t i = 0; i < m_ArraySize; ++i)
@@ -298,7 +345,7 @@ namespace Blueberry
 
 	bool GfxTextureDX12::Initialize(D3D12_SUBRESOURCE_DATA* subresourceData, uint32_t subresourceCount, const TextureProperties& properties)
 	{
-		bool useDSV = DxgiHelper::IsDepth(m_Format);
+		bool useDSV = DxgiHelper::IsDepth(m_DxgiFormat);
 		bool useRTV = !useDSV && HasFlag(properties.usageFlags, TextureUsageFlags::RenderTarget);
 		bool useUAV = HasFlag(properties.usageFlags, TextureUsageFlags::UnorderedAccess);
 		bool isReadable = HasFlag(properties.usageFlags, TextureUsageFlags::CPUReadable);
@@ -307,7 +354,7 @@ namespace Blueberry
 
 		D3D12_RESOURCE_DESC resourceDesc = {};
 		resourceDesc.MipLevels = m_MipLevels;
-		resourceDesc.Format = m_Format;
+		resourceDesc.Format = m_DxgiFormat;
 		resourceDesc.Width = m_Width;
 		resourceDesc.Height = m_Height;
 		resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
@@ -332,28 +379,24 @@ namespace Blueberry
 		}
 
 		D3D12_CLEAR_VALUE clearValue = {};
-		clearValue.Format = m_Format;
+		clearValue.Format = m_DxgiFormat;
 		if (useDSV)
 		{
 			clearValue.DepthStencil.Depth = 1.0f;
 		}
 
-		D3D12_RESOURCE_STATES targetState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-		D3D12_RESOURCE_STATES initialState = subresourceData == nullptr ? targetState : D3D12_RESOURCE_STATE_COPY_DEST;
-		HRESULT hr = m_Device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE, &resourceDesc, initialState, (useRTV || useDSV) ? &clearValue : nullptr, IID_PPV_ARGS(&m_Resource));
+		m_State = subresourceData == nullptr ? D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE : D3D12_RESOURCE_STATE_COPY_DEST;
+		HRESULT hr = m_Device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE, &resourceDesc, m_State, (useRTV || useDSV) ? &clearValue : nullptr, IID_PPV_ARGS(&m_Resource));
 		
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create texture."));
 			return false;
 		}
-		m_State = targetState;
 
 		if (subresourceData != nullptr)
 		{
-			ID3D12GraphicsCommandList* commandList = m_GfxDevice->GetCommandList();
 			m_GfxDevice->GetUploadBuffer().UploadTexture(m_Resource.Get(), subresourceData, subresourceCount, 512ull);
-			commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), initialState, targetState));
 		}
 
 		// SRV
@@ -409,13 +452,14 @@ namespace Blueberry
 			break;
 		}
 		
-		m_GfxDevice->CreateSRV(m_Resource.Get(), &shaderResourceViewDesc, &m_ShaderResourceView);
+		m_ShaderResourceView = m_GfxDevice->GetCbvSrvUavHeap().AllocatePersistent();
+		m_Device->CreateShaderResourceView(m_Resource.Get(), &shaderResourceViewDesc, m_ShaderResourceView.GetCPU());
 
 		// RTV
 		if (useRTV)
 		{
 			D3D12_RENDER_TARGET_VIEW_DESC renderTargetViewDesc = {};
-			renderTargetViewDesc.Format = m_Format;
+			renderTargetViewDesc.Format = m_DxgiFormat;
 
 			switch (m_Dimension)
 			{
@@ -459,14 +503,15 @@ namespace Blueberry
 				break;
 			}
 			
-			m_GfxDevice->CreateRTV(m_Resource.Get(), &renderTargetViewDesc, &m_RenderTargetView);
+			m_RenderTargetView = m_GfxDevice->GetRtvHeap().AllocatePersistent();
+			m_Device->CreateRenderTargetView(m_Resource.Get(), &renderTargetViewDesc, m_RenderTargetView.GetCPU());
 		}
 
 		// DSV
 		if (useDSV)
 		{
 			D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc = {};
-			depthStencilViewDesc.Format = m_Format;
+			depthStencilViewDesc.Format = m_DxgiFormat;
 
 			switch (m_Dimension)
 			{
@@ -491,14 +536,15 @@ namespace Blueberry
 				break;
 			}
 
-			m_GfxDevice->CreateDSV(m_Resource.Get(), &depthStencilViewDesc, &m_DepthStencilView);
+			m_DepthStencilView = m_GfxDevice->GetDsvHeap().AllocatePersistent();
+			m_Device->CreateDepthStencilView(m_Resource.Get(), &depthStencilViewDesc, m_DepthStencilView.GetCPU());
 		}
 
 		// UAV
 		if (useUAV)
 		{
 			D3D12_UNORDERED_ACCESS_VIEW_DESC unorderedAccessViewDesc = {};
-			unorderedAccessViewDesc.Format = m_Format;
+			unorderedAccessViewDesc.Format = m_DxgiFormat;
 
 			switch (m_Dimension)
 			{
@@ -521,8 +567,9 @@ namespace Blueberry
 				unorderedAccessViewDesc.Texture3D.WSize = -1;
 				break;
 			}
-			
-			m_GfxDevice->CreateUAV(m_Resource.Get(), &unorderedAccessViewDesc, &m_UnorderedAccessView);
+
+			m_UnorderedAccessView = m_GfxDevice->GetCbvSrvUavHeap().AllocatePersistent();
+			m_Device->CreateUnorderedAccessView(m_Resource.Get(), nullptr, &unorderedAccessViewDesc, m_UnorderedAccessView.GetCPU());
 		}
 
 		return true;

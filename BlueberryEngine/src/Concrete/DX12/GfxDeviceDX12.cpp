@@ -2,14 +2,18 @@
 
 #include "GfxShaderDX12.h"
 #include "GfxComputeShaderDX12.h"
+#include "GfxRayTracingShaderDX12.h"
 #include "GfxBufferDX12.h"
 #include "GfxTextureDX12.h"
+#include "GfxBottomLevelAccelerationStructureDX12.h"
+#include "GfxTopLevelAccelerationStructureDX12.h"
+#include "GfxRayTracingShaderTableDX12.h"
 #include "Blueberry\Graphics\Enums.h"
 #include "..\Windows\WindowsHelper.h"
 
 namespace Blueberry
 {
-	#define DEBUG_LAYER false
+	#define DEBUG_LAYER true
 	#define GPU_VALIDATION false
 
 	bool GfxDeviceDX12::InitializeImpl(int width, int height, void* data)
@@ -19,6 +23,7 @@ namespace Blueberry
 
 		m_StateCache = GfxRenderStateCacheDX12(this);
 		m_ComputeStateCache = GfxComputeRenderStateCacheDX12(this);
+		m_RayTracingStateCache = GfxRayTracingRenderStateCacheDX12(this);
 
 		return true;
 	}
@@ -32,7 +37,8 @@ namespace Blueberry
 		}
 		else
 		{
-			m_CommandList->ClearRenderTargetView(m_BindedRenderTarget->m_RenderTargetView.GetCPU(), color, 0, nullptr);
+			m_BindedRenderTarget->SetState(D3D12_RESOURCE_STATE_RENDER_TARGET);
+			m_CommandList->ClearRenderTargetView(m_BindedRenderTarget->GetRenderTargetView().GetCPU(), color, 0, nullptr);
 		}
 	}
 
@@ -40,7 +46,8 @@ namespace Blueberry
 	{
 		if (m_BindedDepthStencil != nullptr)
 		{
-			m_CommandList->ClearDepthStencilView(m_BindedDepthStencil->m_DepthStencilView.GetCPU(), D3D12_CLEAR_FLAG_DEPTH, depth, 0, 0, nullptr);
+			m_BindedDepthStencil->SetState(D3D12_RESOURCE_STATE_DEPTH_WRITE);
+			m_CommandList->ClearDepthStencilView(m_BindedDepthStencil->GetDepthStencilView().GetCPU(), D3D12_CLEAR_FLAG_DEPTH, depth, 0, 0, nullptr);
 		}
 	}
 
@@ -80,7 +87,20 @@ namespace Blueberry
 			WaitForSingleObjectEx(m_FenceEvent, INFINITE, FALSE);
 		}
 
-		m_ReleasedResources.clear();
+		if (m_ReleasedResources.size() > 0)
+		{
+			for (auto it = m_ReleasedResources.begin(); it != m_ReleasedResources.end();)
+			{
+				if (m_FenceLastSignaledValue - it->first > 3)
+				{
+					it = m_ReleasedResources.erase(it);
+				}
+				else
+				{
+					++it;
+				}
+			}
+		}
 		m_FrameContexts[m_FrameIndex].fenceValue = fenceValue;
 		m_FrameIndex = (m_FrameIndex + 1) % BUFFER_COUNT;
 		m_UploadBuffer.UpdateGeneration(m_FenceLastSignaledValue);
@@ -194,6 +214,17 @@ namespace Blueberry
 		return true;
 	}
 
+	bool GfxDeviceDX12::CreateRayTracingShaderImpl(const ByteData& rayTracingData, GfxRayTracingShader*& shader)
+	{
+		auto dxShader = new GfxRayTracingShaderDX12();
+		if (!dxShader->Initialize(m_Device.Get(), rayTracingData))
+		{
+			return false;
+		}
+		shader = dxShader;
+		return true;
+	}
+
 	bool GfxDeviceDX12::CreateBufferImpl(const BufferProperties& properties, GfxBuffer*& buffer)
 	{
 		GfxBufferDX12* dxBuffer = new GfxBufferDX12(this);
@@ -216,15 +247,31 @@ namespace Blueberry
 		return true;
 	}
 
+	bool GfxDeviceDX12::CreateBottomLevelAccelerationStructureImpl(const BottomLevelAccelerationStructureProperties& properties, GfxBottomLevelAccelerationStructure*& accelerationStructure)
+	{
+		GfxBottomLevelAccelerationStructureDX12* dxAccelerationStructure = new GfxBottomLevelAccelerationStructureDX12(this);
+		if (!dxAccelerationStructure->Initialize(properties))
+		{
+			return false;
+		}
+		accelerationStructure = dxAccelerationStructure;
+		return true;
+	}
+
+	bool GfxDeviceDX12::CreateTopLevelAccelerationStructureImpl(GfxTopLevelAccelerationStructure*& accelerationStructure)
+	{
+		GfxTopLevelAccelerationStructureDX12* dxAccelerationStructure = new GfxTopLevelAccelerationStructureDX12(this);
+		accelerationStructure = dxAccelerationStructure;
+		return true;
+	}
+
 	void GfxDeviceDX12::CopyImpl(GfxTexture* source, GfxTexture* target)
 	{
 		GfxTextureDX12* dxSource = static_cast<GfxTextureDX12*>(source);
 		GfxTextureDX12* dxTarget = static_cast<GfxTextureDX12*>(target);
-		D3D12_RESOURCE_BARRIER preBarriers[] = { CD3DX12_RESOURCE_BARRIER::Transition(dxSource->m_Resource.Get(), dxSource->m_State, D3D12_RESOURCE_STATE_COPY_SOURCE), CD3DX12_RESOURCE_BARRIER::Transition(dxTarget->m_Resource.Get(), dxTarget->m_State, D3D12_RESOURCE_STATE_COPY_DEST) };
-		D3D12_RESOURCE_BARRIER postBarriers[] = { CD3DX12_RESOURCE_BARRIER::Transition(dxSource->m_Resource.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, dxSource->m_State), CD3DX12_RESOURCE_BARRIER::Transition(dxTarget->m_Resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, dxTarget->m_State) };
-		m_CommandList->ResourceBarrier(2, preBarriers);
-		m_CommandList->CopyResource(dxTarget->m_Resource.Get(), dxSource->m_Resource.Get());
-		m_CommandList->ResourceBarrier(2, postBarriers);
+		dxSource->SetState(D3D12_RESOURCE_STATE_COPY_SOURCE);
+		dxTarget->SetState(D3D12_RESOURCE_STATE_COPY_DEST);
+		m_CommandList->CopyResource(dxTarget->GetResource(), dxSource->GetResource());
 	}
 
 	void GfxDeviceDX12::CopyImpl(GfxTexture* source, GfxTexture* target, const Rectangle& area)
@@ -233,12 +280,12 @@ namespace Blueberry
 		GfxTextureDX12* dxTarget = static_cast<GfxTextureDX12*>(target);
 
 		D3D12_TEXTURE_COPY_LOCATION srcLocation = {};
-		srcLocation.pResource = dxSource->m_Resource.Get();
+		srcLocation.pResource = dxSource->GetResource();
 		srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 		srcLocation.SubresourceIndex = 0;
 
 		D3D12_TEXTURE_COPY_LOCATION dstLocation = {};
-		dstLocation.pResource = dxTarget->m_Resource.Get();
+		dstLocation.pResource = dxTarget->GetResource();
 		dstLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 		dstLocation.SubresourceIndex = 0;
 
@@ -250,11 +297,9 @@ namespace Blueberry
 		srcBox.front = 0;
 		srcBox.back = 1;
 
-		D3D12_RESOURCE_BARRIER preBarriers[] = { CD3DX12_RESOURCE_BARRIER::Transition(dxSource->m_Resource.Get(), dxSource->m_State, D3D12_RESOURCE_STATE_COPY_SOURCE), CD3DX12_RESOURCE_BARRIER::Transition(dxTarget->m_Resource.Get(), dxTarget->m_State, D3D12_RESOURCE_STATE_COPY_DEST) };
-		D3D12_RESOURCE_BARRIER postBarriers[] = { CD3DX12_RESOURCE_BARRIER::Transition(dxSource->m_Resource.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, dxSource->m_State), CD3DX12_RESOURCE_BARRIER::Transition(dxTarget->m_Resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, dxTarget->m_State) };
-		m_CommandList->ResourceBarrier(2, preBarriers);
+		dxSource->SetState(D3D12_RESOURCE_STATE_COPY_SOURCE);
+		dxTarget->SetState(D3D12_RESOURCE_STATE_COPY_DEST);
 		m_CommandList->CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, &srcBox);
-		m_CommandList->ResourceBarrier(2, postBarriers);
 	}
 
 	void GfxDeviceDX12::CopyImpl(GfxTexture* source, GfxTexture* target, const Vector2Int& offset, const Rectangle& area)
@@ -263,12 +308,12 @@ namespace Blueberry
 		GfxTextureDX12* dxTarget = static_cast<GfxTextureDX12*>(target);
 
 		D3D12_TEXTURE_COPY_LOCATION srcLocation = {};
-		srcLocation.pResource = dxSource->m_Resource.Get();
+		srcLocation.pResource = dxSource->GetResource();
 		srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 		srcLocation.SubresourceIndex = 0;
 
 		D3D12_TEXTURE_COPY_LOCATION dstLocation = {};
-		dstLocation.pResource = dxTarget->m_Resource.Get();
+		dstLocation.pResource = dxTarget->GetResource();
 		dstLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 		dstLocation.SubresourceIndex = 0;
 
@@ -280,11 +325,9 @@ namespace Blueberry
 		srcBox.front = 0;
 		srcBox.back = 1;
 
-		D3D12_RESOURCE_BARRIER preBarriers[] = { CD3DX12_RESOURCE_BARRIER::Transition(dxSource->m_Resource.Get(), dxSource->m_State, D3D12_RESOURCE_STATE_COPY_SOURCE), CD3DX12_RESOURCE_BARRIER::Transition(dxTarget->m_Resource.Get(), dxTarget->m_State, D3D12_RESOURCE_STATE_COPY_DEST) };
-		D3D12_RESOURCE_BARRIER postBarriers[] = { CD3DX12_RESOURCE_BARRIER::Transition(dxSource->m_Resource.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, dxSource->m_State), CD3DX12_RESOURCE_BARRIER::Transition(dxTarget->m_Resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, dxTarget->m_State) };
-		m_CommandList->ResourceBarrier(2, preBarriers);
+		dxSource->SetState(D3D12_RESOURCE_STATE_COPY_SOURCE);
+		dxTarget->SetState(D3D12_RESOURCE_STATE_COPY_DEST);
 		m_CommandList->CopyTextureRegion(&dstLocation, static_cast<UINT>(offset.x), static_cast<UINT>(offset.y), 0, &srcLocation, &srcBox);
-		m_CommandList->ResourceBarrier(2, postBarriers);
 	}
 
 	void GfxDeviceDX12::CopyImpl(GfxTexture* source, GfxTexture* target, uint32_t sourceSlice, uint32_t targetSlice, uint32_t mipLevel)
@@ -292,50 +335,26 @@ namespace Blueberry
 		GfxTextureDX12* dxSource = static_cast<GfxTextureDX12*>(source);
 		GfxTextureDX12* dxTarget = static_cast<GfxTextureDX12*>(target);
 
-		UINT sourceSubresource = D3D12CalcSubresource(mipLevel, sourceSlice, 0, dxSource->m_MipLevels, dxSource->m_ArraySize);
-		UINT targetSubresource = D3D12CalcSubresource(mipLevel, targetSlice, 0, dxTarget->m_MipLevels, dxSource->m_ArraySize);
+		UINT sourceSubresource = D3D12CalcSubresource(mipLevel, sourceSlice, 0, dxSource->GetMipLevels(), dxSource->GetArraySize());
+		UINT targetSubresource = D3D12CalcSubresource(mipLevel, targetSlice, 0, dxTarget->GetMipLevels(), dxSource->GetArraySize());
 
 		D3D12_TEXTURE_COPY_LOCATION srcLocation = {};
-		srcLocation.pResource = static_cast<GfxTextureDX12*>(source)->m_Resource.Get();
+		srcLocation.pResource = static_cast<GfxTextureDX12*>(source)->GetResource();
 		srcLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 		srcLocation.SubresourceIndex = sourceSubresource;
 
 		D3D12_TEXTURE_COPY_LOCATION dstLocation = {};
-		dstLocation.pResource = static_cast<GfxTextureDX12*>(target)->m_Resource.Get();
+		dstLocation.pResource = static_cast<GfxTextureDX12*>(target)->GetResource();
 		dstLocation.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 		dstLocation.SubresourceIndex = targetSubresource;
 
-		D3D12_RESOURCE_BARRIER preBarriers[] = { CD3DX12_RESOURCE_BARRIER::Transition(dxSource->m_Resource.Get(), dxSource->m_State, D3D12_RESOURCE_STATE_COPY_SOURCE), CD3DX12_RESOURCE_BARRIER::Transition(dxTarget->m_Resource.Get(), dxTarget->m_State, D3D12_RESOURCE_STATE_COPY_DEST) };
-		D3D12_RESOURCE_BARRIER postBarriers[] = { CD3DX12_RESOURCE_BARRIER::Transition(dxSource->m_Resource.Get(), D3D12_RESOURCE_STATE_COPY_SOURCE, dxSource->m_State), CD3DX12_RESOURCE_BARRIER::Transition(dxTarget->m_Resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, dxTarget->m_State) };
-		m_CommandList->ResourceBarrier(2, preBarriers);
+		dxSource->SetState(D3D12_RESOURCE_STATE_COPY_SOURCE);
+		dxTarget->SetState(D3D12_RESOURCE_STATE_COPY_DEST);
 		m_CommandList->CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, nullptr);
-		m_CommandList->ResourceBarrier(2, postBarriers);
 	}
 
 	void GfxDeviceDX12::SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, uint32_t arraySlice, uint32_t mipLevel)
 	{
-		if (m_BindedRenderTarget != nullptr && m_BindedRenderTarget != renderTexture)
-		{
-			D3D12_RESOURCE_STATES previousState = m_BindedRenderTarget->m_State;
-			D3D12_RESOURCE_STATES nextState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-			if (previousState != nextState)
-			{
-				m_CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_BindedRenderTarget->m_Resource.Get(), previousState, nextState));
-				m_BindedRenderTarget->m_State = nextState;
-			}
-		}
-
-		if (m_BindedDepthStencil != nullptr && m_BindedDepthStencil != depthStencilTexture)
-		{
-			D3D12_RESOURCE_STATES previousState = m_BindedDepthStencil->m_State;
-			D3D12_RESOURCE_STATES nextState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-			if (previousState != nextState)
-			{
-				m_CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_BindedDepthStencil->m_Resource.Get(), previousState, nextState));
-				m_BindedDepthStencil->m_State = nextState;
-			}
-		}
-
 		if (renderTexture == nullptr && depthStencilTexture == nullptr)
 		{
 			BackbufferData& backbuffer = m_Backbuffers[m_BackbufferIndex];
@@ -370,24 +389,17 @@ namespace Blueberry
 				GfxTextureDX12* dxRenderTarget = static_cast<GfxTextureDX12*>(renderTexture);
 				if (arraySlice || mipLevel)
 				{
-					renderTargets[0] = dxRenderTarget->GetRTV(arraySlice, mipLevel).GetCPU();
+					renderTargets[0] = dxRenderTarget->GetRenderTargetView(arraySlice, mipLevel).GetCPU();
 				}
 				else
 				{
-					renderTargets[0] = dxRenderTarget->GetRTV().GetCPU();
+					renderTargets[0] = dxRenderTarget->GetRenderTargetView().GetCPU();
 				}
 
-				D3D12_RESOURCE_STATES previousState = dxRenderTarget->m_State;
-				D3D12_RESOURCE_STATES nextState = D3D12_RESOURCE_STATE_RENDER_TARGET;
-				if (previousState != nextState)
-				{
-					m_CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(dxRenderTarget->m_Resource.Get(), previousState, nextState));
-					dxRenderTarget->m_State = nextState;
-				}
 				m_BindedRenderTarget = dxRenderTarget;
-				m_TargetInfo.renderTargetFormat = dxRenderTarget->m_Format;
-				m_TargetInfo.sampleCount = dxRenderTarget->m_AntiAliasing;
-				m_TargetInfo.sampleQuality = dxRenderTarget->m_Quality;
+				m_TargetInfo.renderTargetFormat = dxRenderTarget->GetDxgiFormat();
+				m_TargetInfo.sampleCount = dxRenderTarget->GetAntiAliasing();
+				m_TargetInfo.sampleQuality = dxRenderTarget->GetQuality();
 			}
 			else
 			{
@@ -397,18 +409,11 @@ namespace Blueberry
 			if (depthStencilTexture != nullptr)
 			{
 				GfxTextureDX12* dxDepthStencil = static_cast<GfxTextureDX12*>(depthStencilTexture);
-				D3D12_RESOURCE_STATES previousState = dxDepthStencil->m_State;
-				D3D12_RESOURCE_STATES nextState = D3D12_RESOURCE_STATE_DEPTH_WRITE;
-				if (previousState != nextState)
-				{
-					m_CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(dxDepthStencil->m_Resource.Get(), previousState, nextState));
-					dxDepthStencil->m_State = nextState;
-				}
-				depthStencil = dxDepthStencil->m_DepthStencilView.GetCPU();
+				depthStencil = dxDepthStencil->GetDepthStencilView().GetCPU();
 				m_BindedDepthStencil = dxDepthStencil;
-				m_TargetInfo.depthStencilFormat = dxDepthStencil->m_Format;
-				m_TargetInfo.sampleCount = dxDepthStencil->m_AntiAliasing;
-				m_TargetInfo.sampleQuality = dxDepthStencil->m_Quality;
+				m_TargetInfo.depthStencilFormat = dxDepthStencil->GetDxgiFormat();
+				m_TargetInfo.sampleCount = dxDepthStencil->GetAntiAliasing();
+				m_TargetInfo.sampleQuality = dxDepthStencil->GetQuality();
 			}
 			else
 			{
@@ -425,11 +430,11 @@ namespace Blueberry
 		{
 			if (pair.first == id)
 			{
-				pair.second = dxBuffer->m_Index;
+				pair.second = dxBuffer->GetIndex();
 				return;
 			}
 		}
-		m_BindedBuffers.push_back(std::make_pair(id, dxBuffer->m_Index));
+		m_BindedBuffers.push_back(std::make_pair(id, dxBuffer->GetIndex()));
 	}
 
 	void GfxDeviceDX12::SetGlobalTextureImpl(size_t id, GfxTexture* texture)
@@ -439,11 +444,11 @@ namespace Blueberry
 		{
 			if (pair.first == id)
 			{
-				pair.second = dxTexture->m_Index;
+				pair.second = dxTexture->GetIndex();
 				return;
 			}
 		}
-		m_BindedTextures.push_back(std::make_pair(id, dxTexture->m_Index));
+		m_BindedTextures.push_back(std::make_pair(id, dxTexture->GetIndex()));
 	}
 
 	D3D12_PRIMITIVE_TOPOLOGY GetPrimitiveTopologyD3D12(const Topology& topology)
@@ -467,12 +472,22 @@ namespace Blueberry
 		}
 
 		const GfxRenderStateDX12 renderState = m_StateCache.GetRenderState(operation.material, operation.passId, operation.layout, m_TargetInfo, operation.topology, m_DepthBias, m_SlopeDepthBias, operation.isCounterClockwise, operation.isSolid);
-		
+
 		if (!renderState.isValid)
 		{
 			return;
 		}
-		
+
+		if (m_BindedRenderTarget != nullptr)
+		{
+			m_BindedRenderTarget->SetState(D3D12_RESOURCE_STATE_RENDER_TARGET);
+		}
+
+		if (m_BindedDepthStencil != nullptr)
+		{
+			m_BindedDepthStencil->SetState(D3D12_RESOURCE_STATE_DEPTH_WRITE);
+		}
+
 		if (renderState.pipelineState != m_PipelineState)
 		{
 			m_PipelineState = renderState.pipelineState;
@@ -481,37 +496,52 @@ namespace Blueberry
 		
 		if (renderState.vertexConstantBuffersCount > 0)
 		{
-			auto vertexÑbvDestHandle = m_CbvSrvUavRingHeap.AllocateTemporary(renderState.vertexConstantBuffersCount);
-			m_Device->CopyDescriptors(1, &vertexÑbvDestHandle.GetCPU(), &renderState.vertexConstantBuffersCount, renderState.vertexConstantBuffersCount, renderState.vertexConstantBuffers, nullptr, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-			m_CommandList->SetGraphicsRootDescriptorTable(0, vertexÑbvDestHandle.GetGPU());
+			if (memcmp(m_RenderState.vertexConstantBuffers, renderState.vertexConstantBuffers, sizeof(D3D12_CPU_DESCRIPTOR_HANDLE) * renderState.vertexConstantBuffersCount) != 0)
+			{
+				auto vertexÑbvDestHandle = m_CbvSrvUavRingHeap.AllocateTemporary(renderState.vertexConstantBuffersCount);
+				m_Device->CopyDescriptors(1, &vertexÑbvDestHandle.GetCPU(), &renderState.vertexConstantBuffersCount, renderState.vertexConstantBuffersCount, renderState.vertexConstantBuffers, nullptr, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+				m_CommandList->SetGraphicsRootDescriptorTable(0, vertexÑbvDestHandle.GetGPU());
+			}
 		}
 
 		if (renderState.geometryConstantBuffersCount > 0)
 		{
-			auto geometryÑbvDestHandle = m_CbvSrvUavRingHeap.AllocateTemporary(renderState.geometryConstantBuffersCount);
-			m_Device->CopyDescriptors(1, &geometryÑbvDestHandle.GetCPU(), &renderState.geometryConstantBuffersCount, renderState.geometryConstantBuffersCount, renderState.geometryConstantBuffers, nullptr, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-			m_CommandList->SetGraphicsRootDescriptorTable(1, geometryÑbvDestHandle.GetGPU());
+			if (memcmp(m_RenderState.geometryConstantBuffers, renderState.geometryConstantBuffers, sizeof(D3D12_CPU_DESCRIPTOR_HANDLE) * renderState.geometryConstantBuffersCount) != 0)
+			{
+				auto geometryÑbvDestHandle = m_CbvSrvUavRingHeap.AllocateTemporary(renderState.geometryConstantBuffersCount);
+				m_Device->CopyDescriptors(1, &geometryÑbvDestHandle.GetCPU(), &renderState.geometryConstantBuffersCount, renderState.geometryConstantBuffersCount, renderState.geometryConstantBuffers, nullptr, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+				m_CommandList->SetGraphicsRootDescriptorTable(1, geometryÑbvDestHandle.GetGPU());
+			}
 		}
 
 		if (renderState.pixelConstantBuffersCount > 0)
 		{
-			auto pixelÑbvDestHandle = m_CbvSrvUavRingHeap.AllocateTemporary(renderState.pixelConstantBuffersCount);
-			m_Device->CopyDescriptors(1, &pixelÑbvDestHandle.GetCPU(), &renderState.pixelConstantBuffersCount, renderState.pixelConstantBuffersCount, renderState.pixelConstantBuffers, nullptr, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-			m_CommandList->SetGraphicsRootDescriptorTable(2, pixelÑbvDestHandle.GetGPU());
+			if (memcmp(m_RenderState.pixelConstantBuffers, renderState.pixelConstantBuffers, sizeof(D3D12_CPU_DESCRIPTOR_HANDLE) * renderState.pixelConstantBuffersCount) != 0)
+			{
+				auto pixelÑbvDestHandle = m_CbvSrvUavRingHeap.AllocateTemporary(renderState.pixelConstantBuffersCount);
+				m_Device->CopyDescriptors(1, &pixelÑbvDestHandle.GetCPU(), &renderState.pixelConstantBuffersCount, renderState.pixelConstantBuffersCount, renderState.pixelConstantBuffers, nullptr, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+				m_CommandList->SetGraphicsRootDescriptorTable(2, pixelÑbvDestHandle.GetGPU());
+			}
 		}
 
 		if (renderState.vertexShaderResourceViewsCount > 0)
 		{
-			auto vertexSrvDestHandle = m_CbvSrvUavRingHeap.AllocateTemporary(renderState.vertexShaderResourceViewsCount);
-			m_Device->CopyDescriptors(1, &vertexSrvDestHandle.GetCPU(), &renderState.vertexShaderResourceViewsCount, renderState.vertexShaderResourceViewsCount, renderState.vertexShaderResourceViews, nullptr, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-			m_CommandList->SetGraphicsRootDescriptorTable(3, vertexSrvDestHandle.GetGPU());
+			if (memcmp(m_RenderState.vertexShaderResourceViews, renderState.vertexShaderResourceViews, sizeof(D3D12_CPU_DESCRIPTOR_HANDLE) * renderState.vertexShaderResourceViewsCount) != 0)
+			{
+				auto vertexSrvDestHandle = m_CbvSrvUavRingHeap.AllocateTemporary(renderState.vertexShaderResourceViewsCount);
+				m_Device->CopyDescriptors(1, &vertexSrvDestHandle.GetCPU(), &renderState.vertexShaderResourceViewsCount, renderState.vertexShaderResourceViewsCount, renderState.vertexShaderResourceViews, nullptr, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+				m_CommandList->SetGraphicsRootDescriptorTable(3, vertexSrvDestHandle.GetGPU());
+			}
 		}
 
 		if (renderState.pixelShaderResourceViewsCount > 0)
 		{
-			auto pixelSrvDestHandle = m_CbvSrvUavRingHeap.AllocateTemporary(renderState.pixelShaderResourceViewsCount);
-			m_Device->CopyDescriptors(1, &pixelSrvDestHandle.GetCPU(), &renderState.pixelShaderResourceViewsCount, renderState.pixelShaderResourceViewsCount, renderState.pixelShaderResourceViews, nullptr, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-			m_CommandList->SetGraphicsRootDescriptorTable(4, pixelSrvDestHandle.GetGPU());
+			if (memcmp(m_RenderState.pixelShaderResourceViews, renderState.pixelShaderResourceViews, sizeof(D3D12_CPU_DESCRIPTOR_HANDLE) * renderState.pixelShaderResourceViewsCount) != 0)
+			{
+				auto pixelSrvDestHandle = m_CbvSrvUavRingHeap.AllocateTemporary(renderState.pixelShaderResourceViewsCount);
+				m_Device->CopyDescriptors(1, &pixelSrvDestHandle.GetCPU(), &renderState.pixelShaderResourceViewsCount, renderState.pixelShaderResourceViewsCount, renderState.pixelShaderResourceViews, nullptr, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+				m_CommandList->SetGraphicsRootDescriptorTable(4, pixelSrvDestHandle.GetGPU());
+			}
 		}
 
 		if (renderState.vertexSamplersCount > 0)
@@ -525,6 +555,11 @@ namespace Blueberry
 			uint32_t offset = GetSamplersOffset(renderState.pixelSamplers, renderState.pixelSamplersCount);
 			m_CommandList->SetGraphicsRootDescriptorTable(6, m_SamplerRingHeap.GetGPU(offset));
 		}
+
+		if (renderState.pixelBindlessIndexesCount > 0)
+		{
+			m_CommandList->SetGraphicsRoot32BitConstants(7, renderState.pixelBindlessIndexesCount, renderState.bindlessIndexes, 0);
+		}
 		
 		if (operation.topology != m_Topology)
 		{
@@ -533,11 +568,7 @@ namespace Blueberry
 		}
 
 		auto dxVertexBuffer = static_cast<GfxBufferDX12*>(operation.vertexBuffer);
-		if (dxVertexBuffer->m_State != D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER)
-		{
-			m_CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(dxVertexBuffer->m_Resource.Get(), dxVertexBuffer->m_State, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER));
-			dxVertexBuffer->m_State = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
-		}
+		dxVertexBuffer->SetState(D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 		if (dxVertexBuffer != m_VertexBuffer)
 		{
 			m_VertexBuffer = dxVertexBuffer;
@@ -551,7 +582,8 @@ namespace Blueberry
 			m_InstanceOffset = operation.instanceOffset;
 			if (dxInstanceBuffer != nullptr)
 			{
-				uint32_t byteOffset = m_InstanceBuffer ? m_InstanceOffset * m_InstanceBuffer->m_ElementSize : 0;
+				dxInstanceBuffer->SetState(D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+				uint32_t byteOffset = m_InstanceBuffer ? m_InstanceOffset * m_InstanceBuffer->GetElementSize() : 0;
 				D3D12_VERTEX_BUFFER_VIEW view = dxInstanceBuffer->GetVertexView();
 				view.BufferLocation += static_cast<D3D12_GPU_VIRTUAL_ADDRESS>(byteOffset);
 				view.SizeInBytes -= byteOffset;
@@ -573,6 +605,7 @@ namespace Blueberry
 		else
 		{
 			auto dxIndexBuffer = static_cast<GfxBufferDX12*>(operation.indexBuffer);
+			dxIndexBuffer->SetState(D3D12_RESOURCE_STATE_INDEX_BUFFER);
 			if (dxIndexBuffer != m_IndexBuffer)
 			{
 				m_IndexBuffer = dxIndexBuffer;
@@ -587,11 +620,12 @@ namespace Blueberry
 				m_CommandList->DrawIndexedInstanced(operation.indexCount, operation.instanceCount * m_ViewCount, operation.indexOffset, 0, 0);
 			}
 		}
+		m_RenderState = renderState;
 	}
 
-	void GfxDeviceDX12::DispatchImpl(GfxComputeShader* shader, uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ)
+	void GfxDeviceDX12::DispatchImpl(ComputeShader* shader, uint32_t kernelIndex, uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ)
 	{
-		const GfxComputeRenderStateDX12 renderState = m_ComputeStateCache.GetRenderState(shader);
+		const GfxComputeRenderStateDX12 renderState = m_ComputeStateCache.GetRenderState(shader, kernelIndex);
 
 		if (!renderState.isValid)
 		{
@@ -634,6 +668,59 @@ namespace Blueberry
 		m_CommandList->Dispatch(threadGroupsX, threadGroupsY, threadGroupsZ);
 	}
 
+	void GfxDeviceDX12::DispatchRaysImpl(RayTracingShader* shader, GfxTopLevelAccelerationStructure* accelerationStructure, uint32_t width, uint32_t height, uint32_t depth)
+	{
+		const GfxRayTracingRenderStateDX12 renderState = m_RayTracingStateCache.GetRenderState(shader, accelerationStructure);
+
+		auto dxAccelerationStructure = static_cast<GfxTopLevelAccelerationStructureDX12*>(accelerationStructure);
+		
+		D3D12_DISPATCH_RAYS_DESC dispatchDesc = {};
+		dispatchDesc.RayGenerationShaderRecord.StartAddress = renderState.rayGenerationShaderTableAddress;
+		dispatchDesc.RayGenerationShaderRecord.SizeInBytes = renderState.rayGenerationShaderTableSize;
+		dispatchDesc.HitGroupTable.StartAddress = renderState.hitGroupShaderTableAddress;
+		dispatchDesc.HitGroupTable.SizeInBytes = renderState.hitGroupShaderTableSize;
+		dispatchDesc.HitGroupTable.StrideInBytes = renderState.hitGroupShaderTableStride;
+		dispatchDesc.MissShaderTable.StartAddress = renderState.missShaderTableAddress;
+		dispatchDesc.MissShaderTable.SizeInBytes = renderState.missShaderTableSize;
+		dispatchDesc.MissShaderTable.StrideInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+		dispatchDesc.Width = width;
+		dispatchDesc.Height = height;
+		dispatchDesc.Depth = depth;
+
+		m_DxrCommandList->SetComputeRootSignature(m_DxrGlobalRootSignature.Get());
+		
+		if (renderState.constantBuffersCount > 0)
+		{
+			auto cbvDestHandle = m_CbvSrvUavRingHeap.AllocateTemporary(renderState.constantBuffersCount);
+			m_Device->CopyDescriptors(1, &cbvDestHandle.GetCPU(), &renderState.constantBuffersCount, renderState.constantBuffersCount, renderState.constantBuffers, nullptr, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			m_CommandList->SetComputeRootDescriptorTable(0, cbvDestHandle.GetGPU());
+		}
+
+		if (renderState.shaderResourceViewsCount > 0)
+		{
+			auto srvDestHandle = m_CbvSrvUavRingHeap.AllocateTemporary(renderState.shaderResourceViewsCount);
+			m_Device->CopyDescriptors(1, &srvDestHandle.GetCPU(), &renderState.shaderResourceViewsCount, renderState.shaderResourceViewsCount, renderState.shaderResourceViews, nullptr, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			m_CommandList->SetComputeRootDescriptorTable(1, srvDestHandle.GetGPU());
+		}
+
+		if (renderState.unorderedAccessViewsCount > 0)
+		{
+			auto uavDestHandle = m_CbvSrvUavRingHeap.AllocateTemporary(renderState.unorderedAccessViewsCount);
+			m_Device->CopyDescriptors(1, &uavDestHandle.GetCPU(), &renderState.unorderedAccessViewsCount, renderState.unorderedAccessViewsCount, renderState.unorderedAccessViews, nullptr, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			m_CommandList->SetComputeRootDescriptorTable(2, uavDestHandle.GetGPU());
+		}
+
+		if (renderState.samplers > 0)
+		{
+			uint32_t offset = GetSamplersOffset(renderState.samplers, renderState.samplersCount);
+			m_CommandList->SetComputeRootDescriptorTable(3, m_SamplerRingHeap.GetGPU(offset));
+		}
+
+		m_DxrCommandList->SetPipelineState1(renderState.stateObject);
+		m_DxrCommandList->DispatchRays(&dispatchDesc);
+		m_DxrCommandList->SetComputeRootSignature(m_ComputeRootSignature.Get());
+	}
+
 	Matrix GfxDeviceDX12::GetGPUMatrixImpl(const Matrix& matrix) const
 	{
 		return matrix;
@@ -664,12 +751,32 @@ namespace Blueberry
 		return m_ComputeRootSignature.Get();
 	}
 
+	ID3D12Device5* GfxDeviceDX12::GetDxrDevice()
+	{
+		return m_DxrDevice.Get();
+	}
+
+	ID3D12GraphicsCommandList4* GfxDeviceDX12::GetDxrCommandList()
+	{
+		return m_DxrCommandList.Get();
+	}
+
+	ID3D12RootSignature* GfxDeviceDX12::GetDxrGlobalRootSignature()
+	{
+		return m_DxrGlobalRootSignature.Get();
+	}
+
+	ID3D12RootSignature* GfxDeviceDX12::GetDxrLocalRootSignature()
+	{
+		return m_DxrLocalRootSignature.Get();
+	}
+
 	HWND GfxDeviceDX12::GetHwnd()
 	{
 		return m_Hwnd;
 	}
 
-	GfxDescriptorHeapDX12& GfxDeviceDX12::GetCbvSrvDsvHeap()
+	GfxDescriptorHeapDX12& GfxDeviceDX12::GetCbvSrvUavHeap()
 	{
 		return m_CbvSrvUavHeap;
 	}
@@ -684,7 +791,7 @@ namespace Blueberry
 		return m_DsvHeap;
 	}
 
-	GfxDescriptorRingHeapDX12& GfxDeviceDX12::GetCbvSrvDsvRingHeap()
+	GfxDescriptorHeapDX12& GfxDeviceDX12::GetCbvSrvUavRingHeap()
 	{
 		return m_CbvSrvUavRingHeap;
 	}
@@ -721,12 +828,12 @@ namespace Blueberry
 
 	void GfxDeviceDX12::Reset()
 	{
-		m_CommandList->SetGraphicsRootSignature(m_GraphicsRootSignature.Get());
-		m_CommandList->SetComputeRootSignature(m_ComputeRootSignature.Get());
 		ID3D12DescriptorHeap* heaps[] = { m_CbvSrvUavRingHeap.GetHeap(), m_SamplerRingHeap.GetHeap() };
 		m_CommandList->SetDescriptorHeaps(2, heaps);
+		m_CommandList->SetGraphicsRootSignature(m_GraphicsRootSignature.Get());
+		m_CommandList->SetComputeRootSignature(m_ComputeRootSignature.Get());
 		BackbufferData& backbuffer = m_Backbuffers[m_BackbufferIndex];
-		m_CommandList->OMSetRenderTargets((m_BindedRenderTarget == nullptr && m_BindedDepthStencil != nullptr) ? 0 : 1, m_BindedRenderTarget == nullptr ? &backbuffer.renderTargetView.GetCPU() : &m_BindedRenderTarget->m_RenderTargetView.GetCPU(), FALSE, m_BindedDepthStencil == nullptr ? nullptr : &m_BindedDepthStencil->m_DepthStencilView.GetCPU());
+		m_CommandList->OMSetRenderTargets((m_BindedRenderTarget == nullptr && m_BindedDepthStencil != nullptr) ? 0 : 1, m_BindedRenderTarget == nullptr ? &backbuffer.renderTargetView.GetCPU() : &m_BindedRenderTarget->GetRenderTargetView().GetCPU(), FALSE, m_BindedDepthStencil == nullptr ? nullptr : &m_BindedDepthStencil->GetDepthStencilView().GetCPU());
 		m_CommandList->RSSetViewports(1, &m_Viewport);
 		if (m_ScissorRect.right > 0)
 		{
@@ -737,50 +844,15 @@ namespace Blueberry
 		m_IndexBuffer = nullptr;
 		m_IndexBuffer = nullptr;
 		m_Topology = (Topology)-1;
+		m_RenderState = {};
 	}
 
 	void GfxDeviceDX12::Release(ComPtr<ID3D12Resource>& resource)
 	{
 		if (resource.Get() != nullptr)
 		{
-			m_ReleasedResources.push_back(resource);
+			m_ReleasedResources.push_back(std::make_pair(m_FenceLastSignaledValue, resource));
 		}
-	}
-
-	void GfxDeviceDX12::CreateCBV(D3D12_CONSTANT_BUFFER_VIEW_DESC* cbvDesc, GfxHandleDX12* handle)
-	{
-		m_CbvSrvUavHeap.Allocate(handle);
-		m_Device->CreateConstantBufferView(cbvDesc, handle->GetCPU());
-	}
-
-	void GfxDeviceDX12::CreateSRV(ID3D12Resource* resource, D3D12_SHADER_RESOURCE_VIEW_DESC* srvDesc, GfxHandleDX12* handle)
-	{
-		m_CbvSrvUavHeap.Allocate(handle);
-		m_Device->CreateShaderResourceView(resource, srvDesc, handle->GetCPU());
-	}
-
-	void GfxDeviceDX12::CreateUAV(ID3D12Resource* resource, D3D12_UNORDERED_ACCESS_VIEW_DESC* uavDesc, GfxHandleDX12* handle)
-	{
-		m_CbvSrvUavHeap.Allocate(handle);
-		m_Device->CreateUnorderedAccessView(resource, nullptr, uavDesc, handle->GetCPU());
-	}
-
-	void GfxDeviceDX12::CreateRTV(ID3D12Resource* resource, D3D12_RENDER_TARGET_VIEW_DESC* rtvDesc, GfxHandleDX12* handle)
-	{
-		m_RtvHeap.Allocate(handle);
-		m_Device->CreateRenderTargetView(resource, rtvDesc, handle->GetCPU());
-	}
-
-	void GfxDeviceDX12::CreateDSV(ID3D12Resource* resource, D3D12_DEPTH_STENCIL_VIEW_DESC* dsvDesc, GfxHandleDX12* handle)
-	{
-		m_DsvHeap.Allocate(handle);
-		m_Device->CreateDepthStencilView(resource, dsvDesc, handle->GetCPU());
-	}
-
-	void GfxDeviceDX12::CreateSampler(D3D12_SAMPLER_DESC* samplerDesc, GfxHandleDX12* handle)
-	{
-		m_SamplerHeap.Allocate(handle);
-		m_Device->CreateSampler(samplerDesc, handle->GetCPU());
 	}
 
 	bool GfxDeviceDX12::InitializeDirectX(HWND hwnd, int width, int height)
@@ -830,6 +902,14 @@ namespace Blueberry
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error creating device."));
+			return false;
+		}
+
+		m_Device->QueryInterface(IID_PPV_ARGS(&m_DxrDevice));
+
+		if (FAILED(hr))
+		{
+			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error getting DXR device."));
 			return false;
 		}
 
@@ -899,42 +979,42 @@ namespace Blueberry
 		}
 
 		m_CbvSrvUavHeap = GfxDescriptorHeapDX12(this);
-		if (!m_CbvSrvUavHeap.Initialize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1024 * 4))
+		if (!m_CbvSrvUavHeap.Initialize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, false, 1024 * 16, 0))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error creating cbv srv uav heap."));
 			return false;
 		}
 
 		m_RtvHeap = GfxDescriptorHeapDX12(this);
-		if (!m_RtvHeap.Initialize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 1024))
+		if (!m_RtvHeap.Initialize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, false, 1024, 0))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error creating rtv heap."));
 			return false;
 		}
 
 		m_DsvHeap = GfxDescriptorHeapDX12(this);
-		if (!m_DsvHeap.Initialize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 64))
+		if (!m_DsvHeap.Initialize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, false, 64, 0))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error creating dsv heap."));
 			return false;
 		}
 
 		m_SamplerHeap = GfxDescriptorHeapDX12(this);
-		if (!m_SamplerHeap.Initialize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, 128))
+		if (!m_SamplerHeap.Initialize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, false, 128, 0))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error creating sampler heap."));
 			return false;
 		}
 
-		m_CbvSrvUavRingHeap = GfxDescriptorRingHeapDX12(this);
-		if (!m_CbvSrvUavRingHeap.Initialize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1024 * 256, 128))
+		m_CbvSrvUavRingHeap = GfxDescriptorHeapDX12(this);
+		if (!m_CbvSrvUavRingHeap.Initialize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, true, 1024 * 16, 1024 * 64))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error creating cbv srv uav ring heap."));
 			return false;
 		}
 
-		m_SamplerRingHeap = GfxDescriptorRingHeapDX12(this);
-		if (!m_SamplerRingHeap.Initialize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, 1024 * 2, 0))
+		m_SamplerRingHeap = GfxDescriptorHeapDX12(this);
+		if (!m_SamplerRingHeap.Initialize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, true, 128, 1920))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error creating sampler ring heap."));
 			return false;
@@ -949,7 +1029,9 @@ namespace Blueberry
 				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error getting swapchain buffer."));
 				return false;
 			}
-			CreateRTV(backbuffer.resource.Get(), nullptr, &backbuffer.renderTargetView);
+			GfxHandleDX12 handle = m_RtvHeap.AllocatePersistent();
+			m_Device->CreateRenderTargetView(backbuffer.resource.Get(), nullptr, handle.GetCPU());
+			backbuffer.renderTargetView = handle;
 			backbuffer.state = D3D12_RESOURCE_STATE_PRESENT;
 		}
 
@@ -969,6 +1051,14 @@ namespace Blueberry
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error creating command list."));
+			return false;
+		}
+
+		m_CommandList->QueryInterface(IID_PPV_ARGS(&m_DxrCommandList));
+
+		if (FAILED(hr))
+		{
+			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error getting DXR command list."));
 			return false;
 		}
 
@@ -1064,6 +1154,13 @@ namespace Blueberry
 			pixelSamplerParam.DescriptorTable.pDescriptorRanges = &samplerRange;
 			pixelSamplerParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
+			D3D12_ROOT_PARAMETER materialDataCBVParam = {};
+			materialDataCBVParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+			materialDataCBVParam.Constants.ShaderRegister = 0;
+			materialDataCBVParam.Constants.RegisterSpace = 1;
+			materialDataCBVParam.Constants.Num32BitValues = 16;
+			materialDataCBVParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
 			D3D12_ROOT_PARAMETER params[] =
 			{
 				vertexCbvParam,
@@ -1072,13 +1169,14 @@ namespace Blueberry
 				vertexSrvParam,
 				pixelSrvParam,
 				vertexSamplerParam,
-				pixelSamplerParam
+				pixelSamplerParam,
+				materialDataCBVParam
 			};
 
 			D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc = {};
 			rootSignatureDesc.NumParameters = _countof(params);
 			rootSignatureDesc.pParameters = params;
-			rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+			rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT | D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED | D3D12_ROOT_SIGNATURE_FLAG_SAMPLER_HEAP_DIRECTLY_INDEXED;
 
 			ComPtr<ID3DBlob> signature;
 			ComPtr<ID3DBlob> error;
@@ -1086,7 +1184,7 @@ namespace Blueberry
 			
 			if (FAILED(hr))
 			{
-				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error serializing graphics root signature."));
+				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error serializing graphics root signature.") << '\n' << static_cast<const char*>(error->GetBufferPointer()));
 				return false;
 			}
 			
@@ -1164,7 +1262,7 @@ namespace Blueberry
 			D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc = {};
 			rootSignatureDesc.NumParameters = _countof(params);
 			rootSignatureDesc.pParameters = params;
-			rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_NONE;
+			rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED | D3D12_ROOT_SIGNATURE_FLAG_SAMPLER_HEAP_DIRECTLY_INDEXED;
 
 			ComPtr<ID3DBlob> signature;
 			ComPtr<ID3DBlob> error;
@@ -1172,7 +1270,7 @@ namespace Blueberry
 
 			if (FAILED(hr))
 			{
-				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error serializing compute root signature."));
+				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error serializing compute root signature.") << '\n' << static_cast<const char*>(error->GetBufferPointer()));
 				return false;
 			}
 
@@ -1181,6 +1279,152 @@ namespace Blueberry
 			if (FAILED(hr))
 			{
 				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error creating compute root signature."));
+				return false;
+			}
+		}
+
+		// DXR global root signature
+		{
+			D3D12_DESCRIPTOR_RANGE cbvRange = {};
+			cbvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+			cbvRange.NumDescriptors = 4;
+			cbvRange.BaseShaderRegister = 0;
+			cbvRange.RegisterSpace = 0;
+			cbvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+			D3D12_DESCRIPTOR_RANGE srvRange = {};
+			srvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+			srvRange.NumDescriptors = 4;
+			srvRange.BaseShaderRegister = 0;
+			srvRange.RegisterSpace = 0;
+			srvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+			D3D12_DESCRIPTOR_RANGE uavRange = {};
+			uavRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+			uavRange.NumDescriptors = 4;
+			uavRange.BaseShaderRegister = 0;
+			uavRange.RegisterSpace = 0;
+			uavRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+			D3D12_DESCRIPTOR_RANGE samplerRange = {};
+			samplerRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
+			samplerRange.NumDescriptors = 4;
+			samplerRange.BaseShaderRegister = 0;
+			samplerRange.RegisterSpace = 0;
+			samplerRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+			D3D12_ROOT_PARAMETER cbvParam = {};
+			cbvParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+			cbvParam.DescriptorTable.NumDescriptorRanges = 1;
+			cbvParam.DescriptorTable.pDescriptorRanges = &cbvRange;
+			cbvParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+			D3D12_ROOT_PARAMETER srvParam = {};
+			srvParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+			srvParam.DescriptorTable.NumDescriptorRanges = 1;
+			srvParam.DescriptorTable.pDescriptorRanges = &srvRange;
+			srvParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+			D3D12_ROOT_PARAMETER uavParam = {};
+			uavParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+			uavParam.DescriptorTable.NumDescriptorRanges = 1;
+			uavParam.DescriptorTable.pDescriptorRanges = &uavRange;
+			uavParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+			D3D12_ROOT_PARAMETER samplerParam = {};
+			samplerParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+			samplerParam.DescriptorTable.NumDescriptorRanges = 1;
+			samplerParam.DescriptorTable.pDescriptorRanges = &samplerRange;
+			samplerParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+			D3D12_ROOT_PARAMETER params[] =
+			{
+				cbvParam,
+				srvParam,
+				uavParam,
+				samplerParam
+			};
+
+			D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc = {};
+			rootSignatureDesc.NumParameters = _countof(params);
+			rootSignatureDesc.pParameters = params;
+			rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED | D3D12_ROOT_SIGNATURE_FLAG_SAMPLER_HEAP_DIRECTLY_INDEXED;
+
+			ComPtr<ID3DBlob> signature;
+			ComPtr<ID3DBlob> error;
+			hr = D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1_0, &signature, &error);
+
+			if (FAILED(hr))
+			{
+				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error serializing dxr global root signature.") << '\n' << static_cast<const char*>(error->GetBufferPointer()));
+				return false;
+			}
+
+			hr = m_Device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_DxrGlobalRootSignature));
+
+			if (FAILED(hr))
+			{
+				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error creating dxr global root signature."));
+				return false;
+			}
+		}
+
+		// DXR local root signature
+		{
+			D3D12_ROOT_PARAMETER vertexBufferParam = {};
+			vertexBufferParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
+			vertexBufferParam.Descriptor.ShaderRegister = 0;
+			vertexBufferParam.Descriptor.RegisterSpace = 1;
+			vertexBufferParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+			D3D12_ROOT_PARAMETER indexBufferParam = {};
+			indexBufferParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
+			indexBufferParam.Descriptor.ShaderRegister = 1;
+			indexBufferParam.Descriptor.RegisterSpace = 1;
+			indexBufferParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+			D3D12_ROOT_PARAMETER meshDataCBVParam = {};
+			meshDataCBVParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+			meshDataCBVParam.Constants.ShaderRegister = 0;
+			meshDataCBVParam.Constants.RegisterSpace = 1;
+			meshDataCBVParam.Constants.Num32BitValues = 3;
+			meshDataCBVParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+			D3D12_ROOT_PARAMETER materialDataCBVParam = {};
+			materialDataCBVParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+			materialDataCBVParam.Constants.ShaderRegister = 1;
+			materialDataCBVParam.Constants.RegisterSpace = 1;
+			materialDataCBVParam.Constants.Num32BitValues = 16;
+			materialDataCBVParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+			D3D12_ROOT_PARAMETER params[] =
+			{
+				vertexBufferParam,
+				indexBufferParam,
+				meshDataCBVParam,
+				materialDataCBVParam
+			};
+
+			D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc = {};
+			rootSignatureDesc.NumParameters = _countof(params);
+			rootSignatureDesc.pParameters = params;
+			rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
+
+			ComPtr<ID3DBlob> signature;
+			ComPtr<ID3DBlob> error;
+			hr = D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1_0, &signature, &error);
+
+			if (FAILED(hr))
+			{
+				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error serializing dxr local root signature.") << '\n' << static_cast<const char*>(error->GetBufferPointer()));
+				return false;
+			}
+
+			hr = m_Device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_DxrLocalRootSignature));
+
+			if (FAILED(hr))
+			{
+				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error creating dxr local root signature."));
 				return false;
 			}
 		}
@@ -1249,8 +1493,11 @@ namespace Blueberry
 		samplerDesc.MinLOD = -FLT_MAX;
 		samplerDesc.MaxLOD = FLT_MAX;
 
-		GfxHandleDX12 handle;
-		CreateSampler(&samplerDesc, &handle);
+		GfxHandleDX12 handle = m_SamplerHeap.AllocatePersistent();
+		m_Device->CreateSampler(&samplerDesc, handle.GetCPU());
+
+		GfxHandleDX12 ringHandle = m_SamplerRingHeap.AllocatePersistent();
+		m_Device->CopyDescriptorsSimple(1, ringHandle.GetCPU(), handle.GetCPU(), D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 		
 		m_Samplers.push_back(std::make_pair(key, handle));
 		return static_cast<uint32_t>(m_Samplers.size() - 1);
@@ -1305,22 +1552,14 @@ namespace Blueberry
 					BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error getting swapchain buffer."));
 					return;
 				}
-				CreateRTV(backbuffer.resource.Get(), nullptr, &backbuffer.renderTargetView);
+				GfxHandleDX12 handle = m_RtvHeap.AllocatePersistent();
+				m_Device->CreateRenderTargetView(backbuffer.resource.Get(), nullptr, handle.GetCPU());
+				backbuffer.renderTargetView = handle;
 				backbuffer.state = D3D12_RESOURCE_STATE_PRESENT;
 			}
 
 			m_BackbufferIndex = m_SwapChain->GetCurrentBackBufferIndex();
 			m_BackbufferResizeRequest = {};
 		}
-	}
-
-	void GfxDeviceDX12::TransitionBarrier(ID3D12Resource* resource, D3D12_RESOURCE_STATES fromState, D3D12_RESOURCE_STATES toState)
-	{
-		m_CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(resource, fromState, toState));
-	}
-
-	void GfxDeviceDX12::UAVBarrier(ID3D12Resource* resource)
-	{
-		m_CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(resource));
 	}
 }

@@ -35,7 +35,7 @@ namespace Blueberry
 	{
 	protected:
 		GfxPassData GetPassData(Material* material, uint64_t passId);
-		uint32_t GetTextureIndex(Material* material, size_t id) const;
+		uint32_t GetTextureSlot(Material* material, size_t id) const;
 		uint32_t GetTextureIndex(Material* material, uint32_t slotIndex) const;
 	};
 }

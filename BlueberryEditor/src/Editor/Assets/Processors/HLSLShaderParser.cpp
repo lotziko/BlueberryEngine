@@ -364,7 +364,6 @@ namespace Blueberry
 			}
 			return true;
 		}
-
 		return false;
 	}
 }

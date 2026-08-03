@@ -732,7 +732,7 @@ namespace Blueberry
 			float2 u1 = hitGroupData->uvs[index.y];
 			float2 u2 = hitGroupData->uvs[index.z];
 			albedo = sampleMaterial(u0 * uvw.z + u1 * uvw.x + u2 * uvw.y, hitGroupData->materialColor);
-			newThroughput *= albedo;
+			newThroughput *= make_float3(fmin(albedo.x, 0.9f), fmin(albedo.y, 0.9f), fmin(albedo.z, 0.9f));
 		}
 
 		float3 radiance = sampleDirectRadiance(positionWS, normalWS) * throughput * albedo;

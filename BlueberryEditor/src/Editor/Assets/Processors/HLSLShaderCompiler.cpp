@@ -168,7 +168,7 @@ namespace Blueberry
 
 	HLSLShaderCompilerDXC::HLSLShaderCompilerDXC(const String& code)
 	{
-		DxcHelper::GetLibrary()->CreateBlobWithEncodingOnHeapCopy(code.c_str(), static_cast<UINT32>(code.size()), CP_UTF8, m_CodeBlob.GetAddressOf());
+		m_Code = code;
 	}
 
 	void HLSLShaderCompilerDXC::SetKeywords(const List<String>& keywords)
@@ -176,6 +176,8 @@ namespace Blueberry
 		m_Keywords.reserve(keywords.size());
 		m_Keywords.clear();
 		m_Defines.clear();
+		m_ConstantDefines = 0;
+		AddConstantDefine(L"BINDLESS", L"1");
 		for (auto& keyword : keywords)
 		{
 			m_Keywords.push_back(StringHelper::StringToWide(keyword));
@@ -191,29 +193,36 @@ namespace Blueberry
 		switch (profile)
 		{
 		case HLSLShaderCompilerProfile::Vertex:
-			targetProfile = L"vs_6_0";
+			targetProfile = L"vs_6_6";
 			break;
 		case HLSLShaderCompilerProfile::Geometry:
-			targetProfile = L"gs_6_0";
+			targetProfile = L"gs_6_6";
 			break;
 		case HLSLShaderCompilerProfile::Fragment:
-			targetProfile = L"ps_6_0";
+			targetProfile = L"ps_6_6";
 			break;
 		case HLSLShaderCompilerProfile::Compute:
-			targetProfile = L"cs_6_0";
+			targetProfile = L"cs_6_6";
 			break;
 		default:
 			return false;
 		}
 
-		for (size_t i = 0; i < m_Defines.size(); ++i)
+		for (size_t i = m_ConstantDefines; i < m_Defines.size(); ++i)
 		{
-			m_Defines[i].Value = (1ull << i) & variant ? L"1" : L"0";
+			m_Defines[i].Value = (1ull << (i - m_ConstantDefines)) & variant ? L"1" : L"0";
 		}
 
 		HLSLShaderCompilerIncludeHandler includeHandler = {};
 		ComPtr<IDxcOperationResult> operationResult;
-		HRESULT hr = DxcHelper::GetCompiler()->Compile(m_CodeBlob.Get(), nullptr, StringHelper::StringToWide(entryPoint).c_str(), targetProfile, nullptr, 0, m_Defines.data(), static_cast<UINT32>(m_Defines.size()), &includeHandler, operationResult.GetAddressOf());
+		DxcBuffer codeBuffer = {};
+		codeBuffer.Ptr = m_Code.c_str();
+		codeBuffer.Size = m_Code.size();
+		codeBuffer.Encoding = CP_UTF8;
+		WString wentryPoint = StringHelper::StringToWide(entryPoint);
+		ComPtr<IDxcCompilerArgs> compilerArgs;
+		HRESULT hr = DxcHelper::GetUtils()->BuildArguments(wentryPoint.c_str(), wentryPoint.c_str(), targetProfile, nullptr, 0, m_Defines.data(), static_cast<UINT32>(m_Defines.size()), &compilerArgs);
+		hr = DxcHelper::GetCompiler()->Compile(&codeBuffer, compilerArgs->GetArguments(), compilerArgs->GetCount(), &includeHandler, IID_PPV_ARGS(&operationResult));
 		operationResult->GetStatus(&hr);
 
 		if (FAILED(hr))
@@ -238,5 +247,94 @@ namespace Blueberry
 		memcpy(result.data(), resultBlob->GetBufferPointer(), result.size());
 
 		return true;
+	}
+
+	bool HLSLShaderCompilerDXC::Compile(const String& rayGenerationEntryPoint, const List<String>& anyHitEntryPoints, const List<String>& closestHitEntryPoints, const List<String>& missEntryPoints, ByteData& result)
+	{
+		const wchar_t* targetProfile = L"lib_6_6";
+		WString renameArg = L"-exports ";
+		List<LPCWSTR> args;
+		if (rayGenerationEntryPoint.size() > 0)
+		{
+			renameArg.append(L"RayGeneration=");
+			renameArg.append(StringHelper::StringToWide(rayGenerationEntryPoint));
+			renameArg.append(L";");
+		}
+
+		for (size_t i = 0; i < anyHitEntryPoints.size(); ++i)
+		{
+			renameArg.append(L"AnyHit");
+			renameArg.append(std::to_wstring(i));
+			renameArg.append(L"=");
+			renameArg.append(StringHelper::StringToWide(anyHitEntryPoints[i]));
+			renameArg.append(L";");
+		}
+
+		for (size_t i = 0; i < closestHitEntryPoints.size(); ++i)
+		{
+			renameArg.append(L"ClosestHit");
+			renameArg.append(std::to_wstring(i));
+			renameArg.append(L"=");
+			renameArg.append(StringHelper::StringToWide(closestHitEntryPoints[i]));
+			renameArg.append(L";");
+		}
+
+		for (size_t i = 0; i < missEntryPoints.size(); ++i)
+		{
+			renameArg.append(L"Miss");
+			renameArg.append(std::to_wstring(i));
+			renameArg.append(L"=");
+			renameArg.append(StringHelper::StringToWide(missEntryPoints[i]));
+			renameArg.append(L";");
+		}
+
+		if (renameArg.size() > 0)
+		{
+			renameArg.erase(renameArg.end() - 1);
+		}
+		args.push_back(renameArg.c_str());
+
+		HLSLShaderCompilerIncludeHandler includeHandler = {};
+		ComPtr<IDxcResult> operationResult;
+		DxcBuffer codeBuffer = {};
+		codeBuffer.Ptr = m_Code.c_str();
+		codeBuffer.Size = m_Code.size();
+		codeBuffer.Encoding = CP_UTF8;
+		ComPtr<IDxcCompilerArgs> compilerArgs;
+		HRESULT hr = DxcHelper::GetUtils()->BuildArguments(renameArg.c_str(), nullptr, targetProfile, args.data(), args.size(), nullptr, 0, &compilerArgs);
+		hr = DxcHelper::GetCompiler()->Compile(&codeBuffer, compilerArgs->GetArguments(), compilerArgs->GetCount(), &includeHandler, IID_PPV_ARGS(&operationResult));
+		operationResult->GetStatus(&hr);
+
+		if (FAILED(hr))
+		{
+			BB_ERROR("Failed to compile shader.");
+			ComPtr<IDxcBlobEncoding> error;
+			operationResult->GetErrorBuffer(error.GetAddressOf());
+			BB_ERROR(static_cast<char*>(error->GetBufferPointer()));
+			return false;
+		}
+
+		ComPtr<IDxcBlob> resultBlob;
+		hr = operationResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&resultBlob), nullptr);
+
+		if (FAILED(hr))
+		{
+			BB_ERROR("Failed to get shader.");
+			return false;
+		}
+
+		result.resize(resultBlob->GetBufferSize());
+		memcpy(result.data(), resultBlob->GetBufferPointer(), result.size());
+
+		return true;
+	}
+
+	void HLSLShaderCompilerDXC::AddConstantDefine(const wchar_t* name, const wchar_t* value)
+	{
+		DxcDefine define = {};
+		define.Name = name;
+		define.Value = value;
+		m_Defines.push_back(define);
+		++m_ConstantDefines;
 	}
 }

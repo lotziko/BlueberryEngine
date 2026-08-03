@@ -11,8 +11,6 @@
 
 namespace Blueberry
 {
-	#define SHADER_RESOURCE_STATE (D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
-
 	bool GfxPipelineStateKeyDX12::operator==(const GfxPipelineStateKeyDX12& other) const
 	{
 		return memcmp(this, &other, sizeof(GfxPipelineStateKeyDX12)) == 0;
@@ -136,7 +134,7 @@ namespace Blueberry
 			// Vertex material textures
 			for (auto it = dxVertexShader->m_TextureSRVSamplerSlots.begin(); it != dxVertexShader->m_TextureSRVSamplerSlots.end(); it++)
 			{
-				uint32_t offset = GetTextureIndex(material, it->first);
+				uint32_t offset = GetTextureSlot(material, it->first);
 				if (offset != UINT32_MAX)
 				{
 					usedTextures.push_back(it->first);
@@ -210,11 +208,22 @@ namespace Blueberry
 			// Fragment material textures
 			for (auto it = dxFragmentShader->m_TextureSRVSamplerSlots.begin(); it != dxFragmentShader->m_TextureSRVSamplerSlots.end(); it++)
 			{
-				uint32_t offset = GetTextureIndex(material, it->first);
+				uint32_t offset = GetTextureSlot(material, it->first);
 				if (offset != UINT32_MAX)
 				{
 					usedTextures.push_back(it->first);
 					bindingState.pixelTextures.push_back({ offset, false, it->second.first, it->second.second != 255 ? it->second.second : UINT8_MAX });
+				}
+			}
+
+			// Fragment bindless material textures
+			for (auto it = dxFragmentShader->m_BindlessTextureSRVSamplerSlots.begin(); it != dxFragmentShader->m_BindlessTextureSRVSamplerSlots.end(); it++)
+			{
+				uint32_t offset = GetTextureSlot(material, it->first);
+				if (offset != UINT32_MAX)
+				{
+					usedTextures.push_back(it->first);
+					bindingState.pixelBindlessTextures.push_back({ offset, false, it->second.first, it->second.second != 255 ? it->second.second : UINT8_MAX });
 				}
 			}
 
@@ -241,7 +250,7 @@ namespace Blueberry
 
 		if (hasPipelineState)
 		{
-			renderState.pipelineState = psIt->second.pipelineState;
+			renderState.pipelineState = psIt->second.pipelineState.Get();
 			renderState.isValid = true;
 		}
 		else
@@ -331,7 +340,7 @@ namespace Blueberry
 
 			m_Device->m_Device->CreateGraphicsPipelineState(&pipelineStateDesc, IID_PPV_ARGS(&pipelineState.pipelineState));
 			m_PipelineStates.insert_or_assign(pipelineStateKey, pipelineState);
-			renderState.pipelineState = pipelineState.pipelineState;
+			renderState.pipelineState = pipelineState.pipelineState.Get();
 		}
 		return renderState;
 	}
@@ -340,86 +349,73 @@ namespace Blueberry
 	{
 		for (auto& buffer : bindingState.vertexBuffers)
 		{
-			GfxBufferDX12* dxBuffer = GfxBufferDX12::s_PointerCache.Get(m_Device->m_BindedBuffers[buffer.bindingIndex].second);
+			GfxBufferDX12* dxBuffer = GfxBufferDX12::Get(m_Device->m_BindedBuffers[buffer.bindingIndex].second);
 			if (buffer.bufferSlot != UINT8_MAX)
 			{
-				renderState.vertexConstantBuffers[buffer.bufferSlot] = dxBuffer->m_ConstantBufferView.GetCPU();
+				dxBuffer->SetState(D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+				renderState.vertexConstantBuffers[buffer.bufferSlot] = dxBuffer->GetConstantBufferView().GetCPU();
 				renderState.vertexConstantBuffersCount = std::max(renderState.vertexConstantBuffersCount, buffer.bufferSlot + 1u);
 			}
 			if (buffer.srvSlot != UINT8_MAX)
 			{
-				if (dxBuffer->m_State != SHADER_RESOURCE_STATE)
-				{
-					m_Device->TransitionBarrier(dxBuffer->m_Resource.Get(), dxBuffer->m_State, SHADER_RESOURCE_STATE);
-					dxBuffer->m_State = SHADER_RESOURCE_STATE;
-				}
-				renderState.vertexShaderResourceViews[buffer.srvSlot] = dxBuffer->m_ShaderResourceView.GetCPU();
+				dxBuffer->SetState(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+				renderState.vertexShaderResourceViews[buffer.srvSlot] = dxBuffer->GetShaderResourceView().GetCPU();
 				renderState.vertexShaderResourceViewsCount = std::max(renderState.vertexShaderResourceViewsCount, buffer.srvSlot + 1u);
 			}
 		}
 
 		for (auto& buffer : bindingState.geometryBuffers)
 		{
-			GfxBufferDX12* dxBuffer = GfxBufferDX12::s_PointerCache.Get(m_Device->m_BindedBuffers[buffer.bindingIndex].second);
+			GfxBufferDX12* dxBuffer = GfxBufferDX12::Get(m_Device->m_BindedBuffers[buffer.bindingIndex].second);
 			if (buffer.bufferSlot != UINT8_MAX)
 			{
-				renderState.geometryConstantBuffers[buffer.bufferSlot] = dxBuffer->m_ConstantBufferView.GetCPU();
+				dxBuffer->SetState(D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+				renderState.geometryConstantBuffers[buffer.bufferSlot] = dxBuffer->GetConstantBufferView().GetCPU();
 				renderState.geometryConstantBuffersCount = std::max(renderState.geometryConstantBuffersCount, buffer.bufferSlot + 1u);
 			}
 			if (buffer.srvSlot != UINT8_MAX)
 			{
-				/*if (dxBuffer->m_State != SHADER_RESOURCE_STATE)
-				{
-					m_Device->TransitionBarrier(dxBuffer->m_Resource.Get(), dxBuffer->m_State, SHADER_RESOURCE_STATE);
-					dxBuffer->m_State = SHADER_RESOURCE_STATE;
-				}*/
-				//renderState.geometryShaderResourceViews[buffer.srvSlot] = dxBuffer->m_ShaderResourceView.GetCPU();
+				//dxBuffer->SetState(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+				//renderState.geometryShaderResourceViews[buffer.srvSlot] = dxBuffer->GetShaderResourceView().GetCPU();
 				//renderState.geometryShaderResourceViewsCount = std::max(renderState.geometryShaderResourceViewsCount, buffer.srvSlot);
 			}
 		}
 
 		for (auto& buffer : bindingState.pixelBuffers)
 		{
-			GfxBufferDX12* dxBuffer = GfxBufferDX12::s_PointerCache.Get(m_Device->m_BindedBuffers[buffer.bindingIndex].second);
+			GfxBufferDX12* dxBuffer = GfxBufferDX12::Get(m_Device->m_BindedBuffers[buffer.bindingIndex].second);
 			if (buffer.bufferSlot != UINT8_MAX)
 			{
-				renderState.pixelConstantBuffers[buffer.bufferSlot] = dxBuffer->m_ConstantBufferView.GetCPU();
+				dxBuffer->SetState(D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+				renderState.pixelConstantBuffers[buffer.bufferSlot] = dxBuffer->GetConstantBufferView().GetCPU();
 				renderState.pixelConstantBuffersCount = std::max(renderState.pixelConstantBuffersCount, buffer.bufferSlot + 1u);
 			}
 			if (buffer.srvSlot != UINT8_MAX)
 			{
-				if (dxBuffer->m_State != SHADER_RESOURCE_STATE)
-				{
-					m_Device->TransitionBarrier(dxBuffer->m_Resource.Get(), dxBuffer->m_State, SHADER_RESOURCE_STATE);
-					dxBuffer->m_State = SHADER_RESOURCE_STATE;
-				}
-				renderState.pixelShaderResourceViews[buffer.srvSlot] = dxBuffer->m_ShaderResourceView.GetCPU();
+				dxBuffer->SetState(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+				renderState.pixelShaderResourceViews[buffer.srvSlot] = dxBuffer->GetShaderResourceView().GetCPU();
 				renderState.pixelShaderResourceViewsCount = std::max(renderState.pixelShaderResourceViewsCount, buffer.srvSlot + 1u);
 			}
 		}
 
 		for (auto& texture : bindingState.vertexTextures)
 		{
-			GfxTextureDX12* dxTexture = GfxTextureDX12::s_PointerCache.Get(texture.isGlobal ? m_Device->m_BindedTextures[texture.bindingIndex].second : GetTextureIndex(material, texture.bindingIndex));
+			GfxTextureDX12* dxTexture = GfxTextureDX12::Get(texture.isGlobal ? m_Device->m_BindedTextures[texture.bindingIndex].second : GetTextureIndex(material, texture.bindingIndex));
 			if (dxTexture == nullptr)
 			{
 				BB_ERROR("Texture is missing.");
 				continue;
 			}
-			if (dxTexture->m_State != SHADER_RESOURCE_STATE)
-			{
-				m_Device->TransitionBarrier(dxTexture->m_Resource.Get(), dxTexture->m_State, SHADER_RESOURCE_STATE);
-				dxTexture->m_State = SHADER_RESOURCE_STATE;
-			}
-			renderState.vertexShaderResourceViews[texture.srvSlot] = dxTexture->m_ShaderResourceView.GetCPU();
+			dxTexture->SetState(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			renderState.vertexShaderResourceViews[texture.srvSlot] = dxTexture->GetShaderResourceView().GetCPU();
 			renderState.vertexShaderResourceViewsCount = std::max(renderState.vertexShaderResourceViewsCount, texture.srvSlot + 1u);
 			if (texture.samplerSlot != UINT8_MAX)
 			{
-				uint8_t sampler = dxTexture->m_Sampler;
+				uint8_t sampler = dxTexture->GetSampler();
 				if (sampler == UINT8_MAX)
 				{
-					sampler = m_Device->GetSampler(dxTexture->m_WrapMode, dxTexture->m_FilterMode);
-					dxTexture->m_Sampler = sampler;
+					sampler = m_Device->GetSampler(dxTexture->GetWrapMode(), dxTexture->GetFilterMode());
+					dxTexture->SetSampler(sampler);
 				}
 				renderState.vertexSamplers[texture.samplerSlot] = sampler;
 				renderState.vertexSamplersCount = std::max(renderState.vertexSamplersCount, texture.samplerSlot + 1u);
@@ -428,29 +424,49 @@ namespace Blueberry
 
 		for (auto& texture : bindingState.pixelTextures)
 		{
-			GfxTextureDX12* dxTexture = GfxTextureDX12::s_PointerCache.Get(texture.isGlobal ? m_Device->m_BindedTextures[texture.bindingIndex].second : GetTextureIndex(material, texture.bindingIndex));
+			GfxTextureDX12* dxTexture = GfxTextureDX12::Get(texture.isGlobal ? m_Device->m_BindedTextures[texture.bindingIndex].second : GetTextureIndex(material, texture.bindingIndex));
 			if (dxTexture == nullptr)
 			{
 				BB_ERROR("Texture is missing.");
 				continue;
 			}
-			if (dxTexture->m_State != SHADER_RESOURCE_STATE)
-			{
-				m_Device->TransitionBarrier(dxTexture->m_Resource.Get(), dxTexture->m_State, SHADER_RESOURCE_STATE);
-				dxTexture->m_State = SHADER_RESOURCE_STATE;
-			}
-			renderState.pixelShaderResourceViews[texture.srvSlot] = dxTexture->m_ShaderResourceView.GetCPU();
+			dxTexture->SetState(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			renderState.pixelShaderResourceViews[texture.srvSlot] = dxTexture->GetShaderResourceView().GetCPU();
 			renderState.pixelShaderResourceViewsCount = std::max(renderState.pixelShaderResourceViewsCount, texture.srvSlot + 1u);
 			if (texture.samplerSlot != UINT8_MAX)
 			{
-				uint8_t sampler = dxTexture->m_Sampler;
+				uint8_t sampler = dxTexture->GetSampler();
 				if (sampler == UINT8_MAX)
 				{
-					sampler = m_Device->GetSampler(dxTexture->m_WrapMode, dxTexture->m_FilterMode);
-					dxTexture->m_Sampler = sampler;
+					sampler = m_Device->GetSampler(dxTexture->GetWrapMode(), dxTexture->GetFilterMode());
+					dxTexture->SetSampler(sampler);
 				}
 				renderState.pixelSamplers[texture.samplerSlot] = sampler;
 				renderState.pixelSamplersCount = std::max(renderState.pixelSamplersCount, texture.samplerSlot + 1u);
+			}
+		}
+
+		for (auto& texture : bindingState.pixelBindlessTextures)
+		{
+			GfxTextureDX12* dxTexture = GfxTextureDX12::Get(GetTextureIndex(material, texture.bindingIndex));
+			if (dxTexture == nullptr)
+			{
+				BB_ERROR("Texture is missing.");
+				continue;
+			}
+			dxTexture->SetState(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			renderState.bindlessIndexes[texture.srvSlot] = dxTexture->GetRingShaderResourceView().GetIndex();
+			renderState.pixelBindlessIndexesCount = std::max(renderState.pixelSamplersCount, texture.srvSlot + 1u);
+			if (texture.samplerSlot != UINT8_MAX)
+			{
+				uint8_t sampler = dxTexture->GetSampler();
+				if (sampler == UINT8_MAX)
+				{
+					sampler = m_Device->GetSampler(dxTexture->GetWrapMode(), dxTexture->GetFilterMode());
+					dxTexture->SetSampler(sampler);
+				}
+				renderState.bindlessIndexes[texture.samplerSlot] = sampler;
+				renderState.pixelBindlessIndexesCount = std::max(renderState.pixelSamplersCount, texture.samplerSlot + 1u);
 			}
 		}
 	}

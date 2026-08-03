@@ -156,7 +156,7 @@ namespace Blueberry
 
 	void ObjectDB::AllocateId(Object* object)
 	{
-		std::lock_guard<std::mutex> lock(s_AllocationMutex);
+		std::scoped_lock lock(s_AllocationMutex);
 		ObjectId id = s_Array.AddSingle();
 		object->m_ObjectId = id;
 		ObjectItem* objectItem = IdToObjectItem(id);

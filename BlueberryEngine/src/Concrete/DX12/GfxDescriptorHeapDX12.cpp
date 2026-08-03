@@ -5,6 +5,16 @@
 
 namespace Blueberry
 {
+	D3D12_CPU_DESCRIPTOR_HANDLE GfxHandleDX12::GetCPU() const
+	{
+		return m_Heap->GetCPU(m_Index);
+	}
+
+	D3D12_GPU_DESCRIPTOR_HANDLE GfxHandleDX12::GetGPU() const
+	{
+		return m_Heap->GetGPU(m_Index);
+	}
+
 	bool GfxHandleDX12::IsInvalid() const
 	{
 		return m_Index == UINT32_MAX;
@@ -14,7 +24,7 @@ namespace Blueberry
 	{
 		if (m_Heap != nullptr && m_Index != UINT32_MAX)
 		{
-			m_Heap->m_FreeBlocks.push_back({ m_Index, 1 });
+			m_Heap->Free(*this);
 			m_Index = UINT32_MAX;
 		}
 	}
@@ -23,15 +33,14 @@ namespace Blueberry
 	{
 	}
 
-	bool GfxDescriptorHeapDX12::Initialize(D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t descriptorsCount)
+	bool GfxDescriptorHeapDX12::Initialize(D3D12_DESCRIPTOR_HEAP_TYPE type, bool isShaderVisible, uint32_t persistentDescriptorsCount, uint32_t temporaryDescriptorsCount)
 	{
 		m_Type = type;
-		m_DescriptorsCount = descriptorsCount;
 
 		D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-		heapDesc.NumDescriptors = descriptorsCount;
+		heapDesc.NumDescriptors = persistentDescriptorsCount + temporaryDescriptorsCount;
 		heapDesc.Type = type;
-		heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+		heapDesc.Flags = isShaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 		
 		HRESULT hr = m_Device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_Heap));
 
@@ -42,56 +51,27 @@ namespace Blueberry
 		}
 
 		m_StartCPU = m_Heap->GetCPUDescriptorHandleForHeapStart();
-		m_StartGPU = m_Heap->GetGPUDescriptorHandleForHeapStart();
+		if (isShaderVisible)
+		{
+			m_StartGPU = m_Heap->GetGPUDescriptorHandleForHeapStart();
+		}
 		m_HandleIncrement = m_Device->GetDescriptorHandleIncrementSize(type);
+		m_PersistentCount = persistentDescriptorsCount;
+		m_PersistentFreeBlocks.push_back({ 0, persistentDescriptorsCount });
+		m_TemporaryCount = temporaryDescriptorsCount;
+		m_TemporaryOffset = persistentDescriptorsCount;
 
-		Free(0, descriptorsCount);
 		return true;
 	}
 
-	uint32_t GfxDescriptorHeapDX12::GetIndex(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle) const
+	GfxHandleDX12 GfxDescriptorHeapDX12::AllocatePersistent(uint32_t size)
 	{
-		return static_cast<uint32_t>((cpuHandle.ptr - m_StartCPU.ptr) / m_HandleIncrement);
-	}
+		GfxHandleDX12 handle = {};
+		handle.m_Heap = this;
+		handle.m_Size = size;
+		handle.m_IsPersistent = true;
 
-	D3D12_CPU_DESCRIPTOR_HANDLE GfxDescriptorHeapDX12::GetCPU(uint32_t index) const
-	{
-		D3D12_CPU_DESCRIPTOR_HANDLE handle;
-		handle.ptr = m_StartCPU.ptr + static_cast<SIZE_T>(index * m_HandleIncrement);
-		return handle;
-	}
-
-	D3D12_GPU_DESCRIPTOR_HANDLE GfxDescriptorHeapDX12::GetGPU(uint32_t index) const
-	{
-		D3D12_GPU_DESCRIPTOR_HANDLE handle;
-		handle.ptr = m_StartGPU.ptr + static_cast<SIZE_T>(index * m_HandleIncrement);
-		return handle;
-	}
-
-	void GfxDescriptorHeapDX12::GetCPU(D3D12_CPU_DESCRIPTOR_HANDLE* cpuHandle, uint32_t index) const
-	{
-		cpuHandle->ptr = m_StartCPU.ptr + static_cast<SIZE_T>(index * m_HandleIncrement);
-	}
-
-	void GfxDescriptorHeapDX12::GetGPU(D3D12_GPU_DESCRIPTOR_HANDLE* gpuHandle, uint32_t index) const
-	{
-		gpuHandle->ptr = m_StartGPU.ptr + static_cast<SIZE_T>(index * m_HandleIncrement);
-	}
-
-	void GfxDescriptorHeapDX12::Allocate(GfxHandleDX12* handle)
-	{
-		handle->m_Heap = this;
-		handle->m_Index = Allocate();
-	}
-
-	uint32_t GfxDescriptorHeapDX12::Allocate(uint32_t size)
-	{
-		if (m_FreeBlocks.size() == 0)
-		{
-			Resize(m_DescriptorsCount * 2);
-		}
-
-		for (auto it = m_FreeBlocks.begin(); it != m_FreeBlocks.end(); ++it)
+		for (auto it = m_PersistentFreeBlocks.begin(); it != m_PersistentFreeBlocks.end(); ++it)
 		{
 			if (it->size >= size)
 			{
@@ -102,144 +82,51 @@ namespace Blueberry
 
 				if (it->size == 0)
 				{
-					it = m_FreeBlocks.erase(it);
+					it = m_PersistentFreeBlocks.erase(it);
 				}
 
-				return offset;
+				handle.m_Index = offset;
+				return handle;
 			}
 		}
-		return UINT32_MAX;
+		return {};
 	}
 
-	void GfxDescriptorHeapDX12::Free(uint32_t offset, uint32_t size)
+	GfxHandleDX12 GfxDescriptorHeapDX12::AllocateTemporary(uint32_t size)
 	{
-		m_FreeBlocks.insert(m_FreeBlocks.begin(), { offset, size });
-	}
-
-	ID3D12DescriptorHeap* GfxDescriptorHeapDX12::GetHeap() const
-	{
-		return m_Heap.Get();
-	}
-
-	void GfxDescriptorHeapDX12::Resize(uint32_t descriptorsCount)
-	{
-		if (descriptorsCount <= m_DescriptorsCount || m_Type == D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV || m_Type == D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER)
-		{
-			return;
-		}
-		
-		D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-		heapDesc.NumDescriptors = descriptorsCount;
-		heapDesc.Type = m_Type;
-		heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-
-		ComPtr<ID3D12DescriptorHeap> oldHeap = m_Heap;
-		HRESULT hr = m_Device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_Heap));
-
-		if (FAILED(hr))
-		{
-			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error creating heap."));
-			return;
-		}
-
-		m_GfxDevice->WaitForGPU();
-		m_GfxDevice->Reset();
-
-		m_StartCPU = m_Heap->GetCPUDescriptorHandleForHeapStart();
-		m_StartGPU = m_Heap->GetGPUDescriptorHandleForHeapStart();
-		m_HandleIncrement = m_Device->GetDescriptorHandleIncrementSize(m_Type);
-
-		m_Device->CopyDescriptorsSimple(m_DescriptorsCount, m_StartCPU, oldHeap->GetCPUDescriptorHandleForHeapStart(), m_Type);
-		m_FreeBlocks.push_back({ m_DescriptorsCount, descriptorsCount - m_DescriptorsCount });
-		m_DescriptorsCount = descriptorsCount;
-	}
-
-	GfxDescriptorRingHeapDX12::GfxDescriptorRingHeapDX12(GfxDeviceDX12* device) : m_Device(device->GetDevice())
-	{
-	}
-
-	bool GfxDescriptorRingHeapDX12::Initialize(D3D12_DESCRIPTOR_HEAP_TYPE type, uint32_t temporaryCount, uint32_t persistentCount)
-	{
-		m_Type = type;
-		m_PersistentCount = persistentCount;
-		m_TemporaryCount = temporaryCount;
-		m_TemporaryOffset = persistentCount;
-
-		D3D12_DESCRIPTOR_HEAP_DESC heapDesc = {};
-		heapDesc.NumDescriptors = temporaryCount + persistentCount;
-		heapDesc.Type = type;
-		heapDesc.Flags = (type == D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV || type == D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER) ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-
-		HRESULT hr = m_Device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_Heap));
-		
-		if (FAILED(hr))
-		{
-			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error creating ring heap."));
-			return false;
-		}
-
-		m_StartCPU = m_Heap->GetCPUDescriptorHandleForHeapStart();
-		m_StartGPU = m_Heap->GetGPUDescriptorHandleForHeapStart();
-		m_HandleIncrement = m_Device->GetDescriptorHandleIncrementSize(type);
-
-		return true;
-	}
-
-	bool GfxDescriptorRingHeapDX12::CanAllocateTemporary(uint32_t size)
-	{
-		return m_TemporaryOffset + size <= m_TemporaryCount;
-	}
-
-	GfxRingHandleDX12 GfxDescriptorRingHeapDX12::AllocateTemporary(uint32_t size)
-	{
-		if (m_TemporaryOffset + size > m_TemporaryCount)
+		GfxHandleDX12 handle = {};
+		if (m_TemporaryOffset + size > m_PersistentCount + m_TemporaryCount)
 		{
 			m_TemporaryOffset = m_PersistentCount;
 		}
-		GfxRingHandleDX12 handle;
-		handle.m_CpuHandle.ptr = m_StartCPU.ptr + static_cast<SIZE_T>(m_TemporaryOffset * m_HandleIncrement);
-		handle.m_GpuHandle.ptr = m_StartGPU.ptr + static_cast<SIZE_T>(m_TemporaryOffset * m_HandleIncrement);
+		handle.m_Heap = this;
+		handle.m_Size = size;
 		handle.m_Index = m_TemporaryOffset;
 		m_TemporaryOffset += size;
 		return handle;
 	}
 
-	uint32_t GfxDescriptorRingHeapDX12::GetOffset() const
+	void GfxDescriptorHeapDX12::Free(GfxHandleDX12 handle)
 	{
-		return m_TemporaryOffset;
-	}
-
-	GfxRingHandleDX12 GfxDescriptorRingHeapDX12::AllocatePersistent(uint32_t size)
-	{
-		if (m_PersistentOffset + size > m_PersistentCount)
+		if (handle.m_IsPersistent)
 		{
-			BB_ERROR("Can't allocate descriptor.");
-			return {};
+			m_PersistentFreeBlocks.insert(m_PersistentFreeBlocks.begin(), { handle.m_Index, handle.m_Size });
 		}
-		GfxRingHandleDX12 handle;
-		handle.m_CpuHandle.ptr = m_StartCPU.ptr + static_cast<SIZE_T>(m_PersistentOffset * m_HandleIncrement);
-		handle.m_GpuHandle.ptr = m_StartGPU.ptr + static_cast<SIZE_T>(m_PersistentOffset * m_HandleIncrement);
-		handle.m_Index = m_PersistentOffset;
-		m_PersistentOffset += size;
-		return handle;
 	}
 
-	void GfxDescriptorRingHeapDX12::Reset()
+	void GfxDescriptorHeapDX12::Free(D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle)
 	{
-		m_TemporaryOffset = m_PersistentCount;
+		if (cpuHandle.ptr >= m_StartCPU.ptr)
+		{
+			uint32_t index = GetIndex(cpuHandle);
+			if (index < m_PersistentCount)
+			{
+				m_PersistentFreeBlocks.insert(m_PersistentFreeBlocks.begin(), { index, 1 });
+			}
+		}
 	}
 
-	D3D12_CPU_DESCRIPTOR_HANDLE GfxDescriptorRingHeapDX12::GetCPU(uint32_t index) const
-	{
-		return { m_StartCPU.ptr + static_cast<SIZE_T>(index * m_HandleIncrement) };
-	}
-
-	D3D12_GPU_DESCRIPTOR_HANDLE GfxDescriptorRingHeapDX12::GetGPU(uint32_t index) const
-	{
-		return { m_StartGPU.ptr + static_cast<SIZE_T>(index * m_HandleIncrement) };
-	}
-
-	ID3D12DescriptorHeap* GfxDescriptorRingHeapDX12::GetHeap() const
+	ID3D12DescriptorHeap* GfxDescriptorHeapDX12::GetHeap() const
 	{
 		return m_Heap.Get();
 	}

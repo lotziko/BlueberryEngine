@@ -44,7 +44,7 @@ namespace Blueberry
 		}
 		else
 		{
-			m_DeviceContext->ClearRenderTargetView(m_BindedRenderTarget->m_RenderTargetView.Get(), color);
+			m_DeviceContext->ClearRenderTargetView(m_BindedRenderTarget->GetRenderTargetView(), color);
 		}
 	}
 
@@ -52,7 +52,7 @@ namespace Blueberry
 	{
 		if (m_BindedDepthStencil != nullptr)
 		{
-			m_DeviceContext->ClearDepthStencilView(m_BindedDepthStencil->m_DepthStencilView.Get(), D3D11_CLEAR_DEPTH, depth, 0);
+			m_DeviceContext->ClearDepthStencilView(m_BindedDepthStencil->GetDepthStencilView(), D3D11_CLEAR_DEPTH, depth, 0);
 		}
 	}
 
@@ -191,6 +191,11 @@ namespace Blueberry
 		return true;
 	}
 
+	bool GfxDeviceDX11::CreateRayTracingShaderImpl(const ByteData& rayTracingData, GfxRayTracingShader*& shader)
+	{
+		return false;
+	}
+
 	bool GfxDeviceDX11::CreateBufferImpl(const BufferProperties& properties, GfxBuffer*& buffer)
 	{
 		auto dxBuffer = new GfxBufferDX11(m_Device.Get(), m_DeviceContext.Get());
@@ -213,9 +218,19 @@ namespace Blueberry
 		return true;
 	}
 
+	bool GfxDeviceDX11::CreateBottomLevelAccelerationStructureImpl(const BottomLevelAccelerationStructureProperties& properties, GfxBottomLevelAccelerationStructure*& accelerationStructure)
+	{
+		return false;
+	}
+
+	bool GfxDeviceDX11::CreateTopLevelAccelerationStructureImpl(GfxTopLevelAccelerationStructure*& accelerationStructure)
+	{
+		return false;
+	}
+
 	void GfxDeviceDX11::CopyImpl(GfxTexture* source, GfxTexture* target)
 	{
-		m_DeviceContext->CopyResource(static_cast<GfxTextureDX11*>(target)->m_Texture.Get(), static_cast<GfxTextureDX11*>(source)->m_Texture.Get());
+		m_DeviceContext->CopyResource(static_cast<GfxTextureDX11*>(target)->GetResource(), static_cast<GfxTextureDX11*>(source)->GetResource());
 	}
 
 	void GfxDeviceDX11::CopyImpl(GfxTexture* source, GfxTexture* target, const Rectangle& area)
@@ -228,7 +243,7 @@ namespace Blueberry
 		src.front = 0;
 		src.back = 1;
 
-		m_DeviceContext->CopySubresourceRegion(static_cast<GfxTextureDX11*>(target)->m_Texture.Get(), 0, 0, 0, 0, static_cast<GfxTextureDX11*>(source)->m_Texture.Get(), 0, &src);
+		m_DeviceContext->CopySubresourceRegion(static_cast<GfxTextureDX11*>(target)->GetResource(), 0, 0, 0, 0, static_cast<GfxTextureDX11*>(source)->GetResource(), 0, &src);
 	}
 
 	void GfxDeviceDX11::CopyImpl(GfxTexture* source, GfxTexture* target, const Vector2Int& offset, const Rectangle& area)
@@ -241,7 +256,7 @@ namespace Blueberry
 		src.front = 0;
 		src.back = 1;
 
-		m_DeviceContext->CopySubresourceRegion(static_cast<GfxTextureDX11*>(target)->m_Texture.Get(), static_cast<UINT>(offset.x), static_cast<UINT>(offset.y), 0, 0, static_cast<GfxTextureDX11*>(source)->m_Texture.Get(), 0, &src);
+		m_DeviceContext->CopySubresourceRegion(static_cast<GfxTextureDX11*>(target)->GetResource(), static_cast<UINT>(offset.x), static_cast<UINT>(offset.y), 0, 0, static_cast<GfxTextureDX11*>(source)->GetResource(), 0, &src);
 	}
 
 	void GfxDeviceDX11::CopyImpl(GfxTexture* source, GfxTexture* target, uint32_t sourceSlice, uint32_t targetSlice, uint32_t mipLevel)
@@ -249,10 +264,10 @@ namespace Blueberry
 		GfxTextureDX11* dxSource = static_cast<GfxTextureDX11*>(source);
 		GfxTextureDX11* dxTarget = static_cast<GfxTextureDX11*>(target);
 
-		UINT sourceSubresource = D3D11CalcSubresource(mipLevel, sourceSlice, dxSource->m_MipLevels);
-		UINT targetSubresource = D3D11CalcSubresource(mipLevel, targetSlice, dxTarget->m_MipLevels);
+		UINT sourceSubresource = D3D11CalcSubresource(mipLevel, sourceSlice, dxSource->GetMipLevels());
+		UINT targetSubresource = D3D11CalcSubresource(mipLevel, targetSlice, dxTarget->GetMipLevels());
 
-		m_DeviceContext->CopySubresourceRegion(dxTarget->m_Texture.Get(), targetSubresource, 0, 0, 0, dxSource->m_Texture.Get(), sourceSubresource, NULL);
+		m_DeviceContext->CopySubresourceRegion(dxTarget->GetResource(), targetSubresource, 0, 0, 0, dxSource->GetResource(), sourceSubresource, NULL);
 	}
 
 	void GfxDeviceDX11::SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, uint32_t arraySlice, uint32_t mipLevel)
@@ -265,11 +280,11 @@ namespace Blueberry
 			GfxTextureDX11* dxRenderTarget = static_cast<GfxTextureDX11*>(renderTexture);
 			if (arraySlice || mipLevel)
 			{
-				renderTargets[0] = dxRenderTarget->GetRTV(arraySlice, mipLevel);
+				renderTargets[0] = dxRenderTarget->GetRenderTargetView(arraySlice, mipLevel);
 			}
 			else
 			{
-				renderTargets[0] = dxRenderTarget->GetRTV();
+				renderTargets[0] = dxRenderTarget->GetRenderTargetView();
 			}
 			m_BindedRenderTarget = dxRenderTarget;
 		}
@@ -281,7 +296,7 @@ namespace Blueberry
 		if (depthStencilTexture != nullptr)
 		{
 			GfxTextureDX11* dxDepthStencil = static_cast<GfxTextureDX11*>(depthStencilTexture);
-			depthStencil = dxDepthStencil->m_DepthStencilView.Get();
+			depthStencil = dxDepthStencil->GetDepthStencilView();
 			m_BindedDepthStencil = dxDepthStencil;
 		}
 		else
@@ -306,11 +321,11 @@ namespace Blueberry
 		{
 			if (pair.first == id)
 			{
-				pair.second = dxBuffer->m_Index;
+				pair.second = dxBuffer->GetIndex();
 				return;
 			}
 		}
-		m_BindedBuffers.push_back(std::make_pair(id, dxBuffer->m_Index));
+		m_BindedBuffers.push_back(std::make_pair(id, dxBuffer->GetIndex()));
 	}
 
 	void GfxDeviceDX11::SetGlobalTextureImpl(size_t id, GfxTexture* texture)
@@ -320,11 +335,11 @@ namespace Blueberry
 		{
 			if (pair.first == id)
 			{
-				pair.second = dxTexture->m_Index;
+				pair.second = dxTexture->GetIndex();
 				return;
 			}
 		}
-		m_BindedTextures.push_back(std::make_pair(id, dxTexture->m_Index));
+		m_BindedTextures.push_back(std::make_pair(id, dxTexture->GetIndex()));
 	}
 
 	D3D11_PRIMITIVE_TOPOLOGY GetPrimitiveTopologyD3D11(const Topology& topology)
@@ -432,9 +447,11 @@ namespace Blueberry
 		auto dxVertexBuffer = static_cast<GfxBufferDX11*>(operation.vertexBuffer);
 		if (dxVertexBuffer != m_VertexBuffer)
 		{
+			ID3D11Buffer* buffer = dxVertexBuffer->GetBuffer();
+			uint32_t elementSize = dxVertexBuffer->GetElementSize();
 			uint32_t byteOffset = 0;
 			m_VertexBuffer = dxVertexBuffer;
-			m_DeviceContext->IASetVertexBuffers(0, 1, dxVertexBuffer->m_Buffer.GetAddressOf(), &dxVertexBuffer->m_ElementSize, &byteOffset);
+			m_DeviceContext->IASetVertexBuffers(0, 1, &buffer, &elementSize, &byteOffset);
 		}
 
 		auto dxInstanceBuffer = static_cast<GfxBufferDX11*>(operation.instanceBuffer);
@@ -444,8 +461,10 @@ namespace Blueberry
 			m_InstanceOffset = operation.instanceOffset;
 			if (dxInstanceBuffer != nullptr)
 			{
-				uint32_t byteOffset = m_InstanceBuffer ? m_InstanceOffset * m_InstanceBuffer->m_ElementSize : 0;
-				m_DeviceContext->IASetVertexBuffers(1, 1, dxInstanceBuffer->m_Buffer.GetAddressOf(), &dxInstanceBuffer->m_ElementSize, &byteOffset);
+				ID3D11Buffer* buffer = dxInstanceBuffer->GetBuffer();
+				uint32_t elementSize = dxInstanceBuffer->GetElementSize();
+				uint32_t byteOffset = m_InstanceBuffer ? m_InstanceOffset * elementSize : 0;
+				m_DeviceContext->IASetVertexBuffers(1, 1, &buffer, &elementSize, &byteOffset);
 			}
 		}
 
@@ -466,7 +485,7 @@ namespace Blueberry
 			if (dxIndexBuffer != m_IndexBuffer)
 			{
 				m_IndexBuffer = dxIndexBuffer;
-				m_DeviceContext->IASetIndexBuffer(dxIndexBuffer->m_Buffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+				m_DeviceContext->IASetIndexBuffer(dxIndexBuffer->GetBuffer(), DXGI_FORMAT_R32_UINT, 0);
 			}
 			if (m_InstanceBuffer == nullptr)
 			{
@@ -481,9 +500,9 @@ namespace Blueberry
 		m_RenderState = renderState;
 	}
 
-	void GfxDeviceDX11::DispatchImpl(GfxComputeShader* shader, uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ)
+	void GfxDeviceDX11::DispatchImpl(ComputeShader* shader, uint32_t kernelIndex, uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ)
 	{
-		const GfxComputeRenderStateDX11 renderState = m_ComputeStateCache.GetRenderState(shader);
+		const GfxComputeRenderStateDX11 renderState = m_ComputeStateCache.GetRenderState(shader, kernelIndex);
 
 		if (!renderState.isValid)
 		{
@@ -517,6 +536,10 @@ namespace Blueberry
 		m_DeviceContext->CSSetSamplers(0, 16, m_EmptySamplers);
 		m_DeviceContext->CSSetUnorderedAccessViews(0, 8, m_EmptyUnorderedAccessViews, NULL);
 		m_ComputeRenderState = renderState;
+	}
+
+	void GfxDeviceDX11::DispatchRaysImpl(RayTracingShader* shader, GfxTopLevelAccelerationStructure* accelerationStructure, uint32_t width, uint32_t height, uint32_t depth)
+	{
 	}
 
 	Matrix GfxDeviceDX11::GetGPUMatrixImpl(const Matrix& matrix) const

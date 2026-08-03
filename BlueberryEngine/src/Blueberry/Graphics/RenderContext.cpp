@@ -28,8 +28,6 @@
 #include "Blueberry\Graphics\Buffers\PerDrawDataConstantBuffer.h"
 #include "Blueberry\Threading\JobSystem.h"
 
-#include "Blueberry\Graphics\TextureCube.h"
-
 namespace Blueberry
 {
 

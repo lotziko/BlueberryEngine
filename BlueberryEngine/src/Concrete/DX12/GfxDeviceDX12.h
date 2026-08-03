@@ -9,6 +9,7 @@
 #include "GfxReadbackBufferDX12.h"
 #include "GfxRenderStateCacheDX12.h"
 #include "GfxComputeRenderStateCacheDX12.h"
+#include "GfxRayTracingRenderStateCacheDX12.h"
 
 namespace Blueberry
 {
@@ -41,9 +42,12 @@ namespace Blueberry
 		virtual bool CreateGeometryShaderImpl(const ByteData& geometryData, GfxGeometryShader*& shader) final;
 		virtual bool CreateFragmentShaderImpl(const ByteData& fragmentData, GfxFragmentShader*& shader) final;
 		virtual bool CreateComputeShaderImpl(const ByteData& computeData, GfxComputeShader*& shader) final;
+		virtual bool CreateRayTracingShaderImpl(const ByteData& rayTracingData, GfxRayTracingShader*& shader) final;
 		virtual bool CreateBufferImpl(const BufferProperties& properties, GfxBuffer*& buffer) final;
 		virtual bool CreateTextureImpl(const TextureProperties& properties, GfxTexture*& texture) final;
-
+		virtual bool CreateBottomLevelAccelerationStructureImpl(const BottomLevelAccelerationStructureProperties& properties, GfxBottomLevelAccelerationStructure*& accelerationStructure) final;
+		virtual bool CreateTopLevelAccelerationStructureImpl(GfxTopLevelAccelerationStructure*& accelerationStructure) final;
+		
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target) final;
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Rectangle& area) final;
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Vector2Int& offset, const Rectangle& area) final;
@@ -54,8 +58,9 @@ namespace Blueberry
 		virtual void SetGlobalTextureImpl(size_t id, GfxTexture* texture) final;
 		virtual void DrawImpl(const GfxDrawingOperation& operation) final;
 
-		virtual void DispatchImpl(GfxComputeShader* shader, uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ) final;
-
+		virtual void DispatchImpl(ComputeShader* shader, uint32_t kernelIndex, uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ) final;
+		virtual void DispatchRaysImpl(RayTracingShader* shader, GfxTopLevelAccelerationStructure* accelerationStructure, uint32_t width, uint32_t height, uint32_t depth) final;
+		
 		virtual Matrix GetGPUMatrixImpl(const Matrix& matrix) const final;
 
 	public:
@@ -64,12 +69,16 @@ namespace Blueberry
 		ID3D12GraphicsCommandList* GetCommandList();
 		ID3D12RootSignature* GetGraphicsRootSignature();
 		ID3D12RootSignature* GetComputeRootSignature();
+		ID3D12Device5* GetDxrDevice();
+		ID3D12GraphicsCommandList4* GetDxrCommandList();
+		ID3D12RootSignature* GetDxrGlobalRootSignature();
+		ID3D12RootSignature* GetDxrLocalRootSignature();
 		HWND GetHwnd();
 
-		GfxDescriptorHeapDX12& GetCbvSrvDsvHeap();
+		GfxDescriptorHeapDX12& GetCbvSrvUavHeap();
 		GfxDescriptorHeapDX12& GetRtvHeap();
 		GfxDescriptorHeapDX12& GetDsvHeap();
-		GfxDescriptorRingHeapDX12& GetCbvSrvDsvRingHeap();
+		GfxDescriptorHeapDX12& GetCbvSrvUavRingHeap();
 		GfxUploadBufferDX12& GetUploadBuffer();
 		GfxReadbackBufferDX12& GetReadbackBuffer();
 		uint64_t GetGeneration();
@@ -79,28 +88,19 @@ namespace Blueberry
 
 		void Release(ComPtr<ID3D12Resource>& resource);
 
-		void CreateCBV(D3D12_CONSTANT_BUFFER_VIEW_DESC* cbvDesc, GfxHandleDX12* handle);
-		void CreateSRV(ID3D12Resource* resource, D3D12_SHADER_RESOURCE_VIEW_DESC* srvDesc, GfxHandleDX12* handle);
-		void CreateUAV(ID3D12Resource* resource, D3D12_UNORDERED_ACCESS_VIEW_DESC* uavDesc, GfxHandleDX12* handle);
-		void CreateRTV(ID3D12Resource* resource, D3D12_RENDER_TARGET_VIEW_DESC* rtvDesc, GfxHandleDX12* handle);
-		void CreateDSV(ID3D12Resource* resource, D3D12_DEPTH_STENCIL_VIEW_DESC* dsvDesc, GfxHandleDX12* handle);
-		void CreateSampler(D3D12_SAMPLER_DESC* samplerDesc, GfxHandleDX12* handle);
-		
 	private:
 		bool InitializeDirectX(HWND hwnd, int width, int height);
 
 		uint32_t GetSampler(WrapMode wrapMode, FilterMode filterMode);
 		uint32_t GetSamplersOffset(const uint8_t* indexes, uint32_t size);
 		void ResizeBackbufferIfNeeded();
-		void TransitionBarrier(ID3D12Resource* resource, D3D12_RESOURCE_STATES fromState, D3D12_RESOURCE_STATES toState);
-		void UAVBarrier(ID3D12Resource* resource);
 
 		static const uint32_t BUFFER_COUNT = 2;
 
 		struct FrameContext
 		{
 			ComPtr<ID3D12CommandAllocator> commandAllocator;
-			UINT64 fenceValue;
+			UINT64 fenceValue = 0;
 		};
 
 		struct BackbufferData
@@ -134,12 +134,17 @@ namespace Blueberry
 		UINT m_FrameIndex;
 		UINT m_BackbufferIndex;
 
+		ComPtr<ID3D12Device5> m_DxrDevice;
+		ComPtr<ID3D12GraphicsCommandList4> m_DxrCommandList;
+		ComPtr<ID3D12RootSignature> m_DxrGlobalRootSignature;
+		ComPtr<ID3D12RootSignature> m_DxrLocalRootSignature;
+
 		GfxDescriptorHeapDX12 m_CbvSrvUavHeap;
 		GfxDescriptorHeapDX12 m_RtvHeap;
 		GfxDescriptorHeapDX12 m_DsvHeap;
 		GfxDescriptorHeapDX12 m_SamplerHeap;
-		GfxDescriptorRingHeapDX12 m_CbvSrvUavRingHeap;
-		GfxDescriptorRingHeapDX12 m_SamplerRingHeap;
+		GfxDescriptorHeapDX12 m_CbvSrvUavRingHeap;
+		GfxDescriptorHeapDX12 m_SamplerRingHeap;
 		GfxUploadBufferDX12 m_UploadBuffer;
 		GfxReadbackBufferDX12 m_ReadbackBuffer;
 		List<std::pair<size_t, GfxHandleDX12>> m_Samplers;
@@ -150,10 +155,12 @@ namespace Blueberry
 		List<std::pair<size_t, uint32_t>> m_BindedBuffers;
 		List<std::pair<size_t, uint32_t>> m_BindedTextures;
 		GfxTargetInfoDX12 m_TargetInfo;
-		List<ComPtr<ID3D12Resource>> m_ReleasedResources;
+		List<std::pair<UINT64, ComPtr<ID3D12Resource>>> m_ReleasedResources;
 
 		GfxRenderStateCacheDX12 m_StateCache;
+		GfxRenderStateDX12 m_RenderState = {};
 		GfxComputeRenderStateCacheDX12 m_ComputeStateCache;
+		GfxRayTracingRenderStateCacheDX12 m_RayTracingStateCache;
 
 		ID3D12PipelineState* m_PipelineState = nullptr;
 		GfxBufferDX12* m_VertexBuffer = nullptr;
@@ -172,5 +179,6 @@ namespace Blueberry
 		friend class GfxDescriptorHeapDX12;
 		friend class GfxRenderStateCacheDX12;
 		friend class GfxComputeRenderStateCacheDX12;
+		friend class GfxRayTracingRenderStateCacheDX12;
 	};
 }

@@ -86,4 +86,29 @@ static uint _RenderInstanceId;
 
 #endif
 
+#if (BINDLESS)
+
+float4 SampleTexture2D(uint textureIndex, uint samplerIndex, float2 uv)
+{
+	Texture2D<float4> texture = ResourceDescriptorHeap[textureIndex];
+	SamplerState sampler = SamplerDescriptorHeap[samplerIndex];
+	return texture.Sample(sampler, uv);
+}
+
+#define MATERIAL_BEGIN													cbuffer PerMaterialData : register(b0, space1) {
+#define MATERIAL_END													}
+#define TEXTURE2D_MATERIAL(textureName)									uint textureName
+#define SAMPLER_MATERIAL(samplerName)									uint samplerName
+#define SAMPLE_TEXTURE2D_MATERIAL(textureName, samplerName, coord2)		SampleTexture2D(textureName, samplerName, coord2)
+
+#else
+
+#define MATERIAL_BEGIN
+#define MATERIAL_END
+#define TEXTURE2D_MATERIAL(textureName)									Texture2D textureName
+#define SAMPLER_MATERIAL(samplerName)									SamplerState samplerName
+#define SAMPLE_TEXTURE2D_MATERIAL(textureName, samplerName, coord2)		textureName.Sample(samplerName, coord2)
+
+#endif
+
 #endif

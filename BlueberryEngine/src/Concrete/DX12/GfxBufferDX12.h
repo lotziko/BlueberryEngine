@@ -22,11 +22,18 @@ namespace Blueberry
 		virtual void GetData(void* data) final;
 		virtual void SetData(const void* data, size_t size) final;
 
+		ID3D12Resource* GetResource();
+		const GfxHandleDX12& GetShaderResourceView() const;
+		const GfxHandleDX12& GetUnorderedAccessView() const;
+		const GfxHandleDX12& GetConstantBufferView() const;
 		D3D12_VERTEX_BUFFER_VIEW GetVertexView();
 		D3D12_INDEX_BUFFER_VIEW GetIndexView();
 
-		virtual uint32_t GetElementSize() const final;
-		virtual uint32_t GetElementCount() const final;
+		D3D12_RESOURCE_STATES GetState() const;
+		void SetState(D3D12_RESOURCE_STATES state);
+		void SetUAVState();
+
+		static GfxBufferDX12* Get(uint32_t index);
 
 	private:
 		bool Initialize(D3D12_SUBRESOURCE_DATA* subresourceData, const BufferProperties& properties);
@@ -37,18 +44,12 @@ namespace Blueberry
 		GfxHandleDX12 m_UnorderedAccessView;
 		GfxHandleDX12 m_ConstantBufferView;
 
-		ID3D12Device* m_Device;
 		GfxDeviceDX12* m_GfxDevice;
+		ID3D12Device* m_Device;
 
-		uint32_t m_ElementSize = 0;
-		uint32_t m_ElementCount = 0;
-		bool m_IsConstant = false;
 		D3D12_RESOURCE_STATES m_State = D3D12_RESOURCE_STATE_COMMON;
+		uint64_t m_Generation = 0;
 
 		static GfxPointerCache<GfxBufferDX12> s_PointerCache;
-
-		friend class GfxDeviceDX12;
-		friend class GfxRenderStateCacheDX12;
-		friend class GfxComputeRenderStateCacheDX12;
 	};
 }

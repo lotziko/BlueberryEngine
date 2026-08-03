@@ -1,4 +1,4 @@
-#pragma compute CSClustering
+#pragma compute ClusteringCompute
 
 // https://github.com/DaveH355/clustered-shading
 
@@ -58,7 +58,7 @@ RWTexture2D<uint> _ClusteringLightIndexTexture;
 // Possible to avoid calculation of clusters every frame by storing them in a buffer instead and recalculating only when need more lights (up to 256)
 
 [numthreads(1, 1, 1)]
-void CSClustering(uint3 id : SV_DispatchThreadID)
+void ClusteringCompute(uint3 id : SV_DispatchThreadID)
 {
 	uint viewIndex = id.z;
 	uint3 positionFVS = uint3(id.x, id.y, 0);

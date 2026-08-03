@@ -1,5 +1,7 @@
 #include "GfxComputeRenderStateCacheDX11.h"
 
+#include "Blueberry\Graphics\ComputeShader.h"
+
 #include "GfxDeviceDX11.h"
 #include "GfxComputeShaderDX11.h"
 #include "GfxTextureDX11.h"
@@ -11,19 +13,20 @@ namespace Blueberry
 	{
 	}
 
-	GfxComputeRenderStateDX11 GfxComputeRenderStateCacheDX11::GetRenderState(GfxComputeShader* shader)
+	GfxComputeRenderStateDX11 GfxComputeRenderStateCacheDX11::GetRenderState(ComputeShader* shader, uint32_t kernelIndex)
 	{
-		size_t key = reinterpret_cast<size_t>(shader);
+		GfxComputeShader* computeShader = shader->GetKernel(kernelIndex);
+		size_t key = reinterpret_cast<size_t>(computeShader);
 
 		GfxComputeRenderStateDX11 renderState = {};
 		auto it = m_PipelineBindingStates.find(key);
 		if (it != m_PipelineBindingStates.end())
 		{
-			FillRenderState(shader, renderState, it->second.first, it->second.second);
+			FillRenderState(computeShader, renderState, it->second.first, it->second.second);
 		}
 		else
 		{
-			auto dxComputeShader = static_cast<GfxComputeShaderDX11*>(shader);
+			GfxComputeShaderDX11* dxComputeShader = static_cast<GfxComputeShaderDX11*>(computeShader);
 
 			GfxComputePipelineStateDX11 pipelineState = {};
 			GfxComputeBindingStateDX11 bindingState = {};
@@ -115,7 +118,7 @@ namespace Blueberry
 			}
 
 			m_PipelineBindingStates.insert_or_assign(key, std::make_pair(pipelineState, bindingState));
-			FillRenderState(shader, renderState, pipelineState, bindingState);
+			FillRenderState(computeShader, renderState, pipelineState, bindingState);
 		}
 		return renderState;
 	}
@@ -126,79 +129,79 @@ namespace Blueberry
 
 		for (auto& binding : bindingState.cbvs)
 		{
-			GfxBufferDX11* dxBuffer = GfxBufferDX11::s_PointerCache.Get(m_Device->m_BindedBuffers[binding.bindingIndex].second);
+			GfxBufferDX11* dxBuffer = GfxBufferDX11::Get(m_Device->m_BindedBuffers[binding.bindingIndex].second);
 			if (dxBuffer == nullptr)
 			{
 				BB_ERROR("Buffer is missing.");
 				continue;
 			}
-			renderState.constantBuffers[binding.slotIndex] = dxBuffer->m_Buffer.Get();
+			renderState.constantBuffers[binding.slotIndex] = dxBuffer->GetBuffer();
 			renderState.constantBuffersCount = std::max(renderState.constantBuffersCount, binding.slotIndex + 1u);
 		}
 
 		for (auto& binding : bindingState.bufferSrvs)
 		{
-			GfxBufferDX11* dxBuffer = GfxBufferDX11::s_PointerCache.Get(m_Device->m_BindedBuffers[binding.bindingIndex].second);
+			GfxBufferDX11* dxBuffer = GfxBufferDX11::Get(m_Device->m_BindedBuffers[binding.bindingIndex].second);
 			if (dxBuffer == nullptr)
 			{
 				BB_ERROR("Buffer is missing.");
 				continue;
 			}
-			renderState.shaderResourceViews[binding.slotIndex] = dxBuffer->m_ShaderResourceView.Get();
+			renderState.shaderResourceViews[binding.slotIndex] = dxBuffer->GetShaderResourceView();
 			renderState.shaderResourceViewsCount = std::max(renderState.shaderResourceViewsCount, binding.slotIndex + 1u);
 		}
 
 		for (auto& binding : bindingState.textureSrvs)
 		{
-			GfxTextureDX11* dxTexture = GfxTextureDX11::s_PointerCache.Get(m_Device->m_BindedTextures[binding.bindingIndex].second);
+			GfxTextureDX11* dxTexture = GfxTextureDX11::Get(m_Device->m_BindedTextures[binding.bindingIndex].second);
 			if (dxTexture == nullptr)
 			{
 				BB_ERROR("Texture is missing.");
 				continue;
 			}
-			renderState.shaderResourceViews[binding.slotIndex] = dxTexture->m_ShaderResourceView.Get();
+			renderState.shaderResourceViews[binding.slotIndex] = dxTexture->GetShaderResourceView();
 			renderState.shaderResourceViewsCount = std::max(renderState.shaderResourceViewsCount, binding.slotIndex + 1u);
 		}
 
 		for (auto& binding : bindingState.bufferUavs)
 		{
-			GfxBufferDX11* dxBuffer = GfxBufferDX11::s_PointerCache.Get(m_Device->m_BindedBuffers[binding.bindingIndex].second);
+			GfxBufferDX11* dxBuffer = GfxBufferDX11::Get(m_Device->m_BindedBuffers[binding.bindingIndex].second);
 			if (dxBuffer == nullptr)
 			{
 				BB_ERROR("Buffer is missing.");
 				continue;
 			}
 			uint8_t slotIndex = binding.slotIndex;
-			renderState.unorderedAccessViews[binding.slotIndex] = dxBuffer->m_UnorderedAccessView.Get();
+			renderState.unorderedAccessViews[binding.slotIndex] = dxBuffer->GetUnorderedAccessView();
 			renderState.unorderedAccessViewsCount = std::max(renderState.unorderedAccessViewsCount, binding.slotIndex + 1u);
 		}
 
 		for (auto& binding : bindingState.textureUavs)
 		{
-			GfxTextureDX11* dxTexture = GfxTextureDX11::s_PointerCache.Get(m_Device->m_BindedTextures[binding.bindingIndex].second);
+			GfxTextureDX11* dxTexture = GfxTextureDX11::Get(m_Device->m_BindedTextures[binding.bindingIndex].second);
 			if (dxTexture == nullptr)
 			{
 				BB_ERROR("Texture is missing.");
 				continue;
 			}
 			uint8_t slotIndex = binding.slotIndex;
-			renderState.unorderedAccessViews[slotIndex] = dxTexture->m_UnorderedAccessView.Get();
+			renderState.unorderedAccessViews[slotIndex] = dxTexture->GetUnorderedAccessView();
 			renderState.unorderedAccessViewsCount = std::max(renderState.unorderedAccessViewsCount, binding.slotIndex + 1u);
 		}
 
 		for (auto& binding : bindingState.samplers)
 		{
-			GfxTextureDX11* dxTexture = GfxTextureDX11::s_PointerCache.Get(m_Device->m_BindedTextures[binding.bindingIndex].second);
+			GfxTextureDX11* dxTexture = GfxTextureDX11::Get(m_Device->m_BindedTextures[binding.bindingIndex].second);
 			if (dxTexture == nullptr)
 			{
 				BB_ERROR("Texture is missing.");
 				continue;
 			}
-			ID3D11SamplerState* samplerState = dxTexture->m_SamplerState.Get();
+			ID3D11SamplerState* samplerState = dxTexture->GetSamplerState();
 			if (samplerState == nullptr)
 			{
-				samplerState = m_Device->GetSamplerState(dxTexture->m_WrapMode, dxTexture->m_FilterMode);
-				dxTexture->m_SamplerState = samplerState;
+				samplerState = m_Device->GetSamplerState(dxTexture->GetWrapMode(), dxTexture->GetFilterMode());
+				dxTexture->SetSamplerState(samplerState);
 			}
 			renderState.samplerStates[binding.slotIndex] = samplerState;
 			renderState.samplerStatesCount = std::max(renderState.samplerStatesCount, binding.slotIndex + 1u);

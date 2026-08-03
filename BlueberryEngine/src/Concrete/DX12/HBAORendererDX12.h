@@ -1,6 +1,7 @@
 #pragma once
 
 #include "..\..\Blueberry\Graphics\HBAORenderer.h"
+#include "GfxDescriptorHeapDX12.h"
 #include "Concrete\DX12\DX12.h"
 
 class GFSDK_SSAO_Context_D3D12;
@@ -23,8 +24,8 @@ namespace Blueberry
 		ID3D12CommandQueue* m_CommandQueue;
 		ID3D12GraphicsCommandList* m_CommandList;
 		GFSDK_SSAO_Context_D3D12* m_AOContext;
-		uint32_t m_SrvHeapIndex;
-		uint32_t m_RtvHeapIndex;
+		GfxHandleDX12 m_SrvHandle;
+		GfxHandleDX12 m_RtvHandle;
 		Rectangle m_Viewport;
 	};
 }

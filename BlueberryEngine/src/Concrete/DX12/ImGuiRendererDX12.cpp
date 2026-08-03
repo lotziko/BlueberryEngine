@@ -30,17 +30,20 @@ namespace Blueberry
 		initInfo.NumFramesInFlight = 2;
 		initInfo.RTVFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 		initInfo.DSVFormat = DXGI_FORMAT_D32_FLOAT;
-		initInfo.SrvDescriptorHeap = m_GfxDevice->GetCbvSrvDsvRingHeap().GetHeap();
+		initInfo.SrvDescriptorHeap = m_GfxDevice->GetCbvSrvUavRingHeap().GetHeap();
 		initInfo.SrvDescriptorAllocFn = [](ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE* out_cpu_desc_handle, D3D12_GPU_DESCRIPTOR_HANDLE* out_gpu_desc_handle)
 		{
 			GfxDeviceDX12* gfxDevice = static_cast<GfxDeviceDX12*>(GfxDevice::GetInstance());
-			GfxDescriptorRingHeapDX12& heap = gfxDevice->GetCbvSrvDsvRingHeap();
-			GfxRingHandleDX12 handle = heap.AllocatePersistent();
+			GfxDescriptorHeapDX12& heap = gfxDevice->GetCbvSrvUavRingHeap();
+			GfxHandleDX12 handle = heap.AllocatePersistent();
 			*out_cpu_desc_handle = handle.GetCPU();
 			*out_gpu_desc_handle = handle.GetGPU();
 		};
 		initInfo.SrvDescriptorFreeFn = [](ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE cpu_desc_handle, D3D12_GPU_DESCRIPTOR_HANDLE gpu_desc_handle)
 		{
+			GfxDeviceDX12* gfxDevice = static_cast<GfxDeviceDX12*>(GfxDevice::GetInstance());
+			GfxDescriptorHeapDX12& heap = gfxDevice->GetCbvSrvUavRingHeap();
+			heap.Free(cpu_desc_handle);
 		};
 
 		// Setup Platform/Renderer backends

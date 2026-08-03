@@ -40,6 +40,7 @@ namespace Blueberry
 		GfxUploadBufferDX12(GfxDeviceDX12* device);
 
 		void UploadBuffer(ID3D12Resource* resource, const void* data, uint64_t size, uint64_t alignment);
+		void UploadBuffer(D3D12_GPU_VIRTUAL_ADDRESS& adress, const void* data, uint64_t size, uint64_t alignment);
 		void UploadTexture(ID3D12Resource* resource, D3D12_SUBRESOURCE_DATA* subresourceData, UINT subresourceCount, uint64_t alignment);
 		void UpdateGeneration(uint64_t generation);
 

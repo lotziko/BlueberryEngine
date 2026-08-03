@@ -42,9 +42,12 @@ namespace Blueberry
 		virtual bool CreateGeometryShaderImpl(const ByteData& geometryData, GfxGeometryShader*& shader) final;
 		virtual bool CreateFragmentShaderImpl(const ByteData& fragmentData, GfxFragmentShader*& shader) final;
 		virtual bool CreateComputeShaderImpl(const ByteData& computeData, GfxComputeShader*& shader) final;
+		virtual bool CreateRayTracingShaderImpl(const ByteData& rayTracingData, GfxRayTracingShader*& shader) final;
 		virtual bool CreateBufferImpl(const BufferProperties& properties, GfxBuffer*& buffer) final;
 		virtual bool CreateTextureImpl(const TextureProperties& properties, GfxTexture*& texture) final;
-
+		virtual bool CreateBottomLevelAccelerationStructureImpl(const BottomLevelAccelerationStructureProperties& properties, GfxBottomLevelAccelerationStructure*& accelerationStructure) final;
+		virtual bool CreateTopLevelAccelerationStructureImpl(GfxTopLevelAccelerationStructure*& accelerationStructure) final;
+		
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target) final;
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Rectangle& area) final;
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Vector2Int& offset, const Rectangle& area) final;
@@ -55,8 +58,9 @@ namespace Blueberry
 		virtual void SetGlobalTextureImpl(size_t id, GfxTexture* texture) final;
 		virtual void DrawImpl(const GfxDrawingOperation& operation) final;
 
-		virtual void DispatchImpl(GfxComputeShader* shader, uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ) final;
-
+		virtual void DispatchImpl(ComputeShader* shader, uint32_t kernelIndex, uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ) final;
+		virtual void DispatchRaysImpl(RayTracingShader* shader, GfxTopLevelAccelerationStructure* accelerationStructure, uint32_t width, uint32_t height, uint32_t depth) final;
+		
 		virtual Matrix GetGPUMatrixImpl(const Matrix& matrix) const final;
 
 	public:

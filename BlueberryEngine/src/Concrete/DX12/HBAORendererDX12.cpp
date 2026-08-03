@@ -10,7 +10,7 @@ namespace Blueberry
 	bool HBAORendererDX12::InitializeImpl()
 	{
 		m_GfxDevice = static_cast<GfxDeviceDX12*>(GfxDevice::GetInstance());
-		GfxDescriptorRingHeapDX12& srvHeap = m_GfxDevice->GetCbvSrvDsvRingHeap();
+		GfxDescriptorHeapDX12& srvHeap = m_GfxDevice->GetCbvSrvUavRingHeap();
 		GfxDescriptorHeapDX12& rtvHeap = m_GfxDevice->GetRtvHeap();
 
 		m_Device = m_GfxDevice->GetDevice();
@@ -21,11 +21,14 @@ namespace Blueberry
 		customHeap.new_ = ::operator new;
 		customHeap.delete_ = ::operator delete;
 
+		m_SrvHandle = srvHeap.AllocatePersistent(GFSDK_SSAO_NUM_DESCRIPTORS_CBV_SRV_UAV_HEAP_D3D12);
+		m_RtvHandle = rtvHeap.AllocatePersistent(GFSDK_SSAO_NUM_DESCRIPTORS_RTV_HEAP_D3D12);
+
 		GFSDK_SSAO_DescriptorHeaps_D3D12 descriptorHeaps;
 		descriptorHeaps.CBV_SRV_UAV.pDescHeap = srvHeap.GetHeap();
-		descriptorHeaps.CBV_SRV_UAV.BaseIndex = m_SrvHeapIndex = srvHeap.AllocatePersistent(GFSDK_SSAO_NUM_DESCRIPTORS_CBV_SRV_UAV_HEAP_D3D12).GetIndex();
+		descriptorHeaps.CBV_SRV_UAV.BaseIndex = m_SrvHandle.GetIndex();
 		descriptorHeaps.RTV.pDescHeap = rtvHeap.GetHeap();
-		descriptorHeaps.RTV.BaseIndex = m_RtvHeapIndex = rtvHeap.Allocate(GFSDK_SSAO_NUM_DESCRIPTORS_RTV_HEAP_D3D12);
+		descriptorHeaps.RTV.BaseIndex = m_RtvHandle.GetIndex();
 
 		GFSDK_SSAO_Status status;
 		status = GFSDK_SSAO_CreateContext_D3D12(m_Device, 1, descriptorHeaps, &m_AOContext, &customHeap);
@@ -38,12 +41,8 @@ namespace Blueberry
 
 	void HBAORendererDX12::ShutdownImpl()
 	{
-		GfxDescriptorHeapDX12& srvHeap = m_GfxDevice->GetCbvSrvDsvHeap();
-		GfxDescriptorHeapDX12& rtvHeap = m_GfxDevice->GetRtvHeap();
-
-		srvHeap.Free(m_SrvHeapIndex, GFSDK_SSAO_NUM_DESCRIPTORS_CBV_SRV_UAV_HEAP_D3D12);
-		rtvHeap.Free(GFSDK_SSAO_NUM_DESCRIPTORS_RTV_HEAP_D3D12);
-
+		m_SrvHandle.Free();
+		m_RtvHandle.Free();
 		m_AOContext->Release();
 	}
 
@@ -85,18 +84,15 @@ namespace Blueberry
 
 		GFSDK_SSAO_RenderTargetView_D3D12 rtv;
 		rtv.pResource = colorOutputTexture->GetResource();
-		rtv.CpuHandle = colorOutputTexture->GetRTV().GetCPU().ptr;
+		rtv.CpuHandle = colorOutputTexture->GetRenderTargetView().GetCPU().ptr;
 
 		GFSDK_SSAO_Output_D3D12 output;
 		output.pRenderTargetView = &rtv;
 		output.Blend.Mode = GFSDK_SSAO_OVERWRITE_RGB;
 
-		D3D12_RESOURCE_BARRIER preBarriers[] = { CD3DX12_RESOURCE_BARRIER::Transition(depthStencilTexture->GetResource(), depthStencilTexture->GetState(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE), CD3DX12_RESOURCE_BARRIER::Transition(colorOutputTexture->GetResource(), colorOutputTexture->GetState(), D3D12_RESOURCE_STATE_RENDER_TARGET) };
-		D3D12_RESOURCE_BARRIER postBarriers[] = { CD3DX12_RESOURCE_BARRIER::Transition(depthStencilTexture->GetResource(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, depthStencilTexture->GetState()), CD3DX12_RESOURCE_BARRIER::Transition(colorOutputTexture->GetResource(), D3D12_RESOURCE_STATE_RENDER_TARGET, colorOutputTexture->GetState()) };
-		
-		m_CommandList->ResourceBarrier(2, preBarriers);
+		depthStencilTexture->SetState(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		colorOutputTexture->SetState(D3D12_RESOURCE_STATE_RENDER_TARGET);
 		GFSDK_SSAO_Status status = m_AOContext->RenderAO(m_CommandQueue, m_CommandList, input, params, output);
-		m_CommandList->ResourceBarrier(2, postBarriers);
 		assert(status == GFSDK_SSAO_OK);
 		m_GfxDevice->Reset();
 	}

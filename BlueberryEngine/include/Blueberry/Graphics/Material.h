@@ -52,11 +52,13 @@ namespace Blueberry
 		List<TextureData>& GetTextureDatas();
 		void AddTextureData(const TextureData& data);
 
+		bool HasKeyword(const String& keyword);
 		void SetKeyword(const String& keyword, bool enabled);
 		uint32_t GetActiveKeywordsMask();
 
 		uint32_t GetCRC();
 		Texture* GetTexture(size_t id);
+		bool IsOpaque();
 
 		virtual void OnNotify(void* args) final;
 
@@ -81,6 +83,7 @@ namespace Blueberry
 
 		uint32_t m_Crc = UINT32_MAX;
 		uint32_t m_ActiveKeywordsMask = UINT32_MAX;
+		uint8_t m_IsOpaque = 0;
 
 		friend struct GfxDrawingOperation;
 		friend class GfxRenderStateCache;

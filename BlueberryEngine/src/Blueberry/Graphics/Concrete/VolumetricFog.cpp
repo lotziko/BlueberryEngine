@@ -74,19 +74,19 @@ namespace Blueberry
 		FogViewDataConstantBuffer::BindData(data, s_FrustumVolumeSize);
 		GfxDevice::SetGlobalTexture(s_InjectFogVolumeId, isEven ? s_FrustumVolume0 : s_FrustumVolume1);
 		GfxDevice::SetGlobalTexture(s_PreviousFrameInjectFogVolumeId, isEven ? s_FrustumVolume1 : s_FrustumVolume0);
-		GfxDevice::Dispatch(s_VolumetricFogShader->GetKernel(0), s_FrustumVolumeSize.x / 16, s_FrustumVolumeSize.y / 16, 1);
+		GfxDevice::Dispatch(s_VolumetricFogShader, 0, s_FrustumVolumeSize.x / 16, s_FrustumVolumeSize.y / 16, 1);
 		
 		GfxDevice::SetGlobalTexture(s_InjectedFogVolumeId, isEven ? s_FrustumVolume0 : s_FrustumVolume1);
 		GfxDevice::SetGlobalTexture(s_ScatterFogVolumeId, s_FrustumVolume2);
-		GfxDevice::Dispatch(s_VolumetricFogShader->GetKernel(1), s_FrustumVolumeSize.x / 8, s_FrustumVolumeSize.y / 8, 1);
+		GfxDevice::Dispatch(s_VolumetricFogShader, 1, s_FrustumVolumeSize.x / 8, s_FrustumVolumeSize.y / 8, 1);
 
 		/*GfxDevice::SetGlobalTexture(s_ScatterNoBlurFogVolumeId, s_FrustumVolume1);
 		GfxDevice::SetGlobalTexture(s_ScatterBlurFogVolumeId, s_FrustumVolume0);
-		GfxDevice::Dispatch(s_VolumetricFogShader->GetKernel(2), s_FrustumVolumeSize.x / 8, s_FrustumVolumeSize.y / 8, s_FrustumVolumeSize.z / 8);
+		GfxDevice::Dispatch(s_VolumetricFogShader, 2, s_FrustumVolumeSize.x / 8, s_FrustumVolumeSize.y / 8, s_FrustumVolumeSize.z / 8);
 		
 		GfxDevice::SetGlobalTexture(s_ScatterNoBlurFogVolumeId, s_FrustumVolume0);
 		GfxDevice::SetGlobalTexture(s_ScatterBlurFogVolumeId, s_FrustumVolume1);
-		GfxDevice::Dispatch(s_VolumetricFogShader->GetKernel(3), s_FrustumVolumeSize.x / 8, s_FrustumVolumeSize.y / 8, s_FrustumVolumeSize.z / 8);*/
+		GfxDevice::Dispatch(s_VolumetricFogShader, 3, s_FrustumVolumeSize.x / 8, s_FrustumVolumeSize.y / 8, s_FrustumVolumeSize.z / 8);*/
 	}
 
 	GfxTexture* VolumetricFog::GetFrustumTexture()

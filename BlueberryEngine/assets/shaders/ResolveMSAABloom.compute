@@ -1,4 +1,4 @@
-#pragma compute CSSingleTexture
+#pragma compute SingleTextureCompute
 
 #include "Core.hlsl"
 
@@ -21,7 +21,7 @@ groupshared float _GShared[64];
 groupshared float _BShared[64];
 
 [numthreads(8, 8, 1)]
-void CSSingleTexture(uint3 id : SV_DispatchThreadID, uint3 groupId : SV_GroupThreadID, uint groupIdFlattened : SV_GroupIndex)
+void SingleTextureCompute(uint3 id : SV_DispatchThreadID, uint3 groupId : SV_GroupThreadID, uint groupIdFlattened : SV_GroupIndex)
 {
 	float3 color = 0;
 	for (int i = 0; i < MSAA_SAMPLES; ++i)

@@ -10,11 +10,11 @@ namespace Blueberry
 	{
 		String shader = FileHelper::LoadText(path);
 
-		std::regex variantRegex("#pragma\\s*compute\\s*([\\w-]+)[\r?\n]");
-		auto variantsStart = std::sregex_iterator(shader.begin(), shader.end(), variantRegex);
-		auto variantsEnd = std::sregex_iterator();
+		std::regex kernelRegex("#pragma\\s*compute\\s*([\\w-]+)[\r?\n]");
+		auto kernelsStart = std::sregex_iterator(shader.begin(), shader.end(), kernelRegex);
+		auto kernelsEnd = std::sregex_iterator();
 
-		for (std::regex_iterator i = variantsStart; i != variantsEnd; ++i)
+		for (std::regex_iterator i = kernelsStart; i != kernelsEnd; ++i)
 		{
 			std::smatch match = *i;
 			String name = String(match[1].str());

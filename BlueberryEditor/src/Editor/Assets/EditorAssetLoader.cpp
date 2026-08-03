@@ -5,6 +5,7 @@
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\ComputeShader.h"
+#include "Blueberry\Graphics\RayTracingShader.h"
 #include "Blueberry\Graphics\Font.h"
 #include "Blueberry\Tools\FileHelper.h"
 
@@ -13,8 +14,10 @@
 #include "Editor\Assets\Importers\TextureImporter.h"
 #include "Editor\Assets\Importers\ShaderImporter.h"
 #include "Editor\Assets\Importers\ComputeShaderImporter.h"
+#include "Editor\Assets\Importers\RayTracingShaderImporter.h"
 #include "Editor\Assets\Processors\HLSLShaderProcessor.h"
 #include "Editor\Assets\Processors\HLSLComputeShaderProcessor.h"
+#include "Editor\Assets\Processors\HLSLRayTracingShaderProcessor.h"
 #include "Editor\Misc\TextureHelper.h"
 #include "Editor\Misc\PathHelper.h"
 
@@ -150,6 +153,47 @@ namespace Blueberry
 				{
 					processor.SaveKernels(folderPath);
 					shader = ComputeShader::Create(processor.GetShaders(), processor.GetComputeShaderData());
+					ObjectDB::AllocateIdToGuid(shader, guid, 1);
+					AssetDB::SaveAssetObjectsToCache(List<Object*> { shader });
+				}
+			}
+
+			if (shader != nullptr)
+			{
+				shader->SetName(StringHelper::ToString(assetPath.stem()));
+				m_LoadedAssets.insert_or_assign(path, shader);
+			}
+			return shader;
+		}
+		else if (extension == ".raytrace")
+		{
+			String folderPath = RayTracingShaderImporter::GetShaderFolder(guid);
+			if (folderPath.size() == 0)
+			{
+				return nullptr;
+			}
+			auto folderWriteTime = PathHelper::GetDirectoryLastWriteTime(folderPath);
+			RayTracingShader* shader = nullptr;
+			HLSLRayTracingShaderProcessor processor = {};
+
+			bool needImport = true;
+			if (AssetDB::HasAssetWithGuidInData(guid) && PathHelper::GetLastWriteTime(path) < folderWriteTime && ShaderImporter::GetLastFilesWriteTime() < folderWriteTime && processor.Load(folderPath))
+			{
+				auto objects = AssetDB::LoadAssetObjects(guid, ObjectDB::GetObjectsFromGuid(guid));
+				if (objects.size() == 1 && objects[0].first->IsClassType(RayTracingShader::Type))
+				{
+					shader = static_cast<RayTracingShader*>(objects[0].first);
+					needImport = false;
+				}
+			}
+
+			if (needImport)
+			{
+				processor = {};
+				if (processor.Compile(path))
+				{
+					processor.Save(folderPath);
+					shader = RayTracingShader::Create(processor.GetShader(), processor.GetRayTracingShaderData());
 					ObjectDB::AllocateIdToGuid(shader, guid, 1);
 					AssetDB::SaveAssetObjectsToCache(List<Object*> { shader });
 				}

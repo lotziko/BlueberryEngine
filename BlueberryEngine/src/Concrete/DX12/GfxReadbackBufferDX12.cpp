@@ -61,7 +61,7 @@ namespace Blueberry
 		List<UINT64> rowSizes(subresourceCount);
 		UINT64 size;
 		D3D12_RESOURCE_DESC* desc = &resource->GetDesc();
-		m_Device->GetCopyableFootprints(desc, 0, 1, 0, layouts.data(), numRows.data(), rowSizes.data(), &size);
+		m_Device->GetCopyableFootprints(desc, 0, subresourceCount, 0, layouts.data(), numRows.data(), rowSizes.data(), &size);
 		ResizeIfNeeded(size);
 
 		uint32_t bytesPerPixel = DxgiHelper::GetBitsPerPixel(desc->Format) / 8;
@@ -109,7 +109,7 @@ namespace Blueberry
 				m_Resource = nullptr;
 			}
 			m_Size = std::max(size, READBACK_PAGE_SIZE);
-			HRESULT hr = m_Device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK), D3D12_HEAP_FLAG_NONE, &CD3DX12_RESOURCE_DESC::Buffer(size), D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m_Resource));
+			HRESULT hr = m_Device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK), D3D12_HEAP_FLAG_NONE, &CD3DX12_RESOURCE_DESC::Buffer(m_Size), D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m_Resource));
 			if (FAILED(hr))
 			{
 				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create resource."));

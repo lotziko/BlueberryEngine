@@ -5,10 +5,11 @@
 
 namespace Blueberry
 {
-	ComPtr<IDxcCompiler> DxcHelper::s_Compiler = {};
+	ComPtr<IDxcCompiler3> DxcHelper::s_Compiler = {};
 	ComPtr<IDxcLibrary> DxcHelper::s_Library = {};
+	ComPtr<IDxcUtils> DxcHelper::s_Utils = {};
 
-	IDxcCompiler* DxcHelper::GetCompiler()
+	IDxcCompiler3* DxcHelper::GetCompiler()
 	{
 		if (s_Compiler == nullptr)
 		{
@@ -24,6 +25,15 @@ namespace Blueberry
 			HRESULT hr = DxcCreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(&s_Library));
 		}
 		return s_Library.Get();
+	}
+
+	IDxcUtils* DxcHelper::GetUtils()
+	{
+		if (s_Utils == nullptr)
+		{
+			HRESULT hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&s_Utils));
+		}
+		return s_Utils.Get();
 	}
 
 	HRESULT DxcHelper::Reflect(IDxcBlob* pContainer, REFIID iid, void** ppvObject)

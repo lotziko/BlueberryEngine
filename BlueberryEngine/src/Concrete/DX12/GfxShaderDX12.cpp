@@ -45,10 +45,10 @@ namespace Blueberry
 		D3D12_SHADER_DESC vertexShaderDesc;
 		vertexShaderReflection->GetDesc(&vertexShaderDesc);
 
-		unsigned int resourceBindingCount = vertexShaderDesc.BoundResources;
+		UINT resourceBindingCount = vertexShaderDesc.BoundResources;
 
 		// TODO global samplers with UINT8_MAX in first pair value
-		for (uint32_t i = 0; i < resourceBindingCount; i++)
+		for (UINT i = 0; i < resourceBindingCount; i++)
 		{
 			D3D12_SHADER_INPUT_BIND_DESC inputBindDesc;
 			vertexShaderReflection->GetResourceBindingDesc(i, &inputBindDesc);
@@ -59,11 +59,11 @@ namespace Blueberry
 			{
 				size_t textureHash = TO_HASH(String(inputBindDesc.Name));
 				size_t texturePairIndex = UINT64_MAX;
-				for (size_t i = 0; i < m_TextureSRVSamplerSlots.size(); ++i)
+				for (size_t j = 0; j < m_TextureSRVSamplerSlots.size(); ++j)
 				{
-					if (m_TextureSRVSamplerSlots[i].first == textureHash)
+					if (m_TextureSRVSamplerSlots[j].first == textureHash)
 					{
-						texturePairIndex = i;
+						texturePairIndex = j;
 						break;
 					}
 				}
@@ -98,11 +98,11 @@ namespace Blueberry
 				}
 				size_t samplerHash = TO_HASH(samplerName);
 				size_t texturePairIndex = UINT64_MAX;
-				for (size_t i = 0; i < m_TextureSRVSamplerSlots.size(); ++i)
+				for (size_t j = 0; j < m_TextureSRVSamplerSlots.size(); ++j)
 				{
-					if (m_TextureSRVSamplerSlots[i].first == samplerHash)
+					if (m_TextureSRVSamplerSlots[j].first == samplerHash)
 					{
-						texturePairIndex = i;
+						texturePairIndex = j;
 						break;
 					}
 				}
@@ -120,7 +120,7 @@ namespace Blueberry
 		}
 
 		// Input layout
-		uint32_t parameterCount = vertexShaderDesc.InputParameters;
+		UINT parameterCount = vertexShaderDesc.InputParameters;
 		for (uint8_t i = 0; i < VERTEX_ATTRIBUTE_COUNT; ++i)
 		{
 			m_LayoutIndices[i] = UINT8_MAX;
@@ -128,7 +128,7 @@ namespace Blueberry
 
 		m_Crc = 0;
 		m_SemanticNames.resize(parameterCount);
-		for (unsigned int i = 0; i < parameterCount; ++i)
+		for (UINT i = 0; i < parameterCount; ++i)
 		{
 			D3D12_SIGNATURE_PARAMETER_DESC paramDesc;
 			vertexShaderReflection->GetInputParameterDesc(i, &paramDesc);
@@ -267,9 +267,9 @@ namespace Blueberry
 		D3D12_SHADER_DESC geometryShaderDesc;
 		geometryShaderReflection->GetDesc(&geometryShaderDesc);
 
-		unsigned int resourceBindingCount = geometryShaderDesc.BoundResources;
+		UINT resourceBindingCount = geometryShaderDesc.BoundResources;
 
-		for (uint32_t i = 0; i < resourceBindingCount; i++)
+		for (UINT i = 0; i < resourceBindingCount; i++)
 		{
 			D3D12_SHADER_INPUT_BIND_DESC inputBindDesc;
 			geometryShaderReflection->GetResourceBindingDesc(i, &inputBindDesc);
@@ -314,24 +314,25 @@ namespace Blueberry
 		D3D12_SHADER_DESC pixelShaderDesc;
 		pixelShaderReflection->GetDesc(&pixelShaderDesc);
 
-		unsigned int resourceBindingCount = pixelShaderDesc.BoundResources;
+		UINT resourceBindingCount = pixelShaderDesc.BoundResources;
 
-		for (uint32_t i = 0; i < resourceBindingCount; i++)
+		for (UINT i = 0; i < resourceBindingCount; i++)
 		{
 			D3D12_SHADER_INPUT_BIND_DESC inputBindDesc;
 			pixelShaderReflection->GetResourceBindingDesc(i, &inputBindDesc);
 			uint8_t bindPoint = static_cast<uint8_t>(inputBindDesc.BindPoint);
+
 			switch (inputBindDesc.Type)
 			{
 			case D3D_SIT_TEXTURE:
 			{
 				size_t textureHash = TO_HASH(String(inputBindDesc.Name));
 				size_t texturePairIndex = UINT64_MAX;
-				for (size_t i = 0; i < m_TextureSRVSamplerSlots.size(); ++i)
+				for (size_t j = 0; j < m_TextureSRVSamplerSlots.size(); ++j)
 				{
-					if (m_TextureSRVSamplerSlots[i].first == textureHash)
+					if (m_TextureSRVSamplerSlots[j].first == textureHash)
 					{
-						texturePairIndex = i;
+						texturePairIndex = j;
 						break;
 					}
 				}
@@ -346,7 +347,67 @@ namespace Blueberry
 			}
 			break;
 			case D3D_SIT_CBUFFER:
-				m_ConstantBufferSlots.push_back(std::make_pair(TO_HASH(String(inputBindDesc.Name)), bindPoint));
+				if (strcmp(inputBindDesc.Name, "PerMaterialData") == 0)
+				{
+					ID3D12ShaderReflectionConstantBuffer* materialBuffer = pixelShaderReflection->GetConstantBufferByIndex(i);
+					D3D12_SHADER_BUFFER_DESC bufferDesc = {};
+					materialBuffer->GetDesc(&bufferDesc);
+					for (UINT j = 0; j < bufferDesc.Variables; ++j)
+					{
+						ID3D12ShaderReflectionVariable* variable = materialBuffer->GetVariableByIndex(j);
+						D3D12_SHADER_VARIABLE_DESC variableDesc = {};
+						variable->GetDesc(&variableDesc);
+						String samplerName = String(variableDesc.Name);
+						auto pos = samplerName.find("_Sampler");
+						if (pos != std::string::npos)
+						{
+							samplerName.replace(pos, samplerName.length() - pos, "");
+							size_t samplerHash = TO_HASH(samplerName);
+							size_t texturePairIndex = UINT64_MAX;
+							for (size_t k = 0; k < m_BindlessTextureSRVSamplerSlots.size(); ++k)
+							{
+								if (m_BindlessTextureSRVSamplerSlots[k].first == samplerHash)
+								{
+									texturePairIndex = k;
+									break;
+								}
+							}
+							if (texturePairIndex == UINT64_MAX)
+							{
+								m_BindlessTextureSRVSamplerSlots.push_back(std::make_pair(samplerHash, std::make_pair(UINT8_MAX, static_cast<uint8_t>(j))));
+							}
+							else
+							{
+								m_BindlessTextureSRVSamplerSlots[texturePairIndex].second.second = static_cast<uint8_t>(j);
+							}
+						}
+						else
+						{
+							size_t textureHash = TO_HASH(String(variableDesc.Name));
+							size_t texturePairIndex = UINT64_MAX;
+							for (size_t k = 0; k < m_BindlessTextureSRVSamplerSlots.size(); ++k)
+							{
+								if (m_BindlessTextureSRVSamplerSlots[k].first == textureHash)
+								{
+									texturePairIndex = k;
+									break;
+								}
+							}
+							if (texturePairIndex == UINT64_MAX)
+							{
+								m_BindlessTextureSRVSamplerSlots.push_back(std::make_pair(textureHash, std::make_pair(static_cast<uint8_t>(j), UINT8_MAX)));
+							}
+							else
+							{
+								m_BindlessTextureSRVSamplerSlots[texturePairIndex].second.first = static_cast<uint8_t>(j);
+							}
+						}
+					}
+				}
+				else
+				{
+					m_ConstantBufferSlots.push_back(std::make_pair(TO_HASH(String(inputBindDesc.Name)), bindPoint));
+				}
 				break;
 			case D3D_SIT_STRUCTURED:
 				m_BufferSRVSlots.push_back(std::make_pair(TO_HASH(String(inputBindDesc.Name)), bindPoint));
@@ -361,16 +422,15 @@ namespace Blueberry
 				}
 				else
 				{
-					BB_ERROR("Wrong sampler name.");
 					continue;
 				}
 				size_t samplerHash = TO_HASH(samplerName);
 				size_t texturePairIndex = UINT64_MAX;
-				for (size_t i = 0; i < m_TextureSRVSamplerSlots.size(); ++i)
+				for (size_t j = 0; j < m_TextureSRVSamplerSlots.size(); ++j)
 				{
-					if (m_TextureSRVSamplerSlots[i].first == samplerHash)
+					if (m_TextureSRVSamplerSlots[j].first == samplerHash)
 					{
-						texturePairIndex = i;
+						texturePairIndex = j;
 						break;
 					}
 				}

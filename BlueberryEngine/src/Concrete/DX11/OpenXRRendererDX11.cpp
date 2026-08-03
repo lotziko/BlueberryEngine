@@ -454,7 +454,7 @@ namespace Blueberry
 		m_SubmittedColorRenderTarget = renderTarget;
 		uint32_t imgId = s_CompositionData.imgId;
 
-		ID3D11Resource* source = (static_cast<GfxTextureDX11*>(renderTarget))->GetTexture();
+		ID3D11Resource* source = (static_cast<GfxTextureDX11*>(renderTarget))->GetResource();
 		ID3D11Resource* target = s_XrSwapchains[0].surfaceData[imgId].texture;
 		if (target != nullptr)
 		{

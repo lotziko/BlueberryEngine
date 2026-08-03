@@ -108,7 +108,7 @@ namespace Blueberry
 			// Vertex material textures
 			for (auto it = dxVertexShader->m_TextureSRVSamplerSlots.begin(); it != dxVertexShader->m_TextureSRVSamplerSlots.end(); it++)
 			{
-				uint32_t offset = GetTextureIndex(material, it->first);
+				uint32_t offset = GetTextureSlot(material, it->first);
 				if (offset != UINT32_MAX)
 				{
 					usedTextures.push_back(it->first);
@@ -185,7 +185,7 @@ namespace Blueberry
 			// Fragment material textures
 			for (auto it = dxFragmentShader->m_TextureSRVSamplerSlots.begin(); it != dxFragmentShader->m_TextureSRVSamplerSlots.end(); it++)
 			{
-				uint32_t offset = GetTextureIndex(material, it->first);
+				uint32_t offset = GetTextureSlot(material, it->first);
 				if (offset != UINT32_MAX)
 				{
 					usedTextures.push_back(it->first);
@@ -225,14 +225,14 @@ namespace Blueberry
 	{
 		for (auto& buffer : bindingState.vertexBuffers)
 		{
-			GfxBufferDX11* dxBuffer = GfxBufferDX11::s_PointerCache.Get(m_Device->m_BindedBuffers[buffer.bindingIndex].second);
+			GfxBufferDX11* dxBuffer = GfxBufferDX11::Get(m_Device->m_BindedBuffers[buffer.bindingIndex].second);
 			if (buffer.bufferSlot != UINT8_MAX)
 			{
-				renderState.vertexConstantBuffers[buffer.bufferSlot] = dxBuffer->m_Buffer.Get();
+				renderState.vertexConstantBuffers[buffer.bufferSlot] = dxBuffer->GetBuffer();
 			}
 			if (buffer.srvSlot != UINT8_MAX)
 			{
-				renderState.vertexShaderResourceViews[buffer.srvSlot] = dxBuffer->m_ShaderResourceView.Get();
+				renderState.vertexShaderResourceViews[buffer.srvSlot] = dxBuffer->GetShaderResourceView();
 			}
 		}
 
@@ -240,42 +240,42 @@ namespace Blueberry
 		{
 			for (auto& buffer : bindingState.geometryBuffers)
 			{
-				GfxBufferDX11* dxBuffer = GfxBufferDX11::s_PointerCache.Get(m_Device->m_BindedBuffers[buffer.bindingIndex].second);
+				GfxBufferDX11* dxBuffer = GfxBufferDX11::Get(m_Device->m_BindedBuffers[buffer.bindingIndex].second);
 				if (buffer.bufferSlot != UINT8_MAX)
 				{
-					renderState.geometryConstantBuffers[buffer.bufferSlot] = dxBuffer->m_Buffer.Get();
+					renderState.geometryConstantBuffers[buffer.bufferSlot] = dxBuffer->GetBuffer();
 				}
 				if (buffer.srvSlot != UINT8_MAX)
 				{
-					//renderState.geometryShaderResourceViews[buffer.srvSlot] = dxBuffer->m_ShaderResourceView.Get();
+					//renderState.geometryShaderResourceViews[buffer.srvSlot] = dxBuffer->GetShaderResourceView();
 				}
 			}
 		}
 
 		for (auto& buffer : bindingState.pixelBuffers)
 		{
-			GfxBufferDX11* dxBuffer = GfxBufferDX11::s_PointerCache.Get(m_Device->m_BindedBuffers[buffer.bindingIndex].second);
+			GfxBufferDX11* dxBuffer = GfxBufferDX11::Get(m_Device->m_BindedBuffers[buffer.bindingIndex].second);
 			if (buffer.bufferSlot != UINT8_MAX)
 			{
-				renderState.pixelConstantBuffers[buffer.bufferSlot] = dxBuffer->m_Buffer.Get();
+				renderState.pixelConstantBuffers[buffer.bufferSlot] = dxBuffer->GetBuffer();
 			}
 			if (buffer.srvSlot != UINT8_MAX)
 			{
-				renderState.pixelShaderResourceViews[buffer.srvSlot] = dxBuffer->m_ShaderResourceView.Get();
+				renderState.pixelShaderResourceViews[buffer.srvSlot] = dxBuffer->GetShaderResourceView();
 			}
 		}
 
 		for (auto& texture : bindingState.vertexTextures)
 		{
-			GfxTextureDX11* dxTexture = GfxTextureDX11::s_PointerCache.Get(texture.isGlobal ? m_Device->m_BindedTextures[texture.bindingIndex].second : GetTextureIndex(material, texture.bindingIndex));
-			renderState.vertexShaderResourceViews[texture.srvSlot] = dxTexture->m_ShaderResourceView.Get();
+			GfxTextureDX11* dxTexture = GfxTextureDX11::Get(texture.isGlobal ? m_Device->m_BindedTextures[texture.bindingIndex].second : GetTextureIndex(material, texture.bindingIndex));
+			renderState.vertexShaderResourceViews[texture.srvSlot] = dxTexture->GetShaderResourceView();
 			if (texture.samplerSlot != UINT8_MAX)
 			{
-				ID3D11SamplerState* samplerState = dxTexture->m_SamplerState.Get();
+				ID3D11SamplerState* samplerState = dxTexture->GetSamplerState();
 				if (samplerState == nullptr)
 				{
-					samplerState = m_Device->GetSamplerState(dxTexture->m_WrapMode, dxTexture->m_FilterMode);
-					dxTexture->m_SamplerState = samplerState;
+					samplerState = m_Device->GetSamplerState(dxTexture->GetWrapMode(), dxTexture->GetFilterMode());
+					dxTexture->SetSamplerState(samplerState);
 				}
 				renderState.vertexSamplerStates[texture.samplerSlot] = samplerState;
 			}
@@ -283,20 +283,20 @@ namespace Blueberry
 
 		for (auto& texture : bindingState.pixelTextures)
 		{
-			GfxTextureDX11* dxTexture = GfxTextureDX11::s_PointerCache.Get(texture.isGlobal ? m_Device->m_BindedTextures[texture.bindingIndex].second : GetTextureIndex(material, texture.bindingIndex));
+			GfxTextureDX11* dxTexture = GfxTextureDX11::Get(texture.isGlobal ? m_Device->m_BindedTextures[texture.bindingIndex].second : GetTextureIndex(material, texture.bindingIndex));
 			if (dxTexture == nullptr)
 			{
 				BB_ERROR("Texture is missing.");
 				continue;
 			}
-			renderState.pixelShaderResourceViews[texture.srvSlot] = dxTexture->m_ShaderResourceView.Get();
+			renderState.pixelShaderResourceViews[texture.srvSlot] = dxTexture->GetShaderResourceView();
 			if (texture.samplerSlot != UINT8_MAX)
 			{
-				ID3D11SamplerState* samplerState = dxTexture->m_SamplerState.Get();
+				ID3D11SamplerState* samplerState = dxTexture->GetSamplerState();
 				if (samplerState == nullptr)
 				{
-					samplerState = m_Device->GetSamplerState(dxTexture->m_WrapMode, dxTexture->m_FilterMode);
-					dxTexture->m_SamplerState = samplerState;
+					samplerState = m_Device->GetSamplerState(dxTexture->GetWrapMode(), dxTexture->GetFilterMode());
+					dxTexture->SetSamplerState(samplerState);
 				}
 				renderState.pixelSamplerStates[texture.samplerSlot] = samplerState;
 			}

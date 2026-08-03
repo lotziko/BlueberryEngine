@@ -49,6 +49,8 @@ namespace Blueberry
 	public:
 		bool Initialize(ID3D12Device* device, const ByteData& fragmentData);
 
+		List<std::pair<size_t, std::pair<uint8_t, uint8_t>>> m_BindlessTextureSRVSamplerSlots = {};
+
 		friend class GfxDeviceDX12;
 		friend class GfxRenderStateCacheDX12;
 	};

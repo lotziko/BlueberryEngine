@@ -36,7 +36,7 @@ namespace Blueberry
 	{
 		GFSDK_SSAO_InputData_D3D11 input;
 		input.DepthData.DepthTextureType = GFSDK_SSAO_HARDWARE_DEPTHS;
-		input.DepthData.pFullResDepthTextureSRV = (static_cast<GfxTextureDX11*>(depthStencil))->GetSRV();
+		input.DepthData.pFullResDepthTextureSRV = (static_cast<GfxTextureDX11*>(depthStencil))->GetShaderResourceView();
 		input.DepthData.ProjectionMatrix.Data = GFSDK_SSAO_Float4x4((const GFSDK_SSAO_FLOAT*)&projection);
 		input.DepthData.ProjectionMatrix.Layout = GFSDK_SSAO_ROW_MAJOR_ORDER;
 		input.DepthData.MetersToViewSpaceUnits = 1.0f;
@@ -62,7 +62,7 @@ namespace Blueberry
 		params.Blur.Sharpness = 16.f;
 
 		GFSDK_SSAO_Output_D3D11 output;
-		output.pRenderTargetView = (static_cast<GfxTextureDX11*>(colorOutput))->GetRTV();
+		output.pRenderTargetView = (static_cast<GfxTextureDX11*>(colorOutput))->GetRenderTargetView();
 		output.Blend.Mode = GFSDK_SSAO_OVERWRITE_RGB;
 
 		GFSDK_SSAO_Status status = m_AOContext->RenderAO(m_DeviceContext, input, params, output);

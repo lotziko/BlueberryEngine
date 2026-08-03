@@ -6,6 +6,8 @@
 
 namespace Blueberry
 {
+	class GfxBuffer;
+
 	struct BB_API TextureProperties
 	{
 		uint32_t width;
@@ -31,5 +33,25 @@ namespace Blueberry
 		size_t dataSize;
 		BufferFormat format;
 		BufferUsageFlags usageFlags;
+	};
+
+	struct BB_API BottomLevelAccelerationStructureSubMesh
+	{
+		uint32_t indexStart;
+		uint32_t indexCount;
+		bool isOpaque;
+	};
+
+	struct BB_API BottomLevelAccelerationStructureProperties
+	{
+		GfxBuffer* vertexBuffer;
+		GfxBuffer* indexBuffer;
+		uint32_t vertexStride;
+		uint32_t normalOffset;
+		uint32_t tangentOffset;
+		uint32_t uv0Offset;
+
+		BottomLevelAccelerationStructureSubMesh subMeshes[16];
+		uint32_t subMeshCount;
 	};
 }

@@ -1,5 +1,5 @@
-#pragma compute CSLuminanceHistogram
-#pragma compute CSLuminanceAverage
+#pragma compute LuminanceHistogramCompute
+#pragma compute LuminanceAverageCompute
 
 // https://bruop.github.io/exposure/
 
@@ -34,7 +34,7 @@ uint ColorToBin(float3 hdrColor, float minLogLum, float inverseLogLumRange)
 }
 
 [numthreads(16, 16, 1)]
-void CSLuminanceHistogram(uint3 id : SV_DispatchThreadID, uint groupIndex : SV_GroupIndex)
+void LuminanceHistogramCompute(uint3 id : SV_DispatchThreadID, uint groupIndex : SV_GroupIndex)
 {
 	_HistogramShared[groupIndex] = 0;
 	GroupMemoryBarrierWithGroupSync();
@@ -51,7 +51,7 @@ void CSLuminanceHistogram(uint3 id : SV_DispatchThreadID, uint groupIndex : SV_G
 }
 
 [numthreads(256, 1, 1)]
-void CSLuminanceAverage(uint3 id : SV_DispatchThreadID, uint groupIndex : SV_GroupIndex)
+void LuminanceAverageCompute(uint3 id : SV_DispatchThreadID, uint groupIndex : SV_GroupIndex)
 {
 	uint countForThisBin = _Histogram[groupIndex];
 	_HistogramShared[groupIndex] = countForThisBin * groupIndex;

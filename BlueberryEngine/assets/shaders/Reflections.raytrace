@@ -1,0 +1,158 @@
+#pragma raygeneration ReflectionsRayGeneration
+#pragma anyhit0 ReflectionsAnyHit
+#pragma closesthit0 ReflectionsClosestHit
+#pragma miss0 ReflectionsMiss
+
+#pragma payload_size 20
+#pragma attributes_size 8
+#pragma ray_recursion_depth 2
+
+RaytracingAccelerationStructure _RaytracingAccelerationStructure : register(t0);
+TextureCube _SkyboxTexture : register(t1);
+SamplerState _SkyboxTexture_Sampler : register(s0);
+RWTexture2D<float4> _OutputTexture : register(u0);
+
+cbuffer RTPerCameraData : register(b0)
+{
+	float4x4 _InverseViewProjectionMatrix;
+	float4 _CameraPositionWS;
+};
+
+typedef BuiltInTriangleIntersectionAttributes Attributes;
+
+struct Payload
+{
+	float4 color;
+	uint depth;
+};
+
+[shader("raygeneration")]
+void ReflectionsRayGeneration()
+{
+	uint3 dispatchId = DispatchRaysIndex();
+	uint3 dispatchDim = DispatchRaysDimensions();
+	float2 texcoord = (dispatchId.xy + float2(0.5, 0.5)) / float2(dispatchDim.x, dispatchDim.y);
+
+    float2 positionNdc = texcoord * 2.0 - 1.0;
+    positionNdc.y = -positionNdc.y;
+
+	float4 positionCS = float4(positionNdc, 1.0, 1.0);
+
+	float4 positionWS = mul(_InverseViewProjectionMatrix, positionCS);
+    positionWS /= positionWS.w;
+
+	RayDesc ray;
+	ray.Origin = _CameraPositionWS.xyz;
+	ray.Direction = normalize(positionWS.xyz - _CameraPositionWS.xyz);
+	ray.TMin = 0.001;
+	ray.TMax = 10000.0;
+
+	Payload payload;
+    payload.color = float4(0, 0, 0, 0);
+    payload.depth = 0;
+
+	TraceRay(_RaytracingAccelerationStructure, RAY_FLAG_CULL_BACK_FACING_TRIANGLES , ~0, 0, 1, 0, ray, payload);
+	_OutputTexture[DispatchRaysIndex().xy] = payload.color;
+}
+
+ByteAddressBuffer _Vertices : register(t0, space1);
+ByteAddressBuffer _Indices : register(t1, space1);
+
+cbuffer RTPerMeshData : register(b0, space1)
+{
+	uint _VertexStride;
+	uint _NormalOffset;
+	uint _Uv0Offset;
+};
+
+cbuffer RTPerMaterialData : register(b1, space1)
+{
+	uint _BaseMap;
+	uint _BaseMap_Sampler;
+};
+
+float4 SampleTexture2D(uint textureIndex, uint samplerIndex, float2 uv)
+{
+	Texture2D<float4> texture = ResourceDescriptorHeap[textureIndex];
+	SamplerState sampler = SamplerDescriptorHeap[samplerIndex];
+	return texture.SampleLevel(sampler, uv, 0);
+}
+
+uint3 GetIndices()
+{
+	uint triangleIndex = PrimitiveIndex();
+	return uint3(_Indices.Load((triangleIndex * 3 + 0) * 4), _Indices.Load((triangleIndex * 3 + 1) * 4), _Indices.Load((triangleIndex * 3 + 2) * 4));
+}
+
+float3 GetBarycentrics(float2 attributeBarycentrics)
+{
+	return float3(1 - attributeBarycentrics.x - attributeBarycentrics.y, attributeBarycentrics.x, attributeBarycentrics.y);
+}
+
+float3 GetNormal(uint3 indices, float3 barycentrics)
+{
+    float3 n0 = asfloat(_Vertices.Load3(indices.x * _VertexStride + _NormalOffset));
+    float3 n1 = asfloat(_Vertices.Load3(indices.y * _VertexStride + _NormalOffset));
+    float3 n2 = asfloat(_Vertices.Load3(indices.z * _VertexStride + _NormalOffset));
+    return normalize(n0 * barycentrics.x + n1 * barycentrics.y + n2 * barycentrics.z);
+}
+
+float2 GetUv(uint3 indices, float3 barycentrics)
+{
+	float2 uv0 = asfloat(_Vertices.Load2(indices.x * _VertexStride + _Uv0Offset));
+	float2 uv1 = asfloat(_Vertices.Load2(indices.y * _VertexStride + _Uv0Offset));
+	float2 uv2 = asfloat(_Vertices.Load2(indices.z * _VertexStride + _Uv0Offset));
+	return uv0 * barycentrics.x + uv1 * barycentrics.y + uv2 * barycentrics.z;
+}
+
+[shader("anyhit")]
+void ReflectionsAnyHit(inout Payload payload : SV_RayPayload, in Attributes attributes : SV_IntersectionAttributes)
+{
+	float2 uv = GetUv(GetIndices(), GetBarycentrics(attributes.barycentrics));
+	float4 color = SampleTexture2D(_BaseMap, _BaseMap_Sampler, uv);
+	if (color.a < 0.125)
+	{
+		 IgnoreHit();
+	}
+}
+
+[shader("closesthit")]
+void ReflectionsClosestHit(inout Payload payload : SV_RayPayload, in Attributes attributes : SV_IntersectionAttributes)
+{
+	uint3 indices = GetIndices();
+    float3 barycentrics = GetBarycentrics(attributes.barycentrics);
+
+	if (payload.depth >= 1)
+    {
+		float2 uv = GetUv(indices, barycentrics);
+        payload.color = SampleTexture2D(_BaseMap, _BaseMap_Sampler, uv);
+        return;
+    }
+
+	float3 normalOS = GetNormal(indices, barycentrics);
+	float3 normalWS = normalize(mul(normalOS, (float3x3)WorldToObject3x4()));
+
+	float3 incomingWS = WorldRayDirection();
+    float3 reflectedWS = normalize(reflect(incomingWS, normalWS));
+    float3 hitPositionWS = WorldRayOrigin() + RayTCurrent() * incomingWS;
+
+	RayDesc reflectedRay;
+    reflectedRay.Origin = hitPositionWS + normalWS * 0.001;
+    reflectedRay.Direction = reflectedWS;
+    reflectedRay.TMin = 0.001;
+    reflectedRay.TMax = 10000.0;
+
+	Payload reflectedPayload;
+    reflectedPayload.color = float4(0, 0, 0, 1);
+    reflectedPayload.depth = payload.depth + 1;
+
+	TraceRay(_RaytracingAccelerationStructure, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, ~0, 0, 1, 0, reflectedRay, reflectedPayload);
+    payload.color += reflectedPayload.color;
+}
+
+[shader("miss")]
+void ReflectionsMiss(inout Payload payload : SV_RayPayload)
+{
+	float3 rayDir = WorldRayDirection();
+	payload.color += float4(_SkyboxTexture.SampleLevel(_SkyboxTexture_Sampler, normalize(rayDir), 0).rgb, 1) * pow(2, 2.2);
+}

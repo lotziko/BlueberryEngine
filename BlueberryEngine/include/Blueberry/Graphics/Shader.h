@@ -188,7 +188,7 @@ namespace Blueberry
 		static uint32_t GetActiveKeywordsMask();
 
 	private:
-		const Shader::ShaderVariant GetVariant(uint32_t vertexKeywordFlags, uint32_t fragmentKeywordFlags, size_t index);
+		const ShaderVariant GetVariant(uint32_t vertexKeywordFlags, uint32_t fragmentKeywordFlags, size_t index);
 		void IncrementUpdateCount();
 
 	private:

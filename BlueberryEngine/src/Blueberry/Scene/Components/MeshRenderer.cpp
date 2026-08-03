@@ -5,6 +5,7 @@
 #include "Blueberry\Graphics\RendererTree.h"
 #include "Blueberry\Graphics\Mesh.h"
 #include "Blueberry\Graphics\Material.h"
+#include "Blueberry\Graphics\GfxBottomLevelAccelerationStructure.h"
 #include "Blueberry\Scene\Components\Transform.h"
 
 namespace Blueberry
@@ -79,6 +80,11 @@ namespace Blueberry
 		m_Materials[0] = material;
 	}
 
+	const List<ObjectPtr<Material>>& MeshRenderer::GetMaterials() const
+	{
+		return m_Materials;
+	}
+
 	void MeshRenderer::SetMaterials(const List<Material*> materials)
 	{
 		m_Materials.clear();
@@ -124,6 +130,29 @@ namespace Blueberry
 		m_LightmapChartOffset = offset;
 	}
 
+	GfxBottomLevelAccelerationStructure* MeshRenderer::GetAccelerationStructure()
+	{
+		if (m_Mesh.IsValid())
+		{
+			uint32_t meshUpdateCount = m_Mesh->GetUpdateCount();
+			if (m_MeshUpdateCount != meshUpdateCount)
+			{
+				m_AccelerationStructure = nullptr;
+			}
+			if (m_AccelerationStructure == nullptr)
+			{
+				bool opaqueMask[16] = {};
+				for (size_t i = 0; i < m_Materials.size(); ++i)
+				{
+					opaqueMask[i] = m_Materials[i]->IsOpaque();
+				}
+				m_AccelerationStructure = GfxBottomLevelAccelerationStructure::Get(m_Mesh.Get(), opaqueMask);
+				m_MeshUpdateCount = meshUpdateCount;
+			}
+		}
+		return m_AccelerationStructure;
+	}
+
 	void MeshRenderer::UpdateBounds()
 	{
 		if (m_Mesh.IsValid())
@@ -159,5 +188,6 @@ namespace Blueberry
 	void MeshRenderer::InvalidateBounds()
 	{
 		m_UpdateCount = 0;
+		m_MeshUpdateCount = 0;
 	}
 }

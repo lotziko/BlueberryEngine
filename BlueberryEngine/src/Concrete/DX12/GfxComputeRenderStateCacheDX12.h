@@ -1,12 +1,14 @@
 #pragma once
 
 #include "Blueberry\Core\Base.h"
+#include "Concrete\Windows\ComPtr.h"
 #include "Concrete\DX12\DX12.h"
 
 namespace Blueberry
 {
 	class GfxDeviceDX12;
 	class GfxComputeShader;
+	class ComputeShader;
 
 	struct GfxComputeRenderStateDX12
 	{
@@ -27,7 +29,7 @@ namespace Blueberry
 
 	struct GfxComputePipelineStateDX12
 	{
-		ID3D12PipelineState* pipelineState;
+		ComPtr<ID3D12PipelineState> pipelineState;
 	};
 
 	struct GfxComputeBindingDX12
@@ -53,10 +55,10 @@ namespace Blueberry
 		GfxComputeRenderStateCacheDX12(GfxDeviceDX12* device);
 		~GfxComputeRenderStateCacheDX12() = default;
 
-		GfxComputeRenderStateDX12 GetRenderState(GfxComputeShader* shader);
+		GfxComputeRenderStateDX12 GetRenderState(ComputeShader* shader, uint32_t kernelIndex);
 
 	private:
-		void FillRenderState(GfxComputeShader* shader, GfxComputeRenderStateDX12& renderState, const GfxComputePipelineStateDX12& pipelineState, const GfxComputeBindingStateDX12& bindingState);
+		void FillRenderState(GfxComputeRenderStateDX12& renderState, const GfxComputePipelineStateDX12& pipelineState, const GfxComputeBindingStateDX12& bindingState);
 
 	private:
 		GfxDeviceDX12* m_Device = nullptr;

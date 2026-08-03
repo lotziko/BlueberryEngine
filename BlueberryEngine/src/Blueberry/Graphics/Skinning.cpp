@@ -87,7 +87,7 @@ namespace Blueberry
 
 					GfxDevice::SetGlobalBuffer(s_VertexSourceId, mesh->GetVertexBuffer());
 					GfxDevice::SetGlobalBuffer(s_VertexResultId, renderer->m_SkinningVertexBuffer);
-					GfxDevice::Dispatch(s_SkinningShader->GetKernel(0), threadCount, 1, 1);
+					GfxDevice::Dispatch(s_SkinningShader, 0, threadCount, 1, 1);
 				}
 
 				auto& matrices = renderer->GetSkinningMatrices();
@@ -104,7 +104,7 @@ namespace Blueberry
 				GfxDevice::SetGlobalBuffer(s_BoneTransformDataId, s_BoneTransformBuffer);
 				GfxDevice::SetGlobalBuffer(s_VertexSourceId, mesh->GetVertexBuffer());
 				GfxDevice::SetGlobalBuffer(s_VertexResultId, renderer->m_SkinningVertexBuffer);
-				GfxDevice::Dispatch(s_SkinningShader->GetKernel(1), threadCount, 1, 1);
+				GfxDevice::Dispatch(s_SkinningShader, 1, threadCount, 1, 1);
 			}
 			return renderer->m_SkinningVertexBuffer;
 		}

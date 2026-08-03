@@ -20,14 +20,16 @@ namespace Blueberry
 		bool Initialize(const TextureProperties& properties);
 
 		ID3D12Resource* GetResource() const;
-		const GfxHandleDX12& GetSRV() const;
-		const GfxHandleDX12& GetRTV() const;
-		const GfxHandleDX12& GetRTV(uint32_t arraySlice, uint32_t mipSlice);
-		D3D12_RESOURCE_STATES GetState() const;
+		const GfxHandleDX12& GetShaderResourceView() const;
+		const GfxHandleDX12& GetRenderTargetView() const;
+		const GfxHandleDX12& GetRenderTargetView(uint32_t arraySlice, uint32_t mipSlice);
+		const GfxHandleDX12& GetDepthStencilView() const;
+		const GfxHandleDX12& GetUnorderedAccessView() const;
+		const GfxHandleDX12& GetRingShaderResourceView();
+		uint8_t GetSampler() const;
+		void SetSampler(uint8_t sampler);
+		const DXGI_FORMAT GetDxgiFormat() const;
 
-		virtual uint32_t GetWidth() const override;
-		virtual uint32_t GetHeight() const override;
-		virtual TextureFormat GetFormat() const override;
 		virtual void* GetHandle() override;
 
 		virtual void GetData(void* data, const Rectangle& area) override;
@@ -37,6 +39,12 @@ namespace Blueberry
 		virtual void SetWrapMode(WrapMode wrapMode) override;
 		virtual void SetFilterMode(FilterMode filterMode) override;
 		virtual void SetName(const String& name) override;
+
+		D3D12_RESOURCE_STATES GetState() const;
+		void SetState(D3D12_RESOURCE_STATES state);
+		void SetUAVState();
+
+		static GfxTextureDX12* Get(uint32_t index);
 
 	private:
 		void GatherSubresources(const void* data, List<D3D12_SUBRESOURCE_DATA>& subresourceDatas);
@@ -50,31 +58,17 @@ namespace Blueberry
 		GfxHandleDX12 m_UnorderedAccessView;
 		uint8_t m_Sampler = UINT8_MAX;
 
-		GfxRingHandleDX12 m_HandleShaderResourceView;
-		uint64_t m_HandleGeneration = 0;
+		GfxHandleDX12 m_RingShaderResourceView;
 
 		List<GfxHandleDX12> m_SlicesRenderTargetViews;
 
-		DXGI_FORMAT m_Format = DXGI_FORMAT_UNKNOWN;
-		uint32_t m_Width = 0;
-		uint32_t m_Height = 0;
-		uint32_t m_Depth = 0;
-		uint32_t m_AntiAliasing = 1;
-		uint32_t m_Quality = 0;
-		uint32_t m_ArraySize = 0;
-		uint32_t m_MipLevels = 1;
-		TextureDimension m_Dimension = TextureDimension::Texture2D;
-		WrapMode m_WrapMode = WrapMode::Clamp;
-		FilterMode m_FilterMode = FilterMode::Bilinear;
-		D3D12_RESOURCE_STATES m_State = D3D12_RESOURCE_STATE_COMMON;
-
-		ID3D12Device* m_Device;
 		GfxDeviceDX12* m_GfxDevice;
+		ID3D12Device* m_Device;
+
+		DXGI_FORMAT m_DxgiFormat = DXGI_FORMAT_UNKNOWN;
+		D3D12_RESOURCE_STATES m_State = D3D12_RESOURCE_STATE_COMMON;
+		uint64_t m_UnorderedAccessGeneration = 0;
 
 		static GfxPointerCache<GfxTextureDX12> s_PointerCache;
-
-		friend class GfxDeviceDX12;
-		friend class GfxRenderStateCacheDX12;
-		friend class GfxComputeRenderStateCacheDX12;
 	};
 }

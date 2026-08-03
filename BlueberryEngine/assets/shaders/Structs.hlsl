@@ -5,6 +5,7 @@ struct InputData
 {
 	float3 positionWS;
 	float3 positionVS;
+	float2 positionSS;
 	float3 normalWS;
 	float3 normalGS; //geometric roughness
 	float3 viewDirectionWS;

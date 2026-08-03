@@ -6,6 +6,7 @@ namespace Blueberry
 {
 	class Mesh;
 	class Material;
+	class GfxBottomLevelAccelerationStructure;
 
 	class BB_API MeshRenderer : public Renderer
 	{
@@ -26,6 +27,7 @@ namespace Blueberry
 		Material* GetMaterial(uint32_t index = 0) const;
 		void SetMaterial(Material* material);
 
+		const List<ObjectPtr<Material>>& GetMaterials() const;
 		void SetMaterials(const List<Material*> materials);
 
 		uint32_t GetMaterialCount() const;
@@ -37,6 +39,8 @@ namespace Blueberry
 
 		uint32_t GetLightmapChartOffset() const;
 		void SetLightmapChartOffset(uint32_t offset);
+
+		GfxBottomLevelAccelerationStructure* GetAccelerationStructure();
 
 	private:
 		void UpdateBounds();
@@ -51,5 +55,8 @@ namespace Blueberry
 		size_t m_UpdateCount = 0;
 		bool m_CullingDirty = true;
 		uint32_t m_LightmapChartOffset = 0;
+
+		GfxBottomLevelAccelerationStructure* m_AccelerationStructure = nullptr;
+		uint32_t m_MeshUpdateCount = 0;
 	};
 }

@@ -20,7 +20,8 @@ namespace Blueberry
 
 	bool GfxTextureDX11::Initialize(const TextureProperties& properties)
 	{
-		m_Format = static_cast<DXGI_FORMAT>(properties.format);
+		m_Format = properties.format;
+		m_DxgiFormat = static_cast<DXGI_FORMAT>(properties.format);
 		m_Dimension = properties.dimension;
 		m_Width = properties.width;
 		m_Height = properties.height;
@@ -33,14 +34,14 @@ namespace Blueberry
 
 		if (properties.data != nullptr)
 		{
-			uint32_t bitsPerPixel = DxgiHelper::GetBitsPerPixel(m_Format);
+			uint32_t bitsPerPixel = DxgiHelper::GetBitsPerPixel(m_DxgiFormat);
 			uint32_t arraySize = DxgiHelper::GetArraySize(properties.dimension, properties.depth);
 			uint32_t mipLevels = std::max(1u, properties.mipCount);
 			uint32_t size = arraySize * mipLevels;
 			List<D3D11_SUBRESOURCE_DATA> subresourceDatas(size);
 
 			const uint8_t* ptr = static_cast<const uint8_t*>(properties.data);
-			if (DxgiHelper::IsCompressed(m_Format))
+			if (DxgiHelper::IsCompressed(m_DxgiFormat))
 			{
 				uint32_t blockSize = bitsPerPixel * 16 / 8;
 				for (uint32_t i = 0; i < arraySize; ++i)
@@ -88,29 +89,29 @@ namespace Blueberry
 		}
 	}
 
-	ID3D11Resource* GfxTextureDX11::GetTexture() const
+	ID3D11Resource* GfxTextureDX11::GetResource() const
 	{
-		return m_Texture.Get();
+		return m_Resource.Get();
 	}
 
-	ID3D11ShaderResourceView* GfxTextureDX11::GetSRV() const
+	ID3D11ShaderResourceView* GfxTextureDX11::GetShaderResourceView() const
 	{
 		return m_ShaderResourceView.Get();
 	}
 
-	ID3D11RenderTargetView* GfxTextureDX11::GetRTV() const
+	ID3D11RenderTargetView* GfxTextureDX11::GetRenderTargetView() const
 	{
 		return m_RenderTargetView.Get();
 	}
 
-	ID3D11RenderTargetView* GfxTextureDX11::GetRTV(uint32_t arraySlice, uint32_t mipSlice)
+	ID3D11RenderTargetView* GfxTextureDX11::GetRenderTargetView(uint32_t arraySlice, uint32_t mipSlice)
 	{
 		uint32_t index = arraySlice * m_MipLevels + mipSlice;
 		ID3D11RenderTargetView* renderTargetView = m_SlicesRenderTargetViews[index].Get();
 		if (renderTargetView == nullptr)
 		{
 			D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc = {};
-			renderTargetViewDesc.Format = m_Format;
+			renderTargetViewDesc.Format = m_DxgiFormat;
 
 			switch (m_Dimension)
 			{
@@ -150,7 +151,7 @@ namespace Blueberry
 				break;
 			}
 
-			HRESULT hr = m_Device->CreateRenderTargetView(m_Texture.Get(), &renderTargetViewDesc, m_SlicesRenderTargetViews[index].GetAddressOf());
+			HRESULT hr = m_Device->CreateRenderTargetView(m_Resource.Get(), &renderTargetViewDesc, m_SlicesRenderTargetViews[index].GetAddressOf());
 			if (FAILED(hr))
 			{
 				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create render target view."));
@@ -161,19 +162,29 @@ namespace Blueberry
 		return renderTargetView;
 	}
 
-	uint32_t GfxTextureDX11::GetWidth() const
+	ID3D11DepthStencilView* GfxTextureDX11::GetDepthStencilView() const
 	{
-		return m_Width;
+		return m_DepthStencilView.Get();
 	}
 
-	uint32_t GfxTextureDX11::GetHeight() const
+	ID3D11UnorderedAccessView* GfxTextureDX11::GetUnorderedAccessView() const
 	{
-		return m_Height;
+		return m_UnorderedAccessView.Get();
 	}
 
-	TextureFormat GfxTextureDX11::GetFormat() const
+	ID3D11SamplerState* GfxTextureDX11::GetSamplerState() const
 	{
-		return static_cast<TextureFormat>(m_Format);
+		return m_SamplerState.Get();
+	}
+
+	void GfxTextureDX11::SetSamplerState(ID3D11SamplerState* samplerState)
+	{
+		m_SamplerState = samplerState;
+	}
+
+	const DXGI_FORMAT GfxTextureDX11::GetDxgiFormat() const
+	{
+		return m_DxgiFormat;
 	}
 
 	void* GfxTextureDX11::GetHandle()
@@ -183,12 +194,12 @@ namespace Blueberry
 
 	void GfxTextureDX11::GetData(void* data, const Rectangle& area)
 	{
-		if (m_StagingTexture.Get() == nullptr || DxgiHelper::IsCompressed(m_Format))
+		if (m_StagingTexture.Get() == nullptr || DxgiHelper::IsCompressed(m_DxgiFormat))
 		{
 			BB_ERROR("The texture cannot be readed.");
 			return;
 		}
-		m_DeviceContext->CopyResource(m_StagingTexture.Get(), m_Texture.Get());
+		m_DeviceContext->CopyResource(m_StagingTexture.Get(), m_Resource.Get());
 
 		D3D11_MAPPED_SUBRESOURCE mappedTexture = {};
 		HRESULT hr = m_DeviceContext->Map(m_StagingTexture.Get(), 0, D3D11_MAP_READ, 0, &mappedTexture);
@@ -210,14 +221,14 @@ namespace Blueberry
 
 	void GfxTextureDX11::GetData(void* data)
 	{
-		if (m_StagingTexture.Get() == nullptr || DxgiHelper::IsCompressed(m_Format))
+		if (m_StagingTexture.Get() == nullptr || DxgiHelper::IsCompressed(m_DxgiFormat))
 		{
 			BB_ERROR("The texture cannot be readed.");
 			return;
 		}
-		m_DeviceContext->CopyResource(m_StagingTexture.Get(), m_Texture.Get());
+		m_DeviceContext->CopyResource(m_StagingTexture.Get(), m_Resource.Get());
 
-		uint32_t bytesPerPixel = DxgiHelper::GetBitsPerPixel(m_Format) / 8;
+		uint32_t bytesPerPixel = DxgiHelper::GetBitsPerPixel(m_DxgiFormat) / 8;
 		uint8_t* ptr = static_cast<uint8_t*>(data);
 		D3D11_MAPPED_SUBRESOURCE mappedTexture = {};
 
@@ -261,7 +272,7 @@ namespace Blueberry
 		memcpy(mappedTexture.pData, data, size);
 		m_DeviceContext->Unmap(m_StagingTexture.Get(), 0);
 
-		m_DeviceContext->CopyResource(m_Texture.Get(), m_StagingTexture.Get());
+		m_DeviceContext->CopyResource(m_Resource.Get(), m_StagingTexture.Get());
 	}
 
 	void GfxTextureDX11::SetWrapMode(WrapMode wrapMode)
@@ -284,7 +295,12 @@ namespace Blueberry
 
 	void GfxTextureDX11::SetName(const String& name)
 	{
-		m_Texture->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(name.size()), name.data());
+		m_Resource->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(name.size()), name.data());
+	}
+
+	GfxTextureDX11* GfxTextureDX11::Get(uint32_t index)
+	{
+		return s_PointerCache.Get(index);
 	}
 
 	DXGI_FORMAT GetTextureFormat(DXGI_FORMAT format)
@@ -317,7 +333,7 @@ namespace Blueberry
 
 	bool GfxTextureDX11::Initialize(D3D11_SUBRESOURCE_DATA* subresourceData, uint32_t subresourceCount, const TextureProperties& properties)
 	{
-		bool useDSV = DxgiHelper::IsDepth(m_Format);
+		bool useDSV = DxgiHelper::IsDepth(m_DxgiFormat);
 		bool useRTV = !useDSV && HasFlag(properties.usageFlags, TextureUsageFlags::RenderTarget);
 		bool useUAV = HasFlag(properties.usageFlags, TextureUsageFlags::UnorderedAccess);
 		bool isReadable = HasFlag(properties.usageFlags, TextureUsageFlags::CPUReadable);
@@ -341,9 +357,9 @@ namespace Blueberry
 			textureDesc.CPUAccessFlags = 0;
 			textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 			textureDesc.MipLevels = m_MipLevels;
-			textureDesc.Format = GetTextureFormat(m_Format);
+			textureDesc.Format = GetTextureFormat(m_DxgiFormat);
 			textureDesc.SampleDesc.Count = m_AntiAliasing;
-			textureDesc.SampleDesc.Quality = GetQualityLevel(m_Device, m_Format, m_AntiAliasing);
+			textureDesc.SampleDesc.Quality = GetQualityLevel(m_Device, m_DxgiFormat, m_AntiAliasing);
 			textureDesc.ArraySize = m_ArraySize;
 			textureDesc.MiscFlags = 0;
 
@@ -364,7 +380,7 @@ namespace Blueberry
 				textureDesc.MiscFlags |= D3D11_RESOURCE_MISC_TEXTURECUBE;
 			}
 
-			HRESULT hr = m_Device->CreateTexture2D(&textureDesc, subresourceData, reinterpret_cast<ID3D11Texture2D**>(m_Texture.GetAddressOf()));
+			HRESULT hr = m_Device->CreateTexture2D(&textureDesc, subresourceData, reinterpret_cast<ID3D11Texture2D**>(m_Resource.GetAddressOf()));
 			if (FAILED(hr))
 			{
 				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create texture."));
@@ -382,7 +398,7 @@ namespace Blueberry
 			textureDesc.CPUAccessFlags = 0;
 			textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 			textureDesc.MipLevels = 1;
-			textureDesc.Format = GetTextureFormat(m_Format);
+			textureDesc.Format = GetTextureFormat(m_DxgiFormat);
 			textureDesc.MiscFlags = 0;
 
 			if (useRTV)
@@ -394,7 +410,7 @@ namespace Blueberry
 				textureDesc.BindFlags |= D3D11_BIND_UNORDERED_ACCESS;
 			}
 
-			HRESULT hr = m_Device->CreateTexture3D(&textureDesc, subresourceData, reinterpret_cast<ID3D11Texture3D**>(m_Texture.GetAddressOf()));
+			HRESULT hr = m_Device->CreateTexture3D(&textureDesc, subresourceData, reinterpret_cast<ID3D11Texture3D**>(m_Resource.GetAddressOf()));
 			if (FAILED(hr))
 			{
 				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create texture."));
@@ -406,7 +422,7 @@ namespace Blueberry
 
 		// SRV
 		D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc = {};
-		shaderResourceViewDesc.Format = DxgiHelper::GetSRVFormat(m_Format);
+		shaderResourceViewDesc.Format = DxgiHelper::GetSRVFormat(m_DxgiFormat);
 
 		switch (m_Dimension)
 		{
@@ -456,7 +472,7 @@ namespace Blueberry
 			break;
 		}
 		
-		HRESULT hr = m_Device->CreateShaderResourceView(m_Texture.Get(), &shaderResourceViewDesc, m_ShaderResourceView.GetAddressOf());
+		HRESULT hr = m_Device->CreateShaderResourceView(m_Resource.Get(), &shaderResourceViewDesc, m_ShaderResourceView.GetAddressOf());
 		if (FAILED(hr))
 		{
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create shader resource view."));
@@ -467,7 +483,7 @@ namespace Blueberry
 		if (useRTV)
 		{
 			D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc = {};
-			renderTargetViewDesc.Format = m_Format;
+			renderTargetViewDesc.Format = m_DxgiFormat;
 
 			switch (m_Dimension)
 			{
@@ -508,7 +524,7 @@ namespace Blueberry
 				break;
 			}
 
-			hr = m_Device->CreateRenderTargetView(m_Texture.Get(), &renderTargetViewDesc, m_RenderTargetView.GetAddressOf());
+			hr = m_Device->CreateRenderTargetView(m_Resource.Get(), &renderTargetViewDesc, m_RenderTargetView.GetAddressOf());
 			if (FAILED(hr))
 			{
 				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create render target view."));
@@ -520,7 +536,7 @@ namespace Blueberry
 		if (useDSV)
 		{
 			D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc = {};
-			depthStencilViewDesc.Format = m_Format;
+			depthStencilViewDesc.Format = m_DxgiFormat;
 
 			switch (m_Dimension)
 			{
@@ -545,7 +561,7 @@ namespace Blueberry
 				break;
 			}
 
-			hr = m_Device->CreateDepthStencilView(m_Texture.Get(), &depthStencilViewDesc, m_DepthStencilView.GetAddressOf());
+			hr = m_Device->CreateDepthStencilView(m_Resource.Get(), &depthStencilViewDesc, m_DepthStencilView.GetAddressOf());
 			if (FAILED(hr))
 			{
 				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create depth stencil view."));
@@ -557,7 +573,7 @@ namespace Blueberry
 		if (useUAV)
 		{
 			D3D11_UNORDERED_ACCESS_VIEW_DESC unorderedAccessViewDesc = {};
-			unorderedAccessViewDesc.Format = m_Format;
+			unorderedAccessViewDesc.Format = m_DxgiFormat;
 
 			switch (m_Dimension)
 			{
@@ -579,7 +595,7 @@ namespace Blueberry
 				break;
 			}
 
-			hr = m_Device->CreateUnorderedAccessView(m_Texture.Get(), &unorderedAccessViewDesc, &m_UnorderedAccessView);
+			hr = m_Device->CreateUnorderedAccessView(m_Resource.Get(), &unorderedAccessViewDesc, &m_UnorderedAccessView);
 			if (FAILED(hr))
 			{
 				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create unordered access view."));
@@ -595,7 +611,7 @@ namespace Blueberry
 			textureDesc.Height = properties.height;
 			textureDesc.MipLevels = m_MipLevels;
 			textureDesc.ArraySize = m_ArraySize;
-			textureDesc.Format = m_Format;
+			textureDesc.Format = m_DxgiFormat;
 			textureDesc.SampleDesc.Count = 1;
 			textureDesc.MiscFlags = 0;
 

@@ -113,8 +113,18 @@ float3 CalculateIndirectSpecular(float3 normalWS, float3 positionWS, float3 view
 
 	float3 environmentReflection = max(0, SAMPLE_TEXTURECUBE_ARRAY_LOD(_ReflectionTexture, _ReflectionTexture_Sampler, reflectVector, reflectionProbeIndex, roughness * REFLECTION_LOD_COUNT).rgb);
 	float2 fresnelResponse = CalculateFresnelResponse(NDotV, roughness);
-
+	
 	return environmentReflection * (reflectance * fresnelResponse.x + fresnelResponse.y);
+}
+
+float3 CalculateIndirectSpecular(float3 normalWS, float2 positionSS, float3 viewDirectionWS, float roughness, float3 reflectance)
+{
+	float NDotV = max(0, dot(normalWS.xyz, viewDirectionWS.xyz));
+
+	float3 screenReflection = SAMPLE_TEXTURE2D_X(_ScreenReflectionTexture, _ScreenReflectionTexture_Sampler, positionSS).rgb;
+	float2 fresnelResponse = CalculateFresnelResponse(NDotV, roughness);
+
+	return screenReflection * (reflectance * fresnelResponse.x + fresnelResponse.y);
 }
 
 float3 CalculateIndirectSpecular(float3 normalWS, float3 positionWS, float3 viewDirectionWS, float roughness, float3 reflectance, float3 centerWS, float3 minWS, float3 maxWS, uint reflectionProbeIndex)
@@ -311,12 +321,15 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 		totalWeight += weight;
 	}
 
+	float3 screenSpecular = CalculateIndirectSpecular(inputData.normalWS, inputData.positionSS, inputData.viewDirectionWS, geometricRoughness, reflectance);
 	float3 skySpecular = CalculateIndirectSpecular(inputData.normalWS, inputData.viewDirectionWS, geometricRoughness, reflectance);
 	float skyWeight = saturate(1.0f - maxWeight);
-	float3 indirectSpecularTerm = lerp(totalSpecular / max(totalWeight, 1e-5), skySpecular, skyWeight);	// TODO sky debug mode by replacing skySpecular with float3(1, 0, 0)
+	float3 indirectSpecularTerm = geometricRoughness > 0.2 ? lerp(totalSpecular / max(totalWeight, 1e-5), skySpecular, skyWeight) : screenSpecular; // TODO sky debug mode by replacing skySpecular with float3(1, 0, 0)
 #else
 	float3 indirectSpecularTerm = 0;
 #endif
+
+	surfaceData.occlusion *= SAMPLE_TEXTURE2D_X(_ScreenOcclusionTexture, _ScreenOcclusionTexture_Sampler, inputData.positionSS).r;
 
 	return ((directDiffuseTerm + indirectDiffuseTerm * surfaceData.occlusion) * albedo + directSpecularTerm + indirectSpecularTerm * surfaceData.occlusion);
 }

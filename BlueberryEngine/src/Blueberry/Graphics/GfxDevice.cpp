@@ -107,6 +107,11 @@ namespace Blueberry
 		return s_Instance->CreateComputeShaderImpl(computeData, shader);
 	}
 
+	bool GfxDevice::CreateRayTracingShader(const ByteData& rayTracingData, GfxRayTracingShader*& shader)
+	{
+		return s_Instance->CreateRayTracingShaderImpl(rayTracingData, shader);
+	}
+
 	bool GfxDevice::CreateBuffer(const BufferProperties& properties, GfxBuffer*& buffer)
 	{
 		return s_Instance->CreateBufferImpl(properties, buffer);
@@ -115,6 +120,16 @@ namespace Blueberry
 	bool GfxDevice::CreateTexture(const TextureProperties& properties, GfxTexture*& texture)
 	{
 		return s_Instance->CreateTextureImpl(properties, texture);
+	}
+
+	bool GfxDevice::CreateBottomLevelAccelerationStructure(const BottomLevelAccelerationStructureProperties& properties, GfxBottomLevelAccelerationStructure*& accelerationStructure)
+	{
+		return s_Instance->CreateBottomLevelAccelerationStructureImpl(properties, accelerationStructure);
+	}
+
+	bool GfxDevice::CreateTopLevelAccelerationStructure(GfxTopLevelAccelerationStructure*& accelerationStructure)
+	{
+		return s_Instance->CreateTopLevelAccelerationStructureImpl(accelerationStructure);
 	}
 
 	void GfxDevice::Copy(GfxTexture* source, GfxTexture* target)
@@ -172,9 +187,14 @@ namespace Blueberry
 		s_Instance->DrawImpl(operation);
 	}
 
-	void GfxDevice::Dispatch(GfxComputeShader* shader, uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ)
+	void GfxDevice::Dispatch(ComputeShader* shader, uint32_t kernelIndex, uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ)
 	{
-		s_Instance->DispatchImpl(shader, threadGroupsX, threadGroupsY, threadGroupsZ);
+		s_Instance->DispatchImpl(shader, kernelIndex, threadGroupsX, threadGroupsY, threadGroupsZ);
+	}
+
+	void GfxDevice::DispatchRays(RayTracingShader* shader, GfxTopLevelAccelerationStructure* accelerationStructure, uint32_t width, uint32_t height, uint32_t depth)
+	{
+		s_Instance->DispatchRaysImpl(shader, accelerationStructure, width, height, depth);
 	}
 
 	Matrix GfxDevice::GetGPUMatrix(const Matrix& viewProjection)

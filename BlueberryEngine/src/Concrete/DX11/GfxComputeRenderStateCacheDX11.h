@@ -7,6 +7,7 @@ namespace Blueberry
 {
 	class GfxDeviceDX11;
 	class GfxComputeShader;
+	class ComputeShader;
 
 	struct GfxComputeRenderStateDX11
 	{
@@ -53,7 +54,7 @@ namespace Blueberry
 		GfxComputeRenderStateCacheDX11(GfxDeviceDX11* device);
 		~GfxComputeRenderStateCacheDX11() = default;
 
-		GfxComputeRenderStateDX11 GetRenderState(GfxComputeShader* shader);
+		GfxComputeRenderStateDX11 GetRenderState(ComputeShader* shader, uint32_t kernelIndex);
 
 	private:
 		void FillRenderState(GfxComputeShader* shader, GfxComputeRenderStateDX11& renderState, const GfxComputePipelineStateDX11& pipelineState, const GfxComputeBindingStateDX11& bindingState);

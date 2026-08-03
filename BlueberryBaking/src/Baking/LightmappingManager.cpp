@@ -41,7 +41,7 @@ namespace Blueberry
 	LightmappingState LightmappingManager::s_LightmappingState = {};
 
 	// Maybe make a list of valid per chart texels instead of texture tiles?
-	struct ChartData
+	struct LightmappingChartData
 	{
 		List<uint64_t> mask;
 		Vector2Int maskSize;
@@ -52,13 +52,13 @@ namespace Blueberry
 		uint32_t index;
 	};
 
-	struct InstanceData
+	struct LightmappingInstanceData
 	{
 		MeshRenderer* renderer;
 		Transform* transform;
 	};
 
-	struct MeshData
+	struct LightmappingMeshData
 	{
 		void Release()
 		{
@@ -73,7 +73,7 @@ namespace Blueberry
 
 		Mesh* mesh;
 		uint32_t chartCount;
-		List<InstanceData> instances;
+		List<LightmappingInstanceData> instances;
 
 		CUDABuffer vertexBuffer;
 		CUDABuffer normalBuffer;
@@ -95,7 +95,7 @@ namespace Blueberry
 
 	#define CLOSEST_HIT_COUNT 3
 
-	struct PassState
+	struct LightmappingPassState
 	{
 		OptixPipelineCompileOptions pipelineCompileOptions = {};
 		OptixPipeline pipeline = nullptr;
@@ -117,11 +117,11 @@ namespace Blueberry
 		OptixDeviceContext context = nullptr;
 		CalculationParams params = {};
 
-		List<MeshData> meshDatas = {};
+		List<LightmappingMeshData> meshDatas = {};
 		Dictionary<ObjectId, CUDABuffer> textures = {};
 		OptixTraversableHandle iasHandle = 0;
 
-		PassState pass = {};
+		LightmappingPassState pass = {};
 
 		CUmodule denoiserPtxModule = {};
 		CUfunction denoiserKernelFirstPass = {};
@@ -318,7 +318,7 @@ namespace Blueberry
 				else
 				{
 					existingMeshes.insert_or_assign(mesh->GetObjectId(), static_cast<uint32_t>(state.meshDatas.size()));
-					MeshData data = {};
+					LightmappingMeshData data = {};
 					data.mesh = mesh;
 					data.instances.push_back({ meshRenderer, meshRenderer->GetTransform() });
 					data.vertexBuffer.alloc_and_upload(mesh->GetVertices(), mesh->GetVertexCount());
@@ -798,12 +798,12 @@ namespace Blueberry
 		state.lightmappingParams.samplePerTexel = state.params.samplePerTexel;
 	}
 
-	bool CompareCharts(ChartData& c1, ChartData& c2)
+	bool CompareCharts(LightmappingChartData& c1, LightmappingChartData& c2)
 	{
 		return c1.size.x + c1.size.y > c2.size.x + c2.size.y;
 	}
 
-	bool IsChartFits(int i, int j, ChartData& chartData, List<uint64_t>& atlasMask, int blocksPerRow)
+	bool IsChartFits(int i, int j, LightmappingChartData& chartData, List<uint64_t>& atlasMask, int blocksPerRow)
 	{
 		int startBlock = i / 64;
 		int bitOffset = i % 64;
@@ -859,7 +859,7 @@ namespace Blueberry
 		return true;
 	}
 
-	void WriteChart(int i, int j, ChartData& chartData, List<uint64_t>& atlasMask, List<uint32_t>& chartIndexMask, List<uint2>& validTexels, int blocksPerRow, uint32_t maskChartOffset)
+	void WriteChart(int i, int j, LightmappingChartData& chartData, List<uint64_t>& atlasMask, List<uint32_t>& chartIndexMask, List<uint2>& validTexels, int blocksPerRow, uint32_t maskChartOffset)
 	{
 		int size = blocksPerRow * 64;
 		int startBlock = i / 64;
@@ -921,7 +921,7 @@ namespace Blueberry
 	
 	void InitializeChartsAndBVH(LightmapperState& state)
 	{
-		List<ChartData> atlasCharts = {};
+		List<LightmappingChartData> atlasCharts = {};
 
 		for (auto& data : state.meshDatas)
 		{
@@ -983,7 +983,7 @@ namespace Blueberry
 				
 				for (uint32_t i = 0; i < data.chartCount; ++i)
 				{
-					ChartData chartData = {};
+					LightmappingChartData chartData = {};
 					float chartIndex = static_cast<float>(i);
 					float chartScale = texelPerUnit;
 					for (uint32_t j = 0; j < indexCount; j += 3)

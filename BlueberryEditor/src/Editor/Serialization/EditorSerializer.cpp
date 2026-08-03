@@ -13,6 +13,7 @@
 #include "Blueberry\Graphics\Mesh.h"
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\ComputeShader.h"
+#include "Blueberry\Graphics\RayTracingShader.h"
 #include "Blueberry\Audio\AudioClip.h"
 #include "Blueberry\Tools\FileHelper.h"
 
@@ -22,8 +23,10 @@
 
 #include "Editor\Assets\Processors\HLSLShaderProcessor.h"
 #include "Editor\Assets\Processors\HLSLComputeShaderProcessor.h"
+#include "Editor\Assets\Processors\HLSLRayTracingShaderProcessor.h"
 #include "Editor\Assets\Importers\ShaderImporter.h"
 #include "Editor\Assets\Importers\ComputeShaderImporter.h"
+#include "Editor\Assets\Importers\RayTracingShaderImporter.h"
 #include "Editor\Assets\Importers\TextureImporter.h"
 #include "Editor\Assets\Importers\AudioImporter.h"
 
@@ -348,6 +351,16 @@ namespace Blueberry
 			if (processor.LoadKernels(folderPath))
 			{
 				shader->Initialize(processor.GetShaders());
+			}
+		}
+		else if (type == RayTracingShader::Type)
+		{
+			RayTracingShader* shader = static_cast<RayTracingShader*>(object);
+			String folderPath = RayTracingShaderImporter::GetShaderFolder(guid);
+			HLSLRayTracingShaderProcessor processor;
+			if (processor.Load(folderPath))
+			{
+				shader->Initialize(processor.GetShader());
 			}
 		}
 		else if (type == AudioClip::Type)

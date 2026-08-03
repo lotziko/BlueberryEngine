@@ -62,10 +62,15 @@ namespace Blueberry
 
 		virtual void SetKeywords(const List<String>& keywords) override;
 		virtual bool Compile(const String& entryPoint, HLSLShaderCompilerProfile profile, uint32_t variant, ByteData& result) override;
+		bool Compile(const String& rayGenerationEntryPoint, const List<String>& anyHitEntryPoints, const List<String>& closestHitEntryPoints, const List<String>& missEntryPoints, ByteData& result);
 
 	private:
-		ComPtr<IDxcBlobEncoding> m_CodeBlob;
+		void AddConstantDefine(const wchar_t* name, const wchar_t* value);
+
+	private:
+		String m_Code;
 		List<WString> m_Keywords;
 		List<DxcDefine> m_Defines;
+		size_t m_ConstantDefines;
 	};
 }

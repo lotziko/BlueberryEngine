@@ -32,6 +32,21 @@ namespace Blueberry
 		}
 	}
 
+	ID3D11Buffer* GfxBufferDX11::GetBuffer() const
+	{
+		return m_Buffer.Get();
+	}
+
+	ID3D11ShaderResourceView* GfxBufferDX11::GetShaderResourceView() const
+	{
+		return m_ShaderResourceView.Get();
+	}
+
+	ID3D11UnorderedAccessView* GfxBufferDX11::GetUnorderedAccessView() const
+	{
+		return m_UnorderedAccessView.Get();
+	}
+
 	void GfxBufferDX11::GetData(void* data)
 	{
 		m_DeviceContext->CopyResource(m_StagingBuffer.Get(), m_Buffer.Get());
@@ -60,14 +75,9 @@ namespace Blueberry
 		m_DeviceContext->Unmap(m_Buffer.Get(), 0);
 	}
 
-	uint32_t GfxBufferDX11::GetElementSize() const
+	GfxBufferDX11* GfxBufferDX11::Get(uint32_t index)
 	{
-		return m_ElementSize;
-	}
-
-	uint32_t GfxBufferDX11::GetElementCount() const
-	{
-		return m_ElementCount;
+		return s_PointerCache.Get(index);
 	}
 
 	UINT GetBindFlags(const BufferUsageFlags& usageFlags)

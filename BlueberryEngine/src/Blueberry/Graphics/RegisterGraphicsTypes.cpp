@@ -10,6 +10,7 @@
 #include "Blueberry\Graphics\Mesh.h"
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\ComputeShader.h"
+#include "Blueberry\Graphics\RayTracingShader.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\Font.h"
 
@@ -31,6 +32,8 @@ namespace Blueberry
 		REGISTER_DATA_CLASS(KernelData);
 		REGISTER_DATA_CLASS(ComputeShaderData);
 		REGISTER_CLASS(ComputeShader);
+		REGISTER_DATA_CLASS(RayTracingShaderData);
+		REGISTER_CLASS(RayTracingShader);
 		REGISTER_DATA_CLASS(TextureData);
 		REGISTER_CLASS(Material);
 		REGISTER_CLASS(Font);
