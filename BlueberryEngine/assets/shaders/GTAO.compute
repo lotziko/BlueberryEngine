@@ -1,0 +1,68 @@
+#pragma compute PrefilterDepths16x16Compute
+#pragma compute GTAOHighCompute
+#pragma compute DenoisePassCompute
+#pragma compute DenoiseLastPassCompute
+
+#include "XeGTAO.hlsl"
+#include "Core.hlsl"
+
+cbuffer GTAOData
+{
+    GTAOConstants _GTAOConsts;
+}
+
+Texture2D<float> _SrcRawDepth;
+RWTexture2D<lpfloat> _OutWorkingDepthMIP0;
+RWTexture2D<lpfloat> _OutWorkingDepthMIP1;
+RWTexture2D<lpfloat> _OutWorkingDepthMIP2;
+RWTexture2D<lpfloat> _OutWorkingDepthMIP3;
+RWTexture2D<lpfloat> _OutWorkingDepthMIP4;
+SamplerState _PointClamp_Sampler;
+
+Texture2D<lpfloat> _SrcWorkingDepth;
+Texture2D<float4> _SrcNormalmap;
+RWTexture2D<uint> _OutWorkingAOTerm;
+RWTexture2D<unorm float> _OutWorkingEdges;
+
+Texture2D<uint> _SrcWorkingAOTerm;
+Texture2D<lpfloat> _SrcWorkingEdges;
+RWTexture2D<uint> _OutFinalAOTerm;
+
+lpfloat3 LoadNormal(int2 pos)
+{
+    float3 normalWS = DecodeNormalOctahedral(_SrcNormalmap.Load(int3(pos, 0)).rg);
+    return (lpfloat3)TransformWorldToViewNormal(normalWS);
+}
+
+lpfloat2 SpatioTemporalNoise(uint2 pixCoord, uint temporalIndex)
+{
+    uint index = HilbertIndex(pixCoord.x, pixCoord.y);
+    index += 288 * (temporalIndex % 64);
+    return lpfloat2(frac(0.5 + index * float2(0.75487766624669276005, 0.5698402909980532659114)));
+}
+
+[numthreads(8, 8, 1)]
+void PrefilterDepths16x16Compute(uint2 dispatchThreadID : SV_DispatchThreadID, uint2 groupThreadID : SV_GroupThreadID)
+{
+    XeGTAO_PrefilterDepths16x16(dispatchThreadID, groupThreadID, _GTAOConsts, _SrcRawDepth, _PointClamp_Sampler, _OutWorkingDepthMIP0, _OutWorkingDepthMIP1, _OutWorkingDepthMIP2, _OutWorkingDepthMIP3, _OutWorkingDepthMIP4);
+}
+
+[numthreads(XE_GTAO_NUMTHREADS_X, XE_GTAO_NUMTHREADS_Y, 1)]
+void GTAOHighCompute(const uint2 pixCoord : SV_DispatchThreadID)
+{
+    XeGTAO_MainPass(pixCoord, 3, 3, SpatioTemporalNoise(pixCoord, _GTAOConsts.NoiseIndex), LoadNormal(pixCoord), _GTAOConsts, _SrcWorkingDepth, _PointClamp_Sampler, _OutWorkingAOTerm, _OutWorkingEdges);
+}
+
+[numthreads(XE_GTAO_NUMTHREADS_X, XE_GTAO_NUMTHREADS_Y, 1)]
+void DenoisePassCompute(const uint2 dispatchThreadID : SV_DispatchThreadID)
+{
+    const uint2 pixCoordBase = dispatchThreadID * uint2(2, 1);
+    XeGTAO_Denoise(pixCoordBase, _GTAOConsts, _SrcWorkingAOTerm, _SrcWorkingEdges, _PointClamp_Sampler, _OutFinalAOTerm, true);
+}
+
+[numthreads(XE_GTAO_NUMTHREADS_X, XE_GTAO_NUMTHREADS_Y, 1)]
+void DenoiseLastPassCompute(const uint2 dispatchThreadID : SV_DispatchThreadID)
+{
+    const uint2 pixCoordBase = dispatchThreadID * uint2(2, 1);
+    XeGTAO_Denoise(pixCoordBase, _GTAOConsts, _SrcWorkingAOTerm, _SrcWorkingEdges, _PointClamp_Sampler, _OutFinalAOTerm, true);
+}

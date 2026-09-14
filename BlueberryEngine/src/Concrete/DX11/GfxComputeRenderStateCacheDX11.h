@@ -37,6 +37,12 @@ namespace Blueberry
 		uint8_t slotIndex;
 	};
 
+	struct GfxComputeStaticSamplerBindingDX11
+	{
+		ID3D11SamplerState* samplerState;
+		uint8_t slotIndex;
+	};
+
 	struct GfxComputeBindingStateDX11
 	{
 		List<GfxComputeBindingDX11> cbvs;
@@ -45,6 +51,7 @@ namespace Blueberry
 		List<GfxComputeBindingDX11> bufferUavs;
 		List<GfxComputeBindingDX11> textureUavs;
 		List<GfxComputeBindingDX11> samplers;
+		List<GfxComputeStaticSamplerBindingDX11> staticSamplers;
 	};
 
 	class GfxComputeRenderStateCacheDX11

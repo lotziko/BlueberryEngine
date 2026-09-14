@@ -46,7 +46,7 @@ namespace Blueberry
 				auto& bufferSlot = dxComputeShader->m_ConstantBufferSlots[i];
 				for (size_t j = 0; j < m_Device->m_BindedBuffers.size(); ++j)
 				{
-					if (m_Device->m_BindedBuffers[j].first == bufferSlot.first)
+					if (m_Device->m_BindedBuffers[j].id == bufferSlot.first)
 					{
 						bindingState.cbvs.push_back({ static_cast<uint32_t>(j), static_cast<uint8_t>(bufferSlot.second) });
 						break;
@@ -60,7 +60,7 @@ namespace Blueberry
 				auto& srvSlot = dxComputeShader->m_BufferSRVSlots[i];
 				for (size_t j = 0; j < m_Device->m_BindedBuffers.size(); ++j)
 				{
-					if (m_Device->m_BindedBuffers[j].first == srvSlot.first)
+					if (m_Device->m_BindedBuffers[j].id == srvSlot.first)
 					{
 						bindingState.bufferSrvs.push_back({ static_cast<uint32_t>(j), static_cast<uint8_t>(srvSlot.second) });
 						break;
@@ -74,7 +74,7 @@ namespace Blueberry
 				auto& srvSlot = dxComputeShader->m_TextureSRVSlots[i];
 				for (size_t j = 0; j < m_Device->m_BindedTextures.size(); ++j)
 				{
-					if (m_Device->m_BindedTextures[j].first == srvSlot.first)
+					if (m_Device->m_BindedTextures[j].id == srvSlot.first)
 					{
 						bindingState.textureSrvs.push_back({ static_cast<uint32_t>(j), static_cast<uint8_t>(srvSlot.second) });
 						break;
@@ -88,7 +88,7 @@ namespace Blueberry
 				auto& uavSlot = dxComputeShader->m_BufferUAVSlots[i];
 				for (size_t j = 0; j < m_Device->m_BindedBuffers.size(); ++j)
 				{
-					if (m_Device->m_BindedBuffers[j].first == uavSlot.first)
+					if (m_Device->m_BindedBuffers[j].id == uavSlot.first)
 					{
 						bindingState.bufferUavs.push_back({ static_cast<uint32_t>(j), static_cast<uint8_t>(uavSlot.second) });
 						break;
@@ -102,7 +102,7 @@ namespace Blueberry
 				auto& uavSlot = dxComputeShader->m_TextureUAVSlots[i];
 				for (size_t j = 0; j < m_Device->m_BindedTextures.size(); ++j)
 				{
-					if (m_Device->m_BindedTextures[j].first == uavSlot.first)
+					if (m_Device->m_BindedTextures[j].id == uavSlot.first)
 					{
 						bindingState.textureUavs.push_back({ static_cast<uint32_t>(j), static_cast<uint8_t>(uavSlot.second) });
 						break;
@@ -116,12 +116,19 @@ namespace Blueberry
 				auto& samplerSlot = dxComputeShader->m_SamplerSlots[i];
 				for (size_t j = 0; j < m_Device->m_BindedTextures.size(); ++j)
 				{
-					if (m_Device->m_BindedTextures[j].first == samplerSlot.first)
+					if (m_Device->m_BindedTextures[j].id == samplerSlot.first)
 					{
 						bindingState.samplers.push_back({ static_cast<uint32_t>(j), static_cast<uint8_t>(samplerSlot.second) });
 						break;
 					}
 				}
+			}
+
+			// Static samplers
+			for (size_t i = 0; i < dxComputeShader->m_StaticSamplerSlots.size(); ++i)
+			{
+				auto& samplerSlot = dxComputeShader->m_StaticSamplerSlots[i];
+				bindingState.staticSamplers.push_back({ static_cast<uint8_t>(m_Device->GetSampler(std::get<1>(samplerSlot), std::get<0>(samplerSlot))), static_cast<uint8_t>(std::get<2>(samplerSlot)) });
 			}
 
 			m_PipelineBindingStates.insert_or_assign(key, std::make_pair(pipelineState, bindingState));
@@ -136,7 +143,7 @@ namespace Blueberry
 
 		for (auto& binding : bindingState.cbvs)
 		{
-			GfxBufferDX12* dxBuffer = GfxBufferDX12::Get(m_Device->m_BindedBuffers[binding.bindingIndex].second);
+			GfxBufferDX12* dxBuffer = GfxBufferDX12::Get(m_Device->m_BindedBuffers[binding.bindingIndex].index);
 			if (dxBuffer == nullptr)
 			{
 				BB_ERROR("Buffer is missing.");
@@ -149,7 +156,7 @@ namespace Blueberry
 
 		for (auto& binding : bindingState.bufferSrvs)
 		{
-			GfxBufferDX12* dxBuffer = GfxBufferDX12::Get(m_Device->m_BindedBuffers[binding.bindingIndex].second);
+			GfxBufferDX12* dxBuffer = GfxBufferDX12::Get(m_Device->m_BindedBuffers[binding.bindingIndex].index);
 			if (dxBuffer == nullptr)
 			{
 				BB_ERROR("Buffer is missing.");
@@ -162,7 +169,7 @@ namespace Blueberry
 
 		for (auto& binding : bindingState.textureSrvs)
 		{
-			GfxTextureDX12* dxTexture = GfxTextureDX12::Get(m_Device->m_BindedTextures[binding.bindingIndex].second);
+			GfxTextureDX12* dxTexture = GfxTextureDX12::Get(m_Device->m_BindedTextures[binding.bindingIndex].index);
 			if (dxTexture == nullptr)
 			{
 				BB_ERROR("Texture is missing.");
@@ -175,7 +182,7 @@ namespace Blueberry
 
 		for (auto& binding : bindingState.bufferUavs)
 		{
-			GfxBufferDX12* dxBuffer = GfxBufferDX12::Get(m_Device->m_BindedBuffers[binding.bindingIndex].second);
+			GfxBufferDX12* dxBuffer = GfxBufferDX12::Get(m_Device->m_BindedBuffers[binding.bindingIndex].index);
 			if (dxBuffer == nullptr)
 			{
 				BB_ERROR("Buffer is missing.");
@@ -188,20 +195,21 @@ namespace Blueberry
 
 		for (auto& binding : bindingState.textureUavs)
 		{
-			GfxTextureDX12* dxTexture = GfxTextureDX12::Get(m_Device->m_BindedTextures[binding.bindingIndex].second);
+			auto& bindedTexture = m_Device->m_BindedTextures[binding.bindingIndex];
+			GfxTextureDX12* dxTexture = GfxTextureDX12::Get(bindedTexture.index);
 			if (dxTexture == nullptr)
 			{
 				BB_ERROR("Texture is missing.");
 				continue;
 			}
 			dxTexture->SetUAVState();
-			renderState.unorderedAccessViews[binding.slotIndex] = dxTexture->GetUnorderedAccessView().GetCPU();
+			renderState.unorderedAccessViews[binding.slotIndex] = bindedTexture.mip > 0 ? dxTexture->GetUnorderedAccessView(0, bindedTexture.mip).GetCPU() : dxTexture->GetUnorderedAccessView().GetCPU();
 			renderState.unorderedAccessViewsCount = std::max(renderState.unorderedAccessViewsCount, binding.slotIndex + 1u);
 		}
 
 		for (auto& binding : bindingState.samplers)
 		{
-			GfxTextureDX12* dxTexture = GfxTextureDX12::Get(m_Device->m_BindedTextures[binding.bindingIndex].second);
+			GfxTextureDX12* dxTexture = GfxTextureDX12::Get(m_Device->m_BindedTextures[binding.bindingIndex].index);
 			if (dxTexture == nullptr)
 			{
 				BB_ERROR("Texture is missing.");
@@ -214,6 +222,12 @@ namespace Blueberry
 				dxTexture->SetSampler(sampler);
 			}
 			renderState.samplers[binding.slotIndex] = sampler;
+			renderState.samplersCount = std::max(renderState.samplersCount, binding.slotIndex + 1u);
+		}
+
+		for (auto& binding : bindingState.staticSamplers)
+		{
+			renderState.samplers[binding.slotIndex] = binding.sampler;
 			renderState.samplersCount = std::max(renderState.samplersCount, binding.slotIndex + 1u);
 		}
 

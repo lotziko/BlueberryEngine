@@ -1,6 +1,7 @@
 #pragma once
 
 #include "..\..\Blueberry\Graphics\GfxShader.h"
+#include "Blueberry\Graphics\Enums.h"
 #include "Blueberry\Graphics\VertexLayout.h"
 #include "Concrete\Windows\ComPtr.h"
 #include "Concrete\DX11\DX11.h"
@@ -14,6 +15,7 @@ namespace Blueberry
 		ComPtr<ShaderType> m_Shader = nullptr;
 		List<std::pair<size_t, uint8_t>> m_ConstantBufferSlots = {};
 		List<std::pair<size_t, std::pair<uint8_t, uint8_t>>> m_TextureSRVSamplerSlots = {};
+		List<std::tuple<FilterMode, WrapMode, uint32_t>> m_StaticSamplerSlots = {};
 		List<std::pair<size_t, uint8_t>> m_BufferSRVSlots = {};
 
 		friend class GfxDeviceDX11;

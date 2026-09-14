@@ -53,9 +53,9 @@ namespace Blueberry
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Vector2Int& offset, const Rectangle& area) final;
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, uint32_t sourceSlice, uint32_t targetSlice, uint32_t mipLevel) final;
 
-		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, uint32_t arraySlice, uint32_t mipLevel) final;
+		virtual void SetRenderTargetImpl(GfxTexture** renderTextures, uint32_t renderTexturesCount, GfxTexture* depthStencilTexture, uint32_t arraySlice, uint32_t mipLevel) final;
 		virtual void SetGlobalBufferImpl(size_t id, GfxBuffer* buffer) final;
-		virtual void SetGlobalTextureImpl(size_t id, GfxTexture* texture) final;
+		virtual void SetGlobalTextureImpl(size_t id, GfxTexture* texture, uint32_t mip) final;
 		virtual void DrawImpl(const GfxDrawingOperation& operation) final;
 
 		virtual void DispatchImpl(ComputeShader* shader, uint32_t kernelIndex, uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ) final;
@@ -78,6 +78,21 @@ namespace Blueberry
 		ID3D11DepthStencilState* GetDepthStencilState(ZTest zTest, ZWrite zWrite);
 		ID3D11SamplerState* GetSamplerState(WrapMode wrapMode, FilterMode filterMode);
 
+		static const uint32_t BINDED_TARGET_COUNT = 6;
+
+		struct BindedBuffer
+		{
+			size_t id;
+			uint32_t index;
+		};
+
+		struct BindedTexture
+		{
+			size_t id;
+			uint32_t index;
+			uint32_t mip;
+		};
+
 		HWND m_Hwnd;
 
 		ComPtr<ID3D11Device> m_Device;
@@ -91,10 +106,10 @@ namespace Blueberry
 		List<std::pair<size_t, ComPtr<ID3D11BlendState>>> m_BlendStates;
 		List<std::pair<size_t, ComPtr<ID3D11SamplerState>>> m_SamplerStates;
 
-		GfxTextureDX11* m_BindedRenderTarget;
+		GfxTextureDX11* m_BindedRenderTargets[BINDED_TARGET_COUNT];
 		GfxTextureDX11* m_BindedDepthStencil;
-		List<std::pair<size_t, uint32_t>> m_BindedBuffers;
-		List<std::pair<size_t, uint32_t>> m_BindedTextures;
+		List<BindedBuffer> m_BindedBuffers;
+		List<BindedTexture> m_BindedTextures;
 		ID3D11ShaderResourceView* m_EmptyShaderResourceViews[16];
 		ID3D11SamplerState* m_EmptySamplers[16];
 		ID3D11UnorderedAccessView* m_EmptyUnorderedAccessViews[8];

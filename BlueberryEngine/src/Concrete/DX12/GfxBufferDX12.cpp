@@ -171,7 +171,7 @@ namespace Blueberry
 			resourceDesc.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 		}
 		
-		m_State = subresourceData == nullptr ? D3D12_RESOURCE_STATE_COMMON : D3D12_RESOURCE_STATE_COPY_DEST;
+		m_State = D3D12_RESOURCE_STATE_COMMON;
 		HRESULT hr = m_Device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE, &resourceDesc, m_State, nullptr, IID_PPV_ARGS(&m_Resource));
 
 		if (FAILED(hr))
@@ -182,6 +182,7 @@ namespace Blueberry
 
 		if (subresourceData != nullptr)
 		{
+			SetState(D3D12_RESOURCE_STATE_COPY_DEST);
 			m_GfxDevice->GetUploadBuffer().UploadBuffer(m_Resource.Get(), subresourceData->pData, subresourceData->RowPitch, isConstant ? 256ull : 4ull);
 		}
 

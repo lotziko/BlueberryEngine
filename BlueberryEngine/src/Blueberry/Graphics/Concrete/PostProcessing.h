@@ -17,11 +17,13 @@ namespace Blueberry
 	public:
 		static void Initialize();
 		static void Shutdown();
-		static void Draw(Camera* camera, GfxTexture* msaaColor, GfxTexture* color, GfxTexture* output, const Rectangle& viewport, const Vector2Int& size, const CameraType& cameraType);
+		static void Draw(Camera* camera, GfxTexture* input, GfxTexture* output, const Rectangle& viewport, const CameraType& cameraType);
 
 	private:
 		static ComputeShader* s_ResolveMSAABloomShader;
 		static Material* s_BloomMaterial;
+		static Material* s_PostProcessingMaterial;
+		static Material* s_FxaaMaterial;
 		static GfxBuffer* s_ResolveMSAABloomData;
 		static GfxBuffer* s_PostProcessingData;
 		static GfxBuffer* s_BloomData;

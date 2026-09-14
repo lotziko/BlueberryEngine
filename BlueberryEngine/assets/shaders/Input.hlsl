@@ -115,7 +115,7 @@ cbuffer PerCameraLightData
 	float4 _Shadow3x3PCFTermC3;
 };
 
-TEXTURE2D_X(_ScreenOcclusionTexture);
+TEXTURE2D_X_UINT(_ScreenOcclusionTexture);
 SAMPLER(_ScreenOcclusionTexture_Sampler);
 
 TEXTURE2D_X(_ScreenReflectionTexture);

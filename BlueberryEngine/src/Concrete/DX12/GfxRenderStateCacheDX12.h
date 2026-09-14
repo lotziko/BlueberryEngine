@@ -9,7 +9,8 @@ namespace Blueberry
 {
 	struct GfxTargetInfoDX12
 	{
-		DXGI_FORMAT renderTargetFormat;
+		DXGI_FORMAT renderTargetFormats[6];
+		UINT renderTargetCount;
 		DXGI_FORMAT depthStencilFormat;
 		UINT sampleCount;
 		UINT sampleQuality;
@@ -74,9 +75,9 @@ namespace Blueberry
 	{
 		ID3D12PipelineState* pipelineState;
 
-		D3D12_CPU_DESCRIPTOR_HANDLE vertexShaderResourceViews[24];
+		D3D12_CPU_DESCRIPTOR_HANDLE vertexShaderResourceViews[32];
 		uint8_t vertexSamplers[16];
-		D3D12_CPU_DESCRIPTOR_HANDLE pixelShaderResourceViews[24];
+		D3D12_CPU_DESCRIPTOR_HANDLE pixelShaderResourceViews[32];
 		uint8_t pixelSamplers[16];
 
 		D3D12_CPU_DESCRIPTOR_HANDLE vertexConstantBuffers[8];
@@ -121,6 +122,12 @@ namespace Blueberry
 		uint8_t srvSlot;
 	};
 
+	struct GfxStaticSamplerBindingDX12
+	{
+		uint8_t sampler;
+		uint8_t slotIndex;
+	};
+
 	struct GfxBindingStateDX12
 	{
 		List<GfxTextureBindingDX12> vertexTextures;
@@ -129,6 +136,9 @@ namespace Blueberry
 		List<GfxBufferBindingDX12> vertexBuffers;
 		List<GfxBufferBindingDX12> geometryBuffers;
 		List<GfxBufferBindingDX12> pixelBuffers;
+
+		List<GfxStaticSamplerBindingDX12> vertexStaticSamplers;
+		List<GfxStaticSamplerBindingDX12> pixelStaticSamplers;
 
 		List<GfxTextureBindingDX12> pixelBindlessTextures;
 

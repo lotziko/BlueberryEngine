@@ -142,9 +142,6 @@ float3 CalculateIndirectSpecular(float3 normalWS, float3 positionWS, float3 view
 
 float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 {
-	float2 diffuseExponent;
-	float geometricRoughness = AdjustRoughnessByGeometricNormal(surfaceData.roughness, inputData.normalGS);
-
 	float3 albedo = (1 - surfaceData.metallic) * surfaceData.albedo;
 	float3 reflectance = 0.04;
 	reflectance = lerp(reflectance, surfaceData.albedo.rgb, surfaceData.metallic);
@@ -171,8 +168,8 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 		float3 lightDirectionWS = _MainLightDirection.xyz;
 		float3 lightColor = _MainLightColor.rgb;
 
-		directDiffuseTerm += CalculateDirectDiffuse(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, shadowAttenuation, falloff, geometricRoughness);
-		directSpecularTerm += CalculateDirectSpecular(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, shadowAttenuation, falloff, reflectance, geometricRoughness);
+		directDiffuseTerm += CalculateDirectDiffuse(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, shadowAttenuation, falloff, surfaceData.roughness);
+		directSpecularTerm += CalculateDirectSpecular(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, shadowAttenuation, falloff, reflectance, surfaceData.roughness);
 	}
 
 	uint2 pointCluster = GetCluster(inputData.positionVS, inputData.normalizedScreenSpaceUV);
@@ -216,8 +213,8 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 			}
 		}
 #endif
-		directDiffuseTerm += CalculateDirectDiffuse(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, distanceAttenuation * shadowAttenuation, falloff, geometricRoughness);
-		directSpecularTerm += CalculateDirectSpecular(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, distanceAttenuation * shadowAttenuation, falloff, reflectance, geometricRoughness);
+		directDiffuseTerm += CalculateDirectDiffuse(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, distanceAttenuation * shadowAttenuation, falloff, surfaceData.roughness);
+		directSpecularTerm += CalculateDirectSpecular(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, distanceAttenuation * shadowAttenuation, falloff, reflectance, surfaceData.roughness);
 	}
 
 	// Spot lights
@@ -265,8 +262,8 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 		}
 #endif
 
-		directDiffuseTerm += CalculateDirectDiffuse(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, distanceAttenuation * spotAttenuation * cookieAttenuation * shadowAttenuation, falloff, geometricRoughness);
-		directSpecularTerm += CalculateDirectSpecular(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, distanceAttenuation * spotAttenuation * cookieAttenuation * shadowAttenuation, falloff, reflectance, geometricRoughness);
+		directDiffuseTerm += CalculateDirectDiffuse(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, distanceAttenuation * spotAttenuation * cookieAttenuation * shadowAttenuation, falloff, surfaceData.roughness);
+		directSpecularTerm += CalculateDirectSpecular(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, distanceAttenuation * spotAttenuation * cookieAttenuation * shadowAttenuation, falloff, reflectance, surfaceData.roughness);
 	}
 
 	float3 indirectDiffuseTerm = CalculateIndirectDiffuse(inputData.bakedGI);
@@ -300,7 +297,7 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 				continue;
 			}
 			t = 1.0f - saturate((sqrt(squareDistance) + data.fade - range) / data.fade);
-			specular = CalculateIndirectSpecular(inputData.normalWS, inputData.positionWS, inputData.viewDirectionWS, geometricRoughness, reflectance, data.positionWS, data.squareRange, data.index);
+			specular = CalculateIndirectSpecular(inputData.normalWS, inputData.positionWS, inputData.viewDirectionWS, surfaceData.roughness, reflectance, data.positionWS, data.squareRange, data.index);
 		}
 		else if (data.type == 1)
 		{
@@ -310,7 +307,7 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 			}
 			float3 d = max(0, max((data.positionMinWS + data.fade) - inputData.positionWS, inputData.positionWS - (data.positionMaxWS - data.fade)));
 			t = 1.0f - saturate(length(d) / data.fade);
-			specular = CalculateIndirectSpecular(inputData.normalWS, inputData.positionWS, inputData.viewDirectionWS, geometricRoughness, reflectance, data.positionWS, data.positionMinWS, data.positionMaxWS, data.index);
+			specular = CalculateIndirectSpecular(inputData.normalWS, inputData.positionWS, inputData.viewDirectionWS, surfaceData.roughness, reflectance, data.positionWS, data.positionMinWS, data.positionMaxWS, data.index);
 		}
 
 		float weight = t * t * (3.0 - 2.0 * t);
@@ -321,15 +318,16 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 		totalWeight += weight;
 	}
 
-	float3 screenSpecular = CalculateIndirectSpecular(inputData.normalWS, inputData.positionSS, inputData.viewDirectionWS, geometricRoughness, reflectance);
-	float3 skySpecular = CalculateIndirectSpecular(inputData.normalWS, inputData.viewDirectionWS, geometricRoughness, reflectance);
+	float3 screenSpecular = CalculateIndirectSpecular(inputData.normalWS, inputData.renderTargetUV, inputData.viewDirectionWS, surfaceData.roughness, reflectance);
+	float3 skySpecular = CalculateIndirectSpecular(inputData.normalWS, inputData.viewDirectionWS, surfaceData.roughness, reflectance);
 	float skyWeight = saturate(1.0f - maxWeight);
-	float3 indirectSpecularTerm = geometricRoughness > 0.2 ? lerp(totalSpecular / max(totalWeight, 1e-5), skySpecular, skyWeight) : screenSpecular; // TODO sky debug mode by replacing skySpecular with float3(1, 0, 0)
+	float t = smoothstep(0.1, 0.3, surfaceData.roughness);
+	float3 indirectSpecularTerm = lerp(screenSpecular, lerp(totalSpecular / max(totalWeight, 1e-5), skySpecular, skyWeight), t); // TODO sky debug mode by replacing skySpecular with float3(1, 0, 0)
 #else
 	float3 indirectSpecularTerm = 0;
 #endif
 
-	surfaceData.occlusion *= SAMPLE_TEXTURE2D_X(_ScreenOcclusionTexture, _ScreenOcclusionTexture_Sampler, inputData.positionSS).r;
+	surfaceData.occlusion *= saturate(LOAD_TEXTURE2D_X(_ScreenOcclusionTexture, inputData.normalizedScreenSpaceUV * CAMERA_SIZE_INV_SIZE.xy).r / 255.0);
 
 	return ((directDiffuseTerm + indirectDiffuseTerm * surfaceData.occlusion) * albedo + directSpecularTerm + indirectSpecularTerm * surfaceData.occlusion);
 }

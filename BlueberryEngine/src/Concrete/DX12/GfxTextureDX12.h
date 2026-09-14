@@ -25,6 +25,7 @@ namespace Blueberry
 		const GfxHandleDX12& GetRenderTargetView(uint32_t arraySlice, uint32_t mipSlice);
 		const GfxHandleDX12& GetDepthStencilView() const;
 		const GfxHandleDX12& GetUnorderedAccessView() const;
+		const GfxHandleDX12& GetUnorderedAccessView(uint32_t arraySlice, uint32_t mipSlice);
 		const GfxHandleDX12& GetRingShaderResourceView();
 		uint8_t GetSampler() const;
 		void SetSampler(uint8_t sampler);
@@ -61,6 +62,7 @@ namespace Blueberry
 		GfxHandleDX12 m_RingShaderResourceView;
 
 		List<GfxHandleDX12> m_SlicesRenderTargetViews;
+		List<GfxHandleDX12> m_SlicesUnorderedAccessViews;
 
 		GfxDeviceDX12* m_GfxDevice;
 		ID3D12Device* m_Device;

@@ -38,6 +38,12 @@ float LightFalloff(float distanceSqr, float bias = 0)
 	return rcp(distanceSqr + bias);
 }
 
+float2 GetLightmapChartTexcoord(float3 texcoordLightmap)
+{
+	float4 offsetScale = _PerLightmapInstanceData[LIGHTMAP_CHART_OFFSET.x > 0 ? LIGHTMAP_CHART_OFFSET.x + texcoordLightmap.z : 0];
+	return texcoordLightmap.xy * offsetScale.zw + offsetScale.xy;
+}
+
 float3 SampleLightmap(float2 uv)
 {
 	return SAMPLE_TEXTURE2D_LOD(_LightmapTexture, _LightmapTexture_Sampler, uv, 0).rgb;

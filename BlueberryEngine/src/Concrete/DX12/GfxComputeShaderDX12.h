@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Blueberry\Core\Base.h"
+#include "Blueberry\Graphics\Structs.h"
 #include "..\..\Blueberry\Graphics\GfxComputeShader.h"
 #include "Concrete\Windows\ComPtr.h"
 #include "Concrete\DX12\DX12.h"
@@ -23,6 +24,7 @@ namespace Blueberry
 		List<std::pair<size_t, uint32_t>> m_TextureUAVSlots = {};
 		List<std::pair<size_t, uint32_t>> m_BufferUAVSlots = {};
 		List<std::pair<size_t, uint32_t>> m_SamplerSlots = {};
+		List<std::tuple<FilterMode, WrapMode, uint32_t>> m_StaticSamplerSlots = {};
 
 		friend class GfxDeviceDX12;
 		friend class GfxComputeRenderStateCacheDX12;

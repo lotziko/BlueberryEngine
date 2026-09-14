@@ -22,6 +22,7 @@ namespace Blueberry
 		ID3D11RenderTargetView* GetRenderTargetView(uint32_t arraySlice, uint32_t mipSlice);
 		ID3D11DepthStencilView* GetDepthStencilView() const;
 		ID3D11UnorderedAccessView* GetUnorderedAccessView() const;
+		ID3D11UnorderedAccessView* GetUnorderedAccessView(uint32_t arraySlice, uint32_t mipSlice);
 		ID3D11SamplerState* GetSamplerState() const;
 		void SetSamplerState(ID3D11SamplerState* samplerState);
 		const DXGI_FORMAT GetDxgiFormat() const;
@@ -51,6 +52,7 @@ namespace Blueberry
 		ComPtr<ID3D11SamplerState> m_SamplerState;
 
 		List<ComPtr<ID3D11RenderTargetView>> m_SlicesRenderTargetViews;
+		List<ComPtr<ID3D11UnorderedAccessView>> m_SlicesUnorderedAccessViews;
 
 		ID3D11Device* m_Device;
 		ID3D11DeviceContext* m_DeviceContext;

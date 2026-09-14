@@ -10,7 +10,7 @@ namespace Blueberry
 	Material* DefaultMaterials::s_ErrorMaterial = nullptr;
 	Material* DefaultMaterials::s_BlitMaterial = nullptr;
 	Material* DefaultMaterials::s_ResolveMSAAMaterial = nullptr;
-	Material* DefaultMaterials::s_PostProcessingMaterial = nullptr;
+	Material* DefaultMaterials::s_DeferredMaterial = nullptr;
 	Material* DefaultMaterials::s_VRMirrorViewMaterial = nullptr;
 	Material* DefaultMaterials::s_SkyboxMaterial = nullptr;
 
@@ -62,20 +62,20 @@ namespace Blueberry
 		return s_ResolveMSAAMaterial;
 	}
 
-	Material* DefaultMaterials::GetPostProcessing()
+	Material* DefaultMaterials::GetDeferred()
 	{
-		if (s_PostProcessingMaterial == nullptr)
+		if (s_DeferredMaterial == nullptr)
 		{
-			Shader* shader = static_cast<Shader*>(AssetLoader::Load("assets/shaders/PostProcessing.shader"));
+			Shader* shader = static_cast<Shader*>(AssetLoader::Load("assets/shaders/Deferred.shader"));
 			if (shader == nullptr)
 			{
-				BB_ERROR("Failed to load post processing shader.");
+				BB_ERROR("Failed to load deferred shader.");
 				return nullptr;
 			}
-			s_PostProcessingMaterial = Material::Create(shader);
-			s_PostProcessingMaterial->SetName("PostProcessing");
+			s_DeferredMaterial = Material::Create(shader);
+			s_DeferredMaterial->SetName("Deferred");
 		}
-		return s_PostProcessingMaterial;
+		return s_DeferredMaterial;
 	}
 
 	Material* DefaultMaterials::GetVRMirrorView()

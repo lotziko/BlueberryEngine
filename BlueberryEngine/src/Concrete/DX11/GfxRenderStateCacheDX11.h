@@ -83,6 +83,12 @@ namespace Blueberry
 		uint8_t srvSlot;
 	};
 
+	struct GfxStaticSamplerBindingDX11
+	{
+		ID3D11SamplerState* samplerState;
+		uint8_t slotIndex;
+	};
+
 	struct GfxBindingStateDX11
 	{
 		List<GfxTextureBindingDX11> vertexTextures;
@@ -91,6 +97,9 @@ namespace Blueberry
 		List<GfxBufferBindingDX11> vertexBuffers;
 		List<GfxBufferBindingDX11> geometryBuffers;
 		List<GfxBufferBindingDX11> pixelBuffers;
+
+		List<GfxStaticSamplerBindingDX11> vertexStaticSamplers;
+		List<GfxStaticSamplerBindingDX11> pixelStaticSamplers;
 	};
 
 	class GfxRenderStateCacheDX11 : public GfxRenderStateCache

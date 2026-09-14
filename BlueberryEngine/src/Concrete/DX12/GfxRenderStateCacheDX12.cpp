@@ -109,7 +109,7 @@ namespace Blueberry
 				uint32_t offset = 0;
 				for (auto it1 = m_Device->m_BindedBuffers.begin(); it1 < m_Device->m_BindedBuffers.end(); ++it1, ++offset)
 				{
-					if (it1->first == it->first)
+					if (it1->id == it->first)
 					{
 						bindingState.vertexBuffers.push_back({ offset, true, it->second, UINT8_MAX });
 						break;
@@ -123,7 +123,7 @@ namespace Blueberry
 				uint32_t offset = 0;
 				for (auto it1 = m_Device->m_BindedBuffers.begin(); it1 < m_Device->m_BindedBuffers.end(); ++it1, ++offset)
 				{
-					if (it1->first == it->first)
+					if (it1->id == it->first)
 					{
 						bindingState.vertexBuffers.push_back({ offset, true, UINT8_MAX, it->second });
 						break;
@@ -148,9 +148,9 @@ namespace Blueberry
 				uint32_t offset = 0;
 				for (auto it1 = m_Device->m_BindedTextures.begin(); it1 < m_Device->m_BindedTextures.end(); ++it1, ++offset)
 				{
-					if (it1->first == it->first)
+					if (it1->id == it->first)
 					{
-						if (std::find(usedTextures.begin(), usedTextures.end(), it1->first) == usedTextures.end())
+						if (std::find(usedTextures.begin(), usedTextures.end(), it1->id) == usedTextures.end())
 						{
 							bindingState.vertexTextures.push_back({ offset, true, it->second.first, it->second.second != 255 ? it->second.second : UINT8_MAX });
 						}
@@ -168,7 +168,7 @@ namespace Blueberry
 					uint32_t offset = 0;
 					for (auto it1 = m_Device->m_BindedBuffers.begin(); it1 < m_Device->m_BindedBuffers.end(); ++it1, ++offset)
 					{
-						if (it1->first == it->first)
+						if (it1->id == it->first)
 						{
 							bindingState.geometryBuffers.push_back({ offset, true, it->second, UINT8_MAX });
 							break;
@@ -183,7 +183,7 @@ namespace Blueberry
 				uint32_t offset = 0;
 				for (auto it1 = m_Device->m_BindedBuffers.begin(); it1 < m_Device->m_BindedBuffers.end(); ++it1, ++offset)
 				{
-					if (it1->first == it->first)
+					if (it1->id == it->first)
 					{
 						bindingState.pixelBuffers.push_back({ offset, true, it->second, UINT8_MAX });
 						break;
@@ -197,7 +197,7 @@ namespace Blueberry
 				uint32_t offset = 0;
 				for (auto it1 = m_Device->m_BindedBuffers.begin(); it1 < m_Device->m_BindedBuffers.end(); ++it1, ++offset)
 				{
-					if (it1->first == it->first)
+					if (it1->id == it->first)
 					{
 						bindingState.pixelBuffers.push_back({ offset, true, UINT8_MAX, it->second });
 						break;
@@ -233,15 +233,29 @@ namespace Blueberry
 				uint32_t offset = 0;
 				for (auto it1 = m_Device->m_BindedTextures.begin(); it1 < m_Device->m_BindedTextures.end(); ++it1, ++offset)
 				{
-					if (it1->first == it->first)
+					if (it1->id == it->first)
 					{
-						if (std::find(usedTextures.begin(), usedTextures.end(), it1->first) == usedTextures.end())
+						if (std::find(usedTextures.begin(), usedTextures.end(), it1->id) == usedTextures.end())
 						{
 							bindingState.pixelTextures.push_back({ offset, true, it->second.first, it->second.second != 255 ? it->second.second : UINT8_MAX });
 						}
 						break;
 					}
 				}
+			}
+
+			// Vertex static samplers
+			for (size_t i = 0; i < dxVertexShader->m_StaticSamplerSlots.size(); ++i)
+			{
+				auto& samplerSlot = dxVertexShader->m_StaticSamplerSlots[i];
+				bindingState.vertexStaticSamplers.push_back({ static_cast<uint8_t>(m_Device->GetSampler(std::get<1>(samplerSlot), std::get<0>(samplerSlot))), static_cast<uint8_t>(std::get<2>(samplerSlot)) });
+			}
+
+			// Fragment static samplers
+			for (size_t i = 0; i < dxFragmentShader->m_StaticSamplerSlots.size(); ++i)
+			{
+				auto& samplerSlot = dxFragmentShader->m_StaticSamplerSlots[i];
+				bindingState.pixelStaticSamplers.push_back({ static_cast<uint8_t>(m_Device->GetSampler(std::get<1>(samplerSlot), std::get<0>(samplerSlot))), static_cast<uint8_t>(std::get<2>(samplerSlot)) });
 			}
 
 			m_BindingStates.insert_or_assign(bindingStateKey, bindingState);
@@ -281,8 +295,11 @@ namespace Blueberry
 			}
 			pipelineStateDesc.SampleMask = UINT_MAX;
 			pipelineStateDesc.PrimitiveTopologyType = GetPrimitiveTopology(topology);
-			pipelineStateDesc.NumRenderTargets = targetInfo.renderTargetFormat == DXGI_FORMAT_UNKNOWN ? 0 : 1;
-			pipelineStateDesc.RTVFormats[0] = targetInfo.renderTargetFormat;
+			pipelineStateDesc.NumRenderTargets = targetInfo.renderTargetCount;
+			for (UINT i = 0; i < targetInfo.renderTargetCount; ++i)
+			{
+				pipelineStateDesc.RTVFormats[i] = targetInfo.renderTargetFormats[i];
+			}
 			pipelineStateDesc.DSVFormat = targetInfo.depthStencilFormat;
 			pipelineStateDesc.SampleDesc.Count = targetInfo.sampleCount;
 			pipelineStateDesc.SampleDesc.Quality = targetInfo.sampleQuality;
@@ -303,11 +320,12 @@ namespace Blueberry
 			inputLayoutDesc.pInputElementDescs = dxVertexShader->m_InputElementDescs.data();
 			inputLayoutDesc.NumElements = static_cast<UINT>(dxVertexShader->m_InputElementDescs.size());
 
-			bool hasRenderTarget = targetInfo.renderTargetFormat != DXGI_FORMAT_UNKNOWN;
+			bool hasRenderTarget = targetInfo.renderTargetCount > 0;
 			bool hasDepthStencil = targetInfo.depthStencilFormat != DXGI_FORMAT_UNKNOWN;
 
 			D3D12_BLEND_DESC& blendDesc = pipelineStateDesc.BlendState;
 			blendDesc.AlphaToCoverageEnable = false;
+			blendDesc.IndependentBlendEnable = false;
 			blendDesc.RenderTarget[0].BlendEnable = hasRenderTarget;
 			blendDesc.RenderTarget[0].SrcBlend = GetBlend(passData.blendSrcColor);
 			blendDesc.RenderTarget[0].DestBlend = GetBlend(passData.blendDstColor);
@@ -349,7 +367,7 @@ namespace Blueberry
 	{
 		for (auto& buffer : bindingState.vertexBuffers)
 		{
-			GfxBufferDX12* dxBuffer = GfxBufferDX12::Get(m_Device->m_BindedBuffers[buffer.bindingIndex].second);
+			GfxBufferDX12* dxBuffer = GfxBufferDX12::Get(m_Device->m_BindedBuffers[buffer.bindingIndex].index);
 			if (buffer.bufferSlot != UINT8_MAX)
 			{
 				dxBuffer->SetState(D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
@@ -366,7 +384,7 @@ namespace Blueberry
 
 		for (auto& buffer : bindingState.geometryBuffers)
 		{
-			GfxBufferDX12* dxBuffer = GfxBufferDX12::Get(m_Device->m_BindedBuffers[buffer.bindingIndex].second);
+			GfxBufferDX12* dxBuffer = GfxBufferDX12::Get(m_Device->m_BindedBuffers[buffer.bindingIndex].index);
 			if (buffer.bufferSlot != UINT8_MAX)
 			{
 				dxBuffer->SetState(D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
@@ -383,7 +401,7 @@ namespace Blueberry
 
 		for (auto& buffer : bindingState.pixelBuffers)
 		{
-			GfxBufferDX12* dxBuffer = GfxBufferDX12::Get(m_Device->m_BindedBuffers[buffer.bindingIndex].second);
+			GfxBufferDX12* dxBuffer = GfxBufferDX12::Get(m_Device->m_BindedBuffers[buffer.bindingIndex].index);
 			if (buffer.bufferSlot != UINT8_MAX)
 			{
 				dxBuffer->SetState(D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
@@ -400,7 +418,7 @@ namespace Blueberry
 
 		for (auto& texture : bindingState.vertexTextures)
 		{
-			GfxTextureDX12* dxTexture = GfxTextureDX12::Get(texture.isGlobal ? m_Device->m_BindedTextures[texture.bindingIndex].second : GetTextureIndex(material, texture.bindingIndex));
+			GfxTextureDX12* dxTexture = GfxTextureDX12::Get(texture.isGlobal ? m_Device->m_BindedTextures[texture.bindingIndex].index : GetTextureIndex(material, texture.bindingIndex));
 			if (dxTexture == nullptr)
 			{
 				BB_ERROR("Texture is missing.");
@@ -424,7 +442,7 @@ namespace Blueberry
 
 		for (auto& texture : bindingState.pixelTextures)
 		{
-			GfxTextureDX12* dxTexture = GfxTextureDX12::Get(texture.isGlobal ? m_Device->m_BindedTextures[texture.bindingIndex].second : GetTextureIndex(material, texture.bindingIndex));
+			GfxTextureDX12* dxTexture = GfxTextureDX12::Get(texture.isGlobal ? m_Device->m_BindedTextures[texture.bindingIndex].index : GetTextureIndex(material, texture.bindingIndex));
 			if (dxTexture == nullptr)
 			{
 				BB_ERROR("Texture is missing.");
@@ -468,6 +486,16 @@ namespace Blueberry
 				renderState.bindlessIndexes[texture.samplerSlot] = sampler;
 				renderState.pixelBindlessIndexesCount = std::max(renderState.pixelSamplersCount, texture.samplerSlot + 1u);
 			}
+		}
+
+		for (auto& binding : bindingState.vertexStaticSamplers)
+		{
+			renderState.vertexSamplers[binding.slotIndex] = binding.sampler;
+		}
+
+		for (auto& binding : bindingState.pixelStaticSamplers)
+		{
+			renderState.pixelSamplers[binding.slotIndex] = binding.sampler;
 		}
 	}
 }

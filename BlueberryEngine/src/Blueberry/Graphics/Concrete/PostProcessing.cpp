@@ -19,6 +19,8 @@ namespace Blueberry
 {
 	ComputeShader* PostProcessing::s_ResolveMSAABloomShader = nullptr;
 	Material* PostProcessing::s_BloomMaterial = nullptr;
+	Material* PostProcessing::s_PostProcessingMaterial = nullptr;
+	Material* PostProcessing::s_FxaaMaterial = nullptr;
 	GfxBuffer* PostProcessing::s_ResolveMSAABloomData = nullptr;
 	GfxBuffer* PostProcessing::s_PostProcessingData = nullptr;
 	GfxBuffer* PostProcessing::s_BloomData = nullptr;
@@ -62,6 +64,8 @@ namespace Blueberry
 	{
 		s_ResolveMSAABloomShader = static_cast<ComputeShader*>(AssetLoader::Load("assets/shaders/ResolveMSAABloom.compute"));
 		s_BloomMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/Bloom.shader")));
+		s_PostProcessingMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/PostProcessing.shader")));
+		s_FxaaMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/Fxaa.shader")));
 
 		BufferProperties postProcessingBufferProperties = {};
 		postProcessingBufferProperties.elementCount = 1;
@@ -98,6 +102,8 @@ namespace Blueberry
 	{
 		Object::Destroy(s_ResolveMSAABloomShader);
 		Object::Destroy(s_BloomMaterial);
+		Object::Destroy(s_PostProcessingMaterial);
+		Object::Destroy(s_FxaaMaterial);
 		delete s_PostProcessingData;
 		delete s_ResolveMSAABloomData;
 		delete s_BloomData;
@@ -106,22 +112,40 @@ namespace Blueberry
 		AutoExposure::Shutdown();
 	}
 
-	void PostProcessing::Draw(Camera* camera, GfxTexture* msaaColor, GfxTexture* color, GfxTexture* output, const Rectangle& viewport, const Vector2Int& size, const CameraType& cameraType)
+	void PostProcessing::Draw(Camera* camera, GfxTexture* input, GfxTexture* output, const Rectangle& viewport, const CameraType& cameraType)
 	{
+		GfxTexture* color = GfxTexturePool::Get(input->GetWidth(), input->GetHeight(), 1, TextureUsageFlags::RenderTarget | TextureUsageFlags::UnorderedAccess, 1, 1, input->GetFormat());
+		GfxTexture* tonemapping = nullptr;
+		bool isMsaa = input->GetAntiAliasing() > 1;
+		if (!isMsaa)
+		{
+			tonemapping = GfxTexturePool::Get(input->GetWidth(), input->GetHeight(), 1, TextureUsageFlags::RenderTarget, 1, 1, input->GetFormat());
+		}
 		if (cameraType == CameraType::Preview)
 		{
-			// Resolve color
-			GfxDevice::SetRenderTarget(color);
-			GfxDevice::SetGlobalTexture(s_ScreenColorTextureId, msaaColor);
-			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetResolveMSAA(), 1));
-			GfxDevice::SetRenderTarget(nullptr);
+			if (isMsaa)
+			{
+				// Resolve color
+				GfxDevice::SetRenderTarget(color);
+				GfxDevice::SetGlobalTexture(s_ScreenColorTextureId, input);
+				GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetResolveMSAA(), 1));
+				GfxDevice::SetRenderTarget(nullptr);
+			}
 
 			// Tonemapping
 			// Gamma correction is done manually together with MSAA resolve to avoid using SRGB swapchain
-			GfxDevice::SetRenderTarget(output);
-			GfxDevice::SetViewport(0, 0, size.x, size.y);
+			GfxDevice::SetRenderTarget(isMsaa ? output : tonemapping);
+			GfxDevice::SetViewport(0, 0, viewport.width, viewport.height);
 			GfxDevice::SetGlobalTexture(s_ScreenColorTextureId, color);
-			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetPostProcessing(), 2));
+			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_PostProcessingMaterial, 2));
+			
+			// Fxaa
+			if (!isMsaa)
+			{
+				GfxDevice::SetRenderTarget(output);
+				GfxDevice::SetGlobalTexture(s_SourceTextureId, tonemapping);
+				GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_FxaaMaterial, 0));
+			}
 			GfxDevice::SetRenderTarget(nullptr);
 		}
 		else
@@ -144,8 +168,8 @@ namespace Blueberry
 			s_ResolveMSAABloomData->SetData(reinterpret_cast<char*>(&resolveMSAABloomConstants), sizeof(ResolveMSAABloomData));
 			GfxDevice::SetGlobalBuffer(s_ResolveMSAABloomDataId, s_ResolveMSAABloomData);
 
-			uint32_t textureWidth = color->GetWidth() / 4;
-			uint32_t textureHeight = color->GetHeight() / 4;
+			uint32_t textureWidth = input->GetWidth() / 4;
+			uint32_t textureHeight = input->GetHeight() / 4;
 			uint32_t textureWidth2 = Math::NextPowerOfTwo(textureWidth);
 			uint32_t textureHeight2 = Math::NextPowerOfTwo(textureHeight);
 
@@ -180,10 +204,20 @@ namespace Blueberry
 			GfxDevice::ClearColor(Color(0.0f, 0.0f, 0.0f, 0.0f));
 			GfxDevice::SetRenderTarget(nullptr);
 
-			GfxDevice::SetGlobalTexture(s_MSAASourceTextureId, msaaColor);
-			GfxDevice::SetGlobalTexture(s_ColorOutputTextureId, color);
-			GfxDevice::SetGlobalTexture(s_BloomOutputTextureId, bloom);
-			GfxDevice::Dispatch(s_ResolveMSAABloomShader, 0, threadWidth, threadHeight, 1);
+			if (isMsaa)
+			{
+				GfxDevice::SetGlobalTexture(s_MSAASourceTextureId, input);
+				GfxDevice::SetGlobalTexture(s_ColorOutputTextureId, color);
+				GfxDevice::SetGlobalTexture(s_BloomOutputTextureId, bloom);
+				GfxDevice::Dispatch(s_ResolveMSAABloomShader, 0, threadWidth, threadHeight, 1);
+			}
+			else
+			{
+				GfxDevice::SetGlobalTexture(s_SourceTextureId, input);
+				GfxDevice::SetGlobalTexture(s_ColorOutputTextureId, color);
+				GfxDevice::SetGlobalTexture(s_BloomOutputTextureId, bloom);
+				GfxDevice::Dispatch(s_ResolveMSAABloomShader, 1, threadWidth, threadHeight, 1);
+			}
 			AutoExposure::Calculate(camera, color, viewport);
 
 			BloomData bloomConstants = {};
@@ -319,10 +353,19 @@ namespace Blueberry
 
 			// Tonemapping
 			// Gamma correction is done manually together with MSAA resolve to avoid using SRGB swapchain
-			GfxDevice::SetRenderTarget(output);
-			GfxDevice::SetViewport(0, 0, size.x, size.y);
+			GfxDevice::SetRenderTarget(isMsaa ? output : tonemapping);
+			GfxDevice::SetViewport(0, 0, viewport.width, viewport.height);
 			GfxDevice::SetGlobalTexture(s_ScreenColorTextureId, color);
-			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetPostProcessing(), cameraType == CameraType::Reflection ? 1 : 0));
+			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_PostProcessingMaterial, cameraType == CameraType::Reflection ? 1 : 0));
+
+			// Fxaa
+			if (!isMsaa)
+			{
+				GfxDevice::SetRenderTarget(output);
+				GfxDevice::SetGlobalTexture(s_SourceTextureId, tonemapping);
+				GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_FxaaMaterial, 0));
+			}
+
 			GfxDevice::SetRenderTarget(nullptr);
 
 			GfxTexturePool::Release(bloom);
@@ -330,6 +373,11 @@ namespace Blueberry
 			GfxTexturePool::Release(bloom8);
 			GfxTexturePool::Release(bloom16);
 			GfxTexturePool::Release(bloom32);
+		}
+		GfxTexturePool::Release(color);
+		if (!isMsaa)
+		{
+			GfxTexturePool::Release(tonemapping);
 		}
 	}
 }

@@ -53,9 +53,9 @@ namespace Blueberry
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Vector2Int& offset, const Rectangle& area) final;
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, uint32_t sourceSlice, uint32_t targetSlice, uint32_t mipLevel) final;
 
-		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, uint32_t arraySlice, uint32_t mipLevel) final;
+		virtual void SetRenderTargetImpl(GfxTexture** renderTextures, uint32_t renderTexturesCount, GfxTexture* depthStencilTexture, uint32_t arraySlice, uint32_t mipLevel) final;
 		virtual void SetGlobalBufferImpl(size_t id, GfxBuffer* buffer) final;
-		virtual void SetGlobalTextureImpl(size_t id, GfxTexture* texture) final;
+		virtual void SetGlobalTextureImpl(size_t id, GfxTexture* texture, uint32_t mip) final;
 		virtual void DrawImpl(const GfxDrawingOperation& operation) final;
 
 		virtual void DispatchImpl(ComputeShader* shader, uint32_t kernelIndex, uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ) final;
@@ -95,6 +95,7 @@ namespace Blueberry
 		uint32_t GetSamplersOffset(const uint8_t* indexes, uint32_t size);
 		void ResizeBackbufferIfNeeded();
 
+		static const uint32_t BINDED_TARGET_COUNT = 6;
 		static const uint32_t BUFFER_COUNT = 2;
 
 		struct FrameContext
@@ -114,6 +115,19 @@ namespace Blueberry
 		{
 			uint8_t data[16];
 			uint32_t offset;
+		};
+
+		struct BindedBuffer
+		{
+			size_t id;
+			uint32_t index;
+		};
+
+		struct BindedTexture
+		{
+			size_t id;
+			uint32_t index;
+			uint32_t mip;
 		};
 
 		HWND m_Hwnd;
@@ -150,10 +164,11 @@ namespace Blueberry
 		List<std::pair<size_t, GfxHandleDX12>> m_Samplers;
 		List<SamplerOffsetData> m_SamplerHeapOffsets;
 
-		GfxTextureDX12* m_BindedRenderTarget = nullptr;
+		GfxTextureDX12* m_BindedRenderTargets[BINDED_TARGET_COUNT];
+		uint32_t m_BindedRenderTargetsCount = 0;
 		GfxTextureDX12* m_BindedDepthStencil = nullptr;
-		List<std::pair<size_t, uint32_t>> m_BindedBuffers;
-		List<std::pair<size_t, uint32_t>> m_BindedTextures;
+		List<BindedBuffer> m_BindedBuffers;
+		List<BindedTexture> m_BindedTextures;
 		GfxTargetInfoDX12 m_TargetInfo;
 		List<std::pair<UINT64, ComPtr<ID3D12Resource>>> m_ReleasedResources;
 

@@ -106,6 +106,26 @@ namespace Blueberry
 
 	ID3D11RenderTargetView* GfxTextureDX11::GetRenderTargetView(uint32_t arraySlice, uint32_t mipSlice)
 	{
+		if (m_SlicesRenderTargetViews.size() == 0)
+		{
+			switch (m_Dimension)
+			{
+			case TextureDimension::Texture2D:
+				m_SlicesRenderTargetViews.resize(m_MipLevels);
+				break;
+			case TextureDimension::Texture2DArray:
+				m_SlicesRenderTargetViews.resize(static_cast<size_t>(m_ArraySize * m_MipLevels));
+				break;
+			case TextureDimension::TextureCube:
+				m_SlicesRenderTargetViews.resize(static_cast<size_t>(6 * m_MipLevels));
+				break;
+			case TextureDimension::Texture3D:
+				m_SlicesRenderTargetViews.resize(static_cast<size_t>(m_Depth * m_MipLevels));
+				break;
+			}
+			m_SlicesRenderTargetViews[0] = m_RenderTargetView;
+		}
+
 		uint32_t index = arraySlice * m_MipLevels + mipSlice;
 		ID3D11RenderTargetView* renderTargetView = m_SlicesRenderTargetViews[index].Get();
 		if (renderTargetView == nullptr)
@@ -170,6 +190,63 @@ namespace Blueberry
 	ID3D11UnorderedAccessView* GfxTextureDX11::GetUnorderedAccessView() const
 	{
 		return m_UnorderedAccessView.Get();
+	}
+
+	ID3D11UnorderedAccessView* GfxTextureDX11::GetUnorderedAccessView(uint32_t arraySlice, uint32_t mipSlice)
+	{
+		if (m_SlicesUnorderedAccessViews.size() == 0)
+		{
+			switch (m_Dimension)
+			{
+			case TextureDimension::Texture2D:
+				m_SlicesUnorderedAccessViews.resize(m_MipLevels);
+				break;
+			case TextureDimension::Texture2DArray:
+				m_SlicesUnorderedAccessViews.resize(static_cast<size_t>(m_ArraySize * m_MipLevels));
+				break;
+			case TextureDimension::Texture3D:
+				m_SlicesUnorderedAccessViews.resize(static_cast<size_t>(m_Depth * m_MipLevels));
+				break;
+			}
+			m_SlicesUnorderedAccessViews[0] = m_UnorderedAccessView;
+		}
+
+		uint32_t index = arraySlice * m_MipLevels + mipSlice;
+		ID3D11UnorderedAccessView* unorderedAccessView = m_SlicesUnorderedAccessViews[index].Get();
+		if (unorderedAccessView == nullptr)
+		{
+			D3D11_UNORDERED_ACCESS_VIEW_DESC unorderedAccessViewDesc = {};
+			unorderedAccessViewDesc.Format = m_DxgiFormat;
+
+			switch (m_Dimension)
+			{
+			case TextureDimension::Texture2D:
+				unorderedAccessViewDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
+				unorderedAccessViewDesc.Texture2D.MipSlice = mipSlice;
+				break;
+			case TextureDimension::Texture2DArray:
+				unorderedAccessViewDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
+				unorderedAccessViewDesc.Texture2DArray.MipSlice = mipSlice;
+				unorderedAccessViewDesc.Texture2DArray.FirstArraySlice = arraySlice;
+				unorderedAccessViewDesc.Texture2DArray.ArraySize = m_ArraySize;
+				break;
+			case TextureDimension::Texture3D:
+				unorderedAccessViewDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
+				unorderedAccessViewDesc.Texture3D.MipSlice = mipSlice;
+				unorderedAccessViewDesc.Texture3D.FirstWSlice = arraySlice;
+				unorderedAccessViewDesc.Texture3D.WSize = -1;
+				break;
+			}
+
+			HRESULT hr = m_Device->CreateUnorderedAccessView(m_Resource.Get(), &unorderedAccessViewDesc, m_SlicesUnorderedAccessViews[index].GetAddressOf());
+			if (FAILED(hr))
+			{
+				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create render target view."));
+				return false;
+			}
+			return m_SlicesUnorderedAccessViews[index].Get();
+		}
+		return unorderedAccessView;
 	}
 
 	ID3D11SamplerState* GfxTextureDX11::GetSamplerState() const
@@ -490,7 +567,6 @@ namespace Blueberry
 			case TextureDimension::Texture2D:
 				renderTargetViewDesc.ViewDimension = m_AntiAliasing > 1 ? D3D11_RTV_DIMENSION_TEXTURE2DMS : D3D11_RTV_DIMENSION_TEXTURE2D;
 				renderTargetViewDesc.Texture2D.MipSlice = 0;
-				m_SlicesRenderTargetViews.resize(m_MipLevels);
 				break;
 			case TextureDimension::Texture2DArray:
 				if (m_AntiAliasing > 1)
@@ -506,21 +582,18 @@ namespace Blueberry
 					renderTargetViewDesc.Texture2DArray.FirstArraySlice = 0;
 					renderTargetViewDesc.Texture2DArray.ArraySize = m_ArraySize;
 				}
-				m_SlicesRenderTargetViews.resize(static_cast<size_t>(m_ArraySize * m_MipLevels));
 				break;
 			case TextureDimension::TextureCube:
 				renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
 				renderTargetViewDesc.Texture2DArray.MipSlice = 0;
 				renderTargetViewDesc.Texture2DArray.FirstArraySlice = 0;
 				renderTargetViewDesc.Texture2DArray.ArraySize = 6;
-				m_SlicesRenderTargetViews.resize(static_cast<size_t>(6 * m_MipLevels));
 				break;
 			case TextureDimension::Texture3D:
 				renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE3D;
 				renderTargetViewDesc.Texture3D.MipSlice = 0;
 				renderTargetViewDesc.Texture3D.FirstWSlice = 0;
 				renderTargetViewDesc.Texture3D.WSize = -1;
-				m_SlicesRenderTargetViews.resize(static_cast<size_t>(properties.depth * m_MipLevels));
 				break;
 			}
 

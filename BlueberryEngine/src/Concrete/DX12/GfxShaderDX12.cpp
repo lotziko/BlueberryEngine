@@ -1,6 +1,7 @@
 #include "GfxShaderDX12.h"
 
 #include "Blueberry\Tools\CRCHelper.h"
+#include "..\..\Blueberry\Graphics\SamplerHelper.h"
 #include "Concrete\Windows\DxcHelper.h"
 #include "..\Windows\WindowsHelper.h"
 
@@ -86,33 +87,43 @@ namespace Blueberry
 			case D3D_SIT_SAMPLER:
 			{
 				String samplerName = String(inputBindDesc.Name);
-				auto pos = samplerName.find("_Sampler");
-				if (pos != std::string::npos)
-				{
-					samplerName.replace(pos, samplerName.length() - pos, "");
-				}
-				else
-				{
-					BB_ERROR("Wrong sampler name.");
-					continue;
-				}
 				size_t samplerHash = TO_HASH(samplerName);
-				size_t texturePairIndex = UINT64_MAX;
-				for (size_t j = 0; j < m_TextureSRVSamplerSlots.size(); ++j)
+
+				FilterMode filterMode;
+				WrapMode wrapMode;
+				if (SamplerHelper::ParseName(samplerHash, filterMode, wrapMode))
 				{
-					if (m_TextureSRVSamplerSlots[j].first == samplerHash)
-					{
-						texturePairIndex = j;
-						break;
-					}
-				}
-				if (texturePairIndex == UINT64_MAX)
-				{
-					m_TextureSRVSamplerSlots.push_back(std::make_pair(samplerHash, std::make_pair(UINT8_MAX, bindPoint)));
+					m_StaticSamplerSlots.push_back(std::make_tuple(filterMode, wrapMode, inputBindDesc.BindPoint));
 				}
 				else
 				{
-					m_TextureSRVSamplerSlots[texturePairIndex].second.second = bindPoint;
+					auto pos = samplerName.find("_Sampler");
+					if (pos != std::string::npos)
+					{
+						samplerName.replace(pos, samplerName.length() - pos, "");
+						samplerHash = TO_HASH(samplerName);
+						size_t texturePairIndex = UINT64_MAX;
+						for (size_t j = 0; j < m_TextureSRVSamplerSlots.size(); ++j)
+						{
+							if (m_TextureSRVSamplerSlots[j].first == samplerHash)
+							{
+								texturePairIndex = j;
+								break;
+							}
+						}
+						if (texturePairIndex == UINT64_MAX)
+						{
+							m_TextureSRVSamplerSlots.push_back(std::make_pair(samplerHash, std::make_pair(UINT8_MAX, bindPoint)));
+						}
+						else
+						{
+							m_TextureSRVSamplerSlots[texturePairIndex].second.second = bindPoint;
+						}
+					}
+					else
+					{
+						BB_ERROR("Wrong sampler name.");
+					}
 				}
 			}
 			break;
@@ -415,32 +426,43 @@ namespace Blueberry
 			case D3D_SIT_SAMPLER:
 			{
 				String samplerName = String(inputBindDesc.Name);
-				auto pos = samplerName.find("_Sampler");
-				if (pos != std::string::npos)
-				{
-					samplerName.replace(pos, samplerName.length() - pos, "");
-				}
-				else
-				{
-					continue;
-				}
 				size_t samplerHash = TO_HASH(samplerName);
-				size_t texturePairIndex = UINT64_MAX;
-				for (size_t j = 0; j < m_TextureSRVSamplerSlots.size(); ++j)
+
+				FilterMode filterMode;
+				WrapMode wrapMode;
+				if (SamplerHelper::ParseName(samplerHash, filterMode, wrapMode))
 				{
-					if (m_TextureSRVSamplerSlots[j].first == samplerHash)
-					{
-						texturePairIndex = j;
-						break;
-					}
-				}
-				if (texturePairIndex == UINT64_MAX)
-				{
-					m_TextureSRVSamplerSlots.push_back(std::make_pair(samplerHash, std::make_pair(UINT8_MAX, bindPoint)));
+					m_StaticSamplerSlots.push_back(std::make_tuple(filterMode, wrapMode, inputBindDesc.BindPoint));
 				}
 				else
 				{
-					m_TextureSRVSamplerSlots[texturePairIndex].second.second = bindPoint;
+					auto pos = samplerName.find("_Sampler");
+					if (pos != std::string::npos)
+					{
+						samplerName.replace(pos, samplerName.length() - pos, "");
+						samplerHash = TO_HASH(samplerName);
+						size_t texturePairIndex = UINT64_MAX;
+						for (size_t j = 0; j < m_TextureSRVSamplerSlots.size(); ++j)
+						{
+							if (m_TextureSRVSamplerSlots[j].first == samplerHash)
+							{
+								texturePairIndex = j;
+								break;
+							}
+						}
+						if (texturePairIndex == UINT64_MAX)
+						{
+							m_TextureSRVSamplerSlots.push_back(std::make_pair(samplerHash, std::make_pair(UINT8_MAX, bindPoint)));
+						}
+						else
+						{
+							m_TextureSRVSamplerSlots[texturePairIndex].second.second = bindPoint;
+						}
+					}
+					else
+					{
+						BB_ERROR("Wrong sampler name.");
+					}
 				}
 			}
 			break;

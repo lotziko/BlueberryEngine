@@ -62,6 +62,10 @@ namespace Blueberry
 
 	void Object::Destroy(Object* object)
 	{
+		if (object == nullptr)
+		{
+			return;
+		}
 		ObjectDB::FreeId(object);
 		delete object;
 	}

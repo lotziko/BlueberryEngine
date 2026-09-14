@@ -61,8 +61,9 @@ namespace Blueberry
 		static void SetRenderTarget(GfxTexture* renderTexture, GfxTexture* depthStencilTexture);
 		static void SetRenderTarget(GfxTexture* renderTexture, uint32_t arraySlice, uint32_t mipLevel);
 		static void SetRenderTarget(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, uint32_t arraySlice, uint32_t mipLevel);
+		static void SetRenderTarget(GfxTexture** renderTextures, uint32_t renderTexturesCount, GfxTexture* depthStencilTexture);
 		static void SetGlobalBuffer(size_t id, GfxBuffer* buffer);
-		static void SetGlobalTexture(size_t id, GfxTexture* texture);
+		static void SetGlobalTexture(size_t id, GfxTexture* texture, uint32_t mip = 0);
 		static void Draw(const GfxDrawingOperation& operation);
 
 		static void Dispatch(ComputeShader* shader, uint32_t kernelIndex, uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ);
@@ -103,9 +104,9 @@ namespace Blueberry
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, const Vector2Int& offset, const Rectangle& area) = 0;
 		virtual void CopyImpl(GfxTexture* source, GfxTexture* target, uint32_t sourceSlice, uint32_t targetSlice, uint32_t mipLevel) = 0;
 
-		virtual void SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, uint32_t arraySlice, uint32_t mipLevel) = 0;
+		virtual void SetRenderTargetImpl(GfxTexture** renderTextures, uint32_t renderTexturesCount, GfxTexture* depthStencilTexture, uint32_t arraySlice, uint32_t mipLevel) = 0;
 		virtual void SetGlobalBufferImpl(size_t id, GfxBuffer* buffer) = 0;
-		virtual void SetGlobalTextureImpl(size_t id, GfxTexture* texture) = 0;
+		virtual void SetGlobalTextureImpl(size_t id, GfxTexture* texture, uint32_t mip) = 0;
 		virtual void DrawImpl(const GfxDrawingOperation& operation) = 0;
 
 		virtual void DispatchImpl(ComputeShader* shader, uint32_t kernelIndex, uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ) = 0;

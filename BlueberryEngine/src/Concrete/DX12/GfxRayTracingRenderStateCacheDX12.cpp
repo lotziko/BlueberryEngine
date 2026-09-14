@@ -95,7 +95,7 @@ namespace Blueberry
 				auto& bufferSlot = dxRayTracingShader->m_ConstantBufferSlots[i];
 				for (size_t j = 0; j < m_Device->m_BindedBuffers.size(); ++j)
 				{
-					if (m_Device->m_BindedBuffers[j].first == bufferSlot.first)
+					if (m_Device->m_BindedBuffers[j].id == bufferSlot.first)
 					{
 						bindingState.cbvs.push_back({ static_cast<uint32_t>(j), static_cast<uint8_t>(bufferSlot.second) });
 						break;
@@ -109,7 +109,7 @@ namespace Blueberry
 				auto& srvSlot = dxRayTracingShader->m_TextureSRVSlots[i];
 				for (size_t j = 0; j < m_Device->m_BindedTextures.size(); ++j)
 				{
-					if (m_Device->m_BindedTextures[j].first == srvSlot.first)
+					if (m_Device->m_BindedTextures[j].id == srvSlot.first)
 					{
 						bindingState.textureSrvs.push_back({ static_cast<uint32_t>(j), static_cast<uint8_t>(srvSlot.second) });
 						break;
@@ -123,7 +123,7 @@ namespace Blueberry
 				auto& uavSlot = dxRayTracingShader->m_TextureUAVSlots[i];
 				for (size_t j = 0; j < m_Device->m_BindedTextures.size(); ++j)
 				{
-					if (m_Device->m_BindedTextures[j].first == uavSlot.first)
+					if (m_Device->m_BindedTextures[j].id == uavSlot.first)
 					{
 						bindingState.textureUavs.push_back({ static_cast<uint32_t>(j), static_cast<uint8_t>(uavSlot.second) });
 						break;
@@ -137,7 +137,7 @@ namespace Blueberry
 				auto& samplerSlot = dxRayTracingShader->m_SamplerSlots[i];
 				for (size_t j = 0; j < m_Device->m_BindedTextures.size(); ++j)
 				{
-					if (m_Device->m_BindedTextures[j].first == samplerSlot.first)
+					if (m_Device->m_BindedTextures[j].id == samplerSlot.first)
 					{
 						bindingState.samplers.push_back({ static_cast<uint32_t>(j), static_cast<uint8_t>(samplerSlot.second) });
 						break;
@@ -288,7 +288,7 @@ namespace Blueberry
 
 		for (auto& binding : bindingState.cbvs)
 		{
-			GfxBufferDX12* dxBuffer = GfxBufferDX12::Get(m_Device->m_BindedBuffers[binding.bindingIndex].second);
+			GfxBufferDX12* dxBuffer = GfxBufferDX12::Get(m_Device->m_BindedBuffers[binding.bindingIndex].index);
 			if (dxBuffer == nullptr)
 			{
 				BB_ERROR("Buffer is missing.");
@@ -301,7 +301,7 @@ namespace Blueberry
 
 		for (auto& binding : bindingState.textureSrvs)
 		{
-			GfxTextureDX12* dxTexture = GfxTextureDX12::Get(m_Device->m_BindedTextures[binding.bindingIndex].second);
+			GfxTextureDX12* dxTexture = GfxTextureDX12::Get(m_Device->m_BindedTextures[binding.bindingIndex].index);
 			if (dxTexture == nullptr)
 			{
 				BB_ERROR("Texture is missing.");
@@ -314,7 +314,7 @@ namespace Blueberry
 
 		for (auto& binding : bindingState.textureUavs)
 		{
-			GfxTextureDX12* dxTexture = GfxTextureDX12::Get(m_Device->m_BindedTextures[binding.bindingIndex].second);
+			GfxTextureDX12* dxTexture = GfxTextureDX12::Get(m_Device->m_BindedTextures[binding.bindingIndex].index);
 			if (dxTexture == nullptr)
 			{
 				BB_ERROR("Texture is missing.");
@@ -327,7 +327,7 @@ namespace Blueberry
 
 		for (auto& binding : bindingState.samplers)
 		{
-			GfxTextureDX12* dxTexture = GfxTextureDX12::Get(m_Device->m_BindedTextures[binding.bindingIndex].second);
+			GfxTextureDX12* dxTexture = GfxTextureDX12::Get(m_Device->m_BindedTextures[binding.bindingIndex].index);
 			if (dxTexture == nullptr)
 			{
 				BB_ERROR("Texture is missing.");

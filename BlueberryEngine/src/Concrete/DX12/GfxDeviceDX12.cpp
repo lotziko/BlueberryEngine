@@ -13,7 +13,7 @@
 
 namespace Blueberry
 {
-	#define DEBUG_LAYER true
+	#define DEBUG_LAYER false
 	#define GPU_VALIDATION false
 
 	bool GfxDeviceDX12::InitializeImpl(int width, int height, void* data)
@@ -30,15 +30,22 @@ namespace Blueberry
 
 	void GfxDeviceDX12::ClearColorImpl(const Color& color)
 	{
-		if (m_BindedRenderTarget == nullptr)
+		if (m_BindedRenderTargets[0] == nullptr)
 		{
 			BackbufferData& backbuffer = m_Backbuffers[m_BackbufferIndex];
 			m_CommandList->ClearRenderTargetView(backbuffer.renderTargetView.GetCPU(), color, 0, nullptr);
 		}
 		else
 		{
-			m_BindedRenderTarget->SetState(D3D12_RESOURCE_STATE_RENDER_TARGET);
-			m_CommandList->ClearRenderTargetView(m_BindedRenderTarget->GetRenderTargetView().GetCPU(), color, 0, nullptr);
+			for (uint32_t i = 0; i < BINDED_TARGET_COUNT; ++i)
+			{
+				GfxTextureDX12* renderTarget = m_BindedRenderTargets[i];
+				if (renderTarget != nullptr)
+				{
+					renderTarget->SetState(D3D12_RESOURCE_STATE_RENDER_TARGET);
+					m_CommandList->ClearRenderTargetView(renderTarget->GetRenderTargetView().GetCPU(), color, 0, nullptr);
+				}
+			}
 		}
 	}
 
@@ -353,9 +360,14 @@ namespace Blueberry
 		m_CommandList->CopyTextureRegion(&dstLocation, 0, 0, 0, &srcLocation, nullptr);
 	}
 
-	void GfxDeviceDX12::SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, uint32_t arraySlice, uint32_t mipLevel)
+	void GfxDeviceDX12::SetRenderTargetImpl(GfxTexture** renderTextures, uint32_t renderTexturesCount, GfxTexture* depthStencilTexture, uint32_t arraySlice, uint32_t mipLevel)
 	{
-		if (renderTexture == nullptr && depthStencilTexture == nullptr)
+		m_TargetInfo.renderTargetFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+		for (uint32_t i = 1; i < m_BindedRenderTargetsCount; ++i)
+		{
+			m_TargetInfo.renderTargetFormats[i] = DXGI_FORMAT_UNKNOWN;
+		}
+		if (renderTexturesCount == 0 && depthStencilTexture == nullptr)
 		{
 			BackbufferData& backbuffer = m_Backbuffers[m_BackbufferIndex];
 			if (backbuffer.state != D3D12_RESOURCE_STATE_RENDER_TARGET)
@@ -364,16 +376,19 @@ namespace Blueberry
 				m_CommandList->OMSetRenderTargets(1, &backbuffer.renderTargetView.GetCPU(), FALSE, nullptr);
 				backbuffer.state = D3D12_RESOURCE_STATE_RENDER_TARGET;
 			}
-			m_BindedRenderTarget = nullptr;
+			for (uint32_t i = 0; i < m_BindedRenderTargetsCount; ++i)
+			{
+				m_BindedRenderTargets[i] = nullptr;
+			}
 			m_BindedDepthStencil = nullptr;
-			m_TargetInfo.renderTargetFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+			m_TargetInfo.renderTargetFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
 			m_TargetInfo.depthStencilFormat = DXGI_FORMAT_UNKNOWN;
 			m_TargetInfo.sampleCount = 1;
 			m_TargetInfo.sampleQuality = 0;
 		}
 		else
 		{
-			if (m_BindedRenderTarget == nullptr && m_BindedDepthStencil == nullptr)
+			if (m_BindedRenderTargets[0] == nullptr && m_BindedDepthStencil == nullptr)
 			{
 				BackbufferData& backbuffer = m_Backbuffers[m_BackbufferIndex];
 				if (backbuffer.state != D3D12_RESOURCE_STATE_PRESENT)
@@ -383,27 +398,27 @@ namespace Blueberry
 				}
 			}
 
-			D3D12_CPU_DESCRIPTOR_HANDLE renderTargets[1] = {};
-			if (renderTexture != nullptr)
+			D3D12_CPU_DESCRIPTOR_HANDLE renderTargets[BINDED_TARGET_COUNT] = {};
+			if (renderTexturesCount > 0)
 			{
-				GfxTextureDX12* dxRenderTarget = static_cast<GfxTextureDX12*>(renderTexture);
-				if (arraySlice || mipLevel)
+				for (uint32_t i = 0; i < renderTexturesCount; ++i)
 				{
-					renderTargets[0] = dxRenderTarget->GetRenderTargetView(arraySlice, mipLevel).GetCPU();
-				}
-				else
-				{
-					renderTargets[0] = dxRenderTarget->GetRenderTargetView().GetCPU();
-				}
+					GfxTextureDX12* dxRenderTarget = static_cast<GfxTextureDX12*>(renderTextures[i]);
+					if (arraySlice || mipLevel)
+					{
+						renderTargets[i] = dxRenderTarget->GetRenderTargetView(arraySlice, mipLevel).GetCPU();
+					}
+					else
+					{
+						renderTargets[i] = dxRenderTarget->GetRenderTargetView().GetCPU();
+					}
 
-				m_BindedRenderTarget = dxRenderTarget;
-				m_TargetInfo.renderTargetFormat = dxRenderTarget->GetDxgiFormat();
-				m_TargetInfo.sampleCount = dxRenderTarget->GetAntiAliasing();
-				m_TargetInfo.sampleQuality = dxRenderTarget->GetQuality();
-			}
-			else
-			{
-				m_TargetInfo.renderTargetFormat = DXGI_FORMAT_UNKNOWN;
+					m_BindedRenderTargets[i] = dxRenderTarget;
+					m_TargetInfo.renderTargetFormats[i] = dxRenderTarget->GetDxgiFormat();
+					m_TargetInfo.renderTargetCount = renderTexturesCount;
+					m_TargetInfo.sampleCount = dxRenderTarget->GetAntiAliasing();
+					m_TargetInfo.sampleQuality = dxRenderTarget->GetQuality();
+				}
 			}
 			D3D12_CPU_DESCRIPTOR_HANDLE depthStencil = {};
 			if (depthStencilTexture != nullptr)
@@ -419,36 +434,38 @@ namespace Blueberry
 			{
 				m_TargetInfo.depthStencilFormat = DXGI_FORMAT_UNKNOWN;
 			}
-			m_CommandList->OMSetRenderTargets(renderTexture == nullptr ? 0 : 1, renderTexture == nullptr ? nullptr : renderTargets, FALSE, depthStencilTexture == nullptr ? nullptr : &depthStencil);
+			m_CommandList->OMSetRenderTargets(renderTexturesCount, renderTargets, FALSE, depthStencilTexture == nullptr ? nullptr : &depthStencil);
 		}
+		m_BindedRenderTargetsCount = renderTexturesCount;
 	}
 
 	void GfxDeviceDX12::SetGlobalBufferImpl(size_t id, GfxBuffer* buffer)
 	{
 		auto dxBuffer = static_cast<GfxBufferDX12*>(buffer);
-		for (auto& pair : m_BindedBuffers)
+		for (auto& bindedBuffer : m_BindedBuffers)
 		{
-			if (pair.first == id)
+			if (bindedBuffer.id == id)
 			{
-				pair.second = dxBuffer->GetIndex();
+				bindedBuffer.index = dxBuffer->GetIndex();
 				return;
 			}
 		}
-		m_BindedBuffers.push_back(std::make_pair(id, dxBuffer->GetIndex()));
+		m_BindedBuffers.push_back({ id, dxBuffer->GetIndex() });
 	}
 
-	void GfxDeviceDX12::SetGlobalTextureImpl(size_t id, GfxTexture* texture)
+	void GfxDeviceDX12::SetGlobalTextureImpl(size_t id, GfxTexture* texture, uint32_t mip)
 	{
 		auto dxTexture = static_cast<GfxTextureDX12*>(texture);
-		for (auto& pair : m_BindedTextures)
+		for (auto& bindedTexture : m_BindedTextures)
 		{
-			if (pair.first == id)
+			if (bindedTexture.id == id)
 			{
-				pair.second = dxTexture->GetIndex();
+				bindedTexture.index = dxTexture->GetIndex();
+				bindedTexture.mip = mip;
 				return;
 			}
 		}
-		m_BindedTextures.push_back(std::make_pair(id, dxTexture->GetIndex()));
+		m_BindedTextures.push_back({ id, dxTexture->GetIndex(), mip });
 	}
 
 	D3D12_PRIMITIVE_TOPOLOGY GetPrimitiveTopologyD3D12(const Topology& topology)
@@ -478,9 +495,9 @@ namespace Blueberry
 			return;
 		}
 
-		if (m_BindedRenderTarget != nullptr)
+		for (uint32_t i = 0; i < m_BindedRenderTargetsCount; ++i)
 		{
-			m_BindedRenderTarget->SetState(D3D12_RESOURCE_STATE_RENDER_TARGET);
+			m_BindedRenderTargets[i]->SetState(D3D12_RESOURCE_STATE_RENDER_TARGET);
 		}
 
 		if (m_BindedDepthStencil != nullptr)
@@ -833,7 +850,22 @@ namespace Blueberry
 		m_CommandList->SetGraphicsRootSignature(m_GraphicsRootSignature.Get());
 		m_CommandList->SetComputeRootSignature(m_ComputeRootSignature.Get());
 		BackbufferData& backbuffer = m_Backbuffers[m_BackbufferIndex];
-		m_CommandList->OMSetRenderTargets((m_BindedRenderTarget == nullptr && m_BindedDepthStencil != nullptr) ? 0 : 1, m_BindedRenderTarget == nullptr ? &backbuffer.renderTargetView.GetCPU() : &m_BindedRenderTarget->GetRenderTargetView().GetCPU(), FALSE, m_BindedDepthStencil == nullptr ? nullptr : &m_BindedDepthStencil->GetDepthStencilView().GetCPU());
+		D3D12_CPU_DESCRIPTOR_HANDLE renderTargets[BINDED_TARGET_COUNT] = {};
+		uint32_t renderTargetsCount;
+		if (m_BindedRenderTargetsCount > 0)
+		{
+			for (uint32_t i = 0; i < m_BindedRenderTargetsCount; ++i)
+			{
+				renderTargets[i] = m_BindedRenderTargets[i]->GetRenderTargetView().GetCPU();
+			}
+			renderTargetsCount = m_BindedRenderTargetsCount;
+		}
+		else
+		{
+			renderTargets[0] = backbuffer.renderTargetView.GetCPU();
+			renderTargetsCount = 1;
+		}
+		m_CommandList->OMSetRenderTargets(renderTargetsCount, renderTargets, FALSE, m_BindedDepthStencil == nullptr ? nullptr : &m_BindedDepthStencil->GetDepthStencilView().GetCPU());
 		m_CommandList->RSSetViewports(1, &m_Viewport);
 		if (m_ScissorRect.right > 0)
 		{
@@ -1100,7 +1132,7 @@ namespace Blueberry
 
 			D3D12_DESCRIPTOR_RANGE srvRange = {};
 			srvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-			srvRange.NumDescriptors = 16;
+			srvRange.NumDescriptors = 32;
 			srvRange.BaseShaderRegister = 0;
 			srvRange.RegisterSpace = 0;
 			srvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
@@ -1429,7 +1461,10 @@ namespace Blueberry
 			}
 		}
 
-		m_BindedRenderTarget = nullptr;
+		for (uint32_t i = 0; i < BINDED_TARGET_COUNT; ++i)
+		{
+			m_BindedRenderTargets[i] = nullptr;
+		}
 		m_BindedDepthStencil = nullptr;
 
 		BB_INFO("DirectX initialized successful.");

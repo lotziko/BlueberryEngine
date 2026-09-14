@@ -7,6 +7,7 @@ Shader
 	Pass
 	{
 		Blend One Zero
+		ZTest Equal
 		ZWrite Off
 		Cull None
 
@@ -31,6 +32,12 @@ Shader
 			VERTEX_OUTPUT_VIEW_INDEX
 		};
 
+		struct Output
+		{
+			float4 color : SV_TARGET;
+			float depth : SV_DEPTH;
+		};
+
 		Varyings SkyboxVertex(Attributes input)
 		{
 			Varyings output;
@@ -45,17 +52,20 @@ Shader
 
 		TEXTURECUBE(_BaseMap);		SAMPLER(_BaseMap_Sampler);
 
-		float4 SkyboxFragment(Varyings input) : SV_TARGET
+		Output SkyboxFragment(Varyings input)
 		{
+			Output output;
 			float4 color = SAMPLE_TEXTURECUBE(_BaseMap, _BaseMap_Sampler, input.texcoord) * pow(2, 2.2); // TODO exposure property
-			color = ApplyVolumetricFog(color, input.positionCS.xy * CAMERA_SIZE_INV_SIZE.zw, 1);
-			return color;
+			output.color = ApplyVolumetricFog(color, input.positionCS.xy * CAMERA_SIZE_INV_SIZE.zw, 1);
+			output.depth = 1.0;
+			return output;
 		}
 		HLSLEND
 	}
 	Pass
 	{
 		Blend One Zero
+		ZTest Equal
 		ZWrite Off
 		Cull None
 
@@ -79,6 +89,12 @@ Shader
 			VERTEX_OUTPUT_VIEW_INDEX
 		};
 
+		struct Output
+		{
+			float4 color : SV_TARGET;
+			float depth : SV_DEPTH;
+		};
+
 		Varyings SkyboxVertex(Attributes input)
 		{
 			Varyings output;
@@ -89,11 +105,13 @@ Shader
 			return output;
 		}
 
-		float4 SkyboxFragment(Varyings input) : SV_TARGET
+		Output SkyboxFragment(Varyings input)
 		{
+			Output output;
 			float4 color = CAMERA_COLOR;
-			color = ApplyVolumetricFog(color, input.positionCS.xy * CAMERA_SIZE_INV_SIZE.zw, 1);
-			return color;
+			output.color = ApplyVolumetricFog(color, input.positionCS.xy * CAMERA_SIZE_INV_SIZE.zw, 1);
+			output.depth = 1.0;
+			return output;
 		}
 		HLSLEND
 	}

@@ -5,7 +5,6 @@
 #include "GfxBufferDX11.h"
 #include "GfxTextureDX11.h"
 #include "ImGuiRendererDX11.h"
-#include "HBAORendererDX11.h"
 #include "Blueberry\Graphics\Enums.h"
 #include "Blueberry\Tools\CRCHelper.h"
 #include "..\Windows\WindowsHelper.h"
@@ -38,13 +37,20 @@ namespace Blueberry
 
 	void GfxDeviceDX11::ClearColorImpl(const Color& color)
 	{
-		if (m_BindedRenderTarget == nullptr)
+		if (m_BindedRenderTargets[0] == nullptr)
 		{
 			m_DeviceContext->ClearRenderTargetView(m_BackbufferRenderTargetView.Get(), color);
 		}
 		else
 		{
-			m_DeviceContext->ClearRenderTargetView(m_BindedRenderTarget->GetRenderTargetView(), color);
+			for (uint32_t i = 0; i < BINDED_TARGET_COUNT; ++i)
+			{
+				GfxTextureDX11* renderTarget = m_BindedRenderTargets[i];
+				if (renderTarget != nullptr)
+				{
+					m_DeviceContext->ClearRenderTargetView(renderTarget->GetRenderTargetView(), color);
+				}
+			}
 		}
 	}
 
@@ -270,27 +276,32 @@ namespace Blueberry
 		m_DeviceContext->CopySubresourceRegion(dxTarget->GetResource(), targetSubresource, 0, 0, 0, dxSource->GetResource(), sourceSubresource, NULL);
 	}
 
-	void GfxDeviceDX11::SetRenderTargetImpl(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, uint32_t arraySlice, uint32_t mipLevel)
+	void GfxDeviceDX11::SetRenderTargetImpl(GfxTexture** renderTextures, uint32_t renderTexturesCount, GfxTexture* depthStencilTexture, uint32_t arraySlice, uint32_t mipLevel)
 	{
 		Clear();
 
-		ID3D11RenderTargetView* renderTargets[1] = {};
-		if (renderTexture != nullptr)
+		ID3D11RenderTargetView* renderTargets[BINDED_TARGET_COUNT] = {};
+		if (renderTexturesCount > 0)
 		{
-			GfxTextureDX11* dxRenderTarget = static_cast<GfxTextureDX11*>(renderTexture);
-			if (arraySlice || mipLevel)
+			for (uint32_t i = 0; i < renderTexturesCount; ++i)
 			{
-				renderTargets[0] = dxRenderTarget->GetRenderTargetView(arraySlice, mipLevel);
+				GfxTextureDX11* dxRenderTarget = static_cast<GfxTextureDX11*>(renderTextures[i]);
+
+				if (arraySlice || mipLevel)
+				{
+					renderTargets[i] = dxRenderTarget->GetRenderTargetView(arraySlice, mipLevel);
+				}
+				else
+				{
+					renderTargets[i] = dxRenderTarget->GetRenderTargetView();
+				}
+
+				m_BindedRenderTargets[i] = dxRenderTarget;
 			}
-			else
-			{
-				renderTargets[0] = dxRenderTarget->GetRenderTargetView();
-			}
-			m_BindedRenderTarget = dxRenderTarget;
 		}
 		else
 		{
-			m_BindedRenderTarget = nullptr;
+			m_BindedRenderTargets[0] = nullptr;
 		}
 		ID3D11DepthStencilView* depthStencil = nullptr;
 		if (depthStencilTexture != nullptr)
@@ -310,36 +321,37 @@ namespace Blueberry
 		}
 		else
 		{
-			m_DeviceContext->OMSetRenderTargets(renderTargets[0] == nullptr ? 0 : 1, renderTargets, depthStencil);
+			m_DeviceContext->OMSetRenderTargets(renderTexturesCount, renderTargets, depthStencil);
 		}
 	}
 
 	void GfxDeviceDX11::SetGlobalBufferImpl(size_t id, GfxBuffer* buffer)
 	{
 		auto dxBuffer = static_cast<GfxBufferDX11*>(buffer);
-		for (auto& pair : m_BindedBuffers)
+		for (auto& bindedBuffer : m_BindedBuffers)
 		{
-			if (pair.first == id)
+			if (bindedBuffer.id == id)
 			{
-				pair.second = dxBuffer->GetIndex();
+				bindedBuffer.index = dxBuffer->GetIndex();
 				return;
 			}
 		}
-		m_BindedBuffers.push_back(std::make_pair(id, dxBuffer->GetIndex()));
+		m_BindedBuffers.push_back({ id, dxBuffer->GetIndex() });
 	}
 
-	void GfxDeviceDX11::SetGlobalTextureImpl(size_t id, GfxTexture* texture)
+	void GfxDeviceDX11::SetGlobalTextureImpl(size_t id, GfxTexture* texture, uint32_t mip)
 	{
 		auto dxTexture = static_cast<GfxTextureDX11*>(texture);
-		for (auto& pair : m_BindedTextures)
+		for (auto& bindedTexture : m_BindedTextures)
 		{
-			if (pair.first == id)
+			if (bindedTexture.id == id)
 			{
-				pair.second = dxTexture->GetIndex();
+				bindedTexture.index = dxTexture->GetIndex();
+				bindedTexture.mip = mip;
 				return;
 			}
 		}
-		m_BindedTextures.push_back(std::make_pair(id, dxTexture->GetIndex()));
+		m_BindedTextures.push_back({ id, dxTexture->GetIndex(), mip });
 	}
 
 	D3D11_PRIMITIVE_TOPOLOGY GetPrimitiveTopologyD3D11(const Topology& topology)
@@ -662,7 +674,7 @@ namespace Blueberry
 
 		m_DeviceContext->OMSetRenderTargets(1, m_BackbufferRenderTargetView.GetAddressOf(), NULL);
 
-		m_BindedRenderTarget = nullptr;
+		m_BindedRenderTargets[0] = nullptr;
 		m_BindedDepthStencil = nullptr;
 
 		BB_INFO("DirectX initialized successful.");

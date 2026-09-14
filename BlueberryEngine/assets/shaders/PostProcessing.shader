@@ -77,7 +77,7 @@ Shader
 			SETUP_OUTPUT_VIEW_INDEX(output);
 
 			output.positionCS = float4(input.positionOS, 1.0f);
-			output.texcoord = input.texcoord;
+			output.texcoord = input.texcoord * (CAMERA_SIZE_INV_SIZE.xy * RENDER_TARGET_SIZE_INV_SIZE.zw);
 			return output;
 		}
 
@@ -98,7 +98,9 @@ Shader
 			float3 blueNoise = (SAMPLE_TEXTURE2D(_BlueNoiseLUT, _BlueNoiseLUT_Sampler, input.texcoord * RENDER_TARGET_SIZE_INV_SIZE.xy / 256.0 + _ExposureTime.yy).rgb - 0.5) / 255;
 			tonemappedColor += blueNoise;
 
-			return float4(tonemappedColor, color.a);
+			// FXAA
+			float luma = dot(tonemappedColor, float3(0.299, 0.587, 0.114));
+			return float4(tonemappedColor, luma);
 		}
 		HLSLEND
 	}
@@ -130,7 +132,7 @@ Shader
 		{
 			Varyings output;
 			output.positionCS = float4(input.positionOS, 1.0f);
-			output.texcoord = input.texcoord;
+			output.texcoord = input.texcoord * (CAMERA_SIZE_INV_SIZE.xy * RENDER_TARGET_SIZE_INV_SIZE.zw);
 			return output;
 		}
 
@@ -148,7 +150,9 @@ Shader
 			float3 blueNoise = (SAMPLE_TEXTURE2D(_BlueNoiseLUT, _BlueNoiseLUT_Sampler, input.texcoord * RENDER_TARGET_SIZE_INV_SIZE.xy / 256.0).rgb - 0.5) / 255;
 			tonemappedColor += blueNoise;
 
-			return float4(tonemappedColor, color.a);
+			// FXAA
+			float luma = dot(tonemappedColor, float3(0.299, 0.587, 0.114));
+			return float4(tonemappedColor, luma);
 		}
 		HLSLEND
 	}
@@ -188,7 +192,7 @@ Shader
 			SETUP_OUTPUT_VIEW_INDEX(output);
 
 			output.positionCS = float4(input.positionOS, 1.0f);
-			output.texcoord = input.texcoord;
+			output.texcoord = input.texcoord * (CAMERA_SIZE_INV_SIZE.xy * RENDER_TARGET_SIZE_INV_SIZE.zw);
 			return output;
 		}
 
@@ -196,10 +200,13 @@ Shader
 
 		float4 PostProcessingFragment(Varyings input) : SV_TARGET
 		{
-			float4 color = SAMPLE_TEXTURE2D_X(_ScreenColorTexture, _ScreenColorTexture_Sampler, input.texcoord);
+			float3 color = SAMPLE_TEXTURE2D_X(_ScreenColorTexture, _ScreenColorTexture_Sampler, input.texcoord).rgb;
 			// Gamma correction
-			color.rgb = pow(color.rgb, 1.0 / 2.2);
-			return color;
+			color = pow(color, 1.0 / 2.2);
+
+			// FXAA
+			float luma = dot(color, float3(0.299, 0.587, 0.114));
+			return float4(color, luma);
 		}
 		HLSLEND
 	}
