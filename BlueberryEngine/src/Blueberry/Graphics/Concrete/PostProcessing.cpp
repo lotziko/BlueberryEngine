@@ -1,6 +1,7 @@
 #include "PostProcessing.h"
 
 #include "AutoExposure.h"
+#include "PerCameraData.h"
 #include "Blueberry\Core\Time.h"
 
 #include "Blueberry\Assets\AssetLoader.h"
@@ -112,7 +113,7 @@ namespace Blueberry
 		AutoExposure::Shutdown();
 	}
 
-	void PostProcessing::Draw(Camera* camera, GfxTexture* input, GfxTexture* output, const Rectangle& viewport, const CameraType& cameraType)
+	void PostProcessing::Draw(Camera* camera, GfxTexture* input, GfxTexture* output, const Rectangle& viewport, const CameraType& cameraType, PerCameraData& perCameraData)
 	{
 		GfxTexture* color = GfxTexturePool::Get(input->GetWidth(), input->GetHeight(), 1, TextureUsageFlags::RenderTarget | TextureUsageFlags::UnorderedAccess, 1, 1, input->GetFormat());
 		GfxTexture* tonemapping = nullptr;
@@ -150,7 +151,7 @@ namespace Blueberry
 		}
 		else
 		{
-			float exposure = 0.2f / AutoExposure::GetExposure(camera);
+			float exposure = 0.2f / AutoExposure::GetExposure(perCameraData);
 			PostProcessingData postProcessingConstants = {};
 			postProcessingConstants.exposureTime = Vector4(exposure, Time::GetFrameCount() / 60.0f / 10, 0, 0);
 
@@ -218,7 +219,7 @@ namespace Blueberry
 				GfxDevice::SetGlobalTexture(s_BloomOutputTextureId, bloom);
 				GfxDevice::Dispatch(s_ResolveMSAABloomShader, 1, threadWidth, threadHeight, 1);
 			}
-			AutoExposure::Calculate(camera, color, viewport);
+			AutoExposure::Calculate(camera, color, viewport, perCameraData);
 
 			BloomData bloomConstants = {};
 			bloomConstants.texelSize = Vector2(1.0f / textureWidth, 1.0f / textureHeight);

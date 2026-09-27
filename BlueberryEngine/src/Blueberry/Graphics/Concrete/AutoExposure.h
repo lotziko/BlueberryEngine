@@ -9,6 +9,7 @@ namespace Blueberry
 	class GfxBuffer;
 	class ComputeShader;
 	class Camera;
+	class PerCameraData;
 
 	struct PerCameraExposureData
 	{
@@ -22,14 +23,13 @@ namespace Blueberry
 	public:
 		static void Initialize();
 		static void Shutdown();
-		static void Calculate(Camera* camera, GfxTexture* color, const Rectangle& viewport);
-		static float GetExposure(Camera* camera);
+		static void Calculate(Camera* camera, GfxTexture* color, const Rectangle& viewport, PerCameraData& perCameraData);
+		static float GetExposure(const PerCameraData& perCameraData);
 
 	private:
 		static ComputeShader* s_ExposureShader;
 		static GfxBuffer* s_ExposureData;
 		static GfxBuffer* s_Histogram;
 		static GfxBuffer* s_Result;
-		static Dictionary<ObjectId, PerCameraExposureData> s_PerCameraData;
 	};
 }

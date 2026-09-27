@@ -160,13 +160,14 @@ namespace Blueberry
 
 		for (auto& binding : bindingState.textureSrvs)
 		{
-			GfxTextureDX11* dxTexture = GfxTextureDX11::Get(m_Device->m_BindedTextures[binding.bindingIndex].index);
+			auto& bindedTexture = m_Device->m_BindedTextures[binding.bindingIndex];
+			GfxTextureDX11* dxTexture = GfxTextureDX11::Get(bindedTexture.index);
 			if (dxTexture == nullptr)
 			{
 				BB_ERROR("Texture is missing.");
 				continue;
 			}
-			renderState.shaderResourceViews[binding.slotIndex] = dxTexture->GetShaderResourceView();
+			renderState.shaderResourceViews[binding.slotIndex] = bindedTexture.mip == UINT32_MAX ? dxTexture->GetShaderResourceView() : dxTexture->GetShaderResourceView(0, bindedTexture.mip);
 			renderState.shaderResourceViewsCount = std::max(renderState.shaderResourceViewsCount, binding.slotIndex + 1u);
 		}
 
@@ -193,7 +194,7 @@ namespace Blueberry
 				continue;
 			}
 			uint8_t slotIndex = binding.slotIndex;
-			renderState.unorderedAccessViews[slotIndex] = bindedTexture.mip > 0 ? dxTexture->GetUnorderedAccessView(0, bindedTexture.mip) : dxTexture->GetUnorderedAccessView();
+			renderState.unorderedAccessViews[slotIndex] = bindedTexture.mip == UINT32_MAX ? dxTexture->GetUnorderedAccessView() : dxTexture->GetUnorderedAccessView(0, bindedTexture.mip);
 			renderState.unorderedAccessViewsCount = std::max(renderState.unorderedAccessViewsCount, binding.slotIndex + 1u);
 		}
 

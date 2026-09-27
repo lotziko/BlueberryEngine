@@ -63,7 +63,7 @@ namespace Blueberry
 		static void SetRenderTarget(GfxTexture* renderTexture, GfxTexture* depthStencilTexture, uint32_t arraySlice, uint32_t mipLevel);
 		static void SetRenderTarget(GfxTexture** renderTextures, uint32_t renderTexturesCount, GfxTexture* depthStencilTexture);
 		static void SetGlobalBuffer(size_t id, GfxBuffer* buffer);
-		static void SetGlobalTexture(size_t id, GfxTexture* texture, uint32_t mip = 0);
+		static void SetGlobalTexture(size_t id, GfxTexture* texture, uint32_t mip = UINT32_MAX);
 		static void Draw(const GfxDrawingOperation& operation);
 
 		static void Dispatch(ComputeShader* shader, uint32_t kernelIndex, uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ);

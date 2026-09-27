@@ -21,6 +21,7 @@ namespace Blueberry
 
 		ID3D12Resource* GetResource() const;
 		const GfxHandleDX12& GetShaderResourceView() const;
+		const GfxHandleDX12& GetShaderResourceView(uint32_t arraySlice, uint32_t mipSlice);
 		const GfxHandleDX12& GetRenderTargetView() const;
 		const GfxHandleDX12& GetRenderTargetView(uint32_t arraySlice, uint32_t mipSlice);
 		const GfxHandleDX12& GetDepthStencilView() const;
@@ -41,9 +42,9 @@ namespace Blueberry
 		virtual void SetFilterMode(FilterMode filterMode) override;
 		virtual void SetName(const String& name) override;
 
-		D3D12_RESOURCE_STATES GetState() const;
-		void SetState(D3D12_RESOURCE_STATES state);
-		void SetUAVState();
+		D3D12_RESOURCE_STATES GetState(uint32_t mipLevel = UINT32_MAX) const;
+		void SetState(D3D12_RESOURCE_STATES state, uint32_t mipLevel = UINT32_MAX);
+		void SetUAVState(uint32_t mipLevel = UINT32_MAX);
 
 		static GfxTextureDX12* Get(uint32_t index);
 
@@ -61,6 +62,7 @@ namespace Blueberry
 
 		GfxHandleDX12 m_RingShaderResourceView;
 
+		List<GfxHandleDX12> m_SlicesShaderResourceViews;
 		List<GfxHandleDX12> m_SlicesRenderTargetViews;
 		List<GfxHandleDX12> m_SlicesUnorderedAccessViews;
 
@@ -69,7 +71,9 @@ namespace Blueberry
 
 		DXGI_FORMAT m_DxgiFormat = DXGI_FORMAT_UNKNOWN;
 		D3D12_RESOURCE_STATES m_State = D3D12_RESOURCE_STATE_COMMON;
-		uint64_t m_UnorderedAccessGeneration = 0;
+		List<D3D12_RESOURCE_STATES> m_SubresourceStates;
+		uint32_t m_SubresourceCount = 0;
+		uint64_t m_UnorderedAccessGeneration = UINT64_MAX;
 
 		static GfxPointerCache<GfxTextureDX12> s_PointerCache;
 	};

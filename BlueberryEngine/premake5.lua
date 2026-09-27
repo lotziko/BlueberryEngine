@@ -12,6 +12,7 @@ project "BlueberryEngine"
 
 	files
 	{
+		"assets/**",
 		"include/**.h",
 		"src/**.h",
 		"src/**.cpp",
@@ -39,6 +40,7 @@ project "BlueberryEngine"
 		"%{IncludeDir.miniaudio}",
 		"%{IncludeDir.rmlui}",
 		"%{IncludeDir.lz4}",
+		"%{IncludeDir.d3dx12}",
 		"%{IncludeDir.dxc}",
 	}
 
@@ -50,6 +52,10 @@ project "BlueberryEngine"
 		"%{Library.openxr}",
 		"%{Library.dxc}",
 	}
+
+	filter "files:assets/**"
+    		buildaction "None"
+	filter {}
 
 	defines { "RMLUI_CORE_EXPORTS" }
 

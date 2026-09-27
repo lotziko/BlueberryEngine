@@ -1,8 +1,6 @@
 #ifndef MACROS_INCLUDED
 #define MACROS_INCLUDED
 
-#define PI 3.14159265358979323846
-
 static uint _ViewIndex;
 static uint _RenderInstanceId;
 
@@ -58,9 +56,10 @@ static uint _RenderInstanceId;
 #define SAMPLER_CMP(samplerName)						SamplerComparisonState samplerName
 
 #define SAMPLE_TEXTURE2D(textureName, samplerName, coord2)							textureName.Sample(samplerName, coord2)
-#define SAMPLE_TEXTURE2D_ARRAY(textureName, samplerName, coord2, index)				textureName.Sample(samplerName, float3(coord2, index))
 #define SAMPLE_TEXTURE2D_LOD(textureName, samplerName, coord2, lod)					textureName.SampleLevel(samplerName, coord2, lod)
 #define SAMPLE_TEXTURE2D_SHADOW(textureName, samplerName, coord2, depth)			textureName.SampleCmpLevelZero(samplerName, coord2, depth)
+#define SAMPLE_TEXTURE2D_ARRAY(textureName, samplerName, coord2, index)				textureName.Sample(samplerName, float3(coord2, index))
+#define SAMPLE_TEXTURE2D_ARRAY_LOD(textureName, samplerName, coord2, index, lod)	textureName.SampleLevel(samplerName, float3(coord2, index), lod)
 #define LOAD_TEXTURE2D(textureName, coord2)											textureName.Load(uint3(coord2, 0))
 #define LOAD_TEXTURE2D_MSAA(textureName, uv, sampleIndex)							textureName.Load(uv, sampleIndex)
 #define LOAD_TEXTURE2D_ARRAY(textureName, uv, index)								textureName.Load(uint4(uv, index, 0))
@@ -74,23 +73,25 @@ static uint _RenderInstanceId;
 
 #if (MULTIVIEW)
 
-#define TEXTURE2D_X(textureName)								TEXTURE2D_ARRAY(textureName)
-#define TEXTURE2D_X_UINT(textureName)							TEXTURE2D_ARRAY_UINT(textureName)
-#define TEXTURE2D_X_MSAA(textureName, samples)					TEXTURE2D_ARRAY_MSAA(textureName, samples)
-#define TEXTURE2D_X_MSAA_FLOAT(textureName, samples)			TEXTURE2D_ARRAY_MSAA_FLOAT(textureName, samples)
-#define SAMPLE_TEXTURE2D_X(textureName, samplerName, coord2)	SAMPLE_TEXTURE2D_ARRAY(textureName, samplerName, coord2, VIEW_INDEX)
-#define LOAD_TEXTURE2D_X(textureName, uv)						LOAD_TEXTURE2D_ARRAY(textureName, uv, VIEW_INDEX)
-#define LOAD_TEXTURE2D_X_MSAA(textureName, uv, sampleIndex)		LOAD_TEXTURE2D_ARRAY_MSAA(textureName, uv, VIEW_INDEX, sampleIndex)
+#define TEXTURE2D_X(textureName)										TEXTURE2D_ARRAY(textureName)
+#define TEXTURE2D_X_UINT(textureName)									TEXTURE2D_ARRAY_UINT(textureName)
+#define TEXTURE2D_X_MSAA(textureName, samples)							TEXTURE2D_ARRAY_MSAA(textureName, samples)
+#define TEXTURE2D_X_MSAA_FLOAT(textureName, samples)					TEXTURE2D_ARRAY_MSAA_FLOAT(textureName, samples)
+#define SAMPLE_TEXTURE2D_X(textureName, samplerName, coord2)			SAMPLE_TEXTURE2D_ARRAY(textureName, samplerName, coord2, VIEW_INDEX)
+#define SAMPLE_TEXTURE2D_X_LOD(textureName, samplerName, coord2, lod)	SAMPLE_TEXTURE2D_ARRAY_LOD(textureName, samplerName, coord2, VIEW_INDEX, lod)
+#define LOAD_TEXTURE2D_X(textureName, uv)								LOAD_TEXTURE2D_ARRAY(textureName, uv, VIEW_INDEX)
+#define LOAD_TEXTURE2D_X_MSAA(textureName, uv, sampleIndex)				LOAD_TEXTURE2D_ARRAY_MSAA(textureName, uv, VIEW_INDEX, sampleIndex)
 
 #else
 
-#define TEXTURE2D_X(textureName)								TEXTURE2D(textureName)
-#define TEXTURE2D_X_UINT(textureName)							TEXTURE2D_UINT(textureName)
-#define TEXTURE2D_X_MSAA(textureName, samples)					TEXTURE2D_MSAA(textureName, samples)
-#define TEXTURE2D_X_MSAA_FLOAT(textureName, samples)			TEXTURE2D_MSAA_FLOAT(textureName, samples)
-#define SAMPLE_TEXTURE2D_X(textureName, samplerName, coord2)	SAMPLE_TEXTURE2D(textureName, samplerName, coord2)
-#define LOAD_TEXTURE2D_X(textureName, uv)						LOAD_TEXTURE2D(textureName, uv)
-#define LOAD_TEXTURE2D_X_MSAA(textureName, uv, sampleIndex)		LOAD_TEXTURE2D_MSAA(textureName, uv, sampleIndex)
+#define TEXTURE2D_X(textureName)										TEXTURE2D(textureName)
+#define TEXTURE2D_X_UINT(textureName)									TEXTURE2D_UINT(textureName)
+#define TEXTURE2D_X_MSAA(textureName, samples)							TEXTURE2D_MSAA(textureName, samples)
+#define TEXTURE2D_X_MSAA_FLOAT(textureName, samples)					TEXTURE2D_MSAA_FLOAT(textureName, samples)
+#define SAMPLE_TEXTURE2D_X(textureName, samplerName, coord2)			SAMPLE_TEXTURE2D(textureName, samplerName, coord2)
+#define SAMPLE_TEXTURE2D_X_LOD(textureName, samplerName, coord2, lod)	SAMPLE_TEXTURE2D_LOD(textureName, samplerName, coord2, lod)
+#define LOAD_TEXTURE2D_X(textureName, uv)								LOAD_TEXTURE2D(textureName, uv)
+#define LOAD_TEXTURE2D_X_MSAA(textureName, uv, sampleIndex)				LOAD_TEXTURE2D_MSAA(textureName, uv, sampleIndex)
 
 #endif
 

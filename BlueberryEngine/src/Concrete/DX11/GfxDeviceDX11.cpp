@@ -286,16 +286,14 @@ namespace Blueberry
 			for (uint32_t i = 0; i < renderTexturesCount; ++i)
 			{
 				GfxTextureDX11* dxRenderTarget = static_cast<GfxTextureDX11*>(renderTextures[i]);
-
-				if (arraySlice || mipLevel)
+				if (arraySlice != UINT32_MAX || mipLevel != UINT32_MAX)
 				{
-					renderTargets[i] = dxRenderTarget->GetRenderTargetView(arraySlice, mipLevel);
+					renderTargets[i] = dxRenderTarget->GetRenderTargetView(arraySlice == UINT32_MAX ? 0 : arraySlice, mipLevel == UINT32_MAX ? 0 : mipLevel);
 				}
 				else
 				{
 					renderTargets[i] = dxRenderTarget->GetRenderTargetView();
 				}
-
 				m_BindedRenderTargets[i] = dxRenderTarget;
 			}
 		}
@@ -544,9 +542,14 @@ namespace Blueberry
 		}
 		
 		m_DeviceContext->Dispatch(threadGroupsX, threadGroupsY, threadGroupsZ);
-		m_DeviceContext->CSSetShaderResources(0, 16, m_EmptyShaderResourceViews);
-		m_DeviceContext->CSSetSamplers(0, 16, m_EmptySamplers);
-		m_DeviceContext->CSSetUnorderedAccessViews(0, 8, m_EmptyUnorderedAccessViews, NULL);
+		if (renderState.shaderResourceViewsCount > 0)
+		{
+			m_DeviceContext->CSSetShaderResources(0, renderState.shaderResourceViewsCount, m_EmptyShaderResourceViews);
+		}
+		if (renderState.unorderedAccessViewsCount > 0)
+		{
+			m_DeviceContext->CSSetUnorderedAccessViews(0, renderState.unorderedAccessViewsCount, m_EmptyUnorderedAccessViews, NULL);
+		}
 		m_ComputeRenderState = renderState;
 	}
 

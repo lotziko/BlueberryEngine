@@ -29,6 +29,11 @@ namespace Blueberry
 {
 	class GfxTexture;
 
+	struct ReturnTextureToPool
+	{
+		void operator()(GfxTexture* texture) const;
+	};
+
 	class GfxTexturePool
 	{
 	public:

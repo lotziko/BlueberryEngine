@@ -40,9 +40,9 @@ float ComputeCascadeIndex(float3 positionWS, float4 cascades[3])
 	float3 sphereToWS0 = positionWS - cascades[0].xyz;
 	float3 sphereToWS1 = positionWS - cascades[1].xyz;
 	float3 sphereToWS2 = positionWS - cascades[2].xyz;
-	float4 weights = float4(dot(sphereToWS0, sphereToWS0) < cascades[0].w, dot(sphereToWS1, sphereToWS1) < cascades[1].w, dot(sphereToWS2, sphereToWS2) < cascades[2].w, 1);
-	weights.yzw = saturate(weights.yzw - weights.xyz);
-	return half(4.0) - dot(weights, half4(4, 3, 2, 1));
+	float3 inside = float4(dot(sphereToWS0, sphereToWS0) < cascades[0].w, dot(sphereToWS1, sphereToWS1) < cascades[1].w, dot(sphereToWS2, sphereToWS2) < cascades[2].w, 1);
+	float3 outside = 1.0 - inside;
+	return outside.x * (1.0 + outside.y * (1.0 + outside.z));
 }
 
 float4 ApplyShadowBias(float4 positionSS)

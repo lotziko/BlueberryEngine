@@ -11,6 +11,8 @@
 
 namespace Blueberry
 {
+	static GfxRenderStateDX12 s_DefaultRenderState = {};
+
 	bool GfxPipelineStateKeyDX12::operator==(const GfxPipelineStateKeyDX12& other) const
 	{
 		return memcmp(this, &other, sizeof(GfxPipelineStateKeyDX12)) == 0;
@@ -33,6 +35,11 @@ namespace Blueberry
 
 	GfxRenderStateCacheDX12::GfxRenderStateCacheDX12(GfxDeviceDX12* device) : m_Device(device)
 	{
+		std::fill_n(s_DefaultRenderState.vertexConstantBuffers, _countof(s_DefaultRenderState.vertexConstantBuffers), device->m_EmptyCbv.GetCPU());
+		std::fill_n(s_DefaultRenderState.vertexShaderResourceViews, _countof(s_DefaultRenderState.vertexShaderResourceViews), device->m_EmptySrv.GetCPU());
+		std::fill_n(s_DefaultRenderState.geometryConstantBuffers, _countof(s_DefaultRenderState.geometryConstantBuffers), device->m_EmptyCbv.GetCPU());
+		std::fill_n(s_DefaultRenderState.pixelConstantBuffers, _countof(s_DefaultRenderState.pixelConstantBuffers), device->m_EmptyCbv.GetCPU());
+		std::fill_n(s_DefaultRenderState.pixelShaderResourceViews, _countof(s_DefaultRenderState.pixelShaderResourceViews), device->m_EmptySrv.GetCPU());
 	}
 
 	D3D12_BLEND GetBlend(BlendMode blend)
@@ -68,7 +75,7 @@ namespace Blueberry
 		uint32_t meshLayoutCrc = meshLayout->GetCrc();
 		uint32_t materialCrc = material->GetCRC();
 		
-		GfxRenderStateDX12 renderState = {};
+		GfxRenderStateDX12 renderState = s_DefaultRenderState;
 		GfxPassData passData = {};
 		GfxPipelineStateKeyDX12 pipelineStateKey = { keywordMask, passId, shaderObjectId, meshLayoutCrc, targetInfo, static_cast<uint32_t>(topology), depthBias, slopeDepthBias, isCounterClockwise, isSolid };
 		GfxRenderStateKeyDX12 bindingStateKey = { keywordMask, passId, materialObjectId };
@@ -356,9 +363,11 @@ namespace Blueberry
 			depthStencilDesc.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 			depthStencilDesc.BackFace = depthStencilDesc.FrontFace;
 
-			m_Device->m_Device->CreateGraphicsPipelineState(&pipelineStateDesc, IID_PPV_ARGS(&pipelineState.pipelineState));
+			HRESULT hr = m_Device->m_Device->CreateGraphicsPipelineState(&pipelineStateDesc, IID_PPV_ARGS(&pipelineState.pipelineState));
+			pipelineState.isValid = SUCCEEDED(hr);
 			m_PipelineStates.insert_or_assign(pipelineStateKey, pipelineState);
 			renderState.pipelineState = pipelineState.pipelineState.Get();
+			renderState.isValid = pipelineState.isValid;
 		}
 		return renderState;
 	}
@@ -418,14 +427,27 @@ namespace Blueberry
 
 		for (auto& texture : bindingState.vertexTextures)
 		{
-			GfxTextureDX12* dxTexture = GfxTextureDX12::Get(texture.isGlobal ? m_Device->m_BindedTextures[texture.bindingIndex].index : GetTextureIndex(material, texture.bindingIndex));
+			uint32_t mip;
+			uint32_t index;
+			if (texture.isGlobal)
+			{
+				auto& bindedTexture = m_Device->m_BindedTextures[texture.bindingIndex];
+				mip = bindedTexture.mip;
+				index = bindedTexture.index;
+			}
+			else
+			{
+				mip = UINT32_MAX;
+				index = GetTextureIndex(material, texture.bindingIndex);
+			}
+			GfxTextureDX12* dxTexture = GfxTextureDX12::Get(index);
 			if (dxTexture == nullptr)
 			{
 				BB_ERROR("Texture is missing.");
 				continue;
 			}
-			dxTexture->SetState(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-			renderState.vertexShaderResourceViews[texture.srvSlot] = dxTexture->GetShaderResourceView().GetCPU();
+			dxTexture->SetState(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, mip);
+			renderState.vertexShaderResourceViews[texture.srvSlot] = mip == UINT32_MAX ? dxTexture->GetShaderResourceView().GetCPU() : dxTexture->GetShaderResourceView(0, mip).GetCPU();
 			renderState.vertexShaderResourceViewsCount = std::max(renderState.vertexShaderResourceViewsCount, texture.srvSlot + 1u);
 			if (texture.samplerSlot != UINT8_MAX)
 			{
@@ -442,14 +464,27 @@ namespace Blueberry
 
 		for (auto& texture : bindingState.pixelTextures)
 		{
-			GfxTextureDX12* dxTexture = GfxTextureDX12::Get(texture.isGlobal ? m_Device->m_BindedTextures[texture.bindingIndex].index : GetTextureIndex(material, texture.bindingIndex));
+			uint32_t mip;
+			uint32_t index;
+			if (texture.isGlobal)
+			{
+				auto& bindedTexture = m_Device->m_BindedTextures[texture.bindingIndex];
+				mip = bindedTexture.mip;
+				index = bindedTexture.index;
+			}
+			else
+			{
+				mip = UINT32_MAX;
+				index = GetTextureIndex(material, texture.bindingIndex);
+			}
+			GfxTextureDX12* dxTexture = GfxTextureDX12::Get(index);
 			if (dxTexture == nullptr)
 			{
 				BB_ERROR("Texture is missing.");
 				continue;
 			}
-			dxTexture->SetState(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-			renderState.pixelShaderResourceViews[texture.srvSlot] = dxTexture->GetShaderResourceView().GetCPU();
+			dxTexture->SetState(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, mip);
+			renderState.pixelShaderResourceViews[texture.srvSlot] = mip == UINT32_MAX ? dxTexture->GetShaderResourceView().GetCPU() : dxTexture->GetShaderResourceView(0, mip).GetCPU();
 			renderState.pixelShaderResourceViewsCount = std::max(renderState.pixelShaderResourceViewsCount, texture.srvSlot + 1u);
 			if (texture.samplerSlot != UINT8_MAX)
 			{

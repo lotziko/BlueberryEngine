@@ -7,6 +7,7 @@
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Scene\Components\Camera.h"
+#include "PerCameraData.h"
 
 namespace Blueberry
 {
@@ -14,7 +15,6 @@ namespace Blueberry
 	GfxBuffer* AutoExposure::s_ExposureData = nullptr;
 	GfxBuffer* AutoExposure::s_Histogram = nullptr;
 	GfxBuffer* AutoExposure::s_Result = nullptr;
-	Dictionary<ObjectId, PerCameraExposureData> AutoExposure::s_PerCameraData = {};
 
 	struct ExposureData
 	{
@@ -63,14 +63,14 @@ namespace Blueberry
 		delete s_Result;
 	}
 
-	void AutoExposure::Calculate(Camera* camera, GfxTexture* color, const Rectangle& viewport)
+	void AutoExposure::Calculate(Camera* camera, GfxTexture* color, const Rectangle& viewport, PerCameraData& perCameraData)
 	{
-		PerCameraExposureData& perCameraData = s_PerCameraData[camera->GetObjectId()];
+		PerCameraExposureData& exposureData = perCameraData.m_ExposureData;
 
 		float deltaTime = Time::GetDeltaTime();
-		if (perCameraData.recalculateTimer <= 0.0f)
+		if (exposureData.recalculateTimer <= 0.0f)
 		{
-			perCameraData.recalculateTimer = 1.0f;
+			exposureData.recalculateTimer = 1.0f;
 			float minLogLum = -8.0f / 2;
 			float maxLogLum = 3.5f / 2;
 
@@ -92,20 +92,19 @@ namespace Blueberry
 			uint32_t groupsY = (static_cast<uint32_t>(viewport.height + 15)) / 16;
 			GfxDevice::Dispatch(s_ExposureShader, 0, groupsX, groupsY, 1);
 			GfxDevice::Dispatch(s_ExposureShader, 1, 1, 1, 1);
-			s_Result->GetData(&perCameraData.targetExposure);
+			s_Result->GetData(&exposureData.targetExposure);
 		}
 		else
 		{
-			perCameraData.recalculateTimer -= deltaTime;
+			exposureData.recalculateTimer -= deltaTime;
 		}
 		float adaptationSpeed = 1.0f;
 		float t = 1.0f - std::expf(-adaptationSpeed * deltaTime);
-		perCameraData.currentExposure = Math::Lerp(perCameraData.currentExposure, perCameraData.targetExposure, t);
+		exposureData.currentExposure = Math::Lerp(exposureData.currentExposure, exposureData.targetExposure, t);
 	}
 
-	float AutoExposure::GetExposure(Camera* camera)
+	float AutoExposure::GetExposure(const PerCameraData& perCameraData)
 	{
-		PerCameraExposureData& perCameraData = s_PerCameraData[camera->GetObjectId()];
-		return perCameraData.currentExposure;
+		return perCameraData.m_ExposureData.currentExposure;
 	}
 }

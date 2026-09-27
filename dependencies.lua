@@ -14,6 +14,7 @@ IncludeDir["xatlas"] = "%{wks.location}/BlueberryEngine/vendor/xatlas"
 IncludeDir["miniaudio"] = "%{wks.location}/BlueberryEngine/vendor/miniaudio"
 IncludeDir["rmlui"] = "%{wks.location}/BlueberryEngine/vendor/rmlui/include"
 IncludeDir["lz4"] = "%{wks.location}/BlueberryEngine/vendor/lz4"
+IncludeDir["d3dx12"] = "%{wks.location}/BlueberryEngine/vendor/d3dx12/include"
 IncludeDir["dxc"] = "%{wks.location}/BlueberryEngine/vendor/dxc/include"
 
 Library = {}

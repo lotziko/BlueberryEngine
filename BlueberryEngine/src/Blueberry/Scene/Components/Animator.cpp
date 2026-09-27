@@ -61,7 +61,7 @@ namespace Blueberry
 						stateData.time += deltaTime * stateData.speed;
 						stateData.normalizedTime = stateData.time / stateData.length;
 						stateData.previousLoopNormalizedTime = stateData.loopNormalizedTime;
-						stateData.loopNormalizedTime = std::fmodf(stateData.normalizedTime, stateData.length);
+						stateData.loopNormalizedTime = std::fmodf(stateData.normalizedTime, 1.0f);
 					}
 					else
 					{
@@ -341,25 +341,25 @@ namespace Blueberry
 						switch (condition.GetComparison())
 						{
 						case AnimationConditionComparison::Greater:
-							if (value > pair.second)
+							if (value >= pair.second)
 							{
 								isValid = false;
 							}
 							break;
 						case AnimationConditionComparison::Less:
-							if (value < pair.second)
+							if (value <= pair.second)
 							{
 								isValid = false;
 							}
 							break;
 						case AnimationConditionComparison::Equal:
-							if (value == pair.second)
+							if (value != pair.second)
 							{
 								isValid = false;
 							}
 							break;
 						case AnimationConditionComparison::NotEqual:
-							if (value != pair.second)
+							if (value == pair.second)
 							{
 								isValid = false;
 							}

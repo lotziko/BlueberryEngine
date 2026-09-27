@@ -19,6 +19,11 @@ namespace Blueberry
 		return first != other.first || second != other.second;
 	}
 
+	void ReturnTextureToPool::operator()(GfxTexture* texture) const
+	{
+		GfxTexturePool::Release(texture);
+	}
+
 	GfxTexturePoolKey GetKey(uint32_t width, uint32_t height, uint32_t depth, TextureUsageFlags usageFlags, uint32_t antiAliasing, uint32_t mipCount, TextureFormat textureFormat, TextureDimension textureDimension, WrapMode wrapMode, FilterMode filterMode)
 	{
 		GfxTexturePoolKey key;

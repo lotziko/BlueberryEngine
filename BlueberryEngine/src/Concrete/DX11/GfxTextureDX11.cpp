@@ -99,6 +99,87 @@ namespace Blueberry
 		return m_ShaderResourceView.Get();
 	}
 
+	ID3D11ShaderResourceView* GfxTextureDX11::GetShaderResourceView(uint32_t arraySlice, uint32_t mipSlice)
+	{
+		if (m_SlicesShaderResourceViews.size() == 0)
+		{
+			switch (m_Dimension)
+			{
+			case TextureDimension::Texture2D:
+				m_SlicesShaderResourceViews.resize(m_MipLevels);
+				break;
+			case TextureDimension::Texture2DArray:
+				m_SlicesShaderResourceViews.resize(static_cast<size_t>(m_ArraySize * m_MipLevels));
+				break;
+			case TextureDimension::TextureCube:
+				m_SlicesShaderResourceViews.resize(static_cast<size_t>(6 * m_MipLevels));
+				break;
+			case TextureDimension::Texture3D:
+				m_SlicesShaderResourceViews.resize(static_cast<size_t>(m_Depth * m_MipLevels));
+				break;
+			}
+		}
+
+		uint32_t index = arraySlice * m_MipLevels + mipSlice;
+		ID3D11ShaderResourceView* shaderResourceView = m_SlicesShaderResourceViews[index].Get();
+		if (shaderResourceView == nullptr)
+		{
+			D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc = {};
+			shaderResourceViewDesc.Format = m_DxgiFormat;
+
+			switch (m_Dimension)
+			{
+			case TextureDimension::Texture2D:
+				if (m_AntiAliasing > 1)
+				{
+					shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
+				}
+				else
+				{
+					shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+					shaderResourceViewDesc.Texture2D.MostDetailedMip = mipSlice;
+					shaderResourceViewDesc.Texture2D.MipLevels = 1;
+				}
+				break;
+			case TextureDimension::Texture2DArray:
+				if (m_AntiAliasing > 1)
+				{
+					shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMSARRAY;
+					shaderResourceViewDesc.Texture2DMSArray.FirstArraySlice = arraySlice;
+					shaderResourceViewDesc.Texture2DMSArray.ArraySize = 1;
+				}
+				else
+				{
+					shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+					shaderResourceViewDesc.Texture2DArray.MostDetailedMip = mipSlice;
+					shaderResourceViewDesc.Texture2DArray.MipLevels = 1;
+					shaderResourceViewDesc.Texture2DArray.FirstArraySlice = arraySlice;
+					shaderResourceViewDesc.Texture2DArray.ArraySize = 1;
+				}
+				break;
+			case TextureDimension::TextureCube:
+				shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
+				shaderResourceViewDesc.TextureCube.MostDetailedMip = mipSlice;
+				shaderResourceViewDesc.TextureCube.MipLevels = 1;
+				break;
+			case TextureDimension::Texture3D:
+				shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
+				shaderResourceViewDesc.Texture3D.MostDetailedMip = mipSlice;
+				shaderResourceViewDesc.Texture3D.MipLevels = 1;
+				break;
+			}
+
+			HRESULT hr = m_Device->CreateShaderResourceView(m_Resource.Get(), &shaderResourceViewDesc, m_SlicesShaderResourceViews[index].GetAddressOf());
+			if (FAILED(hr))
+			{
+				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create shader resource view."));
+				return false;
+			}
+			return m_SlicesShaderResourceViews[index].Get();
+		}
+		return shaderResourceView;
+	}
+
 	ID3D11RenderTargetView* GfxTextureDX11::GetRenderTargetView() const
 	{
 		return m_RenderTargetView.Get();
@@ -123,7 +204,6 @@ namespace Blueberry
 				m_SlicesRenderTargetViews.resize(static_cast<size_t>(m_Depth * m_MipLevels));
 				break;
 			}
-			m_SlicesRenderTargetViews[0] = m_RenderTargetView;
 		}
 
 		uint32_t index = arraySlice * m_MipLevels + mipSlice;
@@ -147,21 +227,21 @@ namespace Blueberry
 				{
 					renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 					renderTargetViewDesc.Texture2DMSArray.FirstArraySlice = arraySlice;
-					renderTargetViewDesc.Texture2DMSArray.ArraySize = m_ArraySize;
+					renderTargetViewDesc.Texture2DMSArray.ArraySize = 1;
 				}
 				else
 				{
 					renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DMSARRAY;
 					renderTargetViewDesc.Texture2DArray.MipSlice = mipSlice;
 					renderTargetViewDesc.Texture2DArray.FirstArraySlice = arraySlice;
-					renderTargetViewDesc.Texture2DArray.ArraySize = m_ArraySize;
+					renderTargetViewDesc.Texture2DArray.ArraySize = 1;
 				}
 				break;
 			case TextureDimension::TextureCube:
 				renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
 				renderTargetViewDesc.Texture2DArray.MipSlice = mipSlice;
 				renderTargetViewDesc.Texture2DArray.FirstArraySlice = arraySlice;
-				renderTargetViewDesc.Texture2DArray.ArraySize = 6;
+				renderTargetViewDesc.Texture2DArray.ArraySize = 1;
 				break;
 			case TextureDimension::Texture3D:
 				renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE3D;
@@ -208,7 +288,6 @@ namespace Blueberry
 				m_SlicesUnorderedAccessViews.resize(static_cast<size_t>(m_Depth * m_MipLevels));
 				break;
 			}
-			m_SlicesUnorderedAccessViews[0] = m_UnorderedAccessView;
 		}
 
 		uint32_t index = arraySlice * m_MipLevels + mipSlice;
@@ -228,7 +307,7 @@ namespace Blueberry
 				unorderedAccessViewDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
 				unorderedAccessViewDesc.Texture2DArray.MipSlice = mipSlice;
 				unorderedAccessViewDesc.Texture2DArray.FirstArraySlice = arraySlice;
-				unorderedAccessViewDesc.Texture2DArray.ArraySize = m_ArraySize;
+				unorderedAccessViewDesc.Texture2DArray.ArraySize = 1;
 				break;
 			case TextureDimension::Texture3D:
 				unorderedAccessViewDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
@@ -519,33 +598,34 @@ namespace Blueberry
 			if (m_AntiAliasing > 1)
 			{
 				shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMSARRAY;
+				shaderResourceViewDesc.Texture2DMSArray.FirstArraySlice = 0;
 				shaderResourceViewDesc.Texture2DMSArray.ArraySize = m_ArraySize;
 			}
 			else
 			{
 				shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-				shaderResourceViewDesc.Texture2DArray.ArraySize = m_ArraySize;
+				shaderResourceViewDesc.Texture2DArray.MostDetailedMip = 0;
 				shaderResourceViewDesc.Texture2DArray.MipLevels = m_MipLevels;
 				shaderResourceViewDesc.Texture2DArray.FirstArraySlice = 0;
-				shaderResourceViewDesc.Texture2DArray.MostDetailedMip = 0;
+				shaderResourceViewDesc.Texture2DArray.ArraySize = m_ArraySize;
 			}
 			break;
 		case TextureDimension::TextureCube:
 			shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
-			shaderResourceViewDesc.TextureCube.MipLevels = m_MipLevels;
 			shaderResourceViewDesc.TextureCube.MostDetailedMip = 0;
+			shaderResourceViewDesc.TextureCube.MipLevels = m_MipLevels;
 			break;
 		case TextureDimension::TextureCubeArray:
 			shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBEARRAY;
-			shaderResourceViewDesc.TextureCubeArray.MipLevels = m_MipLevels;
 			shaderResourceViewDesc.TextureCubeArray.MostDetailedMip = 0;
+			shaderResourceViewDesc.TextureCubeArray.MipLevels = m_MipLevels;
 			shaderResourceViewDesc.TextureCubeArray.First2DArrayFace = 0;
 			shaderResourceViewDesc.TextureCubeArray.NumCubes = m_ArraySize / 6;
 			break;
 		case TextureDimension::Texture3D:
 			shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
-			shaderResourceViewDesc.Texture3D.MipLevels = m_MipLevels;
 			shaderResourceViewDesc.Texture3D.MostDetailedMip = 0;
+			shaderResourceViewDesc.Texture3D.MipLevels = m_MipLevels;
 			break;
 		}
 		

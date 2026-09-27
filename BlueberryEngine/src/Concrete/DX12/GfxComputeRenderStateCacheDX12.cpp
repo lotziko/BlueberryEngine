@@ -9,8 +9,13 @@
 
 namespace Blueberry
 {
+	static GfxComputeRenderStateDX12 s_DefaultComputeRenderState = {};
+
 	GfxComputeRenderStateCacheDX12::GfxComputeRenderStateCacheDX12(GfxDeviceDX12* device) : m_Device(device)
 	{
+		std::fill_n(s_DefaultComputeRenderState.constantBuffers, _countof(s_DefaultComputeRenderState.constantBuffers), device->m_EmptyCbv.GetCPU());
+		std::fill_n(s_DefaultComputeRenderState.shaderResourceViews, _countof(s_DefaultComputeRenderState.shaderResourceViews), device->m_EmptySrv.GetCPU());
+		std::fill_n(s_DefaultComputeRenderState.unorderedAccessViews, _countof(s_DefaultComputeRenderState.unorderedAccessViews), device->m_EmptyUav.GetCPU());
 	}
 
 	GfxComputeRenderStateDX12 GfxComputeRenderStateCacheDX12::GetRenderState(ComputeShader* shader, uint32_t kernelIndex)
@@ -18,7 +23,7 @@ namespace Blueberry
 		GfxComputeShader* computeShader = shader->GetKernel(kernelIndex);
 		size_t key = reinterpret_cast<size_t>(computeShader);
 
-		GfxComputeRenderStateDX12 renderState = {};
+		GfxComputeRenderStateDX12 renderState = s_DefaultComputeRenderState;
 		auto it = m_PipelineBindingStates.find(key);
 		if (it != m_PipelineBindingStates.end())
 		{
@@ -169,14 +174,15 @@ namespace Blueberry
 
 		for (auto& binding : bindingState.textureSrvs)
 		{
-			GfxTextureDX12* dxTexture = GfxTextureDX12::Get(m_Device->m_BindedTextures[binding.bindingIndex].index);
+			auto& bindedTexture = m_Device->m_BindedTextures[binding.bindingIndex];
+			GfxTextureDX12* dxTexture = GfxTextureDX12::Get(bindedTexture.index);
 			if (dxTexture == nullptr)
 			{
 				BB_ERROR("Texture is missing.");
 				continue;
 			}
-			dxTexture->SetState(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-			renderState.shaderResourceViews[binding.slotIndex] = dxTexture->GetShaderResourceView().GetCPU();
+			dxTexture->SetState(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, bindedTexture.mip);
+			renderState.shaderResourceViews[binding.slotIndex] = bindedTexture.mip == UINT32_MAX ? dxTexture->GetShaderResourceView().GetCPU() : dxTexture->GetShaderResourceView(0, bindedTexture.mip).GetCPU();
 			renderState.shaderResourceViewsCount = std::max(renderState.shaderResourceViewsCount, binding.slotIndex + 1u);
 		}
 
@@ -202,8 +208,8 @@ namespace Blueberry
 				BB_ERROR("Texture is missing.");
 				continue;
 			}
-			dxTexture->SetUAVState();
-			renderState.unorderedAccessViews[binding.slotIndex] = bindedTexture.mip > 0 ? dxTexture->GetUnorderedAccessView(0, bindedTexture.mip).GetCPU() : dxTexture->GetUnorderedAccessView().GetCPU();
+			dxTexture->SetUAVState(bindedTexture.mip);
+			renderState.unorderedAccessViews[binding.slotIndex] = bindedTexture.mip == UINT32_MAX ? dxTexture->GetUnorderedAccessView().GetCPU() : dxTexture->GetUnorderedAccessView(0, bindedTexture.mip).GetCPU();
 			renderState.unorderedAccessViewsCount = std::max(renderState.unorderedAccessViewsCount, binding.slotIndex + 1u);
 		}
 

@@ -83,8 +83,8 @@ namespace Blueberry
 		scratchResourceDesc.SampleDesc.Count = 1;
 		scratchResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 		scratchResourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-
-		hr = m_GfxDevice->GetDevice()->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE, &scratchResourceDesc, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, nullptr, IID_PPV_ARGS(&m_ScratchResource));
+		
+		hr = m_GfxDevice->GetDevice()->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE, &scratchResourceDesc, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&m_ScratchResource));
 
 		if (FAILED(hr))
 		{
@@ -92,6 +92,7 @@ namespace Blueberry
 			return false;
 		}
 
+		m_GfxDevice->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_ScratchResource.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 		dxVertexBuffer->SetState(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 		dxIndexBuffer->SetState(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 

@@ -164,12 +164,17 @@ namespace Blueberry
 		List<std::pair<size_t, GfxHandleDX12>> m_Samplers;
 		List<SamplerOffsetData> m_SamplerHeapOffsets;
 
+		GfxHandleDX12 m_EmptyCbv;
+		GfxHandleDX12 m_EmptySrv;
+		GfxHandleDX12 m_EmptyUav;
+
 		GfxTextureDX12* m_BindedRenderTargets[BINDED_TARGET_COUNT];
 		uint32_t m_BindedRenderTargetsCount = 0;
 		GfxTextureDX12* m_BindedDepthStencil = nullptr;
 		List<BindedBuffer> m_BindedBuffers;
 		List<BindedTexture> m_BindedTextures;
 		GfxTargetInfoDX12 m_TargetInfo;
+		uint32_t m_TargetMipLevel = 0;
 		List<std::pair<UINT64, ComPtr<ID3D12Resource>>> m_ReleasedResources;
 
 		GfxRenderStateCacheDX12 m_StateCache;

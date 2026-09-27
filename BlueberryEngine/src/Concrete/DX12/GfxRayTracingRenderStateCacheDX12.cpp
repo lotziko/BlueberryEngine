@@ -12,8 +12,13 @@
 
 namespace Blueberry
 {
+	static GfxRayTracingRenderStateDX12 s_DefaultRayTracingRenderState = {};
+
 	GfxRayTracingRenderStateCacheDX12::GfxRayTracingRenderStateCacheDX12(GfxDeviceDX12* device) : m_Device(device)
 	{
+		std::fill_n(s_DefaultRayTracingRenderState.constantBuffers, _countof(s_DefaultRayTracingRenderState.constantBuffers), device->m_EmptyCbv.GetCPU());
+		std::fill_n(s_DefaultRayTracingRenderState.shaderResourceViews, _countof(s_DefaultRayTracingRenderState.shaderResourceViews), device->m_EmptySrv.GetCPU());
+		std::fill_n(s_DefaultRayTracingRenderState.unorderedAccessViews, _countof(s_DefaultRayTracingRenderState.unorderedAccessViews), device->m_EmptyUav.GetCPU());
 	}
 
 	GfxRayTracingRenderStateDX12 GfxRayTracingRenderStateCacheDX12::GetRenderState(RayTracingShader* shader, GfxTopLevelAccelerationStructure* accelerationStructure)
@@ -21,7 +26,7 @@ namespace Blueberry
 		GfxRayTracingShader* rayTracingShader = shader->Get();
 		size_t key = reinterpret_cast<size_t>(rayTracingShader);
 
-		GfxRayTracingRenderStateDX12 renderState = {};
+		GfxRayTracingRenderStateDX12 renderState = s_DefaultRayTracingRenderState;
 		auto it = m_PipelineBindingStates.find(key);
 		if (it != m_PipelineBindingStates.end())
 		{

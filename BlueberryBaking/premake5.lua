@@ -13,7 +13,7 @@ project "BlueberryBaking"
 	
 	cudaPTXFiles 
 	{ 
-		"**.cu"
+		path.getabsolute("src/**.cu")
 	}
 
 	files
@@ -21,8 +21,11 @@ project "BlueberryBaking"
 		"include/**.h",
 		"src/**.h",
 		"src/**.cpp",
-		"src/**.cu",
 	}
+
+	filter "action:not vs*"
+		files { "src/**.cu" }
+	filter {}
 
 	includedirs
 	{

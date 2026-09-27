@@ -24,6 +24,11 @@ namespace DirectX::SimpleMath
 			return x == V.x && y == V.y;
 		}
 
+		bool operator != (const Vector2Int& V) const noexcept
+		{
+			return x != V.x || y != V.y;
+		}
+
 		constexpr Vector2Int(int32_t _x, int32_t _y) noexcept : x(_x), y(_y) {}
 		explicit Vector2Int(_In_reads_(2) const int32_t* pArray) noexcept : x(pArray[0]), y(pArray[1]) {}
 	};

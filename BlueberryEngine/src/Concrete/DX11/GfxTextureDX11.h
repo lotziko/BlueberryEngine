@@ -18,6 +18,7 @@ namespace Blueberry
 
 		ID3D11Resource* GetResource() const;
 		ID3D11ShaderResourceView* GetShaderResourceView() const;
+		ID3D11ShaderResourceView* GetShaderResourceView(uint32_t arraySlice, uint32_t mipSlice);
 		ID3D11RenderTargetView* GetRenderTargetView() const;
 		ID3D11RenderTargetView* GetRenderTargetView(uint32_t arraySlice, uint32_t mipSlice);
 		ID3D11DepthStencilView* GetDepthStencilView() const;
@@ -51,6 +52,7 @@ namespace Blueberry
 		ComPtr<ID3D11Resource> m_StagingTexture;
 		ComPtr<ID3D11SamplerState> m_SamplerState;
 
+		List<ComPtr<ID3D11ShaderResourceView>> m_SlicesShaderResourceViews;
 		List<ComPtr<ID3D11RenderTargetView>> m_SlicesRenderTargetViews;
 		List<ComPtr<ID3D11UnorderedAccessView>> m_SlicesUnorderedAccessViews;
 

@@ -15,13 +15,14 @@
 #include "Blueberry\Graphics\DefaultMaterials.h"
 #include "Blueberry\Graphics\DefaultTextures.h"
 #include "..\RenderContext.h"
+#include "PerCameraData.h"
 #include "ShadowAtlas.h"
 #include "CookieAtlas.h"
 #include "RealtimeLights.h"
 #include "PostProcessing.h"
 #include "VolumetricFog.h"
 #include "AmbientOcclusion.h"
-#include "RayTracing.h"
+#include "Reflections.h"
 #include "Blueberry\Scene\Components\Camera.h"
 
 #include "..\OpenXRRenderer.h"
@@ -30,6 +31,7 @@ namespace Blueberry
 {
 	static RenderContext s_DefaultContext = {};
 	static CullingResults s_Results = {};
+	static Dictionary<ObjectId, PerCameraData> s_PerCameraData = {};
 
 	static size_t s_ScreenColorTextureId = TO_HASH("_ScreenColorTexture");
 	static size_t s_ScreenNormalWSTextureId = TO_HASH("_ScreenNormalWSTexture");
@@ -56,7 +58,7 @@ namespace Blueberry
 		AmbientOcclusion::Initialize();
 		RealtimeLights::Initialize();
 		ShadowAtlas::Initialize();
-		RayTracing::Initialize();
+		Reflections::Initialize();
 	}
 
 	void DefaultRenderer::Shutdown()
@@ -67,7 +69,8 @@ namespace Blueberry
 		AmbientOcclusion::Shutdown();
 		RealtimeLights::Shutdown();
 		ShadowAtlas::Shutdown();
-		RayTracing::Shutdown();
+		Reflections::Shutdown();
+		s_PerCameraData.clear();
 	}
 	
 	void DefaultRenderer::Draw(Scene* scene, Camera* camera, Rectangle viewport, GfxTexture* colorOutput, GfxTexture* depthOutput)
@@ -76,11 +79,11 @@ namespace Blueberry
 		cameraData.camera = camera;
 
 		CameraType cameraType = camera->GetCameraType();
+		PerCameraData& perCameraData = s_PerCameraData[camera->GetObjectId()];
 
 		GfxTexture* gBuffer[4] = {};
 		GfxTexture* depthStencilRenderTarget = nullptr;
 		GfxTexture* HBAORenderTarget = nullptr;
-		GfxTexture* reflectionRenderTarget = nullptr;
 		GfxTexture* postProcessingRenderTarget = nullptr;
 		GfxTexture* resultRenderTarget = nullptr;
 
@@ -165,11 +168,10 @@ namespace Blueberry
 
 		if (cameraType != CameraType::Preview)
 		{
-			reflectionRenderTarget = GfxTexturePool::Get(size.x, size.y, 1, TextureUsageFlags::UnorderedAccess);
-			RayTracing::Draw(scene, camera, reflectionRenderTarget, viewport, size);
-			GfxDevice::SetGlobalTexture(s_ReflectionTextureId, reflectionRenderTarget);
-			VolumetricFog::CalculateFrustum(s_Results, cameraData);
-			GfxDevice::SetGlobalTexture(s_VolumetricFogTextureId, VolumetricFog::GetFrustumTexture());
+			Reflections::Draw(scene, camera, viewport, size, perCameraData);
+			GfxDevice::SetGlobalTexture(s_ReflectionTextureId, Reflections::GetReflectionTexture(perCameraData));
+			VolumetricFog::CalculateFrustum(s_Results, cameraData, perCameraData);
+			GfxDevice::SetGlobalTexture(s_VolumetricFogTextureId, VolumetricFog::GetFrustumTexture(perCameraData));
 		}
 
 		// Ambient Occlusion
@@ -187,12 +189,13 @@ namespace Blueberry
 		BB_PROFILE_BEGIN("Deferred");
 		RealtimeLights::CalculateClusters();
 		GfxDevice::SetRenderTarget(postProcessingRenderTarget);
+		GfxDevice::SetViewport(viewport.x, viewport.y, viewport.width, viewport.height);
 		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetDeferred()));
 		GfxDevice::SetRenderTarget(postProcessingRenderTarget, depthStencilRenderTarget);
 		s_DefaultContext.DrawSky(s_Results);
 		BB_PROFILE_END();
 
-		PostProcessing::Draw(camera, postProcessingRenderTarget, resultRenderTarget, viewport, cameraType);
+		PostProcessing::Draw(camera, postProcessingRenderTarget, resultRenderTarget, viewport, cameraType, perCameraData);
 
 		GfxDevice::SetRenderTarget(resultRenderTarget);
 		s_DefaultContext.DrawCanvases(s_Results);
@@ -232,10 +235,5 @@ namespace Blueberry
 		GfxTexturePool::Release(HBAORenderTarget);
 		GfxTexturePool::Release(postProcessingRenderTarget);
 		GfxTexturePool::Release(resultRenderTarget);
-
-		if (cameraType != CameraType::Preview)
-		{
-			GfxTexturePool::Release(reflectionRenderTarget);
-		}
 	}
 }

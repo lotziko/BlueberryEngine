@@ -5,6 +5,8 @@
 #include "RealtimeLights.hlsl"
 #include "RealtimeShadows.hlsl"
 
+#include "nrd/NRD.hlsl"
+
 float CalculateGeometricRoughnessFactor(float3 geometricNormalWs)
 {
 	float3 normalWsDdx = ddx(geometricNormalWs.xyz);
@@ -121,7 +123,9 @@ float3 CalculateIndirectSpecular(float3 normalWS, float2 positionSS, float3 view
 {
 	float NDotV = max(0, dot(normalWS.xyz, viewDirectionWS.xyz));
 
-	float3 screenReflection = SAMPLE_TEXTURE2D_X(_ScreenReflectionTexture, _ScreenReflectionTexture_Sampler, positionSS).rgb;
+	float4 packedReflection = SAMPLE_TEXTURE2D_X(_ScreenReflectionTexture, _ScreenReflectionTexture_Sampler, positionSS);
+	float3 screenReflection = REBLUR_BackEnd_UnpackRadianceAndNormHitDist(packedReflection).rgb;
+	//float3 screenReflection = SAMPLE_TEXTURE2D_X(_ScreenReflectionTexture, _ScreenReflectionTexture_Sampler, positionSS).rgb;
 	float2 fresnelResponse = CalculateFresnelResponse(NDotV, roughness);
 
 	return screenReflection * (reflectance * fresnelResponse.x + fresnelResponse.y);
@@ -319,10 +323,10 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 	}
 
 	float3 screenSpecular = CalculateIndirectSpecular(inputData.normalWS, inputData.renderTargetUV, inputData.viewDirectionWS, surfaceData.roughness, reflectance);
-	float3 skySpecular = CalculateIndirectSpecular(inputData.normalWS, inputData.viewDirectionWS, surfaceData.roughness, reflectance);
-	float skyWeight = saturate(1.0f - maxWeight);
-	float t = smoothstep(0.1, 0.3, surfaceData.roughness);
-	float3 indirectSpecularTerm = lerp(screenSpecular, lerp(totalSpecular / max(totalWeight, 1e-5), skySpecular, skyWeight), t); // TODO sky debug mode by replacing skySpecular with float3(1, 0, 0)
+	//float3 skySpecular = CalculateIndirectSpecular(inputData.normalWS, inputData.viewDirectionWS, surfaceData.roughness, reflectance);
+	//float skyWeight = saturate(1.0f - maxWeight);
+	//float t = smoothstep(0.1, 0.3, surfaceData.roughness);
+	float3 indirectSpecularTerm = screenSpecular;//lerp(screenSpecular, lerp(totalSpecular / max(totalWeight, 1e-5), skySpecular, skyWeight), t); // TODO sky debug mode by replacing skySpecular with float3(1, 0, 0)
 #else
 	float3 indirectSpecularTerm = 0;
 #endif

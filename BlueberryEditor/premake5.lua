@@ -9,6 +9,7 @@ project "BlueberryEditor"
 
 	files
 	{
+		"assets/**",
 		"src/**.h",
 		"src/**.cpp",
 		"vendor/fbxsdk/include/**.h",
@@ -43,25 +44,26 @@ project "BlueberryEditor"
 		"ImguiNode",
 	}
 
-	postbuildcommands
+	dependson { "BlueberryResources", "BlueberryRuntime" }
+
+	copychanged
 	{
-		"{COPYDIR} %{wks.location}/BlueberryEditor/assets %{cfg.targetdir}/assets",
-		"{COPYDIR} %{wks.location}/BlueberryEngine/assets %{cfg.targetdir}/assets",
-		"{COPYDIR} %{wks.location}/bin/" .. outputdir .. "/BlueberryBaking/assets %{cfg.targetdir}/assets",
-		"{COPYDIR} %{wks.location}/BlueberryEngine/include %{cfg.targetdir}/include",
-		"{COPYDIR} %{wks.location}/BlueberryEngine/vendor/rmlui/include %{cfg.targetdir}/include",
-		"{COPYFILE} %{wks.location}/BlueberryEditor/vendor/fbxsdk/lib/vs2017/x64/release/libfbxsdk.dll %{cfg.targetdir}/libfbxsdk.dll",
-		"{COPYFILE} %{wks.location}/BlueberryEngine/vendor/openxr/native/x64/release/bin/openxr_loader.dll %{cfg.targetdir}/openxr_loader.dll",
-		"{COPYFILE} %{wks.location}/BlueberryEngine/vendor/dxc/bin/x64/dxcompiler.dll %{cfg.targetdir}/dxcompiler.dll",
-		"{COPYFILE} %{wks.location}/BlueberryEngine/vendor/dxc/bin/x64/dxil.dll %{cfg.targetdir}/dxil.dll",
-		"{COPYFILE} %{wks.location}/BlueberryEngine/vendor/d3dx12/bin/x64/D3D12Core.dll %{cfg.targetdir}/D3D12Core.dll",
-		"{COPYFILE} %{wks.location}/BlueberryEngine/vendor/d3dx12/bin/x64/d3d12SDKLayers.dll %{cfg.targetdir}/d3d12SDKLayers.dll",
-		"{COPYFILE} %{wks.location}/bin/" .. outputdir .. "/BlueberryRuntime/BlueberryRuntime.lib %{cfg.targetdir}/BlueberryRuntime.lib",
-		"{COPYFILE} %{wks.location}/bin/" .. outputdir .. "/BlueberryRuntime/BlueberryRuntime.exe %{cfg.targetdir}/BlueberryRuntime.exe",
-		"{COPYFILE} %{wks.location}/BlueberryEngine/vendor/rmlui/lib/rmlui.lib %{cfg.targetdir}/rmlui.lib",
-		"{COPYFILE} %{wks.location}/BlueberryEditor/vendor/fastbuild/bin/FBuild.exe %{cfg.targetdir}/FBuild.exe",
-		"{COPYFILE} %{wks.location}/vendor/premake/bin/premake5.exe %{cfg.targetdir}/premake5.exe",
+		{ "%{wks.location}/BlueberryEditor/vendor/fbxsdk/lib/vs2017/x64/release/libfbxsdk.dll", "%{cfg.targetdir}/libfbxsdk.dll" },
+		{ "%{wks.location}/BlueberryEngine/vendor/openxr/native/x64/release/bin/openxr_loader.dll", "%{cfg.targetdir}/openxr_loader.dll" },
+		{ "%{wks.location}/BlueberryEngine/vendor/dxc/bin/x64/dxcompiler.dll", "%{cfg.targetdir}/dxcompiler.dll" },
+		{ "%{wks.location}/BlueberryEngine/vendor/dxc/bin/x64/dxil.dll", "%{cfg.targetdir}/dxil.dll" },
+		{ "%{wks.location}/BlueberryEngine/vendor/d3dx12/bin/x64/D3D12Core.dll", "%{cfg.targetdir}/D3D12Core.dll" },
+		{ "%{wks.location}/BlueberryEngine/vendor/d3dx12/bin/x64/d3d12SDKLayers.dll", "%{cfg.targetdir}/d3d12SDKLayers.dll" },
+		{ "%{wks.location}/bin/" .. outputdir .. "/BlueberryRuntime/BlueberryRuntime.lib", "%{cfg.targetdir}/BlueberryRuntime.lib" },
+		{ "%{wks.location}/bin/" .. outputdir .. "/BlueberryRuntime/BlueberryRuntime.exe", "%{cfg.targetdir}/BlueberryRuntime.exe" },
+		{ "%{wks.location}/bin/" .. outputdir .. "/RmlUi/RmlUi.lib", "%{cfg.targetdir}/rmlui.lib" },
+		{ "%{wks.location}/BlueberryEditor/vendor/fastbuild/bin/FBuild.exe", "%{cfg.targetdir}/FBuild.exe" },
+		{ "%{wks.location}/vendor/premake/bin/premake5.exe", "%{cfg.targetdir}/premake5.exe" },
 	}
+
+	filter "files:assets/**"
+		buildaction "None"
+	filter {}
 
 	filter "system:windows"
 

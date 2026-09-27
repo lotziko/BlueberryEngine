@@ -404,20 +404,20 @@ namespace Blueberry
 				for (uint32_t i = 0; i < renderTexturesCount; ++i)
 				{
 					GfxTextureDX12* dxRenderTarget = static_cast<GfxTextureDX12*>(renderTextures[i]);
-					if (arraySlice || mipLevel)
+					if (arraySlice != UINT32_MAX || mipLevel != UINT32_MAX)
 					{
-						renderTargets[i] = dxRenderTarget->GetRenderTargetView(arraySlice, mipLevel).GetCPU();
+						renderTargets[i] = dxRenderTarget->GetRenderTargetView(arraySlice == UINT32_MAX ? 0 : arraySlice, mipLevel == UINT32_MAX ? 0 : mipLevel).GetCPU();
 					}
 					else
 					{
 						renderTargets[i] = dxRenderTarget->GetRenderTargetView().GetCPU();
 					}
-
 					m_BindedRenderTargets[i] = dxRenderTarget;
 					m_TargetInfo.renderTargetFormats[i] = dxRenderTarget->GetDxgiFormat();
 					m_TargetInfo.renderTargetCount = renderTexturesCount;
 					m_TargetInfo.sampleCount = dxRenderTarget->GetAntiAliasing();
 					m_TargetInfo.sampleQuality = dxRenderTarget->GetQuality();
+					m_TargetMipLevel = mipLevel;
 				}
 			}
 			D3D12_CPU_DESCRIPTOR_HANDLE depthStencil = {};
@@ -432,6 +432,7 @@ namespace Blueberry
 			}
 			else
 			{
+				m_BindedDepthStencil = nullptr;
 				m_TargetInfo.depthStencilFormat = DXGI_FORMAT_UNKNOWN;
 			}
 			m_CommandList->OMSetRenderTargets(renderTexturesCount, renderTargets, FALSE, depthStencilTexture == nullptr ? nullptr : &depthStencil);
@@ -497,7 +498,7 @@ namespace Blueberry
 
 		for (uint32_t i = 0; i < m_BindedRenderTargetsCount; ++i)
 		{
-			m_BindedRenderTargets[i]->SetState(D3D12_RESOURCE_STATE_RENDER_TARGET);
+			m_BindedRenderTargets[i]->SetState(D3D12_RESOURCE_STATE_RENDER_TARGET, m_TargetMipLevel);
 		}
 
 		if (m_BindedDepthStencil != nullptr)
@@ -1044,7 +1045,7 @@ namespace Blueberry
 			BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error creating cbv srv uav ring heap."));
 			return false;
 		}
-
+		
 		m_SamplerRingHeap = GfxDescriptorHeapDX12(this);
 		if (!m_SamplerRingHeap.Initialize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, true, 128, 1920))
 		{
@@ -1319,28 +1320,28 @@ namespace Blueberry
 		{
 			D3D12_DESCRIPTOR_RANGE cbvRange = {};
 			cbvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-			cbvRange.NumDescriptors = 4;
+			cbvRange.NumDescriptors = 14;
 			cbvRange.BaseShaderRegister = 0;
 			cbvRange.RegisterSpace = 0;
 			cbvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 			D3D12_DESCRIPTOR_RANGE srvRange = {};
 			srvRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-			srvRange.NumDescriptors = 4;
+			srvRange.NumDescriptors = 16;
 			srvRange.BaseShaderRegister = 0;
 			srvRange.RegisterSpace = 0;
 			srvRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 			D3D12_DESCRIPTOR_RANGE uavRange = {};
 			uavRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-			uavRange.NumDescriptors = 4;
+			uavRange.NumDescriptors = 8;
 			uavRange.BaseShaderRegister = 0;
 			uavRange.RegisterSpace = 0;
 			uavRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 			D3D12_DESCRIPTOR_RANGE samplerRange = {};
 			samplerRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
-			samplerRange.NumDescriptors = 4;
+			samplerRange.NumDescriptors = 16;
 			samplerRange.BaseShaderRegister = 0;
 			samplerRange.RegisterSpace = 0;
 			samplerRange.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
@@ -1459,6 +1460,28 @@ namespace Blueberry
 				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Error creating dxr local root signature."));
 				return false;
 			}
+		}
+
+		// Empty descriptors
+		{
+			m_EmptyCbv = m_CbvSrvUavHeap.AllocatePersistent();
+			m_Device->CreateConstantBufferView(nullptr, m_EmptyCbv.GetCPU());
+
+			D3D12_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc = {};
+			shaderResourceViewDesc.Format = DXGI_FORMAT_R32_FLOAT;
+			shaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+			shaderResourceViewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+			shaderResourceViewDesc.Texture2D.MipLevels = 1;
+
+			m_EmptySrv = m_CbvSrvUavHeap.AllocatePersistent();
+			m_Device->CreateShaderResourceView(nullptr, &shaderResourceViewDesc, m_EmptySrv.GetCPU());
+
+			D3D12_UNORDERED_ACCESS_VIEW_DESC unorderedAccessViewDesc = {};
+			unorderedAccessViewDesc.Format = DXGI_FORMAT_R32_FLOAT;
+			unorderedAccessViewDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+
+			m_EmptyUav = m_CbvSrvUavHeap.AllocatePersistent();
+			m_Device->CreateUnorderedAccessView(nullptr, nullptr, &unorderedAccessViewDesc, m_EmptyUav.GetCPU());
 		}
 
 		for (uint32_t i = 0; i < BINDED_TARGET_COUNT; ++i)

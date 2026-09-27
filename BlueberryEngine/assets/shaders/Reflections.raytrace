@@ -3,67 +3,40 @@
 #pragma closesthit0 ReflectionsClosestHit
 #pragma miss0 ReflectionsMiss
 
-#pragma payload_size 20
+#pragma payload_size 16
 #pragma attributes_size 8
 #pragma ray_recursion_depth 2
+
+#include "Math.hlsl"
+#include "nrd/NRD.hlsl"
 
 RaytracingAccelerationStructure _RaytracingAccelerationStructure : register(t0);
 Texture2D _ScreenDepthStencilTexture : register(t1);
 Texture2D _ScreenORMTexture : register(t2);
-TextureCube _SkyboxTexture : register(t3);
+Texture2D _ScreenNormalWSTexture : register(t3);
+TextureCube _SkyboxTexture : register(t4);
 SamplerState _SkyboxTexture_Sampler : register(s0);
-RWTexture2D<float4> _OutputTexture : register(u0);
+RWTexture2D<float4> _RadianceHitDistTexture : register(u0);
+RWTexture2D<float3> _NormalRoughnessTexture : register(u1);
+RWTexture2D<float> _ViewZTexture : register(u2);
 
-cbuffer RTPerCameraData : register(b0)
+cbuffer ReflectionsCameraData : register(b0)
 {
+	float4x4 _ProjectionMatrix;
 	float4x4 _InverseViewProjectionMatrix;
-	float4 _CameraPositionWS;
+	float3 _CameraPositionWS;
+	uint _FrameIndex;
+	uint2 _ViewportSize;
+	uint2 _BufferSize;
 };
 
 typedef BuiltInTriangleIntersectionAttributes Attributes;
 
 struct Payload
 {
-	float4 color;
-	uint depth;
+	float3 color;
+	float distance;
 };
-
-[shader("raygeneration")]
-void ReflectionsRayGeneration()
-{
-	uint3 dispatchId = DispatchRaysIndex();
-	float depth = _ScreenDepthStencilTexture.Load(uint3(dispatchId.xy, 0)).r;
-	float3 orm = _ScreenORMTexture.Load(uint3(dispatchId.xy, 0)).rgb;
-	if (depth < 1 && orm.g <= 0.3)
-	{
-		uint3 dispatchDim = DispatchRaysDimensions();
-		float2 texcoord = (dispatchId.xy + float2(0.5, 0.5)) / float2(dispatchDim.x, dispatchDim.y);
-		float2 positionNdc = texcoord * 2.0 - 1.0;
-		positionNdc.y = -positionNdc.y;
-
-		float4 positionCS = float4(positionNdc, 1.0, 1.0);
-
-		float4 positionWS = mul(_InverseViewProjectionMatrix, positionCS);
-		positionWS /= positionWS.w;
-
-		RayDesc ray;
-		ray.Origin = _CameraPositionWS.xyz;
-		ray.Direction = normalize(positionWS.xyz - _CameraPositionWS.xyz);
-		ray.TMin = 0.001;
-		ray.TMax = 10000.0;
-
-		Payload payload;
-		payload.color = float4(0, 0, 0, 0);
-		payload.depth = 0;
-
-		TraceRay(_RaytracingAccelerationStructure, RAY_FLAG_CULL_BACK_FACING_TRIANGLES , ~0, 0, 1, 0, ray, payload);
-		_OutputTexture[dispatchId.xy] = payload.color;
-	}
-    else
-	{
-		_OutputTexture[dispatchId.xy] = float4(0, 0, 0, 0);
-	}
-}
 
 ByteAddressBuffer _Vertices : register(t0, space1);
 ByteAddressBuffer _Indices : register(t1, space1);
@@ -86,6 +59,17 @@ float4 SampleTexture2D(uint textureIndex, uint samplerIndex, float2 uv)
 	Texture2D<float4> texture = ResourceDescriptorHeap[textureIndex];
 	SamplerState sampler = SamplerDescriptorHeap[samplerIndex];
 	return texture.SampleLevel(sampler, uv, 0);
+}
+
+float3 ClampLuminance(float3 color, float limit)
+{
+    float luminance = dot(color, float3(0.2126, 0.7152, 0.0722));
+    return color * min(1.0, limit / max(luminance, 1e-6));
+}
+
+float3 SampleSkybox(float3 direction)
+{
+	return ClampLuminance(_SkyboxTexture.SampleLevel(_SkyboxTexture_Sampler, direction, 0).rgb * pow(2, 2.2), 5);
 }
 
 uint3 GetIndices()
@@ -115,6 +99,103 @@ float2 GetUv(uint3 indices, float3 barycentrics)
 	return uv0 * barycentrics.x + uv1 * barycentrics.y + uv2 * barycentrics.z;
 }
 
+float HaltonRadicalInverse(uint index, uint base)
+{
+    float result = 0.0f;
+    float invBase = 1.0f / (float)base;
+    float fraction = invBase;
+    
+    while (index > 0u)
+    {
+        result += (float)(index % base) * fraction;
+        fraction *= invBase;
+        index /= base;
+    }
+    
+    return result;
+}
+
+float2 Halton23(uint index)
+{
+    return float2(HaltonRadicalInverse(index, 2u), HaltonRadicalInverse(index, 3u));
+}
+
+float2 HashToFloat2(float2 p)
+{
+    float3 p3 = frac(float3(p.xyx) * float3(0.1031, 0.1030, 0.0973));
+    p3 += dot(p3, p3.yzx + 33.33);
+    return frac((p3.xx + p3.yz) * p3.zy);
+}
+
+float DepthToViewZ(float depth, float4x4 projection)
+{
+    return (projection[2][3] - depth * projection[3][3]) / (depth * projection[3][2] - projection[2][2]);
+}
+
+[shader("raygeneration")]
+void ReflectionsRayGeneration()
+{
+	uint2 sourcePixel = DispatchRaysIndex().xy;
+	float2 texcoord = (float2(sourcePixel) + 0.5) / float2(_ViewportSize);
+	float2 positionNdc = texcoord * 2.0 - 1.0;
+	positionNdc.y = -positionNdc.y;
+	float depth = _ScreenDepthStencilTexture.Load(uint3(sourcePixel.xy, 0)).r;
+	float viewZ = DepthToViewZ(depth, _ProjectionMatrix);
+	float3 normalWS = DecodeNormalOctahedral(_ScreenNormalWSTexture.Load(uint3(sourcePixel.xy, 0)).rg);
+	float3 orm = _ScreenORMTexture.Load(uint3(sourcePixel.xy, 0)).rgb;
+	float roughness = orm.g;
+
+	_NormalRoughnessTexture[sourcePixel] = NRD_FrontEnd_PackNormalAndRoughness(normalWS, roughness, 0);
+	_ViewZTexture[sourcePixel] = depth < 1.0 ? viewZ : NRD_INF;
+
+	const uint specCheckerboard = 0u;
+	uint checkerboard = (sourcePixel.x ^ sourcePixel.y ^ _FrameIndex) & 1u;
+
+	if (checkerboard != specCheckerboard)
+	{
+		return;
+	}
+
+	uint2 outputPixel = uint2(sourcePixel.x >> 1, sourcePixel.y);
+
+	if (depth >= 1.0)
+	{
+		_RadianceHitDistTexture[outputPixel] = 0.0;
+		return;
+	}
+
+	float4 positionCS = float4(positionNdc, depth, 1.0);
+	float4 positionWS = mul(_InverseViewProjectionMatrix, positionCS);
+	positionWS /= positionWS.w;
+	float3 viewDirectionWS = normalize(positionWS.xyz - _CameraPositionWS);
+
+	float3 rayDirectionWS;
+	if (roughness <= 0.0)
+	{
+		rayDirectionWS = reflect(viewDirectionWS, normalWS);
+	}
+	else
+	{
+		float2 Xi = frac(Halton23(_FrameIndex + 1u) + HashToFloat2(sourcePixel.xy));
+		float4 H = ImportanceSampleGGX(Xi, normalWS, roughness);
+		rayDirectionWS = reflect(viewDirectionWS, H.xyz);
+	}
+
+	RayDesc ray;
+	ray.Origin = positionWS + normalWS * 0.001;
+	ray.Direction = rayDirectionWS;
+	ray.TMin = 0.001;
+	ray.TMax = 10000.0;
+
+	Payload payload;
+	payload.color = float3(0, 0, 0);
+	payload.distance = 1;
+
+	TraceRay(_RaytracingAccelerationStructure, RAY_FLAG_CULL_BACK_FACING_TRIANGLES , ~0, 0, 1, 0, ray, payload);
+	float normHitDist = REBLUR_FrontEnd_GetNormHitDist(payload.distance, viewZ, float3(3.0, 0.1, 20.0), roughness);
+	_RadianceHitDistTexture[outputPixel] = REBLUR_FrontEnd_PackRadianceAndNormHitDist(payload.color, normHitDist, true);
+}
+
 [shader("anyhit")]
 void ReflectionsAnyHit(inout Payload payload : SV_RayPayload, in Attributes attributes : SV_IntersectionAttributes)
 {
@@ -131,38 +212,15 @@ void ReflectionsClosestHit(inout Payload payload : SV_RayPayload, in Attributes 
 {
 	uint3 indices = GetIndices();
     float3 barycentrics = GetBarycentrics(attributes.barycentrics);
-
-	if (payload.depth >= 1)
-    {
-		float2 uv = GetUv(indices, barycentrics);
-        payload.color = SampleTexture2D(_BaseMap, _BaseMap_Sampler, uv);
-        return;
-    }
-
-	float3 normalOS = GetNormal(indices, barycentrics);
-	float3 normalWS = normalize(mul(normalOS, (float3x3)WorldToObject3x4()));
-
-	float3 incomingWS = WorldRayDirection();
-    float3 reflectedWS = normalize(reflect(incomingWS, normalWS));
-    float3 hitPositionWS = WorldRayOrigin() + RayTCurrent() * incomingWS;
-
-	RayDesc reflectedRay;
-    reflectedRay.Origin = hitPositionWS + normalWS * 0.001;
-    reflectedRay.Direction = reflectedWS;
-    reflectedRay.TMin = 0.001;
-    reflectedRay.TMax = 10000.0;
-
-	Payload reflectedPayload;
-    reflectedPayload.color = float4(0, 0, 0, 1);
-    reflectedPayload.depth = payload.depth + 1;
-
-	TraceRay(_RaytracingAccelerationStructure, RAY_FLAG_CULL_BACK_FACING_TRIANGLES, ~0, 0, 1, 0, reflectedRay, reflectedPayload);
-    payload.color += reflectedPayload.color;
+	float2 uv = GetUv(indices, barycentrics);
+    payload.color.rgb = SampleTexture2D(_BaseMap, _BaseMap_Sampler, uv);
+	payload.distance = RayTCurrent();
 }
 
 [shader("miss")]
 void ReflectionsMiss(inout Payload payload : SV_RayPayload)
 {
 	float3 rayDir = WorldRayDirection();
-	payload.color += float4(_SkyboxTexture.SampleLevel(_SkyboxTexture_Sampler, normalize(rayDir), 0).rgb, 1) * pow(2, 2.2);
+	payload.color.rgb += SampleSkybox(normalize(rayDir));
+	payload.distance = NRD_INF;
 }

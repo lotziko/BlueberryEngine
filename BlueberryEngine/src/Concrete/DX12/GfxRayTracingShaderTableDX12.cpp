@@ -56,13 +56,15 @@ namespace Blueberry
 			resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 			resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
-			HRESULT hr = m_GfxDevice->GetDevice()->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE, &resourceDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m_Resource));
-
+			HRESULT hr = m_GfxDevice->GetDevice()->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE, &resourceDesc, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&m_Resource));
+			
 			if (FAILED(hr))
 			{
 				BB_ERROR(WindowsHelper::GetErrorMessage(hr, "Failed to create shader table buffer."));
 				return;
 			}
+
+			m_GfxDevice->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST));
 		}
 		else
 		{

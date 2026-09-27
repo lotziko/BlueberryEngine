@@ -3,6 +3,7 @@
 
 #include "Macros.hlsl"
 #include "Input.hlsl"
+#include "InputFunctions.hlsl"
 #include "Structs.hlsl"
 #include "Math.hlsl"
 #include "PBR.hlsl"

@@ -154,12 +154,12 @@ namespace Blueberry
 
 	void GfxDevice::SetRenderTarget(GfxTexture* renderTexture)
 	{
-		s_Instance->SetRenderTargetImpl(&renderTexture, renderTexture == nullptr ? 0 : 1, nullptr, 0, 0);
+		s_Instance->SetRenderTargetImpl(&renderTexture, renderTexture == nullptr ? 0 : 1, nullptr, UINT32_MAX, UINT32_MAX);
 	}
 
 	void GfxDevice::SetRenderTarget(GfxTexture* renderTexture, GfxTexture* depthStencilTexture)
 	{
-		s_Instance->SetRenderTargetImpl(&renderTexture, renderTexture == nullptr ? 0 : 1, depthStencilTexture, 0, 0);
+		s_Instance->SetRenderTargetImpl(&renderTexture, renderTexture == nullptr ? 0 : 1, depthStencilTexture, UINT32_MAX, UINT32_MAX);
 	}
 
 	void GfxDevice::SetRenderTarget(GfxTexture* renderTexture, uint32_t arraySlice, uint32_t mipLevel)
@@ -174,7 +174,7 @@ namespace Blueberry
 
 	void GfxDevice::SetRenderTarget(GfxTexture** renderTextures, uint32_t renderTexturesCount, GfxTexture* depthStencilTexture)
 	{
-		s_Instance->SetRenderTargetImpl(renderTextures, renderTexturesCount, depthStencilTexture, 0, 0);
+		s_Instance->SetRenderTargetImpl(renderTextures, renderTexturesCount, depthStencilTexture, UINT32_MAX, UINT32_MAX);
 	}
 
 	void GfxDevice::SetGlobalBuffer(size_t id, GfxBuffer* buffer)

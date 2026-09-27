@@ -33,7 +33,7 @@ namespace Blueberry
 		if (s_LastFilesWriteTime == 0)
 		{
 			String filesPath = "assets/shaders/";
-			for (const auto& entry : std::filesystem::directory_iterator(filesPath))
+			for (const auto& entry : std::filesystem::recursive_directory_iterator(filesPath))
 			{
 				std::filesystem::path path = entry;
 				if (path.extension() == ".hlsl")

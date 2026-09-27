@@ -11,13 +11,14 @@ namespace Blueberry
 	class Material;
 	class Camera;
 	enum class CameraType;
+	class PerCameraData;
 
 	class PostProcessing
 	{
 	public:
 		static void Initialize();
 		static void Shutdown();
-		static void Draw(Camera* camera, GfxTexture* input, GfxTexture* output, const Rectangle& viewport, const CameraType& cameraType);
+		static void Draw(Camera* camera, GfxTexture* input, GfxTexture* output, const Rectangle& viewport, const CameraType& cameraType, PerCameraData& perCameraData);
 
 	private:
 		static ComputeShader* s_ResolveMSAABloomShader;

@@ -284,9 +284,17 @@ namespace Blueberry
 			--s_SceneRedrawRequestsCount;
 		}
 
-		ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(m_ColorRenderTarget->GetHandle()), pos, ImVec2(pos.x + size.x, pos.y + size.y), ImVec2(0, 0), ImVec2(size.x / Screen::GetWidth(), size.y / Screen::GetHeight()));
+		ImDrawList* drawList = ImGui::GetWindowDrawList();
+		ImDrawListSplitter splitter;
+		splitter.Split(drawList, 2);
+
+		splitter.SetCurrentChannel(drawList, 1);
 		DrawControls();
 		DrawGizmos(Rectangle(static_cast<long>(pos.x), static_cast<long>(pos.y), static_cast<long>(size.x), static_cast<long>(size.y)));
+
+		splitter.SetCurrentChannel(drawList, 0);
+		ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(m_ColorRenderTarget->GetHandle()), pos, ImVec2(pos.x + size.x, pos.y + size.y), ImVec2(0, 0), ImVec2(size.x / Screen::GetWidth(), size.y / Screen::GetHeight()));
+		splitter.Merge(drawList);
 	}
 
 	void SceneArea::OnSaveChanges()

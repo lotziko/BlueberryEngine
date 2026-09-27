@@ -292,9 +292,9 @@ namespace Blueberry
 				case WM_HIDEPROGRESS:
 				{
 					--counter;
-					showTime = 0;
 					if (isVisible && counter <= 0)
 					{
+						showTime = 0;
 						isVisible = false;
 						hideTime = GetTickCount64() + 10;
 					}

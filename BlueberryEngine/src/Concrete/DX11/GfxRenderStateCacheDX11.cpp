@@ -281,8 +281,26 @@ namespace Blueberry
 
 		for (auto& texture : bindingState.vertexTextures)
 		{
-			GfxTextureDX11* dxTexture = GfxTextureDX11::Get(texture.isGlobal ? m_Device->m_BindedTextures[texture.bindingIndex].index : GetTextureIndex(material, texture.bindingIndex));
-			renderState.vertexShaderResourceViews[texture.srvSlot] = dxTexture->GetShaderResourceView();
+			uint32_t mip;
+			uint32_t index;
+			if (texture.isGlobal)
+			{
+				auto& bindedTexture = m_Device->m_BindedTextures[texture.bindingIndex];
+				mip = bindedTexture.mip;
+				index = bindedTexture.index;
+			}
+			else
+			{
+				mip = UINT32_MAX;
+				index = GetTextureIndex(material, texture.bindingIndex);
+			}
+			GfxTextureDX11* dxTexture = GfxTextureDX11::Get(index);
+			if (dxTexture == nullptr)
+			{
+				BB_ERROR("Texture is missing.");
+				continue;
+			}
+			renderState.vertexShaderResourceViews[texture.srvSlot] = mip == UINT32_MAX ? dxTexture->GetShaderResourceView() : dxTexture->GetShaderResourceView(0, mip);
 			if (texture.samplerSlot != UINT8_MAX)
 			{
 				ID3D11SamplerState* samplerState = dxTexture->GetSamplerState();
@@ -297,13 +315,26 @@ namespace Blueberry
 
 		for (auto& texture : bindingState.pixelTextures)
 		{
-			GfxTextureDX11* dxTexture = GfxTextureDX11::Get(texture.isGlobal ? m_Device->m_BindedTextures[texture.bindingIndex].index : GetTextureIndex(material, texture.bindingIndex));
+			uint32_t mip;
+			uint32_t index;
+			if (texture.isGlobal)
+			{
+				auto& bindedTexture = m_Device->m_BindedTextures[texture.bindingIndex];
+				mip = bindedTexture.mip;
+				index = bindedTexture.index;
+			}
+			else
+			{
+				mip = UINT32_MAX;
+				index = GetTextureIndex(material, texture.bindingIndex);
+			}
+			GfxTextureDX11* dxTexture = GfxTextureDX11::Get(index);
 			if (dxTexture == nullptr)
 			{
 				BB_ERROR("Texture is missing.");
 				continue;
 			}
-			renderState.pixelShaderResourceViews[texture.srvSlot] = dxTexture->GetShaderResourceView();
+			renderState.pixelShaderResourceViews[texture.srvSlot] = mip == UINT32_MAX ? dxTexture->GetShaderResourceView() : dxTexture->GetShaderResourceView(0, mip);
 			if (texture.samplerSlot != UINT8_MAX)
 			{
 				ID3D11SamplerState* samplerState = dxTexture->GetSamplerState();

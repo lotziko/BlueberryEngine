@@ -18,10 +18,10 @@ namespace Blueberry
 		ID3D12StateObject* stateObject;
 		ID3D12StateObjectProperties* stateObjectProperties;
 
-		D3D12_CPU_DESCRIPTOR_HANDLE constantBuffers[4];
-		D3D12_CPU_DESCRIPTOR_HANDLE shaderResourceViews[4];
-		D3D12_CPU_DESCRIPTOR_HANDLE unorderedAccessViews[4];
-		uint8_t samplers[4];
+		D3D12_CPU_DESCRIPTOR_HANDLE constantBuffers[14];
+		D3D12_CPU_DESCRIPTOR_HANDLE shaderResourceViews[16];
+		D3D12_CPU_DESCRIPTOR_HANDLE unorderedAccessViews[8];
+		uint8_t samplers[16];
 
 		UINT constantBuffersCount;
 		UINT shaderResourceViewsCount;

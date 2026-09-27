@@ -21,9 +21,17 @@ namespace Blueberry
 		m_RenderTargetView.Free();
 		m_DepthStencilView.Free();
 		m_UnorderedAccessView.Free();
+		for (auto& sliceShaderResourcetView : m_SlicesShaderResourceViews)
+		{
+			sliceShaderResourcetView.Free();
+		}
 		for (auto& sliceRenderTargetView : m_SlicesRenderTargetViews)
 		{
 			sliceRenderTargetView.Free();
+		}
+		for (auto& unorderedAccessView : m_SlicesUnorderedAccessViews)
+		{
+			unorderedAccessView.Free();
 		}
 		m_RingShaderResourceView.Free();
 		m_GfxDevice->Release(m_Resource);
@@ -83,6 +91,84 @@ namespace Blueberry
 		return m_ShaderResourceView;
 	}
 
+	const GfxHandleDX12& GfxTextureDX12::GetShaderResourceView(uint32_t arraySlice, uint32_t mipSlice)
+	{
+		if (m_SlicesShaderResourceViews.size() == 0)
+		{
+			switch (m_Dimension)
+			{
+			case TextureDimension::Texture2D:
+				m_SlicesShaderResourceViews.resize(m_MipLevels);
+				break;
+			case TextureDimension::Texture2DArray:
+				m_SlicesShaderResourceViews.resize(static_cast<size_t>(m_ArraySize * m_MipLevels));
+				break;
+			case TextureDimension::TextureCube:
+				m_SlicesShaderResourceViews.resize(static_cast<size_t>(6 * m_MipLevels));
+				break;
+			case TextureDimension::Texture3D:
+				m_SlicesShaderResourceViews.resize(static_cast<size_t>(m_Depth * m_MipLevels));
+				break;
+			}
+		}
+
+		uint32_t index = arraySlice * m_MipLevels + mipSlice;
+		const GfxHandleDX12& handle = m_SlicesShaderResourceViews[index];
+		if (handle.IsInvalid())
+		{
+			D3D12_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc = {};
+			shaderResourceViewDesc.Format = DxgiHelper::GetSRVFormat(m_DxgiFormat);
+			shaderResourceViewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+
+			switch (m_Dimension)
+			{
+			case TextureDimension::Texture2D:
+				shaderResourceViewDesc.ViewDimension = m_AntiAliasing > 1 ? D3D12_SRV_DIMENSION_TEXTURE2DMS : D3D12_SRV_DIMENSION_TEXTURE2D;
+				shaderResourceViewDesc.Texture2D.MostDetailedMip = mipSlice;
+				shaderResourceViewDesc.Texture2D.PlaneSlice = 0;
+				shaderResourceViewDesc.Texture2D.MipLevels = 1;
+				shaderResourceViewDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+				break;
+			case TextureDimension::Texture2DArray:
+				if (m_AntiAliasing > 1)
+				{
+					shaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMSARRAY;
+					shaderResourceViewDesc.Texture2DMSArray.FirstArraySlice = arraySlice;
+					shaderResourceViewDesc.Texture2DMSArray.ArraySize = 1;
+				}
+				else
+				{
+					shaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+					shaderResourceViewDesc.Texture2DArray.MostDetailedMip = mipSlice;
+					shaderResourceViewDesc.Texture2DArray.MipLevels = 1;
+					shaderResourceViewDesc.Texture2DArray.FirstArraySlice = arraySlice;
+					shaderResourceViewDesc.Texture2DArray.ArraySize = 1;
+					shaderResourceViewDesc.Texture2DArray.PlaneSlice = 0;
+					shaderResourceViewDesc.Texture2DArray.ResourceMinLODClamp = 0.0f;
+				}
+				break;
+			case TextureDimension::TextureCube:
+				shaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+				shaderResourceViewDesc.TextureCube.MostDetailedMip = mipSlice;
+				shaderResourceViewDesc.TextureCube.MipLevels = 1;
+				shaderResourceViewDesc.TextureCube.ResourceMinLODClamp = 0.0f;
+				break;
+			case TextureDimension::Texture3D:
+				shaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
+				shaderResourceViewDesc.Texture3D.MostDetailedMip = mipSlice;
+				shaderResourceViewDesc.Texture3D.MipLevels = 1;
+				shaderResourceViewDesc.Texture3D.ResourceMinLODClamp = 0.0f;
+				break;
+			}
+
+			GfxHandleDX12 handle = m_GfxDevice->GetCbvSrvUavHeap().AllocatePersistent();
+			m_Device->CreateShaderResourceView(m_Resource.Get(), &shaderResourceViewDesc, handle.GetCPU());
+			m_SlicesShaderResourceViews[index] = handle;
+			return m_SlicesShaderResourceViews[index];
+		}
+		return handle;
+	}
+
 	const GfxHandleDX12& GfxTextureDX12::GetRenderTargetView() const
 	{
 		return m_RenderTargetView;
@@ -107,7 +193,6 @@ namespace Blueberry
 				m_SlicesRenderTargetViews.resize(static_cast<size_t>(m_Depth * m_MipLevels));
 				break;
 			}
-			m_SlicesRenderTargetViews[0] = m_RenderTargetView;
 		}
 
 		uint32_t index = arraySlice * m_MipLevels + mipSlice;
@@ -132,14 +217,14 @@ namespace Blueberry
 				{
 					renderTargetViewDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 					renderTargetViewDesc.Texture2DMSArray.FirstArraySlice = arraySlice;
-					renderTargetViewDesc.Texture2DMSArray.ArraySize = m_ArraySize;
+					renderTargetViewDesc.Texture2DMSArray.ArraySize = 1;
 				}
 				else
 				{
 					renderTargetViewDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DMSARRAY;
 					renderTargetViewDesc.Texture2DArray.MipSlice = mipSlice;
 					renderTargetViewDesc.Texture2DArray.FirstArraySlice = arraySlice;
-					renderTargetViewDesc.Texture2DArray.ArraySize = m_ArraySize;
+					renderTargetViewDesc.Texture2DArray.ArraySize = 1;
 					renderTargetViewDesc.Texture2DArray.PlaneSlice = 0;
 				}
 				break;
@@ -147,7 +232,7 @@ namespace Blueberry
 				renderTargetViewDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
 				renderTargetViewDesc.Texture2DArray.MipSlice = mipSlice;
 				renderTargetViewDesc.Texture2DArray.FirstArraySlice = arraySlice;
-				renderTargetViewDesc.Texture2DArray.ArraySize = 6;
+				renderTargetViewDesc.Texture2DArray.ArraySize = 1;
 				renderTargetViewDesc.Texture2DArray.PlaneSlice = 0;
 				break;
 			case TextureDimension::Texture3D:
@@ -192,7 +277,6 @@ namespace Blueberry
 				m_SlicesUnorderedAccessViews.resize(static_cast<size_t>(m_Depth * m_MipLevels));
 				break;
 			}
-			m_SlicesUnorderedAccessViews[0] = m_UnorderedAccessView;
 		}
 
 		uint32_t index = arraySlice * m_MipLevels + mipSlice;
@@ -210,9 +294,10 @@ namespace Blueberry
 				unorderedAccessViewDesc.Texture2D.PlaneSlice = 0;
 				break;
 			case TextureDimension::Texture2DArray:
-				unorderedAccessViewDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+				unorderedAccessViewDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
+				unorderedAccessViewDesc.Texture2DArray.MipSlice = mipSlice;
 				unorderedAccessViewDesc.Texture2DArray.FirstArraySlice = arraySlice;
-				unorderedAccessViewDesc.Texture2DArray.ArraySize = m_ArraySize;
+				unorderedAccessViewDesc.Texture2DArray.ArraySize = m_ArraySize - arraySlice;
 				break;
 			case TextureDimension::Texture3D:
 				unorderedAccessViewDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
@@ -262,6 +347,7 @@ namespace Blueberry
 			m_RingShaderResourceView = m_GfxDevice->GetCbvSrvUavRingHeap().AllocatePersistent();
 			m_Device->CopyDescriptorsSimple(1, m_RingShaderResourceView.GetCPU(), m_ShaderResourceView.GetCPU(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		}
+		SetState(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		return reinterpret_cast<void*>(m_RingShaderResourceView.GetGPU().ptr);
 	}
 
@@ -314,38 +400,126 @@ namespace Blueberry
 		m_Resource->SetName(StringHelper::StringToWide(name).c_str());
 	}
 
-	D3D12_RESOURCE_STATES GfxTextureDX12::GetState() const
+	D3D12_RESOURCE_STATES GfxTextureDX12::GetState(uint32_t mipLevel) const
 	{
-		return m_State;
-	}
-
-	void GfxTextureDX12::SetState(D3D12_RESOURCE_STATES state)
-	{
-		if (m_State != state)
+		if (mipLevel == UINT32_MAX)
 		{
-			m_GfxDevice->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), m_State, state));
-			m_State = state;
+			return m_State;
+		}
+		else
+		{
+			return m_SubresourceStates.empty() ? m_State : m_SubresourceStates[D3D12CalcSubresource(mipLevel, 0, 0, m_MipLevels, m_ArraySize)];
 		}
 	}
 
-	void GfxTextureDX12::SetUAVState()
+	void GfxTextureDX12::SetState(D3D12_RESOURCE_STATES state, uint32_t mipLevel)
 	{
-		if (m_State == D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+		if (mipLevel == UINT32_MAX)
 		{
-			uint64_t generation = m_GfxDevice->GetGeneration();
+			if (m_SubresourceStates.empty())
+			{
+				if (m_State != state)
+				{
+					m_GfxDevice->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), m_State, state));
+					m_State = state;
+					if (state == D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+					{
+						m_UnorderedAccessGeneration = m_GfxDevice->GetGeneration();
+					}
+				}
+			}
+			else
+			{
+				List<D3D12_RESOURCE_BARRIER> barriers;
+				for (uint32_t i = 0; i < m_SubresourceCount; ++i)
+				{
+					if (m_SubresourceStates[i] != state)
+					{
+						barriers.push_back(CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), m_SubresourceStates[i], state, i));
+					}
+				}
+				if (!barriers.empty())
+				{
+					m_GfxDevice->GetCommandList()->ResourceBarrier(static_cast<UINT>(barriers.size()), barriers.data());
+				}
+				m_SubresourceStates.clear();
+				m_State = state;
+				if (state == D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+				{
+					m_UnorderedAccessGeneration = m_GfxDevice->GetGeneration();
+				}
+			}
+		}
+		else
+		{
+			if (m_SubresourceStates.empty() && m_State == state)
+			{
+				return;
+			}
+			UINT subresource = D3D12CalcSubresource(mipLevel, 0, 0, m_MipLevels, m_ArraySize);
+			if (m_SubresourceStates.empty())
+			{
+				m_SubresourceStates.assign(m_SubresourceCount, m_State);
+			}
+			D3D12_RESOURCE_STATES previousState = m_SubresourceStates[subresource];
+			if (previousState != state)
+			{
+				m_GfxDevice->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), previousState, state, subresource));
+				m_SubresourceStates[subresource] = state;
+				if (state == D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+				{
+					m_UnorderedAccessGeneration = m_GfxDevice->GetGeneration();
+				}
+			}
+		}
+	}
+
+	void GfxTextureDX12::SetUAVState(uint32_t mipLevel)
+	{
+		uint64_t generation = m_GfxDevice->GetGeneration();
+		if (mipLevel == UINT32_MAX)
+		{
+			if (m_SubresourceStates.empty())
+			{
+				if (m_State == D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+				{
+					if (m_UnorderedAccessGeneration == generation)
+					{
+						m_GfxDevice->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(m_Resource.Get()));
+					}
+				}
+				else
+				{
+					SetState(D3D12_RESOURCE_STATE_UNORDERED_ACCESS, mipLevel);
+				}
+			}
+			else
+			{
+				if (m_UnorderedAccessGeneration == generation)
+				{
+					for (uint32_t i = 0; i < m_SubresourceCount; ++i)
+					{
+						if (m_SubresourceStates[i] == D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+						{
+							m_GfxDevice->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(m_Resource.Get()));
+							break;
+						}
+					}
+				}
+				SetState(D3D12_RESOURCE_STATE_UNORDERED_ACCESS, mipLevel);
+			}
+		}
+		else
+		{
 			if (m_UnorderedAccessGeneration == generation)
 			{
 				m_GfxDevice->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(m_Resource.Get()));
 			}
-			m_UnorderedAccessGeneration = generation;
+			SetState(D3D12_RESOURCE_STATE_UNORDERED_ACCESS, mipLevel);
 		}
-		else
-		{
-			m_GfxDevice->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), m_State, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
-			m_State = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-		}
+		m_UnorderedAccessGeneration = generation;
 	}
-
+	
 	GfxTextureDX12* GfxTextureDX12::Get(uint32_t index)
 	{
 		return s_PointerCache.Get(index);
@@ -460,6 +634,7 @@ namespace Blueberry
 		}
 
 		m_State = D3D12_RESOURCE_STATE_COMMON;
+		m_SubresourceCount = m_MipLevels * m_ArraySize;
 		HRESULT hr = m_Device->CreateCommittedResource(&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT), D3D12_HEAP_FLAG_NONE, &resourceDesc, m_State, (useRTV || useDSV) ? &clearValue : nullptr, IID_PPV_ARGS(&m_Resource));
 		
 		if (FAILED(hr))
@@ -484,8 +659,8 @@ namespace Blueberry
 		case TextureDimension::Texture2D:
 			shaderResourceViewDesc.ViewDimension = m_AntiAliasing > 1 ? D3D12_SRV_DIMENSION_TEXTURE2DMS : D3D12_SRV_DIMENSION_TEXTURE2D;
 			shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
-			shaderResourceViewDesc.Texture2D.PlaneSlice = 0;
 			shaderResourceViewDesc.Texture2D.MipLevels = m_MipLevels;
+			shaderResourceViewDesc.Texture2D.PlaneSlice = 0;
 			shaderResourceViewDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 			break;
 		case TextureDimension::Texture2DArray:
@@ -498,6 +673,7 @@ namespace Blueberry
 			else
 			{
 				shaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+				shaderResourceViewDesc.Texture2DArray.MostDetailedMip = 0;
 				shaderResourceViewDesc.Texture2DArray.MipLevels = m_MipLevels;
 				shaderResourceViewDesc.Texture2DArray.FirstArraySlice = 0;
 				shaderResourceViewDesc.Texture2DArray.ArraySize = m_ArraySize;
@@ -507,22 +683,22 @@ namespace Blueberry
 			break;
 		case TextureDimension::TextureCube:
 			shaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
-			shaderResourceViewDesc.TextureCube.MipLevels = m_MipLevels;
 			shaderResourceViewDesc.TextureCube.MostDetailedMip = 0;
+			shaderResourceViewDesc.TextureCube.MipLevels = m_MipLevels;
 			shaderResourceViewDesc.TextureCube.ResourceMinLODClamp = 0.0f;
 			break;
 		case TextureDimension::TextureCubeArray:
 			shaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBEARRAY;
-			shaderResourceViewDesc.TextureCubeArray.MipLevels = m_MipLevels;
 			shaderResourceViewDesc.TextureCubeArray.MostDetailedMip = 0;
+			shaderResourceViewDesc.TextureCubeArray.MipLevels = m_MipLevels;
 			shaderResourceViewDesc.TextureCubeArray.First2DArrayFace = 0;
 			shaderResourceViewDesc.TextureCubeArray.NumCubes = m_ArraySize / 6;
 			shaderResourceViewDesc.TextureCubeArray.ResourceMinLODClamp = 0.0f;
 			break;
 		case TextureDimension::Texture3D:
 			shaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
-			shaderResourceViewDesc.Texture3D.MipLevels = m_MipLevels;
 			shaderResourceViewDesc.Texture3D.MostDetailedMip = 0;
+			shaderResourceViewDesc.Texture3D.MipLevels = m_MipLevels;
 			shaderResourceViewDesc.Texture3D.ResourceMinLODClamp = 0.0f;
 			break;
 		}

@@ -1,3 +1,4 @@
+include "scripts/CopyChanged.lua"
 include "dependencies.lua"
 
 workspace "BlueberryEngine"
@@ -28,3 +29,7 @@ include "BlueberryEngine"
 include "BlueberryEditor"
 include "BlueberryBaking"
 include "BlueberryRuntime"
+
+group "Build"
+	include "resources.lua"
+group ""

@@ -25,11 +25,11 @@ project "BlueberryRuntime"
 		"BlueberryEngine",
 	}
 	
-	postbuildcommands
+	copychanged
 	{
-		"{COPYFILE} %{wks.location}/BlueberryEngine/vendor/dxc/bin/x64/dxcompiler.dll %{cfg.targetdir}/dxcompiler.dll",
-		"{COPYFILE} %{wks.location}/BlueberryEngine/vendor/d3dx12/bin/x64/D3D12Core.dll %{cfg.targetdir}/D3D12Core.dll",
-		"{COPYFILE} %{wks.location}/BlueberryEngine/vendor/d3dx12/bin/x64/d3d12SDKLayers.dll %{cfg.targetdir}/d3d12SDKLayers.dll",
+		{ "%{wks.location}/BlueberryEngine/vendor/dxc/bin/x64/dxcompiler.dll", "%{cfg.targetdir}/dxcompiler.dll" },
+		{ "%{wks.location}/BlueberryEngine/vendor/d3dx12/bin/x64/D3D12Core.dll", "%{cfg.targetdir}/D3D12Core.dll" },
+		{ "%{wks.location}/BlueberryEngine/vendor/d3dx12/bin/x64/d3d12SDKLayers.dll", "%{cfg.targetdir}/d3d12SDKLayers.dll" },
 	}
 
 	filter "system:windows"
