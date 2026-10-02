@@ -29,4 +29,19 @@ namespace Blueberry
 	{
 		m_IsCastingShadows = castingShadows;
 	}
+
+	ObjectId Renderer::GetOctreeObjectId() const
+	{
+		return m_ObjectId;
+	}
+
+	OctreeNode* Renderer::GetOctreeNode() const
+	{
+		return m_OctreeNode;
+	}
+
+	void Renderer::SetOctreeNode(OctreeNode* node)
+	{
+		m_OctreeNode = node;
+	}
 }

@@ -61,6 +61,7 @@ namespace Blueberry
 		m_Camera = cameraEntity->AddComponent<Camera>();
 		m_Camera->SetBackgroundColor(Color(0.117f, 0.117f, 0.117f, 1.0f));
 		cameraEntity->OnCreate();
+		m_Camera->OnEnable();
 
 		m_ColorRenderTarget = GfxTexturePool::Get(Screen::GetWidth(), Screen::GetHeight(), 1, TextureUsageFlags::RenderTarget, 1, 1, TextureFormat::R8G8B8A8_UNorm);
 		m_DepthStencilRenderTarget = GfxTexturePool::Get(Screen::GetWidth(), Screen::GetHeight(), 1, TextureUsageFlags::RenderTarget, 1, 1, TextureFormat::D24_UNorm);

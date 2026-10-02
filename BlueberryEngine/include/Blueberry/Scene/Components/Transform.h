@@ -6,6 +6,12 @@
 
 namespace Blueberry
 {
+	class BB_API TransformDependencyInterface
+	{
+	public:
+		virtual void OnTransformInvalidate() = 0;
+	};
+
 	class BB_API Transform : public Component
 	{
 		OBJECT_DECLARATION(Transform)
@@ -55,6 +61,9 @@ namespace Blueberry
 		bool IsStatic() const;
 		void SetStatic(bool isStatic);
 
+		void AddDependency(TransformDependencyInterface* dependency);
+		void RemoveDependency(TransformDependencyInterface* dependency);
+
 	private:
 		void InvalidateHierarchy();
 		void RecalculateHierarchy();
@@ -65,6 +74,7 @@ namespace Blueberry
 
 		ObjectPtr<Transform> m_Parent = nullptr;
 		List<ObjectPtr<Transform>> m_Children;
+		List<TransformDependencyInterface*> m_Dependencies;
 
 		Matrix m_LocalToWorldMatrix;
 		Matrix m_WorldToLocalMatrix;

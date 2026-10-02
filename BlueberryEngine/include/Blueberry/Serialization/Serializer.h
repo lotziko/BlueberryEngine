@@ -30,7 +30,7 @@ namespace Blueberry
 			static Context Create(Object* object, TypeId type)
 			{
 				const ClassInfo* info = ClassDB::GetInfo(type);
-				return { object - info->offset, info };
+				return { reinterpret_cast<char*>(object) - info->offset, info };
 			}
 
 			static Context CreateNoOffset(Data* data, TypeId type)
@@ -52,7 +52,7 @@ namespace Blueberry
 
 			static Context Create(Data* data, const ClassInfo* info)
 			{
-				return { data - info->offset, info };
+				return { reinterpret_cast<char*>(data) - info->offset, info };
 			}
 		};
 

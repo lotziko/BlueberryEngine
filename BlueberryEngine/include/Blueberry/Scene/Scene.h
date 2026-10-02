@@ -5,7 +5,7 @@
 #include "Blueberry\Core\ObjectPtr.h"
 #include "Components\ComponentManager.h"
 #include "Blueberry\Events\Event.h"
-#include "Blueberry\Graphics\RendererTree.h"
+#include "Blueberry\Graphics\Octree.h"
 
 namespace Blueberry
 {
@@ -13,6 +13,7 @@ namespace Blueberry
 	class Serializer;
 	class Entity;
 	class Component;
+	class CullableInterface;
 	
 	class BB_API Scene
 	{
@@ -24,10 +25,9 @@ namespace Blueberry
 		bool Initialize();
 
 		template<class ComponentType>
-		ComponentIterator GetIterator();
+		ComponentView<ComponentType> GetComponents();
 
-		template<class ComponentType>
-		ComponentMap& GetComponents();
+		ComponentView<Component> GetComponents(TypeId type);
 
 		void FixedUpdate();
 		void Update();
@@ -42,7 +42,10 @@ namespace Blueberry
 		const Dictionary<ObjectId, ObjectPtr<Entity>>& GetEntities();
 		const List<ObjectPtr<Entity>>& GetRootEntities();
 
-		RendererTree& GetRendererTree();
+		Octree& GetRendererTree();
+
+		void MarkCullableDirty(ObjectId id, CullableInterface* object);
+		bool FlushDirtyCullables();
 
 	private:
 		void AddToRoot(Entity* entity);
@@ -58,21 +61,17 @@ namespace Blueberry
 
 		// Stores only components with iterators
 		ComponentManager m_ComponentManager;
-		RendererTree m_RendererTree;
+		Octree m_RendererTree = Octree(Vector3::Zero, 10.0f, 1.0f, 1.0f);
+		Dictionary<ObjectId, CullableInterface*> m_DirtyCullables;
+		size_t m_CullingFrame = 0;
 
 		friend class Entity;
 		friend class Transform;
 	};
 
 	template<class ComponentType>
-	inline ComponentIterator Scene::GetIterator()
+	inline ComponentView<ComponentType> Scene::GetComponents()
 	{
-		return m_ComponentManager.GetIterator<ComponentType>();
-	}
-
-	template<class ComponentType>
-	inline ComponentMap& Scene::GetComponents()
-	{
-		return m_ComponentManager.GetComponents(ComponentType::Type);
+		return m_ComponentManager.GetComponents<ComponentType>();
 	}
 }

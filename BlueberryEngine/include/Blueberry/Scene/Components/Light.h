@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Blueberry\Scene\Components\Component.h"
+#include "Component.h"
+#include "Transform.h"
 
 namespace Blueberry
 {
@@ -14,7 +15,7 @@ namespace Blueberry
 	class Texture;
 	class GfxTexture;
 
-	class BB_API Light : public Component
+	class BB_API Light : public Component, public TransformDependencyInterface
 	{
 		OBJECT_DECLARATION(Light)
 
@@ -22,9 +23,10 @@ namespace Blueberry
 		Light() = default;
 		virtual ~Light() = default;
 
+		virtual void OnEnable() final;
 		virtual void OnDisable() final;
 
-		void OnPreCull();
+		virtual void OnTransformInvalidate() final;
 
 		LightType GetType();
 		void SetType(LightType type);
@@ -39,7 +41,10 @@ namespace Blueberry
 		void SetRange(float range);
 
 		float GetOuterSpotAngle() const;
+		void SetOuterSpotAngle(float outerSpotAngle);
+
 		float GetInnerSpotAngle() const;
+		void SetInnerSpotAngle(float innerSpotAngle);
 
 		bool IsCastingShadows() const;
 		void SetCastingShadows(bool castingShadows);
@@ -54,10 +59,9 @@ namespace Blueberry
 		void SetCookie(Texture* cookie);
 
 	private:
+		void InvalidateCache();
 		GfxTexture* GetCachedShadow();
 		void ReleaseCachedShadow();
-
-		void UpdateBounds();
 
 	private:
 		LightType m_Type = LightType::Point;
@@ -73,7 +77,6 @@ namespace Blueberry
 
 	private:
 		GfxTexture* m_CachedShadow = nullptr;
-		size_t m_UpdateCount = 0;
 		bool m_IsDirty[6] = { true, true, true, true, true, true };
 		Matrix m_WorldToShadow[6];
 		Matrix m_AtlasWorldToShadow[6];

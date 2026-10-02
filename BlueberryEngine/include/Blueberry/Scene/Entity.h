@@ -86,10 +86,15 @@ namespace Blueberry
 		{
 			bool operator<(const OperationData& other)
 			{
-				return priority > other.priority;
+				if (priority != other.priority)
+				{
+					return priority > other.priority;
+				}
+				return sequence > other.sequence;
 			}
 
 			int priority;
+			uint64_t sequence;
 			Operation operation;
 			ObjectPtr<Object> object;
 		};
@@ -98,11 +103,16 @@ namespace Blueberry
 		{
 			bool operator()(const OperationData& o1, const OperationData& o2)
 			{
-				return o1.priority > o2.priority;
+				if (o1.priority != o2.priority)
+				{
+					return o1.priority > o2.priority;
+				}
+				return o1.sequence > o2.sequence;
 			}
 		};
 
 		static std::priority_queue<OperationData, List<OperationData>, CompareOperations> s_Operations;
+		static uint64_t s_OperationSequence;
 
 	private:
 		List<ObjectPtr<Component>> m_Components;

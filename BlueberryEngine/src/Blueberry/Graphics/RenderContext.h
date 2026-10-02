@@ -88,6 +88,5 @@ namespace Blueberry
 
 	private:
 		static GfxBuffer* s_IndexBuffer;
-		static size_t s_LastCullingFrame;
 	};
 }

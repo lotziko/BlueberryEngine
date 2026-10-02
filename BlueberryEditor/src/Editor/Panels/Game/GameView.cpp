@@ -60,20 +60,20 @@ namespace Blueberry
 		Scene* scene = EditorSceneManager::GetScene();
 		if (scene != nullptr)
 		{
-			Camera* camera = nullptr;
-			for (auto& pair : scene->GetIterator<Camera>())
+			Camera* mainCamera = nullptr;
+			for (Camera* camera : scene->GetComponents<Camera>())
 			{
-				if (pair.second->GetEntity()->IsActiveInHierarchy())
+				if (camera->GetEntity()->IsActiveInHierarchy())
 				{
-					camera = static_cast<Camera*>(pair.second);
+					mainCamera = camera;
 					break;
 				}
 			}
-			if (camera != nullptr)
+			if (mainCamera != nullptr)
 			{
 				EditorLayer::RequestFrameUpdate();
-				Camera::SetCurrent(camera);
-				RectangleFloat viewport = CameraHelper::CalculateViewport(camera, Rectangle(static_cast<long>(pos.x), static_cast<long>(pos.y), static_cast<long>(size.x), static_cast<long>(size.y)));
+				Camera::SetCurrent(mainCamera);
+				RectangleFloat viewport = CameraHelper::CalculateViewport(mainCamera, Rectangle(static_cast<long>(pos.x), static_cast<long>(pos.y), static_cast<long>(size.x), static_cast<long>(size.y)));
 				Screen::SetGameViewport(Rectangle(static_cast<long>(viewport.x), static_cast<long>(viewport.y), static_cast<long>(viewport.width), static_cast<long>(viewport.height)));
 				
 				if (m_RenderTarget == nullptr || viewport.x != m_RenderTarget->GetWidth() || viewport.y != m_RenderTarget->GetHeight())
@@ -83,10 +83,10 @@ namespace Blueberry
 						GfxTexturePool::Release(m_RenderTarget);
 					}
 					m_RenderTarget = GfxTexturePool::Get(static_cast<uint32_t>(viewport.width), static_cast<uint32_t>(viewport.height), 1, TextureUsageFlags::RenderTarget, 1, 1, TextureFormat::R8G8B8A8_UNorm);
-					camera->SetPixelSize(Vector2(viewport.width, viewport.height));
+					mainCamera->SetPixelSize(Vector2(viewport.width, viewport.height));
 				}
 
-				DefaultRenderer::Draw(scene, camera, Rectangle(0l, 0l, static_cast<long>(viewport.width), static_cast<long>(viewport.height)), m_RenderTarget);
+				DefaultRenderer::Draw(scene, mainCamera, Rectangle(0l, 0l, static_cast<long>(viewport.width), static_cast<long>(viewport.height)), m_RenderTarget);
 				ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(m_RenderTarget->GetHandle()), ImVec2(viewport.x, viewport.y), ImVec2(viewport.x + viewport.width, viewport.y + viewport.height), ImVec2(0.0f, 0.0f), ImVec2(viewport.width / m_RenderTarget->GetWidth(), viewport.height / m_RenderTarget->GetHeight()));
 			}
 		}

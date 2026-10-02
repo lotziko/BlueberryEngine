@@ -377,6 +377,24 @@ namespace Blueberry
 		m_GfxDevice->GetUploadBuffer().UploadTexture(m_Resource.Get(), subresourceDatas.data(), static_cast<UINT>(subresourceDatas.size()), 512ull);
 	}
 
+	size_t GfxTextureDX12::GetAllocationSize()
+	{
+		if (m_AllocationSize == UINT64_MAX)
+		{
+			D3D12_RESOURCE_DESC desc = m_Resource->GetDesc();
+			D3D12_RESOURCE_ALLOCATION_INFO allocationInfo = m_Device->GetResourceAllocationInfo(0, 1, &desc);
+			if (allocationInfo.SizeInBytes == UINT64_MAX)
+			{
+				m_AllocationSize = 0;
+			}
+			else
+			{
+				m_AllocationSize = allocationInfo.SizeInBytes;
+			}
+		}
+		return m_AllocationSize;
+	}
+
 	void GfxTextureDX12::SetWrapMode(WrapMode wrapMode)
 	{
 		if (m_WrapMode != wrapMode)

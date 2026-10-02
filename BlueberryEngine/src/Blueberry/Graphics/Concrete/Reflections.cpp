@@ -207,17 +207,15 @@ namespace Blueberry
 		}
 
 		s_AccelerationStructure->Clear();
-		for (auto& component : scene->GetIterator<MeshRenderer>())
+		for (MeshRenderer* meshRenderer : scene->GetComponents<MeshRenderer>())
 		{
-			MeshRenderer* meshRenderer = static_cast<MeshRenderer*>(component.second);
 			s_AccelerationStructure->Add(meshRenderer->GetAccelerationStructure(), meshRenderer->GetMaterials(), meshRenderer->GetTransform()->GetLocalToWorldMatrix());
 		}
 
 		// TODO move miss into skybox material and make GfxTopLevelAccelerationStructure::Add for it
 		Texture* skyboxTexture = nullptr;
-		for (auto& component : scene->GetIterator<SkyRenderer>())
+		for (SkyRenderer* skyRenderer : scene->GetComponents<SkyRenderer>())
 		{
-			SkyRenderer* skyRenderer = static_cast<SkyRenderer*>(component.second);
 			Material* material = skyRenderer->GetMaterial();
 			if (material != nullptr)
 			{
@@ -291,7 +289,7 @@ namespace Blueberry
 			reflectionsData.previousViewToWorld = cameraViewToWorld;
 			reflectionsData.previousProjection = projection;
 			reflectionsData.previousFrustum = frustum;
-			reflectionsData.previousRectSize = Vector2(viewport.width, viewport.height);
+			reflectionsData.previousRectSize = Vector2(static_cast<float>(viewport.width), static_cast<float>(viewport.height));
 			reflectionsData.previousResourceSize = size;
 			reflectionsData.previousJitter = jitter;
 			reflectionsData.previousSplitScreen = splitScreen;
@@ -320,7 +318,7 @@ namespace Blueberry
 		reblurData.worldToViewPrev = GfxDevice::GetGPUMatrix(previousRelativeWorldToView);
 		reblurData.worldToClipPrev = GfxDevice::GetGPUMatrix(previousRelativeWorldToView * reflectionsData.previousProjection);
 		reblurData.worldPrevToWorld = Matrix::Identity;
-		reblurData.rotatorPre = MakeRotator(float(sequence - std::floor(sequence)) * 1.57079632679f);
+		reblurData.rotatorPre = MakeRotator(static_cast<float>(sequence - std::floor(sequence)) * 1.57079632679f);
 		reblurData.rotator = MakeRotator(blurAngle);
 		reblurData.rotatorPost = MakeRotator(blurAngle + 0.39269908170f);
 		reblurData.frustum = frustum;
@@ -332,21 +330,21 @@ namespace Blueberry
 		reblurData.mvScale = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 		reblurData.convergenceSettings = Vector4(1.0f, 0.2f, 0.8f, 0.0f);
 		reblurData.antilagSettings = Vector2(2.0f, 3.0f);
-		reblurData.resourceSize = Vector2(float(size.x), float(size.y));
+		reblurData.resourceSize = Vector2(static_cast<float>(size.x), static_cast<float>(size.y));
 		reblurData.resourceSizeInv = Vector2(1.0f / size.x, 1.0f / size.y);
 		reblurData.resourceSizeInvPrev = Vector2(1.0f / reflectionsData.previousResourceSize.x, 1.0f / reflectionsData.previousResourceSize.y);
-		reblurData.rectSize = Vector2(viewport.width, viewport.height);
+		reblurData.rectSize = Vector2(static_cast<float>(viewport.width), static_cast<float>(viewport.height));
 		reblurData.rectSizeInv = Vector2(1.0f / viewport.width, 1.0f / viewport.height);
 		reblurData.rectSizePrev = reflectionsData.previousRectSize;
-		reblurData.resolutionScale = Vector2(float(viewport.width) / size.x, float(viewport.height) / size.y);
-		reblurData.resolutionScalePrev = Vector2(float(reflectionsData.previousRectSize.x) / size.x, float(reflectionsData.previousRectSize.y) / size.y);
+		reblurData.resolutionScale = Vector2(static_cast<float>(viewport.width) / size.x, static_cast<float>(viewport.height) / size.y);
+		reblurData.resolutionScalePrev = Vector2(static_cast<float>(reflectionsData.previousRectSize.x) / size.x, static_cast<float>(reflectionsData.previousRectSize.y) / size.y);
 		const float resolutionScale = (std::min)(reblurData.resolutionScale.x, reblurData.resolutionScale.y);
 		reblurData.rectOffset = Vector2(0.0f, 0.0f);
 		reblurData.jitter = Vector2(0.0f, 0.0f);
 		reblurData.printfAt = Vector2Uint(9999, 9999);
 		reblurData.rectOrigin = Vector2Uint(0, 0);
-		reblurData.rectSizeMinusOne = Vector2Int(int(viewport.width) - 1, int(viewport.height) - 1);
-		const float thresholdBonus = 1.0f / float(viewport.height);
+		reblurData.rectSizeMinusOne = Vector2Int(static_cast<int>(viewport.width) - 1, static_cast<int>(viewport.height) - 1);
+		const float thresholdBonus = 1.0f / static_cast<float>(viewport.height);
 		reblurData.disocclusionThreshold = 0.01f + thresholdBonus;
 		reblurData.disocclusionThresholdAlternate = 0.05f + thresholdBonus;
 		reblurData.cameraAttachedReflectionMaterialID = 999.0f;
@@ -393,7 +391,7 @@ namespace Blueberry
 		reblurData.diffCheckerboard = 2;
 		reblurData.specCheckerboard = 0;
 		reblurData.frameIndex = frameIndex;
-		reblurData.isRectChanged = reflectionsData.previousRectSize.x != float(viewport.width) || reflectionsData.previousRectSize.y != float(viewport.height);
+		reblurData.isRectChanged = reflectionsData.previousRectSize.x != static_cast<float>(viewport.width) || reflectionsData.previousRectSize.y != static_cast<float>(viewport.height);
 		reblurData.resetHistory = resetHistory ? 1 : 0;
 		reblurData.returnHistoryLengthInsteadOfOcclusion = 0;
 		s_ReblurBuffer->SetData(reinterpret_cast<char*>(&reblurData), sizeof(ReblurSharedData));
@@ -517,7 +515,7 @@ namespace Blueberry
 		reflectionsData.previousViewToWorld = cameraViewToWorld;
 		reflectionsData.previousProjection = projection;
 		reflectionsData.previousFrustum = frustum;
-		reflectionsData.previousRectSize = Vector2(viewport.width, viewport.height);
+		reflectionsData.previousRectSize = Vector2(static_cast<float>(viewport.width), static_cast<float>(viewport.height));
 		reflectionsData.previousResourceSize = size;
 		reflectionsData.previousJitter = jitter;
 		reflectionsData.previousSplitScreen = splitScreen;

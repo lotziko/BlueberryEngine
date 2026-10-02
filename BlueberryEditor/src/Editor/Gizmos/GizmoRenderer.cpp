@@ -9,8 +9,6 @@
 #include "Editor\Inspector\ObjectEditorDB.h"
 #include "Editor\Inspector\ObjectEditor.h"
 
-#include "Blueberry\Graphics\RendererTree.h"
-
 #include "Blueberry\Scene\Scene.h"
 
 namespace Blueberry

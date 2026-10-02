@@ -344,11 +344,29 @@ namespace Blueberry
 		InvalidateHierarchy();
 	}
 
+	void Transform::AddDependency(TransformDependencyInterface* dependency)
+	{
+		m_Dependencies.push_back(dependency);
+	}
+
+	void Transform::RemoveDependency(TransformDependencyInterface* dependency)
+	{
+		auto it = std::find(m_Dependencies.begin(), m_Dependencies.end(), dependency);
+		if (it != m_Dependencies.end())
+		{
+			m_Dependencies.erase(it);
+		}
+	}
+
 	void Transform::InvalidateHierarchy()
 	{
 		if (m_DirtyFlags ^ DIRTY_ALL)
 		{
 			m_DirtyFlags = DIRTY_ALL;
+			for (auto& dependency : m_Dependencies)
+			{
+				dependency->OnTransformInvalidate();
+			}
 			for (auto& child : m_Children)
 			{
 				child->InvalidateHierarchy();

@@ -1,7 +1,7 @@
 #include "Blueberry\Graphics\Texture.h"
 
 #include "Blueberry\Core\ObjectDB.h"
-#include "Blueberry\Core\Notifyable.h"
+#include "Blueberry\Core\NotifyableInterface.h"
 #include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Core\ClassDB.h"
 
@@ -110,7 +110,7 @@ namespace Blueberry
 			Object* object = ObjectDB::GetObject(dependency);
 			if (object != nullptr)
 			{
-				dynamic_cast<Notifyable*>(object)->OnNotify(static_cast<Object*>(this));
+				dynamic_cast<NotifyableInterface*>(object)->OnNotify(static_cast<Object*>(this));
 			}
 		}
 	}

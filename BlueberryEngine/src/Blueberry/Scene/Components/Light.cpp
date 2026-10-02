@@ -1,5 +1,6 @@
 #include "Blueberry\Scene\Components\Light.h"
 
+#include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Core\ClassDB.h"
@@ -12,28 +13,34 @@ namespace Blueberry
 	OBJECT_DEFINITION(Light, Component)
 	{
 		DEFINE_BASE_FIELDS(Light, Component)
-		DEFINE_FIELD(Light, m_Type, BindingType::Enum, FieldOptions().SetEnumHint("Spot,Directional,Point"))
+		DEFINE_FIELD(Light, m_Type, BindingType::Enum, FieldOptions().SetEnumHint("Spot,Directional,Point").SetUpdateCallback(MethodBind::Create(&Light::ReleaseCachedShadow)))
 		DEFINE_FIELD(Light, m_Color, BindingType::Color, FieldOptions())
 		DEFINE_FIELD(Light, m_Intensity, BindingType::Float, FieldOptions())
-		DEFINE_FIELD(Light, m_Range, BindingType::Float, FieldOptions())
-		DEFINE_FIELD(Light, m_OuterSpotAngle, BindingType::Float, FieldOptions())
-		DEFINE_FIELD(Light, m_InnerSpotAngle, BindingType::Float, FieldOptions())
+		DEFINE_FIELD(Light, m_Range, BindingType::Float, FieldOptions().SetUpdateCallback(MethodBind::Create(&Light::InvalidateCache)))
+		DEFINE_FIELD(Light, m_OuterSpotAngle, BindingType::Float, FieldOptions().SetUpdateCallback(MethodBind::Create(&Light::InvalidateCache)))
+		DEFINE_FIELD(Light, m_InnerSpotAngle, BindingType::Float, FieldOptions().SetUpdateCallback(MethodBind::Create(&Light::InvalidateCache)))
 		DEFINE_FIELD(Light, m_IsCastingShadows, BindingType::Bool, FieldOptions())
 		DEFINE_FIELD(Light, m_IsCastingFog, BindingType::Bool, FieldOptions())
-		DEFINE_FIELD(Light, m_IsCached, BindingType::Bool, FieldOptions())
+		DEFINE_FIELD(Light, m_IsCached, BindingType::Bool, FieldOptions().SetUpdateCallback(MethodBind::Create(&Light::InvalidateCache)))
 		DEFINE_FIELD(Light, m_Cookie, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Texture::Type))
 		DEFINE_ITERATOR(Light)
 		DEFINE_EXECUTE_ALWAYS()
 	}
 
+	void Light::OnEnable()
+	{
+		GetTransform()->AddDependency(this);
+	}
+
 	void Light::OnDisable()
 	{
+		GetTransform()->RemoveDependency(this);
 		ReleaseCachedShadow();
 	}
 
-	void Light::OnPreCull()
+	void Light::OnTransformInvalidate()
 	{
-		UpdateBounds();
+		InvalidateCache();
 	}
 
 	LightType Light::GetType()
@@ -44,6 +51,7 @@ namespace Blueberry
 	void Light::SetType(LightType type)
 	{
 		m_Type = type;
+		ReleaseCachedShadow();
 	}
 
 	const Color& Light::GetColor() const
@@ -74,6 +82,7 @@ namespace Blueberry
 	void Light::SetRange(float range)
 	{
 		m_Range = range;
+		InvalidateCache();
 	}
 
 	float Light::GetOuterSpotAngle() const
@@ -81,9 +90,21 @@ namespace Blueberry
 		return m_OuterSpotAngle;
 	}
 
+	void Light::SetOuterSpotAngle(float outerSpotAngle)
+	{
+		m_OuterSpotAngle = outerSpotAngle;
+		InvalidateCache();
+	}
+
 	float Light::GetInnerSpotAngle() const
 	{
 		return m_InnerSpotAngle;
+	}
+
+	void Light::SetInnerSpotAngle(float innerSpotAngle)
+	{
+		m_InnerSpotAngle = innerSpotAngle;
+		InvalidateCache();
 	}
 
 	bool Light::IsCastingShadows() const
@@ -114,6 +135,7 @@ namespace Blueberry
 	void Light::SetCached(bool cached)
 	{
 		m_IsCached = cached;
+		InvalidateCache();
 	}
 
 	Texture* Light::GetCookie() const
@@ -124,6 +146,14 @@ namespace Blueberry
 	void Light::SetCookie(Texture* cookie)
 	{
 		m_Cookie = cookie;
+	}
+
+	void Light::InvalidateCache()
+	{
+		if (m_IsCached)
+		{
+			memset(m_IsDirty, true, sizeof(bool) * 6);
+		}
 	}
 
 	GfxTexture* Light::GetCachedShadow()
@@ -144,17 +174,6 @@ namespace Blueberry
 			GfxTexturePool::Release(m_CachedShadow);
 			m_CachedShadow = nullptr;
 			memset(m_IsDirty, true, sizeof(bool) * 6);
-		}
-	}
-
-	void Light::UpdateBounds()
-	{
-		Transform* transform = GetTransform();
-		size_t transformUpdateCount = transform->GetUpdateCount();
-		if (m_UpdateCount < transformUpdateCount)
-		{
-			memset(m_IsDirty, true, sizeof(bool) * 6);
-			m_UpdateCount = transformUpdateCount;
 		}
 	}
 }

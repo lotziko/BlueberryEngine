@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Renderer.h"
+#include "Transform.h"
+#include "Blueberry\Graphics\CullableInterface.h"
 
 namespace Blueberry
 {
@@ -8,7 +10,7 @@ namespace Blueberry
 	class Material;
 	class GfxBottomLevelAccelerationStructure;
 
-	class BB_API MeshRenderer : public Renderer
+	class BB_API MeshRenderer : public Renderer, public TransformDependencyInterface, public CullableInterface
 	{
 		OBJECT_DECLARATION(MeshRenderer)
 
@@ -18,8 +20,9 @@ namespace Blueberry
 
 		virtual void OnEnable() final;
 		virtual void OnDisable() final;
-		
-		void OnPreCull();
+
+		virtual void OnTransformInvalidate() final;
+		virtual void OnPreCull() final;
 
 		Mesh* GetMesh();
 		void SetMesh(Mesh* mesh);
@@ -49,11 +52,9 @@ namespace Blueberry
 	private:
 		ObjectPtr<Mesh> m_Mesh;
 		List<ObjectPtr<Material>> m_Materials;
-		AABB m_PreviousBounds;
 		AABB m_Bounds = AABB(Vector3::Zero, Vector3::Zero);
 		bool m_IsBakeable = false;
-		size_t m_UpdateCount = 0;
-		bool m_CullingDirty = true;
+		bool m_BoundsDirty = true;
 		uint32_t m_LightmapChartOffset = 0;
 
 		GfxBottomLevelAccelerationStructure* m_AccelerationStructure = nullptr;

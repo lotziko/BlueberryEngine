@@ -62,7 +62,6 @@ namespace Blueberry
 		List<ObjectPtr<Material>> m_Materials;
 		ObjectPtr<Transform> m_Root;
 		List<ObjectPtr<Transform>> m_Bones;
-		AABB m_PreviousBounds;
 		AABB m_Bounds = AABB(Vector3::Zero, Vector3::Zero);
 		size_t m_UpdateCount = 0;
 		size_t m_LastVisibleFrame = 0;

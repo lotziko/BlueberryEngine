@@ -46,9 +46,17 @@ namespace Blueberry
 	private:
 		static GfxTexture* Find(const GfxTexturePoolKey& key);
 		static GfxTexture* Allocate(const TextureProperties& textureProperties);
+		static bool ReleaseOldest();
 
 	private:
+		struct TextureData
+		{
+			GfxTexture* texture;
+			size_t releaseFrame;
+		};
+
 		static Dictionary<GfxTexture*, GfxTexturePoolKey> s_TemporaryKeys;
-		static Dictionary<GfxTexturePoolKey, List<std::pair<GfxTexture*, size_t>>> s_TemporaryPool;
+		static Dictionary<GfxTexturePoolKey, List<TextureData>> s_TemporaryPool;
+		static size_t s_UnusedMemory;
 	};
 }

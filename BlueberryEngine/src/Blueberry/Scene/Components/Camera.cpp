@@ -19,6 +19,22 @@ namespace Blueberry
 		DEFINE_EXECUTE_ALWAYS()
 	}
 
+	void Camera::OnEnable()
+	{
+		m_IsViewDirty = true;
+		GetTransform()->AddDependency(this);
+	}
+
+	void Camera::OnDisable()
+	{
+		GetTransform()->RemoveDependency(this);
+	}
+
+	void Camera::OnTransformInvalidate()
+	{
+		m_IsViewDirty = true;
+	}
+
 	const Matrix& Camera::GetProjectionMatrix()
 	{
 		if (m_IsProjectionDirty)
@@ -30,7 +46,7 @@ namespace Blueberry
 
 	const Matrix& Camera::GetViewMatrix()
 	{
-		if (IsViewDirty())
+		if (m_IsViewDirty)
 		{
 			RecalculateView();
 		}
@@ -39,7 +55,7 @@ namespace Blueberry
 
 	const Matrix& Camera::GetViewProjectionMatrix()
 	{
-		if (IsViewDirty())
+		if (m_IsViewDirty)
 		{
 			RecalculateView();
 		}
@@ -61,7 +77,7 @@ namespace Blueberry
 
 	const Matrix& Camera::GetInverseViewMatrix()
 	{
-		if (IsViewDirty())
+		if (m_IsViewDirty)
 		{
 			RecalculateView();
 		}
@@ -70,7 +86,7 @@ namespace Blueberry
 
 	const Matrix& Camera::GetInverseViewProjectionMatrix()
 	{
-		if (IsViewDirty())
+		if (m_IsViewDirty)
 		{
 			RecalculateView();
 		}
@@ -189,7 +205,7 @@ namespace Blueberry
 
 	Vector3 Camera::WorldToScreenPoint(Vector3 position)
 	{
-		if (IsViewDirty())
+		if (m_IsViewDirty)
 		{
 			RecalculateView();
 		}
@@ -221,7 +237,7 @@ namespace Blueberry
 	Vector3 Camera::ScreenToWorldPoint(Vector3 position)
 	{
 		// Based on https://github.com/tezheng/UH5/blob/master/src/UnityEngine/Render/Camera.cs
-		if (IsViewDirty())
+		if (m_IsViewDirty)
 		{
 			RecalculateView();
 		}
@@ -274,18 +290,6 @@ namespace Blueberry
 		m_BackgroundColor = backgroundColor;
 	}
 
-	bool Camera::IsViewDirty()
-	{
-		// This may cause problems some time later
-		size_t transformUpdateCount = GetTransform()->GetUpdateCount();
-		if (m_UpdateCount != transformUpdateCount)
-		{
-			m_UpdateCount = transformUpdateCount;
-			return true;
-		}
-		return false;
-	}
-
 	void Camera::InvalidateProjection()
 	{
 		m_IsProjectionDirty = true;
@@ -306,6 +310,7 @@ namespace Blueberry
 		m_InverseViewMatrix = m_ViewMatrix.Invert();
 		m_ViewProjectionMatrix = m_ViewMatrix * m_ProjectionMatrix;
 		m_InverseViewProjectionMatrix = m_ViewProjectionMatrix.Invert();
+		m_IsViewDirty = false;
 	}
 
 	void Camera::RecalculateProjection()

@@ -127,9 +127,8 @@ namespace Blueberry
 
 						list->PushClipRect(pos, pos + size, true);
 						const List<Vector4>& chartScaleOffset = lightingData->GetChartOffsetScale();
-						for (auto& component : scene->GetIterator<MeshRenderer>())
+						for (MeshRenderer* meshRenderer : scene->GetComponents<MeshRenderer>())
 						{
-							MeshRenderer* meshRenderer = static_cast<MeshRenderer*>(component.second);
 							if (meshRenderer->GetLightmapChartOffset() != 0)
 							{
 								bool active = Selection::IsActiveObject(meshRenderer->GetEntity());
@@ -234,9 +233,8 @@ namespace Blueberry
 							AssetDB::Refresh();
 							lightingData->ApplyProbeVolume();
 
-							for (auto& component : scene->GetIterator<ProbeVolume>())
+							for (ProbeVolume* probeVolume : scene->GetComponents<ProbeVolume>())
 							{
-								ProbeVolume* probeVolume = static_cast<ProbeVolume*>(component.second);
 								probeVolume->SetBounds(result.probeBounds);
 								probeVolume->SetSize(result.probeOutputSize);
 							}

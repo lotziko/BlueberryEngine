@@ -38,6 +38,8 @@ namespace Blueberry
 		virtual void GetData(void* data) override;
 		virtual void SetData(void* data, size_t size) override;
 
+		virtual size_t GetAllocationSize() override;
+
 		virtual void SetWrapMode(WrapMode wrapMode) override;
 		virtual void SetFilterMode(FilterMode filterMode) override;
 		virtual void SetName(const String& name) override;

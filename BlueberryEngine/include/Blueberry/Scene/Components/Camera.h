@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Blueberry\Scene\Components\Component.h"
+#include "Component.h"
+#include "Transform.h"
 
 namespace Blueberry
 {
@@ -12,13 +13,18 @@ namespace Blueberry
 		Reflection,
 	};
 
-	class BB_API Camera : public Component
+	class BB_API Camera : public Component, public TransformDependencyInterface
 	{
 		OBJECT_DECLARATION(Camera)
 
 	public:
 		Camera() = default;
 		virtual ~Camera() = default;
+
+		virtual void OnEnable() final;
+		virtual void OnDisable() final;
+
+		virtual void OnTransformInvalidate() final;
 
 		const Matrix& GetProjectionMatrix();
 		const Matrix& GetViewMatrix();
@@ -61,7 +67,6 @@ namespace Blueberry
 		void SetBackgroundColor(const Color& backgroundColor);
 
 	private:
-		bool IsViewDirty();
 		void InvalidateProjection();
 
 		void RecalculateView();
@@ -77,6 +82,7 @@ namespace Blueberry
 		Matrix m_ViewProjectionMatrix;
 		Matrix m_InverseViewProjectionMatrix;
 
+		bool m_IsViewDirty = true;
 		bool m_IsProjectionDirty = true;
 
 		bool m_IsOrthographic = true;
@@ -88,8 +94,6 @@ namespace Blueberry
 
 		Vector3 m_Direction = Vector3(0, 0, 1);
 		Vector3 m_Up = Vector3(0, 1, 0);
-
-		size_t m_UpdateCount = 0;
 
 		float m_ZNearPlane = 0.1f;
 		float m_ZFarPlane = 1000.0f;

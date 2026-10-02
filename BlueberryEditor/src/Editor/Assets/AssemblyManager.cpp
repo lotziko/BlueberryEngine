@@ -386,7 +386,7 @@ namespace Blueberry
 		ss << "}\n";
 		ss << "\n";
 		ss << ".Compiler				= '$VSBasePath$\\bin\\Hostx64\\x64\\cl.exe'\n";
-		ss << ".CompilerOptions		= '\"%1\" /Fo\"%2\" /c /Zi /FS /nologo /std:c++17 /MP " << GetDebugReleaseRuntimeMode() << " /D\"BUILD_DLL\"'\n";
+		ss << ".CompilerOptions		= '\"%1\" /Fo\"%2\" /c /Zi /FS /nologo /std:c++17 /MP /EHsc " << GetDebugReleaseRuntimeMode() << " /D\"BUILD_DLL\"'\n";
 		ss << "\n";
 		ss << ".BaseIncludePaths		= ' /I\"./\"'\n";
 		ss << "						+ ' /I\"$WindowsSDKIncludePath$\\ucrt\"'\n";

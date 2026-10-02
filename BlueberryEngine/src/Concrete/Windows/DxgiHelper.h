@@ -219,12 +219,16 @@ namespace Blueberry
 			{
 			case TextureDimension::Texture2D:
 				return 1;
+			case TextureDimension::Texture2DArray:
+				return std::max(1u, depth);
 			case TextureDimension::TextureCubeArray:
 				return 6 * depth;
 			case TextureDimension::TextureCube:
 				return 6;
+			case TextureDimension::Texture3D:
+				return 1;
 			default:
-				return std::min(1u, depth);
+				return 0;
 			}
 		}
 	};

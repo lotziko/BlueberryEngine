@@ -7,7 +7,10 @@
 namespace Blueberry
 {
 	Dictionary<GfxTexture*, GfxTexturePoolKey> GfxTexturePool::s_TemporaryKeys = {};
-	Dictionary<GfxTexturePoolKey, List<std::pair<GfxTexture*, size_t>>> GfxTexturePool::s_TemporaryPool = {};
+	Dictionary<GfxTexturePoolKey, List<GfxTexturePool::TextureData>> GfxTexturePool::s_TemporaryPool = {};
+	size_t GfxTexturePool::s_UnusedMemory = 0;
+
+	static size_t s_MaxUnusedMemory = 1024ull * 1024 * 256;
 
 	bool GfxTexturePoolKey::operator==(const GfxTexturePoolKey& other) const
 	{
@@ -38,7 +41,7 @@ namespace Blueberry
 		{
 			for (auto& pair : it->second)
 			{
-				delete pair.first;
+				delete pair.texture;
 			}
 			it->second.clear();
 		}
@@ -47,24 +50,12 @@ namespace Blueberry
 
 	void GfxTexturePool::Update()
 	{
-		size_t currentFrame = Time::GetFrameCount();
-		for (auto it = s_TemporaryPool.begin(); it != s_TemporaryPool.end(); ++it)
+		if (s_UnusedMemory > s_MaxUnusedMemory)
 		{
-			auto& vector = it->second;
-			for (int i = static_cast<int>(vector.size() - 1); i >= 0; --i)
+			size_t targetMemory = (s_MaxUnusedMemory * 4) / 5; // Decrease to 80%
+			while (s_UnusedMemory > targetMemory)
 			{
-				auto& pair = vector[i];
-				// Release textures older than 5 frames
-				if (currentFrame - pair.second > 5)
-				{
-					GfxTexture* texture = pair.first;
-					if (texture != nullptr)
-					{
-						s_TemporaryKeys.erase(texture);
-						delete texture;
-						it->second.erase(vector.begin() + i);
-					}
-				}
+				ReleaseOldest();
 			}
 		}
 	}
@@ -117,19 +108,20 @@ namespace Blueberry
 		auto it = s_TemporaryKeys.find(texture);
 		if (it != s_TemporaryKeys.end())
 		{
-			auto pair = std::make_pair(texture, Time::GetFrameCount());
+			TextureData data = { texture, Time::GetFrameCount() };
 			auto it1 = s_TemporaryPool.find(it->second);
 			if (it1 != s_TemporaryPool.end())
 			{
-				List<std::pair<GfxTexture*, size_t>>& textures = it1->second;
-				textures.emplace_back(pair);
+				List<TextureData>& textures = it1->second;
+				textures.emplace_back(data);
 			}
 			else
 			{
-				List<std::pair<GfxTexture*, size_t>> textures = {};
-				textures.emplace_back(pair);
+				List<TextureData> textures = {};
+				textures.emplace_back(data);
 				s_TemporaryPool.insert({ it->second, textures });
 			}
+			s_UnusedMemory += texture->GetAllocationSize();
 		}
 		else
 		{
@@ -142,11 +134,12 @@ namespace Blueberry
 		auto it = s_TemporaryPool.find(key);
 		if (it != s_TemporaryPool.end())
 		{
-			List<std::pair<GfxTexture*, size_t>>& textures = it->second;
+			List<TextureData>& textures = it->second;
 			if (textures.size() > 0)
 			{
-				GfxTexture* last = (textures.end() - 1)->first;
+				GfxTexture* last = (textures.end() - 1)->texture;
 				textures.erase(textures.end() - 1);
+				s_UnusedMemory -= last->GetAllocationSize();
 				return last;
 			}
 		}
@@ -158,5 +151,46 @@ namespace Blueberry
 		GfxTexture* texture = nullptr;
 		GfxDevice::CreateTexture(textureProperties, texture);
 		return texture;
+	}
+
+	bool GfxTexturePool::ReleaseOldest()
+	{
+		auto oldestBucket = s_TemporaryPool.end();
+		size_t oldestIndex = 0;
+		size_t oldestFrame = SIZE_MAX;
+
+		for (auto it = s_TemporaryPool.begin(); it != s_TemporaryPool.end(); ++it)
+		{
+			List<TextureData>& textures = it->second;
+			for (size_t i = 0; i < textures.size(); ++i)
+			{
+				if (oldestBucket == s_TemporaryPool.end() || textures[i].releaseFrame < oldestFrame)
+				{
+					oldestBucket = it;
+					oldestIndex = i;
+					oldestFrame = textures[i].releaseFrame;
+				}
+			}
+		}
+
+		if (oldestBucket == s_TemporaryPool.end())
+		{
+			return false;
+		}
+
+		List<TextureData>& textures = oldestBucket->second;
+		GfxTexture* texture = textures[oldestIndex].texture;
+
+		textures.erase(textures.begin() + oldestIndex);
+		s_TemporaryKeys.erase(texture);
+		s_UnusedMemory -= texture->GetAllocationSize();
+
+		if (textures.empty())
+		{
+			s_TemporaryPool.erase(oldestBucket);
+		}
+
+		delete texture;
+		return true;
 	}
 }

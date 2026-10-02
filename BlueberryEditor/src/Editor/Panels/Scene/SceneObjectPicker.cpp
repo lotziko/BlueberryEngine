@@ -80,12 +80,11 @@ namespace Blueberry
 		GfxDevice::ClearColor(Color(0.0f, 0.0f, 0.0f, 0.0f));
 		GfxDevice::ClearDepth(1.0f);
 		Renderer2D::Begin();
-		for (auto& pair : scene->GetIterator<SpriteRenderer>())
+		for (SpriteRenderer* spriteRenderer : scene->GetComponents<SpriteRenderer>())
 		{
-			Entity* entity = pair.second->GetEntity();
+			Entity* entity = spriteRenderer->GetEntity();
 			if (entity->IsActiveInHierarchy())
 			{
-				SpriteRenderer* spriteRenderer = static_cast<SpriteRenderer*>(pair.second);
 				if (spriteRenderer->GetTexture() != nullptr)
 				{
 					Renderer2D::Draw(spriteRenderer->GetLocalToWorldMatrix(), spriteRenderer->GetTexture(), m_SpriteObjectPickerMaterial, ConvertIndexToColor(index), spriteRenderer->GetSortingOrder());
@@ -96,10 +95,9 @@ namespace Blueberry
 		}
 		Renderer2D::End();
 
-		for (auto& pair : scene->GetIterator<MeshRenderer>())
+		for (MeshRenderer* meshRenderer : scene->GetComponents<MeshRenderer>())
 		{
-			Entity* entity = pair.second->GetEntity();
-			MeshRenderer* meshRenderer = static_cast<MeshRenderer*>(pair.second);
+			Entity* entity = meshRenderer->GetEntity();
 			Mesh* mesh = meshRenderer->GetMesh();
 			if (mesh != nullptr)
 			{
@@ -111,10 +109,9 @@ namespace Blueberry
 			}
 		}
 
-		for (auto& pair : scene->GetIterator<SkinnedMeshRenderer>())
+		for (SkinnedMeshRenderer* skinnedMeshRenderer : scene->GetComponents<SkinnedMeshRenderer>())
 		{
-			Entity* entity = pair.second->GetEntity();
-			SkinnedMeshRenderer* skinnedMeshRenderer = static_cast<SkinnedMeshRenderer*>(pair.second);
+			Entity* entity = skinnedMeshRenderer->GetEntity();
 			Mesh* mesh = skinnedMeshRenderer->GetMesh();
 			if (mesh != nullptr)
 			{
@@ -184,12 +181,11 @@ namespace Blueberry
 		GfxDevice::ClearDepth(1.0f);
 
 		Renderer2D::Begin();
-		for (auto& pair : scene->GetIterator<SpriteRenderer>())
+		for (SpriteRenderer* spriteRenderer : scene->GetComponents<SpriteRenderer>())
 		{
-			Entity* entity = pair.second->GetEntity();
+			Entity* entity = spriteRenderer->GetEntity();
 			if (Selection::IsActiveObject(entity) && entity->IsActiveInHierarchy())
 			{
-				SpriteRenderer* spriteRenderer = static_cast<SpriteRenderer*>(pair.second);
 				if (spriteRenderer->GetTexture() != nullptr)
 				{
 					Renderer2D::Draw(spriteRenderer->GetLocalToWorldMatrix(), spriteRenderer->GetTexture(), m_SpriteObjectPickerMaterial, ConvertIndexToColor(65535), spriteRenderer->GetSortingOrder());
@@ -198,12 +194,11 @@ namespace Blueberry
 		}
 		Renderer2D::End();
 
-		for (auto& pair : scene->GetIterator<MeshRenderer>())
+		for (MeshRenderer* meshRenderer : scene->GetComponents<MeshRenderer>())
 		{
-			Entity* entity = pair.second->GetEntity();
+			Entity* entity = meshRenderer->GetEntity();
 			if (Selection::IsActiveObject(entity) && entity->IsActiveInHierarchy())
 			{
-				MeshRenderer* meshRenderer = static_cast<MeshRenderer*>(pair.second);
 				Mesh* mesh = meshRenderer->GetMesh();
 				if (mesh != nullptr)
 				{
@@ -214,12 +209,11 @@ namespace Blueberry
 			}
 		}
 
-		for (auto& pair : scene->GetIterator<SkinnedMeshRenderer>())
+		for (SkinnedMeshRenderer* skinnedMeshRenderer : scene->GetComponents<SkinnedMeshRenderer>())
 		{
-			Entity* entity = pair.second->GetEntity();
+			Entity* entity = skinnedMeshRenderer->GetEntity();
 			if (Selection::IsActiveObject(entity) && entity->IsActiveInHierarchy())
 			{
-				SkinnedMeshRenderer* skinnedMeshRenderer = static_cast<SkinnedMeshRenderer*>(pair.second);
 				if (skinnedMeshRenderer->HasRoot())
 				{
 					Mesh* mesh = skinnedMeshRenderer->GetMesh();

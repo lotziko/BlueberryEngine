@@ -7,6 +7,7 @@
 namespace Blueberry
 {
 	std::priority_queue<Entity::OperationData, List<Entity::OperationData>, Entity::CompareOperations> Entity::s_Operations;
+	uint64_t Entity::s_OperationSequence = 0;
 
 	OBJECT_DEFINITION(Entity, Object)
 	{
@@ -37,19 +38,19 @@ namespace Blueberry
 					{
 						if (component->m_IsActive)
 						{
-							s_Operations.push({ 3000, Operation::DisableComponent, component });
+							s_Operations.push({ 2000, ++s_OperationSequence, Operation::DisableComponent, component });
 							component->m_IsActive = false;
 						}
 						if (!component->m_IsDestroyed)
 						{
-							s_Operations.push({ 4000, Operation::DestroyComponent, component });
+							s_Operations.push({ 3000, ++s_OperationSequence, Operation::DestroyComponent, component });
 							component->m_IsDestroyed = true;
 						}
 					}
 				}
 			}
 			m_Components.clear();
-			s_Operations.push({ 5000, Operation::DestroyEntity, this });
+			s_Operations.push({ 4000, ++s_OperationSequence, Operation::DestroyEntity, this });
 			m_IsDestroyed = true;
 		}
 	}
@@ -78,12 +79,12 @@ namespace Blueberry
 			{
 				if (!component->m_IsCreated)
 				{
-					s_Operations.push({ 1000, Operation::CreateComponent, component });
+					s_Operations.push({ 1000, ++s_OperationSequence, Operation::CreateComponent, component });
 					component->m_IsCreated = true;
 				}
 				if (!component->m_IsActive)
 				{
-					s_Operations.push({ 2000, Operation::EnableComponent, component });
+					s_Operations.push({ 2000, ++s_OperationSequence, Operation::EnableComponent, component });
 					component->m_IsActive = true;
 				}
 			}
@@ -112,12 +113,12 @@ namespace Blueberry
 			{
 				if (component->m_IsActive)
 				{
-					s_Operations.push({ 3000, Operation::DisableComponent, component });
+					s_Operations.push({ 2000, ++s_OperationSequence, Operation::DisableComponent, component });
 					component->m_IsActive = false;
 				}
 				if (!component->m_IsDestroyed)
 				{
-					s_Operations.push({ 4000, Operation::DestroyComponent, component });
+					s_Operations.push({ 3000, ++s_OperationSequence, Operation::DestroyComponent, component });
 					component->m_IsDestroyed = true;
 				}
 			}
@@ -363,12 +364,12 @@ namespace Blueberry
 			{
 				if (!component->m_IsCreated)
 				{
-					s_Operations.push({ 1000, Operation::CreateComponent, component });
+					s_Operations.push({ 1000, ++s_OperationSequence, Operation::CreateComponent, component });
 					component->m_IsCreated = true;
 				}
 				if (!component->m_IsActive)
 				{
-					s_Operations.push({ 2000, Operation::EnableComponent, component });
+					s_Operations.push({ 2000, ++s_OperationSequence, Operation::EnableComponent, component });
 					component->m_IsActive = true;
 				}
 			}
@@ -382,7 +383,7 @@ namespace Blueberry
 			Component* component = componentSlot.Get();
 			if (component->m_IsActive && component->CanExecute())
 			{
-				s_Operations.push({ 3000, Operation::DisableComponent, component });
+				s_Operations.push({ 2000, ++s_OperationSequence, Operation::DisableComponent, component });
 				component->m_IsActive = false;
 			}
 		}

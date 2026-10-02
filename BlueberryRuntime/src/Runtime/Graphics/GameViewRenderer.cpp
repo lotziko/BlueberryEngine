@@ -17,19 +17,19 @@ namespace Blueberry
 
 	void GameViewRenderer::Draw(Scene* scene)
 	{
-		Camera* camera = nullptr;
-		for (auto& pair : scene->GetIterator<Camera>())
+		Camera* mainCamera = nullptr;
+		for (Camera* camera : scene->GetComponents<Camera>())
 		{
-			if (pair.second->GetEntity()->IsActiveInHierarchy())
+			if (camera->GetEntity()->IsActiveInHierarchy())
 			{
-				camera = static_cast<Camera*>(pair.second);
+				mainCamera = camera;
 				break;
 			}
 		}
-		if (camera != nullptr)
+		if (mainCamera != nullptr)
 		{
-			Camera::SetCurrent(camera);
-			RectangleFloat viewport = CameraHelper::CalculateViewport(camera, Screen::GetGameViewport());
+			Camera::SetCurrent(mainCamera);
+			RectangleFloat viewport = CameraHelper::CalculateViewport(mainCamera, Screen::GetGameViewport());
 
 			if (s_RenderTarget == nullptr || static_cast<uint32_t>(viewport.width) != s_RenderTarget->GetWidth() || static_cast<uint32_t>(viewport.height) != s_RenderTarget->GetHeight())
 			{
@@ -38,10 +38,10 @@ namespace Blueberry
 					GfxTexturePool::Release(s_RenderTarget);
 				}
 				s_RenderTarget = GfxTexturePool::Get(static_cast<uint32_t>(viewport.width), static_cast<uint32_t>(viewport.height), 1, TextureUsageFlags::RenderTarget, 1, 1, TextureFormat::R8G8B8A8_UNorm);
-				camera->SetPixelSize(Vector2(viewport.width, viewport.height));
+				mainCamera->SetPixelSize(Vector2(viewport.width, viewport.height));
 			}
 
-			DefaultRenderer::Draw(scene, camera, Rectangle(0l, 0l, static_cast<long>(viewport.width), static_cast<long>(viewport.height)), s_RenderTarget);
+			DefaultRenderer::Draw(scene, mainCamera, Rectangle(0l, 0l, static_cast<long>(viewport.width), static_cast<long>(viewport.height)), s_RenderTarget);
 			GfxDevice::SetRenderTarget(nullptr);
 			GfxDevice::SetViewport(static_cast<int>(viewport.x), static_cast<int>(viewport.y), static_cast<int>(viewport.width), static_cast<int>(viewport.height));
 			GfxDevice::SetGlobalTexture(TO_HASH("_BlitTexture"), s_RenderTarget);

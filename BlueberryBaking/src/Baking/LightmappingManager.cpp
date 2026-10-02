@@ -173,9 +173,8 @@ namespace Blueberry
 		GfxTexture* renderTexture = GfxTexturePool::Get(MATERIAL_COLOR_SIZE, MATERIAL_COLOR_SIZE, 1, TextureUsageFlags::RenderTarget | TextureUsageFlags::CPUReadable, 1, 1, TextureFormat::R8G8B8A8_UNorm, TextureDimension::Texture2D, WrapMode::Clamp, FilterMode::Bilinear);
 		GfxDevice::SetRenderTarget(renderTexture);
 		GfxDevice::SetViewport(0, 0, MATERIAL_COLOR_SIZE, MATERIAL_COLOR_SIZE);
-		for (auto& component : scene->GetIterator<MeshRenderer>())
+		for (MeshRenderer* meshRenderer : scene->GetComponents<MeshRenderer>())
 		{
-			MeshRenderer* meshRenderer = static_cast<MeshRenderer*>(component.second);
 			for (uint32_t i = 0; i < meshRenderer->GetMaterialCount(); ++i)
 			{
 				Material* material = meshRenderer->GetMaterial(i);
@@ -199,9 +198,8 @@ namespace Blueberry
 			}
 		}
 
-		for (auto& component : scene->GetIterator<SkyRenderer>())
+		for (SkyRenderer* skyRenderer : scene->GetComponents<SkyRenderer>())
 		{
-			SkyRenderer* skyRenderer = static_cast<SkyRenderer*>(component.second);
 			GfxTexture* skyboxRenderTexture = GfxTexturePool::Get(SKY_COLOR_SIZE, SKY_COLOR_SIZE, 1, TextureUsageFlags::RenderTarget | TextureUsageFlags::CPUReadable, 1, 1, TextureFormat::R8G8B8A8_UNorm, TextureDimension::TextureCube, WrapMode::Clamp, FilterMode::Bilinear);
 
 			GfxDevice::SetViewCount(6);
@@ -279,9 +277,8 @@ namespace Blueberry
 		{
 			Dictionary<ObjectId, uint32_t> existingMeshes = {};
 
-			for (auto& component : scene->GetIterator<MeshRenderer>())
+			for (MeshRenderer* meshRenderer : scene->GetComponents<MeshRenderer>())
 			{
-				MeshRenderer* meshRenderer = static_cast<MeshRenderer*>(component.second);
 				Transform* transform = meshRenderer->GetTransform();
 				if (!transform->IsStatic())
 				{
@@ -1199,9 +1196,8 @@ namespace Blueberry
 		Vector3 minPosition = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
 		Vector3 maxPosition = Vector3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
-		for (auto& component : scene->GetIterator<MeshRenderer>())
+		for (MeshRenderer* meshRenderer : scene->GetComponents<MeshRenderer>())
 		{
-			MeshRenderer* meshRenderer = static_cast<MeshRenderer*>(component.second);
 			AABB bounds = meshRenderer->GetBounds();
 			Vector3 center = static_cast<Vector3>(bounds.Center);
 			Vector3 min = center - bounds.Extents;
@@ -1280,9 +1276,8 @@ namespace Blueberry
 	void InitializeLights(LightmapperState& state, Scene* scene)
 	{
 		List<PointLight> pointLights = {};
-		for (auto component : scene->GetIterator<Light>())
+		for (Light* light : scene->GetComponents<Light>())
 		{
-			Light* light = static_cast<Light*>(component.second);
 			Transform* transform = light->GetTransform();
 			LightType type = light->GetType();
 			Color color = light->GetColor();

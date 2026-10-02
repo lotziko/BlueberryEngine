@@ -1,9 +1,11 @@
 #include "Blueberry\Scene\Scene.h"
 
+#include "Blueberry\Graphics\CullableInterface.h"
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Components\Component.h"
 #include "Blueberry\Serialization\Serializer.h"
+#include "Blueberry\Core\Time.h"
 #include "Blueberry\Core\ClassDB.h"
 
 namespace Blueberry
@@ -13,19 +15,24 @@ namespace Blueberry
 		return true;
 	}
 
+	ComponentView<Component> Scene::GetComponents(TypeId type)
+	{
+		return m_ComponentManager.GetComponents(type);
+	}
+
 	void Scene::FixedUpdate()
 	{
-		for (auto& component : m_ComponentManager.GetIterator(UpdatableComponent::Type))
+		for (Component* component : m_ComponentManager.GetComponents(UpdatableComponent::Type))
 		{
-			component.second->OnFixedUpdate();
+			component->OnFixedUpdate();
 		}
 	}
 
 	void Scene::Update()
 	{
-		for (auto& component : m_ComponentManager.GetIterator(UpdatableComponent::Type))
+		for (Component* component : m_ComponentManager.GetComponents(UpdatableComponent::Type))
 		{
-			component.second->OnUpdate();
+			component->OnUpdate();
 		}
 	}
 
@@ -122,9 +129,36 @@ namespace Blueberry
 		return m_RootEntities;
 	}
 
-	RendererTree& Scene::GetRendererTree()
+	Octree& Scene::GetRendererTree()
 	{
 		return m_RendererTree;
+	}
+
+	void Scene::MarkCullableDirty(ObjectId id, CullableInterface* object)
+	{
+		m_DirtyCullables.insert_or_assign(id, object);
+	}
+
+	bool Scene::FlushDirtyCullables()
+	{
+		size_t frameCount = Time::GetFrameCount();
+		if (frameCount != m_CullingFrame)
+		{
+			if (m_DirtyCullables.size() > 0)
+			{
+				for (auto& pair : m_DirtyCullables)
+				{
+					if (ObjectDB::IsValid(pair.first))
+					{
+						pair.second->OnPreCull();
+					}
+				}
+				m_DirtyCullables.clear();
+			}
+			m_CullingFrame = frameCount;
+			return true;
+		}
+		return false;
 	}
 
 	void Scene::AddToRoot(Entity* entity)

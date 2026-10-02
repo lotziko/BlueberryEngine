@@ -2,7 +2,6 @@
 
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Core\ClassDB.h"
-#include "Blueberry\Graphics\RendererTree.h"
 #include "Blueberry\Graphics\Mesh.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Graphics\GfxBottomLevelAccelerationStructure.h"
@@ -26,9 +25,10 @@ namespace Blueberry
 		Scene* scene = GetScene();
 		if (scene != nullptr)
 		{
+			m_BoundsDirty = true;
 			m_Bounds = GetBounds();
-			m_PreviousBounds = m_Bounds;
-			scene->GetRendererTree().Add(m_ObjectId, m_Bounds);
+			scene->GetRendererTree().Add(this, m_Bounds);
+			GetTransform()->AddDependency(this);
 		}
 	}
 
@@ -37,17 +37,22 @@ namespace Blueberry
 		Scene* scene = GetScene();
 		if (scene != nullptr)
 		{
-			scene->GetRendererTree().Remove(m_ObjectId, m_Bounds);
+			scene->GetRendererTree().Remove(this);
+			GetTransform()->RemoveDependency(this);
 		}
+	}
+
+	void MeshRenderer::OnTransformInvalidate()
+	{
+		InvalidateBounds();
 	}
 
 	void MeshRenderer::OnPreCull()
 	{
-		UpdateBounds();
-		if (m_CullingDirty)
+		if (m_IsActive)
 		{
-			GetScene()->GetRendererTree().Update(m_ObjectId, m_PreviousBounds, m_Bounds);
-			m_CullingDirty = false;
+			UpdateBounds();
+			GetScene()->GetRendererTree().Update(this, m_Bounds);
 		}
 	}
 
@@ -157,37 +162,23 @@ namespace Blueberry
 	{
 		if (m_Mesh.IsValid())
 		{
-			Transform* transform = GetTransform();
-			size_t transformUpdateCount = transform->GetUpdateCount();
-			if (m_UpdateCount != transformUpdateCount)
+			if (m_BoundsDirty)
 			{
 				AABB bounds = m_Mesh->GetBounds();
-				Matrix matrix = transform->GetLocalToWorldMatrix();
-
-				Vector3 corners[8];
-				bounds.GetCorners(corners);
-
-				for (int i = 0; i < 8; i++)
-				{
-					Vector3 corner = corners[i];
-					Vector3::Transform(corner, matrix, corners[i]);
-				}
-
-				AABB::CreateFromPoints(bounds, 8, corners, sizeof(Vector3));
-				if (!m_CullingDirty)
-				{
-					m_PreviousBounds = m_Bounds;
-					m_CullingDirty = true;
-				}
-				m_Bounds = bounds;
-				m_UpdateCount = transformUpdateCount;
+				Matrix matrix = GetTransform()->GetLocalToWorldMatrix();
+				bounds.Transform(m_Bounds, matrix);
+				m_BoundsDirty = false;
 			}
 		}
 	}
 
 	void MeshRenderer::InvalidateBounds()
 	{
-		m_UpdateCount = 0;
-		m_MeshUpdateCount = 0;
+		m_BoundsDirty = true;
+		Scene* scene = GetScene();
+		if (scene != nullptr)
+		{
+			scene->MarkCullableDirty(m_ObjectId, this);
+		}
 	}
 }

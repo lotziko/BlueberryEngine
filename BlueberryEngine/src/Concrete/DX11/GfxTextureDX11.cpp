@@ -431,6 +431,55 @@ namespace Blueberry
 		m_DeviceContext->CopyResource(m_Resource.Get(), m_StagingTexture.Get());
 	}
 
+	size_t GfxTextureDX11::GetAllocationSize()
+	{
+		if (m_AllocationSize == UINT64_MAX)
+		{
+			size_t bitsPerPixel = DxgiHelper::GetBitsPerPixel(m_DxgiFormat);
+
+			if (bitsPerPixel == 0)
+			{
+				BB_ERROR("Cannot estimate size of unknown texture format.");
+				return 0;
+			}
+
+			bool isCompressed = DxgiHelper::IsCompressed(m_DxgiFormat);
+			bool isVolume = m_Dimension == TextureDimension::Texture3D;
+
+			size_t width = m_Width;
+			size_t height = m_Height;
+			size_t depth = isVolume ? m_Depth : 1;
+			size_t arraySize = isVolume ? 1 : m_ArraySize;
+			size_t samples = isVolume ? 1 : m_AntiAliasing;
+			uint32_t mipLevels = isVolume ? 1 : m_MipLevels;
+
+			size_t totalBytes = 0;
+			for (uint32_t i = 0; i < mipLevels; ++i)
+			{
+				size_t sliceBytes;
+				if (isCompressed)
+				{
+					size_t blocksX = (width + 3) / 4;
+					size_t blocksY = (height + 3) / 4;
+					size_t bytesPerBlock = bitsPerPixel * 16 / 8;
+
+					sliceBytes = blocksX * blocksY * bytesPerBlock;
+				}
+				else
+				{
+					size_t rowBytes = (width * bitsPerPixel + 7) / 8;
+					sliceBytes = rowBytes * height;
+				}
+				totalBytes += sliceBytes * depth * arraySize * samples;
+				width = std::max(1ull, width / 2);
+				height = std::max(1ull, height / 2);
+				depth = std::max(1ull, depth / 2);
+			}
+			m_AllocationSize = totalBytes;
+		}
+		return m_AllocationSize;
+	}
+
 	void GfxTextureDX11::SetWrapMode(WrapMode wrapMode)
 	{
 		if (m_WrapMode != wrapMode)

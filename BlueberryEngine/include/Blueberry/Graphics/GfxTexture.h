@@ -35,6 +35,8 @@ namespace Blueberry
 		virtual void GetData(void* data) = 0;
 		virtual void SetData(void* data, size_t size) = 0;
 
+		virtual size_t GetAllocationSize() = 0;
+
 		virtual void SetWrapMode(WrapMode wrapMode) = 0;
 		virtual void SetFilterMode(FilterMode filterMode) = 0;
 		virtual void SetName(const String& name) = 0;
@@ -52,5 +54,6 @@ namespace Blueberry
 		WrapMode m_WrapMode = WrapMode::Clamp;
 		FilterMode m_FilterMode = FilterMode::Bilinear;
 		uint32_t m_Index = 0;
+		size_t m_AllocationSize = UINT64_MAX;
 	};
 }

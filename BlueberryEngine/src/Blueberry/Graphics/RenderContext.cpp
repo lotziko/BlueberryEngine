@@ -21,7 +21,6 @@
 #include "Blueberry\Graphics\Renderer2D.h"
 #include "Blueberry\Graphics\Skinning.h"
 #include "LightHelper.h"
-#include "Blueberry\Graphics\RendererTree.h"
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\GfxBuffer.h"
 #include "Blueberry\Graphics\Buffers\PerCameraDataConstantBuffer.h"
@@ -32,7 +31,6 @@ namespace Blueberry
 {
 
 	GfxBuffer* RenderContext::s_IndexBuffer = nullptr;
-	size_t RenderContext::s_LastCullingFrame = 0;
 
 	const uint32_t INSTANCE_BUFFER_SIZE = 8192;
 	const uint32_t SKINNING_BUFFER_SIZE = 128;
@@ -326,58 +324,43 @@ namespace Blueberry
 		results.cullerInfos.push_back(cameraFrustumInfo);
 
 		results.skyRenderer = nullptr;
-		for (auto& component : scene->GetIterator<SkyRenderer>())
+		for (SkyRenderer* skyRenderer : scene->GetComponents<SkyRenderer>())
 		{
-			results.skyRenderer = static_cast<SkyRenderer*>(component.second);
+			results.skyRenderer = skyRenderer;
 			break;
 		}
 
 		results.probeVolume = nullptr;
-		for (auto& component : scene->GetIterator<ProbeVolume>())
+		for (ProbeVolume* probeVolume : scene->GetComponents<ProbeVolume>())
 		{
-			results.probeVolume = static_cast<ProbeVolume*>(component.second);
+			results.probeVolume = probeVolume;
 			break;
 		}
 
 		// TODO culling
-		for (auto& component : scene->GetIterator<ReflectionProbe>())
+		for (ReflectionProbe* reflectionProbe : scene->GetComponents<ReflectionProbe>())
 		{
-			results.reflectionProbes.push_back(static_cast<ReflectionProbe*>(component.second));
+			results.reflectionProbes.push_back(reflectionProbe);
 		}
 
-		for (auto& component : scene->GetIterator<Canvas>())
+		for (Canvas* canvas : scene->GetComponents<Canvas>())
 		{
-			Canvas* canvas = static_cast<Canvas*>(component.second);
 			if (canvas->GetCamera() == camera)
 			{
 				results.canvases.push_back(canvas);
 			}
 		}
 
-		if (s_LastCullingFrame < Time::GetFrameCount())
+		if (scene->FlushDirtyCullables())
 		{
-			// TODO move to frame start or find the other away to react on the transform movement
-			for (auto& component : scene->GetIterator<MeshRenderer>())
+			for (SkinnedMeshRenderer* skinnedMeshRenderer : scene->GetComponents<SkinnedMeshRenderer>())
 			{
-				MeshRenderer* meshRenderer = static_cast<MeshRenderer*>(component.second);
-				meshRenderer->OnPreCull();
-			}
-			for (auto& component : scene->GetIterator<SkinnedMeshRenderer>())
-			{
-				SkinnedMeshRenderer* skinnedMeshRenderer = static_cast<SkinnedMeshRenderer*>(component.second);
 				skinnedMeshRenderer->OnPreCull();
 			}
-			for (auto& component : scene->GetIterator<Light>())
-			{
-				Light* light = static_cast<Light*>(component.second);
-				light->OnPreCull();
-			}
-			s_LastCullingFrame = Time::GetFrameCount();
 		}
 
-		for (auto& component : scene->GetIterator<Light>())
+		for (Light* light : scene->GetComponents<Light>())
 		{
-			Light* light = static_cast<Light*>(component.second);
 			Transform* transform = light->GetTransform();
 			// TODO light types
 			Sphere bounds = Sphere(transform->GetPosition(), light->GetRange());

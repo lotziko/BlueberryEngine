@@ -4,64 +4,59 @@ namespace Blueberry
 {
 	const int MAX_OBJECTS_COUNT = 8;
 
-	OctreeNode::OctreeNode(const Vector3& center, float size, float minNodeSize, float looseness)
+	static bool EncapsulatesBounds(const AABB& first, const AABB& second)
 	{
-		FillData(center, size, minNodeSize, looseness);
+		return first.Contains(second) == DirectX::ContainmentType::CONTAINS;
 	}
 
-	bool OctreeNode::Add(const AABB& bounds, ObjectId object)
+	bool OctreeNode::Add(OctreeObjectInterface* object, const AABB& bounds)
 	{
-		if (!Encapsulates(m_Bounds, bounds))
+		if (!EncapsulatesBounds(m_Bounds, bounds))
 		{
 			return false;
 		}
-		SubAdd(bounds, object);
+		SubAdd(object, bounds);
 		return true;
 	}
 
-	bool OctreeNode::Remove(ObjectId object)
+	bool OctreeNode::Remove(OctreeObjectInterface* object)
 	{
 		bool removed = false;
-		for (int i = 0; i < m_Objects.size(); ++i)
+		if (object->GetOctreeNode() == this)
 		{
-			if (m_Objects[i].second == object)
+			for (int i = 0; i < m_Objects.size(); ++i)
 			{
-				m_Objects.erase(m_Objects.begin() + i);
-				removed = true;
-				break;
-			}
-		}
-
-		if (!removed && m_Children[0])
-		{
-			for (int i = 0; i < 8; ++i) 
-			{
-				removed = m_Children[i]->Remove(object);
-				if (removed)
+				if (m_Objects[i].object == object)
 				{
+					object->SetOctreeNode(nullptr);
+					if (i != m_Objects.size() - 1)
+					{
+						m_Objects[i] = m_Objects.back();
+					}
+					m_Objects.pop_back();
+					removed = true;
 					break;
 				}
 			}
 		}
-
-		if (removed && m_Children[0])
+		
+		if (removed)
 		{
-			if (ShouldMerge())
+			OctreeNode* node = this;
+			while (node != nullptr)
 			{
-				Merge();
+				if (node->m_Children[0])
+				{
+					if (node->ShouldMerge())
+					{
+						node->Merge();
+					}
+				}
+				node = node->m_Parent;
 			}
 		}
 
 		return removed;
-	}
-
-	bool OctreeNode::Remove(const AABB& bounds, ObjectId object)
-	{
-		if (!Encapsulates(m_Bounds, bounds))
-		{
-			return false;
-		}
-		return SubRemove(bounds, object);
 	}
 
 	const uint32_t OctreeNode::GetBestFit(const Vector3& center)
@@ -75,7 +70,7 @@ namespace Blueberry
 		{
 			for (int i = 0; i < m_Objects.size(); ++i)
 			{
-				result.push_back(m_Objects[i].second);
+				result.push_back(m_Objects[i].id);
 			}
 			if (m_Children[0])
 			{
@@ -89,9 +84,9 @@ namespace Blueberry
 		{
 			for (int i = 0; i < m_Objects.size(); ++i)
 			{
-				if (m_Objects[i].first.ContainedBy(planes[0], planes[1], planes[2], planes[3], planes[4], planes[5]))
+				if (m_Objects[i].bounds.ContainedBy(planes[0], planes[1], planes[2], planes[3], planes[4], planes[5]))
 				{
-					result.push_back(m_Objects[i].second);
+					result.push_back(m_Objects[i].id);
 				}
 			}
 			if (m_Children[0])
@@ -128,7 +123,7 @@ namespace Blueberry
 		}
 	}
 
-	std::shared_ptr<OctreeNode> OctreeNode::ShrinkIfPossible(float minSize)
+	OctreeNode* OctreeNode::ShrinkIfPossible(float minSize)
 	{
 		if (m_Size < (2 * minSize))
 		{
@@ -138,16 +133,16 @@ namespace Blueberry
 		{
 			return nullptr;
 		}
-		uint32_t bestFit = MAXUINT32;
+		uint32_t bestFit = UINT32_MAX;
 		for (int i = 0; i < m_Objects.size(); ++i)
 		{
-			std::pair<AABB, ObjectId> object = m_Objects[i];
-			int newBestFit = GetBestFit(object.first.Center);
+			ObjectData& objectData = m_Objects[i];
+			int newBestFit = GetBestFit(objectData.bounds.Center);
 			if (i == 0 || newBestFit == bestFit)
 			{
-				if (Encapsulates(m_ChildBounds[newBestFit], object.first))
+				if (EncapsulatesBounds(m_ChildBounds[newBestFit], objectData.bounds))
 				{
-					if (bestFit == MAXUINT32)
+					if (bestFit == UINT32_MAX)
 					{
 						bestFit = newBestFit;
 					}
@@ -174,7 +169,7 @@ namespace Blueberry
 					{
 						return nullptr;
 					}
-					if (bestFit != MAXUINT32 && bestFit != i)
+					if (bestFit != UINT32_MAX && bestFit != i)
 					{
 						return nullptr;
 					}
@@ -186,11 +181,11 @@ namespace Blueberry
 
 		if (!m_Children[0])
 		{
-			FillData(m_ChildBounds[bestFit].Center, m_Size / 2, minSize, m_Looseness);
+			FillData(m_ChildBounds[bestFit].Center, m_Size / 2, m_MinNodeSize, m_Looseness);
 			return nullptr;
 		}
 
-		if (bestFit == MAXUINT32)
+		if (bestFit == UINT32_MAX)
 		{
 			return nullptr;
 		}
@@ -221,18 +216,14 @@ namespace Blueberry
 		m_ChildBounds[7] = AABB(m_Center + Vector3(quarter, -quarter, quarter), childExtents);
 	}
 
-	bool OctreeNode::Encapsulates(const AABB& first, const AABB& second)
-	{
-		return first.Contains(second) == DirectX::ContainmentType::CONTAINS;
-	}
-
-	void OctreeNode::SubAdd(const AABB& bounds, ObjectId object)
+	void OctreeNode::SubAdd(OctreeObjectInterface* object, const AABB& bounds)
 	{
 		if (!m_Children[0])
 		{
 			if (m_Objects.size() < MAX_OBJECTS_COUNT || (m_Size / 2.0f) < m_MinNodeSize)
 			{
-				m_Objects.push_back(std::make_pair(bounds, object));
+				object->SetOctreeNode(this);
+				m_Objects.push_back({ object->GetOctreeObjectId(), object, bounds });
 				return;
 			}
 
@@ -248,72 +239,46 @@ namespace Blueberry
 
 				for (int i = static_cast<int>(m_Objects.size() - 1); i >= 0; i--)
 				{
-					std::pair<AABB, ObjectId> object = m_Objects[i];
-					AABB objectBounds = object.first;
+					ObjectData& objectData = m_Objects[i];
+					AABB objectBounds = objectData.bounds;
 					bestFitChild = GetBestFit(objectBounds.Center);
-					if (Encapsulates(m_Children[bestFitChild]->m_Bounds, objectBounds))
+					if (EncapsulatesBounds(m_Children[bestFitChild]->m_Bounds, objectBounds))
 					{
-						m_Children[bestFitChild]->SubAdd(object.first, object.second);
-						m_Objects.erase(m_Objects.begin() + i);
+						m_Children[bestFitChild]->SubAdd(objectData.object, objectData.bounds);
+						if (i != m_Objects.size() - 1)
+						{
+							m_Objects[i] = m_Objects.back();
+						}
+						m_Objects.pop_back();
 					}
 				}
 			}
 		}
 
 		uint32_t bestFit = GetBestFit(bounds.Center);
-		if (Encapsulates(m_Children[bestFit]->m_Bounds, bounds))
+		if (EncapsulatesBounds(m_Children[bestFit]->m_Bounds, bounds))
 		{
-			m_Children[bestFit]->SubAdd(bounds, object);
+			m_Children[bestFit]->SubAdd(object, bounds);
 		}
 		else
 		{
-			m_Objects.push_back(std::make_pair(bounds, object));
+			object->SetOctreeNode(this);
+			m_Objects.push_back({ object->GetOctreeObjectId(), object, bounds });
 		}
-	}
-
-	bool OctreeNode::SubRemove(const AABB& bounds, ObjectId object)
-	{
-		bool removed = false;
-
-		for (uint32_t i = 0; i < m_Objects.size(); ++i)
-		{
-			if (m_Objects[i].second == object)
-			{
-				m_Objects.erase(m_Objects.begin() + i);
-				removed = true;
-				break;
-			}
-		}
-
-		if (!removed && m_Children[0])
-		{
-			uint32_t bestFit = GetBestFit(bounds.Center);
-			removed = m_Children[bestFit]->SubRemove(bounds, object);
-		}
-
-		if (removed && m_Children[0])
-		{
-			if (ShouldMerge())
-			{
-				Merge();
-			}
-		}
-
-		return removed;
 	}
 
 	void OctreeNode::Split()
 	{
 		float quarter = m_Size / 4.0f;
 		float newSize = m_Size / 2.0f;
-		m_Children[0] = std::make_shared<OctreeNode>(m_Center + Vector3(-quarter, quarter, -quarter), newSize, m_MinNodeSize, m_Looseness);
-		m_Children[1] = std::make_shared<OctreeNode>(m_Center + Vector3(quarter, quarter, -quarter), newSize, m_MinNodeSize, m_Looseness);
-		m_Children[2] = std::make_shared<OctreeNode>(m_Center + Vector3(-quarter, quarter, quarter), newSize, m_MinNodeSize, m_Looseness);
-		m_Children[3] = std::make_shared<OctreeNode>(m_Center + Vector3(quarter, quarter, quarter), newSize, m_MinNodeSize, m_Looseness);
-		m_Children[4] = std::make_shared<OctreeNode>(m_Center + Vector3(-quarter, -quarter, -quarter), newSize, m_MinNodeSize, m_Looseness);
-		m_Children[5] = std::make_shared<OctreeNode>(m_Center + Vector3(quarter, -quarter, -quarter), newSize, m_MinNodeSize, m_Looseness);
-		m_Children[6] = std::make_shared<OctreeNode>(m_Center + Vector3(-quarter, -quarter, quarter), newSize, m_MinNodeSize, m_Looseness);
-		m_Children[7] = std::make_shared<OctreeNode>(m_Center + Vector3(quarter, -quarter, quarter), newSize, m_MinNodeSize, m_Looseness);
+		m_Children[0] = m_Tree->Allocate(this, m_Center + Vector3(-quarter, quarter, -quarter), newSize, m_MinNodeSize, m_Looseness);
+		m_Children[1] = m_Tree->Allocate(this, m_Center + Vector3(quarter, quarter, -quarter), newSize, m_MinNodeSize, m_Looseness);
+		m_Children[2] = m_Tree->Allocate(this, m_Center + Vector3(-quarter, quarter, quarter), newSize, m_MinNodeSize, m_Looseness);
+		m_Children[3] = m_Tree->Allocate(this, m_Center + Vector3(quarter, quarter, quarter), newSize, m_MinNodeSize, m_Looseness);
+		m_Children[4] = m_Tree->Allocate(this, m_Center + Vector3(-quarter, -quarter, -quarter), newSize, m_MinNodeSize, m_Looseness);
+		m_Children[5] = m_Tree->Allocate(this, m_Center + Vector3(quarter, -quarter, -quarter), newSize, m_MinNodeSize, m_Looseness);
+		m_Children[6] = m_Tree->Allocate(this, m_Center + Vector3(-quarter, -quarter, quarter), newSize, m_MinNodeSize, m_Looseness);
+		m_Children[7] = m_Tree->Allocate(this, m_Center + Vector3(quarter, -quarter, quarter), newSize, m_MinNodeSize, m_Looseness);
 	}
 
 	bool OctreeNode::ShouldMerge()
@@ -323,7 +288,7 @@ namespace Blueberry
 		{
 			for (uint32_t i = 0; i < 8; ++i)
 			{
-				OctreeNode* child = m_Children[i].get();
+				OctreeNode* child = m_Children[i];
 				if (child->m_Children[0])
 				{
 					return false;
@@ -338,11 +303,14 @@ namespace Blueberry
 	{
 		for (uint32_t i = 0; i < 8; ++i)
 		{
-			OctreeNode* child = m_Children[i].get();
+			OctreeNode* child = m_Children[i];
 			for (int j = static_cast<int>(child->m_Objects.size()) - 1; j >= 0; --j)
 			{
-				m_Objects.push_back(child->m_Objects[j]);
+				ObjectData& objectData = child->m_Objects[j];
+				objectData.object->SetOctreeNode(this);
+				m_Objects.push_back(objectData);
 			}
+			m_Tree->Release(child);
 			m_Children[i] = nullptr;
 		}
 	}
@@ -356,7 +324,7 @@ namespace Blueberry
 
 		if (m_Children[0])
 		{
-			for (int i = 0; i < 8; i++) 
+			for (int i = 0; i < 8; i++)
 			{
 				if (m_Children[i]->HasAnyObjects())
 				{
@@ -371,15 +339,15 @@ namespace Blueberry
 	Octree::Octree(const Vector3& initialPosition, float initialSize, float minNodeSize, float looseness)
 	{
 		m_Looseness = std::clamp(looseness, 1.0f, 2.0f);
-		m_Root = std::make_shared<OctreeNode>(initialPosition, initialSize, minNodeSize, m_Looseness);
+		m_Root = Allocate(nullptr, initialPosition, initialSize, minNodeSize, m_Looseness);
 		m_InitialSize = initialSize;
 		m_MinNodeSize = minNodeSize;
 	}
 
-	void Octree::Add(const AABB& bounds, ObjectId object)
+	void Octree::Add(OctreeObjectInterface* object, const AABB& bounds)
 	{
 		int count = 0;
-		while (!m_Root->Add(bounds, object))
+		while (!m_Root->Add(object, bounds))
 		{
 			Grow(bounds.Center - m_Root->m_Center);
 			if (++count > 10)
@@ -390,27 +358,52 @@ namespace Blueberry
 		}
 	}
 
-	bool Octree::Remove(ObjectId object)
+	void Octree::Update(OctreeObjectInterface* object, const AABB& bounds)
 	{
-		bool removed = m_Root->Remove(object);
-
-		if (removed)
+		OctreeNode* node = object->GetOctreeNode();
+		if (node != nullptr && EncapsulatesBounds(node->m_Bounds, bounds))
 		{
-			Shrink();
+			uint32_t bestFit = node->GetBestFit(bounds.Center);
+			bool canMoveDown = node->m_Children[0] && EncapsulatesBounds(node->m_ChildBounds[bestFit], bounds);
+
+			if (!canMoveDown)
+			{
+				for (int i = 0; i < node->m_Objects.size(); ++i)
+				{
+					OctreeNode::ObjectData& objectData = node->m_Objects[i];
+					if (objectData.object == object)
+					{
+						objectData.bounds = bounds;
+						return;
+					}
+				}
+			}
+		}
+		if (node != nullptr)
+		{
+			if (!node->Remove(object))
+			{
+				BB_ERROR("Octree object is missing from its owning node.");
+				return;
+			}
 		}
 
-		return removed;
+		Add(object, bounds);
+		Shrink();
 	}
 
-	bool Octree::Remove(const AABB& bounds, ObjectId object)
+	bool Octree::Remove(OctreeObjectInterface* object)
 	{
-		bool removed = m_Root->Remove(bounds, object);
-
+		OctreeNode* node = object->GetOctreeNode();
+		if (node == nullptr)
+		{
+			return false;
+		}
+		bool removed = node->Remove(object);
 		if (removed)
 		{
 			Shrink();
 		}
-
 		return removed;
 	}
 
@@ -424,20 +417,64 @@ namespace Blueberry
 		m_Root->GatherChildrenBounds(result);
 	}
 
+	OctreeNode* Octree::Allocate(OctreeNode* parent, const Vector3& center, float size, float minNodeSize, float looseness)
+	{
+		OctreeNode* node;
+		if (m_FreeNodes.size() > 0)
+		{
+			node = m_FreeNodes.back();
+			m_FreeNodes.pop_back();
+		}
+		else
+		{
+			uint32_t id = m_MaxNodeId;
+			uint32_t chunkIndex = id / NodesPerChunk;
+			uint32_t slotIndex = id % NodesPerChunk;
+			if (chunkIndex == m_Chunks.size())
+			{
+				m_Chunks.push_back(std::make_unique<OctreeChunk>());
+			}
+			node = &(*m_Chunks[chunkIndex])[slotIndex];
+			node->m_Id = id;
+			node->m_Tree = this;
+			++m_MaxNodeId;
+		}
+		node->m_Parent = parent;
+		node->FillData(center, size, minNodeSize, looseness);
+		return node;
+	}
+
+	void Octree::Release(OctreeNode* node)
+	{
+		if (node == nullptr)
+		{
+			return;
+		}
+		for (OctreeNode* child : node->m_Children)
+		{
+			Release(child);
+		}
+		node->m_Objects.clear();
+		node->m_Children.fill(nullptr);
+		node->m_Parent = nullptr;
+		m_FreeNodes.push_back(node);
+	}
+
 	void Octree::Grow(const Vector3& direction)
 	{
 		int xDirection = direction.x >= 0 ? 1 : -1;
 		int yDirection = direction.y >= 0 ? 1 : -1;
 		int zDirection = direction.z >= 0 ? 1 : -1;
-		std::shared_ptr<OctreeNode> oldRoot = m_Root;
+		OctreeNode* oldRoot = m_Root;
 		Vector3 oldCenter = oldRoot->m_Center;
 		float oldSize = oldRoot->m_Size;
 		float half = oldSize / 2.0f;
 		float newSize = oldSize * 2.0f;
 		Vector3 newCenter = oldCenter + Vector3(xDirection * half, yDirection * half, zDirection * half);
 
-		m_Root = std::make_shared<OctreeNode>(newCenter, newSize, m_MinNodeSize, m_Looseness);
+		m_Root = Allocate(nullptr, newCenter, newSize, m_MinNodeSize, m_Looseness);
 
+		bool releaseOldRoot = true;
 		if (oldRoot->HasAnyObjects())
 		{
 			uint32_t rootPos = m_Root->GetBestFit(oldCenter);
@@ -446,24 +483,42 @@ namespace Blueberry
 				if (i == rootPos)
 				{
 					m_Root->m_Children[i] = oldRoot;
+					oldRoot->m_Parent = m_Root;
+					releaseOldRoot = false;
 				}
 				else
 				{
 					xDirection = i % 2 == 0 ? -1 : 1;
 					yDirection = i > 3 ? -1 : 1;
 					zDirection = (i < 2 || (i > 3 && i < 6)) ? -1 : 1;
-					m_Root->m_Children[i] = std::make_shared<OctreeNode>(newCenter + Vector3(xDirection * half, yDirection * half, zDirection * half), oldSize, m_MinNodeSize, m_Looseness);
+					m_Root->m_Children[i] = Allocate(m_Root, newCenter + Vector3(xDirection * half, yDirection * half, zDirection * half), oldSize, m_MinNodeSize, m_Looseness);
 				}
 			}
+		}
+		if (releaseOldRoot)
+		{
+			Release(oldRoot);
 		}
 	}
 
 	void Octree::Shrink()
 	{
-		std::shared_ptr<OctreeNode> newRoot = m_Root->ShrinkIfPossible(m_InitialSize);
+		OctreeNode* newRoot = m_Root->ShrinkIfPossible(m_InitialSize);
 		if (newRoot != nullptr)
 		{
+			OctreeNode* oldRoot = m_Root;
+			for (int i = 0; i < 8; ++i)
+			{
+				OctreeNode*& child = oldRoot->m_Children[i];
+				if (child == newRoot)
+				{
+					child = nullptr;
+					break;
+				}
+			}
+			newRoot->m_Parent = nullptr;
 			m_Root = newRoot;
+			Release(oldRoot);
 		}
 	}
 }

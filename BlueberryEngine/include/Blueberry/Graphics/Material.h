@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Blueberry\Core\ObjectPtr.h"
-#include "Blueberry\Core\Notifyable.h"
+#include "Blueberry\Core\NotifyableInterface.h"
 #include "Blueberry\Graphics\Shader.h"
 
 namespace Blueberry
@@ -30,7 +30,7 @@ namespace Blueberry
 	};
 
 	// New material properties will appear here after saving them in the inspector and calling update
-	class BB_API Material : public Object, public Notifyable
+	class BB_API Material : public Object, public NotifyableInterface
 	{
 		OBJECT_DECLARATION(Material)
 

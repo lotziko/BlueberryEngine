@@ -27,8 +27,7 @@ namespace Blueberry
 		if (scene != nullptr)
 		{
 			m_Bounds = GetBounds();
-			m_PreviousBounds = m_Bounds;
-			scene->GetRendererTree().Add(m_ObjectId, m_Bounds);
+			scene->GetRendererTree().Add(this, m_Bounds);
 		}
 		UpdateBoneDatas();
 	}
@@ -38,7 +37,7 @@ namespace Blueberry
 		Scene* scene = GetScene();
 		if (scene != nullptr)
 		{
-			scene->GetRendererTree().Remove(m_ObjectId, m_Bounds);
+			scene->GetRendererTree().Remove(this);
 		}
 
 		if (m_SkinningVertexBuffer != nullptr)
@@ -53,7 +52,7 @@ namespace Blueberry
 		UpdateBounds();
 		if (m_CullingDirty)
 		{
-			GetScene()->GetRendererTree().Update(m_ObjectId, m_PreviousBounds, m_Bounds);
+			GetScene()->GetRendererTree().Update(this, m_Bounds);
 			m_CullingDirty = false;
 		}
 	}
@@ -232,23 +231,8 @@ namespace Blueberry
 				AABB meshBounds = m_Mesh->GetBounds();
 				AABB bounds(Vector3::Zero, Vector3(meshBounds.Extents.x * 2, meshBounds.Extents.y * 2, meshBounds.Extents.z * 2));
 				Matrix matrix = m_Bones[0]->GetLocalToWorldMatrix();
-
-				Vector3 corners[8];
-				bounds.GetCorners(corners);
-
-				for (int i = 0; i < 8; i++)
-				{
-					Vector3 corner = corners[i];
-					Vector3::Transform(corner, matrix, corners[i]);
-				}
-
-				AABB::CreateFromPoints(bounds, 8, corners, sizeof(Vector3));
-				if (!m_CullingDirty)
-				{
-					m_PreviousBounds = m_Bounds;
-					m_CullingDirty = true;
-				}
-				m_Bounds = bounds;
+				bounds.Transform(m_Bounds, matrix);
+				m_CullingDirty = true;
 				m_UpdateCount = transformUpdateCount;
 			}
 		}
