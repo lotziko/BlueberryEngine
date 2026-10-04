@@ -17,6 +17,7 @@ namespace Blueberry
 		DEFINE_FIELD(Camera, m_ZFarPlane, BindingType::Float, FieldOptions().SetUpdateCallback(MethodBind::Create(&Camera::InvalidateProjection)))
 		DEFINE_ITERATOR(Camera)
 		DEFINE_EXECUTE_ALWAYS()
+		DEFINE_ADD_COMPONENT_MENU("Rendering/Camera")
 	}
 
 	void Camera::OnEnable()

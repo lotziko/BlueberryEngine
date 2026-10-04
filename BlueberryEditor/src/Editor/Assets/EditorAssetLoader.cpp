@@ -20,6 +20,7 @@
 #include "Editor\Assets\Processors\HLSLRayTracingShaderProcessor.h"
 #include "Editor\Misc\TextureHelper.h"
 #include "Editor\Misc\PathHelper.h"
+#include "Editor\Misc\PlatformHelper.h"
 
 #include <directxtex\DirectXTex.h>
 
@@ -111,6 +112,7 @@ namespace Blueberry
 
 			if (needImport)
 			{
+				PlatformHelper::ShowProgressBar("Compiling shaders", path);
 				processor = {};
 				if (processor.Compile(path))
 				{
@@ -119,6 +121,7 @@ namespace Blueberry
 					ObjectDB::AllocateIdToGuid(shader, guid, 1);
 					AssetDB::SaveAssetObjectsToCache(List<Object*> { shader });
 				}
+				PlatformHelper::HideProgressBar();
 			}
 
 			if (shader != nullptr)
@@ -148,6 +151,7 @@ namespace Blueberry
 			
 			if (needImport)
 			{
+				PlatformHelper::ShowProgressBar("Compiling shaders", path);
 				processor = {};
 				if (processor.Compile(path))
 				{
@@ -156,6 +160,7 @@ namespace Blueberry
 					ObjectDB::AllocateIdToGuid(shader, guid, 1);
 					AssetDB::SaveAssetObjectsToCache(List<Object*> { shader });
 				}
+				PlatformHelper::HideProgressBar();
 			}
 
 			if (shader != nullptr)
@@ -189,6 +194,7 @@ namespace Blueberry
 
 			if (needImport)
 			{
+				PlatformHelper::ShowProgressBar("Compiling shaders", path);
 				processor = {};
 				if (processor.Compile(path))
 				{
@@ -197,6 +203,7 @@ namespace Blueberry
 					ObjectDB::AllocateIdToGuid(shader, guid, 1);
 					AssetDB::SaveAssetObjectsToCache(List<Object*> { shader });
 				}
+				PlatformHelper::HideProgressBar();
 			}
 
 			if (shader != nullptr)

@@ -34,18 +34,15 @@ namespace Blueberry
 				if (componentSlot.IsValid())
 				{
 					Component* component = componentSlot.Get();
-					if (component->CanExecute())
+					if (component->m_IsActive)
 					{
-						if (component->m_IsActive)
-						{
-							s_Operations.push({ 2000, ++s_OperationSequence, Operation::DisableComponent, component });
-							component->m_IsActive = false;
-						}
-						if (!component->m_IsDestroyed)
-						{
-							s_Operations.push({ 3000, ++s_OperationSequence, Operation::DestroyComponent, component });
-							component->m_IsDestroyed = true;
-						}
+						s_Operations.push({ 2000, ++s_OperationSequence, Operation::DisableComponent, component });
+						component->m_IsActive = false;
+					}
+					if (!component->m_IsDestroyed)
+					{
+						s_Operations.push({ 3000, ++s_OperationSequence, Operation::DestroyComponent, component });
+						component->m_IsDestroyed = true;
 					}
 				}
 			}
@@ -75,18 +72,15 @@ namespace Blueberry
 		}
 		if (IsActiveInHierarchy())
 		{
-			if (component->CanExecute())
+			if (!component->m_IsCreated)
 			{
-				if (!component->m_IsCreated)
-				{
-					s_Operations.push({ 1000, ++s_OperationSequence, Operation::CreateComponent, component });
-					component->m_IsCreated = true;
-				}
-				if (!component->m_IsActive)
-				{
-					s_Operations.push({ 2000, ++s_OperationSequence, Operation::EnableComponent, component });
-					component->m_IsActive = true;
-				}
+				s_Operations.push({ 1000, ++s_OperationSequence, Operation::CreateComponent, component });
+				component->m_IsCreated = true;
+			}
+			if (!component->m_IsActive)
+			{
+				s_Operations.push({ 2000, ++s_OperationSequence, Operation::EnableComponent, component });
+				component->m_IsActive = true;
 			}
 		}
 	}
@@ -109,21 +103,21 @@ namespace Blueberry
 	{
 		if (component->m_Entity == this)
 		{
-			if (component->CanExecute())
+			if (component->m_IsActive)
 			{
-				if (component->m_IsActive)
-				{
-					s_Operations.push({ 2000, ++s_OperationSequence, Operation::DisableComponent, component });
-					component->m_IsActive = false;
-				}
-				if (!component->m_IsDestroyed)
-				{
-					s_Operations.push({ 3000, ++s_OperationSequence, Operation::DestroyComponent, component });
-					component->m_IsDestroyed = true;
-				}
+				s_Operations.push({ 2000, ++s_OperationSequence, Operation::DisableComponent, component });
+				component->m_IsActive = false;
 			}
-			auto& index = std::find(m_Components.begin(), m_Components.end(), component);
-			m_Components.erase(index);
+			if (!component->m_IsDestroyed)
+			{
+				s_Operations.push({ 3000, ++s_OperationSequence, Operation::DestroyComponent, component });
+				component->m_IsDestroyed = true;
+			}
+			auto it = std::find(m_Components.begin(), m_Components.end(), component);
+			if (it != m_Components.end())
+			{
+				m_Components.erase(it);
+			}
 		}
 	}
 
@@ -191,8 +185,14 @@ namespace Blueberry
 					switch (data.operation)
 					{
 					case Operation::CreateComponent:
-						(static_cast<Component*>(object))->OnCreate();
-						break;
+					{
+						Component* component = static_cast<Component*>(object);
+						if (component->CanExecute())
+						{
+							component->OnCreate();
+						}
+					}
+					break;
 					case Operation::EnableComponent:
 					{
 						Component* component = static_cast<Component*>(object);
@@ -204,7 +204,10 @@ namespace Blueberry
 								scene->m_ComponentManager.AddComponent(component, *type);
 							}
 						}
-						component->OnEnable();
+						if (component->CanExecute())
+						{
+							component->OnEnable();
+						}
 					}
 					break;
 					case Operation::DisableComponent:
@@ -218,13 +221,22 @@ namespace Blueberry
 								scene->m_ComponentManager.RemoveComponent(component, *type);
 							}
 						}
-						component->OnDisable();
+						if (component->CanExecute())
+						{
+							component->OnDisable();
+						}
 					}
 					break;
 					case Operation::DestroyComponent:
-						(static_cast<Component*>(object))->OnDestroy();
+					{
+						Component* component = static_cast<Component*>(object);
+						if (component->CanExecute())
+						{
+							component->OnDestroy();
+						}
 						Object::Destroy(object);
-						break;
+					}
+					break;
 					case Operation::DestroyEntity:
 						Object::Destroy(object);
 						break;

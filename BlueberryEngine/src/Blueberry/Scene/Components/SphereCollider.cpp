@@ -12,6 +12,7 @@ namespace Blueberry
 	{
 		DEFINE_BASE_FIELDS(SphereCollider, Collider)
 		DEFINE_FIELD(SphereCollider, m_Radius, BindingType::Float, FieldOptions())
+		DEFINE_ADD_COMPONENT_MENU("Physics/Sphere Collider")
 	}
 
 	float SphereCollider::GetRadius() const

@@ -147,11 +147,13 @@ namespace Blueberry
 					if (object->IsClassType(PrefabInstance::Type))
 					{
 						PrefabInstance* instance = static_cast<PrefabInstance*>(object);
+						instance->m_AddedComponents.clear();
 						m_PrefabInstances.push_back(instance);
 					}
 					DeserializeNode(tree.GetConstRoot(), Context::Create(object, object->GetType()));
 				}
 			}
+			Dictionary<ObjectId, PrefabInstance*> references;
 			for (auto& tree : m_Trees)
 			{
 				if (tree.isReference)
@@ -164,10 +166,35 @@ namespace Blueberry
 					PrefabInstance* prefabInstance = static_cast<PrefabInstance*>(GetPtrObject(prefabInstanceData));
 					Object* correspondingPrefabObject = GetPtrObject(correspondingPrefabObjectData);
 					prefabInstance->AddObjectMapping(correspondingPrefabObject, ObjectDB::GetObject(tree.objectId));
-					m_References.insert(tree.objectId);
+					references[tree.objectId] = prefabInstance;
 				}
 			}
 			stream.close();
+			// Components added to prefabs
+			for (auto& tree : m_Trees)
+			{
+				if (!tree.isReference)
+				{
+					Object* object = ObjectDB::GetObject(tree.objectId);
+					if (object->IsClassType(Component::Type))
+					{
+						Component* component = static_cast<Component*>(object);
+						Entity* entity = component->GetEntity();
+						if (entity != nullptr)
+						{
+							auto it = references.find(entity->GetObjectId());
+							if (it != references.end())
+							{
+								PrefabInstance* instance = it->second;
+								PrefabAddedComponentData data = {};
+								data.SetEntity(entity);
+								data.SetComponent(component);
+								instance->m_AddedComponents.push_back(std::move(data));
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -224,23 +251,6 @@ namespace Blueberry
 				if (instance->HasSource())
 				{
 					instance->Initialize();
-				}
-			}
-			// Components added to prefab
-			for (auto& tree : m_Trees)
-			{
-				if (!tree.isReference)
-				{
-					Object* object = ObjectDB::GetObject(tree.objectId);
-					if (object->IsClassType(Component::Type))
-					{
-						Component* component = static_cast<Component*>(object);
-						Entity* entity = component->GetEntity();
-						if (entity != nullptr && m_References.count(entity->GetObjectId()) > 0)
-						{
-							entity->AddComponent(component);
-						}
-					}
 				}
 			}
 			// Setup prefab context

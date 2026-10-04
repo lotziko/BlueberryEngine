@@ -128,6 +128,7 @@ namespace Blueberry
 			s_Camera->SetFieldOfView(90.0f);
 			s_Camera->SetAspectRatio(1.0f);
 			cameraEntity->OnCreate();
+			s_Camera->OnEnable();
 
 			s_Rotation[0] = Quaternion::CreateFromAxisAngle(Vector3::Up, Math::Math::ToRadians(90));
 			s_Rotation[1] = Quaternion::CreateFromAxisAngle(Vector3::Up, Math::Math::ToRadians(-90));

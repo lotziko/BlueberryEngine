@@ -14,6 +14,7 @@ namespace Blueberry
 		DEFINE_FIELD(AudioSource, m_AudioClip, BindingType::ObjectPtr, FieldOptions().SetObjectType(&AudioClip::Type))
 		DEFINE_FIELD(AudioSource, m_Volume, BindingType::Float, FieldOptions())
 		DEFINE_FIELD(AudioSource, m_IsLoop, BindingType::Bool, FieldOptions())
+		DEFINE_ADD_COMPONENT_MENU("Audio/Audio Source")
 	}
 
 	void AudioSource::OnDestroy()

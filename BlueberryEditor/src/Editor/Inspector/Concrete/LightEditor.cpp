@@ -17,6 +17,7 @@ namespace Blueberry
 {
 	static Texture* s_SpotIcon = nullptr;
 	static Texture* s_PointIcon = nullptr;
+	static Texture* s_DirectionalIcon = nullptr;
 
 	LightEditor::LightEditor()
 	{
@@ -24,6 +25,7 @@ namespace Blueberry
 		{
 			s_SpotIcon = static_cast<Texture*>(AssetLoader::Load("assets/icons/SpotLightIcon.png"));
 			s_PointIcon = static_cast<Texture*>(AssetLoader::Load("assets/icons/PointLightIcon.png"));
+			s_DirectionalIcon = static_cast<Texture*>(AssetLoader::Load("assets/icons/DirectionalLightIcon.png"));
 		}
 	}
 
@@ -82,6 +84,8 @@ namespace Blueberry
 			return s_SpotIcon;
 		case LightType::Point:
 			return s_PointIcon;
+		case LightType::Directional:
+			return s_DirectionalIcon;
 		default:
 			return nullptr;
 		}

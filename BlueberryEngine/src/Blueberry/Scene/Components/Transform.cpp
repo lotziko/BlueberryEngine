@@ -35,13 +35,14 @@ namespace Blueberry
 	{
 		if (m_Parent.IsValid())
 		{
-			if (m_Parent->m_Children.size() > 0)
+			auto& children = m_Parent->m_Children;
+			auto it = std::find_if(children.begin(), children.end(), [this](ObjectPtr<Transform> const& i) { return i.Get() == this; });
+			if (it != children.end())
 			{
-				auto index = std::find_if(m_Parent->m_Children.begin(), m_Parent->m_Children.end(), [this](ObjectPtr<Transform> const& i) { return i.Get() == this; });
-				m_Parent->m_Children.erase(index);
-				m_Parent = nullptr;
+				children.erase(it);
 			}
 		}
+		m_Parent = nullptr;
 	}
 
 	const Matrix& Transform::GetLocalToWorldMatrix()

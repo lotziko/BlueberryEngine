@@ -20,6 +20,7 @@ namespace Blueberry
 		DEFINE_FIELD(Canvas, m_Document, BindingType::ObjectPtr, FieldOptions().SetObjectType(&UIDocument::Type))
 		DEFINE_ITERATOR(Canvas)
 		DEFINE_EXECUTE_ALWAYS()
+		DEFINE_ADD_COMPONENT_MENU("UI/Canvas")
 	}
 
 	void Canvas::OnCreate()

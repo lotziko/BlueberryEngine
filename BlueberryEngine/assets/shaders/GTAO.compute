@@ -2,6 +2,7 @@
 #pragma compute GTAOHighCompute
 #pragma compute DenoisePassCompute
 #pragma compute DenoiseLastPassCompute
+#pragma compute ClearCompute
 
 #include "XeGTAO.hlsl"
 #include "Core.hlsl"
@@ -65,4 +66,13 @@ void DenoiseLastPassCompute(const uint2 dispatchThreadID : SV_DispatchThreadID)
 {
     const uint2 pixCoordBase = dispatchThreadID * uint2(2, 1);
     XeGTAO_Denoise(pixCoordBase, _GTAOConsts, _SrcWorkingAOTerm, _SrcWorkingEdges, _PointClamp_Sampler, _OutFinalAOTerm, true);
+}
+
+[numthreads(8, 8, 1)]
+void ClearCompute(const uint2 dispatchThreadID : SV_DispatchThreadID)
+{
+    if (dispatchThreadID.x < _GTAOConsts.ViewportSize.x && dispatchThreadID.y < _GTAOConsts.ViewportSize.y)
+    {
+        _OutFinalAOTerm[dispatchThreadID] = 255;
+    }
 }

@@ -311,13 +311,20 @@ namespace Blueberry
 		Scene* scene = GetScene();
 		if (scene != nullptr)
 		{
+			List<ObjectPtr<PrefabInstance>> prefabInstances;
 			for (auto& pair : scene->GetEntities())
 			{
 				Entity* entity = pair.second.Get();
 				if (PrefabManager::IsPrefabInstanceRoot(entity))
 				{
-					PrefabInstance* instance = PrefabManager::GetInstance(entity);
-					instance->UpdateIfNeeded();
+					prefabInstances.push_back(PrefabManager::GetInstance(entity));
+				}
+			}
+			for (const auto& prefabInstance : prefabInstances)
+			{
+				if (prefabInstance.IsValid())
+				{
+					prefabInstance->UpdateIfNeeded();
 				}
 			}
 		}

@@ -13,6 +13,7 @@ namespace Blueberry
 	{
 		DEFINE_BASE_FIELDS(BoxCollider, Collider)
 		DEFINE_FIELD(BoxCollider, m_Size, BindingType::Vector3, FieldOptions())
+		DEFINE_ADD_COMPONENT_MENU("Physics/Box Collider")
 	}
 
 	const Vector3& BoxCollider::GetSize()

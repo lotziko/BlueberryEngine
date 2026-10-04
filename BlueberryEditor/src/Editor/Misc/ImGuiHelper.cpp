@@ -43,6 +43,7 @@ if (s_MixedValue)\
 {\
 	ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, true);\
 }\
+ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);\
 ImGui::SetNextItemWidth(valueWidth);\
 
 #define PROPERTY_END_VALUE()\
@@ -50,6 +51,7 @@ if (s_MixedValue)\
 {\
 	ImGui::PopItemFlag();\
 }\
+ImGui::PopStyleVar();\
 ImGui::PopID();\
 
 Blueberry::SerializedProperty* ImGui::ClearOverrideEventArgs::GetProperty()
@@ -935,66 +937,80 @@ void ImGui::ApplyEditorDarkTheme()
 	ImGuiStyle* style = &ImGui::GetStyle();
 	ImVec4* colors = style->Colors;
 
-	colors[ImGuiCol_Text] = ImVec4(1.000f, 1.000f, 1.000f, 1.000f);
-	colors[ImGuiCol_TextDisabled] = ImVec4(0.500f, 0.500f, 0.500f, 1.000f);
-	colors[ImGuiCol_WindowBg] = ImVec4(0.180f, 0.180f, 0.180f, 1.000f);
-	colors[ImGuiCol_ChildBg] = ImVec4(0.280f, 0.280f, 0.280f, 0.000f);
-	colors[ImGuiCol_PopupBg] = ImVec4(0.148f, 0.148f, 0.148f, 1.000f);
-	colors[ImGuiCol_Border] = ImVec4(0.266f, 0.266f, 0.266f, 1.000f);
-	colors[ImGuiCol_BorderShadow] = ImVec4(0.000f, 0.000f, 0.000f, 0.000f);
-	colors[ImGuiCol_FrameBg] = ImVec4(0.160f, 0.160f, 0.160f, 1.000f);
-	colors[ImGuiCol_FrameBgHovered] = ImVec4(0.200f, 0.200f, 0.200f, 1.000f);
-	colors[ImGuiCol_FrameBgActive] = ImVec4(0.280f, 0.280f, 0.280f, 1.000f);
-	colors[ImGuiCol_TitleBg] = ImVec4(0.148f, 0.148f, 0.148f, 1.000f);
-	colors[ImGuiCol_TitleBgActive] = ImVec4(0.148f, 0.148f, 0.148f, 1.000f);
-	colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.148f, 0.148f, 0.148f, 1.000f);
-	colors[ImGuiCol_MenuBarBg] = ImVec4(0.195f, 0.195f, 0.195f, 1.000f);
-	colors[ImGuiCol_ScrollbarBg] = ImVec4(0.160f, 0.160f, 0.160f, 1.000f);
-	colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.277f, 0.277f, 0.277f, 1.000f);
-	colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.300f, 0.300f, 0.300f, 1.000f);
-	colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
-	colors[ImGuiCol_CheckMark] = ImVec4(1.000f, 1.000f, 1.000f, 1.000f);
-	colors[ImGuiCol_SliderGrab] = ImVec4(0.391f, 0.391f, 0.391f, 1.000f);
-	colors[ImGuiCol_SliderGrabActive] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
-	colors[ImGuiCol_Button] = ImVec4(1.000f, 1.000f, 1.000f, 0.000f);
-	colors[ImGuiCol_ButtonHovered] = ImVec4(1.000f, 1.000f, 1.000f, 0.156f);
-	colors[ImGuiCol_ButtonActive] = ImVec4(1.000f, 1.000f, 1.000f, 0.391f);
-	colors[ImGuiCol_Header] = ImVec4(0.313f, 0.313f, 0.313f, 1.000f);
-	colors[ImGuiCol_HeaderHovered] = ImVec4(0.469f, 0.469f, 0.469f, 1.000f);
-	colors[ImGuiCol_HeaderActive] = ImVec4(0.469f, 0.469f, 0.469f, 1.000f);
-	colors[ImGuiCol_Separator] = colors[ImGuiCol_Border];
-	colors[ImGuiCol_SeparatorHovered] = ImVec4(0.391f, 0.391f, 0.391f, 1.000f);
-	colors[ImGuiCol_SeparatorActive] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
-	colors[ImGuiCol_ResizeGrip] = ImVec4(1.000f, 1.000f, 1.000f, 0.250f);
-	colors[ImGuiCol_ResizeGripHovered] = ImVec4(1.000f, 1.000f, 1.000f, 0.670f);
-	colors[ImGuiCol_ResizeGripActive] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
-	colors[ImGuiCol_Tab] = ImVec4(0.148f, 0.148f, 0.148f, 1.000f);
-	colors[ImGuiCol_TabHovered] = ImVec4(0.352f, 0.352f, 0.352f, 1.000f);
-	colors[ImGuiCol_TabActive] = ImVec4(0.195f, 0.195f, 0.195f, 1.000f);
-	colors[ImGuiCol_TabUnfocused] = ImVec4(0.148f, 0.148f, 0.148f, 1.000f);
-	colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.195f, 0.195f, 0.195f, 1.000f);
-	colors[ImGuiCol_DockingPreview] = ImVec4(1.000f, 0.391f, 0.000f, 0.781f);
-	colors[ImGuiCol_DockingEmptyBg] = ImVec4(0.180f, 0.180f, 0.180f, 1.000f);
-	colors[ImGuiCol_PlotLines] = ImVec4(0.469f, 0.469f, 0.469f, 1.000f);
-	colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
-	colors[ImGuiCol_PlotHistogram] = ImVec4(0.586f, 0.586f, 0.586f, 1.000f);
-	colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
-	colors[ImGuiCol_TextSelectedBg] = ImVec4(1.000f, 1.000f, 1.000f, 0.156f);
-	colors[ImGuiCol_DragDropTarget] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
-	colors[ImGuiCol_NavHighlight] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
-	colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.000f, 0.391f, 0.000f, 1.000f);
-	colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.000f, 0.000f, 0.000f, 0.586f);
-	colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.000f, 0.000f, 0.000f, 0.586f);
-
-	// Convert to SRGB
-	/*for (int i = 0; i < ImGuiCol_COUNT; i++)
+	// Neutral gray surfaces with One Dark's blue accent.
+	const ImVec4 background = ImColor(40, 40, 40);  // #282828
+	const ImVec4 panel = ImColor(33, 33, 33);       // #212121
+	const ImVec4 field = ImColor(27, 27, 27);       // #1B1B1B
+	const ImVec4 selection = ImColor(64, 64, 64);   // #404040
+	const ImVec4 hovered = ImColor(77, 77, 77);     // #4D4D4D
+	const ImVec4 muted = ImColor(99, 99, 99);       // #636363
+	const ImVec4 text = ImColor(184, 184, 184);     // #B8B8B8
+	const ImVec4 accent = ImColor(97, 175, 239);     // #61AFEF
+	const ImVec4 accentHovered = ImColor(133, 193, 243); // #85C1F3
+	const auto withAlpha = [](ImVec4 color, float alpha)
 	{
-		ImVec4 color = colors[i];
-		color.x = powf(color.x, 2.2f);
-		color.y = powf(color.y, 2.2f);
-		color.z = powf(color.z, 2.2f);
-		colors[i] = color;
-	}*/
+		color.w = alpha;
+		return color;
+	};
+
+	colors[ImGuiCol_Text] = text;
+	colors[ImGuiCol_TextDisabled] = muted;
+	colors[ImGuiCol_WindowBg] = background;
+	colors[ImGuiCol_ChildBg] = withAlpha(background, 0.0f);
+	colors[ImGuiCol_PopupBg] = panel;
+	colors[ImGuiCol_Border] = selection;
+	colors[ImGuiCol_BorderShadow] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
+	colors[ImGuiCol_FrameBg] = field;
+	colors[ImGuiCol_FrameBgHovered] = selection;
+	colors[ImGuiCol_FrameBgActive] = hovered;
+	colors[ImGuiCol_TitleBg] = panel;
+	colors[ImGuiCol_TitleBgActive] = panel;
+	colors[ImGuiCol_TitleBgCollapsed] = panel;
+	colors[ImGuiCol_MenuBarBg] = panel;
+	colors[ImGuiCol_ScrollbarBg] = panel;
+	colors[ImGuiCol_ScrollbarGrab] = selection;
+	colors[ImGuiCol_ScrollbarGrabHovered] = hovered;
+	colors[ImGuiCol_ScrollbarGrabActive] = accent;
+	colors[ImGuiCol_CheckMark] = text;
+	colors[ImGuiCol_SliderGrab] = text;
+	colors[ImGuiCol_SliderGrabActive] = accentHovered;
+	colors[ImGuiCol_Button] = withAlpha(background, 0.0f);
+	colors[ImGuiCol_ButtonHovered] = selection;
+	colors[ImGuiCol_ButtonActive] = hovered;
+	colors[ImGuiCol_Header] = selection;
+	colors[ImGuiCol_HeaderHovered] = hovered;
+	colors[ImGuiCol_HeaderActive] = hovered;
+	colors[ImGuiCol_Separator] = selection;
+	colors[ImGuiCol_SeparatorHovered] = accentHovered;
+	colors[ImGuiCol_SeparatorActive] = accent;
+	colors[ImGuiCol_ResizeGrip] = withAlpha(text, 0.25f);
+	colors[ImGuiCol_ResizeGripHovered] = withAlpha(accent, 0.67f);
+	colors[ImGuiCol_ResizeGripActive] = accent;
+	colors[ImGuiCol_Tab] = panel;
+	colors[ImGuiCol_TabHovered] = selection;
+	colors[ImGuiCol_TabSelected] = background;
+	colors[ImGuiCol_TabSelectedOverline] = accent;
+	colors[ImGuiCol_TabDimmed] = panel;
+	colors[ImGuiCol_TabDimmedSelected] = background;
+	colors[ImGuiCol_TabDimmedSelectedOverline] = muted;
+	colors[ImGuiCol_DockingPreview] = withAlpha(accent, 0.781f);
+	colors[ImGuiCol_DockingEmptyBg] = background;
+	colors[ImGuiCol_PlotLines] = text;
+	colors[ImGuiCol_PlotLinesHovered] = accent;
+	colors[ImGuiCol_PlotHistogram] = accent;
+	colors[ImGuiCol_PlotHistogramHovered] = accentHovered;
+	colors[ImGuiCol_TableHeaderBg] = panel;
+	colors[ImGuiCol_TableBorderStrong] = selection;
+	colors[ImGuiCol_TableBorderLight] = panel;
+	colors[ImGuiCol_TableRowBg] = withAlpha(background, 0.0f);
+	colors[ImGuiCol_TableRowBgAlt] = withAlpha(text, 0.04f);
+	colors[ImGuiCol_TextLink] = accent;
+	colors[ImGuiCol_TextSelectedBg] = withAlpha(accent, 0.3f);
+	colors[ImGuiCol_DragDropTarget] = accent;
+	colors[ImGuiCol_NavCursor] = accent;
+	colors[ImGuiCol_NavWindowingHighlight] = accent;
+	colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.586f);
+	colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.586f);
 
 	float scale = Blueberry::Screen::GetScale();
 
@@ -1005,14 +1021,15 @@ void ImGui::ApplyEditorDarkTheme()
 	style->PopupRounding = 2.0f * scale;
 	style->ScrollbarRounding = 12.0f * scale;
 	style->ScrollbarSize = 13.0f * scale;
-	style->TabBorderSize = 1.0f * scale;
-	style->TabRounding = 0.0f;
+	style->TabBorderSize = 0.0f * scale;
+	style->TabRounding = 3.0f * scale;
 	style->WindowRounding = 4.0f * scale;
 	style->WindowPadding = ImVec2(0.0f, 0.0f);
 
 	EditorStyle* editorStyle = &GEditor->Style;
-	
-	editorStyle->ProjectBottomPanelSize = 20 * scale;
+
+	editorStyle->ProjectTopPanelSize = 16 * scale;
+	editorStyle->ProjectBottomPanelSize = 16 * scale;
 	editorStyle->ProjectCellSize = 90 * scale;
 	editorStyle->ProjectSpaceBetweenCells = 15 * scale;
 	editorStyle->ProjectCellIconPadding = 8 * scale;
@@ -1025,9 +1042,10 @@ void ImGui::LoadDefaultEditorFonts()
 {
 	ImFontConfig cfg = {};
 	cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags::ImGuiFreeTypeBuilderFlags_LightHinting;
+	cfg.RasterizerMultiply = 1.2f;
 
 	ImGuiIO& io = ImGui::GetIO();
-	float fontSize = 16 * Blueberry::Screen::GetScale();
+	float fontSize = 14 * Blueberry::Screen::GetScale();
 	io.Fonts->FontBuilderIO = ImGuiFreeType::GetBuilderForFreeType();
-	io.FontDefault = io.Fonts->AddFontFromFileTTF("assets/fonts/segoeui/segoeui.ttf", fontSize, &cfg, io.Fonts->GetGlyphRangesCyrillic());
+	io.FontDefault = io.Fonts->AddFontFromFileTTF("assets/fonts/inter/Inter.ttf", fontSize, &cfg, io.Fonts->GetGlyphRangesCyrillic());
 }

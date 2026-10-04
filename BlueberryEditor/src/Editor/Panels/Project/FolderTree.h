@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Blueberry\Core\Base.h"
+#include "Blueberry\Core\Guid.h"
 #include <filesystem>
 
 namespace Blueberry
@@ -9,7 +10,8 @@ namespace Blueberry
 	{
 		String name;
 		std::filesystem::path path;
-		List<FolderTreeNode> children;
+		Guid guid;
+		int depth = 0;
 	};
 
 	class FolderTree
@@ -17,13 +19,13 @@ namespace Blueberry
 	public:
 		FolderTree() = default;
 
-		const FolderTreeNode& GetRoot();
-		void Update(const String& root);
+		List<FolderTreeNode>& GetNodes();
+		void Update(const std::filesystem::path& rootPath);
 
 	private:
-		void Populate(FolderTreeNode* parent);
+		void Populate(const std::filesystem::path& parentPath, int depth);
 
 	private:
-		FolderTreeNode m_Root;
+		List<FolderTreeNode> m_Nodes;
 	};
 }

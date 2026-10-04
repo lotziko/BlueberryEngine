@@ -41,6 +41,7 @@ namespace ImGui
 
 	struct EditorStyle
 	{
+		float ProjectTopPanelSize;
 		float ProjectBottomPanelSize;
 		float ProjectCellSize;
 		float ProjectSpaceBetweenCells;

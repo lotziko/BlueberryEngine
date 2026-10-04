@@ -21,9 +21,17 @@ namespace Blueberry
 		void OnEntityDestroy();
 
 	private:
+		struct ComponentEditorData
+		{
+			ObjectId id;
+			String name;
+			String displayName;
+			ObjectEditor* editor;
+		};
+
 		SerializedProperty m_IsActiveProperty;
 		SerializedProperty m_ComponentsProperty;
-		List<std::pair<ObjectId, ObjectEditor*>> m_ComponentsEditors;
+		List<ComponentEditorData> m_ComponentsEditors;
 		List<std::pair<Entity*, Component*>> m_AddedComponents;
 		List<Component*> m_RemovedComponents;
 	};

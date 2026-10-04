@@ -8,9 +8,8 @@ namespace Blueberry
 {
 	class PrefabInstance;
 	class Entity;
+	class Component;
 	class Transform;
-	class Scene;
-	class Serializer;
 
 	class PrefabManager
 	{
@@ -31,6 +30,8 @@ namespace Blueberry
 		static const bool HasModification(Object* object, const String& path);
 		static void SetParent(Entity* entity, Transform* parent);
 		static void RemoveParent(Entity* entity);
+		static void AddComponent(Entity* entity, Component* component);
+		static void RemoveComponent(Component* component);
 		static bool IsPrefabChild(Entity* entity);
 		static bool IsOverridable(Object* object);
 

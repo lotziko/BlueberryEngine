@@ -15,6 +15,7 @@ namespace Blueberry
 		DEFINE_FIELD(SpriteRenderer, m_Texture, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Texture::Type))
 		DEFINE_FIELD(SpriteRenderer, m_Material, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Material::Type))
 		DEFINE_FIELD(SpriteRenderer, m_SortingOrder, BindingType::Int, FieldOptions())
+		DEFINE_ADD_COMPONENT_MENU("Rendering/Sprite Renderer")
 	}
 
 	const AABB& SpriteRenderer::GetBounds()

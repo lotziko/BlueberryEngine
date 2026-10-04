@@ -15,6 +15,7 @@ namespace Blueberry
 		DEFINE_FIELD(ReflectionProbe, m_AtlasIndex, BindingType::Uint, FieldOptions().SetSerializationFlags(SerializationFlags::RuntimeOnly))
 		DEFINE_ITERATOR(ReflectionProbe)
 		DEFINE_EXECUTE_ALWAYS()
+		DEFINE_ADD_COMPONENT_MENU("Rendering/Reflection Probe")
 	}
 
 	ReflectionProbeType ReflectionProbe::GetType()

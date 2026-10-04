@@ -1280,7 +1280,7 @@ namespace Blueberry
 		{
 			Transform* transform = light->GetTransform();
 			LightType type = light->GetType();
-			Color color = light->GetColor();
+			Color color = Math::ToLinear(light->GetColor());
 			float intensity = light->GetIntensity();
 
 			if (type == LightType::Point)

@@ -47,7 +47,20 @@ namespace Blueberry
 					}
 				}
 			}
-			else if (path[i] == '.' || i == path.size() - 1)
+			else if (path[i] == '.')
+			{
+				String name = path.substr(offset, i - offset);
+				const ClassInfo* classInfo = ClassDB::GetInfo(type);
+				result.fieldInfo = classInfo->GetField(name);
+				if (result.fieldInfo == nullptr)
+				{
+					return {};
+				}
+				result.context += result.fieldInfo->offset;
+				type = *result.fieldInfo->options.objectType;
+				offset = i + 1;
+			}
+			else if (i == path.size() - 1)
 			{
 				size_t length = (i < path.size() - 1 ? i : path.size()) - offset;
 				if (length > 0)

@@ -18,6 +18,7 @@ namespace Blueberry
 		DEFINE_FIELD(MeshRenderer, m_LightmapChartOffset, BindingType::Uint, FieldOptions().SetVisibility(VisibilityType::Hidden).SetSerializationFlags(SerializationFlags::RuntimeOnly))
 		DEFINE_ITERATOR(MeshRenderer)
 		DEFINE_EXECUTE_ALWAYS()
+		DEFINE_ADD_COMPONENT_MENU("Rendering/Mesh Renderer")
 	}
 
 	void MeshRenderer::OnEnable()

@@ -19,6 +19,7 @@ namespace Blueberry
 		DEFINE_BASE_FIELDS(PhysicsBody, Component)
 		DEFINE_FIELD(PhysicsBody, m_IsKinematic, BindingType::Bool, FieldOptions())
 		DEFINE_ITERATOR(UpdatableComponent)
+		DEFINE_ADD_COMPONENT_MENU("Physics/Physics Body")
 	}
 
 	struct PhysicsBody::PrivateData

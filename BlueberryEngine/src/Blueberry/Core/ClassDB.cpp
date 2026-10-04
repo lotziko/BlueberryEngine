@@ -102,6 +102,11 @@ namespace Blueberry
 		s_CurrentClassInfo.executeAlways = true;
 	}
 
+	void ClassDB::DefineAddComponentMenu(const String& path)
+	{
+		s_CurrentClassInfo.addComponentMenuPath = path;
+	}
+
 	TypeId ClassDB::GetOrCreateTypeId(const String& name)
 	{
 		static TypeId maxId = 0;

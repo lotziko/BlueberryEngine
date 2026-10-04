@@ -23,6 +23,7 @@ namespace Blueberry
 		static TextureCubeArray* GetBlackCubeArray();
 		static Texture3D* GetWhite3D();
 		static Texture3D* GetBlack3D();
+		static Texture2D* GetWhiteInt2D();
 
 	private:
 		static Texture2D* s_WhiteTexture2D;
@@ -33,5 +34,6 @@ namespace Blueberry
 		static TextureCubeArray* s_BlackTextureCubeArray;
 		static Texture3D* s_WhiteTexture3D;
 		static Texture3D* s_BlackTexture3D;
+		static Texture2D* s_WhiteIntTexture2D;
 	};
 }

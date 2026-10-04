@@ -7,6 +7,7 @@
 namespace Blueberry
 {
 	class Entity;
+	class Component;
 	class Transform;
 
 	class PrefabModificationData : public Data
@@ -49,6 +50,20 @@ namespace Blueberry
 		int32_t m_Index;
 	};
 
+	class PrefabAddedComponentData
+	{
+	public:
+		Entity* GetEntity();
+		void SetEntity(Entity* entity);
+
+		Component* GetComponent();
+		void SetComponent(Component* component);
+
+	private:
+		ObjectPtr<Entity> m_Entity;
+		ObjectPtr<Component> m_Component;
+	};
+
 	class PrefabInstance : public Object
 	{
 		OBJECT_DECLARATION(PrefabInstance)
@@ -75,6 +90,7 @@ namespace Blueberry
 		ObjectPtr<Transform> m_Parent;
 		List<PrefabModificationData> m_Modifications;
 		List<PrefabAddedEntityData> m_AddedEntities;
+		List<PrefabAddedComponentData> m_AddedComponents;	// Runtime only
 
 		ObjectPtr<Entity> m_Entity;
 		uint32_t m_UpdateCount = 0;

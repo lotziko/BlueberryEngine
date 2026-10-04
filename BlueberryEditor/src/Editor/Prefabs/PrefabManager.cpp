@@ -78,12 +78,105 @@ namespace Blueberry
 
 	PrefabInstance* PrefabManager::CloneInstance(PrefabInstance* source)
 	{
+		ObjectMapping sourceToClone;
+		HashSet<ObjectId> removed;
+
+		Entity* instanceEntity = static_cast<Entity*>(ObjectCloner::Resolve(sourceToClone, removed, source->GetEntity()));
 		PrefabInstance* instance = Object::Create<PrefabInstance>();
 		instance->m_SourcePrefab = source->m_SourcePrefab;
+		instance->m_Entity = instanceEntity;
 		instance->m_Modifications = source->m_Modifications;
 		instance->m_UpdateCount = source->m_UpdateCount;
-		// TODO added instances and components
-		InitializeHierarchy(instance);
+
+		// Only prefab-backed objects belong in this mapping.
+		for (auto& pair : source->m_PrefabToInstanceMapping)
+		{
+			auto it = sourceToClone.find(pair.second);
+			if (it == sourceToClone.end())
+			{
+				continue;
+			}
+
+			instance->m_PrefabToInstanceMapping.insert_or_assign(pair.first, it->second);
+		}
+
+		auto findClone = [&](Object* object) -> Object*
+		{
+			if (object == nullptr)
+			{
+				return nullptr;
+			}
+
+			auto it = sourceToClone.find(object->GetObjectId());
+			return it != sourceToClone.end() ? ObjectDB::GetObject(it->second) : nullptr;
+		};
+
+		for (auto& addedEntity : source->m_AddedEntities)
+		{
+			Entity* entity = addedEntity.GetEntity();
+			Entity* clonedEntity = static_cast<Entity*>(findClone(entity));
+			Transform* clonedParent = static_cast<Transform*>(findClone(addedEntity.GetParent()));
+
+			if (clonedEntity == nullptr || clonedParent == nullptr)
+			{
+				continue;
+			}
+
+			PrefabAddedEntityData data = {};
+			data.SetEntity(clonedEntity);
+			data.SetParent(clonedParent);
+			data.SetIndex(static_cast<int32_t>(entity->GetTransform()->GetSiblingIndex()));
+			instance->m_AddedEntities.push_back(data);
+		}
+
+		for (auto& addedComponent : source->m_AddedComponents)
+		{
+			Entity* entity = static_cast<Entity*>(findClone(addedComponent.GetEntity()));
+			Component* component = static_cast<Component*>(findClone(addedComponent.GetComponent()));
+
+			if (entity == nullptr || component == nullptr)
+			{
+				continue;
+			}
+
+			PrefabAddedComponentData data = {};
+			data.SetEntity(entity);
+			data.SetComponent(component);
+			instance->m_AddedComponents.push_back(data);
+		}
+		
+		for (auto& modification : instance->m_Modifications)
+		{
+			auto* reference = std::get_if<ObjectPtr<Object>>(&modification.GetValue());
+			if (reference != nullptr)
+			{
+				Object* clone = findClone(reference->Get());
+				if (clone != nullptr)
+				{
+					*reference = clone;
+				}
+			}
+		}
+
+		ObjectId instanceObjectId = instance->GetObjectId();
+		s_RootToPrefabInstance.insert_or_assign(instanceEntity->GetObjectId(), instanceObjectId);
+		for (auto& pair : instance->m_PrefabToInstanceMapping)
+		{
+			FileId fileId = ObjectDB::GetFileIdFromObjectId(pair.first);
+			s_ObjectToPrefabInstance.insert_or_assign(pair.second, instanceObjectId);
+			s_ObjectToPrefabObject.insert_or_assign(pair.second, pair.first);
+			instance->m_FileIdToObject.insert_or_assign(fileId, pair.second);
+		}
+
+		Transform* instanceTransform = instanceEntity->GetTransform();
+		const ClassInfo* classInfo = ClassDB::GetInfo(Transform::Type);
+		classInfo->GetField("m_Parent")->Set(instanceTransform, instance->m_Parent);
+
+		for (auto& pair : instance->m_PrefabToInstanceMapping)
+		{
+			instance->m_InstanceToPrefabMapping.insert_or_assign(pair.second, pair.first);
+		}
+
 		return instance;
 	}
 
@@ -184,6 +277,15 @@ namespace Blueberry
 				instance->m_Modifications.erase(it);
 				Variant value;
 				ObjectHelper::ReadValue(prefabObject, path, value);
+				auto* objectRef = std::get_if<ObjectPtr<Object>>(&value);
+				if (objectRef != nullptr && objectRef->IsValid())
+				{
+					auto mappingIt = instance->m_PrefabToInstanceMapping.find(objectRef->Get()->GetObjectId());
+					if (mappingIt != instance->m_PrefabToInstanceMapping.end())
+					{
+						*objectRef = ObjectDB::GetObject(mappingIt->second);
+					}
+				}
 				ObjectHelper::WriteValue(object, path, value);
 				break;
 			}
@@ -242,6 +344,33 @@ namespace Blueberry
 		}
 	}
 
+	void PrefabManager::AddComponent(Entity* entity, Component* component)
+	{
+		PrefabInstance* instance = GetInstance(entity);
+		if (instance != nullptr && instance->HasSource())
+		{
+			PrefabAddedComponentData addedComponent = {};
+			addedComponent.SetEntity(entity);
+			addedComponent.SetComponent(component);
+			instance->m_AddedComponents.push_back(addedComponent);
+		}
+	}
+
+	void PrefabManager::RemoveComponent(Component* component)
+	{
+		Entity* entity = component->GetEntity();
+		PrefabInstance* instance = GetInstance(entity);
+
+		for (auto it = instance->m_AddedComponents.begin(); it != instance->m_AddedComponents.end(); ++it)
+		{
+			if (it->GetEntity() == entity && it->GetComponent() == component)
+			{
+				instance->m_AddedComponents.erase(it);
+				return;
+			}
+		}
+	}
+
 	bool PrefabManager::IsPrefabChild(Entity* entity)
 	{
 		return IsPartOfPrefabInstance(entity->GetTransform()->GetParent());
@@ -268,32 +397,74 @@ namespace Blueberry
 			Entity* assetEntity = static_cast<Entity*>(ObjectDB::GetObjectFromGuid(guid, importer->GetMainObject()));
 			if (assetEntity != nullptr)
 			{
-				List<ObjectId> removed;
-				Entity* entity = static_cast<Entity*>(ObjectCloner::Resolve(instance->m_PrefabToInstanceMapping, removed, assetEntity));
-				Transform* transform = entity->GetTransform();
-				instance->m_Entity = entity;
-				s_RootToPrefabInstance.insert_or_assign(entity->GetObjectId(), instanceObjectId);
+				HashSet<ObjectId> removed;
+				Entity* instanceEntity = static_cast<Entity*>(ObjectCloner::Resolve(instance->m_PrefabToInstanceMapping, removed, assetEntity));
+				Transform* instanceTransform = instanceEntity->GetTransform();
+				instance->m_Entity = instanceEntity;
+				s_RootToPrefabInstance.insert_or_assign(instanceEntity->GetObjectId(), instanceObjectId);
 				for (auto& pair : instance->m_PrefabToInstanceMapping)
 				{
 					FileId fileId = ObjectDB::GetFileIdFromObjectId(pair.first);
-					Object* object = ObjectDB::GetObject(pair.first);
 					s_ObjectToPrefabInstance.insert_or_assign(pair.second, instanceObjectId);
 					s_ObjectToPrefabObject.insert_or_assign(pair.second, pair.first);
 					instance->m_FileIdToObject.insert_or_assign(fileId, pair.second);
 				}
+				
+				// Remove mappings/objects
 				for (ObjectId id : removed)
 				{
+					instance->m_InstanceToPrefabMapping.erase(id);
+					auto it = s_ObjectToPrefabInstance.find(id);
+					if (it != s_ObjectToPrefabInstance.end() && it->second == instanceObjectId)
+					{
+						s_ObjectToPrefabInstance.erase(it);
+						s_ObjectToPrefabObject.erase(id);
+					}
+					for (auto& pair : instance->m_FileIdToObject)
+					{
+						if (pair.second == id)
+						{
+							instance->m_FileIdToObject.erase(pair.first);
+							break;
+						}
+					}
+
 					Object* object = ObjectDB::GetObject(id);
 					if (object != nullptr)
 					{
 						if (object->IsClassType(Entity::Type))
 						{
+							// Destroy PrefabInstance of erased root
+							auto rootIt = s_RootToPrefabInstance.find(id);
+							if (rootIt != s_RootToPrefabInstance.end())
+							{
+								const ObjectId prefabInstanceId = rootIt->second;
+								s_RootToPrefabInstance.erase(rootIt);
+								if (prefabInstanceId != instanceObjectId)
+								{
+									PrefabInstance* nestedInstance = static_cast<PrefabInstance*>(ObjectDB::GetObject(prefabInstanceId));
+									if (nestedInstance != nullptr)
+									{
+										Entity* nestedRoot = nestedInstance->GetEntity();
+										if (nestedRoot == nullptr || nestedRoot->GetObjectId() == id)
+										{
+											Object::Destroy(nestedInstance);
+										}
+									}
+								}
+							}
+
 							Entity* entity = static_cast<Entity*>(object);
 							Scene* scene = entity->GetScene();
 							if (scene != nullptr)
 							{
 								scene->DestroyEntity(entity);
 							}
+						}
+						else if (object->IsClassType(Component::Type))
+						{
+							Component* component = static_cast<Component*>(object);
+							component->GetEntity()->RemoveComponent(component);
 						}
 						else
 						{
@@ -302,14 +473,47 @@ namespace Blueberry
 					}
 				}
 				const ClassInfo* classInfo = ClassDB::GetInfo(Transform::Type);
-				classInfo->GetField("m_Parent")->Set(transform, instance->m_Parent);
-				classInfo->GetField("m_Entity")->Set(transform, instance->m_Entity);
+				classInfo->GetField("m_Parent")->Set(instanceTransform, instance->m_Parent);
+				classInfo->GetField("m_Entity")->Set(instanceTransform, instance->m_Entity);
 
 				for (auto& pair : instance->m_PrefabToInstanceMapping)
 				{
 					instance->m_InstanceToPrefabMapping.insert_or_assign(pair.second, pair.first);
 				}
 
+				// Apply components
+				for (auto& addedComponent : instance->m_AddedComponents)
+				{
+					Entity* target = addedComponent.GetEntity();
+					Component* component = addedComponent.GetComponent();
+
+					if (target == nullptr || component == nullptr)
+					{
+						continue;
+					}
+
+					if (removed.count(target->GetObjectId()) > 0)
+					{
+						continue;
+					}
+
+					bool attached = false;
+					for (size_t i = 0; i < target->GetComponentCount(); ++i)
+					{
+						if (target->GetComponentAt(i) == component)
+						{
+							attached = true;
+							break;
+						}
+					}
+
+					if (!attached)
+					{
+						target->AddComponent(component);
+					}
+				}
+
+				// Apply modifications
 				for (auto& modification : instance->m_Modifications)
 				{
 					Object* target = modification.GetTarget();
@@ -325,7 +529,40 @@ namespace Blueberry
 						}
 					}
 				}
-				entity->UpdateHierarchy();
+
+				// Apply entities
+				if (!instance->m_AddedEntities.empty())
+				{
+					List<PrefabAddedEntityData> addedEntities = instance->m_AddedEntities;
+					std::sort(addedEntities.begin(), addedEntities.end(), [](PrefabAddedEntityData& a, PrefabAddedEntityData& b) { return a.GetIndex() < b.GetIndex(); });
+					for (auto& addedEntity : addedEntities)
+					{
+						Entity* entity = addedEntity.GetEntity();
+						Transform* parent = addedEntity.GetParent();
+
+						if (entity == nullptr || parent == nullptr || removed.count(entity->GetObjectId()) > 0 || removed.count(parent->GetObjectId()) > 0)
+						{
+							continue;
+						}
+
+						Transform* transform = entity->GetTransform();
+						if (transform == nullptr)
+						{
+							continue;
+						}
+						classInfo->GetField("m_Parent")->Set(transform, ObjectPtr<Transform>());
+						transform->SetParent(parent, false);
+						const size_t index = static_cast<size_t>(std::max(addedEntity.GetIndex(), 0));
+						transform->SetSiblingIndex(std::min(index, parent->GetChildrenCount() - 1));
+
+						Scene* scene = parent->GetScene();
+						if (scene != nullptr)
+						{
+							scene->AddEntity(entity);
+						}
+					}
+				}
+				instanceEntity->UpdateHierarchy();
 			}
 			instance->m_UpdateCount = sourcePrefab->m_UpdateCount;
 		}

@@ -10,6 +10,7 @@ namespace Blueberry
 	class GfxTexture;
 	class Camera;
 	class ObjectUpdateEventArgs;
+	class Texture;
 
 	class SceneArea : public EditorWindow
 	{
@@ -88,5 +89,9 @@ namespace Blueberry
 		static uint32_t s_SceneRedrawRequestsCount;
 
 		Viewport m_Viewport;
+
+		Texture* m_ScenePositionIconSmall;
+		Texture* m_SceneRotationIconSmall;
+		Texture* m_SceneScaleIconSmall;
 	};
 }

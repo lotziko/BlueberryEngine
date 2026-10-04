@@ -29,6 +29,7 @@ namespace Blueberry
 		DEFINE_FIELD(CharacterController, m_Height, BindingType::Float, FieldOptions())
 		DEFINE_FIELD(CharacterController, m_Radius, BindingType::Float, FieldOptions())
 		DEFINE_ITERATOR(UpdatableComponent)
+		DEFINE_ADD_COMPONENT_MENU("Physics/Character Controller")
 	}
 
 	static JPH::EBackFaceMode s_BackFaceMode = JPH::EBackFaceMode::CollideWithBackFaces;

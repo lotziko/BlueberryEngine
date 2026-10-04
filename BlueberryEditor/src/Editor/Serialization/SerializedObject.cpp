@@ -122,16 +122,6 @@ namespace Blueberry
 		return s_ObjectUpdated;
 	}
 
-	String GetDisplayName(const String& name)
-	{
-		String displayName = name;
-		if (displayName.rfind("m_", 0) == 0)
-		{
-			displayName.replace(0, 2, "");
-		}
-		return displayName;
-	}
-
 	void CalculateMixedMask(PropertyTreeNode* node)
 	{
 		memset(node->mixedMask, 0, sizeof(node->mixedMask));
@@ -279,7 +269,7 @@ namespace Blueberry
 			size_t child = Allocate();
 			PropertyTreeNode* childNode = Get(child);
 			childNode->name = fieldInfo.name;
-			childNode->displayName = GetDisplayName(fieldInfo.name);
+			childNode->displayName = StringHelper::ToDisplayName(fieldInfo.name);
 			childNode->parent = parent;
 			childNode->index = i;
 			childNode->fieldInfo = &fieldInfo;

@@ -311,7 +311,16 @@ namespace Blueberry
 				{
 					m_ExpandedNodes.insert(entity->GetObjectId());
 					Transform* parent = entity->GetTransform();
-					for (Object* object : Selection::GetActiveObjects())
+					List<Object*> objectsToReparent;
+					if (Selection::IsActiveObject(object))
+					{
+						objectsToReparent = Selection::GetActiveObjects();
+					}
+					else
+					{
+						objectsToReparent.push_back(object);
+					}
+					for (Object* object : objectsToReparent)
 					{
 						if (object->GetType() == Entity::Type)
 						{
@@ -377,7 +386,7 @@ namespace Blueberry
 			else
 			{
 				bool isActive = entity->IsActiveInHierarchy();
-				static ImVec4 colors[3] = { ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ImVec4(0.0f, 1.0f, 0.0f, 1.0f), ImVec4(0.0f, 0.7f, 0.0f, 1.0f) };
+				static ImVec4 colors[3] = { ImGui::GetStyleColorVec4(ImGuiCol_Text), ImGui::GetStyleColorVec4(ImGuiCol_SeparatorActive), ImGui::GetStyleColorVec4(ImGuiCol_SeparatorActive) };
 				ImVec4 color = colors[node.type];
 				if (!isActive)
 				{
@@ -395,29 +404,37 @@ namespace Blueberry
 	{
 		if (ImGui::MenuItem("Create Empty"))
 		{
-			Entity* entity = EditorObjectManager::CreateEntity("Empty Entity");
-			m_RenamingEntity = entity;
-
 			Object* selectedObject = Selection::GetActiveObject();
 			if (selectedObject != nullptr && selectedObject->IsClassType(Entity::Type))
 			{
+				Entity* entity = EditorObjectManager::CreateEntity("Empty Entity");
+				m_RenamingEntity = entity;
+
 				Entity* selectedEntity = static_cast<Entity*>(selectedObject);
-				entity->GetTransform()->SetParent(selectedEntity->GetTransform());
+				Transform* parent = selectedEntity->GetTransform();
+				if (PrefabManager::IsPartOfPrefabInstance(parent))
+				{
+					PrefabManager::SetParent(entity, parent);
+				}
+				entity->GetTransform()->SetParent(parent);
 				m_ExpandedNodes.insert(selectedEntity->GetObjectId());
 			}
 		}
 		if (ImGui::MenuItem("Create Empty Parent"))
 		{
-			Entity* entity = EditorObjectManager::CreateEntity("Empty Entity");
-			m_RenamingEntity = entity;
-
 			Object* selectedObject = Selection::GetActiveObject();
 			if (selectedObject != nullptr && selectedObject->IsClassType(Entity::Type))
 			{
 				Entity* selectedEntity = static_cast<Entity*>(selectedObject);
-				entity->GetTransform()->SetSiblingIndex(selectedEntity->GetTransform()->GetSiblingIndex());
-				selectedEntity->GetTransform()->SetParent(entity->GetTransform());
-				m_ExpandedNodes.insert(entity->GetObjectId());
+				if (!PrefabManager::IsPartOfPrefabInstance(selectedEntity))
+				{
+					Entity* entity = EditorObjectManager::CreateEntity("Empty Entity");
+					m_RenamingEntity = entity;
+
+					entity->GetTransform()->SetSiblingIndex(selectedEntity->GetTransform()->GetSiblingIndex());
+					selectedEntity->GetTransform()->SetParent(entity->GetTransform());
+					m_ExpandedNodes.insert(entity->GetObjectId());
+				}
 			}
 		}
 	}
@@ -492,11 +509,11 @@ namespace Blueberry
 			{
 				Entity* entity = static_cast<Entity*>(object);
 				ObjectId id = entity->GetObjectId();
-				if (entity->GetScene() == m_CurrentScene && m_ExpandedNodes.count(id) == 0)
+				if (entity->GetScene() == m_CurrentScene)
 				{
 					List<TransformTreeNode>& nodes = m_TransformTree.GetNodes();
 					size_t size = nodes.size();
-					for (size_t i = 1; i < size; ++i)
+					for (size_t i = 0; i < size; ++i)
 					{
 						const TransformTreeNode& node = nodes[i];
 						if (node.entity == entity)
@@ -517,6 +534,7 @@ namespace Blueberry
 									break;
 								}
 							}
+							break;
 						}
 					}
 				}

@@ -23,5 +23,6 @@ namespace Blueberry
 		static String WideToString(const WString& wstr);
 		static String ToString(const std::filesystem::path& path);
 		static String ToGenericString(const std::filesystem::path& path);
+		static String ToDisplayName(const String& str);
 	};
 }

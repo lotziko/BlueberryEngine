@@ -176,9 +176,9 @@ namespace Blueberry
 				fileIdIt->second.erase(guidIt->second.second);
 			}
 			s_ObjectIdToGuid.erase(id);
-			s_ObjectIdToFileId.erase(id);
 		}
 		objectItem->object = nullptr;
+		s_ObjectIdToFileId.erase(id);
 	}
 
 	bool ObjectDB::IsValid(Object* object)

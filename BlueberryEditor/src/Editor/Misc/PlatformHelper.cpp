@@ -244,7 +244,7 @@ namespace Blueberry
 			0,
 			L"STATIC",
 			L"Test",
-			WS_CHILD | WS_VISIBLE | SS_LEFT,
+			WS_CHILD | WS_VISIBLE | SS_LEFT | SS_ENDELLIPSIS,
 			20, 80, 480, 20,
 			windowHandle,
 			nullptr,

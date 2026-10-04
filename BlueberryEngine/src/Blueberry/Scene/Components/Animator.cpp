@@ -14,6 +14,7 @@ namespace Blueberry
 		DEFINE_BASE_FIELDS(Animator, Component)
 		DEFINE_FIELD(Animator, m_AnimationGraph, BindingType::ObjectPtr, FieldOptions().SetObjectType(&AnimationGraph::Type).SetUpdateCallback(MethodBind::Create(&Animator::Initialize)))
 		DEFINE_ITERATOR(UpdatableComponent)
+		DEFINE_ADD_COMPONENT_MENU("Miscellaneous/Animator")
 	}
 
 	void GatherBones(Dictionary<String, Transform*>& bones, Transform* parent)

@@ -65,7 +65,7 @@ namespace Blueberry
 		ImGui::BeginChild("Header", ImVec2(0, headerHeight), ImGuiChildFlags_AlwaysUseWindowPadding);
 		ImGui::Text("Projects");
 		ImGui::SameLine(ImGui::GetWindowWidth() - 120);
-		if (ImGui::Button("Open Project", ImVec2(110, 32)))
+		if (ImGui::Button("Open Project", ImVec2(0, 32)))
 		{
 			String path = PlatformHelper::OpenFileDialog();
 			if (path.size() > 0)

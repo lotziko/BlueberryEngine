@@ -12,7 +12,7 @@ namespace Blueberry
 	{
 	public:
 		static Object* Clone(Object* object);
-		static Object* Resolve(ObjectMapping& mapping, List<ObjectId>& removed, Object* object);
+		static Object* Resolve(ObjectMapping& mapping, HashSet<ObjectId>& removed, Object* object);
 
 	private:
 		static void CopyFields(ObjectMapping& mapping, void* source, void* target, const ClassInfo* info);

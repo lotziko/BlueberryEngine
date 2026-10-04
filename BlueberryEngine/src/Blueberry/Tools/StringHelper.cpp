@@ -105,4 +105,31 @@ namespace Blueberry
 	{
 		return path.generic_string<char, std::char_traits<char>, STLAllocator<char>>(STLAllocator<char>());
 	}
+	
+	String StringHelper::ToDisplayName(const String& str)
+	{
+		String result;
+		result.reserve(str.size());
+		size_t start = StartsWith(str, "m_") ? 2 : 0;
+		for (size_t i = start; i < str.size(); ++i)
+		{
+			unsigned char current = static_cast<unsigned char>(str[i]);
+
+			if (i > start && std::isupper(current))
+			{
+				const unsigned char previous = static_cast<unsigned char>(str[i - 1]);
+				const unsigned char next = i + 1 < str.size() ? static_cast<unsigned char>(str[i + 1]) : 0;
+
+				const bool wordStart = std::islower(previous) || std::isdigit(previous);
+				const bool acronymEnd =	std::isupper(previous) && std::islower(next);
+
+				if (wordStart || acronymEnd)
+				{
+					result.push_back(' ');
+				}
+			}
+			result.push_back(static_cast<char>(i == start ? std::toupper(current) : current));
+		}
+		return result;
+	}
 }

@@ -63,6 +63,11 @@ namespace Blueberry
 	{
 		WaitForSingleObjectEx(m_FrameLatencyWaitHandle, 16, TRUE);
 		FrameContext& frameContext = m_FrameContexts[m_FrameIndex];
+		if (m_Fence->GetCompletedValue() < frameContext.fenceValue)
+		{
+			m_Fence->SetEventOnCompletion(frameContext.fenceValue, m_FenceEvent);
+			WaitForSingleObjectEx(m_FenceEvent, INFINITE, FALSE);
+		}
 		frameContext.commandAllocator->Reset();
 		m_CommandList->Reset(frameContext.commandAllocator.Get(), nullptr);
 		ResizeBackbufferIfNeeded();
@@ -86,13 +91,6 @@ namespace Blueberry
 		UINT64 fenceValue = ++m_FenceLastSignaledValue;
 		m_CommandQueue->Signal(m_Fence.Get(), fenceValue);
 		m_BackbufferIndex = m_SwapChain->GetCurrentBackBufferIndex();
-
-		UINT64 completedFenceValue = m_Fence->GetCompletedValue();
-		if (completedFenceValue < m_FrameContexts[m_FrameIndex].fenceValue)
-		{
-			m_Fence->SetEventOnCompletion(m_FrameContexts[m_FrameIndex].fenceValue, m_FenceEvent);
-			WaitForSingleObjectEx(m_FenceEvent, INFINITE, FALSE);
-		}
 
 		if (m_ReleasedResources.size() > 0)
 		{

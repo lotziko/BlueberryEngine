@@ -91,20 +91,45 @@ namespace Blueberry
 		m_Index = index;
 	}
 
+	Entity* PrefabAddedComponentData::GetEntity()
+	{
+		return m_Entity.Get();
+	}
+
+	void PrefabAddedComponentData::SetEntity(Entity* entity)
+	{
+		m_Entity = entity;
+	}
+
+	Component* PrefabAddedComponentData::GetComponent()
+	{
+		return m_Component.Get();
+	}
+
+	void PrefabAddedComponentData::SetComponent(Component* component)
+	{
+		m_Component = component;
+	}
+
 	PrefabInstance::~PrefabInstance()
 	{
 		for (auto& pair : m_PrefabToInstanceMapping)
 		{
-			// This breaks nested root too
-			// Need to rethink them
-			PrefabManager::s_ObjectToPrefabInstance.erase(pair.second);
-			PrefabManager::s_ObjectToPrefabObject.erase(pair.second);
+			auto it = PrefabManager::s_ObjectToPrefabInstance.find(pair.second);
+			if (it != PrefabManager::s_ObjectToPrefabInstance.end() &&	it->second == m_ObjectId)
+			{
+				PrefabManager::s_ObjectToPrefabInstance.erase(it);
+				PrefabManager::s_ObjectToPrefabObject.erase(pair.second);
+			}
 		}
 
 		if (m_Entity.IsValid())
 		{
-			PrefabManager::s_RootToPrefabInstance.erase(m_Entity->GetObjectId());
-			//Object::Destroy(m_Entity.Get());
+			auto it = PrefabManager::s_RootToPrefabInstance.find(m_Entity->GetObjectId());
+			if (it != PrefabManager::s_RootToPrefabInstance.end() && it->second == m_ObjectId)
+			{
+				PrefabManager::s_RootToPrefabInstance.erase(it);
+			}
 		}
 	}
 

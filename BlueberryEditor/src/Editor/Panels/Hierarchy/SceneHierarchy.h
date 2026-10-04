@@ -38,8 +38,8 @@ namespace Blueberry
 
 		void OnSelectionChange();
 
-		Scene* m_CurrentScene;
-		Entity* m_RenamingEntity;
+		Scene* m_CurrentScene = nullptr;
+		Entity* m_RenamingEntity = nullptr;
 		TransformTree m_TransformTree;
 		size_t m_LastClickedItem = UINT64_MAX;
 		HashSet<ObjectId> m_ExpandedNodes;

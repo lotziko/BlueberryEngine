@@ -38,8 +38,8 @@ namespace Blueberry
 	{
 		m_CurrentDirectory = Path::GetAssetsPath();
 
-		m_FolderIconSmall = static_cast<Texture2D*>(AssetLoader::Load("assets/icons/FolderIconSmall.png"));
-		m_FolderIconSmallOpened = static_cast<Texture2D*>(AssetLoader::Load("assets/icons/FolderIconSmallOpened.png"));
+		m_FolderIconSmall = static_cast<Texture*>(AssetLoader::Load("assets/icons/FolderIconSmall.png"));
+		m_FolderIconSmallOpened = static_cast<Texture*>(AssetLoader::Load("assets/icons/FolderIconSmallOpened.png"));
 		
 		UpdateTree();
 		AssetDB::GetAssetDBRefreshed().AddCallback<ProjectBrowser, &ProjectBrowser::OnAssetDBRefresh>(this);
@@ -59,7 +59,36 @@ namespace Blueberry
 		window->Show();
 	}
 
-	bool wasInit = false;
+	void ProjectBrowser::ShowObject(Object* object)
+	{
+		ProjectBrowser* browser = static_cast<ProjectBrowser*>(EditorWindow::GetWindow(ProjectBrowser::Type));
+		String relativePath = AssetDB::GetRelativeAssetPath(object);
+		std::filesystem::path dataPath = Path::GetAssetsPath();
+		dataPath.append(relativePath);
+		browser->m_CurrentDirectory = dataPath.parent_path();
+		browser->UpdateFiles();
+
+		AssetImporter* importer = AssetDB::GetImporter(relativePath);
+		for (auto& asset : browser->m_CurrentDirectoryAssets)
+		{
+			if (asset.importer == importer)
+			{
+				Object* target = asset.importer;
+				for (size_t i = 1; i < asset.objects.size(); ++i)
+				{
+					if (asset.objects[i].Get() == object)
+					{
+						InspectorExpandedItemsCache::Set(asset.pathString, true);
+						target = object;
+						break;
+					}
+				}
+				browser->m_ScrollRequest = target;
+				browser->m_PingRequest = target;
+				browser->m_PingStartTime = -1.0f;
+			}
+		}
+	}
 
 	void ProjectBrowser::OnDrawUI()
 	{
@@ -70,10 +99,10 @@ namespace Blueberry
 		DrawFoldersTree();
 		ImGui::EndChild();
 
-		ImGui::SameLine();
+		ImGui::SameLine(0.0f, 1.0f);
 		ImGui::HorizontalSplitter("##FolderHorizontalSplitter", &m_FoldersColumnWidth, 200);
 
-		ImGui::SameLine();
+		ImGui::SameLine(0.0f, 1.0f);
 		ImGui::BeginChild("##CurrentFolderColumn", ImVec2(0, ImGui::GetContentRegionAvail().y - 2));
 		DrawCurrentFolder();
 		ImGui::EndChild();
@@ -81,37 +110,74 @@ namespace Blueberry
 
 	void ProjectBrowser::DrawFoldersTree()
 	{
-		DrawFolderNode(m_FolderTree.GetRoot());
-	}
-
-	void ProjectBrowser::DrawFolderNode(const FolderTreeNode& node)
-	{
 		ImGui::EditorStyle& style = ImGui::GetEditorStyle();
+		List<FolderTreeNode>& nodes = m_FolderTree.GetNodes();
+		size_t size = nodes.size();
+		int currentDepth = 0;
 
-		ImGuiTreeNodeFlags flags = (node.children.size() > 0 ? ImGuiTreeNodeFlags_OpenOnArrow : ImGuiTreeNodeFlags_Leaf) | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_SpanFullWidth;
-		ImVec2 pos = ImGui::GetCursorScreenPos();
-		const char* label = node.name.c_str();
-		bool opened = ImGui::TreeNodeEx(label, flags, "");
-
-		if (!ImGui::IsItemToggledOpen() && ImGui::IsItemClicked())
+		for (size_t i = 0; i < size; ++i)
 		{
-			m_CurrentDirectory = node.path;
+			FolderTreeNode& node = nodes[i];
+			if (node.depth > currentDepth)
+			{
+				continue;
+			}
+			while (currentDepth >= node.depth + 1)
+			{
+				ImGui::TreePop();
+				--currentDepth;
+			}
+
+			bool hasChildren = (i < size - 1 && nodes[i + 1].depth > node.depth);
+			bool isActive = m_CurrentDirectory == node.path;
+			ImGuiTreeNodeFlags flags = (hasChildren ? ImGuiTreeNodeFlags_OpenOnArrow : (ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen)) | (isActive ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_SpanFullWidth;
+			ImVec2 pos = ImGui::GetCursorScreenPos();
+			const char* label = node.name.c_str();
+
+			ImGui::SetNextItemOpen(m_ExpandedFolderNodes.count(node.guid));
+			bool opened = ImGui::TreeNodeEx(label, flags, "");
+			if (ImGui::IsItemToggledOpen())
+			{
+				if (opened)
+				{
+					m_ExpandedFolderNodes.insert(node.guid);
+				}
+				else
+				{
+					m_ExpandedFolderNodes.erase(node.guid);
+				}
+			}
+			else
+			{
+				if (ImGui::IsItemClicked(0))
+				{
+					m_CurrentDirectory = node.path;
+				}
+			}
+
+			if (m_FolderScrollRequest == i)
+			{
+				ImGui::ScrollToItem(ImGuiScrollFlags_KeepVisibleEdgeY);
+				m_FolderScrollRequest = UINT64_MAX;
+			}
+
+			ImGui::SameLine();
+			ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 4);
+			ImGui::Image(reinterpret_cast<ImTextureID>((opened && hasChildren) ? m_FolderIconSmallOpened->GetHandle() : m_FolderIconSmall->GetHandle()), ImVec2(style.ProjectFolderIconSize, style.ProjectFolderIconSize));
+			ImGui::SameLine();
+			ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 4);
+			ImGui::Text("%s", label);
+
+			if (hasChildren && opened)
+			{
+				++currentDepth;
+			}
 		}
 
-		ImGui::SameLine();
-		ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 4);
-		ImGui::Image(reinterpret_cast<ImTextureID>((opened && node.children.size() > 0) ? m_FolderIconSmallOpened->GetHandle() : m_FolderIconSmall->GetHandle()), ImVec2(style.ProjectFolderIconSize, style.ProjectFolderIconSize));
-		ImGui::SameLine();
-		ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 4);
-		ImGui::Text("%s", label);
-
-		if (opened)
+		while (currentDepth > 0)
 		{
-			for (auto& child : node.children)
-			{
-				DrawFolderNode(child);
-			}
 			ImGui::TreePop();
+			--currentDepth;
 		}
 	}
 
@@ -129,7 +195,64 @@ namespace Blueberry
 			UpdateFiles();
 		}
 
-		if (ImGui::BeginChild("Middle panel", ImVec2(size.x, size.y - style.ProjectBottomPanelSize)))
+		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 0.0f);
+		if (ImGui::BeginChild("Top panel", ImVec2(size.x, style.ProjectTopPanelSize), 0, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
+		{
+			std::filesystem::path root = Path::GetAssetsPath();
+			std::filesystem::path folder = m_CurrentDirectory;
+
+			List<std::filesystem::path> folders;
+			while (true)
+			{
+				folders.push_back(folder);
+				if (folder == root)
+				{
+					break;
+				}
+				folder = folder.parent_path();
+			}
+
+			ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
+			for (size_t i = folders.size(); i-- > 0;)
+			{
+				if (i != folders.size() - 1)
+				{
+					ImGui::SameLine();
+					ImGui::Text(">");
+					ImGui::SameLine();
+				}
+
+				String label = StringHelper::ToString(folders[i].filename());
+
+				if (i > 0)
+				{
+					ImGui::PushID(static_cast<int>(i));
+					bool clicked = ImGui::Button(label.c_str());
+					ImGui::PopID();
+
+					if (clicked)
+					{
+						m_CurrentDirectory = folders[i];
+						m_ScrollRequest = nullptr;
+						UpdateFiles();
+						ScrollToFolder(m_CurrentDirectory);
+						break;
+					}
+				}
+				else
+				{
+					ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetStyle().FramePadding.x);
+					ImGui::AlignTextToFramePadding();
+					ImGui::Text(label.c_str());
+				}
+			}
+			ImGui::PopStyleVar();
+		}
+		ImGui::EndChild();
+		ImGui::PopStyleVar();
+
+		ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyleColorVec4(ImGuiCol_MenuBarBg));
+		if (ImGui::BeginChild("Middle panel", ImVec2(size.x, size.y - style.ProjectTopPanelSize - style.ProjectBottomPanelSize - ImGui::GetStyle().ItemSpacing.y * 2)))
 		{
 			ImVec2 panelPos = ImGui::GetCursorPos();
 			uint32_t maxCells = static_cast<uint32_t>(floorf(size.x / (style.ProjectCellSize + style.ProjectSpaceBetweenCells)));
@@ -147,6 +270,10 @@ namespace Blueberry
 					{
 						expectedCursorPos.x += expandedSpaceBetweenCells;
 						asset.positions[i] = Vector2(expectedCursorPos.x, expectedCursorPos.y);
+						if (m_ScrollRequest != nullptr && (m_ScrollRequest == asset.importer || m_ScrollRequest == asset.objects[i].Get()))
+						{
+							scrollTarget = ImGui::GetCursorScreenPos() + ImVec2(expectedCursorPos.x, expectedCursorPos.y);
+						}
 						if (cellIndex + 1 < maxCells)
 						{
 							expectedCursorPos.x += style.ProjectCellSize;
@@ -157,11 +284,6 @@ namespace Blueberry
 							expectedCursorPos.y += style.ProjectCellSize + style.ProjectSpaceBetweenCells;
 							expectedCursorPos.x = 0;
 							cellIndex = 0;
-						}
-
-						if (m_ScrollRequest != nullptr && (m_ScrollRequest == asset.importer || m_ScrollRequest == asset.objects[i].Get()))
-						{
-							scrollTarget = ImGui::GetCursorScreenPos() + ImVec2(expectedCursorPos.x, expectedCursorPos.y);
 						}
 					}
 				}
@@ -246,6 +368,7 @@ namespace Blueberry
 				Selection::SetActiveObject(nullptr);
 			}
 		}
+		ImGui::PopStyleColor();
 
 		if (ImGui::BeginPopup(contextPopupId))
 		{
@@ -321,9 +444,8 @@ namespace Blueberry
 
 		ImGui::EndChild();
 
-		ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetStyleColorVec4(ImGuiCol_MenuBarBg));
 		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 0.0f);
-		if (ImGui::BeginChild("Bottom panel"))
+		if (ImGui::BeginChild("Bottom panel", ImVec2(size.x, style.ProjectBottomPanelSize), 0, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
 		{
 			String path = AssetDB::GetRelativeAssetPath(Selection::GetActiveObject());
 			if (path.size() > 0)
@@ -333,7 +455,6 @@ namespace Blueberry
 		}
 		ImGui::EndChild();
 		ImGui::PopStyleVar();
-		ImGui::PopStyleColor();
 
 		if (ImGui::IsKeyPressed(ImGuiKey_S) && ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
 		{
@@ -349,16 +470,16 @@ namespace Blueberry
 
 		ImGui::PushID(object->GetObjectId());
 		ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 1.0f));
-		
+
 		if (m_RenamingObject == object || asset.importer == nullptr)
 		{
 			ImGui::Dummy(ImVec2(style.ProjectCellSize, style.ProjectCellSize));
 		}
 		else
 		{
-			if (ImGui::Selectable(object->GetName().c_str(), Selection::IsActiveObject(object), ImGuiSelectableFlags_SelectOnRelease | ImGuiSelectableFlags_AllowDoubleClick, ImVec2(style.ProjectCellSize, style.ProjectCellSize)))
+			if (ImGui::Selectable(object->GetName().c_str(), Selection::IsActiveObject(object), 0, ImVec2(style.ProjectCellSize, style.ProjectCellSize)))
 			{
-				if (ImGui::IsMouseDoubleClicked(0))
+				if (ImGui::IsMouseReleased(0) && ImGui::GetIO().MouseClickedLastCount[0] == 2)
 				{
 					OpenAsset(asset);
 				}
@@ -394,6 +515,30 @@ namespace Blueberry
 			icon = IconDB::GetAssetIcon(iconObject);
 		}
 		ImGui::GetWindowDrawList()->AddImage(reinterpret_cast<ImTextureID>(icon->GetHandle()), ImVec2(screenPos.x + style.ProjectCellIconPadding, screenPos.y), ImVec2(screenPos.x + style.ProjectCellSize - style.ProjectCellIconPadding, screenPos.y + style.ProjectCellSize - style.ProjectCellIconPadding * 2));
+
+		if (m_PingRequest == object && ImGui::IsRectVisible(screenPos, screenPos + ImVec2(style.ProjectCellSize, style.ProjectCellSize)))
+		{
+			if (m_PingStartTime < 0.0)
+			{
+				m_PingStartTime = ImGui::GetTime();
+			}
+			float elapsed = static_cast<float>(ImGui::GetTime() - m_PingStartTime);
+			float duration = 1.0f;
+			if (elapsed < duration)
+			{
+				float fade = ImSaturate((duration - elapsed) / 0.5f);
+				float alpha = (0.7f + 0.3f * std::cos(elapsed * Math::Pi * 4)) * fade;
+				ImVec2 screenEndPos = screenPos + ImVec2(style.ProjectCellSize, style.ProjectCellSize);
+				ImDrawList* drawList = ImGui::GetWindowDrawList();
+				ImVec4 color = ImGui::GetStyleColorVec4(ImGuiCol_SeparatorActive);
+				drawList->AddRectFilled(screenPos, screenEndPos, ImGui::GetColorU32(ImVec4(color.x, color.y, color.z, 0.12f * alpha)), 3.0f);
+				drawList->AddRect(screenPos, screenEndPos, ImGui::GetColorU32(ImVec4(color.x, color.y, color.z, alpha)), 3.0f, 0, 2.0f);
+			}
+			else
+			{
+				m_PingRequest = nullptr;
+			}
+		}
 
 		if (m_RenamingObject == object)
 		{
@@ -473,6 +618,7 @@ namespace Blueberry
 		{
 			std::filesystem::path directoryPath = asset.importer->GetFilePath();
 			m_CurrentDirectory /= directoryPath.filename();
+			ScrollToFolder(m_CurrentDirectory);
 		}
 		else
 		{
@@ -605,28 +751,29 @@ namespace Blueberry
 		}
 	}
 
-	void ProjectBrowser::ShowObject(Object* object)
+	void ProjectBrowser::ScrollToFolder(const std::filesystem::path& path)
 	{
-		ProjectBrowser* browser = static_cast<ProjectBrowser*>(EditorWindow::GetWindow(ProjectBrowser::Type));
-		String relativePath = AssetDB::GetRelativeAssetPath(object);
-		std::filesystem::path dataPath = Path::GetAssetsPath();
-		dataPath.append(relativePath);
-		browser->m_CurrentDirectory = dataPath.parent_path();
-		browser->UpdateFiles();
-
-		AssetImporter* importer = AssetDB::GetImporter(relativePath);
-		for (auto& asset : browser->m_CurrentDirectoryAssets)
+		List<FolderTreeNode>& nodes = m_FolderTree.GetNodes();
+		for (size_t i = 0; i < nodes.size(); ++i)
 		{
-			if (asset.importer == importer)
+			const FolderTreeNode& node = nodes[i];
+			if (node.path == path)
 			{
-				if (asset.objects.size() > 1)
+				int currentDepth = node.depth;
+				m_FolderScrollRequest = i;
+				for (size_t j = i; j-- > 0;)
 				{
-					InspectorExpandedItemsCache::Set(asset.pathString, true);
-					browser->m_ScrollRequest = object;
-				}
-				else
-				{
-					browser->m_ScrollRequest = asset.importer;
+					const FolderTreeNode& currentNode = nodes[j];
+					int depth = currentNode.depth;
+					if (depth < currentDepth)
+					{
+						m_ExpandedFolderNodes.insert(currentNode.guid);
+						currentDepth = depth;
+					}
+					if (depth == 0)
+					{
+						break;
+					}
 				}
 				break;
 			}

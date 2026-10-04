@@ -18,6 +18,7 @@ namespace Blueberry
 	TextureCubeArray* DefaultTextures::s_BlackTextureCubeArray = nullptr;
 	Texture3D* DefaultTextures::s_WhiteTexture3D = nullptr;
 	Texture3D* DefaultTextures::s_BlackTexture3D = nullptr;
+	Texture2D* DefaultTextures::s_WhiteIntTexture2D = nullptr;
 
 	Texture* DefaultTextures::GetTexture(const String& name, TextureDimension dimension)
 	{
@@ -52,10 +53,7 @@ namespace Blueberry
 		{
 			const uint32_t size = 2;
 			uint8_t data[size * size * 4];
-			for (uint32_t i = 0; i < size * size * 4; i++)
-			{
-				data[i] = 255;
-			}
+			std::fill_n(data, size * size * 4, 255);
 
 			s_WhiteTexture2D = Texture2D::Create(size, size, 1, TextureFormat::R8G8B8A8_UNorm, WrapMode::Repeat, FilterMode::Point);
 			s_WhiteTexture2D->SetName("White");
@@ -71,11 +69,8 @@ namespace Blueberry
 		{
 			const uint32_t size = 2;
 			uint8_t data[size * size * 4];
-			for (uint32_t i = 0; i < size * size * 4; i++)
-			{
-				data[i] = 0;
-			}
-
+			std::fill_n(data, size * size * 4, 0);
+			
 			s_BlackTexture2D = Texture2D::Create(size, size, 1, TextureFormat::R8G8B8A8_UNorm, WrapMode::Repeat, FilterMode::Point);
 			s_BlackTexture2D->SetName("Black");
 			s_BlackTexture2D->SetData(data, size * size * 4);
@@ -112,10 +107,8 @@ namespace Blueberry
 		{
 			const uint32_t size = 6 * 4;
 			uint8_t data[size];
-			for (int i = 0; i < size; ++i)
-			{
-				data[i] = 255;
-			}
+			std::fill_n(data, size, 255);
+
 			s_WhiteTextureCube = TextureCube::Create(1, 1, 1, TextureFormat::R8G8B8A8_UNorm, WrapMode::Repeat, FilterMode::Point);
 			s_WhiteTextureCube->SetName("White");
 			s_WhiteTextureCube->SetData(data, size);
@@ -130,10 +123,8 @@ namespace Blueberry
 		{
 			const uint32_t size = 6 * 4;
 			uint8_t data[size];
-			for (int i = 0; i < size; ++i)
-			{
-				data[i] = 0;
-			}
+			std::fill_n(data, size, 0);
+
 			s_BlackTextureCube = TextureCube::Create(1, 1, 1, TextureFormat::R8G8B8A8_UNorm, WrapMode::Repeat, FilterMode::Point);
 			s_BlackTextureCube->SetName("Black");
 			s_BlackTextureCube->SetData(data, size);
@@ -148,10 +139,8 @@ namespace Blueberry
 		{
 			const uint32_t size = 6 * 4;
 			uint8_t data[size];
-			for (int i = 0; i < size; ++i)
-			{
-				data[i] = 0;
-			}
+			std::fill_n(data, size, 0);
+
 			s_BlackTextureCubeArray = TextureCubeArray::Create(1, 1, 1, 1, TextureFormat::R8G8B8A8_UNorm, WrapMode::Repeat, FilterMode::Point);
 			s_BlackTextureCubeArray->SetName("Black");
 			s_BlackTextureCubeArray->SetData(data, size);
@@ -166,10 +155,8 @@ namespace Blueberry
 		{
 			const uint32_t size = 4;
 			uint8_t data[size];
-			data[0] = 255;
-			data[1] = 255;
-			data[2] = 255;
-			data[3] = 255;
+			std::fill_n(data, size, 255);
+			
 			s_WhiteTexture3D = Texture3D::Create(1, 1, 1, TextureFormat::R8G8B8A8_UNorm, WrapMode::Clamp, FilterMode::Point);
 			s_WhiteTexture3D->SetName("White");
 			s_WhiteTexture3D->SetData(data, size);
@@ -188,11 +175,27 @@ namespace Blueberry
 			data[1] = 0;
 			data[2] = 0;
 			data[3] = 255;
+
 			s_BlackTexture3D = Texture3D::Create(1, 1, 1, TextureFormat::R8G8B8A8_UNorm, WrapMode::Clamp, FilterMode::Point);
 			s_BlackTexture3D->SetName("Black");
 			s_BlackTexture3D->SetData(data, size);
 			s_BlackTexture3D->Apply();
 		}
 		return s_BlackTexture3D;
+	}
+	Texture2D* DefaultTextures::GetWhiteInt2D()
+	{
+		if (s_WhiteIntTexture2D == nullptr)
+		{
+			const uint32_t size = 2;
+			uint32_t data[size * size];
+			std::fill_n(data, size * size, 255);
+			
+			s_WhiteIntTexture2D = Texture2D::Create(size, size, 1, TextureFormat::R32_UInt, WrapMode::Repeat, FilterMode::Point);
+			s_WhiteIntTexture2D->SetName("WhiteInt");
+			s_WhiteIntTexture2D->SetData(reinterpret_cast<uint8_t*>(data), size * size * sizeof(uint32_t));
+			s_WhiteIntTexture2D->Apply();
+		}
+		return s_WhiteIntTexture2D;
 	}
 }

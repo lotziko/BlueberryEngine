@@ -36,6 +36,8 @@ namespace Blueberry
 				m_Camera->SetPixelSize(Vector2(static_cast<float>(target->GetWidth()), static_cast<float>(target->GetHeight())));
 				m_Camera->SetCameraType(CameraType::Preview);
 				m_Camera->SetBackgroundColor(Color(0.0f, 0.0f, 0.0f, 1.0f));
+				cameraEntity->OnCreate();
+				m_Camera->OnEnable();
 			}
 
 			m_Mesh = mesh;

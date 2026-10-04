@@ -11,6 +11,7 @@ namespace Blueberry
 		DEFINE_FIELD(ProbeVolume, m_Size, BindingType::Vector3Int, FieldOptions())
 		DEFINE_ITERATOR(ProbeVolume)
 		DEFINE_EXECUTE_ALWAYS()
+		DEFINE_ADD_COMPONENT_MENU("Rendering/Probe Volume")
 	}
 
 	const AABB& ProbeVolume::GetBounds()

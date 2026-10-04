@@ -249,9 +249,9 @@ namespace Blueberry
 			s_ToRemoveWindows.clear();
 		}
 
-		for (auto& window : s_ActiveWindows)
+		for (size_t i = 0, n = s_ActiveWindows.size(); i < n; ++i)
 		{
-			window->DrawUI();
+			s_ActiveWindows[i]->DrawUI();
 		}
 
 		if (s_MaximizedWindow.window.IsValid())

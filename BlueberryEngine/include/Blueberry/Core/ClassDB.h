@@ -129,6 +129,7 @@ namespace Blueberry
 		bool isDll;
 		bool preferBinary;
 		bool executeAlways;
+		String addComponentMenuPath;
 		size_t offset;
 		List<FieldInfo> fields;
 		Dictionary<String, FieldInfo> fieldsMap;
@@ -187,6 +188,7 @@ namespace Blueberry
 		static void DefineIterator(TypeId* type);
 		static void DefinePreferBinary(); // TODO class attributes
 		static void DefineExecuteAlways();
+		static void DefineAddComponentMenu(const String& path);
 
 		template <class ObjectType, class BaseObjectType>
 		static void DefineBaseFields();
@@ -222,6 +224,7 @@ namespace Blueberry
 	#define DEFINE_ITERATOR( className ) ClassDB::DefineIterator(&className::Type);
 	#define DEFINE_PREFER_BINARY() ClassDB::DefinePreferBinary();
 	#define DEFINE_EXECUTE_ALWAYS() ClassDB::DefineExecuteAlways();
+	#define DEFINE_ADD_COMPONENT_MENU( path ) ClassDB::DefineAddComponentMenu(path);
 
 	template<class ObjectType>
 	inline void ClassDB::Register()

@@ -25,6 +25,7 @@ namespace Blueberry
 		DEFINE_FIELD(Light, m_Cookie, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Texture::Type))
 		DEFINE_ITERATOR(Light)
 		DEFINE_EXECUTE_ALWAYS()
+		DEFINE_ADD_COMPONENT_MENU("Rendering/Light")
 	}
 
 	void Light::OnEnable()

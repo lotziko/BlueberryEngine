@@ -1,35 +1,52 @@
 #include "FolderTree.h"
 
+#include "Editor\Path.h"
+#include "Editor\Assets\AssetDB.h"
+#include "Editor\Assets\AssetImporter.h"
+
 #include "Blueberry\Tools\StringHelper.h"
 
 namespace Blueberry
 {
-	const FolderTreeNode& FolderTree::GetRoot()
+	List<FolderTreeNode>& FolderTree::GetNodes()
 	{
-		return m_Root;
+		return m_Nodes;
 	}
 
-	void FolderTree::Update(const String& root)
+	void FolderTree::Update(const std::filesystem::path& rootPath)
 	{
-		std::filesystem::path path = root;
-		m_Root = {};
-		m_Root.path = path;
-		m_Root.name = StringHelper::ToString(path.filename());
-		Populate(&m_Root);
+		m_Nodes.clear();
+		FolderTreeNode rootNode = {};
+		rootNode.path = rootPath;
+		rootNode.name = StringHelper::ToString(rootPath.filename());
+		rootNode.guid = {};
+		rootNode.depth = 0;
+		m_Nodes.push_back(std::move(rootNode));
+		Populate(rootPath, 1);
 	}
 
-	void FolderTree::Populate(FolderTreeNode* parent)
+	void FolderTree::Populate(const std::filesystem::path& parentPath, int depth)
 	{
-		for (auto& it : std::filesystem::directory_iterator(parent->path))
+		for (auto& it : std::filesystem::directory_iterator(parentPath))
 		{
 			if (it.is_directory())
 			{
 				std::filesystem::path path = it;
+				Guid guid = {};
+				String relativePath = StringHelper::ToString(std::filesystem::relative(path, Path::GetAssetsPath()));
+				AssetImporter* importer = AssetDB::GetImporter(relativePath);
+				if (importer != nullptr)
+				{
+					guid = importer->GetGuid();
+				}
+
 				FolderTreeNode child;
 				child.path = path;
 				child.name = StringHelper::ToString(path.filename());
-				Populate(&child);
-				parent->children.push_back(child);
+				child.guid = guid;
+				child.depth = depth;
+				m_Nodes.push_back(std::move(child));
+				Populate(path, depth + 1);
 			}
 		}
 	}

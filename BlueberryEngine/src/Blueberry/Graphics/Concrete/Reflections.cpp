@@ -203,6 +203,10 @@ namespace Blueberry
 
 		if (s_AccelerationStructure == nullptr)
 		{
+			if (reflectionsData.output == nullptr)
+			{
+				reflectionsData.output.reset(GfxTexturePool::Get(size.x, size.y, 1, TextureUsageFlags::UnorderedAccess, 1, 1, TextureFormat::R16G16B16A16_Float, TextureDimension::Texture2D));
+			}
 			return;
 		}
 

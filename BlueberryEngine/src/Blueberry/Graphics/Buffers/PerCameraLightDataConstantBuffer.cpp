@@ -144,7 +144,7 @@ namespace Blueberry
 		if (mainLight != nullptr)
 		{
 			Light* light = mainLight;
-			Color color = light->GetColor();
+			Color color = Math::ToLinear(light->GetColor());
 			float intensity = light->GetIntensity();
 			Vector3 finalColor = Vector3(color.x * intensity, color.y * intensity, color.z * intensity);
 			constants.mainLightDirection = Vector3::Transform(Vector3::Backward, mainLight->GetTransform()->GetRotation());
@@ -186,7 +186,7 @@ namespace Blueberry
 			Vector3 positionVS = Vector3::Transform(positionWS, view);
 			bool hasShadow = light->IsCastingShadows();
 			bool hasFog = light->IsCastingFog();
-			Color color = light->GetColor();
+			Color color = Math::ToLinear(light->GetColor());
 			float intensity = light->GetIntensity();
 			Vector3 finalColor = Vector3(color.x * intensity, color.y * intensity, color.z * intensity);
 			float range = light->GetRange();

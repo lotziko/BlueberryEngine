@@ -113,8 +113,9 @@ namespace Blueberry
 		AutoExposure::Shutdown();
 	}
 
-	void PostProcessing::Draw(Camera* camera, GfxTexture* input, GfxTexture* output, const Rectangle& viewport, const CameraType& cameraType, PerCameraData& perCameraData)
+	void PostProcessing::Draw(Camera* camera, GfxTexture* input, GfxTexture* output, const Rectangle& viewport, PerCameraData& perCameraData)
 	{
+		CameraType cameraType = camera->GetCameraType();
 		GfxTexture* color = GfxTexturePool::Get(input->GetWidth(), input->GetHeight(), 1, TextureUsageFlags::RenderTarget | TextureUsageFlags::UnorderedAccess, 1, 1, input->GetFormat());
 		GfxTexture* tonemapping = nullptr;
 		bool isMsaa = input->GetAntiAliasing() > 1;
@@ -137,7 +138,7 @@ namespace Blueberry
 			// Gamma correction is done manually together with MSAA resolve to avoid using SRGB swapchain
 			GfxDevice::SetRenderTarget(isMsaa ? output : tonemapping);
 			GfxDevice::SetViewport(0, 0, viewport.width, viewport.height);
-			GfxDevice::SetGlobalTexture(s_ScreenColorTextureId, color);
+			GfxDevice::SetGlobalTexture(s_ScreenColorTextureId, isMsaa ? color : input);
 			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_PostProcessingMaterial, 2));
 			
 			// Fxaa

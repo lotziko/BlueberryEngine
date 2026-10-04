@@ -5,9 +5,8 @@
 
 #include "Blueberry\Core\ClassDB.h"
 
-#include "Editor\Inspector\ObjectEditorDB.h"
 #include "Editor\Panels\Inspector\InspectorExpandedItemsCache.h"
-#include "Editor\Panels\Scene\SceneArea.h"
+#include "Editor\Panels\Picking\ComponentPicker.h"
 #include "Editor\Misc\ImGuiHelper.h"
 #include "Editor\EditorObjectManager.h"
 #include "Editor\Selection.h"
@@ -16,21 +15,6 @@
 
 namespace Blueberry
 {
-	bool ShouldHideType(const ClassInfo& info)
-	{
-		if (info.createInstance == nullptr)
-		{
-			return true;
-		}
-
-		if (!ClassDB::IsParent(info.id, Component::Type))
-		{
-			return true;
-		}
-
-		return false;
-	}
-
 	bool EntityEditor::IsInspectorPadded()
 	{
 		return false;
@@ -78,7 +62,8 @@ namespace Blueberry
 				ObjectEditor* editor = ObjectEditor::GetEditor(list);
 				if (editor != nullptr)
 				{
-					m_ComponentsEditors.push_back(std::make_pair(list[0]->GetObjectId(), editor));
+					Object* component = list[0];
+					m_ComponentsEditors.push_back({ component->GetObjectId(), component->GetTypeName(), StringHelper::ToDisplayName(component->GetTypeName()), editor });
 				}
 			}
 		}
@@ -90,9 +75,9 @@ namespace Blueberry
 	{
 		if (m_ComponentsEditors.size() > 0)
 		{
-			for (auto& pair : m_ComponentsEditors)
+			for (auto& componentEditor : m_ComponentsEditors)
 			{
-				ObjectEditor::ReleaseEditor(pair.second);
+				ObjectEditor::ReleaseEditor(componentEditor.editor);
 			}
 			m_ComponentsEditors.clear();
 		}
@@ -102,27 +87,28 @@ namespace Blueberry
 
 	void EntityEditor::OnDrawInspector()
 	{
-		ImGui::BeginPaddedArea(ImVec2(10, 5), ImVec2(10, 5));
+		ImGui::BeginPaddedArea(ImVec2(18, 5), ImVec2(10, 5));
 		ImGui::Property(&m_IsActiveProperty, "Is Active");
 		ImGui::EndPaddedArea();
 
-		for (auto& pair : m_ComponentsEditors)
+		for (auto& componentEditor : m_ComponentsEditors)
 		{
-			ImGui::PushID(pair.first);
+			ImGui::PushID(componentEditor.id);
 
-			String name = ObjectDB::GetObject(pair.first)->GetTypeName();
-			ImGui::SetNextItemOpen(InspectorExpandedItemsCache::Get(name));
-			bool opened = ImGui::CollapsingHeader(name.c_str());
+			ImGui::SetNextItemOpen(InspectorExpandedItemsCache::Get(componentEditor.name));
+			ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f);
+			bool opened = ImGui::CollapsingHeader(componentEditor.displayName.c_str());
+			ImGui::PopStyleVar();
 			if (ImGui::IsItemToggledOpen())
 			{
-				InspectorExpandedItemsCache::Set(name, opened);
+				InspectorExpandedItemsCache::Set(componentEditor.name, opened);
 			}
 
 			if (ImGui::BeginPopupContextItem())
 			{
 				if (ImGui::MenuItem("Remove component"))
 				{
-					for (Object* target : pair.second->GetSerializedObject()->GetTargets())
+					for (Object* target : componentEditor.editor->GetSerializedObject()->GetTargets())
 					{
 						m_RemovedComponents.push_back(static_cast<Component*>(target));
 					}
@@ -132,8 +118,8 @@ namespace Blueberry
 
 			if (opened)
 			{
-				ImGui::BeginPaddedArea(ImVec2(10, 5), ImVec2(10, 5));
-				pair.second->DrawInspector();
+				ImGui::BeginPaddedArea(ImVec2(18, 5), ImVec2(10, 5));
+				componentEditor.editor->DrawInspector();
 				ImGui::EndPaddedArea();
 			}
 
@@ -145,30 +131,17 @@ namespace Blueberry
 		ImGui::Dummy(ImVec2(0, 10));
 		if (ImGui::CenteredButton("   Add Component   "))
 		{
-			ImGui::OpenPopup("addComponent");
+			ComponentPicker::Open();
 		}
 
-		if (ImGui::BeginPopup("addComponent"))
+		TypeId componentType;
+		if (ComponentPicker::GetResult(&componentType))
 		{
-			auto& infos = ClassDB::GetInfos();
-
-			for (auto& info : infos)
+			const ClassInfo* info = ClassDB::GetInfo(componentType);
+			for (Object* target : m_SerializedObject->GetTargets())
 			{
-				if (ShouldHideType(info))
-				{
-					continue;
-				}
-
-				if (ImGui::Selectable(info.name.c_str()))
-				{
-					for (Object* target : m_SerializedObject->GetTargets())
-					{
-						m_AddedComponents.push_back(std::make_pair(static_cast<Entity*>(target), static_cast<Component*>(info.Create())));
-					}
-				}
+				m_AddedComponents.push_back(std::make_pair(static_cast<Entity*>(target), static_cast<Component*>(info->Create())));
 			}
-
-			ImGui::EndPopup();
 		}
 
 		bool hasAddedComponents = m_AddedComponents.size() > 0, hasRemovedComponents = m_RemovedComponents.size() > 0;

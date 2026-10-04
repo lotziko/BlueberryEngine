@@ -73,7 +73,7 @@ namespace Blueberry
 		return ObjectDB::GetObject(mapping[object->GetObjectId()]);
 	}
 
-	Object* ObjectCloner::Resolve(ObjectMapping& mapping, List<ObjectId>& removed, Object* object)
+	Object* ObjectCloner::Resolve(ObjectMapping& mapping, HashSet<ObjectId>& removed, Object* object)
 	{
 		HashSet<ObjectId> visited;
 		List<Object*> objectsToClone;
@@ -111,16 +111,17 @@ namespace Blueberry
 		{
 			CopyFields(mapping, std::get<0>(tuple), std::get<1>(tuple), std::get<2>(tuple));
 		}
-		for (auto& pair : mapping)
+		for (auto it = mapping.begin(); it != mapping.end();)
 		{
-			if (visited.count(pair.first) == 0)
+			if (visited.count(it->first) == 0)
 			{
-				removed.push_back(pair.first);
+				removed.insert(it->second);
+				it = mapping.erase(it);
 			}
-		}
-		for (ObjectId id : removed)
-		{
-			mapping.erase(id);
+			else
+			{
+				++it;
+			}
 		}
 		return ObjectDB::GetObject(mapping[object->GetObjectId()]);
 	}
@@ -296,8 +297,22 @@ namespace Blueberry
 			}
 			break;
 			case BindingType::Variant:
-				*field.Get<Variant>(target) = *field.Get<Variant>(source);
-				break;
+			{
+				Variant value = *field.Get<Variant>(source);
+				auto* reference = std::get_if<ObjectPtr<Object>>(&value);
+
+				if (reference != nullptr && reference->IsValid())
+				{
+					auto it = mapping.find(reference->Get()->GetObjectId());
+					if (it != mapping.end())
+					{
+						*reference = ObjectDB::GetObject(it->second);
+					}
+				}
+
+				*field.Get<Variant>(target) = std::move(value);
+			}
+			break;
 			default:
 				BB_INFO("Can't clone field " << field.name);
 				break;

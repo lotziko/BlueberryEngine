@@ -173,6 +173,42 @@ namespace Blueberry
 			return;
 		}
 
+		HashSet<ObjectId> outlineEntities;
+		List<Transform*> pendingTransforms;
+		for (Object* object : Selection::GetActiveObjects())
+		{
+			if (object != nullptr && object->IsClassType(Entity::Type))
+			{
+				Entity* entity = static_cast<Entity*>(object);
+				if (entity->GetScene() == scene)
+				{
+					pendingTransforms.push_back(entity->GetTransform());
+				}
+			}
+		}
+
+		while (!pendingTransforms.empty())
+		{
+			Transform* transform = pendingTransforms.back();
+			pendingTransforms.pop_back();
+
+			if (transform == nullptr)
+			{
+				continue;
+			}
+
+			Entity* entity = transform->GetEntity();
+			if (!outlineEntities.insert(entity->GetObjectId()).second)
+			{
+				continue;
+			}
+
+			for (const auto& child : transform->GetChildren())
+			{
+				pendingTransforms.push_back(child.Get());
+			}
+		}
+
 		PerCameraDataConstantBuffer::BindData(camera, renderTarget);
 
 		GfxDevice::SetRenderTarget(m_SceneRenderTarget);
@@ -184,7 +220,7 @@ namespace Blueberry
 		for (SpriteRenderer* spriteRenderer : scene->GetComponents<SpriteRenderer>())
 		{
 			Entity* entity = spriteRenderer->GetEntity();
-			if (Selection::IsActiveObject(entity) && entity->IsActiveInHierarchy())
+			if (outlineEntities.count(entity->GetObjectId()) > 0 &&	entity->IsActiveInHierarchy())
 			{
 				if (spriteRenderer->GetTexture() != nullptr)
 				{
@@ -197,7 +233,7 @@ namespace Blueberry
 		for (MeshRenderer* meshRenderer : scene->GetComponents<MeshRenderer>())
 		{
 			Entity* entity = meshRenderer->GetEntity();
-			if (Selection::IsActiveObject(entity) && entity->IsActiveInHierarchy())
+			if (outlineEntities.count(entity->GetObjectId()) > 0 && entity->IsActiveInHierarchy())
 			{
 				Mesh* mesh = meshRenderer->GetMesh();
 				if (mesh != nullptr)
@@ -212,7 +248,7 @@ namespace Blueberry
 		for (SkinnedMeshRenderer* skinnedMeshRenderer : scene->GetComponents<SkinnedMeshRenderer>())
 		{
 			Entity* entity = skinnedMeshRenderer->GetEntity();
-			if (Selection::IsActiveObject(entity) && entity->IsActiveInHierarchy())
+			if (outlineEntities.count(entity->GetObjectId()) > 0 && entity->IsActiveInHierarchy())
 			{
 				if (skinnedMeshRenderer->HasRoot())
 				{

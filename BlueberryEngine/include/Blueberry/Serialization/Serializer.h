@@ -79,7 +79,6 @@ namespace Blueberry
 		List<ObjectId> m_AdditionalObjectsToSerialize;
 		List<std::pair<ObjectId, FileId>> m_DeserializedObjects;
 		List<SerializationTree> m_Trees;
-		HashSet<ObjectId> m_References;
 		Guid m_Guid;
 		Object* m_CurrentObject;
 	};

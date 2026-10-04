@@ -58,12 +58,20 @@ namespace Blueberry
 
 	void EditorObjectManager::AddComponent(Entity* entity, Component* component)
 	{
+		if (PrefabManager::IsPartOfPrefabInstance(entity))
+		{
+			PrefabManager::AddComponent(entity, component);
+		}
 		entity->AddComponent(component);
 		s_EntityUpdated.Invoke();
 	}
 
 	void EditorObjectManager::RemoveComponent(Component* component)
 	{
+		if (PrefabManager::IsPartOfPrefabInstance(component->GetEntity()))
+		{
+			PrefabManager::RemoveComponent(component);
+		}
 		component->GetEntity()->RemoveComponent(component);
 		s_EntityUpdated.Invoke();
 	}

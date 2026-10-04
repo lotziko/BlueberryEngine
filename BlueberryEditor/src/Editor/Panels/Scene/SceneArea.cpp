@@ -28,6 +28,7 @@
 #include "Blueberry\Graphics\Concrete\DefaultRenderer.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\Material.h"
+#include "Blueberry\Graphics\Texture.h"
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Events\WindowEvents.h"
 #include "Blueberry\Logging\Profiler.h"
@@ -66,6 +67,10 @@ namespace Blueberry
 		m_ColorRenderTarget = GfxTexturePool::Get(Screen::GetWidth(), Screen::GetHeight(), 1, TextureUsageFlags::RenderTarget, 1, 1, TextureFormat::R8G8B8A8_UNorm);
 		m_DepthStencilRenderTarget = GfxTexturePool::Get(Screen::GetWidth(), Screen::GetHeight(), 1, TextureUsageFlags::RenderTarget, 1, 1, TextureFormat::D24_UNorm);
 
+		m_ScenePositionIconSmall = static_cast<Texture*>(AssetLoader::Load("assets/icons/ScenePositionIconSmall.png"));
+		m_SceneRotationIconSmall = static_cast<Texture*>(AssetLoader::Load("assets/icons/SceneRotationIconSmall.png"));
+		m_SceneScaleIconSmall = static_cast<Texture*>(AssetLoader::Load("assets/icons/SceneScaleIconSmall.png"));
+		
 		Selection::GetSelectionChanged().AddCallback<&SceneArea::RequestRedrawAll>();
 		EditorSceneManager::GetSceneLoaded().AddCallback<&SceneArea::RequestRedrawAll>();
 		WindowEvents::GetWindowFocused().AddCallback<&SceneArea::RequestRedrawAll>();
@@ -144,6 +149,8 @@ namespace Blueberry
 		{
 			RequestRedrawAll();
 		}
+
+		DrawControls();
 
 		Camera::SetCurrent(m_Camera);
 
@@ -290,7 +297,6 @@ namespace Blueberry
 		splitter.Split(drawList, 2);
 
 		splitter.SetCurrentChannel(drawList, 1);
-		DrawControls();
 		DrawGizmos(Rectangle(static_cast<long>(pos.x), static_cast<long>(pos.y), static_cast<long>(size.x), static_cast<long>(size.y)));
 
 		splitter.SetCurrentChannel(drawList, 0);
@@ -532,17 +538,18 @@ namespace Blueberry
 					ImGui::EndPopup();
 				}
 
-				if (ImGui::Button("Position"))
+				ImVec2 iconSize = ImVec2(20, 20);
+				if (ImGui::ImageButton("Position", reinterpret_cast<ImTextureID>(m_ScenePositionIconSmall->GetHandle()), iconSize))
 				{
 					Preferences::SetGizmoOperation(ImGuizmo::OPERATION::TRANSLATE);
 				}
 				ImGui::SameLine();
-				if (ImGui::Button("Rotation"))
+				if (ImGui::ImageButton("Rotation", reinterpret_cast<ImTextureID>(m_SceneRotationIconSmall->GetHandle()), iconSize))
 				{
 					Preferences::SetGizmoOperation(ImGuizmo::OPERATION::ROTATE);
 				}
 				ImGui::SameLine();
-				if (ImGui::Button("Scale"))
+				if (ImGui::ImageButton("Scale", reinterpret_cast<ImTextureID>(m_SceneScaleIconSmall->GetHandle()), iconSize))
 				{
 					Preferences::SetGizmoOperation(ImGuizmo::OPERATION::SCALE);
 				}
@@ -561,7 +568,6 @@ namespace Blueberry
 		drawList->PushClipRect(ImVec2(static_cast<float>(viewport.x), static_cast<float>(viewport.y)), ImVec2(static_cast<float>(viewport.x + viewport.width), static_cast<float>(viewport.y + viewport.height)));
 		ImGuizmo::SetDrawlist(drawList);
 		ImGuizmo::SetRect(static_cast<float>(viewport.x), static_cast<float>(viewport.y), static_cast<float>(viewport.width), static_cast<float>(viewport.height));
-		ImGuizmo::Enable(!ImGui::IsPopupOpen(NULL, ImGuiPopupFlags_AnyPopup));
 
 		Scene* scene = EditorSceneManager::GetScene();
 		if (scene != nullptr)

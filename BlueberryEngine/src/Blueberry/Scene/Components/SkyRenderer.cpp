@@ -16,6 +16,7 @@ namespace Blueberry
 		DEFINE_FIELD(SkyRenderer, m_AmbientColor, BindingType::Color, FieldOptions())
 		DEFINE_ITERATOR(SkyRenderer)
 		DEFINE_EXECUTE_ALWAYS()
+		DEFINE_ADD_COMPONENT_MENU("Rendering/Sky Renderer")
 	}
 
 	Material* SkyRenderer::GetMaterial() const

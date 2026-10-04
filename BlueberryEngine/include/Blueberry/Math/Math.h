@@ -424,6 +424,11 @@ namespace Blueberry
 			return (Lerp(xf0, xf1, ys) * 1.4247691104677813f) * 0.5f + 0.5f;
 		}
 
+		static inline Color ToLinear(const Color& color)
+		{
+			return Color(std::powf(color.x, 2.2f), std::powf(color.y, 2.2f), std::powf(color.z, 2.2f), color.w);
+		}
+
 		static inline float Pi = 3.1415926535f;
 		static inline float DegreeToRad = 57.29577951471995f;
 		static inline float RadToDegree = 0.0174532925194444f;
