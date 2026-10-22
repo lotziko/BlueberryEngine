@@ -7,17 +7,31 @@
 #include "Blueberry\Serialization\Serializer.h"
 #include "Blueberry\Core\Time.h"
 #include "Blueberry\Core\ClassDB.h"
+#include "Blueberry\Core\ObjectCloner.h"
 
 namespace Blueberry
 {
-	bool Scene::Initialize()
+	Scene::~Scene()
 	{
-		return true;
+		m_Entities.clear();
+		m_RootEntities.clear();
 	}
 
 	ComponentView<Component> Scene::GetComponents(TypeId type)
 	{
 		return m_ComponentManager.GetComponents(type);
+	}
+
+	Scene* Scene::Clone()
+	{
+		Scene* result = new Scene();
+		ObjectMapping mapping;
+		for (const auto& root : m_RootEntities)
+		{
+			Entity* rootEntity = static_cast<Entity*>(ObjectCloner::Clone(mapping, root.Get()));
+			result->AddEntity(rootEntity);
+		}
+		return result;
 	}
 
 	void Scene::FixedUpdate()
@@ -46,8 +60,6 @@ namespace Blueberry
 				DestroyEntity(rootEntity.Get());
 			}
 		}
-		m_Entities.clear();
-		m_RootEntities.clear();
 	}
 
 	Entity* Scene::CreateEntity(const String& name = "Entity")
@@ -83,25 +95,6 @@ namespace Blueberry
 			AddChildEntity(child.Get()->GetEntity());
 		}
 		entity->UpdateHierarchy();
-	}
-
-	void Scene::RemoveEntity(Entity* entity)
-	{
-		if (entity == nullptr)
-		{
-			return;
-		}
-		entity->DisableComponents();
-		entity->m_Scene = nullptr;
-		if (entity->GetTransform()->GetParent() == nullptr)
-		{
-			RemoveFromRoot(entity);
-		}
-		m_Entities.erase(entity->GetObjectId());
-		for (auto& child : entity->GetTransform()->GetChildren())
-		{
-			RemoveEntity(child.Get()->GetEntity());
-		}
 	}
 
 	void Scene::DestroyEntity(Entity* entity)

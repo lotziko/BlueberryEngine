@@ -13,6 +13,7 @@ namespace Blueberry
 		ObjectPtr(const ObjectType* object);
 		void operator=(const ObjectType* object);
 		bool operator==(const ObjectPtr<ObjectType>& other) const;
+		bool operator!=(const ObjectPtr<ObjectType>& other) const;
 		ObjectType* operator->();
 		ObjectType* operator->() const;
 
@@ -58,6 +59,12 @@ namespace Blueberry
 	inline bool ObjectPtr<ObjectType>::operator==(const ObjectPtr<ObjectType>& other) const
 	{
 		return m_Id == other.m_Id || !IsValid() && !other.IsValid();
+	}
+
+	template<class ObjectType>
+	inline bool ObjectPtr<ObjectType>::operator!=(const ObjectPtr<ObjectType>& other) const
+	{
+		return m_Id != other.m_Id || !IsValid() || !other.IsValid();
 	}
 
 	template<class ObjectType>

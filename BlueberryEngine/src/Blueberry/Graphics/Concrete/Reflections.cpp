@@ -216,6 +216,11 @@ namespace Blueberry
 			s_AccelerationStructure->Add(meshRenderer->GetAccelerationStructure(), meshRenderer->GetMaterials(), meshRenderer->GetTransform()->GetLocalToWorldMatrix());
 		}
 
+		if (s_AccelerationStructure->IsEmpty())
+		{
+			return;
+		}
+
 		// TODO move miss into skybox material and make GfxTopLevelAccelerationStructure::Add for it
 		Texture* skyboxTexture = nullptr;
 		for (SkyRenderer* skyRenderer : scene->GetComponents<SkyRenderer>())

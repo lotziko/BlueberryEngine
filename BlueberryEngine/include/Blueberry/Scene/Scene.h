@@ -21,13 +21,14 @@ namespace Blueberry
 		BB_OVERRIDE_NEW_DELETE
 
 		Scene() = default;
-
-		bool Initialize();
+		~Scene();
 
 		template<class ComponentType>
 		ComponentView<ComponentType> GetComponents();
 
 		ComponentView<Component> GetComponents(TypeId type);
+
+		Scene* Clone();
 
 		void FixedUpdate();
 		void Update();
@@ -36,7 +37,6 @@ namespace Blueberry
 
 		Entity* CreateEntity(const String& name);
 		void AddEntity(Entity* entity);
-		void RemoveEntity(Entity* entity);
 		void DestroyEntity(Entity* entity);
 
 		const Dictionary<ObjectId, ObjectPtr<Entity>>& GetEntities();

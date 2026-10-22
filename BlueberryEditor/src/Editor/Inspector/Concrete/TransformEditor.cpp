@@ -7,6 +7,7 @@
 #include "Editor\Preferences.h"
 #include "Editor\Panels\Scene\SceneArea.h"
 #include "Editor\Panels\Hierarchy\SceneHierarchy.h"
+#include "Editor\Undo\UndoManager.h"
 
 #include <imgui\imgui.h>
 #include <imgui\imguizmo.h>
@@ -32,7 +33,8 @@ namespace Blueberry
 
 	void TransformEditor::OnDrawInspector()
 	{
-		m_SerializedObject->Update();
+		m_SerializedObject->UpdateIfNeeded();
+
 		ImGui::Property(&m_LocalPositionProperty, "Position");
 		if (ImGui::Property(&m_LocalRotationEulerHintProperty, "Rotation"))
 		{
@@ -146,8 +148,10 @@ namespace Blueberry
 				snapping[2] = gizmoSnapping[2];
 			}
 			
-			if (ImGuizmo::Manipulate((float*)camera->GetViewMatrix().m, (float*)camera->GetProjectionMatrix().m, (ImGuizmo::OPERATION)gizmoOperation, ImGuizmo::MODE::LOCAL, (float*)transformMatrix.m, 0, snapping))
+			if (ImGuizmo::Manipulate((float*)camera->GetViewMatrix().m, (float*)camera->GetProjectionMatrix().m, (ImGuizmo::OPERATION)gizmoOperation, ImGuizmo::MODE::WORLD, (float*)transformMatrix.m, 0, snapping))
 			{
+				UndoManager::RecordObject(transform);
+
 				Vector3 scale;
 				Quaternion rotation;
 				Vector3 translation;
@@ -158,15 +162,15 @@ namespace Blueberry
 				}
 				
 				transformMatrix.Decompose(scale, rotation, translation);
-				if (!Math::Approximately(Math::RoundToN(translation, 4), Math::RoundToN(m_LocalPositionProperty.GetVector3(), 4)))
+				if (gizmoOperation == ImGuizmo::OPERATION::TRANSLATE && !Math::Approximately(Math::RoundToN(translation, 4), Math::RoundToN(m_LocalPositionProperty.GetVector3(), 4)))
 				{
-					m_LocalPositionProperty.SetVector3(translation);
+					transform->SetLocalPosition(translation);
 				}
-				if (!Math::Approximately(Math::RoundToN(rotation, 4), Math::RoundToN(m_LocalRotationProperty.GetQuaternion(), 4)))
+				if (gizmoOperation == ImGuizmo::OPERATION::ROTATE && !Math::Approximately(Math::RoundToN(rotation, 4), Math::RoundToN(m_LocalRotationProperty.GetQuaternion(), 4)))
 				{
-					m_LocalRotationProperty.SetQuaternion(rotation);
+					transform->SetLocalRotation(rotation, false);
 
-					Vector3 previousEuler = m_LocalRotationEulerHintProperty.GetVector3();
+					Vector3 previousEuler = transform->GetLocalEulerRotationHint();
 					Vector3 euler = CorrectEuler(previousEuler, Math::ToDegrees(rotation.ToEuler()));
 
 					if (snapping[1] > 0)
@@ -188,13 +192,12 @@ namespace Blueberry
 					{
 						euler.z = 0;
 					}
-					m_LocalRotationEulerHintProperty.SetVector3(euler);
+					transform->SetLocalEulerRotationHint(euler);
 				}
-				if (!Math::Approximately(Math::RoundToN(scale, 4), Math::RoundToN(m_LocalScaleProperty.GetVector3(), 4)))
+				if (gizmoOperation == ImGuizmo::OPERATION::SCALE && !Math::Approximately(Math::RoundToN(scale, 4), Math::RoundToN(m_LocalScaleProperty.GetVector3(), 4)))
 				{
-					m_LocalScaleProperty.SetVector3(scale);
+					transform->SetLocalScale(scale);
 				}
-				m_SerializedObject->ApplyModifiedProperties();
 			}
 		}
 	}

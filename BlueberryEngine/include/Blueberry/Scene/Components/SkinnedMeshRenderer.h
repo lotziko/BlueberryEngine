@@ -19,6 +19,8 @@ namespace Blueberry
 		virtual void OnEnable() final;
 		virtual void OnDisable() final;
 
+		virtual void OnPropertiesChanged() final;
+
 		void OnPreCull();
 
 		Mesh* GetMesh();
@@ -69,7 +71,7 @@ namespace Blueberry
 		List<Matrix> m_WorldMatrices;
 		List<Matrix> m_SkinningMatrices;
 		List<BoneData> m_BoneDatas;
-		bool m_CullingDirty = true;
+		bool m_IsCullingDirty = true;
 
 		GfxBuffer* m_SkinningVertexBuffer = nullptr;
 		ObjectId m_SkinningMeshId = INVALID_ID;

@@ -13,10 +13,10 @@ namespace Blueberry
 	OBJECT_DEFINITION(Transform, Component)
 	{
 		DEFINE_BASE_FIELDS(Transform, Component)
-		DEFINE_FIELD(Transform, m_LocalPosition, BindingType::Vector3, FieldOptions().SetUpdateCallback(MethodBind::Create(&Transform::InvalidateHierarchy)))
-		DEFINE_FIELD(Transform, m_LocalRotation, BindingType::Quaternion, FieldOptions().SetUpdateCallback(MethodBind::Create(&Transform::InvalidateHierarchy)))
-		DEFINE_FIELD(Transform, m_LocalScale, BindingType::Vector3, FieldOptions().SetUpdateCallback(MethodBind::Create(&Transform::InvalidateHierarchy)))
-		DEFINE_FIELD(Transform, m_IsStatic, BindingType::Bool, FieldOptions().SetUpdateCallback(MethodBind::Create(&Transform::InvalidateHierarchy)))
+		DEFINE_FIELD(Transform, m_LocalPosition, BindingType::Vector3, FieldOptions())
+		DEFINE_FIELD(Transform, m_LocalRotation, BindingType::Quaternion, FieldOptions())
+		DEFINE_FIELD(Transform, m_LocalScale, BindingType::Vector3, FieldOptions())
+		DEFINE_FIELD(Transform, m_IsStatic, BindingType::Bool, FieldOptions())
 		DEFINE_FIELD(Transform, m_LocalRotationEulerHint, BindingType::Vector3, FieldOptions().SetVisibility(VisibilityType::Hidden).SetSerializationFlags(SerializationFlags::EditorOnly))
 		DEFINE_FIELD(Transform, m_Parent, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Transform::Type).SetVisibility(VisibilityType::Hidden))
 		DEFINE_FIELD(Transform, m_Children, BindingType::ObjectPtrList, FieldOptions().SetObjectType(&Transform::Type).SetVisibility(VisibilityType::Hidden))
@@ -43,6 +43,11 @@ namespace Blueberry
 			}
 		}
 		m_Parent = nullptr;
+	}
+
+	void Transform::OnPropertiesChanged()
+	{
+		InvalidateHierarchy();
 	}
 
 	const Matrix& Transform::GetLocalToWorldMatrix()
@@ -182,33 +187,41 @@ namespace Blueberry
 	{
 		m_LocalPosition = position;
 		InvalidateHierarchy();
+		IncrementChangesCount();
 	}
 
-	void Transform::SetLocalRotation(const Quaternion& rotation)
+	void Transform::SetLocalRotation(const Quaternion& rotation, bool hint)
 	{
 		m_LocalRotation = rotation;
-		m_LocalRotationEulerHint = Math::ToDegrees(m_LocalRotation.ToEuler());
+		if (hint)
+		{
+			m_LocalRotationEulerHint = Math::ToDegrees(m_LocalRotation.ToEuler());
+		}
 		InvalidateHierarchy();
+		IncrementChangesCount();
 	}
 
 	void Transform::SetLocalEulerRotation(const Vector3& euler)
 	{
 		m_LocalRotation = Quaternion::CreateFromYawPitchRoll(euler.y, euler.x, euler.z);
 		InvalidateHierarchy();
+		IncrementChangesCount();
 	}
 
 	void Transform::SetLocalEulerRotationHint(const Vector3& euler)
 	{
 		m_LocalRotationEulerHint = euler;
-		m_LocalRotation = Quaternion::CreateFromYawPitchRoll(Math::ToRadians(m_LocalRotationEulerHint.y), Math::ToRadians(m_LocalRotationEulerHint.x), Math::ToRadians(m_LocalRotationEulerHint.z));
-		m_LocalRotation.Normalize();
+		//m_LocalRotation = Quaternion::CreateFromYawPitchRoll(Math::ToRadians(m_LocalRotationEulerHint.y), Math::ToRadians(m_LocalRotationEulerHint.x), Math::ToRadians(m_LocalRotationEulerHint.z));
+		//m_LocalRotation.Normalize();
 		InvalidateHierarchy();
+		IncrementChangesCount();
 	}
 
 	void Transform::SetLocalScale(const Vector3& scale)
 	{
 		m_LocalScale = scale;
 		InvalidateHierarchy();
+		IncrementChangesCount();
 	}
 
 	void Transform::SetPosition(const Vector3& position)
@@ -222,6 +235,7 @@ namespace Blueberry
 			m_LocalPosition = Vector3::Transform(position, m_Parent->GetWorldToLocalMatrix());
 		}
 		InvalidateHierarchy();
+		IncrementChangesCount();
 	}
 
 	void Transform::SetRotation(const Quaternion& rotation)
@@ -238,6 +252,7 @@ namespace Blueberry
 		}
 		m_LocalRotationEulerHint = Math::ToDegrees(m_LocalRotation.ToEuler());
 		InvalidateHierarchy();
+		IncrementChangesCount();
 	}
 
 	void Transform::SetLocalTRS(const TRS& trs)
@@ -247,6 +262,7 @@ namespace Blueberry
 		m_LocalScale = trs.scale;
 		m_LocalRotationEulerHint = Math::ToDegrees(m_LocalRotation.ToEuler());
 		InvalidateHierarchy();
+		IncrementChangesCount();
 	}
 
 	void Transform::SetParent(Transform* parent, bool worldPositionStays)
@@ -300,6 +316,7 @@ namespace Blueberry
 			InvalidateHierarchy();
 		}
 		m_Entity->UpdateHierarchy();
+		IncrementChangesCount();
 	}
 
 	void Transform::SetSiblingIndex(size_t index)
@@ -343,6 +360,7 @@ namespace Blueberry
 	{
 		m_IsStatic = isStatic;
 		InvalidateHierarchy();
+		IncrementChangesCount();
 	}
 
 	void Transform::AddDependency(TransformDependencyInterface* dependency)

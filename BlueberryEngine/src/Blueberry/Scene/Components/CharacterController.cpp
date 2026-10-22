@@ -47,16 +47,21 @@ namespace Blueberry
 
 	struct CharacterController::PrivateData
 	{
-		JPH::Ref<JPH::CharacterVirtual> character;
-		JPH::RefConst<JPH::Shape> shape;
-		JPH::BodyID bodyId;
-		JPH::RVec3 previousPosition;
+		BB_OVERRIDE_NEW_DELETE
+
+		JPH::Ref<JPH::CharacterVirtual> character = {};
+		JPH::RefConst<JPH::Shape> shape = {};
+		JPH::RVec3 previousPosition = {};
 	};
 
 	CharacterController::CharacterController()
 	{
-		memset(m_PrivateStorage, 0, sizeof(PrivateData));
-		m_PrivateData = reinterpret_cast<PrivateData*>(&m_PrivateStorage);
+		m_PrivateData = new PrivateData();
+	}
+
+	CharacterController::~CharacterController()
+	{
+		delete m_PrivateData;
 	}
 
 	void CharacterController::OnCreate()
@@ -84,29 +89,15 @@ namespace Blueberry
 
 	void CharacterController::OnDestroy()
 	{
-		JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
-		if (bodyInterface.IsAdded(m_PrivateData->bodyId))
-		{
-			bodyInterface.DestroyBody(m_PrivateData->bodyId);
-		}
+		m_PrivateData = nullptr;
 	}
 
 	void CharacterController::OnEnable()
 	{
-		JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
-		if (!bodyInterface.IsAdded(m_PrivateData->bodyId))
-		{
-			bodyInterface.AddBody(m_PrivateData->bodyId, JPH::EActivation::Activate);
-		}
 	}
 
 	void CharacterController::OnDisable()
 	{
-		JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
-		if (bodyInterface.IsAdded(m_PrivateData->bodyId))
-		{
-			bodyInterface.RemoveBody(m_PrivateData->bodyId);
-		}
 	}
 
 	void CharacterController::OnUpdate()

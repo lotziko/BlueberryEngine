@@ -12,7 +12,7 @@ namespace Blueberry
 
 	public:
 		CharacterController();
-		virtual ~CharacterController() = default;
+		virtual ~CharacterController();
 
 		virtual void OnCreate() final;
 		virtual void OnDestroy() final;
@@ -35,11 +35,10 @@ namespace Blueberry
 
 		struct PrivateData;
 
-		PrivateData* m_PrivateData;
-		alignas(8) char m_PrivateStorage[48];
+		PrivateData* m_PrivateData = nullptr;
 		Transform* m_Transform = nullptr;
-		Vector3 m_Velocity;
+		Vector3 m_Velocity = {};
 		bool m_IsGrounded = false;
-		Vector3 m_GroundNormal;
+		Vector3 m_GroundNormal = {};
 	};
 }

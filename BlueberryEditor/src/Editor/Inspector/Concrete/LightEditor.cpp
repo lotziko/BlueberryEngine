@@ -47,6 +47,8 @@ namespace Blueberry
 	{
 		if (m_SerializedObject->GetTargets().size() == 1)
 		{
+			m_SerializedObject->UpdateIfNeeded();
+
 			ImGui::Property(&m_TypeProperty, "Type");
 			ImGui::Property(&m_ColorProperty, "Color");
 			ImGui::Property(&m_IntensityProperty, "Intensity");

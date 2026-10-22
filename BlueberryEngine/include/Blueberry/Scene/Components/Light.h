@@ -27,6 +27,7 @@ namespace Blueberry
 		virtual void OnDisable() final;
 
 		virtual void OnTransformInvalidate() final;
+		virtual void OnPropertiesChanged() final;
 
 		LightType GetType();
 		void SetType(LightType type);
@@ -77,7 +78,8 @@ namespace Blueberry
 
 	private:
 		GfxTexture* m_CachedShadow = nullptr;
-		bool m_IsDirty[6] = { true, true, true, true, true, true };
+		bool m_IsSliceDirty[6] = { true, true, true, true, true, true };
+		bool m_IsCachedShadowDirty = false;
 		Matrix m_WorldToShadow[6];
 		Matrix m_AtlasWorldToShadow[6];
 		Vector4 m_ShadowBounds[6];

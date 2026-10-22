@@ -25,11 +25,7 @@ namespace Blueberry
 
 	String GetDebugReleaseRuntimeMode()
 	{
-#if BB_DEBUG
-		return "/MDd";
-#else
 		return "/MD";
-#endif
 	}
 
 	String GetHotReloadFolder()
@@ -235,11 +231,12 @@ namespace Blueberry
 		ss << "\n";
 		ss << "	filter \"configurations:Debug\"\n";
 		ss << "		staticruntime \"off\"\n";
-		ss << "		runtime \"Debug\"\n";
+		ss << "		runtime \"Release\"\n";
 		ss << "\n";
 		ss << "	filter \"configurations:Release\"\n";
 		ss << "		staticruntime \"off\"\n";
 		ss << "		runtime \"Release\"";
+		ss << "		optimize \"on\"";
 
 		String path = GetAssemblyPath().append("\\premake5.lua");
 		bool isModified = false;

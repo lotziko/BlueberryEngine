@@ -17,7 +17,7 @@ namespace Blueberry
 
 	public:
 		Collider();
-		virtual ~Collider() = default;
+		virtual ~Collider();
 
 		virtual void OnCreate() final;
 		virtual void OnDestroy() final;
@@ -34,8 +34,7 @@ namespace Blueberry
 		
 		struct PrivateData;
 
-		PrivateData* m_PrivateData;
-		alignas(8) char m_PrivateStorage[4];
+		PrivateData* m_PrivateData = nullptr;
 
 		friend class PhysicsBody;
 	};

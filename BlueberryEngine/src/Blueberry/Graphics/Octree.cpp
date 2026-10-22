@@ -432,7 +432,7 @@ namespace Blueberry
 			uint32_t slotIndex = id % NodesPerChunk;
 			if (chunkIndex == m_Chunks.size())
 			{
-				m_Chunks.push_back(std::make_unique<OctreeChunk>());
+				m_Chunks.push_back(MakeUnique<OctreeChunk>());
 			}
 			node = &(*m_Chunks[chunkIndex])[slotIndex];
 			node->m_Id = id;

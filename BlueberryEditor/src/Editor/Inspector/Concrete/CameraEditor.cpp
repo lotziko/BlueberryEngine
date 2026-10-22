@@ -38,6 +38,8 @@ namespace Blueberry
 
 	void CameraEditor::OnDrawInspector()
 	{
+		m_SerializedObject->UpdateIfNeeded();
+
 		ImGui::Property(&m_IsOrthographicProperty, "Is Orthographic");
 
 		if (m_IsOrthographicProperty.GetBool())

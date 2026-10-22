@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Blueberry\Core\Base.h"
 #include "Blueberry\Serialization\Serializer.h"
 
 namespace Blueberry

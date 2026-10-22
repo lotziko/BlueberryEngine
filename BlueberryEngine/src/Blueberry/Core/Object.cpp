@@ -40,7 +40,7 @@ namespace Blueberry
 		m_Name = name;
 	}
 
-	const ObjectState& Object::GetState()
+	const ObjectState Object::GetState()
 	{
 		return m_State;
 	}
@@ -53,6 +53,20 @@ namespace Blueberry
 	void Object::SetState(ObjectState state)
 	{
 		m_State = state;
+	}
+
+	void Object::OnPropertiesChanged()
+	{
+	}
+
+	size_t Object::GetChangesCount() const
+	{
+		return m_ChangesCount;
+	}
+
+	void Object::IncrementChangesCount()
+	{
+		++m_ChangesCount;
 	}
 
 	void Object::DefineFields()

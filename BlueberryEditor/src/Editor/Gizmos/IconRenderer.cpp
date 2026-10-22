@@ -1,9 +1,9 @@
 #include "IconRenderer.h"
 
 #include "Editor\EditorSceneManager.h"
-#include "Editor\EditorObjectManager.h"
 #include "Editor\Inspector\ObjectEditor.h"
 #include "Editor\Inspector\ObjectEditorDB.h"
+#include "Editor\Events\SceneEvents.h"
 
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Graphics\Buffers\PerDrawDataConstantBuffer.h"
@@ -28,22 +28,22 @@ namespace Blueberry
 		if (iconShader == nullptr)
 		{
 			BB_ERROR("Failed to load icon shader.")
-				return false;
+			return false;
 		}
 		s_IconMaterial = Material::Create(iconShader);
-		EditorSceneManager::GetSceneLoaded().AddCallback<&IconRenderer::ClearCache>();
-		EditorObjectManager::GetEntityCreated().AddCallback<&IconRenderer::ClearCache>();
-		EditorObjectManager::GetEntityDestroyed().AddCallback<&IconRenderer::ClearCache>();
-		EditorObjectManager::GetEntityUpdated().AddCallback<&IconRenderer::ClearCache>();
+		SceneEvents::GetSceneLoaded().AddCallback<&IconRenderer::ClearCache>();
+		SceneEvents::GetEntityCreated().AddCallback<&IconRenderer::ClearCache>();
+		SceneEvents::GetEntityDestroyed().AddCallback<&IconRenderer::ClearCache>();
+		SceneEvents::GetEntityUpdated().AddCallback<&IconRenderer::ClearCache>();
 		return true;
 	}
 
 	void IconRenderer::Shutdown()
 	{
-		EditorSceneManager::GetSceneLoaded().RemoveCallback<&IconRenderer::ClearCache>();
-		EditorObjectManager::GetEntityCreated().RemoveCallback<&IconRenderer::ClearCache>();
-		EditorObjectManager::GetEntityDestroyed().RemoveCallback<&IconRenderer::ClearCache>();
-		EditorObjectManager::GetEntityUpdated().RemoveCallback<&IconRenderer::ClearCache>();
+		SceneEvents::GetSceneLoaded().RemoveCallback<&IconRenderer::ClearCache>();
+		SceneEvents::GetEntityCreated().RemoveCallback<&IconRenderer::ClearCache>();
+		SceneEvents::GetEntityDestroyed().RemoveCallback<&IconRenderer::ClearCache>();
+		SceneEvents::GetEntityUpdated().RemoveCallback<&IconRenderer::ClearCache>();
 		Material::Destroy(s_IconMaterial);
 	}
 

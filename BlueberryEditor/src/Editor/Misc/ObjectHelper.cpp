@@ -42,7 +42,20 @@ namespace Blueberry
 						result.context = static_cast<char*>(list->get_base(index));
 						result.fieldTarget = result.context;
 						i = j;
-						offset = j + 1;
+						if (j + 1 < path.size())
+						{
+							if (path[j + 1] != '.' || j + 2 >= path.size())
+							{
+								return {};
+							}
+							if (result.bindingType != BindingType::Data)
+							{
+								return {};
+							}
+							type = *result.fieldInfo->options.objectType;
+							++i;
+						}
+						offset = i + 1;
 						break;
 					}
 				}
@@ -97,10 +110,6 @@ namespace Blueberry
 		if (data.isValid)
 		{
 			VariantHelper::WriteValue(data.bindingType, data.fieldTarget, value);
-			if (data.fieldInfo->options.updateCallback != nullptr)
-			{
-				data.fieldInfo->options.updateCallback->Invoke(data.context);
-			}
 		}
 	}
 }

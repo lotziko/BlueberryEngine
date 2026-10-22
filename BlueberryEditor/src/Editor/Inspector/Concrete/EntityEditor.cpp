@@ -2,13 +2,15 @@
 
 #include "Blueberry\Scene\Entity.h"
 #include "Blueberry\Scene\Components\Component.h"
+#include "Blueberry\Scene\Components\Transform.h"
 
 #include "Blueberry\Core\ClassDB.h"
 
 #include "Editor\Panels\Inspector\InspectorExpandedItemsCache.h"
 #include "Editor\Panels\Picking\ComponentPicker.h"
 #include "Editor\Misc\ImGuiHelper.h"
-#include "Editor\EditorObjectManager.h"
+#include "Editor\Undo\UndoManager.h"
+#include "Editor\Events\SceneEvents.h"
 #include "Editor\Selection.h"
 
 #include <imgui\imgui.h>
@@ -24,7 +26,6 @@ namespace Blueberry
 	{
 		m_IsActiveProperty = m_SerializedObject->FindProperty("m_IsActive");
 		m_ComponentsProperty = m_SerializedObject->FindProperty("m_Components");
-		
 		auto& targets = m_SerializedObject->GetTargets();
 		List<std::pair<size_t, List<Object*>>> components;
 		for (Object* target : targets)
@@ -53,7 +54,7 @@ namespace Blueberry
 				}
 			}
 		}
-		
+
 		for (auto& pair : components)
 		{
 			auto& list = pair.second;
@@ -63,17 +64,18 @@ namespace Blueberry
 				if (editor != nullptr)
 				{
 					Object* component = list[0];
-					m_ComponentsEditors.push_back({ component->GetObjectId(), component->GetTypeName(), StringHelper::ToDisplayName(component->GetTypeName()), editor });
+					m_ComponentsEditors.push_back({ component->GetObjectId(), component->GetType(), component->GetTypeName(), StringHelper::ToDisplayName(component->GetTypeName()), editor });
 				}
 			}
 		}
-
-		EditorObjectManager::GetEntityDestroyed().AddCallback<EntityEditor, &EntityEditor::OnEntityDestroy>(this);
+		SceneEvents::GetEntityDestroyed().AddCallback<EntityEditor, &EntityEditor::OnEntityDestroy>(this);
+		SceneEvents::GetComponentCreated().AddCallback<EntityEditor, &EntityEditor::OnComponentCreate>(this);
+		SceneEvents::GetComponentDestroyed().AddCallback<EntityEditor, &EntityEditor::OnComponentDestroy>(this);
 	}
 
 	void EntityEditor::OnDisable()
 	{
-		if (m_ComponentsEditors.size() > 0)
+		if (!m_ComponentsEditors.empty())
 		{
 			for (auto& componentEditor : m_ComponentsEditors)
 			{
@@ -81,12 +83,15 @@ namespace Blueberry
 			}
 			m_ComponentsEditors.clear();
 		}
-
-		EditorObjectManager::GetEntityDestroyed().RemoveCallback<EntityEditor, &EntityEditor::OnEntityDestroy>(this);
+		SceneEvents::GetEntityDestroyed().RemoveCallback<EntityEditor, &EntityEditor::OnEntityDestroy>(this);
+		SceneEvents::GetComponentCreated().RemoveCallback<EntityEditor, &EntityEditor::OnComponentCreate>(this);
+		SceneEvents::GetComponentDestroyed().RemoveCallback<EntityEditor, &EntityEditor::OnComponentDestroy>(this);
 	}
 
 	void EntityEditor::OnDrawInspector()
 	{
+		m_SerializedObject->UpdateIfNeeded();
+
 		ImGui::BeginPaddedArea(ImVec2(18, 5), ImVec2(10, 5));
 		ImGui::Property(&m_IsActiveProperty, "Is Active");
 		ImGui::EndPaddedArea();
@@ -108,9 +113,12 @@ namespace Blueberry
 			{
 				if (ImGui::MenuItem("Remove component"))
 				{
-					for (Object* target : componentEditor.editor->GetSerializedObject()->GetTargets())
+					if (componentEditor.type != Transform::Type)
 					{
-						m_RemovedComponents.push_back(static_cast<Component*>(target));
+						for (Object* target : componentEditor.editor->GetSerializedObject()->GetTargets())
+						{
+							m_RemovedComponents.push_back(static_cast<Component*>(target));
+						}
 					}
 				}
 				ImGui::EndPopup();
@@ -149,7 +157,7 @@ namespace Blueberry
 		{
 			for (auto& pair : m_AddedComponents)
 			{
-				EditorObjectManager::AddComponent(pair.first, pair.second);
+				UndoManager::AddComponent(pair.first, pair.second);
 			}
 			m_AddedComponents.clear();
 		}
@@ -157,14 +165,9 @@ namespace Blueberry
 		{
 			for (Component* component : m_RemovedComponents)
 			{
-				EditorObjectManager::RemoveComponent(component);
+				UndoManager::DestroyObject(component);
 			}
 			m_RemovedComponents.clear();
-		}
-		if (hasAddedComponents || hasRemovedComponents)
-		{
-			OnDisable();
-			OnEnable();
 		}
 	}
 
@@ -173,6 +176,24 @@ namespace Blueberry
 		if (!m_SerializedObject->IsValid())
 		{
 			Selection::SetActiveObject(nullptr);
+		}
+	}
+
+	void EntityEditor::OnComponentCreate()
+	{
+		if (m_SerializedObject->IsValid())
+		{
+			OnDisable();
+			OnEnable();
+		}
+	}
+
+	void EntityEditor::OnComponentDestroy()
+	{
+		if (m_SerializedObject->IsValid())
+		{
+			OnDisable();
+			OnEnable();
 		}
 	}
 }

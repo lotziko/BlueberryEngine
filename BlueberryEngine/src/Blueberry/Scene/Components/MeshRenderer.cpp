@@ -12,7 +12,7 @@ namespace Blueberry
 	OBJECT_DEFINITION(MeshRenderer, Renderer)
 	{
 		DEFINE_BASE_FIELDS(MeshRenderer, Renderer)
-		DEFINE_FIELD(MeshRenderer, m_Mesh, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Mesh::Type).SetUpdateCallback(MethodBind::Create(&MeshRenderer::InvalidateBounds)))
+		DEFINE_FIELD(MeshRenderer, m_Mesh, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Mesh::Type))
 		DEFINE_FIELD(MeshRenderer, m_Materials, BindingType::ObjectPtrList, FieldOptions().SetObjectType(&Material::Type))
 		DEFINE_FIELD(MeshRenderer, m_IsBakeable, BindingType::Bool, FieldOptions())
 		DEFINE_FIELD(MeshRenderer, m_LightmapChartOffset, BindingType::Uint, FieldOptions().SetVisibility(VisibilityType::Hidden).SetSerializationFlags(SerializationFlags::RuntimeOnly))
@@ -26,7 +26,7 @@ namespace Blueberry
 		Scene* scene = GetScene();
 		if (scene != nullptr)
 		{
-			m_BoundsDirty = true;
+			m_IsBoundsDirty = true;
 			m_Bounds = GetBounds();
 			scene->GetRendererTree().Add(this, m_Bounds);
 			GetTransform()->AddDependency(this);
@@ -44,6 +44,11 @@ namespace Blueberry
 	}
 
 	void MeshRenderer::OnTransformInvalidate()
+	{
+		InvalidateBounds();
+	}
+
+	void MeshRenderer::OnPropertiesChanged()
 	{
 		InvalidateBounds();
 	}
@@ -163,19 +168,19 @@ namespace Blueberry
 	{
 		if (m_Mesh.IsValid())
 		{
-			if (m_BoundsDirty)
+			if (m_IsBoundsDirty)
 			{
 				AABB bounds = m_Mesh->GetBounds();
 				Matrix matrix = GetTransform()->GetLocalToWorldMatrix();
 				bounds.Transform(m_Bounds, matrix);
-				m_BoundsDirty = false;
+				m_IsBoundsDirty = false;
 			}
 		}
 	}
 
 	void MeshRenderer::InvalidateBounds()
 	{
-		m_BoundsDirty = true;
+		m_IsBoundsDirty = true;
 		Scene* scene = GetScene();
 		if (scene != nullptr)
 		{

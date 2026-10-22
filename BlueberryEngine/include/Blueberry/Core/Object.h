@@ -81,9 +81,14 @@ void childclass::DefineFields()														\
 		virtual const String& GetName();
 		void SetName(const String& name);
 
-		const ObjectState& GetState();
+		const ObjectState GetState();
 		const bool IsDefaultState();
 		void SetState(ObjectState state);
+
+		virtual void OnPropertiesChanged();
+
+		size_t GetChangesCount() const;
+		void IncrementChangesCount();
 
 		static void DefineFields();
 
@@ -96,6 +101,7 @@ void childclass::DefineFields()														\
 		ObjectId m_ObjectId = INVALID_ID;
 		String m_Name;
 		ObjectState m_State = ObjectState::Default;
+		size_t m_ChangesCount = 0;
 
 		friend class ObjectDB;
 		friend class ClassDB;

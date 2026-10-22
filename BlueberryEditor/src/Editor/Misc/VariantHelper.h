@@ -8,9 +8,9 @@ namespace Blueberry
 	class VariantHelper
 	{
 	public:
-		static BindingType GetChildType(const BindingType& type);
-		static void GetDefaultValue(const BindingType& type, Variant& value);
-		static void ReadValue(const BindingType& type, void* ptr, Variant& value);
-		static void WriteValue(const BindingType& type, void* ptr, Variant& value);
+		static BindingType GetChildType(BindingType type);
+		static void GetDefaultValue(BindingType type, Variant& value);
+		static void ReadValue(BindingType type, void* ptr, Variant& value);
+		static void WriteValue(BindingType type, void* ptr, Variant& value);
 	};
 }

@@ -44,6 +44,11 @@ namespace Blueberry
 		m_Texture = texture;
 	}
 
+	void Material::OnPropertiesChanged()
+	{
+		ApplyProperties();
+	}
+
 	Material* Material::Create(Shader* shader)
 	{
 		Material* material = Object::Create<Material>();
@@ -93,6 +98,8 @@ namespace Blueberry
 		}
 		FillTextureMap();
 		m_Crc = UINT32_MAX;
+		m_ActiveKeywordsMask = UINT32_MAX;
+		m_IsOpaque = 0;
 	}
 
 	const ShaderData* Material::GetShaderData()

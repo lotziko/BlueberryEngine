@@ -13,7 +13,7 @@ namespace Blueberry
 	{
 		DEFINE_BASE_FIELDS(Entity, Object)
 		DEFINE_FIELD(Entity, m_Components, BindingType::ObjectPtrList, FieldOptions().SetObjectType(&Component::Type).SetVisibility(VisibilityType::Hidden))
-		DEFINE_FIELD(Entity, m_IsActive, BindingType::Bool, FieldOptions().SetUpdateCallback(MethodBind::Create(&Entity::UpdateHierarchy)))
+		DEFINE_FIELD(Entity, m_IsActive, BindingType::Bool, FieldOptions())
 	}
 
 	Entity::Entity(const String& name)
@@ -52,24 +52,34 @@ namespace Blueberry
 		}
 	}
 
+	void Entity::OnPropertiesChanged()
+	{
+		UpdateHierarchy();
+	}
+
 	void Entity::AddComponent(Component* component)
 	{
-		int index = 0;
-		for (auto& componentSlot : m_Components)
-		{
-			if (!componentSlot.IsValid())
-			{
-				componentSlot = component;
-				break;
-			}
-			++index;
-		}
-
 		component->m_Entity = this;
-		if (index >= m_Components.size())
+		m_Components.push_back(component);
+		if (IsActiveInHierarchy())
 		{
-			m_Components.push_back(component);
+			if (!component->m_IsCreated)
+			{
+				s_Operations.push({ 1000, ++s_OperationSequence, Operation::CreateComponent, component });
+				component->m_IsCreated = true;
+			}
+			if (!component->m_IsActive)
+			{
+				s_Operations.push({ 2000, ++s_OperationSequence, Operation::EnableComponent, component });
+				component->m_IsActive = true;
+			}
 		}
+	}
+
+	void Entity::AddComponentAt(Component* component, size_t index)
+	{
+		component->m_Entity = this;
+		m_Components.insert(m_Components.begin() + index, component);
 		if (IsActiveInHierarchy())
 		{
 			if (!component->m_IsCreated)
@@ -92,6 +102,18 @@ namespace Blueberry
 			return m_Components[index].Get();
 		}
 		return nullptr;
+	}
+
+	size_t Entity::GetComponentIndex(Component* component) const
+	{
+		for (size_t i = 0; i < m_Components.size(); ++i)
+		{
+			if (m_Components[i] == component)
+			{
+				return i;
+			}
+		}
+		return UINT64_MAX;
 	}
 
 	const size_t Entity::GetComponentCount()
@@ -369,31 +391,28 @@ namespace Blueberry
 
 	void Entity::EnableComponents()
 	{
-		for (auto&& componentSlot : m_Components)
+		for (auto& componentSlot : m_Components)
 		{
 			Component* component = componentSlot.Get();
-			if (component->CanExecute())
+			if (!component->m_IsCreated)
 			{
-				if (!component->m_IsCreated)
-				{
-					s_Operations.push({ 1000, ++s_OperationSequence, Operation::CreateComponent, component });
-					component->m_IsCreated = true;
-				}
-				if (!component->m_IsActive)
-				{
-					s_Operations.push({ 2000, ++s_OperationSequence, Operation::EnableComponent, component });
-					component->m_IsActive = true;
-				}
+				s_Operations.push({ 1000, ++s_OperationSequence, Operation::CreateComponent, component });
+				component->m_IsCreated = true;
+			}
+			if (!component->m_IsActive)
+			{
+				s_Operations.push({ 2000, ++s_OperationSequence, Operation::EnableComponent, component });
+				component->m_IsActive = true;
 			}
 		}
 	}
 
 	void Entity::DisableComponents()
 	{
-		for (auto&& componentSlot : m_Components)
+		for (auto& componentSlot : m_Components)
 		{
 			Component* component = componentSlot.Get();
-			if (component->m_IsActive && component->CanExecute())
+			if (component->m_IsActive)
 			{
 				s_Operations.push({ 2000, ++s_OperationSequence, Operation::DisableComponent, component });
 				component->m_IsActive = false;

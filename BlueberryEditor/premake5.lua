@@ -69,8 +69,7 @@ project "BlueberryEditor"
 
 	filter "configurations:Debug"
 		defines "BB_DEBUG"
-		runtime "Debug"
-		symbols "on"
+		runtime "Release"
 
 	filter "configurations:Release"
 		runtime "Release"

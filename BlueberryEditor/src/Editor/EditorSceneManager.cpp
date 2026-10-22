@@ -14,28 +14,28 @@
 #include "Editor\Scene\SceneSettings.h"
 #include "Editor\Scene\LightingData.h"
 #include "Editor\Misc\PlatformHelper.h"
+#include "Editor\Events\SceneEvents.h"
 
 namespace Blueberry
 {
-	Scene* EditorSceneManager::s_Scene = nullptr;
+	Scene* EditorSceneManager::s_EditorScene = nullptr;
+	Scene* EditorSceneManager::s_RuntimeScene = nullptr;
 	List<EditorSceneManager::PrefabSceneData> EditorSceneManager::s_PrefabScenes = {};
 	String EditorSceneManager::s_Path = "";
-	SceneLoadEvent EditorSceneManager::s_SceneLoaded = {};
 
 	ObjectPtr<SceneSettings> EditorSceneManager::s_SceneSettings = nullptr;
 
 	void EditorSceneManager::CreateEmpty(const String& path)
 	{
-		s_Scene = new Scene();
-		s_Scene->Initialize();
+		s_EditorScene = new Scene();
 		Save();
 		UpdateScene();
-		s_SceneLoaded.Invoke();
+		SceneEvents::GetSceneLoaded().Invoke();
 	}
 
 	bool EditorSceneManager::HasScene()
 	{
-		return s_Scene != nullptr;
+		return s_EditorScene != nullptr;
 	}
 
 	bool EditorSceneManager::HasPrefabScene()
@@ -49,7 +49,11 @@ namespace Blueberry
 		{
 			return s_PrefabScenes[s_PrefabScenes.size() - 1].scene;
 		}
-		return s_Scene;
+		if (s_RuntimeScene != nullptr)
+		{
+			return s_RuntimeScene;
+		}
+		return s_EditorScene;
 	}
 
 	const String EditorSceneManager::GetRelativePath()
@@ -78,20 +82,19 @@ namespace Blueberry
 		Unload();
 		Entity::Poll();
 
-		s_Scene = new Scene();
-		s_Scene->Initialize();
+		s_EditorScene = new Scene();
 
 		s_Path = path;
 		PlatformHelper::ShowProgressBar("Loading Scene", GetRelativePath());
 		Deserialize(path);
 		UpdateScene();
 		PlatformHelper::HideProgressBar();
-		s_SceneLoaded.Invoke();
+		SceneEvents::GetSceneLoaded().Invoke();
 	}
 
 	void EditorSceneManager::Reload()
 	{
-		if (s_Scene == nullptr && s_Path.empty())
+		if (s_EditorScene == nullptr && s_Path.empty())
 		{
 			return;
 		}
@@ -116,7 +119,7 @@ namespace Blueberry
 				AssetDB::ImportAsset(AssetDB::GetRelativePath(guid));
 			}
 		}
-		else if (s_Scene != nullptr)
+		else if (s_EditorScene != nullptr)
 		{
 			Serialize(s_Path);
 		}
@@ -124,9 +127,9 @@ namespace Blueberry
 
 	void EditorSceneManager::Unload()
 	{
-		if (s_Scene != nullptr)
+		if (s_EditorScene != nullptr)
 		{
-			for (auto& pair : s_Scene->GetEntities())
+			for (auto& pair : s_EditorScene->GetEntities())
 			{
 				Entity* entity = pair.second.Get();
 				if (PrefabManager::IsPrefabInstanceRoot(entity))
@@ -134,8 +137,10 @@ namespace Blueberry
 					Object::Destroy(PrefabManager::GetInstance(entity));
 				}
 			}
-			s_Scene->Destroy();
-			s_Scene = nullptr;
+			s_EditorScene->Destroy();
+			Entity::Poll();
+			delete s_EditorScene;
+			s_EditorScene = nullptr;
 			UpdateScene();
 		}
 	}
@@ -149,7 +154,7 @@ namespace Blueberry
 			if (s_PrefabScenes[i].root == root)
 			{
 				s_PrefabScenes.move_element(i, s_PrefabScenes.size() - 1);
-				s_SceneLoaded.Invoke();
+				SceneEvents::GetSceneLoaded().Invoke();
 				return;
 			}
 		}
@@ -189,14 +194,14 @@ namespace Blueberry
 
 		s_PrefabScenes.push_back(std::move(data));
 		UpdateScene();
-		s_SceneLoaded.Invoke();
+		SceneEvents::GetSceneLoaded().Invoke();
 	}
 
 	void EditorSceneManager::ClosePrefab(const bool& all)
 	{
 		for (size_t i = (all ? 0 : s_PrefabScenes.size() - 1); i < s_PrefabScenes.size(); ++i)
 		{
-			s_PrefabScenes[i].scene->Destroy();
+			delete s_PrefabScenes[i].scene;
 		}
 		if (all)
 		{
@@ -207,7 +212,7 @@ namespace Blueberry
 			s_PrefabScenes.pop_back();
 		}
 		UpdateScene();
-		s_SceneLoaded.Invoke();
+		SceneEvents::GetSceneLoaded().Invoke();
 	}
 
 	void EditorSceneManager::Run()
@@ -216,27 +221,22 @@ namespace Blueberry
 		{
 			return;
 		}
-		Unload();
-		Entity::Poll();
 		Application::SetRunning(true);
-		Reload();
+		s_RuntimeScene = s_EditorScene->Clone();
+		Entity::Poll();
 	}
 
 	void EditorSceneManager::Stop()
 	{
-		if (s_Scene == nullptr || !Application::IsRunning())
+		if (s_RuntimeScene == nullptr || !Application::IsRunning())
 		{
 			return;
 		}
-		Unload();
+		s_RuntimeScene->Destroy();
 		Entity::Poll();
+		delete s_RuntimeScene;
+		s_RuntimeScene = nullptr;
 		Application::SetRunning(false);
-		Reload();
-	}
-
-	SceneLoadEvent& EditorSceneManager::GetSceneLoaded()
-	{
-		return s_SceneLoaded;
 	}
 
 	SceneSettings* EditorSceneManager::GetSettings()
@@ -270,7 +270,7 @@ namespace Blueberry
 			{
 				serializer.AddObject(s_SceneSettings.Get());
 			}
-			serializer.GatherPrefabs(s_Scene);
+			serializer.GatherPrefabs(s_EditorScene);
 		}
 		serializer.Serialize(path, SerializationFlags::EditorOnly | SerializationFlags::Text | SerializationFlags::HasHeaders);
 		AssetDB::Refresh();	// maybe skip refresh on prefabs and save straight to cache?
@@ -287,7 +287,7 @@ namespace Blueberry
 			if (object->IsClassType(Entity::Type))
 			{
 				Entity* entity = static_cast<Entity*>(object);
-				s_Scene->AddEntity(entity);
+				s_EditorScene->AddEntity(entity);
 			}
 			else if (object->IsClassType(PrefabInstance::Type))
 			{
@@ -295,7 +295,7 @@ namespace Blueberry
 				Entity* entity = prefabInstance->GetEntity();
 				if (entity != nullptr)
 				{
-					s_Scene->AddEntity(entity);
+					s_EditorScene->AddEntity(entity);
 				}
 			}
 			else if (object->IsClassType(SceneSettings::Type))
@@ -335,13 +335,13 @@ namespace Blueberry
 			LightingData* lightingData = s_SceneSettings->GetLightingData();
 			if (lightingData != nullptr)
 			{
-				if (s_PrefabScenes.size() == 0 && s_Scene != nullptr)
+				if (s_PrefabScenes.size() == 0 && s_EditorScene != nullptr)
 				{
 					hasLighting = true;
 					lightingData->Apply();
 				}
 			}
-			if (s_Scene == nullptr)
+			if (s_EditorScene == nullptr)
 			{
 				Object::Destroy(s_SceneSettings.Get());
 				s_SceneSettings = nullptr;

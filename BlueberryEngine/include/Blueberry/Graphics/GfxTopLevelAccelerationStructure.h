@@ -13,5 +13,6 @@ namespace Blueberry
 	public:
 		virtual void Add(GfxBottomLevelAccelerationStructure* accelerationStructure, const List<ObjectPtr<Material>>& materials, const Matrix& transform) = 0;
 		virtual void Clear() = 0;
+		virtual bool IsEmpty() = 0;
 	};
 }

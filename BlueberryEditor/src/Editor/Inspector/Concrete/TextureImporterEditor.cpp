@@ -28,6 +28,8 @@ namespace Blueberry
 
 	void TextureImporterEditor::OnDrawInspector()
 	{
+		m_SerializedObject->UpdateIfNeeded();
+
 		ImGui::Property(&m_GenerateMipmapsProperty, "Generate mipmaps");
 		ImGui::Property(&m_IsSRGBProperty, "Is SRGB");
 		ImGui::Property(&m_IsReadableProperty, "Is Readable");
@@ -122,6 +124,7 @@ namespace Blueberry
 				ImGui::SetMixedValue(false);
 			}
 		}
+
 		m_SerializedObject->ApplyModifiedProperties();
 
 		if (ImGui::Button("Save"))

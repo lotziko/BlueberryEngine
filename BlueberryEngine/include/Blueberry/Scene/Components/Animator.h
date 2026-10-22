@@ -20,6 +20,8 @@ namespace Blueberry
 
 		virtual void OnEnable() final;
 		virtual void OnUpdate() final;
+
+		virtual void OnPropertiesChanged() final;
 		
 		AnimationGraph* GetAnimationGraph();
 		void SetAnimationGraph(AnimationGraph* animationGraph);

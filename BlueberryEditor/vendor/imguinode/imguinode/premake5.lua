@@ -40,7 +40,7 @@ project "ImGuiNode"
 
 	filter "configurations:Debug"
         staticruntime "off"
-		runtime "Debug"
+		runtime "Release"
 
 	filter "configurations:Release"
         staticruntime "off"

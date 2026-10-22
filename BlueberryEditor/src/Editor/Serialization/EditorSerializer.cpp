@@ -242,7 +242,7 @@ namespace Blueberry
 				Finalize(object, m_Guid, tree.fileId);
 			}
 		}
-		if (m_PrefabInstances.size() > 0)
+		if (!m_PrefabInstances.empty())
 		{
 			// Setup prefab hierarchy
 			for (PrefabInstance* instance : m_PrefabInstances)

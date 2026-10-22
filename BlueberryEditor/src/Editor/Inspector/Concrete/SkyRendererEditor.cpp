@@ -18,6 +18,8 @@ namespace Blueberry
 
 	void SkyRendererEditor::OnDrawInspector()
 	{
+		m_SerializedObject->UpdateIfNeeded();
+
 		ImGui::EditorStyle& style = ImGui::GetEditorStyle();
 
 		ObjectEditor::OnDrawInspector();

@@ -19,11 +19,14 @@ namespace Blueberry
 
 	private:
 		void OnEntityDestroy();
+		void OnComponentCreate();
+		void OnComponentDestroy();
 
 	private:
 		struct ComponentEditorData
 		{
 			ObjectId id;
+			TypeId type;
 			String name;
 			String displayName;
 			ObjectEditor* editor;

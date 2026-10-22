@@ -34,6 +34,7 @@
 #include "Editor\Menu\EditorMenuManager.h"
 #include "Editor\Serialization\AssemblySerializer.h"
 #include "Editor\Selection.h"
+#include "Editor\Undo\UndoManager.h"
 
 //#include "Blueberry\Graphics\OpenXRRenderer.h"
 
@@ -153,6 +154,7 @@ namespace Blueberry
 			GfxTexturePool::Update();
 			s_FrameUpdateRequested = false;
 		}
+		UndoManager::ResolveRecordedObjects();
 		EngineLayer::Update();
 	}
 
@@ -225,6 +227,7 @@ namespace Blueberry
 					{
 						Physics::Disable();
 						//OpenXRRenderer::Shutdown();
+						UndoManager::ClearPlayMode();
 						EditorSceneManager::Stop();
 						if (isStartingFromScene)
 						{
@@ -241,6 +244,7 @@ namespace Blueberry
 				{
 					if (ImGui::Button("Run"))
 					{
+						// TODO call event instead
 						if (EditorWindow::Save())
 						{
 							isStartingFromScene = EditorWindow::IsFocused(SceneArea::Type);
@@ -292,6 +296,21 @@ namespace Blueberry
 			{
 				ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
 				ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+			}
+
+			if (ImGui::IsMouseClicked(0) && !ImGui::IsAnyItemFocused())
+			{
+				UndoManager::IncrementGroup();
+			}
+
+			if (ImGui::IsKeyDown(ImGuiMod_Ctrl) && ImGui::IsKeyPressed(ImGuiKey_Z))
+			{
+				UndoManager::Undo();
+			}
+
+			if (ImGui::IsKeyDown(ImGuiMod_Ctrl) && ImGui::IsKeyPressed(ImGuiKey_Y))
+			{
+				UndoManager::Redo();
 			}
 
 			EditorWindow::Draw();

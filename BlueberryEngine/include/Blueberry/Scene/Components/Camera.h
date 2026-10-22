@@ -25,6 +25,7 @@ namespace Blueberry
 		virtual void OnDisable() final;
 
 		virtual void OnTransformInvalidate() final;
+		virtual void OnPropertiesChanged() final;
 
 		const Matrix& GetProjectionMatrix();
 		const Matrix& GetViewMatrix();
@@ -67,8 +68,6 @@ namespace Blueberry
 		void SetBackgroundColor(const Color& backgroundColor);
 
 	private:
-		void InvalidateProjection();
-
 		void RecalculateView();
 		void RecalculateProjection();
 

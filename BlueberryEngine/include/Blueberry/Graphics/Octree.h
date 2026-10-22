@@ -86,7 +86,7 @@ namespace Blueberry
 	private:
 		static constexpr uint32_t NodesPerChunk = 256;
 		using OctreeChunk = Array<OctreeNode, NodesPerChunk>;
-		List<std::unique_ptr<OctreeChunk>> m_Chunks;
+		List<UniquePtr<OctreeChunk>> m_Chunks;
 		List<OctreeNode*> m_FreeNodes;
 		uint32_t m_MaxNodeId = 0;
 

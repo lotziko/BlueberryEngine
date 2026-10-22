@@ -2,7 +2,7 @@
 
 namespace Blueberry
 {
-	BindingType VariantHelper::GetChildType(const BindingType& type)
+	BindingType VariantHelper::GetChildType(BindingType type)
 	{
 		switch (type)
 		{
@@ -27,7 +27,7 @@ namespace Blueberry
 		}
 	}
 
-	void VariantHelper::GetDefaultValue(const BindingType& type, Variant& value)
+	void VariantHelper::GetDefaultValue(BindingType type, Variant& value)
 	{
 		switch (type)
 		{
@@ -70,7 +70,7 @@ namespace Blueberry
 		}
 	}
 
-	void VariantHelper::ReadValue(const BindingType& type, void* ptr, Variant& value)
+	void VariantHelper::ReadValue(BindingType type, void* ptr, Variant& value)
 	{
 		switch (type)
 		{
@@ -113,7 +113,7 @@ namespace Blueberry
 		}
 	}
 
-	void VariantHelper::WriteValue(const BindingType& type, void* ptr, Variant& value)
+	void VariantHelper::WriteValue(BindingType type, void* ptr, Variant& value)
 	{
 		switch (type)
 		{

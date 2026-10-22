@@ -47,7 +47,7 @@ namespace Blueberry
 		static Dictionary<size_t, ObjectEditor*> s_DefaultEditors;
 
 	protected:
-		std::shared_ptr<SerializedObject> m_SerializedObject;
+		SharedPtr<SerializedObject> m_SerializedObject;
 		Object* m_Object;
 	};
 }

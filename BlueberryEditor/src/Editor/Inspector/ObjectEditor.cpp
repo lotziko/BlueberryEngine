@@ -66,6 +66,7 @@ namespace Blueberry
 
 	void ObjectEditor::OnDrawInspector()
 	{
+		m_SerializedObject->UpdateIfNeeded();
 		SerializedProperty iterator = m_SerializedObject->GetIterator();
 		ImGui::BeginChangeCheck();
 		do
@@ -101,7 +102,7 @@ namespace Blueberry
 		{
 			ObjectEditor* editor = info->createInstance();
 			editor->OnPrepareTargets(List<Object*> { object });
-			editor->m_SerializedObject = std::make_shared<SerializedObject>(object);
+			editor->m_SerializedObject = MakeShared<SerializedObject>(object);
 			editor->OnEnable();
 			s_Editors.insert_or_assign(objectId, editor);
 			return editor;
@@ -127,7 +128,7 @@ namespace Blueberry
 		{
 			ObjectEditor* editor = info->createInstance();
 			editor->OnPrepareTargets(objects);
-			editor->m_SerializedObject = std::make_shared<SerializedObject>(objects);
+			editor->m_SerializedObject = MakeShared<SerializedObject>(objects);
 			editor->OnEnable();
 			s_Editors.insert_or_assign(objectId, editor);
 			return editor;

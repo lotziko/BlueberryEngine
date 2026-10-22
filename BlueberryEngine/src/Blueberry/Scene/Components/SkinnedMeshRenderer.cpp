@@ -13,7 +13,7 @@ namespace Blueberry
 	OBJECT_DEFINITION(SkinnedMeshRenderer, Renderer)
 	{
 		DEFINE_BASE_FIELDS(SkinnedMeshRenderer, Renderer)
-		DEFINE_FIELD(SkinnedMeshRenderer, m_Mesh, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Mesh::Type).SetUpdateCallback(MethodBind::Create(&SkinnedMeshRenderer::InvalidateBounds)))
+		DEFINE_FIELD(SkinnedMeshRenderer, m_Mesh, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Mesh::Type))
 		DEFINE_FIELD(SkinnedMeshRenderer, m_Materials, BindingType::ObjectPtrList, FieldOptions().SetObjectType(&Material::Type))
 		DEFINE_FIELD(SkinnedMeshRenderer, m_Root, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Transform::Type))
 		DEFINE_FIELD(SkinnedMeshRenderer, m_Bones, BindingType::ObjectPtrList, FieldOptions().SetObjectType(&Transform::Type).SetVisibility(VisibilityType::NonExposed))
@@ -48,13 +48,18 @@ namespace Blueberry
 		}
 	}
 
+	void SkinnedMeshRenderer::OnPropertiesChanged()
+	{
+		InvalidateBounds();
+	}
+
 	void SkinnedMeshRenderer::OnPreCull()
 	{
 		UpdateBounds();
-		if (m_CullingDirty)
+		if (m_IsCullingDirty)
 		{
 			GetScene()->GetRendererTree().Update(this, m_Bounds);
-			m_CullingDirty = false;
+			m_IsCullingDirty = false;
 		}
 	}
 
@@ -233,7 +238,7 @@ namespace Blueberry
 				AABB bounds(Vector3::Zero, Vector3(meshBounds.Extents.x * 2, meshBounds.Extents.y * 2, meshBounds.Extents.z * 2));
 				Matrix matrix = m_Bones[0]->GetLocalToWorldMatrix();
 				bounds.Transform(m_Bounds, matrix);
-				m_CullingDirty = true;
+				m_IsCullingDirty = true;
 				m_UpdateCount = transformUpdateCount;
 			}
 		}

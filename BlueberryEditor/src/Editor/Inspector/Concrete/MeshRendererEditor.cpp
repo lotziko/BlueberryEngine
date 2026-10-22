@@ -17,10 +17,13 @@ namespace Blueberry
 
 	void MeshRendererEditor::OnDrawInspector()
 	{
+		m_SerializedObject->UpdateIfNeeded();
+
 		ImGui::Property(&m_MeshProperty);
 		ImGui::Property(&m_MaterialsProperty);
 		ImGui::Property(&m_IsCastingShadowsProperty);
 		ImGui::Property(&m_IsBakeableProperty);
+
 		m_SerializedObject->ApplyModifiedProperties();
 	}
 

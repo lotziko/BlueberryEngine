@@ -24,16 +24,22 @@ namespace Blueberry
 
 	struct PhysicsBody::PrivateData
 	{
-		JPH::BodyID bodyId;
+		BB_OVERRIDE_NEW_DELETE
+
+		JPH::BodyID bodyId = {};
 	};
 
 	PhysicsBody::PhysicsBody()
 	{
-		memset(m_PrivateStorage, 0, sizeof(PrivateData));
-		m_PrivateData = reinterpret_cast<PrivateData*>(&m_PrivateStorage);
+		m_PrivateData = new PrivateData();
 	}
 
 	// ModelImporter will generate prefabs with static PhysicsBodies with mesh shape if it is choosed to
+
+	PhysicsBody::~PhysicsBody()
+	{
+		delete m_PrivateData;
+	}
 
 	void PhysicsBody::OnCreate()
 	{
@@ -82,7 +88,7 @@ namespace Blueberry
 	void PhysicsBody::OnUpdate()
 	{
 		JPH::BodyInterface& bodyInterface = Physics::s_PhysicsSystem->GetBodyInterface();
-		if (m_PrivateData->bodyId.GetIndex() == 0)
+		if (m_PrivateData->bodyId.IsInvalid())
 		{
 			// Update is used here because colliders attach to PhysicsBody in OnCreate
 			size_t collidersCount = m_Colliders.size();

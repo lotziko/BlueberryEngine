@@ -117,7 +117,7 @@ namespace Blueberry
 			{
 				GfxTexture* cachedTexture = light->GetCachedShadow();
 
-				if (light->m_IsDirty[sliceIndex])
+				if (light->m_IsSliceDirty[sliceIndex])
 				{
 					shadowDrawingSettings.objectsFilter = ObjectsFilter::Static;
 
@@ -127,7 +127,7 @@ namespace Blueberry
 					context.DrawShadows(results, shadowDrawingSettings);
 					GfxDevice::SetRenderTarget(nullptr, s_AtlasTexture);
 
-					light->m_IsDirty[sliceIndex] = false;
+					light->m_IsSliceDirty[sliceIndex] = false;
 				}
 
 				shadowDrawingSettings.objectsFilter = ObjectsFilter::Dynamic;

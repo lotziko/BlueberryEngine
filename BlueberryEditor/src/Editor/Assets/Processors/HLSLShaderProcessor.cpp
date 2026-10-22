@@ -23,14 +23,14 @@ namespace Blueberry
 				PassData& pass = compilationData.dataPasses[i];
 				size_t vertexVariantCount = std::max(static_cast<int>(pow(2, compilationPass.vertexKeywords.size())), 1);
 				size_t fragmentVariantCount = std::max(static_cast<int>(pow(2, compilationPass.fragmentKeywords.size())), 1);
-				std::unique_ptr<HLSLShaderCompiler> compiler;
+				UniquePtr<HLSLShaderCompiler> compiler;
 				if (GraphicsAPI::GetAPI() == GraphicsAPI::API::DX11)
 				{
-					compiler = std::make_unique<HLSLShaderCompilerFXC>(compilationPass.shaderCode);
+					compiler = MakeUnique<HLSLShaderCompilerFXC>(compilationPass.shaderCode);
 				}
 				else
 				{
-					compiler = std::make_unique<HLSLShaderCompilerDXC>(compilationPass.shaderCode);
+					compiler = MakeUnique<HLSLShaderCompilerDXC>(compilationPass.shaderCode);
 				}
 				
 				if (!compilationPass.vertexEntryPoint.empty())

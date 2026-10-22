@@ -38,6 +38,8 @@ namespace Blueberry
 
 	void ReflectionProbeEditor::OnDrawInspector()
 	{
+		m_SerializedObject->UpdateIfNeeded();
+
 		if (m_SerializedObject->GetTargets().size() == 1)
 		{
 			ImGui::Property(&m_TypeProperty, "Type");

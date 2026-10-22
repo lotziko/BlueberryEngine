@@ -11,7 +11,7 @@ namespace Blueberry
 	public:
 		BB_OVERRIDE_NEW_DELETE
 
-		Event() { m_Callbacks = std::make_shared<List<CallbackData>>(); }
+		Event() { m_Callbacks = MakeShared<List<CallbackData>>(); }
 
 		template <class OwnerObject, void(OwnerObject::*method)(Args...)>
 		void AddCallback(OwnerObject* const object);
@@ -32,7 +32,7 @@ namespace Blueberry
 			Delegate<Args...> delegate;
 		};
 
-		std::shared_ptr<List<CallbackData>> m_Callbacks;
+		SharedPtr<List<CallbackData>> m_Callbacks;
 		bool m_IsInvoking = false;
 	};
 
@@ -43,7 +43,7 @@ namespace Blueberry
 		CallbackData data = { reinterpret_cast<uint64_t>(object), *reinterpret_cast<uint64_t*>(&method), Delegate<Args...>::Create<OwnerObject, method>(object) };
 		if (m_IsInvoking)
 		{
-			std::shared_ptr<List<CallbackData>> newCallbacks = std::make_shared<List<CallbackData>>(*m_Callbacks);
+			SharedPtr<List<CallbackData>> newCallbacks = MakeShared<List<CallbackData>>(*m_Callbacks);
 			newCallbacks->push_back(std::move(data));
 			m_Callbacks = newCallbacks;
 		}
@@ -60,7 +60,7 @@ namespace Blueberry
 		CallbackData data = { 0, *reinterpret_cast<uint64_t*>(&method), Delegate<Args...>::Create<method>() };
 		if (m_IsInvoking)
 		{
-			std::shared_ptr<List<CallbackData>> newCallbacks = std::make_shared<List<CallbackData>>(*m_Callbacks);
+			SharedPtr<List<CallbackData>> newCallbacks = MakeShared<List<CallbackData>>(*m_Callbacks);
 			newCallbacks->push_back(std::move(data));
 			m_Callbacks = newCallbacks;
 		}
@@ -78,7 +78,7 @@ namespace Blueberry
 		uint64_t methodPtr = *reinterpret_cast<uint64_t*>(&method);
 		if (m_IsInvoking)
 		{
-			std::shared_ptr<List<CallbackData>> newCallbacks = std::make_shared<List<CallbackData>>(*m_Callbacks);
+			SharedPtr<List<CallbackData>> newCallbacks = MakeShared<List<CallbackData>>(*m_Callbacks);
 			for (auto it = newCallbacks->begin(); it != newCallbacks->end(); ++it)
 			{
 				if (it->ownerPtr == ownerPtr && it->methodPtr == methodPtr)
@@ -109,7 +109,7 @@ namespace Blueberry
 		uint64_t methodPtr = *reinterpret_cast<uint64_t*>(&method);
 		if (m_IsInvoking)
 		{
-			std::shared_ptr<List<CallbackData>> newCallbacks = std::make_shared<List<CallbackData>>(*m_Callbacks);
+			SharedPtr<List<CallbackData>> newCallbacks = MakeShared<List<CallbackData>>(*m_Callbacks);
 			for (auto it = newCallbacks->begin(); it != newCallbacks->end(); ++it)
 			{
 				if (it->methodPtr == methodPtr)

@@ -428,7 +428,7 @@ namespace Blueberry
 									camera->m_ShadowCascades[i] = Vector4(cascadeCenter.x, cascadeCenter.y, cascadeCenter.z, 0.0f);
 									light->m_WorldToShadow[i] = viewProjection;
 									light->m_ShadowCascades[i] = Vector4(cascadeCenter.x, cascadeCenter.y, cascadeCenter.z, std::powf(radius, 2));
-									light->m_IsDirty[i] = true;
+									light->m_IsSliceDirty[i] = true;
 								}
 
 								Math::GetOrthographicPlanes(viewProjection.Invert(), &lightCullerInfo.planes[0], &lightCullerInfo.planes[1], &lightCullerInfo.planes[2], &lightCullerInfo.planes[3], &lightCullerInfo.planes[4], &lightCullerInfo.planes[5]);

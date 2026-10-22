@@ -38,6 +38,8 @@ namespace Blueberry
 		Material() = default;
 		virtual ~Material() = default;
 
+		virtual void OnPropertiesChanged() final;
+
 		static Material* Create(Shader* shader);
 
 		void SetTexture(size_t id, Texture* texture);
@@ -45,8 +47,6 @@ namespace Blueberry
 
 		Shader* GetShader();
 		void SetShader(Shader* shader);
-
-		void ApplyProperties();
 
 		const ShaderData* GetShaderData();
 		List<TextureData>& GetTextureDatas();
@@ -63,6 +63,7 @@ namespace Blueberry
 		virtual void OnNotify(void* args) final;
 
 	private:
+		void ApplyProperties();
 		void FillTextureMap();
 		void CalculateKeywordMask();
 		void ApplyTextureBinding(size_t id, Texture* texture);
@@ -87,5 +88,6 @@ namespace Blueberry
 
 		friend struct GfxDrawingOperation;
 		friend class GfxRenderStateCache;
+		friend class TextureData;
 	};
 }

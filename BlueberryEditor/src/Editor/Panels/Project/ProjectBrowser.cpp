@@ -22,6 +22,7 @@
 #include "Editor\Menu\EditorMenuManager.h"
 #include "Editor\Misc\ImGuiHelper.h"
 #include "Editor\Misc\PlatformHelper.h"
+#include "Editor\Undo\UndoManager.h"
 
 #include <imgui\imgui_internal.h>
 
@@ -629,6 +630,7 @@ namespace Blueberry
 				if (EditorWindow::Save(SceneArea::Type))
 				{
 					SceneArea::Open();
+					UndoManager::Clear();
 					EditorSceneManager::Load(stringPath);
 				}
 			}
@@ -637,6 +639,7 @@ namespace Blueberry
 				if (EditorWindow::Save(SceneArea::Type))
 				{
 					SceneArea::Open();
+					UndoManager::Clear();
 					Entity* root = static_cast<Entity*>(ObjectDB::GetObjectFromGuid(asset.importer->GetGuid(), asset.importer->GetMainObject()));
 					EditorSceneManager::OpenPrefab(root);
 					Selection::SetActiveObject(root);

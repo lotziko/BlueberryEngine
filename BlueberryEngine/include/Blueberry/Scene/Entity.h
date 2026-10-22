@@ -23,15 +23,20 @@ namespace Blueberry
 		void OnCreate();
 		void OnDestroy();
 
+		virtual void OnPropertiesChanged() final;
+
 		template<class ComponentType>
 		ComponentType* AddComponent();
 
 		void AddComponent(Component* component);
+		void AddComponentAt(Component* component, size_t index);
 
 		template<class ComponentType>
 		ComponentType* GetComponent();
 
 		Component* GetComponentAt(size_t index) const;
+
+		size_t GetComponentIndex(Component* component) const;
 
 		template<class ComponentType>
 		ComponentType* GetComponentInParent();

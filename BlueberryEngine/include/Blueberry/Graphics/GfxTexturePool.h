@@ -34,6 +34,8 @@ namespace Blueberry
 		void operator()(GfxTexture* texture) const;
 	};
 
+	using TexturePoolPtr = std::unique_ptr<GfxTexture, ReturnTextureToPool>;
+
 	class GfxTexturePool
 	{
 	public:

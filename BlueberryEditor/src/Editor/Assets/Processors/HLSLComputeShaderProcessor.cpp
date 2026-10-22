@@ -17,14 +17,14 @@ namespace Blueberry
 		ComputeShaderCompilationData compilationData = {};
 		if (HLSLComputeShaderParser::Parse(path, m_ComputeShaderData, compilationData))
 		{
-			std::unique_ptr<HLSLShaderCompiler> compiler;
+			UniquePtr<HLSLShaderCompiler> compiler;
 			if (GraphicsAPI::GetAPI() == GraphicsAPI::API::DX11)
 			{
-				compiler = std::make_unique<HLSLShaderCompilerFXC>(compilationData.shaderCode);
+				compiler = MakeUnique<HLSLShaderCompilerFXC>(compilationData.shaderCode);
 			}
 			else
 			{
-				compiler = std::make_unique<HLSLShaderCompilerDXC>(compilationData.shaderCode);
+				compiler = MakeUnique<HLSLShaderCompilerDXC>(compilationData.shaderCode);
 			}
 
 			for (int i = 0; i < compilationData.computeEntryPoints.size(); ++i)

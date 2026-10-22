@@ -25,17 +25,23 @@ namespace Blueberry
 		auto dxAccelerationStructure = static_cast<GfxBottomLevelAccelerationStructureDX12*>(accelerationStructure);
 
 		UINT materialOffset = static_cast<UINT>(m_InstanceDatas.size());
+		UINT materialCount = 0;
 		for (size_t i = 0; i < materials.size(); ++i)
 		{
-			GfxRayTracingInstanceDataDX12 instanceData = {};
-			instanceData.bottomLevelAccelerationStructure = dxAccelerationStructure;
-			instanceData.geometryData = dxAccelerationStructure->m_GeometryData;
-			instanceData.material = materials[i].Get();
-			m_InstanceDatas.push_back(std::move(instanceData));
+			Material* material = materials[i].Get();
+			if (material != nullptr)
+			{
+				GfxRayTracingInstanceDataDX12 instanceData = {};
+				instanceData.bottomLevelAccelerationStructure = dxAccelerationStructure;
+				instanceData.geometryData = dxAccelerationStructure->m_GeometryData;
+				instanceData.material = material;
+				m_InstanceDatas.push_back(std::move(instanceData));
+				++materialCount;
+			}
 		}
 		
 		D3D12_RAYTRACING_INSTANCE_DESC instanceDesc = {};
-		instanceDesc.InstanceID = static_cast<UINT>(materials.size());
+		instanceDesc.InstanceID = materialCount;
 		instanceDesc.InstanceMask = 1;
 		instanceDesc.InstanceContributionToHitGroupIndex = materialOffset;
 		instanceDesc.AccelerationStructure = dxAccelerationStructure->m_Resource->GetGPUVirtualAddress();
@@ -58,6 +64,11 @@ namespace Blueberry
 	{
 		m_InstanceDatas.clear();
 		m_InstanceDescs.clear();
+	}
+
+	bool GfxTopLevelAccelerationStructureDX12::IsEmpty()
+	{
+		return m_InstanceDatas.empty() || m_InstanceDescs.empty();
 	}
 
 	void GfxTopLevelAccelerationStructureDX12::Build()

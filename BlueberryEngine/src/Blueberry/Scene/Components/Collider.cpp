@@ -21,13 +21,19 @@ namespace Blueberry
 
 	struct Collider::PrivateData
 	{
-		JPH::BodyID bodyId;
+		BB_OVERRIDE_NEW_DELETE
+
+		JPH::BodyID bodyId = {};
 	};
 
 	Collider::Collider()
 	{
-		memset(m_PrivateStorage, 0, sizeof(PrivateData));
-		m_PrivateData = reinterpret_cast<PrivateData*>(&m_PrivateStorage);
+		m_PrivateData = new PrivateData();
+	}
+
+	Collider::~Collider()
+	{
+		delete m_PrivateData;
 	}
 
 	void Collider::OnCreate()

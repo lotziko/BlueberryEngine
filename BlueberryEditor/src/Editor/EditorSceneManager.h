@@ -9,8 +9,6 @@ namespace Blueberry
 	class SceneSettings;
 	class Entity;
 
-	using SceneLoadEvent = Event<>;
-
 	class EditorSceneManager
 	{
 	public:
@@ -32,8 +30,6 @@ namespace Blueberry
 		static void Run();
 		static void Stop();
 
-		static SceneLoadEvent& GetSceneLoaded();
-
 		static SceneSettings* GetSettings();
 		static void SetSettings(SceneSettings* settings);
 
@@ -50,10 +46,10 @@ namespace Blueberry
 		};
 
 	private:
-		static Scene* s_Scene;
+		static Scene* s_EditorScene;
+		static Scene* s_RuntimeScene;
 		static List<PrefabSceneData> s_PrefabScenes;
 		static String s_Path;
-		static SceneLoadEvent s_SceneLoaded;
 
 		static ObjectPtr<SceneSettings> s_SceneSettings;
 	};

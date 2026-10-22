@@ -72,8 +72,6 @@ namespace Blueberry
 		Object* m_Object;
 	};
 
-	using ObjectUpdateEvent = Event<const ObjectUpdateEventArgs&>;
-
 	class SerializedObject : public std::enable_shared_from_this<SerializedObject>
 	{
 	public:
@@ -91,18 +89,17 @@ namespace Blueberry
 
 		bool IsValid();
 		void Update();
+		void UpdateIfNeeded();
 
 		bool ApplyModifiedProperties();
 
-		static ObjectUpdateEvent& GetObjectUpdated();
-
 	private:
 		void BuildTree();
-		void BuildProperties(size_t parent, const ClassInfo* classInfo, const List<void*>& targets, const bool& read);
-		void BuildList(size_t parent, const FieldInfo& fieldInfo, const List<void*>& targets, const bool& read);
+		void BuildProperties(size_t parent, const ClassInfo* classInfo, const List<void*>& targets);
+		void BuildList(size_t parent, const FieldInfo* fieldInfo, const List<void*>& targets);
 		void ReadTree();
 		void ReadProperties(size_t parent, const ClassInfo* classInfo, const List<void*>& targets);
-		void ReadList(size_t parent, const FieldInfo& fieldInfo, const List<void*>& targets);
+		void ReadList(size_t parent, const FieldInfo* fieldInfo, const List<void*>& targets);
 		void AddModifiedProperty(size_t id, const PropertyModificationType& type = PropertyModificationType::Value, size_t index1 = 0, size_t index2 = 0);
 		
 		void InsertListElement(size_t id, size_t index);
@@ -112,6 +109,7 @@ namespace Blueberry
 
 		size_t Allocate();
 		size_t CreateChild(size_t parent);
+		void Release(size_t id);
 		PropertyTreeNode* Get(size_t id);
 
 		String GetNodePath(size_t id);
@@ -124,9 +122,11 @@ namespace Blueberry
 		List<ObjectPtr<Object>> m_TargetPtrs = {};
 		List<PropertyModification> m_Modifications = {};
 		List<PropertyTreeNode> m_Nodes = {};
+		List<size_t> m_ReleasedIndexes = {};
 		List<bool> m_IsPrefabInstance = {};
+		size_t m_TargetChangesCount = 0;
 
-		static ObjectUpdateEvent s_ObjectUpdated;
+		//static ObjectUpdateEvent s_ObjectUpdated;
 
 		friend class SerializedProperty;
 	};

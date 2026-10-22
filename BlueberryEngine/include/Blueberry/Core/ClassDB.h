@@ -166,12 +166,12 @@ namespace Blueberry
 	{
 	public:
 		static const TypeId GetTypeId(const String& name);
-		static const TypeId GetTypeId(const size_t& nameHash);
+		static const TypeId GetTypeId(size_t nameHash);
 		static const ClassInfo* GetInfo(const String& name);
-		static const ClassInfo* GetInfo(const size_t& nameHash);
-		static const ClassInfo* GetInfo(const TypeId& id);
+		static const ClassInfo* GetInfo(size_t nameHash);
+		static const ClassInfo* GetInfo(TypeId id);
 		static List<ClassInfo>& GetInfos();
-		static bool IsParent(const TypeId& id, const TypeId& parentId);
+		static bool IsParent(TypeId id, TypeId parentId);
 
 		template<class ObjectType>
 		static void Register();

@@ -22,6 +22,8 @@ namespace Blueberry
 
 		virtual void OnEnable() final;
 		virtual void OnDestroy() final;
+
+		virtual void OnPropertiesChanged() final;
 		
 		const Matrix& GetLocalToWorldMatrix();
 		const Matrix& GetWorldToLocalMatrix();
@@ -44,7 +46,7 @@ namespace Blueberry
 		size_t GetSiblingIndex();
 
 		void SetLocalPosition(const Vector3& position);
-		void SetLocalRotation(const Quaternion& rotation);
+		void SetLocalRotation(const Quaternion& rotation, bool hint = true);
 		void SetLocalEulerRotation(const Vector3& euler);
 		void SetLocalEulerRotationHint(const Vector3& euler);
 		void SetLocalScale(const Vector3& scale);

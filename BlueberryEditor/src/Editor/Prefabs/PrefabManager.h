@@ -25,9 +25,9 @@ namespace Blueberry
 
 		static void CreatePrefab(const String& path, Entity* entity);
 		static void UnpackPrefabInstance(Entity* entity);
-		static void AddModification(Object* object, const String& path, Variant& value);
+		static void AddModification(Object* object, const String& path, const Variant& value);
 		static void RemoveModification(Object* object, const String& path);
-		static const bool HasModification(Object* object, const String& path);
+		static bool HasModification(Object* object, const String& path);
 		static void SetParent(Entity* entity, Transform* parent);
 		static void RemoveParent(Entity* entity);
 		static void AddComponent(Entity* entity, Component* component);

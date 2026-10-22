@@ -13,9 +13,9 @@ namespace Blueberry
 
 	struct PerCameraVolumetricFogData
 	{
-		std::unique_ptr<GfxTexture, ReturnTextureToPool> frustumVolume0;
-		std::unique_ptr<GfxTexture, ReturnTextureToPool> frustumVolume1;
-		std::unique_ptr<GfxTexture, ReturnTextureToPool> frustumVolume2;
+		TexturePoolPtr frustumVolume0;
+		TexturePoolPtr frustumVolume1;
+		TexturePoolPtr frustumVolume2;
 	};
 
 	class VolumetricFog

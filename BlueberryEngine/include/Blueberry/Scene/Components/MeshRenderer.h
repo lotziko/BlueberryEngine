@@ -22,6 +22,7 @@ namespace Blueberry
 		virtual void OnDisable() final;
 
 		virtual void OnTransformInvalidate() final;
+		virtual void OnPropertiesChanged() final;
 		virtual void OnPreCull() final;
 
 		Mesh* GetMesh();
@@ -54,7 +55,7 @@ namespace Blueberry
 		List<ObjectPtr<Material>> m_Materials;
 		AABB m_Bounds = AABB(Vector3::Zero, Vector3::Zero);
 		bool m_IsBakeable = false;
-		bool m_BoundsDirty = true;
+		bool m_IsBoundsDirty = true;
 		uint32_t m_LightmapChartOffset = 0;
 
 		GfxBottomLevelAccelerationStructure* m_AccelerationStructure = nullptr;

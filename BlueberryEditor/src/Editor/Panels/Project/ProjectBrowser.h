@@ -55,7 +55,7 @@ namespace Blueberry
 		List<AssetInfo> m_CurrentDirectoryAssets;
 		Object* m_ScrollRequest = nullptr;
 		Object* m_PingRequest = nullptr;
-		float m_PingStartTime = -1.0;
+		double m_PingStartTime = -1.0;
 		Object* m_RenamingObject = nullptr;
 
 		Object* m_CreatingObject = nullptr;

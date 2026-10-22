@@ -18,7 +18,7 @@ namespace Blueberry
 		return 0;
 	}
 
-	const TypeId ClassDB::GetTypeId(const size_t& nameHash)
+	const TypeId ClassDB::GetTypeId(size_t nameHash)
 	{
 		auto it = s_NameToTypeId.find(nameHash);
 		if (it != s_NameToTypeId.end())
@@ -38,7 +38,7 @@ namespace Blueberry
 		return nullptr;
 	}
 
-	const ClassInfo* ClassDB::GetInfo(const size_t& nameHash)
+	const ClassInfo* ClassDB::GetInfo(size_t nameHash)
 	{
 		auto it = s_NameToTypeId.find(nameHash);
 		if (it != s_NameToTypeId.end())
@@ -48,7 +48,7 @@ namespace Blueberry
 		return nullptr;
 	}
 
-	const ClassInfo* ClassDB::GetInfo(const TypeId& id)
+	const ClassInfo* ClassDB::GetInfo(TypeId id)
 	{
 		if (id > 0 && id < s_Classes.size())
 		{
@@ -62,7 +62,7 @@ namespace Blueberry
 		return s_Classes;
 	}
 
-	bool ClassDB::IsParent(const TypeId& id, const TypeId& parentId)
+	bool ClassDB::IsParent(TypeId id, TypeId parentId)
 	{
 		TypeId inheritsId = id;
 		while (true)

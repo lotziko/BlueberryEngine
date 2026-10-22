@@ -12,7 +12,7 @@ namespace Blueberry
 	OBJECT_DEFINITION(Animator, Component)
 	{
 		DEFINE_BASE_FIELDS(Animator, Component)
-		DEFINE_FIELD(Animator, m_AnimationGraph, BindingType::ObjectPtr, FieldOptions().SetObjectType(&AnimationGraph::Type).SetUpdateCallback(MethodBind::Create(&Animator::Initialize)))
+		DEFINE_FIELD(Animator, m_AnimationGraph, BindingType::ObjectPtr, FieldOptions().SetObjectType(&AnimationGraph::Type))
 		DEFINE_ITERATOR(UpdatableComponent)
 		DEFINE_ADD_COMPONENT_MENU("Miscellaneous/Animator")
 	}
@@ -200,6 +200,11 @@ namespace Blueberry
 				}
 			}
 		}
+	}
+
+	void Animator::OnPropertiesChanged()
+	{
+		Initialize();
 	}
 	
 	AnimationGraph* Animator::GetAnimationGraph()

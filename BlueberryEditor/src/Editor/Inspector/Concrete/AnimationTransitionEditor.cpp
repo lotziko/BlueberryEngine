@@ -25,6 +25,8 @@ namespace Blueberry
 
 	void AnimationTransitionEditor::OnDrawInspector()
 	{
+		m_SerializedObject->UpdateIfNeeded();
+
 		ImGui::Property(&m_IsFixedDurationProperty);
 		ImGui::Property(&m_TransitionDurationProperty);
 		ImGui::Property(&m_TransitionOffsetProperty);
@@ -141,6 +143,7 @@ namespace Blueberry
 			m_ConditionsProperty.InsertListElement(index);
 			m_ConditionsProperty.GetListElement(index).FindProperty("m_Name").SetString(parameters.size() > 0 ? parameters[0].GetName() : "");
 		}
+
 		m_SerializedObject->ApplyModifiedProperties();
 	}
 }

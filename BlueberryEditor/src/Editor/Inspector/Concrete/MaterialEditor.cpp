@@ -71,6 +71,8 @@ namespace Blueberry
 
 	void MaterialEditor::OnDrawInspector()
 	{
+		m_SerializedObject->UpdateIfNeeded();
+
 		ImGui::Property(&m_ShaderProperty, "Shader");
 
 		for (uint32_t i = 0; i < m_TexturesProperty.GetListSize(); ++i)
@@ -81,14 +83,7 @@ namespace Blueberry
 			ImGui::Property(&textureProperty, nameProperty.GetString().c_str());
 		}
 
-		if (m_SerializedObject->ApplyModifiedProperties())
-		{
-			for (Object* object : m_SerializedObject->GetTargets())
-			{
-				Material* material = static_cast<Material*>(object);
-				material->ApplyProperties();
-			}
-		}
+		m_SerializedObject->ApplyModifiedProperties();
 
 		if (ImGui::Button("Save"))
 		{

@@ -8,13 +8,13 @@ namespace Blueberry
 	OBJECT_DEFINITION(Camera, Component)
 	{
 		DEFINE_BASE_FIELDS(Camera, Component)
-		DEFINE_FIELD(Camera, m_IsOrthographic, BindingType::Bool, FieldOptions().SetUpdateCallback(MethodBind::Create(&Camera::InvalidateProjection)))
-		DEFINE_FIELD(Camera, m_OrthographicSize, BindingType::Float, FieldOptions().SetUpdateCallback(MethodBind::Create(&Camera::InvalidateProjection)))
-		DEFINE_FIELD(Camera, m_PixelSize, BindingType::Vector2, FieldOptions().SetUpdateCallback(MethodBind::Create(&Camera::InvalidateProjection)))
-		DEFINE_FIELD(Camera, m_FieldOfView, BindingType::Float, FieldOptions().SetUpdateCallback(MethodBind::Create(&Camera::InvalidateProjection)))
-		DEFINE_FIELD(Camera, m_AspectRatio, BindingType::Float, FieldOptions().SetUpdateCallback(MethodBind::Create(&Camera::InvalidateProjection)))
-		DEFINE_FIELD(Camera, m_ZNearPlane, BindingType::Float, FieldOptions().SetUpdateCallback(MethodBind::Create(&Camera::InvalidateProjection)))
-		DEFINE_FIELD(Camera, m_ZFarPlane, BindingType::Float, FieldOptions().SetUpdateCallback(MethodBind::Create(&Camera::InvalidateProjection)))
+		DEFINE_FIELD(Camera, m_IsOrthographic, BindingType::Bool, FieldOptions())
+		DEFINE_FIELD(Camera, m_OrthographicSize, BindingType::Float, FieldOptions())
+		DEFINE_FIELD(Camera, m_PixelSize, BindingType::Vector2, FieldOptions())
+		DEFINE_FIELD(Camera, m_FieldOfView, BindingType::Float, FieldOptions())
+		DEFINE_FIELD(Camera, m_AspectRatio, BindingType::Float, FieldOptions())
+		DEFINE_FIELD(Camera, m_ZNearPlane, BindingType::Float, FieldOptions())
+		DEFINE_FIELD(Camera, m_ZFarPlane, BindingType::Float, FieldOptions())
 		DEFINE_ITERATOR(Camera)
 		DEFINE_EXECUTE_ALWAYS()
 		DEFINE_ADD_COMPONENT_MENU("Rendering/Camera")
@@ -34,6 +34,11 @@ namespace Blueberry
 	void Camera::OnTransformInvalidate()
 	{
 		m_IsViewDirty = true;
+	}
+
+	void Camera::OnPropertiesChanged()
+	{
+		m_IsProjectionDirty = true;
 	}
 
 	const Matrix& Camera::GetProjectionMatrix()
@@ -108,7 +113,7 @@ namespace Blueberry
 		if (m_IsOrthographic != isOrthographic)
 		{
 			m_IsOrthographic = isOrthographic;
-			InvalidateProjection();
+			m_IsProjectionDirty = true;
 		}
 	}
 
@@ -120,7 +125,7 @@ namespace Blueberry
 	const void Camera::SetOrthographicSize(float size)
 	{
 		m_OrthographicSize = size;
-		InvalidateProjection();
+		m_IsProjectionDirty = true;
 	}
 
 	const Vector2& Camera::GetPixelSize() const
@@ -134,7 +139,7 @@ namespace Blueberry
 		{
 			m_PixelSize = pixelSize;
 			m_AspectRatio = pixelSize.x / pixelSize.y;
-			InvalidateProjection();
+			m_IsProjectionDirty = true;
 		}
 	}
 
@@ -148,7 +153,7 @@ namespace Blueberry
 		if (m_AspectRatio != aspectRatio)
 		{
 			m_AspectRatio = aspectRatio;
-			InvalidateProjection();
+			m_IsProjectionDirty = true;
 		}
 	}
 
@@ -162,7 +167,7 @@ namespace Blueberry
 		if (m_FieldOfView != fieldOfView)
 		{
 			m_FieldOfView = fieldOfView;
-			InvalidateProjection();
+			m_IsProjectionDirty = true;
 		}
 	}
 
@@ -176,7 +181,7 @@ namespace Blueberry
 		if (m_ZNearPlane != nearClip)
 		{
 			m_ZNearPlane = nearClip;
-			InvalidateProjection();
+			m_IsProjectionDirty = true;
 		}
 	}
 
@@ -190,7 +195,7 @@ namespace Blueberry
 		if (m_ZNearPlane != farClip)
 		{
 			m_ZFarPlane = farClip;
-			InvalidateProjection();
+			m_IsProjectionDirty = true;
 		}
 	}
 
@@ -289,11 +294,6 @@ namespace Blueberry
 	void Camera::SetBackgroundColor(const Color& backgroundColor)
 	{
 		m_BackgroundColor = backgroundColor;
-	}
-
-	void Camera::InvalidateProjection()
-	{
-		m_IsProjectionDirty = true;
 	}
 
 	void Camera::RecalculateView()

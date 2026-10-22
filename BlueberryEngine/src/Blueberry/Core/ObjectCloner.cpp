@@ -39,6 +39,15 @@ namespace Blueberry
 	Object* ObjectCloner::Clone(Object* object)
 	{
 		ObjectMapping mapping;
+		return Clone(mapping, object);
+	}
+
+	Object* ObjectCloner::Clone(ObjectMapping& mapping, Object* object)
+	{
+		if (object == nullptr)
+		{
+			return nullptr;
+		}
 		List<Object*> objectsToClone;
 		Entity* rootEntity = nullptr;
 		if (object->IsClassType(Component::Type))
@@ -75,6 +84,10 @@ namespace Blueberry
 
 	Object* ObjectCloner::Resolve(ObjectMapping& mapping, HashSet<ObjectId>& removed, Object* object)
 	{
+		if (object == nullptr)
+		{
+			return nullptr;
+		}
 		HashSet<ObjectId> visited;
 		List<Object*> objectsToClone;
 		if (object->IsClassType(Component::Type))

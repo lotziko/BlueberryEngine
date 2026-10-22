@@ -35,6 +35,8 @@ namespace Blueberry
 	{
 		Rml::RemoveContext(Rml::CreateString("%d", GetObjectId()));
 		delete m_RenderData;
+		m_RenderData = nullptr;
+		m_Context = nullptr;
 		if (Application::IsRunning())
 		{
 			InputEvents::GetMouseMoved().RemoveCallback<Canvas, &Canvas::OnMouseMove>(this);

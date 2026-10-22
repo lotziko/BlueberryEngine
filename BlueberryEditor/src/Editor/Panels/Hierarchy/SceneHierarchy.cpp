@@ -5,13 +5,17 @@
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Core\ClassDB.h"
+#include "Blueberry\Core\ObjectCloner.h"
 
 #include "Editor\Selection.h"
 #include "Editor\EditorSceneManager.h"
-#include "Editor\EditorObjectManager.h"
 #include "Editor\Prefabs\PrefabManager.h"
+#include "Editor\Prefabs\PrefabInstance.h"
 #include "Editor\Menu\EditorMenuManager.h"
 #include "Editor\Misc\ImGuiHelper.h"
+#include "Editor\Misc\EntityHelper.h"
+#include "Editor\Undo\UndoManager.h"
+#include "Editor\Events\SceneEvents.h"
 
 #include <imgui\imgui_internal.h>
 
@@ -27,15 +31,19 @@ namespace Blueberry
 
 	SceneHierarchy::SceneHierarchy()
 	{
-		EditorObjectManager::GetEntityCreated().AddCallback<SceneHierarchy, &SceneHierarchy::Invalidate>(this);
-		EditorObjectManager::GetEntityDestroyed().AddCallback<SceneHierarchy, &SceneHierarchy::Invalidate>(this);
+		SceneEvents::GetSceneLoaded().AddCallback<SceneHierarchy, &SceneHierarchy::Invalidate>(this);
+		SceneEvents::GetEntityCreated().AddCallback<SceneHierarchy, &SceneHierarchy::Invalidate>(this);
+		SceneEvents::GetEntityDestroyed().AddCallback<SceneHierarchy, &SceneHierarchy::Invalidate>(this);
+		SceneEvents::GetHierarchyUpdated().AddCallback<SceneHierarchy, &SceneHierarchy::Invalidate>(this);
 		Selection::GetSelectionChanged().AddCallback<SceneHierarchy, &SceneHierarchy::OnSelectionChange>(this);
 	}
 
 	SceneHierarchy::~SceneHierarchy()
 	{
-		EditorObjectManager::GetEntityCreated().RemoveCallback<SceneHierarchy, &SceneHierarchy::Invalidate>(this);
-		EditorObjectManager::GetEntityDestroyed().RemoveCallback<SceneHierarchy, &SceneHierarchy::Invalidate>(this);
+		SceneEvents::GetSceneLoaded().RemoveCallback<SceneHierarchy, &SceneHierarchy::Invalidate>(this);
+		SceneEvents::GetEntityCreated().RemoveCallback<SceneHierarchy, &SceneHierarchy::Invalidate>(this);
+		SceneEvents::GetEntityDestroyed().RemoveCallback<SceneHierarchy, &SceneHierarchy::Invalidate>(this);
+		SceneEvents::GetHierarchyUpdated().RemoveCallback<SceneHierarchy, &SceneHierarchy::Invalidate>(this);
 		Selection::GetSelectionChanged().RemoveCallback<SceneHierarchy, &SceneHierarchy::OnSelectionChange>(this);
 	}
 
@@ -138,20 +146,11 @@ namespace Blueberry
 								{
 									--index;
 								}
-								transform->SetSiblingIndex(index);
+								UndoManager::SetTransformParent(transform, parent, index);
 							}
 							else
 							{
-								if (PrefabManager::IsPrefabChild(selectedEntity))
-								{
-									PrefabManager::RemoveParent(selectedEntity);
-								}
-								if (PrefabManager::IsPartOfPrefabInstance(parent))
-								{
-									PrefabManager::SetParent(selectedEntity, parent);
-								}
-								transform->SetParent(parent);
-								transform->SetSiblingIndex(index);
+								UndoManager::SetTransformParent(transform, parent, index);
 							}
 							Invalidate();
 						}
@@ -196,8 +195,7 @@ namespace Blueberry
 		{
 			for (ObjectId id : m_DestroyedEntities)
 			{
-				Entity* entity = static_cast<Entity*>(ObjectDB::GetObject(id));
-				EditorObjectManager::DestroyEntity(entity);
+				UndoManager::DestroyObject(ObjectDB::GetObject(id));
 			}
 			m_DestroyedEntities.clear();
 			Invalidate();
@@ -327,15 +325,8 @@ namespace Blueberry
 							Entity* selectedEntity = static_cast<Entity*>(object);
 							if (entity != selectedEntity)
 							{
-								if (PrefabManager::IsPrefabChild(selectedEntity))
-								{
-									PrefabManager::RemoveParent(selectedEntity);
-								}
-								if (PrefabManager::IsPartOfPrefabInstance(parent))
-								{
-									PrefabManager::SetParent(selectedEntity, parent);
-								}
-								selectedEntity->GetTransform()->SetParent(parent);
+								Transform* transform = selectedEntity->GetTransform();
+								UndoManager::SetTransformParent(transform, parent, parent->GetChildrenCount());
 							}
 						}
 					}
@@ -407,16 +398,11 @@ namespace Blueberry
 			Object* selectedObject = Selection::GetActiveObject();
 			if (selectedObject != nullptr && selectedObject->IsClassType(Entity::Type))
 			{
-				Entity* entity = EditorObjectManager::CreateEntity("Empty Entity");
-				m_RenamingEntity = entity;
-
 				Entity* selectedEntity = static_cast<Entity*>(selectedObject);
-				Transform* parent = selectedEntity->GetTransform();
-				if (PrefabManager::IsPartOfPrefabInstance(parent))
-				{
-					PrefabManager::SetParent(entity, parent);
-				}
-				entity->GetTransform()->SetParent(parent);
+				Entity* entity = EntityHelper::Create("Empty Entity");
+				UndoManager::AddEntity(entity);
+				UndoManager::SetTransformParent(entity->GetTransform(), selectedEntity->GetTransform());
+				m_RenamingEntity = entity;
 				m_ExpandedNodes.insert(selectedEntity->GetObjectId());
 			}
 		}
@@ -428,11 +414,11 @@ namespace Blueberry
 				Entity* selectedEntity = static_cast<Entity*>(selectedObject);
 				if (!PrefabManager::IsPartOfPrefabInstance(selectedEntity))
 				{
-					Entity* entity = EditorObjectManager::CreateEntity("Empty Entity");
+					Entity* entity = EntityHelper::Create("Empty Entity");
+					UndoManager::AddEntity(entity);
+					UndoManager::SetTransformParent(entity->GetTransform(), selectedEntity->GetTransform()->GetParent(), selectedEntity->GetTransform()->GetSiblingIndex());
+					UndoManager::SetTransformParent(selectedEntity->GetTransform(), entity->GetTransform());
 					m_RenamingEntity = entity;
-
-					entity->GetTransform()->SetSiblingIndex(selectedEntity->GetTransform()->GetSiblingIndex());
-					selectedEntity->GetTransform()->SetParent(entity->GetTransform());
 					m_ExpandedNodes.insert(entity->GetObjectId());
 				}
 			}
@@ -447,12 +433,23 @@ namespace Blueberry
 			if (selectedObject != nullptr && selectedObject->IsClassType(Entity::Type))
 			{
 				Entity* entity = static_cast<Entity*>(selectedObject);
-				Entity* newEntity = EditorObjectManager::CloneEntity(entity);
+				Entity* newEntity = nullptr;
+				if (PrefabManager::IsPartOfPrefabInstance(entity))
+				{
+					if (PrefabManager::IsPrefabInstanceRoot(entity))
+					{
+						PrefabInstance* newInstance = PrefabManager::CloneInstance(PrefabManager::GetInstance(entity));
+						newEntity = newInstance->GetEntity();
+					}
+				}
+				else
+				{
+					newEntity = static_cast<Entity*>(ObjectCloner::Clone(entity));
+				}
 				Transform* newTransform = newEntity->GetTransform();
 				Transform* transform = entity->GetTransform();
-				newTransform->SetParent(transform->GetParent());
-				newTransform->SetSiblingIndex(transform->GetSiblingIndex() + 1);
-				newTransform->SetLocalTRS({ transform->GetLocalPosition(), transform->GetLocalRotation(), transform->GetLocalScale() });
+				UndoManager::AddEntity(newEntity);
+				UndoManager::SetTransformParent(newTransform, transform->GetParent(), false, transform->GetSiblingIndex() + 1);
 				Selection::SetActiveObject(newEntity);
 			}
 		}

@@ -16,16 +16,16 @@ namespace Blueberry
 
 	struct PerCameraReflectionsData
 	{
-		std::unique_ptr<GfxTexture, ReturnTextureToPool> previousViewZ;
-		std::unique_ptr<GfxTexture, ReturnTextureToPool> previousNormalRoughness;
-		std::unique_ptr<GfxTexture, ReturnTextureToPool> previousInternalData;
-		std::unique_ptr<GfxTexture, ReturnTextureToPool> specularHistory;
-		std::unique_ptr<GfxTexture, ReturnTextureToPool> specularFastHistory;
-		std::unique_ptr<GfxTexture, ReturnTextureToPool> historyStabilizedPing;
-		std::unique_ptr<GfxTexture, ReturnTextureToPool> historyStabilizedPong;
-		std::unique_ptr<GfxTexture, ReturnTextureToPool> specularHitdistForTrackingPing;
-		std::unique_ptr<GfxTexture, ReturnTextureToPool> specularHitdistForTrackingPong;
-		std::unique_ptr<GfxTexture, ReturnTextureToPool> output;
+		TexturePoolPtr previousViewZ;
+		TexturePoolPtr previousNormalRoughness;
+		TexturePoolPtr previousInternalData;
+		TexturePoolPtr specularHistory;
+		TexturePoolPtr specularFastHistory;
+		TexturePoolPtr historyStabilizedPing;
+		TexturePoolPtr historyStabilizedPong;
+		TexturePoolPtr specularHitdistForTrackingPing;
+		TexturePoolPtr specularHitdistForTrackingPong;
+		TexturePoolPtr output;
 
 		Matrix previousViewToWorld = Matrix::Identity;
 		Matrix previousProjection = Matrix::Identity;

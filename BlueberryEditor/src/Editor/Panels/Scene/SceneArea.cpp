@@ -10,7 +10,6 @@
 #include "Editor\Preferences.h"
 #include "Editor\EditorLayer.h"
 #include "Editor\EditorSceneManager.h"
-#include "Editor\EditorObjectManager.h"
 #include "Editor\Selection.h"
 #include "Editor\Prefabs\PrefabInstance.h"
 #include "Editor\Prefabs\PrefabManager.h"
@@ -19,6 +18,8 @@
 #include "Editor\Menu\EditorMenuManager.h"
 #include "Editor\Serialization\SerializedObject.h"
 #include "Editor\Assets\AssetDB.h"
+#include "Editor\Undo\UndoManager.h"
+#include "Editor\Events\SceneEvents.h"
 
 #include "Blueberry\Core\Application.h"
 #include "Blueberry\Core\Time.h"
@@ -72,12 +73,14 @@ namespace Blueberry
 		m_SceneScaleIconSmall = static_cast<Texture*>(AssetLoader::Load("assets/icons/SceneScaleIconSmall.png"));
 		
 		Selection::GetSelectionChanged().AddCallback<&SceneArea::RequestRedrawAll>();
-		EditorSceneManager::GetSceneLoaded().AddCallback<&SceneArea::RequestRedrawAll>();
+		SceneEvents::GetSceneLoaded().AddCallback<&SceneArea::RequestRedrawAll>();
+		SceneEvents::GetHierarchyUpdated().AddCallback<&SceneArea::RequestRedrawAll>();
+		SceneEvents::GetEntityCreated().AddCallback<SceneArea, &SceneArea::OnEntityUpdate>(this);
+		SceneEvents::GetEntityDestroyed().AddCallback<SceneArea, &SceneArea::OnEntityUpdate>(this);
+		SceneEvents::GetEntityUpdated().AddCallback<SceneArea, &SceneArea::OnEntityUpdate>(this);
+		SceneEvents::GetObjectValueUpdated().AddCallback<&SceneArea::RequestRedrawAll>();
 		WindowEvents::GetWindowFocused().AddCallback<&SceneArea::RequestRedrawAll>();
-		EditorObjectManager::GetEntityCreated().AddCallback<SceneArea, &SceneArea::OnEntityUpdate>(this);
-		EditorObjectManager::GetEntityDestroyed().AddCallback<SceneArea, &SceneArea::OnEntityUpdate>(this);
-		EditorObjectManager::GetEntityUpdated().AddCallback<SceneArea, &SceneArea::OnEntityUpdate>(this);
-		SerializedObject::GetObjectUpdated().AddCallback<SceneArea, &SceneArea::OnObjectUpdate>(this);
+		UndoManager::GetObjectResolved().AddCallback<&SceneArea::RequestRedrawAll>();
 	}
 
 	SceneArea::~SceneArea()
@@ -88,12 +91,14 @@ namespace Blueberry
 		GfxTexturePool::Release(m_DepthStencilRenderTarget);
 
 		Selection::GetSelectionChanged().RemoveCallback<&SceneArea::RequestRedrawAll>();
-		EditorSceneManager::GetSceneLoaded().RemoveCallback<&SceneArea::RequestRedrawAll>();
+		SceneEvents::GetSceneLoaded().RemoveCallback<&SceneArea::RequestRedrawAll>();
+		SceneEvents::GetHierarchyUpdated().AddCallback<&SceneArea::RequestRedrawAll>();
+		SceneEvents::GetEntityCreated().RemoveCallback<SceneArea, &SceneArea::OnEntityUpdate>(this);
+		SceneEvents::GetEntityDestroyed().RemoveCallback<SceneArea, &SceneArea::OnEntityUpdate>(this);
+		SceneEvents::GetEntityUpdated().RemoveCallback<SceneArea, &SceneArea::OnEntityUpdate>(this);
+		SceneEvents::GetObjectValueUpdated().RemoveCallback<&SceneArea::RequestRedrawAll>();
 		WindowEvents::GetWindowFocused().RemoveCallback<&SceneArea::RequestRedrawAll>();
-		EditorObjectManager::GetEntityCreated().RemoveCallback<SceneArea, &SceneArea::OnEntityUpdate>(this);
-		EditorObjectManager::GetEntityDestroyed().RemoveCallback<SceneArea, &SceneArea::OnEntityUpdate>(this);
-		EditorObjectManager::GetEntityUpdated().RemoveCallback<SceneArea, &SceneArea::OnEntityUpdate>(this);
-		SerializedObject::GetObjectUpdated().RemoveCallback<SceneArea, &SceneArea::OnObjectUpdate>(this);
+		UndoManager::GetObjectResolved().RemoveCallback<&SceneArea::RequestRedrawAll>();
 	}
 
 	Vector3 GetMotion(const Quaternion& rotation)
@@ -230,7 +235,7 @@ namespace Blueberry
 						if (instance != nullptr)
 						{
 							Entity* entity = PrefabManager::CreateInstance(instance)->GetEntity();
-							EditorObjectManager::AddEntity(entity);
+							UndoManager::AddEntity(entity);
 							Selection::SetActiveObject(entity);
 						}
 					}

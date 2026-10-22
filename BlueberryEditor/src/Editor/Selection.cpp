@@ -7,7 +7,7 @@ namespace Blueberry
 
 	Object* Selection::GetActiveObject()
 	{
-		if (s_ActiveObjects.size() > 0)
+		if (!s_ActiveObjects.empty())
 		{
 			ObjectId first = *s_ActiveObjects.begin();
 			return ObjectDB::GetObject(first);

@@ -5,6 +5,7 @@
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Graphics\Texture.h"
+#include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Graphics\GfxTexturePool.h"
 #include "..\..\Graphics\LightHelper.h"
 
@@ -13,15 +14,15 @@ namespace Blueberry
 	OBJECT_DEFINITION(Light, Component)
 	{
 		DEFINE_BASE_FIELDS(Light, Component)
-		DEFINE_FIELD(Light, m_Type, BindingType::Enum, FieldOptions().SetEnumHint("Spot,Directional,Point").SetUpdateCallback(MethodBind::Create(&Light::ReleaseCachedShadow)))
+		DEFINE_FIELD(Light, m_Type, BindingType::Enum, FieldOptions().SetEnumHint("Spot,Directional,Point"))
 		DEFINE_FIELD(Light, m_Color, BindingType::Color, FieldOptions())
 		DEFINE_FIELD(Light, m_Intensity, BindingType::Float, FieldOptions())
-		DEFINE_FIELD(Light, m_Range, BindingType::Float, FieldOptions().SetUpdateCallback(MethodBind::Create(&Light::InvalidateCache)))
-		DEFINE_FIELD(Light, m_OuterSpotAngle, BindingType::Float, FieldOptions().SetUpdateCallback(MethodBind::Create(&Light::InvalidateCache)))
-		DEFINE_FIELD(Light, m_InnerSpotAngle, BindingType::Float, FieldOptions().SetUpdateCallback(MethodBind::Create(&Light::InvalidateCache)))
+		DEFINE_FIELD(Light, m_Range, BindingType::Float, FieldOptions())
+		DEFINE_FIELD(Light, m_OuterSpotAngle, BindingType::Float, FieldOptions())
+		DEFINE_FIELD(Light, m_InnerSpotAngle, BindingType::Float, FieldOptions())
 		DEFINE_FIELD(Light, m_IsCastingShadows, BindingType::Bool, FieldOptions())
 		DEFINE_FIELD(Light, m_IsCastingFog, BindingType::Bool, FieldOptions())
-		DEFINE_FIELD(Light, m_IsCached, BindingType::Bool, FieldOptions().SetUpdateCallback(MethodBind::Create(&Light::InvalidateCache)))
+		DEFINE_FIELD(Light, m_IsCached, BindingType::Bool, FieldOptions())
 		DEFINE_FIELD(Light, m_Cookie, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Texture::Type))
 		DEFINE_ITERATOR(Light)
 		DEFINE_EXECUTE_ALWAYS()
@@ -44,6 +45,11 @@ namespace Blueberry
 		InvalidateCache();
 	}
 
+	void Light::OnPropertiesChanged()
+	{
+		InvalidateCache();
+	}
+
 	LightType Light::GetType()
 	{
 		return m_Type;
@@ -52,7 +58,7 @@ namespace Blueberry
 	void Light::SetType(LightType type)
 	{
 		m_Type = type;
-		ReleaseCachedShadow();
+		m_IsCachedShadowDirty = true;
 	}
 
 	const Color& Light::GetColor() const
@@ -153,18 +159,29 @@ namespace Blueberry
 	{
 		if (m_IsCached)
 		{
-			memset(m_IsDirty, true, sizeof(bool) * 6);
+			memset(m_IsSliceDirty, true, sizeof(bool) * 6);
 		}
+		m_IsCachedShadowDirty = true;
 	}
 
 	GfxTexture* Light::GetCachedShadow()
 	{
+		if (m_IsCachedShadowDirty && m_CachedShadow != nullptr)
+		{
+			uint32_t size = LightHelper::GetShadowSize(m_Type);
+			uint32_t sliceCount = LightHelper::GetSliceCount(m_Type);
+			if (m_CachedShadow->GetWidth() != size * sliceCount || m_CachedShadow->GetHeight() != size)
+			{
+				ReleaseCachedShadow();
+			}
+		}
 		if (m_CachedShadow == nullptr)
 		{
 			uint32_t size = LightHelper::GetShadowSize(m_Type);
 			uint32_t sliceCount = LightHelper::GetSliceCount(m_Type);
 			m_CachedShadow = GfxTexturePool::Get(size * sliceCount, size, 1, TextureUsageFlags::RenderTarget, 1, 1, TextureFormat::D32_Float, TextureDimension::Texture2D, WrapMode::Clamp, FilterMode::Point);
 		}
+		m_IsCachedShadowDirty = false;
 		return m_CachedShadow;
 	}
 
@@ -174,7 +191,7 @@ namespace Blueberry
 		{
 			GfxTexturePool::Release(m_CachedShadow);
 			m_CachedShadow = nullptr;
-			memset(m_IsDirty, true, sizeof(bool) * 6);
+			memset(m_IsSliceDirty, true, sizeof(bool) * 6);
 		}
 	}
 }

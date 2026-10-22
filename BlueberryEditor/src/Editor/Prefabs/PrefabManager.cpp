@@ -235,7 +235,7 @@ namespace Blueberry
 		}
 	}
 
-	void PrefabManager::AddModification(Object* object, const String& path, Variant& value)
+	void PrefabManager::AddModification(Object* object, const String& path, const Variant& value)
 	{
 		// TODO list resizing
 		if (object == nullptr)
@@ -292,7 +292,7 @@ namespace Blueberry
 		}
 	}
 
-	const bool PrefabManager::HasModification(Object* object, const String& path)
+	bool PrefabManager::HasModification(Object* object, const String& path)
 	{
 		PrefabInstance* instance = GetInstance(object);
 		if (instance == nullptr)
@@ -514,6 +514,7 @@ namespace Blueberry
 				}
 
 				// Apply modifications
+				HashSet<Object*> modified;
 				for (auto& modification : instance->m_Modifications)
 				{
 					Object* target = modification.GetTarget();
@@ -526,8 +527,13 @@ namespace Blueberry
 							String path = modification.GetPath();
 							Variant& value = modification.GetValue();
 							ObjectHelper::WriteValue(object, path, value);
+							modified.insert(object);
 						}
 					}
+				}
+				for (Object* object : modified)
+				{
+					object->OnPropertiesChanged();
 				}
 
 				// Apply entities
