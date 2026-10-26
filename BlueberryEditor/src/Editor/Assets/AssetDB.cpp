@@ -10,6 +10,8 @@
 #include "Editor\Misc\PlatformHelper.h"
 #include "Editor\Misc\PathHelper.h"
 
+#include "Editor\Assets\ThumbnailCache.h"
+
 namespace Blueberry
 {
 	// TODO import data always if it was found in project but not in cache instead of importing on mouse over icon
@@ -352,6 +354,7 @@ namespace Blueberry
 					String relativePath = s_GuidToRelativePath[pair.first];
 					EditorSerializer serializer = {};
 					String assetPath = Path::GetAssetsPath(relativePath);
+					ThumbnailCache::Release(object);
 					serializer.SetGuid(ObjectDB::GetGuidFromObject(object));
 					serializer.AddObject(object);
 					serializer.Serialize(assetPath, SerializationFlags::EditorOnly | (ClassDB::GetInfo(object->GetType())->preferBinary ? SerializationFlags::None : (SerializationFlags::Text | SerializationFlags::HasHeaders)));
@@ -359,6 +362,12 @@ namespace Blueberry
 				else if (object->IsClassType(AssetImporter::Type))
 				{
 					AssetImporter* importer = static_cast<AssetImporter*>(object);
+					Object* mainObject = ObjectDB::GetObjectFromGuid(importer->GetGuid(), importer->GetMainObject());
+					ThumbnailCache::Release(mainObject);
+					for (auto& pair : importer->GetAssetObjects())
+					{
+						ThumbnailCache::Release(ObjectDB::GetObject(pair.second));
+					}
 					importer->Save();
 					importer->ResetImport();
 				}
@@ -424,7 +433,7 @@ namespace Blueberry
 		{
 			return true;
 		}
-		bool result = importer->GetLastWrite() < std::max(PathHelper::GetLastWriteTime(importer->GetFilePath()), PathHelper::GetLastWriteTime(importer->GetMetaFilePath()));
+		bool result = importer->GetLastWrite() != PathHelper::GetLastWriteTime(importer->GetFilePath()) || importer->GetMetaLastWrite() != PathHelper::GetLastWriteTime(importer->GetMetaFilePath());
 		return result;
 	}
 

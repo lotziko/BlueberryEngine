@@ -16,6 +16,8 @@ Texture2D _ScreenORMTexture : register(t2);
 Texture2D _ScreenNormalWSTexture : register(t3);
 TextureCube _SkyboxTexture : register(t4);
 SamplerState _SkyboxTexture_Sampler : register(s0);
+Texture3D _ProbeVolumeTexture : register(t5);
+
 RWTexture2D<float4> _RadianceHitDistTexture : register(u0);
 RWTexture2D<float3> _NormalRoughnessTexture : register(u1);
 RWTexture2D<float> _ViewZTexture : register(u2);
@@ -29,6 +31,20 @@ cbuffer ReflectionsCameraData : register(b0)
 	uint2 _ViewportSize;
 	uint2 _BufferSize;
 };
+
+cbuffer ReflectionsLightData : register(b1)
+{
+	float _HasMainLight;
+	float3 _Dummy;
+	float3 _MainLightColor;
+	float _MainLightHasShadow;
+	float3 _MainLightDirection;
+	float _HasProbeVolume;
+	float4 _ProbeVolumeMin;
+	float4 _ProbeVolumeSize;
+	float4 _ProbeVolumeInvSize;
+	float4 _ProbeVolumeCellSize;
+}
 
 typedef BuiltInTriangleIntersectionAttributes Attributes;
 
@@ -207,13 +223,131 @@ void ReflectionsAnyHit(inout Payload payload : SV_RayPayload, in Attributes attr
 	}
 }
 
+float3 CalculateDirectDiffuse(float3 normalWS, float3 lightDirectionWS, float3 lightColor, float attenuation)
+{
+	float NdotL = saturate(dot(normalWS, lightDirectionWS));
+	return lightColor * attenuation * NdotL;
+}
+
+float3 SampleProbeVolume(float3 positionWS, float3 normalWS)
+{
+	int3 dimensions = (int3)_ProbeVolumeSize.xyz;
+    float3 invExtent = _ProbeVolumeInvSize.xyz;
+
+    // Zero dimensions/inverse extent means no valid volume was provided.
+    if (any(dimensions < 1) || any(invExtent <= 0.0))
+        return 0.0;
+
+    float3 uvw = (positionWS - _ProbeVolumeMin.xyz) * invExtent;
+
+    // Treat positions outside the volume as having no probe contribution.
+    if (any(uvw < 0.0) || any(uvw > 1.0))
+        return 0.0;
+
+    float3 gridPosition = saturate(uvw) * (float3)(dimensions - 1);
+    int3 lo = (int3)floor(gridPosition);
+    int3 hi = min(lo + 1, dimensions - 1);
+    float3 f = gridPosition - (float3)lo;
+
+    float3 result = 0.0;
+
+    [unroll]
+    for (int z = 0; z < 2; ++z)
+    {
+        [unroll]
+        for (int y = 0; y < 2; ++y)
+        {
+            [unroll]
+            for (int x = 0; x < 2; ++x)
+            {
+                int3 coord = int3(
+                    x != 0 ? hi.x : lo.x,
+                    y != 0 ? hi.y : lo.y,
+                    z != 0 ? hi.z : lo.z);
+
+                float wx = x != 0 ? f.x : 1.0 - f.x;
+                float wy = y != 0 ? f.y : 1.0 - f.y;
+                float wz = z != 0 ? f.z : 1.0 - f.z;
+
+                result += _ProbeVolumeTexture.Load(int4(coord, 0)).rgb
+                        * (wx * wy * wz);
+            }
+        }
+    }
+
+    return result;
+	//float3 uvw = (positionWS - _ProbeVolumeMin.xyz) * _ProbeVolumeInvSize.xyz;
+	//float3 baseCoord = uvw * (_ProbeVolumeSize.xyz - 1);
+	//int3 baseGridCoord = floor(baseCoord);
+	//float3 frac = baseCoord - baseGridCoord;
+
+	//float weightSum = 0;
+	//float3 colorSum = 0;
+
+	//for (int i = 0; i < 8; ++i)
+	//{
+	//	int3 offset = int3(i, i >> 1, i >> 2) & int3(1, 1, 1);
+	//	int3 probeGridCoord = baseGridCoord + offset;
+
+	//	float3 probePositionWS = _ProbeVolumeMin.xyz + (float3)offset * _ProbeVolumeCellSize.xyz;
+	//	float3 probeToPos = positionWS - probePositionWS;
+	//	float3 directionWS = normalize(-probeToPos);
+	//	float distance = length(probeToPos);
+
+	//	float3 trilinear = lerp(1.0 - frac, frac, offset);
+	//	float weight = trilinear.x * trilinear.y * trilinear.z * max(0.005, dot(directionWS, normalWS));
+
+	//	weightSum += weight;
+	//	colorSum += _ProbeVolumeTexture.Load(uint4(probeGridCoord, 0)).rgb * weight;
+	//}
+
+	//return colorSum / weightSum;
+}
+
 [shader("closesthit")]
 void ReflectionsClosestHit(inout Payload payload : SV_RayPayload, in Attributes attributes : SV_IntersectionAttributes)
 {
 	uint3 indices = GetIndices();
     float3 barycentrics = GetBarycentrics(attributes.barycentrics);
 	float2 uv = GetUv(indices, barycentrics);
-    payload.color.rgb = SampleTexture2D(_BaseMap, _BaseMap_Sampler, uv);
+	float3 albedo = SampleTexture2D(_BaseMap, _BaseMap_Sampler, uv);
+
+	float3 normalOS = GetNormal(indices, barycentrics);
+	float3 positionWS = WorldRayOrigin() + RayTCurrent() * WorldRayDirection();
+	float3 normalWS = normalize(mul(normalOS, (float3x3)WorldToObject3x4()));
+
+	float3 directDiffuseTerm = 0;
+	float3 indirectDiffuseTerm = 0;
+	// Main light
+	if (_HasMainLight)
+	{
+		float3 lightDirectionWS = _MainLightDirection;
+		float shadowAttenuation = 1;
+		if (_MainLightHasShadow)
+		{
+			RayDesc visibilityRay;
+			visibilityRay.Origin = positionWS + normalWS * 0.001;
+			visibilityRay.Direction = lightDirectionWS;
+			visibilityRay.TMin = 0.f;
+			visibilityRay.TMax = 10000.0;
+
+			Payload visibilityPayload;
+			visibilityPayload.color = 0;
+			visibilityPayload.distance = 0;
+
+			TraceRay(_RaytracingAccelerationStructure, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER, ~0, 0, 1, 0, visibilityRay, visibilityPayload);
+			shadowAttenuation = visibilityPayload.distance == NRD_INF ? 1.0 : 0.0;
+		}
+		directDiffuseTerm += CalculateDirectDiffuse(normalWS, lightDirectionWS, _MainLightColor, shadowAttenuation);
+	}
+
+	// Probe volume
+	if (_HasProbeVolume)
+	{
+		indirectDiffuseTerm += SampleProbeVolume(positionWS, normalWS);
+	}
+	
+	payload.color.rgb = (directDiffuseTerm + indirectDiffuseTerm) * albedo;
 	payload.distance = RayTCurrent();
 }
 

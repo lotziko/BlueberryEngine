@@ -90,7 +90,6 @@ namespace Blueberry
 			for (Object* object : m_SerializedObject->GetTargets())
 			{
 				AssetDB::SetDirty(object);
-				ThumbnailCache::Refresh(object);
 			}
 			AssetDB::SaveAssets();
 			AssetDB::Refresh();

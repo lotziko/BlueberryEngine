@@ -157,7 +157,7 @@ namespace Blueberry
 		DrawingSettings drawingSettings = {};
 		drawingSettings.passId = s_DeferredPassId;
 		drawingSettings.sortingMode = SortingMode::FrontToBack;
-		drawingSettings.useGI = cameraType != CameraType::Reflection && cameraType != CameraType::Preview;
+		drawingSettings.useGI = cameraType != CameraType::Preview;
 		s_DefaultContext.DrawRenderers(s_Results, drawingSettings);
 		GfxDevice::SetGlobalTexture(s_ScreenColorTextureId, gBuffer[0]);
 		GfxDevice::SetGlobalTexture(s_ScreenNormalWSTextureId, gBuffer[1]);

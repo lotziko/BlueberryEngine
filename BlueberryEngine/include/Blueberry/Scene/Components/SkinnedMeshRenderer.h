@@ -29,7 +29,9 @@ namespace Blueberry
 		Material* GetMaterial(const uint32_t& index = 0);
 		void SetMaterial(Material* material);
 
-		void SetMaterials(const List<Material*> materials);
+		const List<ObjectPtr<Material>>& GetMaterials() const;
+		void SetMaterials(const List<Material*>& materials);
+		void SetMaterials(const List<ObjectPtr<Material>>& materials);
 
 		uint32_t GetMaterialCount();
 

@@ -20,5 +20,8 @@ namespace Blueberry
 
 		static bool IsBusy();
 		static void Wait();
+
+		static void PostMain(const std::function<void()>& job);
+		static void PollMain();
 	};
 }

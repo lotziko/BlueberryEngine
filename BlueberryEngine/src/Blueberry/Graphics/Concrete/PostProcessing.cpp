@@ -150,6 +150,21 @@ namespace Blueberry
 			}
 			GfxDevice::SetRenderTarget(nullptr);
 		}
+		else if (cameraType == CameraType::Reflection)
+		{
+			GfxDevice::SetRenderTarget(output);
+			if (isMsaa)
+			{
+				GfxDevice::SetGlobalTexture(s_ScreenColorTextureId, input);
+				GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetResolveMSAA(), 1));
+			}
+			else
+			{
+				GfxDevice::SetGlobalTexture(TO_HASH("_BlitTexture"), input);
+				GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), DefaultMaterials::GetBlit(), 0));
+			}
+			GfxDevice::SetRenderTarget(nullptr);
+		}
 		else
 		{
 			float exposure = 0.2f / AutoExposure::GetExposure(perCameraData);
@@ -358,7 +373,7 @@ namespace Blueberry
 			GfxDevice::SetRenderTarget(isMsaa ? output : tonemapping);
 			GfxDevice::SetViewport(0, 0, viewport.width, viewport.height);
 			GfxDevice::SetGlobalTexture(s_ScreenColorTextureId, color);
-			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_PostProcessingMaterial, cameraType == CameraType::Reflection ? 1 : 0));
+			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_PostProcessingMaterial, 0));
 
 			// Fxaa
 			if (!isMsaa)

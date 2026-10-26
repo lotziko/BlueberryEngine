@@ -453,7 +453,6 @@ namespace Blueberry
 		{
 			size_t skinnedMeshRendererFileId = TO_HASH(String(nodeName).append("_SkinnedMeshRenderer"));
 			skinnedMeshRenderer = GetOrCreateAssetObject<SkinnedMeshRenderer>(skinnedMeshRendererFileId);
-			skinnedMeshRenderer->SetMesh(mesh);
 			if (!entity->HasComponent<SkinnedMeshRenderer>())
 			{
 				entity->AddComponent(skinnedMeshRenderer);
@@ -462,12 +461,12 @@ namespace Blueberry
 			{
 				entity->RemoveComponent(meshRenderer);
 			}
+			skinnedMeshRenderer->SetMesh(mesh);
 		}
 		else
 		{
 			size_t meshRendererFileId = TO_HASH(String(nodeName).append("_MeshRenderer"));
 			meshRenderer = GetOrCreateAssetObject<MeshRenderer>(meshRendererFileId);
-			meshRenderer->SetMesh(mesh);
 			if (!entity->HasComponent<MeshRenderer>())
 			{
 				entity->AddComponent(meshRenderer);
@@ -476,6 +475,7 @@ namespace Blueberry
 			{
 				entity->RemoveComponent(skinnedMeshRenderer);
 			}
+			meshRenderer->SetMesh(mesh);
 		}
 
 		int fbxControlPointsCount = fbxMesh->GetControlPointsCount();

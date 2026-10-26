@@ -50,6 +50,7 @@ namespace Blueberry
 		static RayTracingShader* s_ReflectionsRayTracingShader;
 		static ComputeShader* s_ReblurComputeShaders[7];
 		static GfxBuffer* s_ReflectionsCameraBuffer;
+		static GfxBuffer* s_ReflectionsLightBuffer;
 		static GfxBuffer* s_ReblurBuffer;
 		static GfxTopLevelAccelerationStructure* s_AccelerationStructure;
 	};

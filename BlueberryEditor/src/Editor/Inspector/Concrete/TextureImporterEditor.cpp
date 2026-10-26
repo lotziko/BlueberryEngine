@@ -132,8 +132,6 @@ namespace Blueberry
 			for (Object* object : m_SerializedObject->GetTargets())
 			{
 				AssetDB::SetDirty(object);
-				TextureImporter* textureImporter = static_cast<TextureImporter*>(object);
-				ThumbnailCache::Refresh(ObjectDB::GetObjectFromGuid(textureImporter->GetGuid(), textureImporter->GetMainObject()));
 			}
 			AssetDB::SaveAssets();
 			AssetDB::Refresh();

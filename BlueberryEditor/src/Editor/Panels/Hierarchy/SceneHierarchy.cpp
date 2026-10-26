@@ -405,6 +405,12 @@ namespace Blueberry
 				m_RenamingEntity = entity;
 				m_ExpandedNodes.insert(selectedEntity->GetObjectId());
 			}
+			else
+			{
+				Entity* entity = EntityHelper::Create("Empty Entity");
+				UndoManager::AddEntity(entity);
+				m_RenamingEntity = entity;
+			}
 		}
 		if (ImGui::MenuItem("Create Empty Parent"))
 		{

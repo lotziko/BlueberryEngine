@@ -18,6 +18,8 @@
 #include "Blueberry\Scene\Scene.h"
 #include "Blueberry\Scene\Components\MeshRenderer.h"
 #include "Blueberry\Scene\Components\SkyRenderer.h"
+#include "Blueberry\Scene\Components\Light.h"
+#include "Blueberry\Scene\Components\ProbeVolume.h"
 #include "Blueberry\Scene\Components\Transform.h"
 #include "Blueberry\Scene\Components\Camera.h"
 #include "PerCameraData.h"
@@ -27,6 +29,7 @@ namespace Blueberry
 	RayTracingShader* Reflections::s_ReflectionsRayTracingShader = nullptr;
 	ComputeShader* Reflections::s_ReblurComputeShaders[7] = {};
 	GfxBuffer* Reflections::s_ReflectionsCameraBuffer = nullptr;
+	GfxBuffer* Reflections::s_ReflectionsLightBuffer = nullptr;
 	GfxBuffer* Reflections::s_ReblurBuffer = nullptr;
 	GfxTopLevelAccelerationStructure* Reflections::s_AccelerationStructure = nullptr;
 
@@ -38,6 +41,20 @@ namespace Blueberry
 		unsigned int frameIndex;
 		Vector2Uint viewportSize;
 		Vector2Uint bufferSize;
+	};
+
+	struct ReflectionsLightData
+	{
+		float hasMainLight;
+		Vector3 dummy;
+		Vector3 mainLightColor;
+		float mainLightHasShadow;
+		Vector3 mainLightDirection;
+		float hasProbeVolume;
+		Vector4 probeVolumeMin;
+		Vector4 probeVolumeSize;
+		Vector4 probeVolumeInvSize;
+		Vector4 probeVolumeCellSize;
 	};
 
 	struct ReblurSharedData
@@ -123,6 +140,7 @@ namespace Blueberry
 	};
 
 	static const size_t s_ReflectionsCameraDataId = TO_HASH("ReflectionsCameraData");
+	static const size_t s_ReflectionsLightDataId = TO_HASH("ReflectionsLightData");
 	static const size_t s_BaseMapId = TO_HASH("_BaseMap");
 	static const size_t s_SkyboxTextureId = TO_HASH("_SkyboxTexture");
 	static const size_t s_RadianceHitDistTextureId = TO_HASH("_RadianceHitDistTexture");
@@ -178,6 +196,13 @@ namespace Blueberry
 		reflectionsCameraBufferProperties.usageFlags = BufferUsageFlags::ConstantBuffer;
 
 		GfxDevice::CreateBuffer(reflectionsCameraBufferProperties, s_ReflectionsCameraBuffer);
+
+		BufferProperties reflectionsLightBufferProperties = {};
+		reflectionsLightBufferProperties.elementCount = 1;
+		reflectionsLightBufferProperties.elementSize = sizeof(ReflectionsLightData) * 1;
+		reflectionsLightBufferProperties.usageFlags = BufferUsageFlags::ConstantBuffer;
+
+		GfxDevice::CreateBuffer(reflectionsLightBufferProperties, s_ReflectionsLightBuffer);
 
 		BufferProperties reblurBufferProperties = {};
 		reblurBufferProperties.elementCount = 1;
@@ -294,7 +319,7 @@ namespace Blueberry
 			reflectionsData.specularHitdistForTrackingPing.reset(GfxTexturePool::Get(size.x, size.y, 1, TextureUsageFlags::UnorderedAccess, 1, 1, TextureFormat::R16_Float, TextureDimension::Texture2D));
 			reflectionsData.specularHitdistForTrackingPong.reset(GfxTexturePool::Get(size.x, size.y, 1, TextureUsageFlags::UnorderedAccess, 1, 1, TextureFormat::R16_Float, TextureDimension::Texture2D));
 			reflectionsData.output.reset(GfxTexturePool::Get(size.x, size.y, 1, TextureUsageFlags::UnorderedAccess, 1, 1, TextureFormat::R16G16B16A16_Float, TextureDimension::Texture2D));
-			
+
 			reflectionsData.previousViewToWorld = cameraViewToWorld;
 			reflectionsData.previousProjection = projection;
 			reflectionsData.previousFrustum = frustum;
@@ -319,6 +344,38 @@ namespace Blueberry
 		cameraData.frameIndex = frameIndex;
 		cameraData.viewportSize = Vector2Uint(viewport.width, viewport.height);
 		s_ReflectionsCameraBuffer->SetData(reinterpret_cast<char*>(&cameraData), sizeof(ReflectionsCameraData));
+
+		ReflectionsLightData lightData = {};
+		for (Light* light : scene->GetComponents<Light>())
+		{
+			if (light->GetType() == LightType::Directional)
+			{
+				lightData.hasMainLight = 1;
+				Color color = Math::ToLinear(light->GetColor());
+				float intensity = light->GetIntensity();
+				Vector3 finalColor = Vector3(color.x * intensity, color.y * intensity, color.z * intensity);
+				lightData.mainLightDirection = Vector3::Transform(Vector3::Backward, light->GetTransform()->GetRotation());
+				lightData.mainLightHasShadow = light->IsCastingShadows();
+				lightData.mainLightColor = finalColor;
+				break;
+			}
+		}
+
+		for (ProbeVolume* probeVolume : scene->GetComponents<ProbeVolume>())
+		{
+			lightData.hasProbeVolume = 1;
+			AABB bounds = probeVolume->GetBounds();
+			Vector3 center = bounds.Center;
+			Vector3 extents = bounds.Extents;
+			Vector3 size = extents * 2;
+			Vector3Int intSize = probeVolume->GetSize();
+			lightData.probeVolumeMin = Vector4(center - extents);
+			lightData.probeVolumeSize = Vector4(static_cast<float>(intSize.x), static_cast<float>(intSize.y), static_cast<float>(intSize.z), 0.0f);
+			lightData.probeVolumeInvSize = Vector4(1.0f / (extents.x * 2), 1.0f / (extents.y * 2), 1.0f / (extents.z * 2), 0);
+			lightData.probeVolumeCellSize = Vector4(size.x / intSize.x, size.y / intSize.y, size.z / intSize.z, 0);
+			break;
+		}
+		s_ReflectionsLightBuffer->SetData(reinterpret_cast<char*>(&lightData), sizeof(ReflectionsLightData));
 
 		ReblurSharedData reblurData = {};
 		reblurData.worldToClip = GfxDevice::GetGPUMatrix(worldToView * projection);
@@ -428,6 +485,7 @@ namespace Blueberry
 		GfxDevice::SetGlobalTexture(s_NormalRoughnessTextureId, normalRoughness);
 		GfxDevice::SetGlobalTexture(s_ViewZTextureId, viewZ);
 		GfxDevice::SetGlobalBuffer(s_ReflectionsCameraDataId, s_ReflectionsCameraBuffer);
+		GfxDevice::SetGlobalBuffer(s_ReflectionsLightDataId, s_ReflectionsLightBuffer);
 		GfxDevice::DispatchRays(s_ReflectionsRayTracingShader, s_AccelerationStructure, viewport.width, viewport.height, 1);
 
 		// Classify tiles

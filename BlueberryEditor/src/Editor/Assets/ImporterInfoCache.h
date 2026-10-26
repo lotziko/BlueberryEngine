@@ -9,9 +9,11 @@ namespace Blueberry
 
 	struct ImporterInfo
 	{
+		uint32_t version;
 		FileId mainObject;
 		List<std::tuple<FileId, TypeId, String>> objects;
 		long long lastWrite;
+		long long metaListWrite;
 	};
 
 	class ImporterInfoCache

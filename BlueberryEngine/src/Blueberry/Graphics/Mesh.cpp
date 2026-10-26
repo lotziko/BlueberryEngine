@@ -484,7 +484,7 @@ namespace Blueberry
 		if (m_SubMeshes.size() == 0)
 		{
 			SubMeshData subMesh = {};
-			subMesh.SetIndexCount(m_VertexCount);
+			subMesh.SetIndexCount(m_IndexCount > 0 ? m_IndexCount : m_VertexCount);
 			m_SubMeshes.push_back(std::move(subMesh));
 		}
 

@@ -162,6 +162,11 @@ namespace Blueberry
 		return m_LastWrite;
 	}
 
+	long long AssetImporter::GetMetaLastWrite() const
+	{
+		return m_MetaLastWrite;
+	}
+
 	AssetImporter* AssetImporter::CreateNew(const TypeId& type, const std::filesystem::path& relativePath)
 	{
 		const ClassInfo* info = ClassDB::GetInfo(type);

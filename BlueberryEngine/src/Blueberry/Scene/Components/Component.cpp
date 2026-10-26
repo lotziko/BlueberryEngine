@@ -28,7 +28,11 @@ namespace Blueberry
 
 	Scene* Component::GetScene()
 	{
-		return m_Entity.Get()->GetScene();
+		if (m_Entity.IsValid())
+		{
+			return m_Entity->GetScene();
+		}
+		return nullptr;
 	}
 
 	bool Component::IsActive() const

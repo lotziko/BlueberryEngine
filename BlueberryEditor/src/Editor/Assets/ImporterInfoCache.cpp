@@ -28,6 +28,13 @@ namespace Blueberry
 			input.read(reinterpret_cast<char*>(&version), sizeof(uint32_t));
 			input.read(reinterpret_cast<char*>(&cacheSize), sizeof(size_t));
 
+			// Version 1 did not have metaListWrite so it's simpler to reimport all assets instead
+			if (version == 1)
+			{
+				input.close();
+				return;
+			}
+
 			for (size_t i = 0; i < cacheSize; ++i)
 			{
 				Guid guid;
@@ -39,6 +46,7 @@ namespace Blueberry
 				}
 
 				ImporterInfo info = {};
+				info.version = version;
 				Read(input, info);
 				s_ImporterInfoCache.insert_or_assign(guid, info);
 			}
@@ -55,7 +63,7 @@ namespace Blueberry
 		output.open(dataPath, std::ios::out | std::ofstream::binary);
 		if (output.is_open())
 		{
-			uint32_t version = 1;
+			uint32_t version = 2;
 			size_t cacheSize = s_ImporterInfoCache.size();
 			output.write(reinterpret_cast<char*>(&version), sizeof(uint32_t));
 			output.write(reinterpret_cast<char*>(&cacheSize), sizeof(size_t));
@@ -111,6 +119,7 @@ namespace Blueberry
 				}
 			}
 			importer->m_LastWrite = info.lastWrite;
+			importer->m_MetaLastWrite = info.metaListWrite;
 			return true;
 		}
 		return false;
@@ -141,7 +150,8 @@ namespace Blueberry
 			}
 		}
 
-		info.lastWrite = std::max(PathHelper::GetLastWriteTime(importer->GetFilePath()), PathHelper::GetLastWriteTime(importer->GetMetaFilePath()));
+		info.lastWrite = PathHelper::GetLastWriteTime(importer->GetFilePath());
+		info.metaListWrite = PathHelper::GetLastWriteTime(importer->GetMetaFilePath());
 		s_ImporterInfoCache.insert_or_assign(guid, info);
 	}
 
@@ -180,6 +190,7 @@ namespace Blueberry
 		}
 
 		is.read(reinterpret_cast<char*>(&info.lastWrite), sizeof(long long));
+		is.read(reinterpret_cast<char*>(&info.metaListWrite), sizeof(long long));
 	}
 
 	void ImporterInfoCache::Write(std::ostream& os, ImporterInfo& info)
@@ -206,5 +217,6 @@ namespace Blueberry
 		}
 
 		os.write(reinterpret_cast<char*>(&info.lastWrite), sizeof(long long));
+		os.write(reinterpret_cast<char*>(&info.metaListWrite), sizeof(long long));
 	}
 }

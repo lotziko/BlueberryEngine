@@ -38,7 +38,7 @@ namespace Blueberry
 				bool foundPlace = false;
 				for (size_t j = 0; j < components.size(); ++j)
 				{
-					auto& pair = components[i];
+					auto& pair = components[j];
 					if (pair.first == type)
 					{
 						pair.second.push_back(component);

@@ -96,13 +96,18 @@ namespace Blueberry
 		return m_Materials;
 	}
 
-	void MeshRenderer::SetMaterials(const List<Material*> materials)
+	void MeshRenderer::SetMaterials(const List<Material*>& materials)
 	{
 		m_Materials.clear();
 		for (Material* material : materials)
 		{
 			m_Materials.push_back(material);
 		}
+	}
+
+	void MeshRenderer::SetMaterials(const List<ObjectPtr<Material>>& materials)
+	{
+		m_Materials = materials;
 	}
 
 	uint32_t MeshRenderer::GetMaterialCount() const
@@ -155,7 +160,10 @@ namespace Blueberry
 				bool opaqueMask[16] = {};
 				for (size_t i = 0; i < m_Materials.size(); ++i)
 				{
-					opaqueMask[i] = m_Materials[i]->IsOpaque();
+					if (m_Materials[i].IsValid())
+					{
+						opaqueMask[i] = m_Materials[i]->IsOpaque();
+					}
 				}
 				m_AccelerationStructure = GfxBottomLevelAccelerationStructure::Get(m_Mesh.Get(), opaqueMask);
 				m_MeshUpdateCount = meshUpdateCount;

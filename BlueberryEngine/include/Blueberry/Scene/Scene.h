@@ -37,6 +37,7 @@ namespace Blueberry
 
 		Entity* CreateEntity(const String& name);
 		void AddEntity(Entity* entity);
+		void RemoveEntity(Entity* entity);
 		void DestroyEntity(Entity* entity);
 
 		const Dictionary<ObjectId, ObjectPtr<Entity>>& GetEntities();

@@ -226,6 +226,7 @@ namespace Blueberry
 							Texture3D* probeVolume = Texture3D::Create(result.probeOutputSize.x, result.probeOutputSize.y, result.probeOutputSize.z, TextureFormat::R11G11B10_Float, WrapMode::Clamp, FilterMode::Trilinear);
 							probeVolume->SetReadable(true);	// Keep data on build
 							probeVolume->SetData(result.probeOutput.data(), result.probeOutput.size());
+							probeVolume->Apply();
 							lightingData->SetProbeVolumeData(probeVolume);
 
 							auto relativePath = std::filesystem::relative(probeVolumePath, Path::GetAssetsPath());

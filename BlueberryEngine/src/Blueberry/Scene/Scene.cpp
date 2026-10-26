@@ -97,6 +97,26 @@ namespace Blueberry
 		entity->UpdateHierarchy();
 	}
 
+	void Scene::RemoveEntity(Entity* entity)
+	{
+		if (entity == nullptr)
+		{
+			return;
+		}
+		entity->DisableComponents();
+		Entity::Poll();
+		entity->m_Scene = nullptr;
+		if (entity->GetTransform()->GetParent() == nullptr)
+		{
+			RemoveFromRoot(entity);
+		}
+		m_Entities.erase(entity->GetObjectId());
+		for (auto& child : entity->GetTransform()->GetChildren())
+		{
+			RemoveEntity(child.Get()->GetEntity());
+		}
+	}
+
 	void Scene::DestroyEntity(Entity* entity)
 	{
 		auto snapshot = entity->GetTransform()->GetChildren();

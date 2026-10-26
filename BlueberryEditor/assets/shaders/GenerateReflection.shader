@@ -91,7 +91,7 @@ Shader
 				float NdotL = max(dot(N, L), 0.0);
 				if (NdotL > 0.0)
 				{
-					prefilteredColor += saturate(SAMPLE_TEXTURECUBE(_SourceTexture, _SourceTexture_Sampler, L).rgb) * NdotL;
+					prefilteredColor += SAMPLE_TEXTURECUBE(_SourceTexture, _SourceTexture_Sampler, L).rgb * NdotL;
 					totalWeight += NdotL;
 				}
 			}

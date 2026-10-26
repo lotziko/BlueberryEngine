@@ -92,13 +92,23 @@ namespace Blueberry
 		m_Materials[0] = material;
 	}
 
-	void SkinnedMeshRenderer::SetMaterials(const List<Material*> materials)
+	const List<ObjectPtr<Material>>& SkinnedMeshRenderer::GetMaterials() const
+	{
+		return m_Materials;
+	}
+
+	void SkinnedMeshRenderer::SetMaterials(const List<Material*>& materials)
 	{
 		m_Materials.clear();
 		for (Material* material : materials)
 		{
 			m_Materials.push_back(material);
 		}
+	}
+
+	void SkinnedMeshRenderer::SetMaterials(const List<ObjectPtr<Material>>& materials)
+	{
+		m_Materials = materials;
 	}
 
 	uint32_t SkinnedMeshRenderer::GetMaterialCount()
@@ -228,7 +238,7 @@ namespace Blueberry
 
 	void SkinnedMeshRenderer::UpdateBounds()
 	{
-		if (m_Mesh.IsValid())
+		if (m_Mesh.IsValid() && m_Root.IsValid())
 		{
 			Transform* transform = GetRoot();
 			size_t transformUpdateCount = transform->GetUpdateCount();

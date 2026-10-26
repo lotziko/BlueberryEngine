@@ -31,6 +31,7 @@ namespace Blueberry
 		void SaveAndReimport();
 		void Rename(const std::filesystem::path& relativePath);
 		long long GetLastWrite() const;
+		long long GetMetaLastWrite() const;
 		// TODO need a way to determine count of not imported assets in this importer
 		
 		static AssetImporter* CreateNew(const TypeId& type, const std::filesystem::path& relativePath);
@@ -54,6 +55,7 @@ namespace Blueberry
 		Dictionary<FileId, ObjectId> m_AssetObjects = {};
 		bool m_RequireSave = false;
 		long long m_LastWrite = 0;
+		long long m_MetaLastWrite = 0;
 
 		friend class ImporterInfoCache;
 	};

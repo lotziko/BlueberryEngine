@@ -13,7 +13,7 @@ namespace Blueberry
 	{
 	public:
 		static Texture2D* GetThumbnail(Object* asset);
-		static void Refresh(Object* asset);
+		static void Release(Object* asset);
 
 	private:
 		static Texture2D* Load(Object* asset);
@@ -22,5 +22,6 @@ namespace Blueberry
 
 	private:
 		static Dictionary<ObjectId, Texture2D*> s_Thumbnails;
+		static HashSet<ObjectId> s_InvalidAssets;
 	};
 }

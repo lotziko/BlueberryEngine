@@ -111,7 +111,12 @@ namespace Blueberry
 					{
 						D3D12_SHADER_INPUT_BIND_DESC inputBindDesc;
 						function->GetResourceBindingDesc(j, &inputBindDesc);
-						if (inputBindDesc.Type == D3D_SIT_CBUFFER)
+						switch (inputBindDesc.Type)
+						{
+						case D3D_SIT_TEXTURE:
+							m_TextureSRVSlots.push_back(std::make_pair(TO_HASH(String(inputBindDesc.Name)), inputBindDesc.BindPoint));
+							break;
+						case D3D_SIT_CBUFFER:
 						{
 							if (strcmp(inputBindDesc.Name, "RTPerMaterialData") == 0)
 							{
@@ -170,6 +175,12 @@ namespace Blueberry
 									}
 								}
 							}
+							else
+							{
+								m_ConstantBufferSlots.push_back(std::make_pair(TO_HASH(String(inputBindDesc.Name)), inputBindDesc.BindPoint));
+							}
+						}
+						break;
 						}
 					}
 				}

@@ -33,6 +33,7 @@ namespace Blueberry
 
 		template<class ComponentType>
 		ComponentType* GetComponent();
+		const List<ObjectPtr<Component>>& GetComponents() const;
 
 		Component* GetComponentAt(size_t index) const;
 

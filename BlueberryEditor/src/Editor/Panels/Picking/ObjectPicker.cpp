@@ -189,7 +189,7 @@ namespace Blueberry
 		}
 
 		Texture* icon = ThumbnailCache::GetThumbnail(object);
-		if (icon == nullptr)
+		if (icon == nullptr || !icon->IsDefaultState())
 		{
 			icon = IconDB::GetAssetIcon(object);
 		}

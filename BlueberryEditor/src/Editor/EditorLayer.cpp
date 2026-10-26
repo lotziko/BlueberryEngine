@@ -36,6 +36,8 @@
 #include "Editor\Selection.h"
 #include "Editor\Undo\UndoManager.h"
 
+#include "Editor\Misc\PlatformHelper.h"
+
 //#include "Blueberry\Graphics\OpenXRRenderer.h"
 
 #include <imgui\imgui.h>

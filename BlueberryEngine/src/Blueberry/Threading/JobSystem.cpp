@@ -7,6 +7,7 @@
 #include <sstream>
 #include <condition_variable>
 #include <Windows.h>
+#include <concurrent_queue.h>
 
 // Based on https://github.com/turanszkij/JobSystem/blob/master/JobSystem.cpp
 
@@ -68,6 +69,7 @@ namespace Blueberry
 	std::mutex wakeMutex;
 	uint64_t currentLabel = 0;
 	std::atomic<uint64_t> finishedLabel;
+	concurrency::concurrent_queue<std::function<void()>, STLAllocator<std::function<void()>>> mainThreadJobs;
 
 	void JobSystem::Initialize()
 	{
@@ -187,5 +189,22 @@ namespace Blueberry
 	void JobSystem::Wait()
 	{
 		while (IsBusy()) { poll(); }
+	}
+
+	void JobSystem::PostMain(const std::function<void()>& job)
+	{
+		mainThreadJobs.push(job);
+	}
+
+	void JobSystem::PollMain()
+	{
+		if (!mainThreadJobs.empty())
+		{
+			std::function<void()> func;
+			while (mainThreadJobs.try_pop(func))
+			{
+				func();
+			}
+		}
 	}
 }

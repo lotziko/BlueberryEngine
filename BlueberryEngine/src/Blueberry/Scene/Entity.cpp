@@ -95,6 +95,11 @@ namespace Blueberry
 		}
 	}
 
+	const List<ObjectPtr<Component>>& Entity::GetComponents() const
+	{
+		return m_Components;
+	}
+
 	Component* Entity::GetComponentAt(size_t index) const
 	{
 		if (index >= 0 && index < m_Components.size())

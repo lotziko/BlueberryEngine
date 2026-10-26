@@ -4,6 +4,7 @@
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Core\ObjectDB.h"
 #include "Blueberry\Tools\FileHelper.h"
+#include "Blueberry\Threading\JobSystem.h"
 
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Assets\ThumbnailRenderer.h"
@@ -13,6 +14,7 @@
 namespace Blueberry
 {
 	Dictionary<ObjectId, Texture2D*> ThumbnailCache::s_Thumbnails = {};
+	HashSet<ObjectId> ThumbnailCache::s_InvalidAssets = {};
 
 	#define THUMBNAIL_SIZE 128
 	#define THUMBNAIL_DATA_SIZE THUMBNAIL_SIZE * THUMBNAIL_SIZE * 4
@@ -49,17 +51,25 @@ namespace Blueberry
 		return nullptr;
 	}
 
-	void ThumbnailCache::Refresh(Object* asset)
+	void ThumbnailCache::Release(Object* asset)
 	{
-		Texture2D* thumbnail = DrawAndSave(asset);
-		if (thumbnail != nullptr)
+		ObjectId id = asset->GetObjectId();
+		s_InvalidAssets.insert(id);
+		auto it = s_Thumbnails.find(id);
+		if (it != s_Thumbnails.end())
 		{
-			s_Thumbnails.insert_or_assign(asset->GetObjectId(), thumbnail);
+			Object::Destroy(it->second);	// TODO pool
+			s_Thumbnails.erase(it);
 		}
 	}
 
 	Texture2D* ThumbnailCache::Load(Object* asset)
 	{
+		if (s_InvalidAssets.count(asset->GetObjectId()) > 0)
+		{
+			return nullptr;
+		}
+
 		std::filesystem::path thumbnailPath = Path::GetThumbnailCachePath();
 		auto pair = ObjectDB::GetGuidAndFileIdFromObject(asset);
 		thumbnailPath.append(pair.first.ToString().append(std::to_string(pair.second)));
@@ -67,18 +77,25 @@ namespace Blueberry
 		{
 			return nullptr;
 		}
-
-		List<uint8_t> data = FileHelper::LoadBinary(StringHelper::ToString(thumbnailPath));
-
+		
 		Texture2D* thumbnail = Texture2D::Create(THUMBNAIL_SIZE, THUMBNAIL_SIZE);
-		thumbnail->SetData(data.data(), data.size());
-		thumbnail->Apply();
-
+		thumbnail->SetState(ObjectState::Loading);
+		JobSystem::Execute([thumbnailPath, thumbnail]()
+		{
+			List<uint8_t> data = FileHelper::LoadBinary(StringHelper::ToString(thumbnailPath));
+			thumbnail->SetData(data.data(), data.size());
+			JobSystem::PostMain([thumbnail]()
+			{
+				thumbnail->Apply();
+				thumbnail->SetState(ObjectState::Default);
+			});
+		});
 		return thumbnail;
 	}
 
 	void ThumbnailCache::Save(Object* asset, unsigned char* thumbnail)
 	{
+		s_InvalidAssets.erase(asset->GetObjectId());
 		std::filesystem::path thumbnailPath = Path::GetThumbnailCachePath();
 		auto pair = ObjectDB::GetGuidAndFileIdFromObject(asset);
 		if (!std::filesystem::exists(thumbnailPath))

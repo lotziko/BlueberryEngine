@@ -640,6 +640,8 @@ namespace Blueberry
 	extern "C" __global__ void __miss__radiance()
 	{
 		float3 radiance = sampleSky(optixGetWorldRayDirection());  // TODO exposure property
+		float3 throughput = make_float3(__uint_as_float(optixGetPayload_4()), __uint_as_float(optixGetPayload_5()), __uint_as_float(optixGetPayload_6()));
+		radiance *= throughput;
 		optixSetPayload_1(__float_as_uint(radiance.x));
 		optixSetPayload_2(__float_as_uint(radiance.y));
 		optixSetPayload_3(__float_as_uint(radiance.z));
@@ -766,13 +768,14 @@ namespace Blueberry
 		
 			if (newDepth < 100)
 			{
-				radiance += make_float3(__uint_as_float(c0), __uint_as_float(c1), __uint_as_float(c2)) * throughput;
-				optixSetPayload_1(__float_as_uint(radiance.x));
-				optixSetPayload_2(__float_as_uint(radiance.y));
-				optixSetPayload_3(__float_as_uint(radiance.z));
-				optixSetPayload_7(seed);
+				radiance += make_float3(__uint_as_float(c0), __uint_as_float(c1), __uint_as_float(c2));
 			}
 		}
+
+		optixSetPayload_1(__float_as_uint(radiance.x));
+		optixSetPayload_2(__float_as_uint(radiance.y));
+		optixSetPayload_3(__float_as_uint(radiance.z));
+		optixSetPayload_7(seed);
 	}
 
 	extern "C" __global__ void __closesthit__shadow()

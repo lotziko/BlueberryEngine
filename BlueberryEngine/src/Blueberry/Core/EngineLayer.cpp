@@ -43,6 +43,7 @@ namespace Blueberry
 
 	void EngineLayer::Update()
 	{
+		JobSystem::PollMain();
 		Entity::Poll();
 	}
 }

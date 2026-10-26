@@ -240,8 +240,8 @@ namespace Blueberry
 			case TextureDimension::TextureCube:
 				renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
 				renderTargetViewDesc.Texture2DArray.MipSlice = mipSlice;
-				renderTargetViewDesc.Texture2DArray.FirstArraySlice = arraySlice;
-				renderTargetViewDesc.Texture2DArray.ArraySize = 1;
+				renderTargetViewDesc.Texture2DArray.FirstArraySlice = 0;
+				renderTargetViewDesc.Texture2DArray.ArraySize = 6;
 				break;
 			case TextureDimension::Texture3D:
 				renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE3D;

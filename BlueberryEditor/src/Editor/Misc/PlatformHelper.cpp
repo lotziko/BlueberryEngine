@@ -308,13 +308,22 @@ namespace Blueberry
 			if (showTime != 0 && tickCount > showTime)
 			{
 				ShowWindow(windowHandle, SW_SHOW);
-				SetForegroundWindow(windowHandle);
 				showTime = 0;
 			}
 			if (hideTime != 0 && tickCount > hideTime)
 			{
 				ShowWindow(windowHandle, SW_HIDE);
 				hideTime = 0;
+			}
+
+			if (counter > 0)
+			{
+				HWND mainHwnd = *static_cast<HWND*>(Application::GetInstance()->GetWindow()->GetHandle());
+				HWND aboveMain = GetWindow(mainHwnd, GW_HWNDPREV);
+				if (aboveMain != windowHandle)
+				{
+					SetWindowPos(windowHandle, aboveMain ? aboveMain : HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+				}
 			}
 		}
 		DestroyWindow(windowHandle);

@@ -301,7 +301,7 @@ namespace Blueberry
 					BB_ERROR(mesh->GetName() << " has no tangents.");
 					continue;
 				}
-				if (meshRenderer->IsBakeable() && !layout.Has(VertexAttribute::Texcoord1))
+				if (state.params.generateLightmap && meshRenderer->IsBakeable() && !layout.Has(VertexAttribute::Texcoord1))
 				{
 					BB_ERROR(mesh->GetName() << " has no lightmap UVs.");
 					continue;

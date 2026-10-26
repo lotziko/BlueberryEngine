@@ -36,8 +36,6 @@ namespace Blueberry
 				m_Camera->SetPixelSize(Vector2(static_cast<float>(target->GetWidth()), static_cast<float>(target->GetHeight())));
 				m_Camera->SetCameraType(CameraType::Preview);
 				m_Camera->SetBackgroundColor(Color(0.0f, 0.0f, 0.0f, 1.0f));
-				cameraEntity->OnCreate();
-				m_Camera->OnEnable();
 			}
 
 			m_Mesh = mesh;
@@ -52,7 +50,8 @@ namespace Blueberry
 			float distance = std::max(std::max(bounds.Extents.x, std::max(bounds.Extents.y, bounds.Extents.z)) * 2, 0.02f);
 			Vector3 targetPosition = bounds.Center;
 			Vector3 cameraPosition = targetPosition + Vector3(-distance, distance / 3, -distance);
-			m_Camera->GetTransform()->SetRotation(Quaternion::CreateFromYawPitchRoll(Math::ToRadians(45), Math::ToRadians(15), 0));
+			Vector3 forward = targetPosition - cameraPosition;
+			m_Camera->GetTransform()->SetRotation(Math::LookRotation(forward, Vector3::Down));
 			m_Camera->GetTransform()->SetPosition(cameraPosition);
 			Entity::Poll();
 		}

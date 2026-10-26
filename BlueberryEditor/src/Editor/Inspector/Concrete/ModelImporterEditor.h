@@ -4,6 +4,8 @@
 
 namespace Blueberry
 {
+	class GfxTexture;
+
 	class ModelImporterEditor : public AssetImporterEditor
 	{
 	public:
@@ -16,5 +18,7 @@ namespace Blueberry
 		SerializedProperty m_ScaleProperty;
 		SerializedProperty m_GenerateLightmapUVProperty;
 		SerializedProperty m_GeneratePhysicsShapeProperty;
+
+		static GfxTexture* s_RenderTexture;
 	};
 }
