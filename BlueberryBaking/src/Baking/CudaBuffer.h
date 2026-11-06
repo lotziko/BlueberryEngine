@@ -12,6 +12,11 @@ namespace Blueberry
 	 buffer */
 	struct CUDABuffer {
 
+		bool empty()
+		{
+			return data == 0;
+		}
+
 		//! re-size buffer to given number of bytes
 		void resize(size_t size)
 		{
@@ -30,7 +35,24 @@ namespace Blueberry
 		void free()
 		{
 			CUDA_CHECK(cudaFree((void *)data));
+			data = 0;
 			sizeInBytes = 0;
+		}
+
+		void resize_if_needed(size_t size)
+		{
+			if (data)
+			{
+				if (sizeInBytes < size)
+				{
+					free();
+					alloc(size);
+				}
+			}
+			else
+			{
+				alloc(size);
+			}
 		}
 
 		template<typename T>
@@ -44,6 +66,13 @@ namespace Blueberry
 		void alloc_and_upload(const T *t, size_t count)
 		{
 			alloc(count * sizeof(T));
+			upload(t, count);
+		}
+
+		template<typename T>
+		void resize_and_upload(const T* t, size_t count)
+		{
+			resize_if_needed(count * sizeof(T));
 			upload(t, count);
 		}
 

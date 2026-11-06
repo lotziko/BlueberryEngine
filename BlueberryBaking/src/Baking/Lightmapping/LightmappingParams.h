@@ -37,7 +37,8 @@ namespace Blueberry
 		float3* normal;
 		float4* position;
 
-		uint2 imageSize;
+		uint2 lightmapSize;
+		uint3 probeVolumeSize;
 		int samplePerTexel;
 		float texelPerUnit;
 
@@ -51,7 +52,6 @@ namespace Blueberry
 		unsigned int* probeColor; // R11G10B11
 		unsigned int probeCount;
 		unsigned int* completeProbeCounter;
-		float distanceBetweenProbes;
 
 		Matrix3x4* instanceMatrices;
 		OptixTraversableHandle handle;

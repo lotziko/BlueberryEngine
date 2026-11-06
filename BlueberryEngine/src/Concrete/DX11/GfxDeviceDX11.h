@@ -101,10 +101,10 @@ namespace Blueberry
 		ComPtr<ID3D11RenderTargetView> m_BackbufferRenderTargetView;
 		HANDLE m_FrameLatencyWaitHandle;
 
-		List<std::pair<size_t, ComPtr<ID3D11RasterizerState>>> m_RasterizerStates;
-		List<std::pair<size_t, ComPtr<ID3D11DepthStencilState>>> m_DepthStencilStates;
-		List<std::pair<size_t, ComPtr<ID3D11BlendState>>> m_BlendStates;
-		List<std::pair<size_t, ComPtr<ID3D11SamplerState>>> m_SamplerStates;
+		List<std::pair<uint64_t, ComPtr<ID3D11RasterizerState>>> m_RasterizerStates;
+		List<std::pair<uint64_t, ComPtr<ID3D11DepthStencilState>>> m_DepthStencilStates;
+		List<std::pair<uint64_t, ComPtr<ID3D11BlendState>>> m_BlendStates;
+		List<std::pair<uint64_t, ComPtr<ID3D11SamplerState>>> m_SamplerStates;
 
 		GfxTextureDX11* m_BindedRenderTargets[BINDED_TARGET_COUNT];
 		GfxTextureDX11* m_BindedDepthStencil;

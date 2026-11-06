@@ -136,66 +136,89 @@ namespace Blueberry
 		return randomDirection;
 	}
 
+	static __forceinline__ __device__ float3 getProbeAxis(unsigned int i)
+	{
+		switch (i)
+		{
+		case 0: return make_float3(1, 0, 0);
+		case 1: return make_float3(-1, 0, 0);
+		case 2: return make_float3(0, 1, 0);
+		case 3: return make_float3(0, -1, 0);
+		case 4: return make_float3(0, 0, 1);
+		default: return make_float3(0, 0, -1);
+		}
+	}
+
 	static __forceinline__ __device__ bool traceBackface(float3& positionWS, unsigned int& seed)
 	{
-		float minDistance = 100.0f;
-		float maxDotSurface = -1;
-		float rayDistance = params.distanceBetweenProbes;
-		float3 closestDirection = {};
-		float3 rayOrigin = positionWS;
-		int validHits = 0;
+		constexpr float probeSpacing = 0.25f;
+		constexpr float maxRayDistance = probeSpacing;
+		constexpr float backfaceThreshold = 0.25f;
+		constexpr float maxOffsetDistance = probeSpacing * 0.45f;
+		constexpr float geometryBias = probeSpacing * 0.05f;
+		constexpr float rayEpsilon = 0;
 
-		for (int i = 0; i < 26; ++i)
+		float3 closestBackfaceDirection = {};
+		float closestBackfaceDistance = maxRayDistance;
+		int backfaceCount = 0;
+
+		for (int i = 0; i < SAMPLE_COUNT; ++i)
 		{
 			float3 rayDirection = rayDirections[i];
 
-			unsigned int radius = 0;
+			unsigned int hitDistanceBits = 0;
 			unsigned int backface = 0;
 			unsigned int c0 = 0;
 			unsigned int c1 = 0;
 			unsigned int c2 = 0;
 			optixTrace(
 				params.handle,
-				rayOrigin,
+				positionWS,
 				rayDirection,
-				0.0f,										// Min intersection distance
-				rayDistance,								// Max intersection distance
+				rayEpsilon,								// Min intersection distance; avoid self-hits
+				maxRayDistance,							// Probe spacing bounds useful relocation search
 				0.0f,
 				OptixVisibilityMask(255),
 				OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT,
 				0,											// SBT offset
-				3,											// SBT stride 
+				3,											// SBT stride
 				0,											// missSBTIndex
-				radius, backface, c0, c1, c2);
+				hitDistanceBits, backface, c0, c1, c2);
 
 			if (!backface)
 			{
-				++validHits;
 				continue;
 			}
-			
-			float newDistance = __uint_as_float(radius);
-			float distanceDiff = newDistance - minDistance;
-			if (distanceDiff < DISTANCE_THRESHOLD)
-			{
-				float3 normalWS = make_float3(__uint_as_float(c0), __uint_as_float(c1), __uint_as_float(c2));
-				float dotSurface = dot(rayDirection, normalWS);
 
-				if (distanceDiff < -DISTANCE_THRESHOLD || dotSurface - maxDotSurface > DOT_THRESHOLD)
-				{
-					closestDirection = rayDirection;
-					maxDotSurface = dotSurface;
-					minDistance = newDistance;
-				}
+			float hitDistance = __uint_as_float(hitDistanceBits);
+			if (!isfinite(hitDistance) || hitDistance < rayEpsilon || hitDistance >= maxRayDistance)
+			{
+				continue;
+			}
+
+			++backfaceCount;
+			if (hitDistance < closestBackfaceDistance)
+			{
+				closestBackfaceDistance = hitDistance;
+				closestBackfaceDirection = rayDirection;
 			}
 		}
 
-		if (minDistance < 100.0f)
+		if (backfaceCount == 0 || static_cast<float>(backfaceCount) / SAMPLE_COUNT <= backfaceThreshold)
 		{
-			positionWS += closestDirection * (minDistance * 1.05f + 0.1f);
-			return true;
+			return false;
 		}
-		return false;
+
+		float3 offset = closestBackfaceDirection * (closestBackfaceDistance + geometryBias);
+		if (dot(offset, offset) >= maxOffsetDistance * maxOffsetDistance)
+		{
+			// Keep the probe in its grid cell; an unrelocatable probe can be
+			// handled separately by probe classification or dilation.
+			return false;
+		}
+
+		positionWS += offset;
+		return true;
 	}
 
 	static __forceinline__ __device__ bool traceOcclusion(SampleData& data, unsigned int& seed)
@@ -240,7 +263,7 @@ namespace Blueberry
 		return invalidCount < 96;
 	}
 
-	static __forceinline__ __device__ bool traceRadiance(float3& radiance, float3 positionWS, unsigned int& seed)
+	static __forceinline__ __device__ bool traceRadiance(float3& radiance, float3& directionWS, float3 positionWS, unsigned int& seed)
 	{
 		float3 rayOrigin = positionWS;
 
@@ -275,6 +298,7 @@ namespace Blueberry
 			return false;
 		}
 		radiance += make_float3(__uint_as_float(c0), __uint_as_float(c1), __uint_as_float(c2));
+		directionWS = rayDirection;
 		return true;
 	}
 
@@ -453,7 +477,7 @@ namespace Blueberry
 
 	#define BATCH_SIZE 64
 	#define RGB_TO_LUMINANCE make_float3(0.2125f, 0.7154f, 0.0721f)
-
+	
 	extern "C" __global__ void __raygen__pass()
 	{
 		while (true)
@@ -467,10 +491,10 @@ namespace Blueberry
 
 			const uint2 pos = params.validTexels[texelIndex];
 
-			unsigned int imageIndex = pos.y * params.imageSize.x + pos.x;
+			unsigned int imageIndex = pos.y * params.lightmapSize.x + pos.x;
 			unsigned int seed = tea<4>(imageIndex, params.accumulationFrameIndex);
 
-			float2 texelSize = make_float2(1.0f / params.imageSize.x, 1.0f / params.imageSize.y);
+			float2 texelSize = make_float2(1.0f / params.lightmapSize.x, 1.0f / params.lightmapSize.y);
 
 			float3 normalResult = {};
 			float3 positionResult = {};
@@ -606,25 +630,33 @@ namespace Blueberry
 			int validSampleCount = 0;
 
 			float3 position = params.probePosition[probeIndex];
-			float3 colorResult = {};
+			float3 direction = {};
+			float3 colorResult[6] = {};
 
-			if (traceBackface(position, seed))
-			{
-				params.probePosition[probeIndex] = position;
-			}
+			traceBackface(position, seed);
 
 			for (int i = 0; i < params.samplePerTexel; ++i)
 			{
 				float3 radiance = {};
-				if (traceRadiance(radiance, position, seed))
+				if (traceRadiance(radiance, direction, position, seed))
 				{
+					static constexpr float pdf = 1.0f / (M_PIf * 4.0f);
 					validSampleCount += 1;
-					colorResult += radiance;
+					for (int j = 0; j < 6; ++j)
+					{
+						float weight = fmax(0.0f, dot(getProbeAxis(j), direction));
+						colorResult[j] += radiance * (weight / pdf);
+					}
 				}
 			}
 
-			colorResult = colorResult / max(validSampleCount, 1);
-			params.probeColor[probeIndex] = convertFloatToR11G11B10(colorResult.x, colorResult.y, colorResult.z);
+			for (int i = 0; i < 6; ++i)
+			{
+				float3 result = colorResult[i];
+				result = result / max(validSampleCount, 1);
+				result /= M_PIf;
+				params.probeColor[params.probeCount * i + probeIndex] = convertFloatToR11G11B10(result.x, result.y, result.z);
+			}
 		}
 	}
 

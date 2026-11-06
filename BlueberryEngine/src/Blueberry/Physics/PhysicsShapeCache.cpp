@@ -13,7 +13,7 @@
 namespace Blueberry
 {
 	PhysicsShapeCache* PhysicsShapeCache::s_Instance = nullptr;
-	static Dictionary<size_t, JPH::Ref<JPH::Shape>> s_Shapes = {};
+	static Dictionary<uint64_t, JPH::Ref<JPH::Shape>> s_Shapes = {};
 
 	class JoltStreamOut : public JPH::StreamOut
 	{
@@ -66,10 +66,10 @@ namespace Blueberry
 		size_t m_Position = 0;
 	};
 
-	size_t GetKey(Mesh* mesh, bool isConvex, const Vector3& scale)
+	uint64_t GetKey(Mesh* mesh, bool isConvex, const Vector3& scale)
 	{
-		size_t mask = (scale.x > 0 ? 1 : 0) | (scale.y > 0 ? 2 : 0) | (scale.z > 0 ? 4 : 0);
-		return static_cast<size_t>(mesh->GetObjectId()) | (isConvex ? 1ull << 32 : 0) | mask << 33;
+		uint64_t mask = (scale.x > 0 ? 1 : 0) | (scale.y > 0 ? 2 : 0) | (scale.z > 0 ? 4 : 0);
+		return static_cast<uint64_t>(mesh->GetObjectId()) | (isConvex ? 1ull << 32 : 0) | mask << 33;
 	}
 
 	void PhysicsShapeCache::Initialize(PhysicsShapeCache* shapeCache)
@@ -80,8 +80,8 @@ namespace Blueberry
 	void PhysicsShapeCache::Clear(Mesh* mesh)
 	{
 		s_Instance->ClearImpl(mesh);
-		size_t key = mesh->GetObjectId();
-		List<size_t> keysToRemove;
+		uint64_t key = static_cast<uint64_t>(mesh->GetObjectId());
+		List<uint64_t> keysToRemove;
 		for (auto& pair : s_Shapes)
 		{
 			if ((pair.first & key) == key)
@@ -89,7 +89,7 @@ namespace Blueberry
 				keysToRemove.push_back(pair.first);
 			}
 		}
-		for (size_t key : keysToRemove)
+		for (uint64_t key : keysToRemove)
 		{
 			s_Shapes.erase(key);
 		}
@@ -97,7 +97,7 @@ namespace Blueberry
 
 	void* PhysicsShapeCache::GetShape(Mesh* mesh, bool isConvex, const Vector3& scale)
 	{
-		size_t key = GetKey(mesh, isConvex, scale);
+		uint64_t key = GetKey(mesh, isConvex, scale);
 		auto it = s_Shapes.find(key);
 		if (it != s_Shapes.end())
 		{

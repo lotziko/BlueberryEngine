@@ -2,9 +2,9 @@
 
 #include "Blueberry\Graphics\Structs.h"
 #include "Blueberry\Graphics\GfxBuffer.h"
+#include "Blueberry\Core\PointerCache.h"
 #include "Concrete\Windows\ComPtr.h"
 #include "Concrete\DX11\DX11.h"
-#include "..\..\Blueberry\Graphics\GfxPointerCache.h"
 
 namespace Blueberry
 {
@@ -37,6 +37,6 @@ namespace Blueberry
 		ID3D11Device* m_Device;
 		ID3D11DeviceContext* m_DeviceContext;
 
-		static GfxPointerCache<GfxBufferDX11> s_PointerCache;
+		static PointerCache<GfxBufferDX11> s_PointerCache;
 	};
 }

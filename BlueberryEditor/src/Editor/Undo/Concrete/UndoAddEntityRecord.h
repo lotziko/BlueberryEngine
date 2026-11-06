@@ -21,6 +21,7 @@ namespace Blueberry
 
 	private:
 		ObjectPtr<Entity> m_Entity;
+		uint32_t m_SceneIndex;
 		UndoSerializer m_Serializer = {};
 	};
 }

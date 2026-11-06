@@ -57,7 +57,12 @@ float3 TransformClipToView(float3 positionCS)
 
 float3 TransformObjectToWorldNormal(float3 normalOS)
 {
-	return normalize(mul(OBJECT_TO_WORLD_MATRIX, float4(normalOS, 0.0f)).xyz);
+	return normalize(mul((float3x3)OBJECT_TO_WORLD_MATRIX, normalOS));
+}
+
+float3 TransformObjectToWorldDirection(float3 directionOS)
+{
+	return normalize(mul((float3x3)OBJECT_TO_WORLD_MATRIX, directionOS));
 }
 
 float3 TransformWorldToViewNormal(float3 normalWS)

@@ -35,7 +35,7 @@ static __forceinline__ __device__ void transformOSToWS(Matrix3x4 localToWorld, f
 {
 	normalWS = normalize(localToWorld * make_float4(normalOS.x, normalOS.y, normalOS.z, 0));
 	tangentWS = normalize(localToWorld * make_float4(tangentOS.x, tangentOS.y, tangentOS.z, 0));
-	bitangentWS = cross(normalWS, tangentWS) * tangentOS.w;
+	bitangentWS = cross(normalWS, tangentWS) * (tangentOS.w < 0.0f ? -1.0f : 1.0f);
 }
 
 // Based on DirectXTex XMFLOAT3PK

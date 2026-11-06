@@ -718,7 +718,7 @@ namespace Blueberry
 
 	ID3D11RasterizerState* GfxDeviceDX11::GetRasterizerState(CullMode mode, uint32_t depthBias, float slopeDepthBias, bool isCounterClockwise, bool isSolid)
 	{
-		size_t key = static_cast<size_t>(mode) | static_cast<size_t>(depthBias) << 8 | *(reinterpret_cast<size_t*>(&slopeDepthBias)) << 16 | (isCounterClockwise ? 1ull : 0ull) << 24 | (isSolid ? 1ull : 0ull) << 25;
+		uint64_t key = static_cast<uint64_t>(mode) | static_cast<uint64_t>(depthBias) << 8 | *(reinterpret_cast<uint64_t*>(&slopeDepthBias)) << 16 | (isCounterClockwise ? 1ull : 0ull) << 24 | (isSolid ? 1ull : 0ull) << 25;
 		for (auto& pair : m_RasterizerStates)
 		{
 			if (pair.first == key)
@@ -761,7 +761,7 @@ namespace Blueberry
 
 	ID3D11BlendState* GfxDeviceDX11::GetBlendState(BlendMode blendSrcColor, BlendMode blendSrcAlpha, BlendMode blendDstColor, BlendMode blendDstAlpha)
 	{
-		size_t key = static_cast<size_t>(blendSrcColor) << 8 | static_cast<size_t>(blendSrcAlpha) << 16 | static_cast<size_t>(blendSrcColor) << 24 | static_cast<size_t>(blendSrcAlpha) << 32;
+		uint64_t key = static_cast<uint64_t>(blendSrcColor) << 8 | static_cast<uint64_t>(blendSrcAlpha) << 16 | static_cast<uint64_t>(blendSrcColor) << 24 | static_cast<uint64_t>(blendSrcAlpha) << 32;
 		for (auto& pair : m_BlendStates)
 		{
 			if (pair.first == key)
@@ -799,7 +799,7 @@ namespace Blueberry
 
 	ID3D11DepthStencilState* GfxDeviceDX11::GetDepthStencilState(ZTest zTest, ZWrite zWrite)
 	{
-		size_t key = static_cast<size_t>(zTest) << 8 | static_cast<size_t>(zWrite) << 16;
+		uint64_t key = static_cast<uint64_t>(zTest) << 8 | static_cast<uint64_t>(zWrite) << 16;
 		for (auto& pair : m_DepthStencilStates)
 		{
 			if (pair.first == key)
@@ -857,7 +857,7 @@ namespace Blueberry
 
 	ID3D11SamplerState* GfxDeviceDX11::GetSamplerState(WrapMode wrapMode, FilterMode filterMode)
 	{
-		size_t key = static_cast<size_t>(wrapMode) << 8 | static_cast<size_t>(filterMode) << 16;
+		uint64_t key = static_cast<uint64_t>(wrapMode) << 8 | static_cast<uint64_t>(filterMode) << 16;
 		for (auto& pair : m_SamplerStates)
 		{
 			if (pair.first == key)

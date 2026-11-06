@@ -44,7 +44,9 @@ namespace Blueberry
 	void AssetDB::Refresh()
 	{
 		HashSet<String> pathsToCheck = {};
-		for (auto& operation : s_AssetsWatch->GetFileOperations())
+		auto operations = s_AssetsWatch->GetFileOperations();
+		s_AssetsWatch->ClearFileOperations();
+		for (auto& operation : operations)
 		{
 			std::filesystem::path path = Path::GetAssetPath(operation.path);
 			if (std::filesystem::exists(path))
@@ -133,7 +135,6 @@ namespace Blueberry
 				OnDeleteAsset(importer);
 			}
 		}
-		s_AssetsWatch->ClearFileOperations();
 		s_AssetDBRefreshed.Invoke();
 	}
 

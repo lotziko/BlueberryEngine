@@ -119,7 +119,7 @@ namespace Blueberry
 			}
 			else
 			{
-				memcpy(&value, node.value.data(), sizeof(bool));
+				memcpy(&value, node.value.data(), sizeof(uint8_t));
 			}
 		}
 	}
@@ -141,7 +141,7 @@ namespace Blueberry
 		}
 	}
 
-	void ReadValue(SerializationNodeConstRef& ref, int& value)
+	void ReadValue(SerializationNodeConstRef& ref, int32_t& value)
 	{
 		SerializationNode& node = ref.Get();
 		if (node.value.size() > 0)
@@ -149,16 +149,16 @@ namespace Blueberry
 			if (ref.tree->isText)
 			{
 				const char* text = node.value.data();
-				value = static_cast<int>(strtol(text, nullptr, 10));
+				value = static_cast<int32_t>(strtol(text, nullptr, 10));
 			}
 			else
 			{
-				memcpy(&value, node.value.data(), sizeof(int));
+				memcpy(&value, node.value.data(), sizeof(int32_t));
 			}
 		}
 	}
 
-	void ReadValue(SerializationNodeConstRef& ref, unsigned int& value)
+	void ReadValue(SerializationNodeConstRef& ref, uint32_t& value)
 	{
 		SerializationNode& node = ref.Get();
 		if (node.value.size() > 0)
@@ -170,29 +170,12 @@ namespace Blueberry
 			}
 			else
 			{
-				memcpy(&value, node.value.data(), sizeof(unsigned int));
+				memcpy(&value, node.value.data(), sizeof(uint32_t));
 			}
 		}
 	}
 
-	void ReadValue(SerializationNodeConstRef& ref, long& value)
-	{
-		SerializationNode& node = ref.Get();
-		if (node.value.size() > 0)
-		{
-			if (ref.tree->isText)
-			{
-				const char* text = node.value.data();
-				value = strtol(text, nullptr, 10);
-			}
-			else
-			{
-				memcpy(&value, node.value.data(), sizeof(long));
-			}
-		}
-	}
-
-	void ReadValue(SerializationNodeConstRef & ref, long long& value)
+	void ReadValue(SerializationNodeConstRef & ref, int64_t& value)
 	{
 		SerializationNode& node = ref.Get();
 		if (node.value.size() > 0)
@@ -204,12 +187,12 @@ namespace Blueberry
 			}
 			else
 			{
-				memcpy(&value, node.value.data(), sizeof(long long));
+				memcpy(&value, node.value.data(), sizeof(int64_t));
 			}
 		}
 	}
 
-	void ReadValue(SerializationNodeConstRef& ref, unsigned long long& value)
+	void ReadValue(SerializationNodeConstRef& ref, uint64_t& value)
 	{
 		SerializationNode& node = ref.Get();
 		if (node.value.size() > 0)
@@ -221,7 +204,7 @@ namespace Blueberry
 			}
 			else
 			{
-				memcpy(&value, node.value.data(), sizeof(unsigned long long));
+				memcpy(&value, node.value.data(), sizeof(uint64_t));
 			}
 		}
 	}
@@ -387,7 +370,7 @@ namespace Blueberry
 		}
 	}
 
-	void ReadValue(SerializationNodeConstRef& ref, DataWrapper<List<int>>& value)
+	void ReadValue(SerializationNodeConstRef& ref, DataWrapper<List<int32_t>>& value)
 	{
 		SerializationNode& node = ref.Get();
 		if (ref.tree->isText)
@@ -395,7 +378,7 @@ namespace Blueberry
 			if (node.value.size() > 0)
 			{
 				size_t size = node.value.size() - 1;
-				value.reference.resize(size / (2 * sizeof(int)));
+				value.reference.resize(size / (2 * sizeof(int32_t)));
 				ByteConverter::HexStringToBytes(node.value.data(), value.reference.data(), size);
 			}
 		}
@@ -436,8 +419,8 @@ namespace Blueberry
 		}
 		else
 		{
-			node.value.resize(sizeof(bool));
-			memcpy(node.value.data(), &value, sizeof(bool));
+			node.value.resize(sizeof(uint8_t));
+			memcpy(node.value.data(), &value, sizeof(uint8_t));
 		}
 	}
 
@@ -459,7 +442,7 @@ namespace Blueberry
 		}
 	}
 
-	void WriteValue(SerializationNodeRef& ref, int& value)
+	void WriteValue(SerializationNodeRef& ref, int32_t& value)
 	{
 		SerializationNode& node = ref.Get();
 		if (ref.tree->isText)
@@ -472,12 +455,12 @@ namespace Blueberry
 		}
 		else
 		{
-			node.value.resize(sizeof(int));
-			memcpy(node.value.data(), &value, sizeof(int));
+			node.value.resize(sizeof(int32_t));
+			memcpy(node.value.data(), &value, sizeof(int32_t));
 		}
 	}
 
-	void WriteValue(SerializationNodeRef& ref, unsigned int& value)
+	void WriteValue(SerializationNodeRef& ref, uint32_t& value)
 	{
 		SerializationNode& node = ref.Get();
 		if (ref.tree->isText)
@@ -490,12 +473,12 @@ namespace Blueberry
 		}
 		else
 		{
-			node.value.resize(sizeof(unsigned int));
-			memcpy(node.value.data(), &value, sizeof(unsigned int));
+			node.value.resize(sizeof(uint32_t));
+			memcpy(node.value.data(), &value, sizeof(uint32_t));
 		}
 	}
 
-	void WriteValue(SerializationNodeRef& ref, long& value)
+	void WriteValue(SerializationNodeRef& ref, int64_t& value)
 	{
 		SerializationNode& node = ref.Get();
 		if (ref.tree->isText)
@@ -508,12 +491,12 @@ namespace Blueberry
 		}
 		else
 		{
-			node.value.resize(sizeof(long));
-			memcpy(node.value.data(), &value, sizeof(long));
+			node.value.resize(sizeof(int64_t));
+			memcpy(node.value.data(), &value, sizeof(int64_t));
 		}
 	}
 
-	void WriteValue(SerializationNodeRef& ref, long long& value)
+	void WriteValue(SerializationNodeRef& ref, uint64_t& value)
 	{
 		SerializationNode& node = ref.Get();
 		if (ref.tree->isText)
@@ -526,26 +509,8 @@ namespace Blueberry
 		}
 		else
 		{
-			node.value.resize(sizeof(long long));
-			memcpy(node.value.data(), &value, sizeof(long long));
-		}
-	}
-
-	void WriteValue(SerializationNodeRef& ref, unsigned long long& value)
-	{
-		SerializationNode& node = ref.Get();
-		if (ref.tree->isText)
-		{
-			char buffer[64];
-			auto result = std::to_chars(buffer, buffer + 64, value);
-			size_t size = result.ptr - buffer;
-			node.value.resize(size + 1, '\0');
-			memcpy(node.value.data(), buffer, size);
-		}
-		else
-		{
-			node.value.resize(sizeof(unsigned long long));
-			memcpy(node.value.data(), &value, sizeof(unsigned long long));
+			node.value.resize(sizeof(uint64_t));
+			memcpy(node.value.data(), &value, sizeof(uint64_t));
 		}
 	}
 
@@ -695,18 +660,18 @@ namespace Blueberry
 		}
 	}
 
-	void WriteValue(SerializationNodeRef& ref, DataWrapper<List<int>>& value)
+	void WriteValue(SerializationNodeRef& ref, DataWrapper<List<int32_t>>& value)
 	{
 		SerializationNode& node = ref.Get();
 		if (ref.tree->isText)
 		{
-			node.value.resize(value.reference.size() * 2 * sizeof(int) + 1, '\0');
-			ByteConverter::BytesToHexString(value.reference.data(), node.value.data(), value.reference.size() * sizeof(int));
+			node.value.resize(value.reference.size() * 2 * sizeof(int32_t) + 1, '\0');
+			ByteConverter::BytesToHexString(value.reference.data(), node.value.data(), value.reference.size() * sizeof(int32_t));
 		}
 		else
 		{
-			node.value.resize(value.reference.size() * sizeof(int));
-			memcpy(node.value.data(), value.reference.data(), value.reference.size() * sizeof(int));
+			node.value.resize(value.reference.size() * sizeof(int32_t));
+			memcpy(node.value.data(), value.reference.data(), value.reference.size() * sizeof(int32_t));
 		}
 	}
 

@@ -14,23 +14,22 @@ namespace Blueberry
 		int tileSize;
 		float texelPerUnit;
 		int samplePerTexel;
-		int maxSize;
-		float distanceBetweenProbes;
+		int lightmapSize;
+		Vector3Int probeVolumeSize;
 		bool denoise;
-		bool generateLightmap;
-		bool generateProbes;
 	};
 
 	struct CalculationResult
 	{
-		List<uint8_t> output;
-		Vector2Int outputSize;
-		AABB probeBounds;
-		List<uint8_t> probeOutput;
-		List<Vector3> probePositions;
-		Vector3Int probeOutputSize;
+		bool hasLightmap;
+		List<uint8_t> lightmapOutput;
+		Vector2Int lightmapOutputSize;
 		List<Vector4> chartOffsetScale;
 		Dictionary<ObjectId, uint32_t> chartInstanceOffset;
+
+		bool hasProbes;
+		ByteData probeOutput;
+		uint32_t probeOutputSize;
 	};
 
 	enum class LightmappingState
@@ -43,8 +42,8 @@ namespace Blueberry
 	class LightmappingManager
 	{
 	public:
-		static void Clear();
-		static void Calculate(Scene* scene, const CalculationParams& params);
+		static void BakeLightmap(Scene* scene, const CalculationParams& params);
+		static void BakeProbes(Scene* scene, const CalculationParams& params, const List<Vector3>& positions);
 		static void Shutdown();
 
 		static float GetProgress();

@@ -215,6 +215,10 @@ namespace Blueberry
 			// Fragment material textures
 			for (auto it = dxFragmentShader->m_TextureSRVSamplerSlots.begin(); it != dxFragmentShader->m_TextureSRVSamplerSlots.end(); it++)
 			{
+				if (it->second.first == UINT8_MAX)
+				{
+					continue;
+				}
 				uint32_t offset = GetTextureSlot(material, it->first);
 				if (offset != UINT32_MAX)
 				{
@@ -226,6 +230,10 @@ namespace Blueberry
 			// Fragment bindless material textures
 			for (auto it = dxFragmentShader->m_BindlessTextureSRVSamplerSlots.begin(); it != dxFragmentShader->m_BindlessTextureSRVSamplerSlots.end(); it++)
 			{
+				if (it->second.first == UINT8_MAX)
+				{
+					continue;
+				}
 				uint32_t offset = GetTextureSlot(material, it->first);
 				if (offset != UINT32_MAX)
 				{
@@ -237,6 +245,10 @@ namespace Blueberry
 			// Fragment global textures
 			for (auto it = dxFragmentShader->m_TextureSRVSamplerSlots.begin(); it != dxFragmentShader->m_TextureSRVSamplerSlots.end(); it++)
 			{
+				if (it->second.first == UINT8_MAX)
+				{
+					continue;
+				}
 				uint32_t offset = 0;
 				for (auto it1 = m_Device->m_BindedTextures.begin(); it1 < m_Device->m_BindedTextures.end(); ++it1, ++offset)
 				{

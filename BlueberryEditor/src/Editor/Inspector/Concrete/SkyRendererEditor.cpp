@@ -3,7 +3,7 @@
 #include "Blueberry\Graphics\TextureCube.h"
 #include "Blueberry\Graphics\Material.h"
 #include "Blueberry\Scene\Components\SkyRenderer.h"
-#include "Editor\Assets\Processors\ReflectionGenerator.h"
+#include "Editor\Graphics\ReflectionGenerator.h"
 #include "Editor\Panels\Scene\SceneArea.h"
 #include "Editor\Misc\ImGuiHelper.h"
 

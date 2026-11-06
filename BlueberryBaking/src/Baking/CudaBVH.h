@@ -64,10 +64,9 @@ namespace Blueberry
 
 	struct CUDABVH
 	{
-		CUDABVH();
-
 		void AddInstance(const CUDABVHInput& input);
 		void Build();
+		void Free();
 
 	private:
 		void Split(const uint32_t& nodeIndex, const uint32_t& triangleStart, const uint32_t& triangleCount, const uint32_t& depth);
@@ -86,5 +85,10 @@ namespace Blueberry
 		CUDABuffer nodeBuffer;
 		CUDABuffer triangleBuffer;
 		CUDABuffer instanceBuffer;
+
+	private:
+		List<BVHTriangle> m_Triangles = {};
+		List<BVHNode> m_Nodes = {};
+		List<BVHInstance> m_Instances = {};
 	};
 }

@@ -2,9 +2,9 @@
 
 #include "Blueberry\Graphics\Structs.h"
 #include "Blueberry\Graphics\GfxTexture.h"
+#include "Blueberry\Core\PointerCache.h"
 #include "Concrete\Windows\ComPtr.h"
 #include "Concrete\DX11\DX11.h"
-#include "..\..\Blueberry\Graphics\GfxPointerCache.h"
 
 namespace Blueberry
 {
@@ -63,6 +63,6 @@ namespace Blueberry
 
 		DXGI_FORMAT m_DxgiFormat = DXGI_FORMAT_UNKNOWN;
 
-		static GfxPointerCache<GfxTextureDX11> s_PointerCache;
+		static PointerCache<GfxTextureDX11> s_PointerCache;
 	};
 }

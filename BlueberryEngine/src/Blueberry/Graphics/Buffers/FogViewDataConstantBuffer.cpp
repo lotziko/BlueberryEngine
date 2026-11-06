@@ -13,7 +13,7 @@ namespace Blueberry
 
 	struct FogViewData
 	{
-		unsigned int jitterOffset;
+		uint32_t jitterOffset;
 		float viewInvCount;
 		Vector2 dummy;
 		Vector4 viewDX[2];

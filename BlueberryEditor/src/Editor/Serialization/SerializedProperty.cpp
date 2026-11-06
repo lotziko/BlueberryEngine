@@ -308,6 +308,21 @@ namespace Blueberry
 		m_SerializedObject->AddModifiedProperty(m_Id);
 	}
 
+	const AABB& SerializedProperty::GetAABB()
+	{
+		return std::get<AABB>(Get()->values[0]);
+	}
+
+	void SerializedProperty::SetAABB(const AABB& value)
+	{
+		PropertyTreeNode* node = Get();
+		for (size_t i = 0; i < node->values.size(); ++i)
+		{
+			node->values[i] = value;
+		}
+		m_SerializedObject->AddModifiedProperty(m_Id);
+	}
+
 	const ObjectPtr<Object>& SerializedProperty::GetObjectPtr()
 	{
 		return std::get<ObjectPtr<Object>>(Get()->values[0]);

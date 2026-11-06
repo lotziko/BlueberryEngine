@@ -102,6 +102,11 @@ namespace Blueberry
 		return m_RawData;
 	}
 
+	uint32_t Texture::GetUpdateCount() const
+	{
+		return m_UpdateCount;
+	}
+
 	void Texture::IncrementUpdateCount()
 	{
 		++m_UpdateCount;

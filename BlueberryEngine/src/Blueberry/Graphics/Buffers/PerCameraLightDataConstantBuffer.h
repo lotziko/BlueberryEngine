@@ -16,7 +16,7 @@ namespace Blueberry
 	class PerCameraLightDataConstantBuffer
 	{
 	public:
-		static void BindData(Camera* camera, Light* mainLight, SkyRenderer* skyRenderer, ProbeVolume* probeVolume, const List<Light*>& lights, const List<ReflectionProbe*>& reflectionProbes, const Vector2Int& shadowAtlasSize);
+		static void BindData(Camera* camera, Light* mainLight, SkyRenderer* skyRenderer, const List<Light*>& lights, const List<ProbeVolume*>& probeVolumes, const List<ReflectionProbe*>& reflectionProbes, const Vector2Int& shadowAtlasSize);
 
 	private:
 		static GfxBuffer* s_ConstantBuffer;
@@ -24,5 +24,6 @@ namespace Blueberry
 		static GfxBuffer* s_SpotLightsBuffer;
 		static GfxBuffer* s_ShadowsBuffer;
 		static GfxBuffer* s_ReflectionProbesBuffer;
+		static GfxBuffer* s_ProbeVolumesBuffer;
 	};
 }

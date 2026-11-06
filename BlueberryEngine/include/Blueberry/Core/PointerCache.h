@@ -3,7 +3,7 @@
 namespace Blueberry
 {
 	template <typename T>
-	class GfxPointerCache
+	class PointerCache
 	{
 	public:
 		uint32_t Allocate(T* ptr)

@@ -2,10 +2,10 @@
 
 #include "Blueberry\Graphics\Structs.h"
 #include "Blueberry\Graphics\GfxBuffer.h"
+#include "Blueberry\Core\PointerCache.h"
 #include "Concrete\Windows\ComPtr.h"
 #include "Concrete\DX12\DX12.h"
 #include "GfxDescriptorHeapDX12.h"
-#include "..\..\Blueberry\Graphics\GfxPointerCache.h"
 
 namespace Blueberry
 {
@@ -50,6 +50,6 @@ namespace Blueberry
 		D3D12_RESOURCE_STATES m_State = D3D12_RESOURCE_STATE_COMMON;
 		uint64_t m_Generation = 0;
 
-		static GfxPointerCache<GfxBufferDX12> s_PointerCache;
+		static PointerCache<GfxBufferDX12> s_PointerCache;
 	};
 }

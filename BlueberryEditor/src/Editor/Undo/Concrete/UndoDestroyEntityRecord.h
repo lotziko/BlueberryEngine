@@ -26,6 +26,7 @@ namespace Blueberry
 		ObjectPtr<Transform> m_Parent;
 		List<ObjectPtr<PrefabInstance>> m_PrefabInstances;
 		size_t m_SiblingIndex;
+		uint32_t m_SceneIndex;
 		UndoSerializer m_Serializer = {};
 	};
 }

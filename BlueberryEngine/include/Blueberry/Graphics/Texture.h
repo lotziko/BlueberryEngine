@@ -36,6 +36,8 @@ namespace Blueberry
 		bool HasData();
 		const ByteData& GetData();
 
+		uint32_t GetUpdateCount() const;
+
 	protected:
 		void IncrementUpdateCount();
 

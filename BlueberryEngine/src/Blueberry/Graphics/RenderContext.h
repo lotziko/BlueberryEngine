@@ -41,8 +41,8 @@ namespace Blueberry
 
 		Camera* camera;
 		SkyRenderer* skyRenderer;
-		ProbeVolume* probeVolume;
 		List<ReflectionProbe*> reflectionProbes;
+		List<ProbeVolume*> probeVolumes;
 		List<Light*> lights;
 		List<Canvas*> canvases;
 		List<CullerInfo> cullerInfos;

@@ -149,16 +149,16 @@ namespace Blueberry
 				*field.Get<bool>(target) = *field.Get<bool>(source);
 				break;
 			case BindingType::Int:
-				*field.Get<int>(target) = *field.Get<int>(source);
+				*field.Get<int32_t>(target) = *field.Get<int32_t>(source);
 				break;
 			case BindingType::Uint:
 				*field.Get<uint32_t>(target) = *field.Get<uint32_t>(source);
 				break;
 			case BindingType::Long:
-				*field.Get<long>(target) = *field.Get<long>(source);
+				*field.Get<int64_t>(target) = *field.Get<int64_t>(source);
 				break;
 			case BindingType::Ulong:
-				*field.Get<unsigned long>(target) = *field.Get<unsigned long>(source);
+				*field.Get<uint64_t>(target) = *field.Get<uint64_t>(source);
 				break;
 			case BindingType::Float:
 				*field.Get<float>(target) = *field.Get<float>(source);
@@ -170,7 +170,7 @@ namespace Blueberry
 				*field.Get<ByteData>(target) = *field.Get<ByteData>(source);
 				break;
 			case BindingType::IntList:
-				*field.Get<List<int>>(target) = *field.Get<List<int>>(source);
+				*field.Get<List<int32_t>>(target) = *field.Get<List<int32_t>>(source);
 				break;
 			case BindingType::FloatList:
 				*field.Get<List<float>>(target) = *field.Get<List<float>>(source);
@@ -179,7 +179,7 @@ namespace Blueberry
 				*field.Get<List<String>>(target) = *field.Get<List<String>>(source);
 				break;
 			case BindingType::Enum:
-				*field.Get<int>(target) = *field.Get<int>(source);
+				*field.Get<int32_t>(target) = *field.Get<int32_t>(source);
 				break;
 			case BindingType::Vector2:
 				*field.Get<Vector2>(target) = *field.Get<Vector2>(source);

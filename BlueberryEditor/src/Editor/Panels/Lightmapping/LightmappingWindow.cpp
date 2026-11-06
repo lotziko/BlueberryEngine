@@ -6,7 +6,6 @@
 #include "Blueberry\Graphics\Shader.h"
 #include "Blueberry\Graphics\Mesh.h"
 #include "Blueberry\Graphics\Texture2D.h"
-#include "Blueberry\Graphics\Texture3D.h"
 #include "Blueberry\Scene\Components\MeshRenderer.h"
 #include "Blueberry\Scene\Components\ProbeVolume.h"
 #include "Blueberry\Scene\Scene.h"
@@ -33,10 +32,7 @@ namespace Blueberry
 		DEFINE_FIELD(LightmappingWindow, m_TexelPerUnit, BindingType::Float, FieldOptions())
 		DEFINE_FIELD(LightmappingWindow, m_SamplePerTexel, BindingType::Int, FieldOptions())
 		DEFINE_FIELD(LightmappingWindow, m_PreferredSize, BindingType::Int, FieldOptions())
-		DEFINE_FIELD(LightmappingWindow, m_DistanceBetweenProbes, BindingType::Float, FieldOptions())
 		DEFINE_FIELD(LightmappingWindow, m_Denoise, BindingType::Bool, FieldOptions())
-		DEFINE_FIELD(LightmappingWindow, m_GenerateLightmap, BindingType::Bool, FieldOptions())
-		DEFINE_FIELD(LightmappingWindow, m_GenerateProbes, BindingType::Bool, FieldOptions())
 		EditorMenuManager::AddItem("Window/Lightmapping", &LightmappingWindow::Open);
 	}
 
@@ -58,10 +54,7 @@ namespace Blueberry
 			ImGui::FloatEdit("Texel per unit", &m_TexelPerUnit);
 			ImGui::IntEdit("Sample per texel", &m_SamplePerTexel);
 			ImGui::IntEdit("Preferred size", &m_PreferredSize);
-			ImGui::FloatEdit("Distance between probes", &m_DistanceBetweenProbes);
 			ImGui::BoolEdit("Denoise", &m_Denoise);
-			ImGui::BoolEdit("Generate lightmap", &m_GenerateLightmap);
-			ImGui::BoolEdit("Generate probes", &m_GenerateProbes);
 
 			SceneSettings* settings = EditorSceneManager::GetSettings();
 			LightingData* lightingData = settings->GetLightingData();
@@ -77,7 +70,7 @@ namespace Blueberry
 			{
 				case LightmappingState::None:
 				{
-					if (ImGui::Button("Bake"))
+					if (ImGui::Button("Bake Lightmap"))
 					{
 						try
 						{
@@ -85,13 +78,10 @@ namespace Blueberry
 							params.tileSize = m_TileSize;
 							params.texelPerUnit = m_TexelPerUnit;
 							params.samplePerTexel = m_SamplePerTexel;
-							params.maxSize = m_PreferredSize;
-							params.distanceBetweenProbes = m_DistanceBetweenProbes;
+							params.lightmapSize = m_PreferredSize;
 							params.denoise = m_Denoise;
-							params.generateLightmap = m_GenerateLightmap;
-							params.generateProbes = m_GenerateProbes;
 
-							LightmappingManager::Calculate(EditorSceneManager::GetScene(), params);
+							LightmappingManager::BakeLightmap(EditorSceneManager::GetScene(), params);
 						}
 						catch (...)
 						{
@@ -182,13 +172,13 @@ namespace Blueberry
 				{
 					CalculationResult& result = LightmappingManager::GetCalculationResult();
 					
-					if (m_GenerateLightmap)
+					if (result.hasLightmap)
 					{
-						if (result.output.size() > 0)
+						if (result.lightmapOutput.size() > 0)
 						{
 							DirectX::ScratchImage image = {};
-							image.Initialize2D(DXGI_FORMAT_R32G32B32A32_FLOAT, result.outputSize.x, result.outputSize.y, 1, 1);
-							memcpy(image.GetPixels(), result.output.data(), result.outputSize.x * result.outputSize.y * sizeof(Vector4));
+							image.Initialize2D(DXGI_FORMAT_R32G32B32A32_FLOAT, result.lightmapOutputSize.x, result.lightmapOutputSize.y, 1, 1);
+							memcpy(image.GetPixels(), result.lightmapOutput.data(), result.lightmapOutputSize.x * result.lightmapOutputSize.y * sizeof(Vector4));
 
 							String lightmapPath = EditorSceneManager::GetPath();
 							lightmapPath.replace(lightmapPath.find(".scene"), 6, "\\Lightmap.hdr");
@@ -211,37 +201,10 @@ namespace Blueberry
 							Texture2D* lightmap = static_cast<Texture2D*>(ObjectDB::GetObjectFromGuid(importer->GetGuid(), importer->GetMainObject()));
 
 							lightingData->SetLightmapData(lightmap, result.chartOffsetScale, result.chartInstanceOffset);
-							lightingData->ApplyLightmap();
+							lightingData->Apply();
 						}
 					}
-					if (m_GenerateProbes)
-					{
-						if (result.probeOutput.size() > 0)
-						{
-							String probeVolumePath = EditorSceneManager::GetPath();
-							probeVolumePath.replace(probeVolumePath.find(".scene"), 6, "\\ProbeVolume.asset");
-
-							std::filesystem::create_directories(std::filesystem::path(probeVolumePath).parent_path());
-
-							Texture3D* probeVolume = Texture3D::Create(result.probeOutputSize.x, result.probeOutputSize.y, result.probeOutputSize.z, TextureFormat::R11G11B10_Float, WrapMode::Clamp, FilterMode::Trilinear);
-							probeVolume->SetReadable(true);	// Keep data on build
-							probeVolume->SetData(result.probeOutput.data(), result.probeOutput.size());
-							probeVolume->Apply();
-							lightingData->SetProbeVolumeData(probeVolume);
-
-							auto relativePath = std::filesystem::relative(probeVolumePath, Path::GetAssetsPath());
-							AssetDB::CreateAsset(probeVolume, StringHelper::ToString(relativePath));
-							AssetDB::Refresh();
-							lightingData->ApplyProbeVolume();
-
-							for (ProbeVolume* probeVolume : scene->GetComponents<ProbeVolume>())
-							{
-								probeVolume->SetBounds(result.probeBounds);
-								probeVolume->SetSize(result.probeOutputSize);
-							}
-						}
-					}
-
+					
 					String lightingDataPath = EditorSceneManager::GetPath();
 					lightingDataPath.replace(lightingDataPath.find(".scene"), 6, "\\LightingData.asset");
 					auto relativeLightingDataPath = std::filesystem::relative(lightingDataPath, Path::GetAssetsPath());

@@ -23,11 +23,12 @@ namespace Blueberry
 		ReflectionProbeType GetType();
 		void SetType(ReflectionProbeType type);
 
-		uint32_t GetAtlasIndex() const;
-		void SetAtlasIndex(uint32_t atlasIndex);
+		uint32_t GetIndex() const;
+		void SetIndex(uint32_t index);
 
 		float GetRadius() const;
 		const Vector3& GetSize() const;
+		float GetFade() const;
 
 	private:
 		ReflectionProbeType m_Type = ReflectionProbeType::Sphere;
@@ -35,9 +36,6 @@ namespace Blueberry
 		Vector3 m_Size = Vector3(1, 1, 1);
 		float m_Fade = 0.25f;
 
-		uint32_t m_AtlasIndex = UINT_MAX;
-
-		friend class ReflectionAtlas;
-		friend class PerCameraLightDataConstantBuffer;
+		uint32_t m_Index = UINT32_MAX;
 	};
 }

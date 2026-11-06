@@ -18,7 +18,7 @@ namespace Blueberry
 	#define CLUSTERS_Y 17
 	#define CLUSTERS_Z 16
 	#define MAX_LIGHTS 64
-	#define LIGHT_TYPE_COUNT (2 + 1)
+	#define LIGHT_TYPE_COUNT (2 + 1 + 1)
 
 	static size_t s_ClusteringLightIndexTextureId = TO_HASH("_ClusteringLightIndexTexture");
 	static size_t s_LightIndexTextureId = TO_HASH("_LightIndexTexture");
@@ -72,7 +72,7 @@ namespace Blueberry
 			}
 			lights.push_back(light);
 		}
-		PerCameraLightDataConstantBuffer::BindData(results.camera, mainLight, results.skyRenderer, results.probeVolume, lights, results.reflectionProbes, ShadowAtlas::GetSize());
+		PerCameraLightDataConstantBuffer::BindData(results.camera, mainLight, results.skyRenderer, lights, results.probeVolumes, results.reflectionProbes, ShadowAtlas::GetSize());
 	}
 
 	void RealtimeLights::CalculateClusters()

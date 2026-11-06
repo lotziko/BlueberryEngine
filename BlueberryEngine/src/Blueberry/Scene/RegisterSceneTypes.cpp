@@ -45,6 +45,8 @@ namespace Blueberry
 		REGISTER_CLASS(Animator);
 		REGISTER_CLASS(Camera);
 		REGISTER_CLASS(Light);
+		REGISTER_DATA_CLASS(ProbeVolumeBrickData);
+		REGISTER_CLASS(ProbeVolumeInfo);
 		REGISTER_CLASS(ProbeVolume);
 		REGISTER_CLASS(ReflectionProbe);
 		REGISTER_CLASS(PhysicsBody);

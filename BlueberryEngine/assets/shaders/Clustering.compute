@@ -89,7 +89,8 @@ void ClusteringCompute(uint3 id : SV_DispatchThreadID)
 
 	uint2 indexPoint = uint2(id.x * MAX_LIGHTS, id.y * CLUSTERS_Z + id.z);
 	uint2 indexSpot = uint2(indexPoint.x, indexPoint.y + CLUSTERS_Z * CLUSTERS_Y);
-	uint2 indexReflectionProbe = uint2(indexSpot.x, indexSpot.y + CLUSTERS_Z * CLUSTERS_Y);
+	uint2 indexProbeVolume = uint2(indexSpot.x, indexSpot.y + CLUSTERS_Z * CLUSTERS_Y);
+	uint2 indexReflectionProbe = uint2(indexSpot.x, indexProbeVolume.y + CLUSTERS_Z * CLUSTERS_Y);
 	uint i;
 	for (i = 0; i < _LightsCount.x; i++)
 	{
@@ -113,6 +114,16 @@ void ClusteringCompute(uint3 id : SV_DispatchThreadID)
 	}
 	for (i = 0; i < _LightsCount.z; i++)
 	{
+		ProbeVolumeData data = _ProbeVolumesData[i];
+
+		if (IsAABBAABBIntersecting(minPosition, maxPosition, data.positionMinVS, data.positionMaxVS))
+		{
+			_ClusteringLightIndexTexture[indexProbeVolume] = i;
+			indexProbeVolume.x += 1;
+		}
+	}
+	for (i = 0; i < _LightsCount.w; i++)
+	{
 		ReflectionProbeData data = _ReflectionProbesData[i];
 
 		if (data.type == 0 && IsSphereAABBIntersecting(data.positionMinVS, data.squareRange, minPosition, maxPosition) || data.type == 1 && IsAABBAABBIntersecting(minPosition, maxPosition, data.positionMinVS, data.positionMaxVS))
@@ -123,5 +134,6 @@ void ClusteringCompute(uint3 id : SV_DispatchThreadID)
 	}
 	_ClusteringLightIndexTexture[indexPoint] = 0xFFFF;
 	_ClusteringLightIndexTexture[indexSpot] = 0xFFFF;
+	_ClusteringLightIndexTexture[indexProbeVolume] = 0xFFFF;
 	_ClusteringLightIndexTexture[indexReflectionProbe] = 0xFFFF;
 }

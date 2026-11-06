@@ -161,7 +161,7 @@ namespace Blueberry
 		GfxDescriptorHeapDX12 m_SamplerRingHeap;
 		GfxUploadBufferDX12 m_UploadBuffer;
 		GfxReadbackBufferDX12 m_ReadbackBuffer;
-		List<std::pair<size_t, GfxHandleDX12>> m_Samplers;
+		List<std::pair<uint64_t, GfxHandleDX12>> m_Samplers;
 		List<SamplerOffsetData> m_SamplerHeapOffsets;
 
 		GfxHandleDX12 m_EmptyCbv;

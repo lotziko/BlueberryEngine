@@ -181,13 +181,16 @@ namespace Blueberry
 	void RmlUiRenderInterface::ReleaseGeometry(Rml::CompiledGeometryHandle geometry)
 	{
 		RmlUiRenderData* renderData = RmlUiRenderer::s_CurrentData;
-		size_t index = static_cast<size_t>(geometry);
-		RmlUiGeometryData& data = renderData->m_Geometry[index];
-		data.isValid = false;
-		renderData->m_VertexCount -= data.vertices.size();
-		renderData->m_IndexCount -= data.indices.size();
-		renderData->m_EmptyGeometryIndexes.push_back(index);
-		renderData->m_IsDirty = true;
+		if (renderData->m_Geometry.size() > 0)
+		{
+			size_t index = static_cast<size_t>(geometry);
+			RmlUiGeometryData& data = renderData->m_Geometry[index];
+			data.isValid = false;
+			renderData->m_VertexCount -= data.vertices.size();
+			renderData->m_IndexCount -= data.indices.size();
+			renderData->m_EmptyGeometryIndexes.push_back(index);
+			renderData->m_IsDirty = true;
+		}
 	}
 
 	// make UIElement wrapper which has SetBackgroundImage() which will set property to "id:6" and resolve it with ObjectId

@@ -11,32 +11,42 @@ namespace Blueberry
 {
 	UndoAddEntityRecord::UndoAddEntityRecord(Entity* entity) : m_Entity(entity)
 	{
-		EditorSceneManager::GetScene()->AddEntity(entity);
+		Scene* scene = EditorSceneManager::GetScene();
+		m_SceneIndex = scene->GetIndex();
+		scene->AddEntity(entity);
 		Entity::Poll();
 		SceneEvents::GetEntityCreated().Invoke();
 	}
 
 	void UndoAddEntityRecord::OnUndo()
 	{
-		Entity* entity = m_Entity.Get();
-		if (m_Serializer.IsEmpty())
+		Scene* scene = Scene::Get(m_SceneIndex);
+		if (scene != nullptr)
 		{
-			entity->GetTransform()->SetParent(nullptr);
-			List<Object*> objects;
-			EntityHelper::GatherObjects(entity, objects);
-			m_Serializer.Serialize(objects);
+			Entity* entity = m_Entity.Get();
+			if (m_Serializer.IsEmpty())
+			{
+				entity->GetTransform()->SetParent(nullptr);
+				List<Object*> objects;
+				EntityHelper::GatherObjects(entity, objects);
+				m_Serializer.Serialize(objects);
+			}
+			scene->DestroyEntity(entity);	// TODO check PrefabInstance
+			Entity::Poll();
+			SceneEvents::GetEntityDestroyed().Invoke();
 		}
-		EditorSceneManager::GetScene()->DestroyEntity(entity);	// TODO check PrefabInstance
-		Entity::Poll();
-		SceneEvents::GetEntityDestroyed().Invoke();
 	}
 
 	void UndoAddEntityRecord::OnRedo()
 	{
-		m_Serializer.Deserialize();
-		Entity* entity = m_Entity.Get();
-		EditorSceneManager::GetScene()->AddEntity(entity);
-		Entity::Poll();
-		SceneEvents::GetEntityCreated().Invoke();
+		Scene* scene = Scene::Get(m_SceneIndex);
+		if (scene != nullptr)
+		{
+			m_Serializer.Deserialize();
+			Entity* entity = m_Entity.Get();
+			scene->AddEntity(entity);
+			Entity::Poll();
+			SceneEvents::GetEntityCreated().Invoke();
+		}
 	}
 }

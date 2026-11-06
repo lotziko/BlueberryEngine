@@ -22,9 +22,6 @@ namespace Blueberry
 		float m_TexelPerUnit = 5;
 		int m_SamplePerTexel = 64;
 		int m_PreferredSize = 1024;
-		float m_DistanceBetweenProbes = 0.25f;
 		bool m_Denoise = true;
-		bool m_GenerateLightmap = true;
-		bool m_GenerateProbes = true;
 	};
 }

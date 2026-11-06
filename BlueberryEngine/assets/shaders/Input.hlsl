@@ -73,6 +73,18 @@ struct ShadowData
 	float4 shadowBounds;	// stores shadowmap slice offsets to counter atlas offsets in _WorldToShadow, otherwise it's just (0, 0, 1, 1)
 };
 
+struct ProbeVolumeData
+{
+	float3 positionMinWS;
+	float3 positionMinVS;
+	float3 positionMaxWS;
+	float3 positionMaxVS;
+	float3 invSizeWS;
+	uint3 topLevelSize;
+	uint probeAtlasOffset;
+	float dummy;
+};
+
 struct ReflectionProbeData
 {
 	float3 positionWS;
@@ -90,6 +102,7 @@ struct ReflectionProbeData
 StructuredBuffer<PointLightData> _PointLightsData;
 StructuredBuffer<SpotLightData> _SpotLightsData;
 StructuredBuffer<ShadowData> _ShadowsData;
+StructuredBuffer<ProbeVolumeData> _ProbeVolumesData;
 StructuredBuffer<ReflectionProbeData> _ReflectionProbesData;
 
 cbuffer PerCameraLightData
@@ -104,11 +117,7 @@ cbuffer PerCameraLightData
 	float4 _AmbientLightColor;
 	// maybe put here clusters size
 
-	uint4 _LightsCount;		// x - point lights, y - spot lights, z - reflection probes
-	float4 _ProbeVolumeMin;
-	float4 _ProbeVolumeSize;
-	float4 _ProbeVolumeInvSize;
-	float4 _ProbeVolumeCellSize;
+	uint4 _LightsCount;		// x - point lights, y - spot lights, z - probe volumes, w - reflection probes
 	float4 _Shadow3x3PCFTermC0;
 	float4 _Shadow3x3PCFTermC1;
 	float4 _Shadow3x3PCFTermC2;
@@ -130,14 +139,19 @@ SAMPLER(_CookieTexture_Sampler);
 TEXTURE3D(_VolumetricFogTexture);
 SAMPLER(_VolumetricFogTexture_Sampler);
 
-TEXTURECUBE_ARRAY(_ReflectionTexture);
-SAMPLER(_ReflectionTexture_Sampler);
-
 TEXTURE2D(_LightmapTexture);
 SAMPLER(_LightmapTexture_Sampler);
 
-TEXTURE3D(_ProbeVolumeTexture);
-SAMPLER(_ProbeVolumeTexture_Sampler);
+TEXTURE3D(_ProbeVolumeTexture0);
+TEXTURE3D(_ProbeVolumeTexture1);
+TEXTURE3D(_ProbeVolumeTexture2);
+TEXTURE3D(_ProbeVolumeTexture3);
+TEXTURE3D(_ProbeVolumeTexture4);
+TEXTURE3D(_ProbeVolumeTexture5);
+SAMPLER(_ProbeVolumeTexture0_Sampler);
+
+TEXTURECUBE_ARRAY(_ReflectionTexture);
+SAMPLER(_ReflectionTexture_Sampler);
 
 TEXTURE2D_UINT(_LightIndexTexture);
 

@@ -23,6 +23,7 @@
 namespace Blueberry
 {
 	static HMODULE s_GameAssembly = nullptr;
+	static LightingSettings* s_LightingSettings = nullptr;
 
 	void ReadAssetResource(std::ifstream& resourcesStream, Object* object, List<uint8_t>& data, List<uint8_t>& compressedData)
 	{
@@ -222,44 +223,7 @@ namespace Blueberry
 				resourcesStream.close();
 			}
 		}
-
-		if (lightingSettings != nullptr)
-		{
-			// Lightmap
-			{
-				Texture2D* lightmap = lightingSettings->GetLightmap();
-				Guid guid = ObjectDB::GetGuidFromObject(lightmap);
-				GfxDevice::SetGlobalTexture(TO_HASH("_LightmapTexture"), lightmap->Get());
-			}
-
-			// Probe volume
-			{
-				Texture3D* probeVolume = lightingSettings->GetProbeVolume();
-				GfxDevice::SetGlobalTexture(TO_HASH("_ProbeVolumeTexture"), probeVolume->Get());
-			}
-
-			// Charts
-			{
-				List<Vector4>& chartOffsetScale = lightingSettings->GetChartOffsetScale();
-				GfxBuffer* scaleOffsetBuffer;
-				BufferProperties properties = {};
-
-				properties.elementCount = static_cast<uint32_t>(chartOffsetScale.size());
-				properties.elementSize = sizeof(Vector4);
-				properties.data = chartOffsetScale.data();
-				properties.dataSize = chartOffsetScale.size() * sizeof(Vector4);
-				properties.usageFlags = BufferUsageFlags::StructuredBuffer | BufferUsageFlags::ShaderResource;
-
-				GfxDevice::CreateBuffer(properties, scaleOffsetBuffer);
-				GfxDevice::SetGlobalBuffer(TO_HASH("_PerLightmapInstanceData"), scaleOffsetBuffer);
-			}
-
-			// Reflection probes
-			{
-				TextureCubeArray* reflectionProbes = lightingSettings->GetReflectionProbes();
-				GfxDevice::SetGlobalTexture(TO_HASH("_ReflectionTexture"), reflectionProbes->Get());
-			}
-		}
+		s_LightingSettings = lightingSettings;
 	}
 
 	void RuntimeLoader::LoadScene(Scene* scene)
@@ -268,7 +232,6 @@ namespace Blueberry
 		Serializer sceneSerializer = {};
 		sceneSerializer.Deserialize(scenePath, SerializationFlags::RuntimeOnly);
 
-		LightingSettings* lightingSettings = nullptr;
 		for (auto& pair : sceneSerializer.GetDeserializedObjects())
 		{
 			Object* object = ObjectDB::GetObject(pair.first);
@@ -281,6 +244,7 @@ namespace Blueberry
 				}
 			}
 		}
+		scene->SetLightingSettings(s_LightingSettings);
 		Entity::Poll();
 	}
 }

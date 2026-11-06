@@ -85,7 +85,7 @@ namespace Blueberry
 		{
 			context.dataStream.write(reinterpret_cast<char*>(&tree.guid), sizeof(Guid));
 		}
-		context.dataStream.write(reinterpret_cast<char*>(&tree.isReference), sizeof(bool));
+		context.dataStream.write(reinterpret_cast<char*>(&tree.isReference), sizeof(uint8_t));
 		context.dataStream.write(reinterpret_cast<char*>(&rootNodeCount), sizeof(uint32_t));
 		for (size_t i = tree.nodes[0].firstChild; i != UINT64_MAX;)
 		{

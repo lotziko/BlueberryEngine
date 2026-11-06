@@ -9,9 +9,13 @@ namespace Blueberry
 	class Texture2D;
 	class Texture3D;
 	class TextureCube;
+	class TextureCubeArray;
 	class Scene;
 	class SkyRenderer;
 	class ReflectionProbe;
+	class ProbeVolume;
+	class ProbeVolumeInfo;
+	class LightingSettings;
 
 	struct BB_API GlobalObjectId
 	{
@@ -43,12 +47,28 @@ namespace Blueberry
 		const GlobalObjectId& GetObjectId();
 		void SetObjectId(const GlobalObjectId& objectId);
 
-		TextureCube* GetTextureCube();
-		void SetTextureCube(TextureCube* textureCube);
+		TextureCube* GetTexture();
+		void SetTexture(TextureCube* texture);
 
 	private:
 		GlobalObjectId m_ObjectId;
 		ObjectPtr<TextureCube> m_TextureCube;
+	};
+
+	class BB_API ProbeVolumeData : public Data
+	{
+		DATA_DECLARATION(ProbeVolumeData)
+
+	public:
+		const GlobalObjectId& GetObjectId();
+		void SetObjectId(const GlobalObjectId& objectId);
+
+		ProbeVolumeInfo* GetInfo();
+		void SetInfo(ProbeVolumeInfo* info);
+
+	private:
+		GlobalObjectId m_ObjectId;
+		ObjectPtr<ProbeVolumeInfo> m_Info;
 	};
 
 	class BB_API LightingData : public Object
@@ -56,34 +76,33 @@ namespace Blueberry
 		OBJECT_DECLARATION(LightingData)
 
 	public:
-		LightingData() = default;
-		virtual ~LightingData() = default;
+		LightingData();
+		virtual ~LightingData();
 
 		const List<Vector4>& GetChartOffsetScale();
 
 		Texture2D* GetLightmap();
 		void SetLightmapData(Texture2D* lightmap, const List<Vector4>& scaleOffset, const Dictionary<ObjectId, uint32_t>& instanceOffset);
-		
-		Texture3D* GetProbeVolume();
-		void SetProbeVolumeData(Texture3D* probeVolume);
 
 		List<TextureCube*> GetReflectionProbes();
 		size_t GetReflectionProbeCount();
-		void SetSkyReflection(SkyRenderer* skyRenderer, TextureCube* textureCube);
-		void SetReflectionProbe(uint32_t index, ReflectionProbe* reflectionProbe, TextureCube* textureCube);
-		
-		void Apply();
-		void ApplyLightmap();
-		void ApplyProbeVolume();
-		void ApplyReflections();
+		void SetSkyReflection(SkyRenderer* skyRenderer, TextureCube* texture);
+		void SetReflectionProbe(uint32_t index, ReflectionProbe* reflectionProbe, TextureCube* texture);
 
-		static void Clear();
+		size_t GetProbeVolumeCount();
+		void SetProbeVolume(uint32_t index, ProbeVolume* probeVolume, ProbeVolumeInfo* info);
+
+		void Apply();
+
+		LightingSettings* GetLightingSettings();
 
 	private:
 		ObjectPtr<Texture2D> m_Lightmap;
-		ObjectPtr<Texture3D> m_ProbeVolume;
 		List<MeshRendererData> m_MeshRenderers;
+		List<ProbeVolumeData> m_ProbeVolumes;
 		List<ReflectionProbeData> m_ReflectionProbes;
 		List<Vector4> m_ChartOffsetScale;
+
+		ObjectPtr<LightingSettings> m_LightingSettings;
 	};
 }

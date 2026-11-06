@@ -64,6 +64,9 @@ namespace Blueberry
 		case BindingType::Color:
 			value = Color(0, 0, 0, 0);
 			break;
+		case BindingType::AABB:
+			value = {};
+			break;
 		case BindingType::ObjectPtr:
 			value = ObjectPtr<Object>();
 			break;
@@ -107,6 +110,9 @@ namespace Blueberry
 		case BindingType::Color:
 			value = *static_cast<Color*>(ptr);
 			break;
+		case BindingType::AABB:
+			value = *static_cast<AABB*>(ptr);
+			break;
 		case BindingType::ObjectPtr:
 			value = *static_cast<ObjectPtr<Object>*>(ptr);
 			break;
@@ -149,6 +155,9 @@ namespace Blueberry
 			break;
 		case BindingType::Color:
 			*static_cast<Color*>(ptr) = std::get<Color>(value);
+			break;
+		case BindingType::AABB:
+			*static_cast<AABB*>(ptr) = std::get<AABB>(value);
 			break;
 		case BindingType::ObjectPtr:
 			*static_cast<ObjectPtr<Object>*>(ptr) = std::get<ObjectPtr<Object>>(value);

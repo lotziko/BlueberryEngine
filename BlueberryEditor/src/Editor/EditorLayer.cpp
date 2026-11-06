@@ -305,12 +305,12 @@ namespace Blueberry
 				UndoManager::IncrementGroup();
 			}
 
-			if (ImGui::IsKeyDown(ImGuiMod_Ctrl) && ImGui::IsKeyPressed(ImGuiKey_Z))
+			if (ImGui::IsKeyDown(ImGuiMod_Ctrl) && ImGui::IsKeyPressed(ImGuiKey_Z, false))
 			{
 				UndoManager::Undo();
 			}
 
-			if (ImGui::IsKeyDown(ImGuiMod_Ctrl) && ImGui::IsKeyPressed(ImGuiKey_Y))
+			if (ImGui::IsKeyDown(ImGuiMod_Ctrl) && ImGui::IsKeyPressed(ImGuiKey_Y, false))
 			{
 				UndoManager::Redo();
 			}

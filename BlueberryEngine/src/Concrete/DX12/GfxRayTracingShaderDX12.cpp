@@ -181,6 +181,21 @@ namespace Blueberry
 							}
 						}
 						break;
+						case D3D_SIT_SAMPLER:
+						{
+							String samplerName = String(inputBindDesc.Name);
+							auto pos = samplerName.find("_Sampler");
+							if (pos != std::string::npos)
+							{
+								samplerName.replace(pos, samplerName.length() - pos, "");
+							}
+							else
+							{
+								BB_ERROR("Wrong sampler name.");
+							}
+							m_SamplerSlots.push_back(std::make_pair(TO_HASH(samplerName), inputBindDesc.BindPoint));
+						}
+						break;
 						}
 					}
 				}

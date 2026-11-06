@@ -245,6 +245,7 @@ namespace Blueberry
 
 			// Horizontal blur
 			GfxDevice::SetRenderTarget(bloom4);
+			GfxDevice::ClearColor(Color(0.0f, 0.0f, 0.0f, 0.0f));
 			GfxDevice::SetViewport(0, 0, textureWidth, textureHeight);
 			GfxDevice::SetGlobalTexture(s_SourceTextureId, bloom);
 			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_BloomMaterial, 0));
@@ -278,6 +279,7 @@ namespace Blueberry
 
 			// Vertical blur
 			GfxDevice::SetRenderTarget(bloom);
+			GfxDevice::ClearColor(Color(0.0f, 0.0f, 0.0f, 0.0f));
 			GfxDevice::SetViewport(0, 0, textureWidth2 / 2, textureHeight2 / 2);
 			GfxDevice::SetGlobalTexture(s_SourceTextureId, bloom8);
 			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_BloomMaterial, 3));
@@ -302,6 +304,7 @@ namespace Blueberry
 			
 			// Vertical blur
 			GfxDevice::SetRenderTarget(bloom);
+			GfxDevice::ClearColor(Color(0.0f, 0.0f, 0.0f, 0.0f));
 			GfxDevice::SetViewport(0, 0, textureWidth2 / 4, textureHeight2 / 4);
 			GfxDevice::SetGlobalTexture(s_SourceTextureId, bloom16);
 			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_BloomMaterial, 3));
@@ -326,6 +329,7 @@ namespace Blueberry
 
 			// Vertical blur
 			GfxDevice::SetRenderTarget(bloom);
+			GfxDevice::ClearColor(Color(0.0f, 0.0f, 0.0f, 0.0f));
 			GfxDevice::SetViewport(0, 0, textureWidth2 / 8, textureHeight2 / 8);
 			GfxDevice::SetGlobalTexture(s_SourceTextureId, bloom32);
 			GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_BloomMaterial, 3));

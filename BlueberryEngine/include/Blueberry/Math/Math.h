@@ -4,13 +4,12 @@
 
 #include <algorithm>
 
-namespace DirectX::SimpleMath
+namespace Blueberry
 {
-	struct Vector2Int
+#undef max
+#undef min
+	struct Vector2Int : public DirectX::XMINT2
 	{
-		int32_t x;
-		int32_t y;
-
 		Vector2Int() = default;
 
 		Vector2Int(const Vector2Int&) = default;
@@ -19,26 +18,49 @@ namespace DirectX::SimpleMath
 		Vector2Int(Vector2Int&&) = default;
 		Vector2Int& operator=(Vector2Int&&) = default;
 
-		bool operator == (const Vector2Int& V) const noexcept
+		constexpr Vector2Int(int32_t _x, int32_t _y) noexcept : DirectX::XMINT2(_x, _y) {}
+		explicit Vector2Int(_In_reads_(2) const int32_t * pArray) noexcept : DirectX::XMINT2(pArray) {}
+
+		inline bool operator == (const Vector2Int& V) const noexcept
 		{
-			return x == V.x && y == V.y;
+			using namespace DirectX;
+			XMVECTOR v1 = XMLoadSInt2(this);
+			XMVECTOR v2 = XMLoadSInt2(&V);
+			return XMVector2Equal(v1, v2);
 		}
 
-		bool operator != (const Vector2Int& V) const noexcept
+		inline bool operator != (const Vector2Int& V) const noexcept
 		{
-			return x != V.x || y != V.y;
+			using namespace DirectX;
+			XMVECTOR v1 = XMLoadSInt2(this);
+			XMVECTOR v2 = XMLoadSInt2(&V);
+			return XMVector2NotEqual(v1, v2);
 		}
 
-		constexpr Vector2Int(int32_t _x, int32_t _y) noexcept : x(_x), y(_y) {}
-		explicit Vector2Int(_In_reads_(2) const int32_t* pArray) noexcept : x(pArray[0]), y(pArray[1]) {}
+		inline Vector2Int& operator+= (const Vector2Int& V) noexcept
+		{
+			using namespace DirectX;
+			XMVECTOR v1 = XMLoadSInt2(this);
+			XMVECTOR v2 = XMLoadSInt2(&V);
+			XMVECTOR X = XMVectorAdd(v1, v2);
+			XMStoreSInt2(this, X);
+			return *this;
+		}
 	};
 
-	struct Vector3Int
+	inline Vector2Int operator+ (const Vector2Int& V1, const Vector2Int& V2) noexcept
 	{
-		int32_t x;
-		int32_t y;
-		int32_t z;
+		using namespace DirectX;
+		XMVECTOR v1 = XMLoadSInt2(&V1);
+		XMVECTOR v2 = XMLoadSInt2(&V2);
+		XMVECTOR X = XMVectorAdd(v1, v2);
+		Vector2Int R;
+		XMStoreSInt2(&R, X);
+		return R;
+	}
 
+	struct Vector3Int : public DirectX::XMINT3
+	{
 		Vector3Int() = default;
 
 		Vector3Int(const Vector3Int&) = default;
@@ -47,22 +69,49 @@ namespace DirectX::SimpleMath
 		Vector3Int(Vector3Int&&) = default;
 		Vector3Int& operator=(Vector3Int&&) = default;
 
-		bool operator == (const Vector3Int& V) const noexcept
+		constexpr Vector3Int(int32_t _x, int32_t _y, int32_t _z) noexcept : DirectX::XMINT3(_x, _y, _z) {}
+		explicit Vector3Int(_In_reads_(3) const int32_t * pArray) noexcept : DirectX::XMINT3(pArray) {}
+
+		inline bool operator == (const Vector3Int& V) const noexcept
 		{
-			return x == V.x && y == V.y && z == V.z;
+			using namespace DirectX;
+			XMVECTOR v1 = XMLoadSInt3(this);
+			XMVECTOR v2 = XMLoadSInt3(&V);
+			return XMVector2Equal(v1, v2);
 		}
 
-		constexpr Vector3Int(int32_t _x, int32_t _y, int32_t _z) noexcept : x(_x), y(_y), z(_z) {}
-		explicit Vector3Int(_In_reads_(3) const int32_t* pArray) noexcept : x(pArray[0]), y(pArray[1]), z(pArray[2]) {}
+		inline bool operator != (const Vector3Int& V) const noexcept
+		{
+			using namespace DirectX;
+			XMVECTOR v1 = XMLoadSInt3(this);
+			XMVECTOR v2 = XMLoadSInt3(&V);
+			return XMVector3NotEqual(v1, v2);
+		}
+
+		inline Vector3Int& operator+= (const Vector3Int& V) noexcept
+		{
+			using namespace DirectX;
+			XMVECTOR v1 = XMLoadSInt3(this);
+			XMVECTOR v2 = XMLoadSInt3(&V);
+			XMVECTOR X = XMVectorAdd(v1, v2);
+			XMStoreSInt3(this, X);
+			return *this;
+		}
 	};
 
-	struct Vector4Int
+	inline Vector3Int operator+ (const Vector3Int& V1, const Vector3Int& V2) noexcept
 	{
-		int32_t x;
-		int32_t y;
-		int32_t z;
-		int32_t w;
+		using namespace DirectX;
+		XMVECTOR v1 = XMLoadSInt3(&V1);
+		XMVECTOR v2 = XMLoadSInt3(&V2);
+		XMVECTOR X = XMVectorAdd(v1, v2);
+		Vector3Int R;
+		XMStoreSInt3(&R, X);
+		return R;
+	}
 
+	struct Vector4Int : public DirectX::XMINT4
+	{
 		Vector4Int() = default;
 
 		Vector4Int(const Vector4Int&) = default;
@@ -71,37 +120,98 @@ namespace DirectX::SimpleMath
 		Vector4Int(Vector4Int&&) = default;
 		Vector4Int& operator=(Vector4Int&&) = default;
 
-		bool operator == (const Vector4Int& V) const noexcept
+		constexpr Vector4Int(int32_t _x, int32_t _y, int32_t _z, int32_t _w) noexcept : DirectX::XMINT4(_x, _y, _z, _w) {}
+		explicit Vector4Int(_In_reads_(4) const int32_t* pArray) noexcept : DirectX::XMINT4(pArray) {}
+
+		inline bool operator == (const Vector4Int& V) const noexcept
 		{
-			return x == V.x && y == V.y && z == V.z && w == V.w;
+			using namespace DirectX;
+			XMVECTOR v1 = XMLoadSInt4(this);
+			XMVECTOR v2 = XMLoadSInt4(&V);
+			return XMVector2Equal(v1, v2);
 		}
 
-		constexpr Vector4Int(int32_t _x, int32_t _y, int32_t _z, int32_t _w) noexcept : x(_x), y(_y), z(_z), w(_w) {}
-		explicit Vector4Int(_In_reads_(4) const int32_t* pArray) noexcept : x(pArray[0]), y(pArray[1]), z(pArray[2]), w(pArray[3]) {}
-	};
-}
+		inline bool operator != (const Vector4Int& V) const noexcept
+		{
+			using namespace DirectX;
+			XMVECTOR v1 = XMLoadSInt4(this);
+			XMVECTOR v2 = XMLoadSInt4(&V);
+			return XMVector4NotEqual(v1, v2);
+		}
 
-namespace Blueberry
-{
-#undef max
-#undef min
+		inline Vector4Int& operator+= (const Vector4Int& V) noexcept
+		{
+			using namespace DirectX;
+			XMVECTOR v1 = XMLoadSInt4(this);
+			XMVECTOR v2 = XMLoadSInt4(&V);
+			XMVECTOR X = XMVectorAdd(v1, v2);
+			XMStoreSInt4(this, X);
+			return *this;
+		}
+	};
+
+	inline Vector4Int operator+ (const Vector4Int& V1, const Vector4Int& V2) noexcept
+	{
+		using namespace DirectX;
+		XMVECTOR v1 = XMLoadSInt4(&V1);
+		XMVECTOR v2 = XMLoadSInt4(&V2);
+		XMVECTOR X = XMVectorAdd(v1, v2);
+		Vector4Int R;
+		XMStoreSInt4(&R, X);
+		return R;
+	}
+
+	struct Color : public DirectX::SimpleMath::Color
+	{
+		Color() noexcept : DirectX::SimpleMath::Color(0.f, 0.f, 0.f, 1.f) {}
+
+		Color(float red, float green, float blue, float alpha = 1.f) noexcept : DirectX::SimpleMath::Color(red, green, blue, alpha) {}
+
+		inline Color ToLinear() const { return Color(std::powf(x, 2.2f), std::powf(y, 2.2f), std::powf(z, 2.2f), w); }
+	};
+
+	struct AABB : public DirectX::BoundingBox
+	{
+		AABB() noexcept = default;
+
+		AABB(const AABB&) = default;
+		AABB& operator=(const AABB&) = default;
+
+		AABB(AABB&&) = default;
+		AABB& operator=(AABB&&) = default;
+
+		AABB(_In_ const DirectX::XMFLOAT3& center, _In_ const DirectX::XMFLOAT3& extents) noexcept
+			: DirectX::BoundingBox(center, extents) {}
+
+		bool operator == (const AABB& aabb) const noexcept
+		{
+			using XMVECTOR = DirectX::XMVECTOR;
+			XMVECTOR c1 = DirectX::XMLoadFloat3(&Center);
+			XMVECTOR e1 = DirectX::XMLoadFloat3(&Extents);
+
+			XMVECTOR c2 = DirectX::XMLoadFloat3(&aabb.Center);
+			XMVECTOR e2 = DirectX::XMLoadFloat3(&aabb.Extents);
+
+			return (DirectX::XMVector3Equal(c1, c2) && DirectX::XMVector3Equal(e1, e2)) != 0;
+		}
+
+		bool operator != (const AABB& aabb) const noexcept
+		{
+			return !(*this == aabb);
+		}
+	};
 
 	using Vector2 = DirectX::SimpleMath::Vector2;
 	using Vector3 = DirectX::SimpleMath::Vector3;
 	using Vector4 = DirectX::SimpleMath::Vector4;
-	using Vector2Int = DirectX::SimpleMath::Vector2Int;
-	using Vector3Int = DirectX::SimpleMath::Vector3Int;
-	using Vector4Int = DirectX::SimpleMath::Vector4Int;
 	using Vector2Uint = DirectX::XMUINT2;
 	using Vector3Uint = DirectX::XMUINT3;
 	using Vector4Uint = DirectX::XMUINT4;
 	using Quaternion = DirectX::SimpleMath::Quaternion;
 	using Ray = DirectX::SimpleMath::Ray;
 	using Matrix = DirectX::SimpleMath::Matrix;
-	using Color = DirectX::SimpleMath::Color;
 	using Rectangle = DirectX::SimpleMath::Rectangle;
 	using Viewport = DirectX::SimpleMath::Viewport;
-	using AABB = DirectX::BoundingBox;
 	using OBB = DirectX::BoundingOrientedBox;
 	using Sphere = DirectX::BoundingSphere;
 	using Frustum = DirectX::BoundingFrustum;
@@ -305,8 +415,8 @@ namespace Blueberry
 		{
 			using XMVECTOR = DirectX::XMVECTOR;
 			// Load origin and orientation of the frustum.
-			XMVECTOR vOrigin = XMLoadFloat3(&frustum.Origin);
-			XMVECTOR vOrientation = XMLoadFloat4(&frustum.Orientation);
+			XMVECTOR vOrigin = DirectX::XMLoadFloat3(&frustum.Origin);
+			XMVECTOR vOrientation = DirectX::XMLoadFloat4(&frustum.Orientation);
 
 			// Create 6 planes (do it inline to encourage use of registers)
 			XMVECTOR NearPlane = DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, frustum.Near); // Flipped
@@ -424,11 +534,6 @@ namespace Blueberry
 			return (Lerp(xf0, xf1, ys) * 1.4247691104677813f) * 0.5f + 0.5f;
 		}
 
-		static inline Color ToLinear(const Color& color)
-		{
-			return Color(std::powf(color.x, 2.2f), std::powf(color.y, 2.2f), std::powf(color.z, 2.2f), color.w);
-		}
-
 		static inline float Pi = 3.1415926535f;
 		static inline float DegreeToRad = 57.29577951471995f;
 		static inline float RadToDegree = 0.0174532925194444f;
@@ -514,5 +619,23 @@ struct std::hash<Blueberry::Vector2Int>
 	size_t operator()(const Blueberry::Vector2Int& vector) const
 	{
 		return (static_cast<size_t>(vector.x) << 32) ^ static_cast<size_t>(vector.y);
+	}
+};
+
+template <>
+struct std::hash<Blueberry::Vector3Int>
+{
+	size_t operator()(const Blueberry::Vector3Int& vector) const
+	{
+		return (static_cast<size_t>(vector.x) << 32) ^ (static_cast<size_t>(vector.y) << 16) ^ static_cast<size_t>(vector.z);
+	}
+};
+
+template <>
+struct std::hash<Blueberry::Vector3>
+{
+	size_t operator()(const Blueberry::Vector3& vector) const
+	{
+		return (static_cast<size_t>(vector.x) << 32) ^ (static_cast<size_t>(vector.y) << 16) ^ static_cast<size_t>(vector.z);
 	}
 };

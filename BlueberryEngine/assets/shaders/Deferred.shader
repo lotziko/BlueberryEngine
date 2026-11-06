@@ -11,7 +11,8 @@ Shader
 		#pragma fragment DeferredFragment
 		
 		#pragma keyword_global_fragment SHADOWS
-		#pragma keyword_global_fragment REFLECTIONS
+		#pragma keyword_global_fragment PROBE_VOLUMES
+		#pragma keyword_global_fragment SCREEN_REFLECTIONS REFLECTION_PROBES
 
 		#include "Core.hlsl"
 

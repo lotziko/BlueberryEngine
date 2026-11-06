@@ -7,7 +7,7 @@
 
 namespace Blueberry
 {
-	GfxPointerCache<GfxTextureDX12> GfxTextureDX12::s_PointerCache = {};
+	PointerCache<GfxTextureDX12> GfxTextureDX12::s_PointerCache = {};
 
 	GfxTextureDX12::GfxTextureDX12(GfxDeviceDX12* device) : m_GfxDevice(device), m_Device(m_GfxDevice->GetDevice())
 	{
@@ -614,9 +614,6 @@ namespace Blueberry
 		bool useDSV = DxgiHelper::IsDepth(m_DxgiFormat);
 		bool useRTV = !useDSV && HasFlag(properties.usageFlags, TextureUsageFlags::RenderTarget);
 		bool useUAV = HasFlag(properties.usageFlags, TextureUsageFlags::UnorderedAccess);
-		bool isReadable = HasFlag(properties.usageFlags, TextureUsageFlags::CPUReadable);
-		bool isWritable = HasFlag(properties.usageFlags, TextureUsageFlags::CPUWritable);
-		bool useStaging = isReadable || isWritable;
 
 		D3D12_RESOURCE_DESC resourceDesc = {};
 		resourceDesc.MipLevels = m_MipLevels;

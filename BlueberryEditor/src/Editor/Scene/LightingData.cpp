@@ -2,18 +2,15 @@
 
 #include "Blueberry\Core\ClassDB.h"
 #include "Blueberry\Scene\Scene.h"
+#include "Blueberry\Scene\LightingSettings.h"
 #include "Blueberry\Scene\Components\MeshRenderer.h"
 #include "Blueberry\Scene\Components\SkyRenderer.h"
 #include "Blueberry\Scene\Components\ReflectionProbe.h"
-#include "Blueberry\Graphics\Shader.h"
+#include "Blueberry\Scene\Components\ProbeVolume.h"
 #include "Blueberry\Graphics\Texture2D.h"
 #include "Blueberry\Graphics\TextureCube.h"
 #include "Blueberry\Graphics\TextureCubeArray.h"
 #include "Blueberry\Graphics\Texture3D.h"
-#include "Blueberry\Graphics\GfxDevice.h"
-#include "Blueberry\Graphics\GfxBuffer.h"
-#include "Blueberry\Graphics\GfxTexture.h"
-#include "Blueberry\Graphics\DefaultTextures.h"
 
 #include "Editor\Prefabs\PrefabManager.h"
 #include "Editor\Prefabs\PrefabInstance.h"
@@ -21,16 +18,6 @@
 
 namespace Blueberry
 {
-	static GfxBuffer* s_ScaleOffsetBuffer = nullptr;
-	static GfxTexture* s_ReflectionTexture = nullptr;
-
-	static size_t s_LightmapTextureId = TO_HASH("_LightmapTexture");
-	static size_t s_ProbeVolumeTextureId = TO_HASH("_ProbeVolumeTexture");
-	static size_t s_ReflectionTextureId = TO_HASH("_ReflectionTexture");
-	static size_t s_PerLightmapInstanceDataId = TO_HASH("_PerLightmapInstanceData");
-
-	#define REFLECTION_SIZE 128
-	
 	DATA_DEFINITION(MeshRendererData)
 	{
 		DEFINE_FIELD(MeshRendererData, m_ObjectId, BindingType::Raw, FieldOptions().SetSize(sizeof(GlobalObjectId)))
@@ -43,13 +30,19 @@ namespace Blueberry
 		DEFINE_FIELD(ReflectionProbeData, m_TextureCube, BindingType::ObjectPtr, FieldOptions().SetObjectType(&TextureCube::Type))
 	}
 
+	DATA_DEFINITION(ProbeVolumeData)
+	{
+		DEFINE_FIELD(ProbeVolumeData, m_ObjectId, BindingType::Raw, FieldOptions().SetSize(sizeof(GlobalObjectId)))
+		DEFINE_FIELD(ProbeVolumeData, m_Info, BindingType::ObjectPtr, FieldOptions().SetObjectType(&ProbeVolumeInfo::Type))
+	}
+
 	OBJECT_DEFINITION(LightingData, Object)
 	{
 		DEFINE_PREFER_BINARY()
 		DEFINE_FIELD(LightingData, m_Lightmap, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Texture2D::Type))
-		DEFINE_FIELD(LightingData, m_ProbeVolume, BindingType::ObjectPtr, FieldOptions().SetObjectType(&Texture3D::Type))
 		DEFINE_FIELD(LightingData, m_MeshRenderers, BindingType::DataList, FieldOptions().SetObjectType(&MeshRendererData::Type))
 		DEFINE_FIELD(LightingData, m_ReflectionProbes, BindingType::DataList, FieldOptions().SetObjectType(&ReflectionProbeData::Type))
+		DEFINE_FIELD(LightingData, m_ProbeVolumes, BindingType::DataList, FieldOptions().SetObjectType(&ProbeVolumeData::Type))
 		DEFINE_FIELD(LightingData, m_ChartOffsetScale, BindingType::Vector4List, FieldOptions())
 	}
 
@@ -83,14 +76,47 @@ namespace Blueberry
 		m_ObjectId = objectId;
 	}
 
-	TextureCube* ReflectionProbeData::GetTextureCube()
+	TextureCube* ReflectionProbeData::GetTexture()
 	{
 		return m_TextureCube.Get();
 	}
 
-	void ReflectionProbeData::SetTextureCube(TextureCube* textureCube)
+	void ReflectionProbeData::SetTexture(TextureCube* texture)
 	{
-		m_TextureCube = textureCube;
+		m_TextureCube = texture;
+	}
+
+	const GlobalObjectId& ProbeVolumeData::GetObjectId()
+	{
+		return m_ObjectId;
+	}
+
+	void ProbeVolumeData::SetObjectId(const GlobalObjectId& objectId)
+	{
+		m_ObjectId = objectId;
+	}
+
+	ProbeVolumeInfo* ProbeVolumeData::GetInfo()
+	{
+		return m_Info.Get();
+	}
+
+	void ProbeVolumeData::SetInfo(ProbeVolumeInfo* info)
+	{
+		m_Info = info;
+	}
+
+	LightingData::LightingData()
+	{
+		m_LightingSettings = Object::Create<LightingSettings>();
+	}
+
+	LightingData::~LightingData()
+	{
+		if (m_LightingSettings.IsValid())
+		{
+			Object::Destroy(m_LightingSettings.Get());
+		}
 	}
 
 	const List<Vector4>& LightingData::GetChartOffsetScale()
@@ -134,16 +160,7 @@ namespace Blueberry
 			data.SetChartInstanceOffset(pair.second);
 			m_MeshRenderers.push_back(data);
 		}
-	}
-
-	Texture3D* LightingData::GetProbeVolume()
-	{
-		return m_ProbeVolume.Get();
-	}
-
-	void LightingData::SetProbeVolumeData(Texture3D* probeVolume)
-	{
-		m_ProbeVolume = probeVolume;
+		m_LightingSettings->IncrementLightmapUpdateCount();
 	}
 
 	List<TextureCube*> LightingData::GetReflectionProbes()
@@ -151,7 +168,7 @@ namespace Blueberry
 		List<TextureCube*> result;
 		for (size_t i = 0; i < m_ReflectionProbes.size(); ++i)
 		{
-			result.push_back(m_ReflectionProbes[i].GetTextureCube());
+			result.push_back(m_ReflectionProbes[i].GetTexture());
 		}
 		return result;
 	}
@@ -161,7 +178,7 @@ namespace Blueberry
 		return m_ReflectionProbes.size();
 	}
 
-	void LightingData::SetSkyReflection(SkyRenderer* skyRenderer, TextureCube* textureCube)
+	void LightingData::SetSkyReflection(SkyRenderer* skyRenderer, TextureCube* texture)
 	{
 		if (m_ReflectionProbes.size() == 0)
 		{
@@ -170,9 +187,9 @@ namespace Blueberry
 
 		ReflectionProbeData data = {};
 		data.SetObjectId(GetGlobalObjectId(skyRenderer->GetEntity()));
-		data.SetTextureCube(textureCube);
+		data.SetTexture(texture);
 		m_ReflectionProbes[0] = data;
-		ApplyReflections();
+		m_LightingSettings->IncrementReflectionProbesUpdateCount();
 	}
 
 	void LightingData::SetReflectionProbe(uint32_t index, ReflectionProbe* reflectionProbe, TextureCube* textureCube)
@@ -184,96 +201,87 @@ namespace Blueberry
 
 		ReflectionProbeData data = {};
 		data.SetObjectId(GetGlobalObjectId(reflectionProbe->GetEntity()));
-		data.SetTextureCube(textureCube);
+		data.SetTexture(textureCube);
 		m_ReflectionProbes[1 + index] = data;
-		ApplyReflections();
+		m_LightingSettings->IncrementReflectionProbesUpdateCount();
+	}
+
+	size_t LightingData::GetProbeVolumeCount()
+	{
+		return m_ProbeVolumes.size();
+	}
+
+	void LightingData::SetProbeVolume(uint32_t index, ProbeVolume* probeVolume, ProbeVolumeInfo* info)
+	{
+		if (m_ProbeVolumes.size() <= index)
+		{
+			m_ProbeVolumes.resize(index + 1);
+		}
+
+		ProbeVolumeData data = {};
+		data.SetObjectId(GetGlobalObjectId(probeVolume->GetEntity()));
+		data.SetInfo(info);
+		m_ProbeVolumes[index] = data;
+		m_LightingSettings->IncrementProbeVolumesUpdateCount();
 	}
 
 	void LightingData::Apply()
 	{
-		ApplyLightmap();
-		ApplyProbeVolume();
-		ApplyReflections();
-	}
+		Dictionary<FileId, Entity*> entities = {};
+		Dictionary<FileId, PrefabInstance*> prefabs = {};
 
-	void LightingData::ApplyLightmap()
-	{
-		if (m_Lightmap.IsValid())
+		for (Object* object : ObjectDB::GetObjects(Entity::Type, SearchObjectType::WithoutGuid))
 		{
-			Texture2D* lightmap = m_Lightmap.Get();
-			GfxDevice::SetGlobalTexture(s_LightmapTextureId, lightmap->Get());
-		}
-		else
-		{
-			GfxDevice::SetGlobalTexture(s_LightmapTextureId, DefaultTextures::GetWhite2D()->Get());
-			return;
-		}
-
-		if (m_ChartOffsetScale.size() > 0)
-		{
-			if (s_ScaleOffsetBuffer != nullptr)
+			Entity* entity = static_cast<Entity*>(object);
+			if (PrefabManager::IsPartOfPrefabInstance(entity))
 			{
-				delete s_ScaleOffsetBuffer;
+				continue;
 			}
-
-			BufferProperties properties = {};
-			properties.elementCount = static_cast<uint32_t>(m_ChartOffsetScale.size());
-			properties.elementSize = sizeof(Vector4);
-			properties.data = m_ChartOffsetScale.data();
-			properties.dataSize = m_ChartOffsetScale.size() * sizeof(Vector4);
-			properties.usageFlags = BufferUsageFlags::StructuredBuffer | BufferUsageFlags::ShaderResource;
-
-			GfxDevice::CreateBuffer(properties, s_ScaleOffsetBuffer);
-			GfxDevice::SetGlobalBuffer(s_PerLightmapInstanceDataId, s_ScaleOffsetBuffer);
-		}
-		else
-		{
-			return;
-		}
-
-		if (m_MeshRenderers.size() > 0)
-		{
-			Dictionary<FileId, Entity*> entities = {};
-			
-			for (Object* object : ObjectDB::GetObjects(Entity::Type, SearchObjectType::WithoutGuid))
+			FileId id = ObjectDB::GetFileIdFromObject(object);
+			if (id != 0)
 			{
-				Entity* entity = static_cast<Entity*>(object);
-				if (PrefabManager::IsPartOfPrefabInstance(entity))
+				entities.insert_or_assign(id, entity);
+			}
+		}
+
+		for (Object* object : ObjectDB::GetObjects(PrefabInstance::Type, SearchObjectType::Any))
+		{
+			PrefabInstance* instance = static_cast<PrefabInstance*>(object);
+			prefabs.insert_or_assign(ObjectDB::GetFileIdFromObject(object), instance);
+		}
+
+		auto FindEntity = [entities, prefabs](GlobalObjectId id) -> Entity*
+		{
+			Entity* entity = nullptr;
+			if (id.prefabInstanceFileId != 0)
+			{
+				auto it = prefabs.find(id.prefabInstanceFileId);
+				if (it != prefabs.end())
 				{
-					continue;
-				}
-				FileId id = ObjectDB::GetFileIdFromObject(object);
-				if (id != 0)
-				{
-					entities.insert_or_assign(id, entity);
+					PrefabInstance* instance = it->second;
+					entity = static_cast<Entity*>(instance->GetCorrespondingObject(id.objectFileId));
 				}
 			}
+			else
+			{
+				auto it = entities.find(id.objectFileId);
+				if (it != entities.end())
+				{
+					entity = it->second;
+				}
+			}
+			return entity;
+		};
 
+		if (!m_MeshRenderers.empty())
+		{
 			uint32_t meshRendererCount = static_cast<uint32_t>(m_MeshRenderers.size());
-
-			Guid guid = EditorSceneManager::GetGuid();
 			for (uint32_t i = 0; i < meshRendererCount; ++i)
 			{
 				MeshRendererData data = m_MeshRenderers[i];
 				GlobalObjectId id = data.GetObjectId();
 				uint32_t offset = data.GetChartInstanceOffset();
-				Entity* entity = nullptr;
-				if (id.prefabInstanceFileId != 0)
-				{
-					PrefabInstance* instance = static_cast<PrefabInstance*>(ObjectDB::GetObjectFromGuid(Guid(), id.prefabInstanceFileId));
-					if (instance != nullptr)
-					{
-						entity = static_cast<Entity*>(instance->GetCorrespondingObject(id.objectFileId));
-					}
-				}
-				else
-				{
-					auto it = entities.find(id.objectFileId);
-					if (it != entities.end())
-					{
-						entity = it->second;
-					}
-				}
+				Entity* entity = FindEntity(id);
 				if (entity != nullptr)
 				{
 					MeshRenderer* meshRenderer = entity->GetComponent<MeshRenderer>();
@@ -284,135 +292,70 @@ namespace Blueberry
 				}
 			}
 		}
-	}
 
-	void LightingData::ApplyProbeVolume()
-	{
-		if (m_ProbeVolume.IsValid())
+		if (!m_ProbeVolumes.empty())
 		{
-			GfxDevice::SetGlobalTexture(s_ProbeVolumeTextureId, m_ProbeVolume->Get());
-		}
-		else
-		{
-			GfxDevice::SetGlobalTexture(s_ProbeVolumeTextureId, DefaultTextures::GetWhite3D()->Get());
-		}
-	}
-
-	void LightingData::ApplyReflections()
-	{
-		size_t probeCount = m_ReflectionProbes.size();
-		size_t textureSize = 0;
-		List<uint8_t> textureData = {};
-
-		if (probeCount > 0)
-		{
-			Dictionary<FileId, Entity*> entities = {};
-			
-			for (Object* object : ObjectDB::GetObjects(Entity::Type, SearchObjectType::WithoutGuid))
-			{
-				Entity* entity = static_cast<Entity*>(object);
-				if (PrefabManager::IsPartOfPrefabInstance(entity))
-				{
-					continue;
-				}
-				FileId id = ObjectDB::GetFileIdFromObject(object);
-				if (id != 0)
-				{
-					entities.insert_or_assign(id, entity);
-				}
-			}
-
-			Dictionary<FileId, PrefabInstance*> prefabs = {};
-			
-			for (Object* object : ObjectDB::GetObjects(PrefabInstance::Type, SearchObjectType::WithoutGuid))
-			{
-				PrefabInstance* instance = static_cast<PrefabInstance*>(object);
-				prefabs.insert_or_assign(ObjectDB::GetFileIdFromObject(object), instance);
-			}
-
+			size_t probeCount = m_ProbeVolumes.size();
 			for (size_t i = 0; i < probeCount; ++i)
 			{
-				ReflectionProbeData data = m_ReflectionProbes[i];
-				TextureCube* texture = data.GetTextureCube();
-				if (texture != nullptr)
-				{
-					textureSize = texture->GetDataSize();
-					textureData.resize(textureSize * probeCount);
-					break;
-				}
-			}
-
-			for (size_t i = 0; i < probeCount; ++i)
-			{
-				ReflectionProbeData data = m_ReflectionProbes[i];
+				ProbeVolumeData data = m_ProbeVolumes[i];
 				GlobalObjectId id = data.GetObjectId();
-				Entity* entity = nullptr;
-				if (id.prefabInstanceFileId != 0)
+				Entity* entity = FindEntity(id);
+				if (entity != nullptr)
 				{
-					auto it = prefabs.find(id.prefabInstanceFileId);
-					if (it != prefabs.end())
-					{
-						PrefabInstance* instance = it->second;
-						entity = static_cast<Entity*>(instance->GetCorrespondingObject(id.objectFileId));
-					}
-				}
-				else
-				{
-					auto it = entities.find(id.objectFileId);
-					if (it != entities.end())
-					{
-						entity = it->second;
-					}
-				}
-
-				TextureCube* texture = data.GetTextureCube();
-				if (entity != nullptr && i > 0)
-				{
-					ReflectionProbe* reflectionProbe = entity->GetComponent<ReflectionProbe>();
-					reflectionProbe->SetAtlasIndex(static_cast<uint32_t>(i));
-				}
-
-				if (texture != nullptr)
-				{
-					memcpy(textureData.data() + textureSize * i, texture->GetData(), textureSize);
+					ProbeVolume* probeVolume = entity->GetComponent<ProbeVolume>();
+					probeVolume->SetIndex(static_cast<uint32_t>(i));
 				}
 			}
 		}
 
-		if (probeCount > 0)
+		List<ObjectPtr<ProbeVolumeInfo>> probeVolumes;
+		if (!m_ProbeVolumes.empty())
 		{
-			TextureProperties textureProperties = {};
-			textureProperties.width = REFLECTION_SIZE;
-			textureProperties.height = REFLECTION_SIZE;
-			textureProperties.depth = static_cast<uint32_t>(probeCount);
-			textureProperties.antiAliasing = 1;
-			textureProperties.mipCount = 6;
-			textureProperties.format = TextureFormat::BC6H_UFloat;
-			textureProperties.dimension = TextureDimension::TextureCubeArray;
-			textureProperties.wrapMode = WrapMode::Clamp;
-			textureProperties.filterMode = FilterMode::Bilinear;
-			textureProperties.data = textureData.data();
-			textureProperties.dataSize = textureData.size();
-
-			if (s_ReflectionTexture != nullptr)
+			size_t volumeCount = m_ProbeVolumes.size();
+			for (size_t i = 0; i < volumeCount; ++i)
 			{
-				delete s_ReflectionTexture;
-				s_ReflectionTexture = nullptr;
+				ProbeVolumeData data = m_ProbeVolumes[i];
+				GlobalObjectId id = data.GetObjectId();
+				Entity* entity = FindEntity(id);
+				if (entity != nullptr)
+				{
+					ProbeVolume* probeVolume = entity->GetComponent<ProbeVolume>();
+					probeVolume->SetIndex(static_cast<uint32_t>(i));
+				}
+				probeVolumes.push_back(data.GetInfo());
 			}
-			GfxDevice::CreateTexture(textureProperties, s_ReflectionTexture);
+		}
 
-			GfxDevice::SetGlobalTexture(s_ReflectionTextureId, s_ReflectionTexture);
-		}
-		else
+		List<ObjectPtr<TextureCube>> reflectionProbes;
+		if (!m_ReflectionProbes.empty())
 		{
-			GfxDevice::SetGlobalTexture(s_ReflectionTextureId, DefaultTextures::GetBlackCubeArray()->Get());
+			size_t probeCount = m_ReflectionProbes.size();
+			for (size_t i = 0; i < probeCount; ++i)
+			{
+				ReflectionProbeData data = m_ReflectionProbes[i];
+				if (i > 0)
+				{
+					GlobalObjectId id = data.GetObjectId();
+					Entity* entity = FindEntity(id);
+					if (entity != nullptr)
+					{
+						ReflectionProbe* reflectionProbe = entity->GetComponent<ReflectionProbe>();
+						reflectionProbe->SetIndex(static_cast<uint32_t>(i));
+					}
+				}
+				reflectionProbes.push_back(data.GetTexture());
+			}
 		}
+
+		m_LightingSettings->SetLightmap(m_Lightmap.Get());
+		m_LightingSettings->SetChartOffsetScale(m_ChartOffsetScale);
+		m_LightingSettings->SetProbeVolumes(probeVolumes);
+		m_LightingSettings->SetReflectionProbes(reflectionProbes);
 	}
 
-	void LightingData::Clear()
+	LightingSettings* LightingData::GetLightingSettings()
 	{
-		GfxDevice::SetGlobalTexture(s_LightmapTextureId, DefaultTextures::GetWhite2D()->Get());
-		GfxDevice::SetGlobalTexture(s_ProbeVolumeTextureId, DefaultTextures::GetWhite3D()->Get());
-		GfxDevice::SetGlobalTexture(s_ReflectionTextureId, DefaultTextures::GetBlackCubeArray()->Get());
+		return m_LightingSettings.Get();
 	}
 }

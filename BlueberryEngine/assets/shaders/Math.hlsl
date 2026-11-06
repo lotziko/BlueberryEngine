@@ -77,4 +77,37 @@ float4 ImportanceSampleGGX(float2 Xi, float3 N, float roughness)
 	return float4(normalize(sampleVec), pdf);
 }
 
+float CalculateGeometricRoughnessFactor(float3 geometricNormalWs)
+{
+	float3 normalWsDdx = ddx(geometricNormalWs.xyz);
+	float3 normalWsDdy = ddy(geometricNormalWs.xyz);
+	return pow(saturate(max(dot(normalWsDdx.xyz, normalWsDdx.xyz), dot(normalWsDdy.xyz, normalWsDdy.xyz))), 0.333);
+}
+
+float AdjustRoughnessByGeometricNormal(float roughness, float3 geometricNormalWs)
+{
+	float geometricRoughnessFactor = CalculateGeometricRoughnessFactor(geometricNormalWs.xyz);
+	roughness = max(roughness, geometricRoughnessFactor.x);
+	return roughness;
+}
+
+float3 GetSphereProjectionDirection(float3 reflectionWS, float3 positionWS, float3 centerWS, float squareRange)
+{
+	float3 worldPos = positionWS - centerWS;
+	float B = dot(worldPos, reflectionWS);
+	float C = dot(worldPos, worldPos) - squareRange;
+	float D = B * B - C;
+	float t = -B + sqrt(max(D, 0.0));
+	return worldPos + reflectionWS * t;
+}
+
+float3 GetBoxProjectionDirection(float3 reflectionWS, float3 positionWS, float3 boxCenterWS, float3 boxMinWS, float3 boxMaxWS)
+{
+	float3 boxMinMax = float3(reflectionWS.x > 0.0f ? boxMaxWS.x : boxMinWS.x, reflectionWS.y > 0.0f ? boxMaxWS.y : boxMinWS.y, reflectionWS.z > 0.0f ? boxMaxWS.z : boxMinWS.z);
+	float3 rbMinMax = (boxMinMax - positionWS) / reflectionWS;
+	float fa = min(min(rbMinMax.x, rbMinMax.y), rbMinMax.z);
+	float3 worldPos = positionWS - boxCenterWS;
+	return worldPos + reflectionWS * fa;
+}
+
 #endif

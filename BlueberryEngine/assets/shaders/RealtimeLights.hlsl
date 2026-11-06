@@ -49,65 +49,31 @@ float3 SampleLightmap(float2 uv)
 	return SAMPLE_TEXTURE2D_LOD(_LightmapTexture, _LightmapTexture_Sampler, uv, 0).rgb;
 }
 
-static const int3 kVolumeOffsets[8] =
+float3 SampleProbeVolume(float3 positionWS, float3 normalWS, ProbeVolumeData probeVolume)
 {
-	int3(0, 0, 0),
-	int3(1, 0, 0),
-	int3(0, 1, 0),
-	int3(1, 1, 0),
-	int3(0, 0, 1),
-	int3(1, 0, 1),
-	int3(0, 1, 1),
-	int3(1, 1, 1),
-};
+	// TODO sparse bricks
+	float3 volumeUvw = ((positionWS + normalWS * 0.125f) - probeVolume.positionMinWS) * probeVolume.invSizeWS;
+	float3 gridPos = volumeUvw * float3(probeVolume.topLevelSize);
+	uint3 cellPos = min((uint3)floor(gridPos), probeVolume.topLevelSize - 1u);
+	float3 localInBrickUvw = saturate(gridPos - float3(cellPos));
+	uint cellIndex = cellPos.x + probeVolume.topLevelSize.x * (cellPos.y + probeVolume.topLevelSize.y * cellPos.z);
+	uint atlasSlot = probeVolume.probeAtlasOffset + cellIndex;
+	uint3 atlasBrickCoord = uint3(atlasSlot % 128, (atlasSlot / 128) % 128, atlasSlot / 16384);
+	float3 texelCenter = float3(atlasBrickCoord * 4) + saturate(localInBrickUvw) * 3.0f + 0.5f;
+	float3 sampleUvw = texelCenter / float3(512.0f, 512.0f, 40.0f);
 
-float3 SampleProbeVolume(float3 positionWS, float3 normalWS)
-{
-	float3 uvw = (positionWS - _ProbeVolumeMin.xyz) * _ProbeVolumeInvSize.xyz;
-	float3 baseCoord = uvw * (_ProbeVolumeSize.xyz - 1);
-	int3 baseGridCoord = floor(baseCoord);
-	float3 frac = baseCoord - baseGridCoord;
-
-	float weightSum = 0;
-	float3 colorSum = 0;
-
-	for (int i = 0; i < 8; ++i)
-	{
-		int3 offset = int3(i, i >> 1, i >> 2) & int3(1, 1, 1);
-		int3 probeGridCoord = baseGridCoord + offset;
-
-		float3 probePositionWS = _ProbeVolumeMin.xyz + (float3)offset * _ProbeVolumeCellSize.xyz;
-		float3 probeToPos = positionWS - probePositionWS;
-		float3 directionWS = normalize(-probeToPos);
-		float distance = length(probeToPos);
-
-		float3 trilinear = lerp(1.0 - frac, frac, offset);
-		float weight = trilinear.x * trilinear.y * trilinear.z * max(0.005, dot(directionWS, normalWS));
-
-		weightSum += weight;
-		colorSum += LOAD_TEXTURE3D(_ProbeVolumeTexture, probeGridCoord).rgb * weight;
-	}
-
-	return colorSum / weightSum;
-}
-
-float3 GetSphereProjectionDirection(float3 reflectionWS, float3 positionWS, float3 centerWS, float squareRange)
-{
-	float3 worldPos = positionWS - centerWS;
-	float B = dot(worldPos, reflectionWS);
-	float C = dot(worldPos, worldPos) - squareRange;
-	float D = B * B - C;
-	float t = -B + sqrt(max(D, 0.0));
-	return worldPos + reflectionWS * t;
-}
-
-float3 GetBoxProjectionDirection(float3 reflectionWS, float3 positionWS, float3 boxCenterWS, float3 boxMinWS, float3 boxMaxWS)
-{
-	float3 boxMinMax = float3(reflectionWS.x > 0.0f ? boxMaxWS.x : boxMinWS.x, reflectionWS.y > 0.0f ? boxMaxWS.y : boxMinWS.y, reflectionWS.z > 0.0f ? boxMaxWS.z : boxMinWS.z);
-	float3 rbMinMax = (boxMinMax - positionWS) / reflectionWS;
-	float fa = min(min(rbMinMax.x, rbMinMax.y), rbMinMax.z);
-	float3 worldPos = positionWS - boxCenterWS;
-	return worldPos + reflectionWS * fa;
+	float3 positive = saturate(normalWS);
+	float3 negative = saturate(-normalWS);
+	positive *= positive;
+	negative *= negative;
+	float3 result = 0;
+	result += _ProbeVolumeTexture0.SampleLevel(_ProbeVolumeTexture0_Sampler, sampleUvw, 0) * positive.x;
+	result += _ProbeVolumeTexture1.SampleLevel(_ProbeVolumeTexture0_Sampler, sampleUvw, 0) * negative.x;
+	result += _ProbeVolumeTexture2.SampleLevel(_ProbeVolumeTexture0_Sampler, sampleUvw, 0) * positive.y;
+	result += _ProbeVolumeTexture3.SampleLevel(_ProbeVolumeTexture0_Sampler, sampleUvw, 0) * negative.y;
+	result += _ProbeVolumeTexture4.SampleLevel(_ProbeVolumeTexture0_Sampler, sampleUvw, 0) * positive.z;
+	result += _ProbeVolumeTexture5.SampleLevel(_ProbeVolumeTexture0_Sampler, sampleUvw, 0) * negative.z;
+	return result;
 }
 
 #endif

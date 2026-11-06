@@ -167,11 +167,10 @@ namespace Blueberry
 
 	void ReadValue(SerializationNodeConstRef& ref, bool& value);
 	void ReadValue(SerializationNodeConstRef& ref, float& value);
-	void ReadValue(SerializationNodeConstRef& ref, int& value);
-	void ReadValue(SerializationNodeConstRef& ref, unsigned int& value);
-	void ReadValue(SerializationNodeConstRef& ref, long& value);
-	void ReadValue(SerializationNodeConstRef& ref, long long& value);
-	void ReadValue(SerializationNodeConstRef& ref, unsigned long long& value);
+	void ReadValue(SerializationNodeConstRef& ref, int32_t& value);
+	void ReadValue(SerializationNodeConstRef& ref, uint32_t& value);
+	void ReadValue(SerializationNodeConstRef& ref, int64_t& value);
+	void ReadValue(SerializationNodeConstRef& ref, uint64_t& value);
 	void ReadValue(SerializationNodeConstRef& ref, String& value);
 	void ReadValue(SerializationNodeConstRef& ref, Vector2& value);
 	void ReadValue(SerializationNodeConstRef& ref, Vector2Int& value);
@@ -186,16 +185,15 @@ namespace Blueberry
 	void ReadValue(SerializationNodeConstRef& ref, Guid& value);
 	void ReadValue(SerializationNodeConstRef& ref, ObjectPtrData& value);
 	void ReadValue(SerializationNodeConstRef& ref, DataWrapper<ByteData>& value);
-	void ReadValue(SerializationNodeConstRef& ref, DataWrapper<List<int>>& value);
+	void ReadValue(SerializationNodeConstRef& ref, DataWrapper<List<int32_t>>& value);
 	void ReadValue(SerializationNodeConstRef& ref, DataWrapper<List<float>>& value);
 
 	void WriteValue(SerializationNodeRef& ref, bool& value);
 	void WriteValue(SerializationNodeRef& ref, float& value);
-	void WriteValue(SerializationNodeRef& ref, int& value);
-	void WriteValue(SerializationNodeRef& ref, unsigned int& value);
-	void WriteValue(SerializationNodeRef& ref, long& value);
-	void WriteValue(SerializationNodeRef& ref, long long& value);
-	void WriteValue(SerializationNodeRef& ref, unsigned long long& value);
+	void WriteValue(SerializationNodeRef& ref, int32_t& value);
+	void WriteValue(SerializationNodeRef& ref, uint32_t& value);
+	void WriteValue(SerializationNodeRef& ref, int64_t& value);
+	void WriteValue(SerializationNodeRef& ref, uint64_t& value);
 	void WriteValue(SerializationNodeRef& ref, String& value);
 	void WriteValue(SerializationNodeRef& ref, Vector2& value);
 	void WriteValue(SerializationNodeRef& ref, Vector2Int& value);
@@ -210,7 +208,7 @@ namespace Blueberry
 	void WriteValue(SerializationNodeRef& ref, Guid& value);
 	void WriteValue(SerializationNodeRef& ref, ObjectPtrData& value);
 	void WriteValue(SerializationNodeRef& ref, DataWrapper<ByteData>& value);
-	void WriteValue(SerializationNodeRef& ref, DataWrapper<List<int>>& value);
+	void WriteValue(SerializationNodeRef& ref, DataWrapper<List<int32_t>>& value);
 	void WriteValue(SerializationNodeRef& ref, DataWrapper<List<float>>& value);
 
 	template<class Type>

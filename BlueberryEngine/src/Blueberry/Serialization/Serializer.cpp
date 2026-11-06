@@ -298,10 +298,16 @@ namespace Blueberry
 				fieldNode << *field.Get<bool>(ptr);
 				break;
 			case BindingType::Int:
-				fieldNode << *field.Get<int>(ptr);
+				fieldNode << *field.Get<int32_t>(ptr);
 				break;
 			case BindingType::Uint:
-				fieldNode << *field.Get<unsigned int>(ptr);
+				fieldNode << *field.Get<uint32_t>(ptr);
+				break;
+			case BindingType::Long:
+				fieldNode << *field.Get<int64_t>(ptr);
+				break;
+			case BindingType::Ulong:
+				fieldNode << *field.Get<uint64_t>(ptr);
 				break;
 			case BindingType::Float:
 				fieldNode << *field.Get<float>(ptr);
@@ -321,8 +327,8 @@ namespace Blueberry
 			break;
 			case BindingType::IntList:
 			{
-				List<int>* data = field.Get<List<int>>(ptr);
-				DataWrapper<List<int>> wrapper = { *data };
+				List<int32_t>* data = field.Get<List<int32_t>>(ptr);
+				DataWrapper<List<int32_t>> wrapper = { *data };
 				fieldNode << wrapper;
 			}
 			break;
@@ -347,7 +353,7 @@ namespace Blueberry
 			}
 			break;
 			case BindingType::Enum:
-				fieldNode << *field.Get<int>(ptr);
+				fieldNode << *field.Get<int32_t>(ptr);
 				break;
 			case BindingType::Vector2:
 				fieldNode << *field.Get<Vector2>(ptr);
@@ -580,6 +586,9 @@ namespace Blueberry
 				case 15:
 					dataNode << GetPtrData(std::get<Blueberry::ObjectPtr<Object>>(variant).Get());
 					break;
+				case 16:
+					dataNode << std::get<AABB>(variant);
+					break;
 				default:
 					BB_INFO("Can't serialize field " << field.name);
 					break;
@@ -607,10 +616,16 @@ namespace Blueberry
 					fieldNode >> *field->Get<bool>(ptr);
 					break;
 				case BindingType::Int:
-					fieldNode >> *field->Get<int>(ptr);
+					fieldNode >> *field->Get<int32_t>(ptr);
 					break;
 				case BindingType::Uint:
-					fieldNode >> *field->Get<unsigned int>(ptr);
+					fieldNode >> *field->Get<uint32_t>(ptr);
+					break;
+				case BindingType::Long:
+					fieldNode >> *field->Get<int64_t>(ptr);
+					break;
+				case BindingType::Ulong:
+					fieldNode >> *field->Get<uint64_t>(ptr);
 					break;
 				case BindingType::Float:
 					fieldNode >> *field->Get<float>(ptr);
@@ -628,10 +643,10 @@ namespace Blueberry
 				break;
 				case BindingType::IntList:
 				{
-					List<int> data;
-					DataWrapper<List<int>> wrapper = { data };
+					List<int32_t> data;
+					DataWrapper<List<int32_t>> wrapper = { data };
 					fieldNode >> wrapper;
-					*field->Get<List<int>>(ptr) = std::move(data);
+					*field->Get<List<int32_t>>(ptr) = std::move(data);
 				}
 				break;
 				case BindingType::FloatList:
@@ -655,7 +670,7 @@ namespace Blueberry
 				}
 				break;
 				case BindingType::Enum:
-					fieldNode >> *field->Get<int>(ptr);
+					fieldNode >> *field->Get<int32_t>(ptr);
 					break;
 				case BindingType::Vector2:
 					fieldNode >> *field->Get<Vector2>(ptr);
@@ -932,6 +947,13 @@ namespace Blueberry
 							dataNode >> data;
 							Object* obj = GetPtrObject(data);
 							*variant = ObjectPtr<Object>(obj);
+						}
+						break;
+						case 16:
+						{
+							AABB value;
+							dataNode >> value;
+							*variant = value;
 						}
 						break;
 						default:

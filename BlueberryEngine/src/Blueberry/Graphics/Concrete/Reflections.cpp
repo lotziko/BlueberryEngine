@@ -38,7 +38,7 @@ namespace Blueberry
 		Matrix projectionMatrix;
 		Matrix inverseViewProjectionMatrix;
 		Vector3 cameraPositionWS;
-		unsigned int frameIndex;
+		uint32_t frameIndex;
 		Vector2Uint viewportSize;
 		Vector2Uint bufferSize;
 	};
@@ -127,15 +127,15 @@ namespace Blueberry
 		float diffMinMaterial;
 		float specMinMaterial;
 		float responsiveAccumulationInvRoughnessThreshold;
-		unsigned int responsiveAccumulationMinAccumulatedFrameNum;
-		unsigned int hasHistoryConfidence;
-		unsigned int hasDisocclusionThresholdMix;
-		unsigned int diffCheckerboard;
-		unsigned int specCheckerboard;
-		unsigned int frameIndex;
-		unsigned int isRectChanged;
-		unsigned int resetHistory;
-		unsigned int returnHistoryLengthInsteadOfOcclusion;
+		uint32_t responsiveAccumulationMinAccumulatedFrameNum;
+		uint32_t hasHistoryConfidence;
+		uint32_t hasDisocclusionThresholdMix;
+		uint32_t diffCheckerboard;
+		uint32_t specCheckerboard;
+		uint32_t frameIndex;
+		uint32_t isRectChanged;
+		uint32_t resetHistory;
+		uint32_t returnHistoryLengthInsteadOfOcclusion;
 		Vector2 dummy;
 	};
 
@@ -294,7 +294,7 @@ namespace Blueberry
 			frustum = Vector4(-invX, invY, 2.0f * invX, -2.0f * invY);
 		}
 
-		unsigned int frameIndex = static_cast<unsigned int>(Time::GetFrameCount() % UINT_MAX);
+		uint32_t frameIndex = static_cast<uint32_t>(Time::GetFrameCount() % UINT32_MAX);
 		double sequence = double(frameIndex) * 0.7071067811865475;
 		double blurSequence = double(frameIndex) * 0.5773502691896258;
 		float blurAngle = float(blurSequence - std::floor(blurSequence)) * 1.57079632679f;
@@ -351,7 +351,7 @@ namespace Blueberry
 			if (light->GetType() == LightType::Directional)
 			{
 				lightData.hasMainLight = 1;
-				Color color = Math::ToLinear(light->GetColor());
+				Color color = light->GetColor().ToLinear();
 				float intensity = light->GetIntensity();
 				Vector3 finalColor = Vector3(color.x * intensity, color.y * intensity, color.z * intensity);
 				lightData.mainLightDirection = Vector3::Transform(Vector3::Backward, light->GetTransform()->GetRotation());
@@ -364,15 +364,17 @@ namespace Blueberry
 		for (ProbeVolume* probeVolume : scene->GetComponents<ProbeVolume>())
 		{
 			lightData.hasProbeVolume = 1;
-			AABB bounds = probeVolume->GetBounds();
-			Vector3 center = bounds.Center;
-			Vector3 extents = bounds.Extents;
-			Vector3 size = extents * 2;
-			Vector3Int intSize = probeVolume->GetSize();
-			lightData.probeVolumeMin = Vector4(center - extents);
-			lightData.probeVolumeSize = Vector4(static_cast<float>(intSize.x), static_cast<float>(intSize.y), static_cast<float>(intSize.z), 0.0f);
-			lightData.probeVolumeInvSize = Vector4(1.0f / (extents.x * 2), 1.0f / (extents.y * 2), 1.0f / (extents.z * 2), 0);
-			lightData.probeVolumeCellSize = Vector4(size.x / intSize.x, size.y / intSize.y, size.z / intSize.z, 0);
+			// TODO OBB
+			Vector3 center = probeVolume->GetTransform()->GetPosition();
+			Vector3 size = probeVolume->GetSize();
+			Vector3 extents = size / 2;
+			Vector3Int density = probeVolume->GetDensity();
+			Vector3Int volumeSize = density + Vector3Int(1, 1, 1);
+			Vector3 cellSize = Vector3(size.x / density.x, size.y / density.y, size.z / density.z);
+			lightData.probeVolumeMin = Vector4(center - extents - cellSize * 0.5f);
+			lightData.probeVolumeSize = Vector4(static_cast<float>(volumeSize.x), static_cast<float>(volumeSize.y), static_cast<float>(volumeSize.z), 0.0f);
+			lightData.probeVolumeInvSize = Vector4(1.0f / (size.x + cellSize.x), 1.0f / (size.y + cellSize.y), 1.0f / (size.z + cellSize.z), 0);
+			lightData.probeVolumeCellSize = Vector4(cellSize);
 			break;
 		}
 		s_ReflectionsLightBuffer->SetData(reinterpret_cast<char*>(&lightData), sizeof(ReflectionsLightData));

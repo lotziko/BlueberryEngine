@@ -10,13 +10,22 @@
 #include "Math.hlsl"
 #include "nrd/NRD.hlsl"
 
+#define PI 3.14159265358979323846
+
 RaytracingAccelerationStructure _RaytracingAccelerationStructure : register(t0);
-Texture2D _ScreenDepthStencilTexture : register(t1);
-Texture2D _ScreenORMTexture : register(t2);
-Texture2D _ScreenNormalWSTexture : register(t3);
-TextureCube _SkyboxTexture : register(t4);
+Texture2D _ScreenColorTexture : register(t1);
+Texture2D _ScreenDepthStencilTexture : register(t2);
+Texture2D _ScreenORMTexture : register(t3);
+Texture2D _ScreenNormalWSTexture : register(t4);
+TextureCube _SkyboxTexture : register(t5);
 SamplerState _SkyboxTexture_Sampler : register(s0);
-Texture3D _ProbeVolumeTexture : register(t5);
+Texture3D _ProbeVolumeTexture0 : register(t6);
+Texture3D _ProbeVolumeTexture1 : register(t7);
+Texture3D _ProbeVolumeTexture2 : register(t8);
+Texture3D _ProbeVolumeTexture3 : register(t9);
+Texture3D _ProbeVolumeTexture4 : register(t10);
+Texture3D _ProbeVolumeTexture5 : register(t11);
+SamplerState _ProbeVolumeTexture_Sampler : register(s1);
 
 RWTexture2D<float4> _RadianceHitDistTexture : register(u0);
 RWTexture2D<float3> _NormalRoughnessTexture : register(u1);
@@ -68,6 +77,8 @@ cbuffer RTPerMaterialData : register(b1, space1)
 {
 	uint _BaseMap;
 	uint _BaseMap_Sampler;
+	uint _ORMMap;
+	uint _ORMMap_Sampler;
 };
 
 float4 SampleTexture2D(uint textureIndex, uint samplerIndex, float2 uv)
@@ -85,7 +96,7 @@ float3 ClampLuminance(float3 color, float limit)
 
 float3 SampleSkybox(float3 direction)
 {
-	return ClampLuminance(_SkyboxTexture.SampleLevel(_SkyboxTexture_Sampler, direction, 0).rgb * pow(2, 2.2), 5);
+	return ClampLuminance(_SkyboxTexture.SampleLevel(_SkyboxTexture_Sampler, direction, 0).rgb/* * pow(2, 2.2)*/, 5);
 }
 
 uint3 GetIndices()
@@ -148,6 +159,53 @@ float DepthToViewZ(float depth, float4x4 projection)
     return (projection[2][3] - depth * projection[3][3]) / (depth * projection[3][2] - projection[2][2]);
 }
 
+float CalculateDistributionGGX(float NDotH, float roughness)
+{
+	float a = roughness * roughness;
+	float a2 = a * a;
+	float NDotH2 = NDotH * NDotH;
+
+	float num = a2;
+	float denom = (NDotH2 * (a2 - 1.0) + 1.0);
+	denom = PI * denom * denom;
+
+	return num / denom;
+}
+
+float CalculateGeometrySchlickGGX(float NDotV, float roughness)
+{
+	float r = (roughness + 1.0);
+	float k = (r * r) / 8.0;
+
+	float num = NDotV;
+	float denom = NDotV * (1.0 - k) + k;
+
+	return num / denom;
+}
+
+float3 CalculateFresnelSchlick(float LDotH, float3 reflectance)
+{
+	return reflectance + (1.0 - reflectance) * pow(1.0 - LDotH, 5);
+}
+
+float3 CalculateDirectSpecular(float3 normalWS, float3 viewDirectionWS, float3 lightDirectionWS, float3 lightColor, float attenuation, float falloff, float3 reflectance, float roughness)
+{
+	float3 floatAngleDirWS = normalize(lightDirectionWS.xyz + viewDirectionWS.xyz);
+	float LDotH = max(0, dot(lightDirectionWS.xyz, floatAngleDirWS.xyz));
+	float NDotH = max(0, dot(normalWS.xyz, floatAngleDirWS.xyz));
+	float NDotL = max(0, dot(normalWS.xyz, lightDirectionWS.xyz));
+	float NDotV = max(0, dot(normalWS.xyz, viewDirectionWS.xyz));
+
+	float NDF = CalculateDistributionGGX(NDotH, roughness);
+	float G = CalculateGeometrySchlickGGX(NDotV, roughness) * CalculateGeometrySchlickGGX(NDotL, roughness);
+	float3 F = CalculateFresnelSchlick(LDotH, reflectance);
+
+	float3 numerator = NDF * G * F;
+	float denominator = 4.0 * NDotV * NDotL + 0.0001;
+
+	return (numerator / denominator) * NDotL * lightColor * attenuation * falloff;
+}
+
 [shader("raygeneration")]
 void ReflectionsRayGeneration()
 {
@@ -160,6 +218,7 @@ void ReflectionsRayGeneration()
 	float3 normalWS = DecodeNormalOctahedral(_ScreenNormalWSTexture.Load(uint3(sourcePixel.xy, 0)).rg);
 	float3 orm = _ScreenORMTexture.Load(uint3(sourcePixel.xy, 0)).rgb;
 	float roughness = orm.g;
+	float metallic = orm.b;
 
 	_NormalRoughnessTexture[sourcePixel] = NRD_FrontEnd_PackNormalAndRoughness(normalWS, roughness, 0);
 	_ViewZTexture[sourcePixel] = depth < 1.0 ? viewZ : NRD_INF;
@@ -185,16 +244,49 @@ void ReflectionsRayGeneration()
 	positionWS /= positionWS.w;
 	float3 viewDirectionWS = normalize(positionWS.xyz - _CameraPositionWS);
 
+	float3 V = -viewDirectionWS;
+	float NdotV = saturate(dot(normalWS, V));
+
+	float3 baseColor = _ScreenColorTexture.Load(uint3(sourcePixel, 0)).rgb;
+	float3 albedo = (1 - metallic) * baseColor;
+	float3 reflectance = 0.04;
+	reflectance = lerp(reflectance, baseColor, metallic);
+
+	float3 sampleWeight;
+	bool validSample = NdotV > 0.0;
+
 	float3 rayDirectionWS;
-	if (roughness <= 0.0)
-	{
-		rayDirectionWS = reflect(viewDirectionWS, normalWS);
-	}
-	else
+	if (roughness > 0.001)
 	{
 		float2 Xi = frac(Halton23(_FrameIndex + 1u) + HashToFloat2(sourcePixel.xy));
 		float4 H = ImportanceSampleGGX(Xi, normalWS, roughness);
 		rayDirectionWS = reflect(viewDirectionWS, H.xyz);
+
+		float VdotH = dot(V, H.xyz);
+		float NdotL = dot(normalWS, rayDirectionWS);
+		float NdotH = dot(normalWS, H.xyz);
+
+		validSample = NdotV > 0.0 && VdotH > 1e-5 && NdotL > 0.0 && NdotH > 0.0 && H.w > 0.0;
+
+		if (validSample)
+		{
+			float pdfL = H.w / (4.0 * VdotH);
+			float D = CalculateDistributionGGX(NdotH, roughness);
+			float G = CalculateGeometrySchlickGGX(NdotV, roughness) * CalculateGeometrySchlickGGX(NdotL, roughness);
+			float3 F = CalculateFresnelSchlick(VdotH, reflectance);
+
+			float3 specularBRDF = D * G * F / max(4.0 * NdotV * NdotL, 1e-6);
+			sampleWeight = specularBRDF * NdotL / max(pdfL, 1e-6);
+		}
+		else
+		{
+			sampleWeight = 0;
+		}
+	}
+	else
+	{
+		rayDirectionWS = reflect(viewDirectionWS, normalWS);
+		sampleWeight = CalculateFresnelSchlick(NdotV, reflectance);
 	}
 
 	RayDesc ray;
@@ -223,85 +315,23 @@ void ReflectionsAnyHit(inout Payload payload : SV_RayPayload, in Attributes attr
 	}
 }
 
-float3 CalculateDirectDiffuse(float3 normalWS, float3 lightDirectionWS, float3 lightColor, float attenuation)
+float3 CalculateDirectDiffuse(float3 normalWS, float3 viewDirectionWS, float3 lightDirectionWS, float3 lightColor, float attenuation, float falloff, float roughness)//(float3 normalWS, float3 lightDirectionWS, float3 lightColor, float attenuation)
 {
 	float NdotL = saturate(dot(normalWS, lightDirectionWS));
-	return lightColor * attenuation * NdotL;
+	float NdotV = saturate(dot(normalWS, viewDirectionWS));
+	float LdotH = saturate(dot(lightDirectionWS, normalize(lightDirectionWS.xyz + viewDirectionWS.xyz)));
+
+	float FD90 = 0.5 + 2.0 * roughness * LdotH * LdotH;
+	float lightScatter = 1.0 + (FD90 - 1.0) * pow(1.0 - NdotL, 5);
+	float viewScatter = 1.0 + (FD90 - 1.0) * pow(1.0 - NdotV, 5);
+
+	return (lightColor * attenuation * falloff) * (lightScatter * viewScatter) * (1.0 / PI) * NdotL;
 }
 
 float3 SampleProbeVolume(float3 positionWS, float3 normalWS)
 {
-	int3 dimensions = (int3)_ProbeVolumeSize.xyz;
-    float3 invExtent = _ProbeVolumeInvSize.xyz;
-
-    // Zero dimensions/inverse extent means no valid volume was provided.
-    if (any(dimensions < 1) || any(invExtent <= 0.0))
-        return 0.0;
-
-    float3 uvw = (positionWS - _ProbeVolumeMin.xyz) * invExtent;
-
-    // Treat positions outside the volume as having no probe contribution.
-    if (any(uvw < 0.0) || any(uvw > 1.0))
-        return 0.0;
-
-    float3 gridPosition = saturate(uvw) * (float3)(dimensions - 1);
-    int3 lo = (int3)floor(gridPosition);
-    int3 hi = min(lo + 1, dimensions - 1);
-    float3 f = gridPosition - (float3)lo;
-
-    float3 result = 0.0;
-
-    [unroll]
-    for (int z = 0; z < 2; ++z)
-    {
-        [unroll]
-        for (int y = 0; y < 2; ++y)
-        {
-            [unroll]
-            for (int x = 0; x < 2; ++x)
-            {
-                int3 coord = int3(
-                    x != 0 ? hi.x : lo.x,
-                    y != 0 ? hi.y : lo.y,
-                    z != 0 ? hi.z : lo.z);
-
-                float wx = x != 0 ? f.x : 1.0 - f.x;
-                float wy = y != 0 ? f.y : 1.0 - f.y;
-                float wz = z != 0 ? f.z : 1.0 - f.z;
-
-                result += _ProbeVolumeTexture.Load(int4(coord, 0)).rgb
-                        * (wx * wy * wz);
-            }
-        }
-    }
-
-    return result;
-	//float3 uvw = (positionWS - _ProbeVolumeMin.xyz) * _ProbeVolumeInvSize.xyz;
-	//float3 baseCoord = uvw * (_ProbeVolumeSize.xyz - 1);
-	//int3 baseGridCoord = floor(baseCoord);
-	//float3 frac = baseCoord - baseGridCoord;
-
-	//float weightSum = 0;
-	//float3 colorSum = 0;
-
-	//for (int i = 0; i < 8; ++i)
-	//{
-	//	int3 offset = int3(i, i >> 1, i >> 2) & int3(1, 1, 1);
-	//	int3 probeGridCoord = baseGridCoord + offset;
-
-	//	float3 probePositionWS = _ProbeVolumeMin.xyz + (float3)offset * _ProbeVolumeCellSize.xyz;
-	//	float3 probeToPos = positionWS - probePositionWS;
-	//	float3 directionWS = normalize(-probeToPos);
-	//	float distance = length(probeToPos);
-
-	//	float3 trilinear = lerp(1.0 - frac, frac, offset);
-	//	float weight = trilinear.x * trilinear.y * trilinear.z * max(0.005, dot(directionWS, normalWS));
-
-	//	weightSum += weight;
-	//	colorSum += _ProbeVolumeTexture.Load(uint4(probeGridCoord, 0)).rgb * weight;
-	//}
-
-	//return colorSum / weightSum;
+	// TODO
+	return 0;
 }
 
 [shader("closesthit")]
@@ -310,13 +340,22 @@ void ReflectionsClosestHit(inout Payload payload : SV_RayPayload, in Attributes 
 	uint3 indices = GetIndices();
     float3 barycentrics = GetBarycentrics(attributes.barycentrics);
 	float2 uv = GetUv(indices, barycentrics);
-	float3 albedo = SampleTexture2D(_BaseMap, _BaseMap_Sampler, uv);
+	float3 orm = SampleTexture2D(_ORMMap, _ORMMap_Sampler, uv);
+	float roughness = orm.g;
+	float metallic = orm.b;
+	
+	float3 baseColor = SampleTexture2D(_BaseMap, _BaseMap_Sampler, uv);
+	float3 albedo = (1 - metallic) * baseColor;
+	float3 reflectance = 0.04;
+	reflectance = lerp(reflectance, baseColor, metallic);
 
 	float3 normalOS = GetNormal(indices, barycentrics);
 	float3 positionWS = WorldRayOrigin() + RayTCurrent() * WorldRayDirection();
 	float3 normalWS = normalize(mul(normalOS, (float3x3)WorldToObject3x4()));
+	float3 viewDirectionWS = normalize(WorldRayOrigin() - positionWS); 
 
 	float3 directDiffuseTerm = 0;
+	float3 directSpecularTerm = 0;
 	float3 indirectDiffuseTerm = 0;
 	// Main light
 	if (_HasMainLight)
@@ -338,16 +377,17 @@ void ReflectionsClosestHit(inout Payload payload : SV_RayPayload, in Attributes 
 			TraceRay(_RaytracingAccelerationStructure, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER, ~0, 0, 1, 0, visibilityRay, visibilityPayload);
 			shadowAttenuation = visibilityPayload.distance == NRD_INF ? 1.0 : 0.0;
 		}
-		directDiffuseTerm += CalculateDirectDiffuse(normalWS, lightDirectionWS, _MainLightColor, shadowAttenuation);
+		directDiffuseTerm += CalculateDirectDiffuse(normalWS, viewDirectionWS, lightDirectionWS, _MainLightColor, shadowAttenuation, 1.0f, roughness);
+		directSpecularTerm += CalculateDirectSpecular(normalWS, viewDirectionWS, lightDirectionWS, _MainLightColor, shadowAttenuation, 1.0f, reflectance, roughness);
 	}
-
+	
 	// Probe volume
 	if (_HasProbeVolume)
 	{
 		indirectDiffuseTerm += SampleProbeVolume(positionWS, normalWS);
 	}
 	
-	payload.color.rgb = (directDiffuseTerm + indirectDiffuseTerm) * albedo;
+	payload.color.rgb = (directDiffuseTerm + indirectDiffuseTerm) * albedo + directSpecularTerm;
 	payload.distance = RayTCurrent();
 }
 

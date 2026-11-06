@@ -134,27 +134,6 @@ namespace Blueberry
 		}
 	}
 
-	TextureCubeArray* CreateReflectionAtlas(LightingData* lightingData)
-	{
-		List<TextureCube*> probeTextures = lightingData->GetReflectionProbes();
-		uint32_t probeCount = static_cast<uint32_t>(probeTextures.size());
-		TextureCube* texture = probeTextures[0];
-		size_t textureSize = texture->GetDataSize();
-		List<uint8_t> textureData(textureSize * probeCount);
-		for (uint32_t i = 0; i < probeCount; ++i)
-		{
-			TextureCube* texture = probeTextures[i];
-			if (texture != nullptr)
-			{
-				memcpy(textureData.data() + textureSize * i, texture->GetData(), textureSize);
-			}
-		}
-		uint32_t size = texture->GetWidth();
-		TextureCubeArray* reflectionProbes = TextureCubeArray::Create(size, size, probeCount, texture->GetMipCount(), texture->GetFormat(), texture->GetWrapMode(), texture->GetFilterMode());
-		reflectionProbes->SetData(textureData.data(), textureData.size());
-		return reflectionProbes;
-	}
-
 	void GatherAssets(const ClassInfo* classInfo, void* ptr, HashSet<Object*>& visited, List<Object*>& stack)
 	{
 		for (auto& field : classInfo->fields)
@@ -243,17 +222,11 @@ namespace Blueberry
 
 		// Scene
 		List<Object*> assetStack;
-		LightingSettings* lightingSettings = nullptr;
-		TextureCubeArray* reflectionProbes = nullptr;
 		LightingData* lightingData = EditorSceneManager::GetSettings()->GetLightingData();
 		if (lightingData != nullptr)
 		{
-			lightingSettings = Object::Create<LightingSettings>();
-			lightingSettings->SetLightmap(lightingData->GetLightmap());
-			lightingSettings->SetProbeVolume(lightingData->GetProbeVolume());
-			lightingSettings->SetReflectionProbes(reflectionProbes = CreateReflectionAtlas(lightingData));
-			ObjectDB::AllocateIdToGuid(reflectionProbes, Guid(TO_HASH("ReflectionProbes"), 0), 1);
-			lightingSettings->SetChartOffsetScale(lightingData->GetChartOffsetScale());
+			lightingData->Apply();
+			LightingSettings* lightingSettings = lightingData->GetLightingSettings();
 			assetSerializer.AddObject(lightingSettings);
 			assetStack.push_back(lightingSettings);
 		}
@@ -307,15 +280,6 @@ namespace Blueberry
 			}
 			// TODO write physics shapes
 			resourcesStream.close();
-		}
-
-		if (reflectionProbes != nullptr)
-		{
-			Object::Destroy(reflectionProbes);
-		}
-		if (lightingSettings != nullptr)
-		{
-			Object::Destroy(lightingSettings);
 		}
 	}
 }

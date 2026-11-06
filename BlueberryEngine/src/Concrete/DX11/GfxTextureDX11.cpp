@@ -5,7 +5,7 @@
 
 namespace Blueberry
 {
-	GfxPointerCache<GfxTextureDX11> GfxTextureDX11::s_PointerCache = {};
+	PointerCache<GfxTextureDX11> GfxTextureDX11::s_PointerCache = {};
 
 	GfxTextureDX11::GfxTextureDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext) : m_Device(device), m_DeviceContext(deviceContext)
 	{
@@ -53,7 +53,7 @@ namespace Blueberry
 						D3D11_SUBRESOURCE_DATA subresourceData = {};
 						subresourceData.pSysMem = ptr;
 						subresourceData.SysMemPitch = std::max(1u, (width + 3) / 4) * blockSize;
-						subresourceData.SysMemSlicePitch = 0;
+						subresourceData.SysMemSlicePitch = properties.depth > 0 ? (std::max(1u, (height + 3) / 4) * subresourceData.SysMemPitch) : 0;
 						subresourceDatas[D3D11CalcSubresource(j, i, mipLevels)] = subresourceData;
 						ptr += subresourceData.SysMemPitch * std::max(1u, (height + 3) / 4);
 						width /= 2;
@@ -72,7 +72,7 @@ namespace Blueberry
 						D3D11_SUBRESOURCE_DATA subresourceData = {};
 						subresourceData.pSysMem = ptr;
 						subresourceData.SysMemPitch = width * bitsPerPixel / 8;
-						subresourceData.SysMemSlicePitch = properties.depth > 0 ? (subresourceData.SysMemPitch * height) : 0;
+						subresourceData.SysMemSlicePitch = properties.depth > 0 ? (height * subresourceData.SysMemPitch) : 0;
 						subresourceDatas[D3D11CalcSubresource(j, i, mipLevels)] = subresourceData;
 						ptr += width * height * bitsPerPixel / 8;
 						width /= 2;
@@ -418,17 +418,42 @@ namespace Blueberry
 
 	void GfxTextureDX11::SetData(void* data, size_t size)
 	{
-		if (m_StagingTexture.Get() == nullptr)
+		uint32_t bitsPerPixel = DxgiHelper::GetBitsPerPixel(m_DxgiFormat);
+		if (DxgiHelper::IsCompressed(m_DxgiFormat))
 		{
-			BB_ERROR("The texture cannot be writed.");
-			return;
+			uint32_t blockSize = bitsPerPixel * 16 / 8;
+			for (uint32_t i = 0; i < m_ArraySize; ++i)
+			{
+				uint32_t width = m_Width;
+				uint32_t height = m_Height;
+				for (uint32_t j = 0; j < m_MipLevels; ++j)
+				{
+					UINT subresource = D3D11CalcSubresource(j, i, m_MipLevels);
+					UINT rowPitch = std::max(1u, (width + 3) / 4) * blockSize;
+					UINT slicePitch = m_Depth > 0 ? (std::max(1u, (height + 3) / 4) * rowPitch) : 0;
+					m_DeviceContext->UpdateSubresource(m_Resource.Get(), subresource, nullptr, data, rowPitch, slicePitch);
+					width /= 2;
+					height /= 2;
+				}
+			}
 		}
-		D3D11_MAPPED_SUBRESOURCE mappedTexture = {};
-		m_DeviceContext->Map(m_StagingTexture.Get(), 0, D3D11_MAP_WRITE, 0, &mappedTexture);
-		memcpy(mappedTexture.pData, data, size);
-		m_DeviceContext->Unmap(m_StagingTexture.Get(), 0);
-
-		m_DeviceContext->CopyResource(m_Resource.Get(), m_StagingTexture.Get());
+		else
+		{
+			for (uint32_t i = 0; i < m_ArraySize; ++i)
+			{
+				uint32_t width = m_Width;
+				uint32_t height = m_Height;
+				for (uint32_t j = 0; j < m_MipLevels; ++j)
+				{
+					UINT subresource = D3D11CalcSubresource(j, i, m_MipLevels);
+					UINT rowPitch = width * bitsPerPixel / 8;
+					UINT slicePitch = m_Depth > 0 ? (height * rowPitch) : 0;
+					m_DeviceContext->UpdateSubresource(m_Resource.Get(), subresource, nullptr, data, rowPitch, slicePitch);
+					width /= 2;
+					height /= 2;
+				}
+			}
+		}
 	}
 
 	size_t GfxTextureDX11::GetAllocationSize()
@@ -541,11 +566,8 @@ namespace Blueberry
 		bool useDSV = DxgiHelper::IsDepth(m_DxgiFormat);
 		bool useRTV = !useDSV && HasFlag(properties.usageFlags, TextureUsageFlags::RenderTarget);
 		bool useUAV = HasFlag(properties.usageFlags, TextureUsageFlags::UnorderedAccess);
-		bool isReadable = HasFlag(properties.usageFlags, TextureUsageFlags::CPUReadable);
+		bool useStaging = HasFlag(properties.usageFlags, TextureUsageFlags::CPUReadable);
 		bool isWritable = HasFlag(properties.usageFlags, TextureUsageFlags::CPUWritable);
-		bool useStaging = isReadable || isWritable;
-		bool isResource = !useDSV && !useRTV && !useUAV && !useStaging;
-		bool useSampler = isResource || m_AntiAliasing <= 1;
 
 		// Texture
 		switch (m_Dimension)
@@ -558,7 +580,7 @@ namespace Blueberry
 			D3D11_TEXTURE2D_DESC textureDesc = {};
 			textureDesc.Width = properties.width;
 			textureDesc.Height = properties.height;
-			textureDesc.Usage = isResource ? D3D11_USAGE_IMMUTABLE : D3D11_USAGE_DEFAULT;
+			textureDesc.Usage = isWritable ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
 			textureDesc.CPUAccessFlags = 0;
 			textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 			textureDesc.MipLevels = m_MipLevels;
@@ -599,7 +621,7 @@ namespace Blueberry
 			textureDesc.Width = properties.width;
 			textureDesc.Height = properties.height;
 			textureDesc.Depth = properties.depth;
-			textureDesc.Usage = isResource ? D3D11_USAGE_IMMUTABLE : D3D11_USAGE_DEFAULT;
+			textureDesc.Usage = isWritable ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
 			textureDesc.CPUAccessFlags = 0;
 			textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 			textureDesc.MipLevels = 1;
@@ -819,7 +841,7 @@ namespace Blueberry
 
 			textureDesc.Usage = D3D11_USAGE_STAGING;
 			textureDesc.BindFlags = 0;
-			textureDesc.CPUAccessFlags = (isReadable ? D3D11_CPU_ACCESS_READ : 0) | (isWritable ? D3D11_CPU_ACCESS_WRITE : 0);
+			textureDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 
 			if (m_Dimension == TextureDimension::TextureCube)
 			{

@@ -301,6 +301,12 @@ namespace Blueberry
 			else if (object->IsClassType(SceneSettings::Type))
 			{
 				s_SceneSettings = static_cast<SceneSettings*>(object);
+				LightingData* lightingData = s_SceneSettings->GetLightingData();
+				if (lightingData != nullptr)
+				{
+					lightingData->Apply();
+				}
+				s_EditorScene->SetLightingSettings(lightingData->GetLightingSettings());
 			}
 		}
 		Entity::Poll();
@@ -327,29 +333,6 @@ namespace Blueberry
 					prefabInstance->UpdateIfNeeded();
 				}
 			}
-		}
-
-		bool hasLighting = false;
-		if (s_SceneSettings.IsValid())
-		{
-			LightingData* lightingData = s_SceneSettings->GetLightingData();
-			if (lightingData != nullptr)
-			{
-				if (s_PrefabScenes.size() == 0 && s_EditorScene != nullptr)
-				{
-					hasLighting = true;
-					lightingData->Apply();
-				}
-			}
-			if (s_EditorScene == nullptr)
-			{
-				Object::Destroy(s_SceneSettings.Get());
-				s_SceneSettings = nullptr;
-			}
-		}
-		if (!hasLighting)
-		{
-			LightingData::Clear();
 		}
 	}
 }

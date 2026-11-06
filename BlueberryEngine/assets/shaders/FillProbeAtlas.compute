@@ -1,0 +1,89 @@
+#pragma compute FillProbeAtlasCompute
+
+#include "Core.hlsl"
+
+cbuffer FillProbeAtlasData
+{
+	uint _BrickGroupsX;
+	uint _FirstBrickOffset;
+	uint _BrickCount;
+	uint _ColorSize;
+};
+
+struct BrickData
+{
+	uint colorOffsets[64];
+	uint children[27];
+};
+
+StructuredBuffer<BrickData> _BricksData;
+StructuredBuffer<uint> _ColorsData;
+
+RWTexture3D<float3> _ProbeVolumeOutputTexture0;
+RWTexture3D<float3> _ProbeVolumeOutputTexture1;
+RWTexture3D<float3> _ProbeVolumeOutputTexture2;
+RWTexture3D<float3> _ProbeVolumeOutputTexture3;
+RWTexture3D<float3> _ProbeVolumeOutputTexture4;
+RWTexture3D<float3> _ProbeVolumeOutputTexture5;
+
+float3 UnpackR11G11B10(uint packedColor)
+{
+	float r = f16tof32((packedColor << 4) & 0x7FF0);
+	float g = f16tof32((packedColor >> 7) & 0x7FF0);
+	float b = f16tof32((packedColor >> 17) & 0x7FE0);
+	return float3(r, g, b);
+}
+
+[numthreads(64, 1, 1)]
+void FillProbeAtlasCompute(uint3 groupId : SV_GroupID, uint groupIndex : SV_GroupIndex)
+{
+	uint brickIndex = groupId.x + groupId.y * _BrickGroupsX;
+	if (brickIndex >= _BrickCount)
+	{
+		return;
+	}
+	uint atlasBrickIndex = _FirstBrickOffset + brickIndex;
+	uint3 atlasBrickCoord = uint3(atlasBrickIndex % 128, (atlasBrickIndex / 128) % 128, atlasBrickIndex / (128 * 128));
+	uint3 localProbeIndex = uint3(groupIndex % 4, (groupIndex / 4) % 4, groupIndex / 16);
+	uint3 outputIndex = atlasBrickCoord * 4 + localProbeIndex;
+	uint colorOffset = _BricksData[brickIndex].colorOffsets[groupIndex];
+
+	_ProbeVolumeOutputTexture0[outputIndex] = UnpackR11G11B10(_ColorsData[colorOffset]);
+	_ProbeVolumeOutputTexture1[outputIndex] = UnpackR11G11B10(_ColorsData[colorOffset + _ColorSize]);
+	_ProbeVolumeOutputTexture2[outputIndex] = UnpackR11G11B10(_ColorsData[colorOffset + _ColorSize * 2]);
+	_ProbeVolumeOutputTexture3[outputIndex] = UnpackR11G11B10(_ColorsData[colorOffset + _ColorSize * 3]);
+	_ProbeVolumeOutputTexture4[outputIndex] = UnpackR11G11B10(_ColorsData[colorOffset + _ColorSize * 4]);
+	_ProbeVolumeOutputTexture5[outputIndex] = UnpackR11G11B10(_ColorsData[colorOffset + _ColorSize * 5]);
+}
+
+/*static const uint3 ATLAS_BRICKS = uint3(128, 128, 10);
+static const uint  ATLAS_BRICK_CAPACITY = 128 * 128 * 10;
+
+uint brickIndex = id.x;
+if (brickDataIndex >= _BrickCount)
+{
+	return;
+}
+
+uint atlasBrickIndex = _FirstBrickOffset + brickIndex;
+if (atlasBrickIndex >= ATLAS_BRICK_CAPACITY)
+{
+	return;
+}
+uint3 atlasBrickCoord = uint3(atlasBrickIndex % 128, (atlasBrickIndex / 128) % 128, atlasBrickIndex / (128 * 128));
+BrickData brick = _BricksData[brickIndex];
+
+[loop]
+for (uint i = 0; i < 64; ++i)
+{
+	uint colorOffset = brick.colorOffsets[i];
+	uint3 localProbeIndex = uint3(i % 4, (i / 4) % 4, i / 16);
+	uint3 outputIndex = atlasBrickCoord * 4 + localProbeIndex;
+
+	_ProbeVolumeTexture0[outputIndex] = UnpackR11G11B10(_colorsData[colorOffset]);
+	_ProbeVolumeTexture1[outputIndex] = UnpackR11G11B10(_colorsData[colorOffset + _ColorSize]);
+	_ProbeVolumeTexture2[outputIndex] = UnpackR11G11B10(_colorsData[colorOffset + _ColorSize * 2]);
+	_ProbeVolumeTexture3[outputIndex] = UnpackR11G11B10(_colorsData[colorOffset + _ColorSize * 3]);
+	_ProbeVolumeTexture4[outputIndex] = UnpackR11G11B10(_colorsData[colorOffset + _ColorSize * 4]);
+	_ProbeVolumeTexture5[outputIndex] = UnpackR11G11B10(_colorsData[colorOffset + _ColorSize * 5]);
+}*/

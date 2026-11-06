@@ -5,7 +5,7 @@
 
 namespace Blueberry
 {
-	GfxPointerCache<GfxBufferDX12> GfxBufferDX12::s_PointerCache = {};
+	PointerCache<GfxBufferDX12> GfxBufferDX12::s_PointerCache = {};
 
 	GfxBufferDX12::GfxBufferDX12(GfxDeviceDX12* device) : m_GfxDevice(device), m_Device(device->GetDevice())
 	{
@@ -139,7 +139,6 @@ namespace Blueberry
 		bool useSRV = HasFlag(properties.usageFlags, BufferUsageFlags::ShaderResource);
 		bool useUAV = HasFlag(properties.usageFlags, BufferUsageFlags::UnorderedAccess);
 		bool isConstant = m_IsConstant = HasFlag(properties.usageFlags, BufferUsageFlags::ConstantBuffer);
-		bool isWritable = isConstant || HasFlag(properties.usageFlags, BufferUsageFlags::CPUWritable);
 		bool isStructured = HasFlag(properties.usageFlags, BufferUsageFlags::StructuredBuffer);
 		bool isRaw = HasFlag(properties.usageFlags, BufferUsageFlags::ByteAdressBuffer);
 		bool isVertex = HasFlag(properties.usageFlags, BufferUsageFlags::VertexBuffer);

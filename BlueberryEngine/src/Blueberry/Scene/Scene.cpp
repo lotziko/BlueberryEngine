@@ -11,8 +11,16 @@
 
 namespace Blueberry
 {
+	PointerCache<Scene> Scene::s_PointerCache = {};
+
+	Scene::Scene()
+	{
+		m_Index = s_PointerCache.Allocate(this);
+	}
+
 	Scene::~Scene()
 	{
+		s_PointerCache.Deallocate(m_Index);
 		m_Entities.clear();
 		m_RootEntities.clear();
 	}
@@ -31,6 +39,7 @@ namespace Blueberry
 			Entity* rootEntity = static_cast<Entity*>(ObjectCloner::Clone(mapping, root.Get()));
 			result->AddEntity(rootEntity);
 		}
+		result->m_LightingSettings = m_LightingSettings;
 		return result;
 	}
 
@@ -172,6 +181,26 @@ namespace Blueberry
 			return true;
 		}
 		return false;
+	}
+
+	LightingSettings* Scene::GetLightingSettings() const
+	{
+		return m_LightingSettings;
+	}
+
+	void Scene::SetLightingSettings(LightingSettings* lightingSettings)
+	{
+		m_LightingSettings = lightingSettings;
+	}
+
+	uint32_t Scene::GetIndex() const
+	{
+		return m_Index;
+	}
+
+	Scene* Scene::Get(uint32_t index)
+	{
+		return s_PointerCache.Get(index);
 	}
 
 	void Scene::AddToRoot(Entity* entity)

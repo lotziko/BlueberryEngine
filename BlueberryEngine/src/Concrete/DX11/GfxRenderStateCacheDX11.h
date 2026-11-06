@@ -118,6 +118,6 @@ namespace Blueberry
 	private:
 		GfxDeviceDX11* m_Device;
 		Dictionary<GfxRenderStateKeyDX11, std::pair<GfxRenderStateDX11, GfxBindingStateDX11>> m_RenderStates;
-		Dictionary<size_t, ID3D11InputLayout*> m_InputLayouts;
+		Dictionary<uint64_t, ID3D11InputLayout*> m_InputLayouts;
 	};
 }

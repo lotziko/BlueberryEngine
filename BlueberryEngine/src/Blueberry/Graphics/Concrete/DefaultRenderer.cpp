@@ -14,6 +14,7 @@
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\DefaultMaterials.h"
 #include "Blueberry\Graphics\DefaultTextures.h"
+#include "Blueberry\Graphics\Concrete\GraphicsSettings.h"
 #include "..\RenderContext.h"
 #include "PerCameraData.h"
 #include "ShadowAtlas.h"
@@ -23,6 +24,7 @@
 #include "VolumetricFog.h"
 #include "AmbientOcclusion.h"
 #include "Reflections.h"
+#include "BakedLighting.h"
 #include "Blueberry\Scene\Components\Camera.h"
 
 #include "..\OpenXRRenderer.h"
@@ -45,7 +47,9 @@ namespace Blueberry
 	static size_t s_VolumetricFogTextureId = TO_HASH("_VolumetricFogTexture");
 	static size_t s_MultiviewKeywordId = TO_HASH("MULTIVIEW");
 	static size_t s_ShadowsKeywordId = TO_HASH("SHADOWS");
-	static size_t s_ReflectionsKeywordId = TO_HASH("REFLECTIONS");
+	static size_t s_ProbeVolumesKeywordId = TO_HASH("PROBE_VOLUMES");
+	static size_t s_ScreenReflectionsKeywordId = TO_HASH("SCREEN_REFLECTIONS");
+	static size_t s_ReflectionProbesKeywordId = TO_HASH("REFLECTION_PROBES");
 	static size_t s_DepthPassId = TO_HASH("Depth");
 	static size_t s_ForwardPassId = TO_HASH("Forward");
 	static size_t s_DeferredPassId = TO_HASH("Deferred");
@@ -59,6 +63,7 @@ namespace Blueberry
 		RealtimeLights::Initialize();
 		ShadowAtlas::Initialize();
 		Reflections::Initialize();
+		BakedLighting::Initialize();
 	}
 
 	void DefaultRenderer::Shutdown()
@@ -70,6 +75,7 @@ namespace Blueberry
 		RealtimeLights::Shutdown();
 		ShadowAtlas::Shutdown();
 		Reflections::Shutdown();
+		BakedLighting::Shutdown();
 		s_PerCameraData.clear();
 	}
 	
@@ -79,7 +85,7 @@ namespace Blueberry
 		cameraData.camera = camera;
 
 		CameraType cameraType = camera->GetCameraType();
-		PerCameraData& perCameraData = s_PerCameraData[camera->GetObjectId()];
+		PerCameraData& perCameraData = s_PerCameraData[camera->GetObjectId()];	// TODO clear every n sec if camera is invalid
 
 		GfxTexture* gBuffer[4] = {};
 		GfxTexture* depthStencilRenderTarget = nullptr;
@@ -118,7 +124,12 @@ namespace Blueberry
 		s_DefaultContext.Cull(scene, cameraData, s_Results);
 		BB_PROFILE_END();
 
-		Shader::SetKeyword(s_ReflectionsKeywordId, cameraType != CameraType::Reflection && cameraType != CameraType::Preview);
+		BakedLighting::Apply(scene);
+
+		Shader::SetKeyword(s_ProbeVolumesKeywordId, true);
+		bool hasScreenReflections = GraphicsSettings::GetScreenReflections();
+		Shader::SetKeyword(s_ScreenReflectionsKeywordId, hasScreenReflections);
+		Shader::SetKeyword(s_ReflectionProbesKeywordId, !hasScreenReflections && cameraType != CameraType::Reflection && cameraType != CameraType::Preview);
 
 		if (cameraType == CameraType::Preview)
 		{
@@ -168,8 +179,11 @@ namespace Blueberry
 
 		if (cameraType != CameraType::Preview)
 		{
-			Reflections::Draw(scene, camera, viewport, size, perCameraData);
-			GfxDevice::SetGlobalTexture(s_ReflectionTextureId, Reflections::GetReflectionTexture(perCameraData));
+			if (hasScreenReflections)
+			{
+				Reflections::Draw(scene, camera, viewport, size, perCameraData);
+				GfxDevice::SetGlobalTexture(s_ReflectionTextureId, Reflections::GetReflectionTexture(perCameraData));
+			}
 			VolumetricFog::CalculateFrustum(s_Results, cameraData, perCameraData);
 			GfxDevice::SetGlobalTexture(s_VolumetricFogTextureId, VolumetricFog::GetFrustumTexture(perCameraData));
 		}

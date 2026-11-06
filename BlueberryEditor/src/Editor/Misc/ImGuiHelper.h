@@ -87,6 +87,7 @@ namespace ImGui
 	bool FloatEdit(const char* label, float* v, float min = 0, float max = 0);
 	bool ColorEdit(const char* label, Blueberry::Color* v);
 	bool StringEdit(const char* label, Blueberry::String* v);
+	bool AABBEdit(const char* label, Blueberry::AABB* v);
 	bool ObjectEdit(const char* label, Blueberry::Object** v, const Blueberry::TypeId& type);
 	bool ObjectEdit(const char* label, Blueberry::ObjectPtr<Blueberry::Object>* v, const Blueberry::TypeId& type);
 	bool ObjectArrayEdit(const char* label, Blueberry::List<Blueberry::ObjectPtr<Blueberry::Object>>* v, const Blueberry::TypeId& type);

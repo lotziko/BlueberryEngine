@@ -4,7 +4,7 @@
 
 namespace Blueberry
 {
-	GfxPointerCache<GfxBufferDX11> GfxBufferDX11::s_PointerCache = {};
+	PointerCache<GfxBufferDX11> GfxBufferDX11::s_PointerCache = {};
 
 	GfxBufferDX11::GfxBufferDX11(ID3D11Device* device, ID3D11DeviceContext* deviceContext) : m_Device(device), m_DeviceContext(deviceContext)
 	{

@@ -430,7 +430,7 @@ namespace Blueberry
 			uint32_t offset = mesh->m_IndexData[iFace * 3 + iVert] * stride;
 			
 			outuv[0] = mesh->m_UVs[0][offset];
-			outuv[1] = mesh->m_UVs[0][offset + 1];
+			outuv[1] = 1 - mesh->m_UVs[0][offset + 1]; // Flip to match DirectX convention
 		}
 
 		static void SetTspaceBasic(const SMikkTSpaceContext *context, const float tangentu[], float fSign, int iFace, int iVert)

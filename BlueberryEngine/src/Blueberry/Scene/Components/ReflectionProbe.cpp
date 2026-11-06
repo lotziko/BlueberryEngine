@@ -12,7 +12,7 @@ namespace Blueberry
 		DEFINE_FIELD(ReflectionProbe, m_Radius, BindingType::Float, FieldOptions())
 		DEFINE_FIELD(ReflectionProbe, m_Size, BindingType::Vector3, FieldOptions())
 		DEFINE_FIELD(ReflectionProbe, m_Fade, BindingType::Float, FieldOptions())
-		DEFINE_FIELD(ReflectionProbe, m_AtlasIndex, BindingType::Uint, FieldOptions().SetSerializationFlags(SerializationFlags::RuntimeOnly))
+		DEFINE_FIELD(ReflectionProbe, m_Index, BindingType::Uint, FieldOptions().SetSerializationFlags(SerializationFlags::RuntimeOnly))
 		DEFINE_ITERATOR(ReflectionProbe)
 		DEFINE_EXECUTE_ALWAYS()
 		DEFINE_ADD_COMPONENT_MENU("Rendering/Reflection Probe")
@@ -28,14 +28,14 @@ namespace Blueberry
 		m_Type = type;
 	}
 
-	uint32_t ReflectionProbe::GetAtlasIndex() const
+	uint32_t ReflectionProbe::GetIndex() const
 	{
-		return m_AtlasIndex;
+		return m_Index;
 	}
 
-	void ReflectionProbe::SetAtlasIndex(uint32_t atlasIndex)
+	void ReflectionProbe::SetIndex(uint32_t index)
 	{
-		m_AtlasIndex = atlasIndex;
+		m_Index = index;
 	}
 
 	float ReflectionProbe::GetRadius() const
@@ -46,5 +46,10 @@ namespace Blueberry
 	const Vector3& ReflectionProbe::GetSize() const
 	{
 		return m_Size;
+	}
+
+	float ReflectionProbe::GetFade() const
+	{
+		return m_Fade;
 	}
 }

@@ -46,6 +46,10 @@ if (s_MixedValue)\
 ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);\
 ImGui::SetNextItemWidth(valueWidth);\
 
+#define PROPERTY_CONTINUE_VALUE()\
+ImGui::SetCursorPosX(ImGui::GetCursorPosX() + s_LabelIndent + labelWidth);\
+ImGui::SetNextItemWidth(valueWidth);\
+
 #define PROPERTY_END_VALUE()\
 if (s_MixedValue)\
 {\
@@ -210,6 +214,16 @@ bool ImGui::Property(Blueberry::SerializedProperty* property, const char* label)
 		if (ImGui::ColorEdit(label, &value))
 		{
 			property->SetColor(value);
+			result = true;
+		}
+	}
+	break;
+	case Blueberry::BindingType::AABB:
+	{
+		Blueberry::AABB value = property->GetAABB();
+		if (ImGui::AABBEdit(label, &value))
+		{
+			property->SetAABB(value);
 			result = true;
 		}
 	}
@@ -686,6 +700,41 @@ bool ImGui::StringEdit(const char* label, Blueberry::String* v)
 	bool result = false;
 	if (ImGui::InputText("##string", v))
 	{
+		result = true;
+	}
+
+	PROPERTY_END_VALUE()
+	if (result)
+	{
+		TriggerChange();
+	}
+	return result;
+}
+
+bool ImGui::AABBEdit(const char* label, Blueberry::AABB* v)
+{
+	PROPERTY_LABEL()
+	PROPERTY_BEGIN_VALUE()
+
+	bool result = false;
+	float center[3] = { v->Center.x, v->Center.y, v->Center.z };
+	float extents[3] = { v->Extents.x, v->Extents.y, v->Extents.z };
+
+	if (ImGui::DragVectorN("##center3", ImGuiDataType_Float, 3, center))
+	{
+		v->Center.x = center[0];
+		v->Center.y = center[1];
+		v->Center.z = center[2];
+		result = true;
+	}
+
+	PROPERTY_CONTINUE_VALUE()
+
+	if (ImGui::DragVectorN("##extents3", ImGuiDataType_Float, 3, extents))
+	{
+		v->Extents.x = extents[0];
+		v->Extents.y = extents[1];
+		v->Extents.z = extents[2];
 		result = true;
 	}
 

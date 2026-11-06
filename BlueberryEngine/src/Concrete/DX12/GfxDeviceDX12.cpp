@@ -1526,7 +1526,7 @@ namespace Blueberry
 
 	uint32_t GfxDeviceDX12::GetSampler(WrapMode wrapMode, FilterMode filterMode)
 	{
-		size_t key = static_cast<size_t>(wrapMode) << 8 | static_cast<size_t>(filterMode) << 16;
+		uint64_t key = static_cast<uint64_t>(wrapMode) << 8 | static_cast<uint64_t>(filterMode) << 16;
 		for (size_t i = 0; i < m_Samplers.size(); ++i)
 		{
 			if (m_Samplers[i].first == key)

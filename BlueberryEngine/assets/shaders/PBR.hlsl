@@ -7,25 +7,6 @@
 
 #include "nrd/NRD.hlsl"
 
-float CalculateGeometricRoughnessFactor(float3 geometricNormalWs)
-{
-	float3 normalWsDdx = ddx(geometricNormalWs.xyz);
-	float3 normalWsDdy = ddy(geometricNormalWs.xyz);
-	return pow(saturate(max(dot(normalWsDdx.xyz, normalWsDdx.xyz), dot(normalWsDdy.xyz, normalWsDdy.xyz))), 0.333);
-}
-
-float AdjustRoughnessByGeometricNormal(float roughness, float3 geometricNormalWs)
-{
-	float geometricRoughnessFactor = CalculateGeometricRoughnessFactor(geometricNormalWs.xyz);
-	roughness = max(roughness, geometricRoughnessFactor.x);
-	return roughness;
-}
-
-float2 CalculateFresnelResponse(float NdotV, float roughness)
-{
-	return pow(SAMPLE_TEXTURE2D(_BRDFIntegrationLUT, _BRDFIntegrationLUT_Sampler, float2(NdotV, roughness)).rg, 2);
-}
-
 float3 CalculateDirectDiffuse(float3 normalWS, float3 viewDirectionWS, float3 lightDirectionWS, float3 lightColor, float attenuation, float falloff, float roughness)
 {
 	float NdotL = saturate(dot(normalWS, lightDirectionWS));
@@ -37,10 +18,6 @@ float3 CalculateDirectDiffuse(float3 normalWS, float3 viewDirectionWS, float3 li
 	float viewScatter = 1.0 + (FD90 - 1.0) * pow(1.0 - NdotV, 5);
 
 	return (lightColor * attenuation * falloff) * (lightScatter * viewScatter) * (1.0 / PI) * NdotL;
-
-	//float diffuseExponentScalar = (diffuseExponent.x + diffuseExponent.y) * 0.5;
-	//float NdotL = max(0, dot(normalWS, lightDirectionWS));
-	//return lightColor * pow(NdotL, diffuseExponent.x) * diffuseExponentScalar * attenuation * falloff;
 }
 
 float CalculateDistributionGGX(float NDotH, float roughness)
@@ -51,7 +28,7 @@ float CalculateDistributionGGX(float NDotH, float roughness)
 
 	float num = a2;
 	float denom = (NDotH2 * (a2 - 1.0) + 1.0);
-	denom = 1 * denom * denom;
+	denom = PI * denom * denom;
 
 	return num / denom;
 }
@@ -90,57 +67,46 @@ float3 CalculateDirectSpecular(float3 normalWS, float3 viewDirectionWS, float3 l
 	return (numerator / denominator) * NDotL * lightColor * attenuation * falloff;
 }
 
-float3 CalculateIndirectDiffuse(float3 bakedGI)
+float2 CalculateFresnelResponse(float NdotV, float roughness)
 {
-	return bakedGI;
+	return pow(SAMPLE_TEXTURE2D(_BRDFIntegrationLUT, _BRDFIntegrationLUT_Sampler, float2(NdotV, roughness)).rg, 2);
 }
 
-float3 CalculateIndirectSpecular(float3 normalWS, float3 viewDirectionWS, float roughness, float3 reflectance)
+float3 CalculateIndirectSpecularSky(float3 normalWS, float3 viewDirectionWS, float roughness, float3 reflectance)
 {
 	float3 reflectVector = reflect(-viewDirectionWS, normalWS);
 	float NDotV = max(0, dot(normalWS.xyz, viewDirectionWS.xyz));
-
 	float3 environmentReflection = max(0, SAMPLE_TEXTURECUBE_ARRAY_LOD(_ReflectionTexture, _ReflectionTexture_Sampler, reflectVector, 0, roughness * REFLECTION_LOD_COUNT).rgb);
 	float2 fresnelResponse = CalculateFresnelResponse(NDotV, roughness);
-
 	return environmentReflection * (reflectance * fresnelResponse.x + fresnelResponse.y);
 }
 
-float3 CalculateIndirectSpecular(float3 normalWS, float3 positionWS, float3 viewDirectionWS, float roughness, float3 reflectance, float3 centerWS, float squareRange, uint reflectionProbeIndex)
+float3 CalculateIndirectSpecularSphere(float3 normalWS, float3 positionWS, float3 viewDirectionWS, float roughness, float3 reflectance, float3 centerWS, float squareRange, uint reflectionProbeIndex)
 {
 	float3 reflectVector = reflect(-viewDirectionWS, normalWS);
 	float NDotV = max(0, dot(normalWS.xyz, viewDirectionWS.xyz));
-
 	reflectVector = GetSphereProjectionDirection(reflectVector, positionWS, centerWS, squareRange);
-
 	float3 environmentReflection = max(0, SAMPLE_TEXTURECUBE_ARRAY_LOD(_ReflectionTexture, _ReflectionTexture_Sampler, reflectVector, reflectionProbeIndex, roughness * REFLECTION_LOD_COUNT).rgb);
 	float2 fresnelResponse = CalculateFresnelResponse(NDotV, roughness);
-	
 	return environmentReflection * (reflectance * fresnelResponse.x + fresnelResponse.y);
 }
 
-float3 CalculateIndirectSpecular(float3 normalWS, float2 positionSS, float3 viewDirectionWS, float roughness, float3 reflectance)
+float3 CalculateIndirectSpecularScreen(float3 normalWS, float2 positionSS, float3 viewDirectionWS, float roughness, float3 reflectance)
 {
 	float NDotV = max(0, dot(normalWS.xyz, viewDirectionWS.xyz));
-
 	float4 packedReflection = SAMPLE_TEXTURE2D_X(_ScreenReflectionTexture, _ScreenReflectionTexture_Sampler, positionSS);
 	float3 screenReflection = REBLUR_BackEnd_UnpackRadianceAndNormHitDist(packedReflection).rgb;
-	//float3 screenReflection = SAMPLE_TEXTURE2D_X(_ScreenReflectionTexture, _ScreenReflectionTexture_Sampler, positionSS).rgb;
 	float2 fresnelResponse = CalculateFresnelResponse(NDotV, roughness);
-
 	return screenReflection * (reflectance * fresnelResponse.x + fresnelResponse.y);
 }
 
-float3 CalculateIndirectSpecular(float3 normalWS, float3 positionWS, float3 viewDirectionWS, float roughness, float3 reflectance, float3 centerWS, float3 minWS, float3 maxWS, uint reflectionProbeIndex)
+float3 CalculateIndirectSpecularBox(float3 normalWS, float3 positionWS, float3 viewDirectionWS, float roughness, float3 reflectance, float3 centerWS, float3 minWS, float3 maxWS, uint reflectionProbeIndex)
 {
 	float3 reflectVector = reflect(-viewDirectionWS, normalWS);
 	float NDotV = max(0, dot(normalWS.xyz, viewDirectionWS.xyz));
-
 	reflectVector = GetBoxProjectionDirection(reflectVector, positionWS, centerWS, minWS, maxWS);
-
 	float3 environmentReflection = max(0, SAMPLE_TEXTURECUBE_ARRAY_LOD(_ReflectionTexture, _ReflectionTexture_Sampler, reflectVector, reflectionProbeIndex, roughness * REFLECTION_LOD_COUNT).rgb);
 	float2 fresnelResponse = CalculateFresnelResponse(NDotV, roughness);
-
 	return environmentReflection * (reflectance * fresnelResponse.x + fresnelResponse.y);
 }
 
@@ -178,7 +144,8 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 
 	uint2 pointCluster = GetCluster(inputData.positionVS, inputData.normalizedScreenSpaceUV);
 	uint2 spotCluster = OffsetCluster(pointCluster);
-	uint2 reflectionCluster = OffsetCluster(spotCluster);
+	uint2 probeVolumeCluster = OffsetCluster(spotCluster);
+	uint2 reflectionCluster = OffsetCluster(probeVolumeCluster);
 
 	int j;
 	// Point lights
@@ -270,12 +237,41 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 		directSpecularTerm += CalculateDirectSpecular(inputData.normalWS, inputData.viewDirectionWS, lightDirectionWS, lightColor, distanceAttenuation * spotAttenuation * cookieAttenuation * shadowAttenuation, falloff, reflectance, surfaceData.roughness);
 	}
 
-	float3 indirectDiffuseTerm = CalculateIndirectDiffuse(inputData.bakedGI);
+	float3 indirectDiffuseTerm = 0;
+	float3 indirectSpecularTerm = 0;
 
-#if (REFLECTIONS)
+#if (PROBE_VOLUMES)
+	float3 totalDiffuse = 0;
+	float totalDiffuseWeight = 0;
+
+	[loop]
+	for (j = 0; j < MAX_LIGHTS; j++)
+	{
+		uint i = LOAD_TEXTURE2D(_LightIndexTexture, probeVolumeCluster).r;
+		if (i == 0xFFFF)
+		{
+			break;
+		}
+		probeVolumeCluster.x += 1;
+
+		ProbeVolumeData data = _ProbeVolumesData[i];
+		if (!IsInsideAABB(inputData.positionWS, data.positionMinWS, data.positionMaxWS))
+		{
+			continue;
+		}
+
+		totalDiffuse += SampleProbeVolume(inputData.positionWS, inputData.normalWS, data);
+		totalDiffuseWeight += 1;
+	}
+	indirectDiffuseTerm += lerp(inputData.bakedGI, totalDiffuse / max(totalDiffuseWeight, 1e-5), totalDiffuseWeight > 0.0);
+#else
+	indirectDiffuseTerm += inputData.bakedGI;
+#endif
+
+#if (REFLECTION_PROBES)
 	float3 totalSpecular = 0;
-	float totalWeight = 0;
-	float maxWeight = 0;
+	float totalSpecularWeight = 0;
+	float maxSpecularWeight = 0;
 
 	[loop]
 	for (j = 0; j < MAX_LIGHTS; j++)
@@ -301,7 +297,7 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 				continue;
 			}
 			t = 1.0f - saturate((sqrt(squareDistance) + data.fade - range) / data.fade);
-			specular = CalculateIndirectSpecular(inputData.normalWS, inputData.positionWS, inputData.viewDirectionWS, surfaceData.roughness, reflectance, data.positionWS, data.squareRange, data.index);
+			specular = CalculateIndirectSpecularSphere(inputData.normalWS, inputData.positionWS, inputData.viewDirectionWS, surfaceData.roughness, reflectance, data.positionWS, data.squareRange, data.index);
 		}
 		else if (data.type == 1)
 		{
@@ -311,24 +307,26 @@ float3 CalculatePBR(SurfaceData surfaceData, InputData inputData)
 			}
 			float3 d = max(0, max((data.positionMinWS + data.fade) - inputData.positionWS, inputData.positionWS - (data.positionMaxWS - data.fade)));
 			t = 1.0f - saturate(length(d) / data.fade);
-			specular = CalculateIndirectSpecular(inputData.normalWS, inputData.positionWS, inputData.viewDirectionWS, surfaceData.roughness, reflectance, data.positionWS, data.positionMinWS, data.positionMaxWS, data.index);
+			specular = CalculateIndirectSpecularBox(inputData.normalWS, inputData.positionWS, inputData.viewDirectionWS, surfaceData.roughness, reflectance, data.positionWS, data.positionMinWS, data.positionMaxWS, data.index);
 		}
 
 		float weight = t * t * (3.0 - 2.0 * t);
-		maxWeight = max(weight, maxWeight);
+		maxSpecularWeight = max(weight, maxSpecularWeight);
 		weight *= data.weight;
 
 		totalSpecular += specular * weight;
-		totalWeight += weight;
+		totalSpecularWeight += weight;
 	}
 
-	float3 screenSpecular = CalculateIndirectSpecular(inputData.normalWS, inputData.renderTargetUV, inputData.viewDirectionWS, surfaceData.roughness, reflectance);
-	float3 skySpecular = CalculateIndirectSpecular(inputData.normalWS, inputData.viewDirectionWS, surfaceData.roughness, reflectance);
-	float skyWeight = saturate(1.0f - maxWeight);
+	float3 skySpecular = CalculateIndirectSpecularSky(inputData.normalWS, inputData.viewDirectionWS, surfaceData.roughness, reflectance);
+	float skyWeight = saturate(1.0f - maxSpecularWeight);
 	float t = smoothstep(0.1, 0.3, surfaceData.roughness);
-	float3 indirectSpecularTerm = screenSpecular; //inputData.normalizedScreenSpaceUV.x > 0.5 ? screenSpecular : totalSpecular / max(totalWeight, 1e-5);//lerp(totalSpecular / max(totalWeight, 1e-5), skySpecular, skyWeight);//lerp(screenSpecular, lerp(totalSpecular / max(totalWeight, 1e-5), skySpecular, skyWeight), t); // TODO sky debug mode by replacing skySpecular with float3(1, 0, 0)
-#else
-	float3 indirectSpecularTerm = 0;
+	indirectSpecularTerm += lerp(totalSpecular / max(totalSpecularWeight, 1e-5), skySpecular, skyWeight); // TODO sky debug mode by replacing skySpecular with float3(1, 0, 0)
+#endif
+
+#if (SCREEN_REFLECTIONS)
+	float3 screenSpecular = CalculateIndirectSpecularScreen(inputData.normalWS, inputData.renderTargetUV, inputData.viewDirectionWS, surfaceData.roughness, reflectance);
+	indirectSpecularTerm += screenSpecular;
 #endif
 
 	surfaceData.occlusion *= saturate(LOAD_TEXTURE2D_X(_ScreenOcclusionTexture, inputData.normalizedScreenSpaceUV * CAMERA_SIZE_INV_SIZE.xy).r / 255.0);

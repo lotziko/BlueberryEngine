@@ -16,7 +16,7 @@ namespace Blueberry
 		RenderTarget = 1,
 		UnorderedAccess = 2,
 		CPUReadable = 4,
-		CPUWritable = 8,
+		CPUWritable = 8,	// Uses D3D11_USAGE_DYNAMIC in DX11
 	};
 
 	inline TextureUsageFlags operator|(TextureUsageFlags lhs, TextureUsageFlags rhs)

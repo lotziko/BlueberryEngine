@@ -2,10 +2,10 @@
 
 #include "Blueberry\Graphics\Structs.h"
 #include "Blueberry\Graphics\GfxTexture.h"
+#include "Blueberry\Core\PointerCache.h"
 #include "Concrete\Windows\ComPtr.h"
 #include "Concrete\DX12\DX12.h"
 #include "GfxDescriptorHeapDX12.h"
-#include "..\..\Blueberry\Graphics\GfxPointerCache.h"
 
 namespace Blueberry
 {
@@ -77,6 +77,6 @@ namespace Blueberry
 		uint32_t m_SubresourceCount = 0;
 		uint64_t m_UnorderedAccessGeneration = UINT64_MAX;
 
-		static GfxPointerCache<GfxTextureDX12> s_PointerCache;
+		static PointerCache<GfxTextureDX12> s_PointerCache;
 	};
 }

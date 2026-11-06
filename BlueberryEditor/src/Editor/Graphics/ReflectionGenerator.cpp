@@ -63,6 +63,7 @@ namespace Blueberry
 		}
 		TextureCube* result = Save(0);
 		lightingData->SetSkyReflection(skyRenderer, result);
+		lightingData->Apply();
 		AssetDB::SetDirty(lightingData);
 		AssetDB::SaveAssets();
 	}
@@ -82,14 +83,15 @@ namespace Blueberry
 		s_CubeTexture->SetData(s_SliceData.data(), SLICE_SIZE * 6);
 
 		LightingData* lightingData = EditorSceneManager::GetSettings()->GetLightingData();
-		uint32_t index = reflectionProbe->GetAtlasIndex();
-		if (index == UINT_MAX)
+		uint32_t index = reflectionProbe->GetIndex();
+		if (index == UINT32_MAX)
 		{
 			index = std::max(static_cast<uint32_t>(lightingData->GetReflectionProbeCount()), 1u);
 		}
 		TextureCube* result = Save(index);
-		reflectionProbe->SetAtlasIndex(index);
+		reflectionProbe->SetIndex(index);
 		lightingData->SetReflectionProbe(index - 1, reflectionProbe, result);
+		lightingData->Apply();
 		AssetDB::SetDirty(lightingData);
 		AssetDB::SaveAssets();
 	}

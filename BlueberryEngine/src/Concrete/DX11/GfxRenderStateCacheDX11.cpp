@@ -360,7 +360,7 @@ namespace Blueberry
 
 	ID3D11InputLayout* GfxRenderStateCacheDX11::GetLayout(GfxVertexShaderDX11* shader, VertexLayout* meshLayout)
 	{
-		size_t key = static_cast<uint64_t>(shader->m_Crc) | (static_cast<uint64_t>(meshLayout->GetCrc()) << 32);
+		uint64_t key = static_cast<uint64_t>(shader->m_Crc) | (static_cast<uint64_t>(meshLayout->GetCrc()) << 32);
 		auto it = m_InputLayouts.find(key);
 		if (it != m_InputLayouts.end())
 		{

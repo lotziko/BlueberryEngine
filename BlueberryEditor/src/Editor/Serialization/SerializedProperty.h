@@ -68,6 +68,9 @@ namespace Blueberry
 		const Color& GetColor();
 		void SetColor(const Color& value);
 
+		const AABB& GetAABB();
+		void SetAABB(const AABB& value);
+
 		const ObjectPtr<Object>& GetObjectPtr();
 		void SetObjectPtr(const ObjectPtr<Object>& value);
 

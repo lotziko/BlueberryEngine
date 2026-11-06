@@ -5,7 +5,7 @@
 #include "Blueberry\Tools\FileHelper.h"
 #include "Editor\Assets\AssetDB.h"
 #include "Editor\Misc\TextureHelper.h"
-#include "Editor\Assets\Processors\ReflectionGenerator.h"
+#include "Editor\Graphics\ReflectionGenerator.h"
 
 #include <directxtex\DirectXTex.h>
 

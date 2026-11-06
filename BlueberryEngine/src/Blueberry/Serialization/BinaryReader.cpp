@@ -60,7 +60,7 @@ namespace Blueberry
 		{
 			context.stream.read(reinterpret_cast<char*>(&tree.guid), sizeof(Guid));
 		}
-		context.stream.read(reinterpret_cast<char*>(&tree.isReference), sizeof(bool));
+		context.stream.read(reinterpret_cast<char*>(&tree.isReference), sizeof(uint8_t));
 		context.stream.read(reinterpret_cast<char*>(&rootNodeCount), sizeof(uint32_t));
 		SerializationNodeRef root = tree.GetRoot();
 		for (uint32_t i = 0; i < rootNodeCount; ++i)

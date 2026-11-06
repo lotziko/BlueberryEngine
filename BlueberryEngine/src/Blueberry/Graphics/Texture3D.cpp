@@ -46,6 +46,7 @@ namespace Blueberry
 
 	void Texture3D::Apply()
 	{
+		// TODO avoid deletion using SetData if parameters match
 		if (m_Texture != nullptr)
 		{
 			delete m_Texture;

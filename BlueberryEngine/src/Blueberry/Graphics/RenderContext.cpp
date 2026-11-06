@@ -307,6 +307,7 @@ namespace Blueberry
 
 		results.camera = camera;
 		results.reflectionProbes.clear();
+		results.probeVolumes.clear();
 		results.lights.clear();
 		results.canvases.clear();
 		results.cullerInfos.clear();
@@ -330,17 +331,16 @@ namespace Blueberry
 			break;
 		}
 
-		results.probeVolume = nullptr;
-		for (ProbeVolume* probeVolume : scene->GetComponents<ProbeVolume>())
-		{
-			results.probeVolume = probeVolume;
-			break;
-		}
-
 		// TODO culling
 		for (ReflectionProbe* reflectionProbe : scene->GetComponents<ReflectionProbe>())
 		{
 			results.reflectionProbes.push_back(reflectionProbe);
+		}
+
+		// TODO culling
+		for (ProbeVolume* probeVolume : scene->GetComponents<ProbeVolume>())
+		{
+			results.probeVolumes.push_back(probeVolume);
 		}
 
 		for (Canvas* canvas : scene->GetComponents<Canvas>())
