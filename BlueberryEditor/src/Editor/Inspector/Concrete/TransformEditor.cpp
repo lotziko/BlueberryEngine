@@ -4,6 +4,7 @@
 #include "Blueberry\Scene\Components\Camera.h"
 
 #include "Editor\Misc\ImGuiHelper.h"
+#include "Editor\Gizmos\Gizmos.h"
 #include "Editor\Preferences.h"
 #include "Editor\Panels\Scene\SceneArea.h"
 #include "Editor\Panels\Hierarchy\SceneHierarchy.h"
@@ -112,95 +113,219 @@ namespace Blueberry
 		return Math::ToDegrees(Vector3(eul[0], eul[1], eul[2]));
 	}
 
+	float WrapRadians(float angle)
+	{
+		return atan2f(sinf(angle), cosf(angle));
+	}
+
+	Vector3 CorrectEuler(const Vector3& previousEuler, const Quaternion& rotation)
+	{
+		Vector3 principal = rotation.ToEuler();
+		Vector3 candidateA = Math::ToDegrees(principal);
+		Vector3 candidateB = candidateA;
+
+		if (fabsf(cosf(principal.x)) > 1e-6f)
+		{
+			Vector3 alternate(principal.x >= 0.0f ? Math::Pi - principal.x : -Math::Pi - principal.x, WrapRadians(principal.y + Math::Pi), WrapRadians(principal.z + Math::Pi));
+			candidateB = Math::ToDegrees(alternate);
+		}
+
+		candidateA = CorrectEuler(previousEuler, candidateA);
+		candidateB = CorrectEuler(previousEuler, candidateB);
+
+		float distanceA = fabsf(candidateA.x - previousEuler.x) + fabsf(candidateA.y - previousEuler.y) + fabsf(candidateA.z - previousEuler.z);
+		float distanceB = fabsf(candidateB.x - previousEuler.x) + fabsf(candidateB.y - previousEuler.y) + fabsf(candidateB.z - previousEuler.z);
+		
+		return distanceA <= distanceB ? candidateA : candidateB;
+	}
+
 	void TransformEditor::OnDrawSceneSelected()
 	{
-		// TODO update with SetLocalPosition() and targets instead
+		int gizmoOperation = Preferences::GetGizmoOperation();
+		bool isGizmoLocal = Preferences::IsGizmoLocalSpace();
 		Transform* transform = static_cast<Transform*>(m_SerializedObject->GetTarget());
-		Matrix transformMatrix = Matrix::CreateScale(transform->GetLocalScale()) * Matrix::CreateFromQuaternion(transform->GetLocalRotation()) * Matrix::CreateTranslation(transform->GetLocalPosition());
+
 		Transform* parentTransform = transform->GetParent();
+		Matrix transformMatrix = Matrix::Identity;
 		if (parentTransform != nullptr)
 		{
-			transformMatrix *= parentTransform->GetLocalToWorldMatrix();
+			transformMatrix = parentTransform->GetLocalToWorldMatrix();
 		}
-		
-		Camera* camera = Camera::GetCurrent();
-		if (camera != nullptr)
+		Gizmos::SetMatrix(transformMatrix);
+
+		Vector3 position = transform->GetLocalPosition();
+		Quaternion rotation = transform->GetLocalRotation();
+		Vector3 scale = transform->GetLocalScale();
+
+		switch (gizmoOperation)
 		{
-			float snapping[3];
-			float* gizmoSnapping = Preferences::GetGizmoSnapping();
-			int gizmoOperation = Preferences::GetGizmoOperation();
-			if (gizmoOperation == ImGuizmo::OPERATION::TRANSLATE)
+		case 0:
+		{
+			if (Gizmos::PositionHandle(position, rotation, isGizmoLocal))
 			{
-				snapping[0] = gizmoSnapping[0];
-				snapping[1] = gizmoSnapping[0];
-				snapping[2] = gizmoSnapping[0];
-			}
-			else if (gizmoOperation == ImGuizmo::OPERATION::ROTATE)
-			{
-				snapping[0] = gizmoSnapping[1];
-				snapping[1] = gizmoSnapping[1];
-				snapping[2] = gizmoSnapping[1];
-			}
-			else if (gizmoOperation == ImGuizmo::OPERATION::SCALE)
-			{
-				snapping[0] = gizmoSnapping[2];
-				snapping[1] = gizmoSnapping[2];
-				snapping[2] = gizmoSnapping[2];
-			}
-			
-			if (ImGuizmo::Manipulate((float*)camera->GetViewMatrix().m, (float*)camera->GetProjectionMatrix().m, (ImGuizmo::OPERATION)gizmoOperation, ImGuizmo::MODE::WORLD, (float*)transformMatrix.m, 0, snapping))
-			{
-				UndoManager::RecordObject(transform);
+				Vector3 delta = position - transform->GetLocalPosition();
+				Vector3 worldDelta = Math::MultiplyVector(transformMatrix, delta);
 
-				Vector3 scale;
-				Quaternion rotation;
-				Vector3 translation;
-
-				if (parentTransform != nullptr)
+				for (Object* target : m_SerializedObject->GetTargets())
 				{
-					transformMatrix *= parentTransform->GetLocalToWorldMatrix().Invert();
+					Transform* targetTransform = static_cast<Transform*>(target);
+					UndoManager::RecordObject(targetTransform);
+					targetTransform->SetPosition(targetTransform->GetPosition() + worldDelta);
 				}
-				
-				transformMatrix.Decompose(scale, rotation, translation);
-				if (gizmoOperation == ImGuizmo::OPERATION::TRANSLATE && !Math::Approximately(Math::RoundToN(translation, 4), Math::RoundToN(m_LocalPositionProperty.GetVector3(), 4)))
+			}
+		}
+		break;
+		case 1:
+		{
+			if (Gizmos::RotationHandle(position, rotation, isGizmoLocal))
+			{
+				Quaternion inverseRotation;
+				transform->GetLocalRotation().Inverse(inverseRotation);
+				Quaternion delta = inverseRotation * rotation;
+				for (Object* target : m_SerializedObject->GetTargets())
 				{
-					transform->SetLocalPosition(translation);
-				}
-				if (gizmoOperation == ImGuizmo::OPERATION::ROTATE && !Math::Approximately(Math::RoundToN(rotation, 4), Math::RoundToN(m_LocalRotationProperty.GetQuaternion(), 4)))
-				{
-					transform->SetLocalRotation(rotation, false);
-
+					Transform* targetTransform = static_cast<Transform*>(target);
+					UndoManager::RecordObject(targetTransform);
+					targetTransform->SetLocalRotation(targetTransform->GetLocalRotation() * delta, false);
 					Vector3 previousEuler = transform->GetLocalEulerRotationHint();
-					Vector3 euler = CorrectEuler(previousEuler, Math::ToDegrees(rotation.ToEuler()));
-
-					if (snapping[1] > 0)
-					{
-						euler /= snapping[1];
-						euler = Vector3(roundf(euler.x), roundf(euler.y), roundf(euler.z));
-						euler *= snapping[1];
-					}
-
-					if (fabs(euler.x) < 1e-6f)
+					Vector3 euler = CorrectEuler(previousEuler, rotation);
+					if (fabs(euler.x) < 1e-3f)
 					{
 						euler.x = 0;
 					}
-					if (fabs(euler.y) < 1e-6f)
+					if (fabs(euler.y) < 1e-3f)
 					{
 						euler.y = 0;
 					}
-					if (fabs(euler.z) < 1e-6f)
+					if (fabs(euler.z) < 1e-3f)
 					{
 						euler.z = 0;
 					}
 					transform->SetLocalEulerRotationHint(euler);
 				}
-				if (gizmoOperation == ImGuizmo::OPERATION::SCALE && !Math::Approximately(Math::RoundToN(scale, 4), Math::RoundToN(m_LocalScaleProperty.GetVector3(), 4)))
+			}
+		}
+		break;
+		case 2:
+		{
+			if (Gizmos::ScaleHandle(position, rotation, scale, isGizmoLocal))
+			{
+				Vector3 delta = scale - transform->GetLocalScale();
+				for (Object* target : m_SerializedObject->GetTargets())
 				{
-					transform->SetLocalScale(scale);
+					Transform* targetTransform = static_cast<Transform*>(target);
+					UndoManager::RecordObject(targetTransform);
+					targetTransform->SetLocalScale(targetTransform->GetLocalScale() + delta);
 				}
 			}
 		}
+		break;
+		}
 	}
+
+	//Transform* parentTransform = transform->GetParent();
+
+	//Matrix transformMatrix = Matrix::Identity;
+	//if (parentTransform != nullptr)
+	//{
+	//	transformMatrix = parentTransform->GetLocalToWorldMatrix();
+	//}
+
+	//Gizmos::SetMatrix(transformMatrix);
+
+	//void TransformEditor::OnDrawSceneSelected()
+	//{
+	//	// TODO update with SetLocalPosition() and targets instead
+	//	
+	//	//Matrix transformMatrix = Matrix::Identity;
+	//	
+	//	/*Matrix transformMatrix = Matrix::CreateScale(transform->GetLocalScale()) * Matrix::CreateFromQuaternion(transform->GetLocalRotation()) * Matrix::CreateTranslation(transform->GetLocalPosition());
+	//	if (parentTransform != nullptr)
+	//	{
+	//		transformMatrix *= parentTransform->GetLocalToWorldMatrix();
+	//	}*/
+
+	//	
+	//	
+
+	//	Camera* camera = Camera::GetCurrent();
+	//	if (camera != nullptr)
+	//	{
+	//		float snapping[3];
+	//		float* gizmoSnapping = Preferences::GetGizmoSnapping();
+	//		int gizmoOperation = Preferences::GetGizmoOperation();
+	//		if (gizmoOperation == ImGuizmo::OPERATION::TRANSLATE)
+	//		{
+	//			snapping[0] = gizmoSnapping[0];
+	//			snapping[1] = gizmoSnapping[0];
+	//			snapping[2] = gizmoSnapping[0];
+	//		}
+	//		else if (gizmoOperation == ImGuizmo::OPERATION::ROTATE)
+	//		{
+	//			snapping[0] = gizmoSnapping[1];
+	//			snapping[1] = gizmoSnapping[1];
+	//			snapping[2] = gizmoSnapping[1];
+	//		}
+	//		else if (gizmoOperation == ImGuizmo::OPERATION::SCALE)
+	//		{
+	//			snapping[0] = gizmoSnapping[2];
+	//			snapping[1] = gizmoSnapping[2];
+	//			snapping[2] = gizmoSnapping[2];
+	//		}
+	//		
+	//		/*if (ImGuizmo::Manipulate((float*)camera->GetViewMatrix().m, (float*)camera->GetProjectionMatrix().m, (ImGuizmo::OPERATION)gizmoOperation, ImGuizmo::MODE::WORLD, (float*)transformMatrix.m, 0, snapping))
+	//		{
+	//			UndoManager::RecordObject(transform);
+
+	//			Vector3 scale;
+	//			Quaternion rotation;
+	//			Vector3 translation;
+
+	//			if (parentTransform != nullptr)
+	//			{
+	//				transformMatrix *= parentTransform->GetLocalToWorldMatrix().Invert();
+	//			}
+	//			
+	//			transformMatrix.Decompose(scale, rotation, translation);
+	//			if (gizmoOperation == ImGuizmo::OPERATION::TRANSLATE && !Math::Approximately(Math::RoundToN(translation, 4), Math::RoundToN(m_LocalPositionProperty.GetVector3(), 4)))
+	//			{
+	//				transform->SetLocalPosition(translation);
+	//			}
+	//			if (gizmoOperation == ImGuizmo::OPERATION::ROTATE && !Math::Approximately(Math::RoundToN(rotation, 4), Math::RoundToN(m_LocalRotationProperty.GetQuaternion(), 4)))
+	//			{
+	//				transform->SetLocalRotation(rotation, false);
+
+	//				Vector3 previousEuler = transform->GetLocalEulerRotationHint();
+	//				Vector3 euler = CorrectEuler(previousEuler, Math::ToDegrees(rotation.ToEuler()));
+
+	//				if (snapping[1] > 0)
+	//				{
+	//					euler /= snapping[1];
+	//					euler = Vector3(roundf(euler.x), roundf(euler.y), roundf(euler.z));
+	//					euler *= snapping[1];
+	//				}
+
+	//				if (fabs(euler.x) < 1e-6f)
+	//				{
+	//					euler.x = 0;
+	//				}
+	//				if (fabs(euler.y) < 1e-6f)
+	//				{
+	//					euler.y = 0;
+	//				}
+	//				if (fabs(euler.z) < 1e-6f)
+	//				{
+	//					euler.z = 0;
+	//				}
+	//				transform->SetLocalEulerRotationHint(euler);
+	//			}
+	//			if (gizmoOperation == ImGuizmo::OPERATION::SCALE && !Math::Approximately(Math::RoundToN(scale, 4), Math::RoundToN(m_LocalScaleProperty.GetVector3(), 4)))
+	//			{
+	//				transform->SetLocalScale(scale);
+	//			}
+	//		}*/
+	//	}
+	//}
 
 	void TransformEditor::OnHierarchyUpdate()
 	{

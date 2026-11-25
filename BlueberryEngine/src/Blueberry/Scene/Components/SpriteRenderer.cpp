@@ -28,6 +28,11 @@ namespace Blueberry
 		return GetTransform()->GetLocalToWorldMatrix();
 	}
 
+	const Matrix& SpriteRenderer::GetWorldToLocalMatrix()
+	{
+		return GetTransform()->GetWorldToLocalMatrix();
+	}
+
 	const Color& SpriteRenderer::GetColor() const
 	{
 		return m_Color;

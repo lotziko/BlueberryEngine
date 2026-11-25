@@ -10,6 +10,8 @@ namespace Blueberry
 	Mesh* StandardMeshes::s_PlaneMesh = nullptr;
 	Mesh* StandardMeshes::s_SphereMesh = nullptr;
 	Mesh* StandardMeshes::s_CubeMesh = nullptr;
+	Mesh* StandardMeshes::s_ConeMesh = nullptr;
+	Mesh* StandardMeshes::s_CylinderMesh = nullptr;
 
 	void StandardMeshes::Initialize()
 	{
@@ -100,10 +102,10 @@ namespace Blueberry
 		if (s_SphereMesh == nullptr)
 		{
 			float radius = 0.5f;
-			const int latitudeSegments = 20;
-			const int longitudeSegments = 20;
-			const int vertexCount = (latitudeSegments + 1) * (longitudeSegments + 1);
-			const int indexCount = latitudeSegments * longitudeSegments * 6;
+			int latitudeSegments = 20;
+			int longitudeSegments = 20;
+			int vertexCount = (latitudeSegments + 1) * (longitudeSegments + 1);
+			int indexCount = latitudeSegments * longitudeSegments * 6;
 
 			List<Vector3> vertices(vertexCount);
 			List<Vector3> normals(vertexCount);
@@ -292,5 +294,208 @@ namespace Blueberry
 		}
 
 		return s_CubeMesh;
+	}
+
+	Mesh* StandardMeshes::GetCone()
+	{
+		if (s_ConeMesh == nullptr)
+		{
+			float radius = 0.5f;
+			float height = 1.0f;
+			uint32_t segments = 20;
+			float halfHeight = height * 0.5f;
+			float angleStep = 2.0f * Math::Pi / segments;
+			int vertexCount = segments * 3 + 4;
+			int indexCount = segments * 6;
+
+			List<Vector3> vertices;
+			List<Vector3> normals;
+			List<Vector2> uvs;
+			List<uint32_t> indices;
+			vertices.reserve(vertexCount);
+			normals.reserve(vertexCount);
+			uvs.reserve(vertexCount);
+			indices.reserve(indexCount);
+
+			for (uint32_t i = 0; i <= segments; ++i)
+			{
+				float angle = i * angleStep;
+
+				float x = cosf(angle);
+				float z = sinf(angle);
+
+				Vector3 normal = Vector3(height * x, radius, height * z);
+				normal.Normalize();
+
+				float u = static_cast<float>(i) / segments;
+
+				vertices.push_back(Vector3(x * radius, -halfHeight, z * radius));
+				normals.push_back(normal);
+				uvs.push_back(Vector2(u, 1.0f));
+
+				vertices.push_back(Vector3(0.0f, halfHeight, 0.0f));
+				normals.push_back(normal);
+				uvs.push_back(Vector2(u, 0.0f));
+			}
+
+			for (uint32_t i = 0; i < segments; ++i)
+			{
+				uint32_t base = i * 2;
+				indices.insert(indices.end(), { base, base + 1, base + 2, base + 1, base + 3, base + 2 });
+			}
+
+			uint32_t centerIndex = static_cast<uint32_t>(vertices.size());
+
+			vertices.push_back(Vector3(0.0f, -halfHeight, 0.0f));
+			normals.push_back(Vector3(0.0f, -1.0f, 0.0f));
+			uvs.push_back(Vector2(0.5f, 0.5f));
+
+			uint32_t ringStart = static_cast<uint32_t>(vertices.size());
+
+			for (uint32_t i = 0; i <= segments; ++i)
+			{
+				float angle = i * angleStep;
+				float x = cosf(angle);
+				float z = sinf(angle);
+
+				vertices.push_back(Vector3(x * radius, -halfHeight, z * radius));
+				normals.push_back(Vector3(0.0f, -1.0f, 0.0f));
+				uvs.push_back(Vector2(x * 0.5f + 0.5f, z * 0.5f + 0.5f));
+			}
+
+			for (uint32_t i = 0; i < segments; ++i)
+			{
+				indices.insert(indices.end(), { centerIndex, ringStart + i + 1, ringStart + i });
+			}
+
+			s_ConeMesh = Mesh::Create();
+			s_ConeMesh->SetName("Cone");
+			s_ConeMesh->SetVertices(vertices.data(), vertexCount);
+			s_ConeMesh->SetNormals(normals.data(), vertexCount);
+			s_ConeMesh->SetIndices(indices.data(), indexCount);
+			s_ConeMesh->SetUVs(0, uvs.data(), vertexCount);
+			s_ConeMesh->GenerateTangents();
+			s_ConeMesh->Apply();
+		}
+
+		return s_ConeMesh;
+	}
+
+	Mesh* StandardMeshes::GetCylinder()
+	{
+		if (s_CylinderMesh == nullptr)
+		{
+			float radius = 0.5f;
+			float height = 1.0f;
+			uint32_t segments = 20;
+			int vertexCount = segments * 4 + 6;
+			int indexCount = segments * 12;
+
+			List<Vector3> vertices;
+			List<Vector3> normals;
+			List<Vector2> uvs;
+			List<uint32_t> indices;
+			vertices.reserve(vertexCount);
+			normals.reserve(vertexCount);
+			uvs.reserve(vertexCount);
+			indices.reserve(indexCount);
+
+			float halfHeight = height * 0.5f;
+			float angleStep = 2.0f * Math::Pi / segments;
+
+			for (uint32_t i = 0; i <= segments; ++i)
+			{
+				float angle = i * angleStep;
+
+				float x = cosf(angle);
+				float z = sinf(angle);
+
+				Vector3 normal(x, 0.0f, z);
+				float u = static_cast<float>(i) / segments;
+
+				vertices.push_back(Vector3(x * radius, -halfHeight, z * radius));
+				normals.push_back(normal);
+				uvs.push_back(Vector2(u, 1.0f));
+
+				vertices.push_back(Vector3(x * radius, halfHeight, z * radius));
+				normals.push_back(normal);
+				uvs.push_back(Vector2(u, 0.0f));
+			}
+
+			for (uint32_t i = 0; i < segments; ++i)
+			{
+				uint32_t base = i * 2;
+				indices.insert(indices.end(), { base, base + 1, base + 2, base + 1, base + 3, base + 2 });
+			}
+
+			// Top cap
+			{
+				float y = halfHeight;
+				uint32_t centerIndex = static_cast<uint32_t>(vertices.size());
+				Vector3 normal(0.0f, 1.0f, 0.0f);
+
+				vertices.push_back(Vector3(0.0f, y, 0.0f));
+				normals.push_back(normal);
+				uvs.push_back(Vector2(0.5f, 0.5f));
+
+				uint32_t ringStart = static_cast<uint32_t>(vertices.size());
+
+				for (uint32_t i = 0; i <= segments; ++i)
+				{
+					float angle = i * angleStep;
+					float x = cosf(angle);
+					float z = sinf(angle);
+
+					vertices.push_back(Vector3(x * radius, y, z * radius));
+					normals.push_back(normal);
+					uvs.push_back(Vector2(x * 0.5f + 0.5f, z * 0.5f + 0.5f));
+				}
+
+				for (uint32_t i = 0; i < segments; ++i)
+				{
+					indices.insert(indices.end(), { centerIndex, ringStart + i, ringStart + i + 1 });
+				}
+			}
+
+			// Bottom cap
+			{
+				float y = -halfHeight;
+				uint32_t centerIndex = static_cast<uint32_t>(vertices.size());
+				Vector3 normal(0.0f, -1.0f, 0.0f);
+
+				vertices.push_back(Vector3(0.0f, y, 0.0f));
+				normals.push_back(normal);
+				uvs.push_back(Vector2(0.5f, 0.5f));
+
+				uint32_t ringStart = static_cast<uint32_t>(vertices.size());
+
+				for (uint32_t i = 0; i <= segments; ++i)
+				{
+					float angle = i * angleStep;
+					float x = cosf(angle);
+					float z = sinf(angle);
+
+					vertices.push_back(Vector3(x * radius, y, z * radius));
+					normals.push_back(normal);
+					uvs.push_back(Vector2(x * 0.5f + 0.5f, z * 0.5f + 0.5f));
+				}
+
+				for (uint32_t i = 0; i < segments; ++i)
+				{
+					indices.insert(indices.end(), { centerIndex, ringStart + i + 1, ringStart + i });
+				}
+			}
+
+			s_CylinderMesh = Mesh::Create();
+			s_CylinderMesh->SetName("Cylinder");
+			s_CylinderMesh->SetVertices(vertices.data(), vertexCount);
+			s_CylinderMesh->SetNormals(normals.data(), vertexCount);
+			s_CylinderMesh->SetIndices(indices.data(), indexCount);
+			s_CylinderMesh->SetUVs(0, uvs.data(), vertexCount);
+			s_CylinderMesh->GenerateTangents();
+			s_CylinderMesh->Apply();
+		}
+
+		return s_CylinderMesh;
 	}
 }

@@ -70,7 +70,7 @@ namespace Blueberry
 
 	void PhysicsBatch::Draw(JPH::ColorArg inColor)
 	{
-		Gizmos::DrawMesh(m_Vertices, m_Indices);
+		Gizmos::DrawMesh(Vector3::Zero, Quaternion::Identity, Vector3::One, m_Vertices, m_Indices);
 	}
 
 	PhysicsGizmoRenderer::PhysicsGizmoRenderer()

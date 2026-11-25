@@ -16,7 +16,6 @@ namespace Blueberry
 		virtual ~SceneSettings() = default;
 
 		LightingData* GetLightingData();
-		void SetLightingData(LightingData* data);
 
 	private:
 		ObjectPtr<LightingData> m_LightingData;

@@ -348,19 +348,7 @@ namespace Blueberry
 			Object* object = ObjectDB::GetObject(objectId);
 			if (object != nullptr)
 			{
-				auto pair = ObjectDB::GetGuidAndFileIdFromObject(object);
-				auto it = s_GuidToRelativePath.find(pair.first);
-				if (it != s_GuidToRelativePath.end())
-				{
-					String relativePath = s_GuidToRelativePath[pair.first];
-					EditorSerializer serializer = {};
-					String assetPath = Path::GetAssetsPath(relativePath);
-					ThumbnailCache::Release(object);
-					serializer.SetGuid(ObjectDB::GetGuidFromObject(object));
-					serializer.AddObject(object);
-					serializer.Serialize(assetPath, SerializationFlags::EditorOnly | (ClassDB::GetInfo(object->GetType())->preferBinary ? SerializationFlags::None : (SerializationFlags::Text | SerializationFlags::HasHeaders)));
-				}
-				else if (object->IsClassType(AssetImporter::Type))
+				if (object->IsClassType(AssetImporter::Type))
 				{
 					AssetImporter* importer = static_cast<AssetImporter*>(object);
 					Object* mainObject = ObjectDB::GetObjectFromGuid(importer->GetGuid(), importer->GetMainObject());
@@ -371,6 +359,21 @@ namespace Blueberry
 					}
 					importer->Save();
 					importer->ResetImport();
+				}
+				else
+				{
+					auto pair = ObjectDB::GetGuidAndFileIdFromObject(object);
+					auto it = s_GuidToRelativePath.find(pair.first);
+					if (it != s_GuidToRelativePath.end())
+					{
+						String relativePath = s_GuidToRelativePath[pair.first];
+						EditorSerializer serializer = {};
+						String assetPath = Path::GetAssetsPath(relativePath);
+						ThumbnailCache::Release(object);
+						serializer.SetGuid(ObjectDB::GetGuidFromObject(object));
+						serializer.AddObject(object);
+						serializer.Serialize(assetPath, SerializationFlags::EditorOnly | (ClassDB::GetInfo(object->GetType())->preferBinary ? SerializationFlags::None : (SerializationFlags::Text | SerializationFlags::HasHeaders)));
+					}
 				}
 			}
 		}

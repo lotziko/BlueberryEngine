@@ -17,7 +17,7 @@ namespace Blueberry
 		virtual void OnEnable() override;
 		virtual void OnDisable() override;
 		virtual void OnDrawInspector() override;
-		virtual void OnDrawSceneSelected() override;
+		virtual void OnDrawSceneSelected() final;
 
 	private:
 		void OnHierarchyUpdate();

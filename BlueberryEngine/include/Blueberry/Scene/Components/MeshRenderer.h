@@ -39,6 +39,7 @@ namespace Blueberry
 
 		virtual const AABB& GetBounds() final;
 		virtual const Matrix& GetLocalToWorldMatrix() final;
+		virtual const Matrix& GetWorldToLocalMatrix() final;
 
 		const bool& IsBakeable();
 
@@ -60,6 +61,7 @@ namespace Blueberry
 		uint32_t m_LightmapChartOffset = 0;
 
 		GfxBottomLevelAccelerationStructure* m_AccelerationStructure = nullptr;
+		uint32_t m_MeshId = 0;
 		uint32_t m_MeshUpdateCount = 0;
 	};
 }

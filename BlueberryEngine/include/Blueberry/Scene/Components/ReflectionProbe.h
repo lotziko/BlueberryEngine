@@ -27,7 +27,10 @@ namespace Blueberry
 		void SetIndex(uint32_t index);
 
 		float GetRadius() const;
+		void SetRadius(float radius);
+
 		const Vector3& GetSize() const;
+		void SetSize(const Vector3& size);
 		float GetFade() const;
 
 	private:

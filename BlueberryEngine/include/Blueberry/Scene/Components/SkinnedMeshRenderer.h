@@ -43,6 +43,7 @@ namespace Blueberry
 
 		virtual const AABB& GetBounds() final;
 		virtual const Matrix& GetLocalToWorldMatrix() final;
+		virtual const Matrix& GetWorldToLocalMatrix() final;
 
 		const List<Matrix>& GetWorldMatrices();
 		const List<Matrix>& GetSkinningMatrices();

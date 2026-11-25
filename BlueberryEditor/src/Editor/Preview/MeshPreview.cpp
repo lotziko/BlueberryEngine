@@ -51,7 +51,7 @@ namespace Blueberry
 			Vector3 targetPosition = bounds.Center;
 			Vector3 cameraPosition = targetPosition + Vector3(-distance, distance / 3, -distance);
 			Vector3 forward = targetPosition - cameraPosition;
-			m_Camera->GetTransform()->SetRotation(Math::LookRotation(forward, Vector3::Down));
+			m_Camera->GetTransform()->SetRotation(Math::LookRotation(forward, Vector3::Up));
 			m_Camera->GetTransform()->SetPosition(cameraPosition);
 			Entity::Poll();
 		}

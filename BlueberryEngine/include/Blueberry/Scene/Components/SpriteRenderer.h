@@ -17,6 +17,7 @@ namespace Blueberry
 
 		virtual const AABB& GetBounds() final;
 		virtual const Matrix& GetLocalToWorldMatrix() final;
+		virtual const Matrix& GetWorldToLocalMatrix() final;
 
 		const Color& GetColor() const;
 		void SetColor(const Color& color);

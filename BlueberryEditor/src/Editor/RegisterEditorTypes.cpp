@@ -10,6 +10,7 @@
 #include "Editor\Panels\Scene\SceneArea.h"
 #include "Editor\Panels\Game\GameView.h"
 #include "Editor\Panels\Statistics\StatisticsWindow.h"
+#include "Editor\Panels\Debug\DebugWindow.h"
 #include "Editor\Panels\Lightmapping\LightmappingWindow.h"
 #include "Editor\Panels\AnimationGraph\AnimationGraphWindow.h"
 #include "Editor\Scene\SceneSettings.h"
@@ -29,6 +30,7 @@ namespace Blueberry
 		REGISTER_CLASS(SceneArea);
 		REGISTER_CLASS(GameView);
 		REGISTER_CLASS(StatisticsWindow);
+		REGISTER_CLASS(DebugWindow);
 		REGISTER_CLASS(LightmappingWindow);
 		REGISTER_CLASS(AnimationGraphWindow);
 		REGISTER_CLASS(SceneSettings);

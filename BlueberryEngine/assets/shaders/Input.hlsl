@@ -4,13 +4,17 @@
 #define MAIN_LIGHT_CASCADES 3
 #define MAX_REALTIME_LIGHTS 128
 #define MAX_VIEW_COUNT 2
-#define REFLECTION_LOD_COUNT 5
+
+#define REFLECTION_LOD_COUNT 7
+#define REFLECTION_ROUGHEST_MIP 1
+#define REFLECTION_ROUGHNESS_MIP_SCALE 1.2
 
 StructuredBuffer<float4x4> _SkinningData;
 
 struct PerDrawData
 {
 	float4x4 modelMatrix;
+	float4x4 normalMatrix;
 	float4 lightmapChartOffset;
 };
 
@@ -38,6 +42,7 @@ cbuffer PerCameraData
 	float4 _CameraColor;
 	float4 _RenderTargetSizeInvSize;
 	float4 _FogNearFarClipPlane;
+	float4 _DebugValue;
 };
 
 struct PointLightData
@@ -89,7 +94,7 @@ struct ReflectionProbeData
 {
 	float3 positionWS;
 	float squareRange;
-	float weight;
+	float volume;
 	float fade;
 	float3 positionMinWS;	// x is used as range for sphere
 	float3 positionMinVS;	// is used as positionVS for sphere

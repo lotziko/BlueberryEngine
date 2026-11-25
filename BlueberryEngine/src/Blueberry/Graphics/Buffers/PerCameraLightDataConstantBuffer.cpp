@@ -91,7 +91,7 @@ namespace Blueberry
 	{
 		Vector3 positionWS;
 		float squareRange;
-		float weight;
+		float volume;
 		float fade;
 		Vector3 positionMinWS;
 		Vector3 positionMinVS;
@@ -113,6 +113,11 @@ namespace Blueberry
 	static size_t s_ShadowsDataId = TO_HASH("_ShadowsData");
 	static size_t s_ProbeVolumesDataId = TO_HASH("_ProbeVolumesData");
 	static size_t s_ReflectionProbesDataId = TO_HASH("_ReflectionProbesData");
+
+	bool CompareReflectionProbes(const ReflectionProbeBufferData& d1, const ReflectionProbeBufferData& d2)
+	{
+		return d1.volume > d2.volume;
+	}
 
 	void PerCameraLightDataConstantBuffer::BindData(Camera* camera, Light* mainLight, SkyRenderer* skyRenderer, const List<Light*>& lights, const List<ProbeVolume*>& probeVolumes, const List<ReflectionProbe*>& reflectionProbes, const Vector2Int& shadowAtlasSize)
 	{
@@ -280,13 +285,10 @@ namespace Blueberry
 				Vector3 positionWS = probeVolume->GetTransform()->GetPosition();
 				Vector3 size = probeVolume->GetSize();
 				Vector3Int volumeSize = probeVolume->GetDensity();
-				//Vector3Int density = probeVolume->GetDensity();
-				//Vector3Int volumeSize = density + Vector3Int(1, 1, 1);
-				//Vector3 cellSize = Vector3(size.x / density.x, size.y / density.y, size.z / density.z);
-
+				
 				Vector3 positionMinVS = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
 				Vector3 positionMaxVS = Vector3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-				Vector3 halfSize = size * 0.5f;//(size + cellSize) * 0.5f;
+				Vector3 halfSize = size * 0.5f;
 
 				for (uint32_t j = 0; j < 8; ++j)
 				{
@@ -301,7 +303,7 @@ namespace Blueberry
 				data.positionMinVS = positionMinVS;
 				data.positionMaxWS = positionWS + halfSize;
 				data.positionMaxVS = positionMaxVS;
-				data.invSizeWS = Vector3(1.0f / size.x, 1.0f / size.y, 1.0f / size.z);//Vector3(1.0f / (size.x + cellSize.x), 1.0f / (size.y + cellSize.y), 1.0f / (size.z + cellSize.z));
+				data.invSizeWS = Vector3(1.0f / size.x, 1.0f / size.y, 1.0f / size.z);
 				data.topLevelSize = Vector3Uint(static_cast<uint32_t>(volumeSize.x), static_cast<uint32_t>(volumeSize.y), static_cast<uint32_t>(volumeSize.z));
 				data.probeAtlasOffset = probeVolume->m_ProbeAtlasOffset;
 
@@ -326,7 +328,7 @@ namespace Blueberry
 					data.positionMinWS = Vector3(radius, 0, 0);
 					data.positionMinVS = Vector3::Transform(positionWS, view);
 					data.squareRange = radius * radius;
-					data.weight = 1.0f / ((4.0f * Math::Pi * radius * radius * radius) / 3.0f);
+					data.volume = ((4.0f * Math::Pi * radius * radius * radius) / 3.0f);
 					data.type = 0;
 				}
 				else
@@ -348,7 +350,7 @@ namespace Blueberry
 					data.positionMinVS = positionMinVS;
 					data.positionMaxWS = positionWS + halfSize;
 					data.positionMaxVS = positionMaxVS;
-					data.weight = 1.0f / (size.x * size.y * size.z);
+					data.volume = (size.x * size.y * size.z);
 					data.type = 1;
 				}
 				data.fade = std::max(reflectionProbe->GetFade(), 1e-2f);
@@ -357,6 +359,10 @@ namespace Blueberry
 				s_ReflectionProbeDatas[reflectionProbeOffset] = data;
 				++reflectionProbeOffset;
 			}
+		}
+		if (reflectionProbeOffset > 0)
+		{
+			std::sort(s_ReflectionProbeDatas, s_ReflectionProbeDatas + reflectionProbeOffset, CompareReflectionProbes);
 		}
 		constants.lightsCount = Vector4Uint(pointOffset, spotOffset, probeVolumeOffset, reflectionProbeOffset);
 

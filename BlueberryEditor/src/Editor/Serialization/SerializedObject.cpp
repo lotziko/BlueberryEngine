@@ -83,6 +83,11 @@ namespace Blueberry
 		return m_Targets;
 	}
 
+	size_t SerializedObject::GetTargetCount() const
+	{
+		return m_Targets.size();
+	}
+
 	bool SerializedObject::IsValid()
 	{
 		for (size_t i = 0; i < m_Targets.size(); ++i)

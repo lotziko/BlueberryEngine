@@ -474,19 +474,22 @@ namespace Blueberry
 			{
 				return;
 			}
-			UINT subresource = D3D12CalcSubresource(mipLevel, 0, 0, m_MipLevels, m_ArraySize);
 			if (m_SubresourceStates.empty())
 			{
 				m_SubresourceStates.assign(m_SubresourceCount, m_State);
 			}
-			D3D12_RESOURCE_STATES previousState = m_SubresourceStates[subresource];
-			if (previousState != state)
+			for (uint32_t i = 0; i < m_ArraySize; ++i)
 			{
-				m_GfxDevice->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), previousState, state, subresource));
-				m_SubresourceStates[subresource] = state;
-				if (state == D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+				UINT subresource = D3D12CalcSubresource(mipLevel, i, 0, m_MipLevels, m_ArraySize);
+				D3D12_RESOURCE_STATES previousState = m_SubresourceStates[subresource];
+				if (previousState != state)
 				{
-					m_UnorderedAccessGeneration = m_GfxDevice->GetGeneration();
+					m_GfxDevice->GetCommandList()->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_Resource.Get(), previousState, state, subresource));
+					m_SubresourceStates[subresource] = state;
+					if (state == D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+					{
+						m_UnorderedAccessGeneration = m_GfxDevice->GetGeneration();
+					}
 				}
 			}
 		}

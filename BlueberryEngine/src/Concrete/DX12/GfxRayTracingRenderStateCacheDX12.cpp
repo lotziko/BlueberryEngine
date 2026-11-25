@@ -108,6 +108,20 @@ namespace Blueberry
 				}
 			}
 
+			// Buffer SRVs
+			for (size_t i = 0; i < dxRayTracingShader->m_BufferSRVSlots.size(); ++i)
+			{
+				auto& srvSlot = dxRayTracingShader->m_BufferSRVSlots[i];
+				for (size_t j = 0; j < m_Device->m_BindedBuffers.size(); ++j)
+				{
+					if (m_Device->m_BindedBuffers[j].id == srvSlot.first)
+					{
+						bindingState.bufferSrvs.push_back({ static_cast<uint32_t>(j), static_cast<uint8_t>(srvSlot.second) });
+						break;
+					}
+				}
+			}
+
 			// Texture SRVs
 			for (size_t i = 0; i < dxRayTracingShader->m_TextureSRVSlots.size(); ++i)
 			{
@@ -302,6 +316,19 @@ namespace Blueberry
 			dxBuffer->SetState(D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 			renderState.constantBuffers[binding.slotIndex] = dxBuffer->GetConstantBufferView().GetCPU();
 			renderState.constantBuffersCount = std::max(renderState.constantBuffersCount, binding.slotIndex + 1u);
+		}
+
+		for (auto& binding : bindingState.bufferSrvs)
+		{
+			GfxBufferDX12* dxBuffer = GfxBufferDX12::Get(m_Device->m_BindedBuffers[binding.bindingIndex].index);
+			if (dxBuffer == nullptr)
+			{
+				BB_ERROR("Buffer is missing.");
+				continue;
+			}
+			dxBuffer->SetState(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			renderState.shaderResourceViews[binding.slotIndex] = dxBuffer->GetShaderResourceView().GetCPU();
+			renderState.shaderResourceViewsCount = std::max(renderState.shaderResourceViewsCount, binding.slotIndex + 1u);
 		}
 
 		for (auto& binding : bindingState.textureSrvs)

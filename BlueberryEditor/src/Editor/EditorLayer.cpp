@@ -21,6 +21,7 @@
 #include "Editor\Inspector\RegisterObjectEditors.h"
 #include "Editor\Assets\RegisterAssetImporters.h"
 #include "Editor\Panels\Scene\SceneArea.h"
+#include "Editor\Panels\Scene\SceneObjectPicker.h"
 #include "Editor\Panels\Game\GameView.h"
 #include "Editor\Physics\EditorPhysicsShapeCache.h"
 
@@ -79,6 +80,7 @@ namespace Blueberry
 
 		Gizmos::Initialize();
 		IconRenderer::Initialize();
+		SceneObjectPicker::Initialize();
 		Physics::Initialize();
 		Audio::Initialize();
 		RmlUiRenderer::Initialize();
@@ -98,6 +100,7 @@ namespace Blueberry
 		}
 		Gizmos::Shutdown();
 		IconRenderer::Shutdown();
+		SceneObjectPicker::Shutdown();
 		Physics::Shutdown();
 		Audio::Shutdown();
 		RmlUiRenderer::Shutdown();
@@ -138,6 +141,7 @@ namespace Blueberry
 
 			SceneArea::RequestRedrawAll();
 		}
+		UndoManager::ResolveRecordedObjects();
 		
 		GfxDevice::SetRenderTarget(nullptr);
 		GfxDevice::ClearColor(Color(0.0f, 0.0f, 0.0f, 0.0f));
@@ -156,7 +160,6 @@ namespace Blueberry
 			GfxTexturePool::Update();
 			s_FrameUpdateRequested = false;
 		}
-		UndoManager::ResolveRecordedObjects();
 		EngineLayer::Update();
 	}
 

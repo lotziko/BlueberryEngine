@@ -52,7 +52,7 @@ float3 SampleLightmap(float2 uv)
 float3 SampleProbeVolume(float3 positionWS, float3 normalWS, ProbeVolumeData probeVolume)
 {
 	// TODO sparse bricks
-	float3 volumeUvw = ((positionWS + normalWS * 0.125f) - probeVolume.positionMinWS) * probeVolume.invSizeWS;
+	float3 volumeUvw = ((positionWS + normalWS) - probeVolume.positionMinWS) * probeVolume.invSizeWS;
 	float3 gridPos = volumeUvw * float3(probeVolume.topLevelSize);
 	uint3 cellPos = min((uint3)floor(gridPos), probeVolume.topLevelSize - 1u);
 	float3 localInBrickUvw = saturate(gridPos - float3(cellPos));

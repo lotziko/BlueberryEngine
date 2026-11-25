@@ -57,7 +57,7 @@ float3 TransformClipToView(float3 positionCS)
 
 float3 TransformObjectToWorldNormal(float3 normalOS)
 {
-	return normalize(mul((float3x3)OBJECT_TO_WORLD_MATRIX, normalOS));
+	return normalize(mul(normalOS, (float3x3)WORLD_TO_OBJECT_MATRIX));
 }
 
 float3 TransformObjectToWorldDirection(float3 directionOS)
@@ -68,6 +68,18 @@ float3 TransformObjectToWorldDirection(float3 directionOS)
 float3 TransformWorldToViewNormal(float3 normalWS)
 {
 	return mul(VIEW_MATRIX, float4(normalWS, 0.0f)).xyz;
+}
+
+float GetProbeMipLevelFromRoughness(float roughness, float3 NdotR)
+{
+	float mip1px = REFLECTION_ROUGHEST_MIP - REFLECTION_ROUGHNESS_MIP_SCALE * log2(max(roughness, 0.001));
+	return REFLECTION_LOD_COUNT - 1 - mip1px;
+}
+
+float GetProbeRoughnessFromMipLevel(float mipLevel)
+{
+	float mip1px = REFLECTION_LOD_COUNT - 1 - mipLevel;
+	return exp2((REFLECTION_ROUGHEST_MIP - mip1px) / REFLECTION_ROUGHNESS_MIP_SCALE);
 }
 
 #endif

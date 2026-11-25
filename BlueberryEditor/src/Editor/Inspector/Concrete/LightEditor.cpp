@@ -7,6 +7,7 @@
 #include "Editor\Gizmos\Gizmos.h"
 #include "Editor\Panels\Scene\SceneArea.h"
 #include "Editor\Misc\ImGuiHelper.h"
+#include "Editor\Undo\UndoManager.h"
 
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Graphics\Texture2D.h"
@@ -106,6 +107,11 @@ namespace Blueberry
 			{
 				Gizmos::SetMatrix(Math::CreateTRS(transform->GetPosition(), Quaternion::Identity, Vector3::One));
 				Gizmos::DrawSphere(Vector3::Zero, range);
+				if (Gizmos::Slider1D(Vector3::Zero, Vector3::Forward, range))
+				{
+					UndoManager::RecordObject(light);
+					light->SetRange(range);
+				}
 			}
 			else if (type == LightType::Spot)
 			{
@@ -131,6 +137,17 @@ namespace Blueberry
 
 					Gizmos::SetColor(Color(1, 1, 1, 0.4f));
 					DrawCone(innerDiscRadius, innerDiscDistance, 1 | 2);
+					Gizmos::SetColor(Color(1, 1, 1, 1));
+					Vector3 innerAnglePosition = Vector3::UnitZ * innerDiscDistance + Vector3::UnitY * innerDiscRadius;
+					Vector3 innerAngleTangent = Vector3::UnitY * innerDiscDistance - Vector3::UnitZ * innerDiscRadius;
+					innerAngleTangent.Normalize();
+					if (Gizmos::Slider1D(innerAnglePosition, innerAngleTangent))
+					{
+						float halfAngle = atan2f(innerAnglePosition.y, innerAnglePosition.z);
+						float newInnerAngle = Math::ToDegrees(2.0f * halfAngle);
+						UndoManager::RecordObject(light);
+						light->SetInnerSpotAngle(std::clamp(newInnerAngle, 0.05f, outerAngle));
+					}
 				}
 
 				Gizmos::SetColor(Color(1, 1, 1, 0.4f));
@@ -142,6 +159,22 @@ namespace Blueberry
 				Gizmos::DrawArc(Vector3::Zero, Vector3::UnitY, vectorLineLeft, outerAngle, range);
 
 				DrawCone(outerDiscRadius, outerDiscDistance, 4 | 8);
+				Vector3 outerAnglePosition = Vector3::UnitZ * outerDiscDistance + Vector3::UnitX * outerDiscRadius;
+				Vector3 outerAngleTangent = Vector3::UnitX * outerDiscDistance - Vector3::UnitZ * outerDiscRadius;
+				outerAngleTangent.Normalize();
+				if (Gizmos::Slider1D(outerAnglePosition, outerAngleTangent))
+				{
+					float halfAngle = atan2f(outerAnglePosition.x, outerAnglePosition.z);
+					float newOuterAngle = Math::ToDegrees(2.0f * halfAngle);
+					UndoManager::RecordObject(light);
+					light->SetOuterSpotAngle(std::clamp(newOuterAngle, innerAngle, 179.0f));
+				}
+
+				if (Gizmos::Slider1D(Vector3::Zero, Vector3::Forward, range))
+				{
+					UndoManager::RecordObject(light);
+					light->SetRange(std::max(range, 0.05f));
+				}
 			}
 			else if (type == LightType::Directional)
 			{

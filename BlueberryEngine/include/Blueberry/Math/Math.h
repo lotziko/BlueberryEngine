@@ -209,6 +209,7 @@ namespace Blueberry
 	using Vector4Uint = DirectX::XMUINT4;
 	using Quaternion = DirectX::SimpleMath::Quaternion;
 	using Ray = DirectX::SimpleMath::Ray;
+	using Plane = DirectX::SimpleMath::Plane;
 	using Matrix = DirectX::SimpleMath::Matrix;
 	using Rectangle = DirectX::SimpleMath::Rectangle;
 	using Viewport = DirectX::SimpleMath::Viewport;
@@ -379,8 +380,16 @@ namespace Blueberry
 		static inline Quaternion LookRotation(Vector3 forward, Vector3 up = Vector3::UnitY)
 		{
 			Vector3 zAxis = forward;
-			Vector3 xAxis = zAxis.Cross(up);
+			zAxis.Normalize();
+
+			Vector3 xAxis = up.Cross(zAxis);
+			if (xAxis.LengthSquared() < 1e-8f)
+			{
+				Vector3 fallbackUp = std::abs(zAxis.y) < 0.999f ? Vector3::UnitY : Vector3::UnitX;
+				xAxis = fallbackUp.Cross(zAxis);
+			}
 			xAxis.Normalize();
+
 			Vector3 yAxis = zAxis.Cross(xAxis);
 
 			Matrix rotationMatrix = Matrix(
@@ -404,10 +413,28 @@ namespace Blueberry
 			return Vector3(pointToTransform.x, pointToTransform.y, pointToTransform.z);
 		}
 
+		static inline Vector3 MultiplyPoint(Quaternion quaternion, Vector3 point)
+		{
+			Vector4 pointToTransform = Vector4(point.x, point.y, point.z, 1.0f);
+			pointToTransform = Vector4::Transform(pointToTransform, quaternion);
+			pointToTransform.w = 1 / pointToTransform.w;
+			pointToTransform.x *= pointToTransform.w;
+			pointToTransform.y *= pointToTransform.w;
+			pointToTransform.z *= pointToTransform.w;
+			return Vector3(pointToTransform.x, pointToTransform.y, pointToTransform.z);
+		}
+
 		static inline Vector3 MultiplyVector(Matrix matrix, Vector3 vector)
 		{
 			Vector4 vectorToTransform = Vector4(vector.x, vector.y, vector.z, 0.0f);
 			vectorToTransform = Vector4::Transform(vectorToTransform, matrix);
+			return Vector3(vectorToTransform.x, vectorToTransform.y, vectorToTransform.z);
+		}
+
+		static inline Vector3 MultiplyVector(Quaternion quaternion, Vector3 vector)
+		{
+			Vector4 vectorToTransform = Vector4(vector.x, vector.y, vector.z, 0.0f);
+			vectorToTransform = Vector4::Transform(vectorToTransform, quaternion);
 			return Vector3(vectorToTransform.x, vectorToTransform.y, vectorToTransform.z);
 		}
 
@@ -477,6 +504,21 @@ namespace Blueberry
 
 			*TopPlane = DirectX::XMPlaneNormalize(DirectX::XMPlaneFromPoints(corners[4], corners[1], corners[0]));
 			*BottomPlane = DirectX::XMPlaneNormalize(DirectX::XMPlaneFromPoints(corners[7], corners[3], corners[2]));
+		}
+
+		static inline bool Raycast(const Plane& plane, const Ray& ray, float& enter)
+		{
+			Vector3 normal = plane.Normal();
+			float distance = plane.D();
+			float vdot = ray.direction.Dot(normal);
+			float ndot = -ray.position.Dot(normal) - distance;
+			if (Math::Approximately(vdot, 0.0f))
+			{
+				enter = 0.0F;
+				return false;
+			}
+			enter = ndot / vdot;
+			return enter > 0.0f;
 		}
 
 		static inline uint32_t GetMipCount(const uint32_t& width, const uint32_t& height, const bool& generateMips)

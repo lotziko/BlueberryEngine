@@ -42,7 +42,7 @@ namespace Blueberry
 		{
 			float percentage = 1.0f - (area->GetCameraDistance() / initialDistance);
 
-			Ray mouseRay = SceneHelper::GUIPointToWorldRay(mousePosition, area->GetCamera());
+			Ray mouseRay = SceneHelper::ScreenPointToWorldRay(mousePosition, area->GetCamera());
 			Vector3 mousePivot = mouseRay.position + mouseRay.direction * initialDistance;
 			Vector3 pivotVector = mousePivot - area->GetPosition();
 

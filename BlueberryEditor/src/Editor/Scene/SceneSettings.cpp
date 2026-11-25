@@ -1,7 +1,11 @@
 #include "SceneSettings.h"
 
 #include "Blueberry\Core\ClassDB.h"
+#include "Editor\EditorSceneManager.h"
+#include "Editor\Assets\AssetDB.h"
 #include "LightingData.h"
+
+#include <filesystem>
 
 namespace Blueberry
 {
@@ -12,11 +16,16 @@ namespace Blueberry
 
 	LightingData* SceneSettings::GetLightingData()
 	{
-		return m_LightingData.Get();
-	}
+		if (!m_LightingData.IsValid())
+		{
+			m_LightingData = Object::Create<LightingData>();
+			String lightingDataPath = EditorSceneManager::GetPath();
+			lightingDataPath.replace(lightingDataPath.find(".scene"), 6, "\\LightingData.asset");
+			auto relativeLightingDataPath = std::filesystem::relative(lightingDataPath, Path::GetAssetsPath());
+			AssetDB::CreateAsset(m_LightingData.Get(), StringHelper::ToString(relativeLightingDataPath));
+			AssetDB::SaveAssets();
+		}
 
-	void SceneSettings::SetLightingData(LightingData* data)
-	{
-		m_LightingData = data;
+		return m_LightingData.Get();
 	}
 }

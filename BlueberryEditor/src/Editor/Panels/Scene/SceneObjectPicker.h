@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Blueberry\Core\Base.h"
+
 namespace Blueberry
 {
 	class Object;
@@ -11,17 +13,18 @@ namespace Blueberry
 	class SceneObjectPicker
 	{
 	public:
-		SceneObjectPicker();
-		virtual ~SceneObjectPicker();
+		static void Initialize();
+		static void Shutdown();
 
-		Object* Pick(Scene* scene, Camera* camera, int positionX, int positionY);
-		void DrawOutline(Scene* scene, Camera* camera, GfxTexture* renderTarget);
+		static Object* Pick(Scene* scene, Camera* camera, int positionX, int positionY);
+		static void DrawOutline(Scene* scene, Camera* camera, GfxTexture* colorRenderTarget, GfxTexture* depthStencilRenderTarget, const Vector2Int& viewport);
+
 	private:
-		GfxTexture* m_SceneRenderTarget = nullptr;
-		GfxTexture* m_SceneDepthStencil = nullptr;
-		Material* m_SpriteObjectPickerMaterial = nullptr;
-		Material* m_MeshObjectPickerMaterial = nullptr;
-		Material* m_IconObjectPickerMaterial = nullptr;
-		Material* m_ObjectPickerOutlineMaterial = nullptr;
+		static GfxTexture* s_SceneRenderTarget;
+		static GfxTexture* s_SceneDepthStencil;
+		static Material* s_SpriteObjectPickerMaterial;
+		static Material* s_MeshObjectPickerMaterial;
+		static Material* s_IconObjectPickerMaterial;
+		static Material* s_ObjectPickerOutlineMaterial;
 	};
 }

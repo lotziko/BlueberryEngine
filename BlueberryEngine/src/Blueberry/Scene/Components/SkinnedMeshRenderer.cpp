@@ -156,7 +156,12 @@ namespace Blueberry
 	{
 		return m_Root->GetParent()->GetLocalToWorldMatrix();
 	}
-	
+
+	const Matrix& SkinnedMeshRenderer::GetWorldToLocalMatrix()
+	{
+		return m_Root->GetParent()->GetWorldToLocalMatrix();
+	}
+
 	const List<Matrix>& SkinnedMeshRenderer::GetWorldMatrices()
 	{
 		return m_WorldMatrices;

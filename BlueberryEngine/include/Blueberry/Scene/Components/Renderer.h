@@ -12,6 +12,7 @@ namespace Blueberry
 	public:
 		virtual const AABB& GetBounds() = 0;
 		virtual const Matrix& GetLocalToWorldMatrix() = 0;
+		virtual const Matrix& GetWorldToLocalMatrix() = 0;
 
 		int GetSortingOrder() const;
 		void SetSortingOrder(int sortingOrder);

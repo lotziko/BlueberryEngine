@@ -58,13 +58,7 @@ namespace Blueberry
 
 			SceneSettings* settings = EditorSceneManager::GetSettings();
 			LightingData* lightingData = settings->GetLightingData();
-
-			if (lightingData == nullptr || lightingData->GetState() != ObjectState::Default)
-			{
-				lightingData = Object::Create<LightingData>();
-				settings->SetLightingData(lightingData);
-			}
-
+			
 			ImGui::EditorStyle& style = ImGui::GetEditorStyle();
 			switch (LightmappingManager::GetLightmappingState())
 			{
@@ -202,14 +196,11 @@ namespace Blueberry
 
 							lightingData->SetLightmapData(lightmap, result.chartOffsetScale, result.chartInstanceOffset);
 							lightingData->Apply();
+							AssetDB::SetDirty(lightingData);
+							AssetDB::SaveAssets();
 						}
 					}
 					
-					String lightingDataPath = EditorSceneManager::GetPath();
-					lightingDataPath.replace(lightingDataPath.find(".scene"), 6, "\\LightingData.asset");
-					auto relativeLightingDataPath = std::filesystem::relative(lightingDataPath, Path::GetAssetsPath());
-					AssetDB::CreateAsset(lightingData, StringHelper::ToString(relativeLightingDataPath));
-
 					EditorSceneManager::Save();
 					LightmappingManager::Shutdown();
 				}

@@ -305,8 +305,8 @@ namespace Blueberry
 				if (lightingData != nullptr)
 				{
 					lightingData->Apply();
+					s_EditorScene->SetLightingSettings(lightingData->GetLightingSettings());
 				}
-				s_EditorScene->SetLightingSettings(lightingData->GetLightingSettings());
 			}
 		}
 		Entity::Poll();

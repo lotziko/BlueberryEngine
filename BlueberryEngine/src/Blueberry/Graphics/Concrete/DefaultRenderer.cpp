@@ -127,7 +127,7 @@ namespace Blueberry
 		BakedLighting::Apply(scene);
 
 		Shader::SetKeyword(s_ProbeVolumesKeywordId, true);
-		bool hasScreenReflections = GraphicsSettings::GetScreenReflections();
+		bool hasScreenReflections = GraphicsSettings::GetScreenReflections() && cameraType != CameraType::Reflection;
 		Shader::SetKeyword(s_ScreenReflectionsKeywordId, hasScreenReflections);
 		Shader::SetKeyword(s_ReflectionProbesKeywordId, !hasScreenReflections && cameraType != CameraType::Reflection && cameraType != CameraType::Preview);
 

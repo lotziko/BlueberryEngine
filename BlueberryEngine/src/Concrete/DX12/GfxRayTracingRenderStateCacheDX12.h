@@ -72,6 +72,7 @@ namespace Blueberry
 	struct GfxRayTracingBindingStateDX12
 	{
 		List<GfxRayTracingBindingDX12> cbvs;
+		List<GfxRayTracingBindingDX12> bufferSrvs;
 		List<GfxRayTracingBindingDX12> textureSrvs;
 		List<GfxRayTracingBindingDX12> textureUavs;
 		List<GfxRayTracingBindingDX12> samplers;

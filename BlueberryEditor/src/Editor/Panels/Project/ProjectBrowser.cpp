@@ -167,7 +167,7 @@ namespace Blueberry
 			ImGui::Image(reinterpret_cast<ImTextureID>((opened && hasChildren) ? m_FolderIconSmallOpened->GetHandle() : m_FolderIconSmall->GetHandle()), ImVec2(style.ProjectFolderIconSize, style.ProjectFolderIconSize));
 			ImGui::SameLine();
 			ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 4);
-			ImGui::Text("%s", label);
+			ImGui::Text(label);
 
 			if (hasChildren && opened)
 			{
@@ -604,8 +604,15 @@ namespace Blueberry
 			if (ImGui::BeginDragDropSource())
 			{
 				ObjectId objectId = iconObject->GetObjectId();
+				float size = style.ProjectCellSize - style.ProjectCellIconPadding * 2;
 				ImGui::SetDragDropPayload("OBJECT_ID", &objectId, sizeof(ObjectId));
-				ImGui::Text("%s", iconObject->GetName().c_str());
+				ImVec2 pos = ImGui::GetCursorScreenPos();
+				const char* text = object->GetName().c_str();
+				float textWidth = ImGui::CalcTextSize(text).x;
+				ImDrawList* drawList = ImGui::GetWindowDrawList();
+				ImGui::Dummy(ImVec2(size, size + ImGui::GetTextLineHeightWithSpacing()));
+				drawList->AddImage(reinterpret_cast<ImTextureID>(icon->GetHandle()), ImVec2(pos.x, pos.y), ImVec2(pos.x + size, pos.y + size));
+				drawList->AddText(pos + ImVec2(std::fmaxf((size - textWidth) * 0.5f, 0.0f), size + ImGui::GetStyle().ItemSpacing.y), ImGui::GetColorU32(ImGuiCol_Text), text);
 				ImGui::EndDragDropSource();
 			}
 		}

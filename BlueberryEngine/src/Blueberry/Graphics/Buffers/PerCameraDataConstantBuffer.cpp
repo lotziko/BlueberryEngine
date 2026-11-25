@@ -6,6 +6,7 @@
 #include "Blueberry\Graphics\GfxDevice.h"
 #include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Graphics\GfxBuffer.h"
+#include "Blueberry\Graphics\Concrete\GraphicsSettings.h"
 
 namespace Blueberry
 {
@@ -29,6 +30,7 @@ namespace Blueberry
 		Color cameraColor;
 		Vector4 renderTargetSizeInvSize;
 		Vector4 fogNearFarClipPlane;
+		Vector4 debugValue;
 	};
 
 	static size_t s_PerCameraDataId = TO_HASH("PerCameraData");
@@ -117,6 +119,7 @@ namespace Blueberry
 		constants.cameraForwardDirectionWS = direction;
 		constants.cameraNearFarClipPlane = nearFar;
 		constants.fogNearFarClipPlane = fogNearFar;
+		constants.debugValue = Vector4(GraphicsSettings::GetDebugValue0(), GraphicsSettings::GetDebugValue1(), 0, 0);
 
 		s_ConstantBuffer->SetData(reinterpret_cast<char*>(&constants), sizeof(PerCameraData));
 		GfxDevice::SetGlobalBuffer(s_PerCameraDataId, s_ConstantBuffer);

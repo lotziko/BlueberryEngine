@@ -30,7 +30,6 @@ namespace Blueberry
 		{
 			SkinnedMeshRenderer* renderer = static_cast<SkinnedMeshRenderer*>(target);
 			AABB bounds = renderer->GetBounds();
-			Gizmos::SetMatrix(Matrix::Identity);
 			Gizmos::DrawBox(bounds.Center, static_cast<Vector3>(bounds.Extents) * 2);
 		}
 	}

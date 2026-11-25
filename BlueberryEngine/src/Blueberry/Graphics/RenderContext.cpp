@@ -38,6 +38,7 @@ namespace Blueberry
 	struct DrawingOperation
 	{
 		Matrix matrix;
+		Matrix normalMatrix;
 		Mesh* mesh;
 		ObjectId meshId;
 		uint8_t submeshIndex;
@@ -70,7 +71,7 @@ namespace Blueberry
 	static Object* s_CurrentCuller = nullptr;
 	static uint32_t s_CurrentCullerIndex = 0;
 	static GIType s_CurrentGIType = GIType::None;
-	static List<std::pair<Matrix, Vector4>> s_PerDrawData = {};
+	static List<PerDrawData> s_PerDrawData = {};
 	static uint32_t s_Indices[INSTANCE_BUFFER_SIZE];
 
 	static size_t s_LightmapId = TO_HASH("LIGHTMAP");
@@ -102,13 +103,16 @@ namespace Blueberry
 	void BindOperationsRenderers()
 	{
 		s_PerDrawData.clear();
-		uint32_t operationCount = static_cast<uint32_t>(s_DrawingOperations.size());
-		for (uint32_t i = 0; i < operationCount; ++i)
+		for (uint32_t i = 0; i < s_DrawingOperations.size(); ++i)
 		{
 			auto& operation = s_DrawingOperations[i];
-			s_PerDrawData.push_back(std::move(std::make_pair(GfxDevice::GetGPUMatrix(operation.matrix), Vector4(static_cast<float>(operation.lightmapChartOffset), 0.0f, 0.0f, 0.0f))));
+			PerDrawData perDrawData;
+			perDrawData.modelMatrix = GfxDevice::GetGPUMatrix(operation.matrix);
+			perDrawData.normalMatrix = GfxDevice::GetGPUMatrix(operation.normalMatrix);
+			perDrawData.lightmapChartOffset = Vector4(static_cast<float>(operation.lightmapChartOffset), 0.0f, 0.0f, 0.0f);
+			s_PerDrawData.push_back(std::move(perDrawData));
 		}
-		PerDrawDataConstantBuffer::BindDataInstanced(s_PerDrawData.data(), operationCount);
+		PerDrawDataConstantBuffer::BindDataInstanced(s_PerDrawData.data(), s_DrawingOperations.size());
 	}
 
 	void GatherOperations(const CullingResults& results, Object* cullerObject, uint32_t index, SortingMode sortingMode, ObjectsFilter objectsFilter, uint64_t passId)
@@ -168,6 +172,7 @@ namespace Blueberry
 					continue;
 				}
 				Matrix matrix = renderer->GetLocalToWorldMatrix();
+				Matrix normalMatrix = renderer->GetWorldToLocalMatrix();
 				float distance = Vector3::Transform(meshRenderer->GetBounds().Center, cullerViewMatrix).z;
 				uint32_t lightmapChartOffset = meshRenderer->GetLightmapChartOffset();
 				uint32_t subMeshCount = mesh->GetSubMeshCount();
@@ -182,6 +187,7 @@ namespace Blueberry
 						{
 							DrawingOperation operation = {};
 							operation.matrix = matrix;
+							operation.normalMatrix = normalMatrix;
 							operation.mesh = mesh;
 							operation.meshId = mesh->GetObjectId();
 							operation.submeshIndex = static_cast<uint8_t>(i);
@@ -202,6 +208,7 @@ namespace Blueberry
 					{
 						DrawingOperation operation = {};
 						operation.matrix = matrix;
+						operation.normalMatrix = normalMatrix;
 						operation.mesh = mesh;
 						operation.meshId = mesh->GetObjectId();
 						operation.submeshIndex = 255;
@@ -233,6 +240,7 @@ namespace Blueberry
 				}
 				Transform* transform = skinnedMeshRenderer->GetTransform();
 				Matrix matrix = renderer->GetLocalToWorldMatrix();
+				Matrix normalMatrix = renderer->GetWorldToLocalMatrix();
 				float distance = Vector3::Transform(skinnedMeshRenderer->GetBounds().Center, cullerViewMatrix).z;
 				uint32_t subMeshCount = mesh->GetSubMeshCount();
 				GfxBuffer* vertexBuffer = Skinning::GetVertexBuffer(skinnedMeshRenderer);
@@ -251,6 +259,7 @@ namespace Blueberry
 						{
 							DrawingOperation operation = {};
 							operation.matrix = matrix;
+							operation.normalMatrix = normalMatrix;
 							operation.mesh = mesh;
 							operation.meshId = mesh->GetObjectId();
 							operation.submeshIndex = static_cast<uint8_t>(i);
@@ -271,6 +280,7 @@ namespace Blueberry
 					{
 						DrawingOperation operation = {};
 						operation.matrix = matrix;
+						operation.normalMatrix = normalMatrix;
 						operation.mesh = mesh;
 						operation.meshId = mesh->GetObjectId();
 						operation.submeshIndex = 255;

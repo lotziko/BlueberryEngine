@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Blueberry\Core\Base.h"
+
 namespace Blueberry
 {
 	class Scene;
@@ -9,6 +11,7 @@ namespace Blueberry
 	class GizmoRenderer
 	{
 	public:
-		static void Draw(Scene* scene, Camera* camera, GfxTexture* target);
+		static void GatherAndUpdate(Scene* scene);
+		static void Draw(GfxTexture* target);
 	};
 }

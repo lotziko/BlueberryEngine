@@ -56,11 +56,6 @@ namespace Blueberry
 
 		SceneSettings* settings = EditorSceneManager::GetSettings();
 		LightingData* lightingData = settings->GetLightingData();
-		if (lightingData == nullptr || lightingData->GetState() != ObjectState::Default)
-		{
-			lightingData = Object::Create<LightingData>();
-			settings->SetLightingData(lightingData);
-		}
 		TextureCube* result = Save(0);
 		lightingData->SetSkyReflection(skyRenderer, result);
 		lightingData->Apply();
@@ -115,7 +110,7 @@ namespace Blueberry
 			s_RenderTargetTexture->SetName("ReflectionGenerator RenderTarget");
 
 			textureProperties.dimension = TextureDimension::TextureCube;
-			textureProperties.usageFlags = TextureUsageFlags::RenderTarget | TextureUsageFlags::CPUWritable;
+			textureProperties.usageFlags = TextureUsageFlags::RenderTarget;
 			GfxDevice::CreateTexture(textureProperties, s_CubeTexture);
 			s_CubeTexture->SetName("ReflectionGenerator CubeTexture");
 		}

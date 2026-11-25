@@ -128,106 +128,115 @@ namespace Blueberry
 			if (perLightingSettingsData.lightmapUpdateCount != lightmapUpdateCount)
 			{
 				auto& chartOffsetScale = lightingSettings->GetChartOffsetScale();
-				if (perLightingSettingsData.scaleOffsetBuffer != nullptr && perLightingSettingsData.scaleOffsetBuffer->GetElementCount() < chartOffsetScale.size())
+				if (!chartOffsetScale.empty())
 				{
-					delete perLightingSettingsData.scaleOffsetBuffer;
-					perLightingSettingsData.scaleOffsetBuffer = nullptr;
+					if (perLightingSettingsData.scaleOffsetBuffer != nullptr && perLightingSettingsData.scaleOffsetBuffer->GetElementCount() < chartOffsetScale.size())
+					{
+						delete perLightingSettingsData.scaleOffsetBuffer;
+						perLightingSettingsData.scaleOffsetBuffer = nullptr;
+					}
+					if (perLightingSettingsData.scaleOffsetBuffer == nullptr)
+					{
+						BufferProperties properties = {};
+						properties.elementCount = static_cast<uint32_t>(chartOffsetScale.size());
+						properties.elementSize = sizeof(Vector4);
+						properties.data = chartOffsetScale.data();
+						properties.dataSize = chartOffsetScale.size() * sizeof(Vector4);
+						properties.usageFlags = BufferUsageFlags::StructuredBuffer | BufferUsageFlags::ShaderResource;
+						GfxDevice::CreateBuffer(properties, perLightingSettingsData.scaleOffsetBuffer);
+					}
+					else
+					{
+						perLightingSettingsData.scaleOffsetBuffer->SetData(chartOffsetScale.data(), chartOffsetScale.size() * sizeof(Vector4));
+					}
+					perLightingSettingsData.lightmapUpdateCount = lightmapUpdateCount;
 				}
-				if (perLightingSettingsData.scaleOffsetBuffer == nullptr)
-				{
-					BufferProperties properties = {};
-					properties.elementCount = static_cast<uint32_t>(chartOffsetScale.size());
-					properties.elementSize = sizeof(Vector4);
-					properties.data = chartOffsetScale.data();
-					properties.dataSize = chartOffsetScale.size() * sizeof(Vector4);
-					properties.usageFlags = BufferUsageFlags::StructuredBuffer | BufferUsageFlags::ShaderResource;
-					GfxDevice::CreateBuffer(properties, perLightingSettingsData.scaleOffsetBuffer);
-				}
-				else
-				{
-					perLightingSettingsData.scaleOffsetBuffer->SetData(chartOffsetScale.data(), chartOffsetScale.size() * sizeof(Vector4));
-				}
-				perLightingSettingsData.lightmapUpdateCount = lightmapUpdateCount;
 			}
 			GfxDevice::SetGlobalTexture(s_LightmapTextureId, lightmap == nullptr ? DefaultTextures::GetWhite2D()->Get() : lightmap->Get());
-			GfxDevice::SetGlobalBuffer(s_PerLightmapInstanceDataId, perLightingSettingsData.scaleOffsetBuffer);
+			if (perLightingSettingsData.scaleOffsetBuffer != nullptr)
+			{
+				GfxDevice::SetGlobalBuffer(s_PerLightmapInstanceDataId, perLightingSettingsData.scaleOffsetBuffer);
+			}
 
 			uint32_t probeVolumesUpdateCount = lightingSettings->GetProbeVolumesUpdateCount();
 			if (perLightingSettingsData.probeVolumesUpdateCount != probeVolumesUpdateCount)
 			{
 				auto& probeVolumes = lightingSettings->GetProbeVolumes();
-				if (perLightingSettingsData.probeVolumeTexture0 == nullptr)
+				if (!probeVolumes.empty())
 				{
-					TextureProperties textureProperties = {};
-					textureProperties.width = 512;
-					textureProperties.height = 512;
-					textureProperties.depth = 40;
-					textureProperties.antiAliasing = 1;
-					textureProperties.mipCount = 1;
-					textureProperties.format = TextureFormat::R11G11B10_Float;
-					textureProperties.dimension = TextureDimension::Texture3D;
-					textureProperties.wrapMode = WrapMode::Clamp;
-					textureProperties.filterMode = FilterMode::Trilinear;
-					textureProperties.usageFlags = TextureUsageFlags::UnorderedAccess;
-
-					perLightingSettingsData.probeVolumeTexture0 = GfxTexturePool::Get(textureProperties);
-					perLightingSettingsData.probeVolumeTexture1 = GfxTexturePool::Get(textureProperties);
-					perLightingSettingsData.probeVolumeTexture2 = GfxTexturePool::Get(textureProperties);
-					perLightingSettingsData.probeVolumeTexture3 = GfxTexturePool::Get(textureProperties);
-					perLightingSettingsData.probeVolumeTexture4 = GfxTexturePool::Get(textureProperties);
-					perLightingSettingsData.probeVolumeTexture5 = GfxTexturePool::Get(textureProperties);
-				}
-				uint32_t brickOffset = 0;
-				for (size_t i = 0; i < probeVolumes.size(); ++i)
-				{
-					ProbeVolumeInfo* info = probeVolumes[i].Get();
-					if (info != nullptr)
+					if (perLightingSettingsData.probeVolumeTexture0 == nullptr)
 					{
-						auto& bricks = info->GetBricks();
-						auto& colors = info->GetColors();
-						if (bricks.size() > MAX_BRICK_COUNT)
-						{
-							BB_ERROR("Too many bricks in volume.");
-							continue;
-						}
-						uint32_t brickCount = static_cast<uint32_t>(bricks.size());
-						if (brickCount > 0)
-						{
-							uint32_t groupsX = std::min(brickCount, 65535u);
-							uint32_t groupsY = (brickCount + groupsX - 1) / groupsX;
+						TextureProperties textureProperties = {};
+						textureProperties.width = 512;
+						textureProperties.height = 512;
+						textureProperties.depth = 40;
+						textureProperties.antiAliasing = 1;
+						textureProperties.mipCount = 1;
+						textureProperties.format = TextureFormat::R11G11B10_Float;
+						textureProperties.dimension = TextureDimension::Texture3D;
+						textureProperties.wrapMode = WrapMode::Clamp;
+						textureProperties.filterMode = FilterMode::Trilinear;
+						textureProperties.usageFlags = TextureUsageFlags::UnorderedAccess;
 
-							FillProbeAtlasData fillProbeAtlasConstants = {};
-							fillProbeAtlasConstants.brickGroupsX = groupsX;
-							fillProbeAtlasConstants.firstBrickOffset = brickOffset;
-							fillProbeAtlasConstants.brickCount = brickCount;
-							fillProbeAtlasConstants.colorSize = static_cast<uint32_t>(info->GetColors().size() / (6 * sizeof(uint32_t)));
-							s_FillProbeAtlasData->SetData(&fillProbeAtlasConstants, sizeof(FillProbeAtlasData));
-
-							s_BricksData->SetData(bricks.data(), bricks.size() * sizeof(ProbeVolumeBrickData));
-							s_ColorsData->SetData(colors.data(), colors.size());
-
-							GfxDevice::SetGlobalBuffer(s_FillProbeAtlasDataId, s_FillProbeAtlasData);
-							GfxDevice::SetGlobalBuffer(s_BricksDataId, s_BricksData);
-							GfxDevice::SetGlobalBuffer(s_ColorsDataId, s_ColorsData);
-							GfxDevice::SetGlobalTexture(s_ProbeVolumeOutputTexture0Id, perLightingSettingsData.probeVolumeTexture0);
-							GfxDevice::SetGlobalTexture(s_ProbeVolumeOutputTexture1Id, perLightingSettingsData.probeVolumeTexture1);
-							GfxDevice::SetGlobalTexture(s_ProbeVolumeOutputTexture2Id, perLightingSettingsData.probeVolumeTexture2);
-							GfxDevice::SetGlobalTexture(s_ProbeVolumeOutputTexture3Id, perLightingSettingsData.probeVolumeTexture3);
-							GfxDevice::SetGlobalTexture(s_ProbeVolumeOutputTexture4Id, perLightingSettingsData.probeVolumeTexture4);
-							GfxDevice::SetGlobalTexture(s_ProbeVolumeOutputTexture5Id, perLightingSettingsData.probeVolumeTexture5);
-							GfxDevice::Dispatch(s_FillProbeAtlasShader, 0, groupsX, groupsY, 1);
-						}
-						for (ProbeVolume* probeVolume : scene->GetComponents<ProbeVolume>())
-						{
-							if (probeVolume->GetIndex() == i)
-							{
-								probeVolume->m_ProbeAtlasOffset = brickOffset;
-							}
-						}
-						brickOffset += brickCount;
+						perLightingSettingsData.probeVolumeTexture0 = GfxTexturePool::Get(textureProperties);
+						perLightingSettingsData.probeVolumeTexture1 = GfxTexturePool::Get(textureProperties);
+						perLightingSettingsData.probeVolumeTexture2 = GfxTexturePool::Get(textureProperties);
+						perLightingSettingsData.probeVolumeTexture3 = GfxTexturePool::Get(textureProperties);
+						perLightingSettingsData.probeVolumeTexture4 = GfxTexturePool::Get(textureProperties);
+						perLightingSettingsData.probeVolumeTexture5 = GfxTexturePool::Get(textureProperties);
 					}
+					uint32_t brickOffset = 0;
+					for (size_t i = 0; i < probeVolumes.size(); ++i)
+					{
+						ProbeVolumeInfo* info = probeVolumes[i].Get();
+						if (info != nullptr)
+						{
+							auto& bricks = info->GetBricks();
+							auto& colors = info->GetColors();
+							if (bricks.size() > MAX_BRICK_COUNT)
+							{
+								BB_ERROR("Too many bricks in volume.");
+								continue;
+							}
+							uint32_t brickCount = static_cast<uint32_t>(bricks.size());
+							if (brickCount > 0)
+							{
+								uint32_t groupsX = std::min(brickCount, 65535u);
+								uint32_t groupsY = (brickCount + groupsX - 1) / groupsX;
+
+								FillProbeAtlasData fillProbeAtlasConstants = {};
+								fillProbeAtlasConstants.brickGroupsX = groupsX;
+								fillProbeAtlasConstants.firstBrickOffset = brickOffset;
+								fillProbeAtlasConstants.brickCount = brickCount;
+								fillProbeAtlasConstants.colorSize = static_cast<uint32_t>(info->GetColors().size() / (6 * sizeof(uint32_t)));
+								s_FillProbeAtlasData->SetData(&fillProbeAtlasConstants, sizeof(FillProbeAtlasData));
+
+								s_BricksData->SetData(bricks.data(), bricks.size() * sizeof(ProbeVolumeBrickData));
+								s_ColorsData->SetData(colors.data(), colors.size());
+
+								GfxDevice::SetGlobalBuffer(s_FillProbeAtlasDataId, s_FillProbeAtlasData);
+								GfxDevice::SetGlobalBuffer(s_BricksDataId, s_BricksData);
+								GfxDevice::SetGlobalBuffer(s_ColorsDataId, s_ColorsData);
+								GfxDevice::SetGlobalTexture(s_ProbeVolumeOutputTexture0Id, perLightingSettingsData.probeVolumeTexture0);
+								GfxDevice::SetGlobalTexture(s_ProbeVolumeOutputTexture1Id, perLightingSettingsData.probeVolumeTexture1);
+								GfxDevice::SetGlobalTexture(s_ProbeVolumeOutputTexture2Id, perLightingSettingsData.probeVolumeTexture2);
+								GfxDevice::SetGlobalTexture(s_ProbeVolumeOutputTexture3Id, perLightingSettingsData.probeVolumeTexture3);
+								GfxDevice::SetGlobalTexture(s_ProbeVolumeOutputTexture4Id, perLightingSettingsData.probeVolumeTexture4);
+								GfxDevice::SetGlobalTexture(s_ProbeVolumeOutputTexture5Id, perLightingSettingsData.probeVolumeTexture5);
+								GfxDevice::Dispatch(s_FillProbeAtlasShader, 0, groupsX, groupsY, 1);
+							}
+							for (ProbeVolume* probeVolume : scene->GetComponents<ProbeVolume>())
+							{
+								if (probeVolume->GetIndex() == i)
+								{
+									probeVolume->m_ProbeAtlasOffset = brickOffset;
+								}
+							}
+							brickOffset += brickCount;
+						}
+					}
+					perLightingSettingsData.probeVolumesUpdateCount = probeVolumesUpdateCount;
 				}
-				perLightingSettingsData.probeVolumesUpdateCount = probeVolumesUpdateCount;
 			}
 			if (perLightingSettingsData.probeVolumeTexture0 == nullptr)
 			{
@@ -252,40 +261,47 @@ namespace Blueberry
 			if (perLightingSettingsData.reflectionProbesUpdateCount != reflectionProbesUpdateCount)
 			{
 				auto& reflectionProbes = lightingSettings->GetReflectionProbes();
-				if (perLightingSettingsData.reflectionProbeTexture != nullptr && perLightingSettingsData.reflectionProbeTexture->GetDepth() < reflectionProbes.size())
+				if (!reflectionProbes.empty())
 				{
-					GfxTexturePool::Release(perLightingSettingsData.reflectionProbeTexture);
-					perLightingSettingsData.reflectionProbeTexture = nullptr;
-				}
-				if (perLightingSettingsData.reflectionProbeTexture == nullptr)
-				{
-					TextureProperties textureProperties = {};
-					textureProperties.width = 128;
-					textureProperties.height = 128;
-					textureProperties.depth = static_cast<uint32_t>(reflectionProbes.size());
-					textureProperties.antiAliasing = 1;
-					textureProperties.mipCount = 6;
-					textureProperties.format = TextureFormat::BC6H_UFloat;
-					textureProperties.dimension = TextureDimension::TextureCubeArray;
-					textureProperties.wrapMode = WrapMode::Clamp;
-					textureProperties.filterMode = FilterMode::Bilinear;
-
-					perLightingSettingsData.reflectionProbeTexture = GfxTexturePool::Get(textureProperties);
-				}
-				// TODO use SetData and do not load probe data to GPU
-				for (size_t i = 0; i < reflectionProbes.size(); ++i)
-				{
-					GfxTexture* sourceTexture = reflectionProbes[i]->Get();
-					uint32_t mipLevels = sourceTexture->GetMipLevels();
-					for (uint32_t j = 0; j < 6; ++j)
+					if (perLightingSettingsData.reflectionProbeTexture != nullptr && perLightingSettingsData.reflectionProbeTexture->GetDepth() < reflectionProbes.size())
 					{
-						for (uint32_t k = 0; k < mipLevels; ++k)
+						GfxTexturePool::Release(perLightingSettingsData.reflectionProbeTexture);
+						perLightingSettingsData.reflectionProbeTexture = nullptr;
+					}
+					if (perLightingSettingsData.reflectionProbeTexture == nullptr)
+					{
+						TextureProperties textureProperties = {};
+						textureProperties.width = 128;
+						textureProperties.height = 128;
+						textureProperties.depth = static_cast<uint32_t>(reflectionProbes.size());
+						textureProperties.antiAliasing = 1;
+						textureProperties.mipCount = 8;
+						textureProperties.format = TextureFormat::BC6H_UFloat;
+						textureProperties.dimension = TextureDimension::TextureCubeArray;
+						textureProperties.wrapMode = WrapMode::Clamp;
+						textureProperties.filterMode = FilterMode::Bilinear;
+
+						perLightingSettingsData.reflectionProbeTexture = GfxTexturePool::Get(textureProperties);
+					}
+					// TODO use SetData and do not load probe data to GPU
+					for (size_t i = 0; i < reflectionProbes.size(); ++i)
+					{
+						TextureCube* reflectionProbe = reflectionProbes[i].Get();
+						if (reflectionProbe != nullptr)
 						{
-							GfxDevice::Copy(sourceTexture, perLightingSettingsData.reflectionProbeTexture, j, static_cast<uint32_t>(i * 6 + j), k);
+							GfxTexture* sourceTexture = reflectionProbe->Get();
+							uint32_t mipLevels = sourceTexture->GetMipLevels();
+							for (uint32_t j = 0; j < 6; ++j)
+							{
+								for (uint32_t k = 0; k < mipLevels; ++k)
+								{
+									GfxDevice::Copy(sourceTexture, perLightingSettingsData.reflectionProbeTexture, j, static_cast<uint32_t>(i * 6 + j), k);
+								}
+							}
 						}
 					}
+					perLightingSettingsData.reflectionProbesUpdateCount = reflectionProbesUpdateCount;
 				}
-				perLightingSettingsData.reflectionProbesUpdateCount = reflectionProbesUpdateCount;
 			}
 			GfxDevice::SetGlobalTexture(s_ReflectionTextureId, perLightingSettingsData.reflectionProbeTexture == nullptr ? DefaultTextures::GetBlackCubeArray()->Get() : perLightingSettingsData.reflectionProbeTexture);
 		}

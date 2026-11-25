@@ -66,11 +66,12 @@ Shader
 			return normalize(direction[face]);
 		}
 
-		#define SAMPLE_COUNT 4096u
+		#define SAMPLE_COUNT 1024u
 
 		cbuffer _ReflectionGenerationData
 		{
-			float4 _Roughness;
+			float _MipLevel;
+			float3 _Dummy;
 		};
 
 		float4 GenerateReflectionFragment(Varyings input) : SV_TARGET
@@ -79,19 +80,20 @@ Shader
 			float3 R = N;
 			float3 V = R;
 
+			float roughness = GetProbeRoughnessFromMipLevel(_MipLevel);
 			float totalWeight = 0.0;
 			float3 prefilteredColor = 0;
 
-			for (uint i = 0u; i < SAMPLE_COUNT; ++i)
+			for (uint i = 0; i < SAMPLE_COUNT; i++)
 			{
 				float2 Xi = Hammersley(i, SAMPLE_COUNT);
-				float4 H = ImportanceSampleGGX(Xi, N, _Roughness.r);
+				float4 H = ImportanceSampleGGX(Xi, N, roughness);
 				float3 L = normalize(2.0 * dot(V, H.xyz) * H.xyz - V);
 
 				float NdotL = max(dot(N, L), 0.0);
-				if (NdotL > 0.0)
+				if (NdotL > 0)
 				{
-					prefilteredColor += SAMPLE_TEXTURECUBE(_SourceTexture, _SourceTexture_Sampler, L).rgb * NdotL;
+					prefilteredColor += SAMPLE_TEXTURECUBE_LOD(_SourceTexture, _SourceTexture_Sampler, L, 0).rgb * NdotL;
 					totalWeight += NdotL;
 				}
 			}

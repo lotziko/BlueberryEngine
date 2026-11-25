@@ -9,6 +9,6 @@ namespace Blueberry
 	class SceneHelper
 	{
 	public:
-		static Ray GUIPointToWorldRay(const Vector2& position, Camera* camera);
+		static Ray ScreenPointToWorldRay(const Vector2& position, Camera* camera);
 	};
 }

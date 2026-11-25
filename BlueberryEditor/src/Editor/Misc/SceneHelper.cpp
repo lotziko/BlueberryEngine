@@ -4,7 +4,7 @@
 
 namespace Blueberry
 {
-	Ray SceneHelper::GUIPointToWorldRay(const Vector2& position, Camera* camera)
+	Ray SceneHelper::ScreenPointToWorldRay(const Vector2& position, Camera* camera)
 	{
 		// Based on https://github.com/Unity-Technologies/UnityCsReference/blob/master/Editor/Mono/Handles/HandleUtility.cs
 		Vector2 viewportSize = camera->GetPixelSize();
@@ -15,7 +15,7 @@ namespace Blueberry
 		Vector3 rayOriginWorldSpace;
 		Vector3 rayDirectionWorldSpace;
 
-		Vector3 rayPointClipSpace = Vector3(position.x / viewportSize.x * 2 - 1, position.y / viewportSize.y * 2 - 1, 0.95f);
+		Vector3 rayPointClipSpace = Vector3(position.x / viewportSize.x * 2 - 1, 1 - position.y / viewportSize.y * 2, 0.95f);	// Top-down to bottom-up
 		Vector3 rayPointCameraSpace = Math::MultiplyPoint(clipToCamera, rayPointClipSpace);
 
 		if (camera->IsOrthographic())

@@ -22,6 +22,7 @@ namespace Blueberry
 		List<std::pair<size_t, uint32_t>> m_ConstantBufferSlots = {};
 		List<std::pair<size_t, uint32_t>> m_TextureSRVSlots = {};
 		List<std::pair<size_t, uint32_t>> m_TextureUAVSlots = {};
+		List<std::pair<size_t, uint32_t>> m_BufferSRVSlots = {};
 		List<std::pair<size_t, uint32_t>> m_SamplerSlots = {};
 
 		List<std::pair<size_t, std::pair<uint8_t, uint8_t>>> m_BindlessTextureSRVSamplerSlots = {};

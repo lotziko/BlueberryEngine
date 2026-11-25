@@ -22,6 +22,11 @@ namespace Blueberry
 
 	void GfxTopLevelAccelerationStructureDX12::Add(GfxBottomLevelAccelerationStructure* accelerationStructure, const List<ObjectPtr<Material>>& materials, const Matrix& transform)
 	{
+		if (accelerationStructure == nullptr)
+		{
+			return;
+		}
+
 		auto dxAccelerationStructure = static_cast<GfxBottomLevelAccelerationStructureDX12*>(accelerationStructure);
 
 		UINT materialOffset = static_cast<UINT>(m_InstanceDatas.size());

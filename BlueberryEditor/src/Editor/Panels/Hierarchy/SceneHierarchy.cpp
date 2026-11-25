@@ -293,7 +293,7 @@ namespace Blueberry
 				ids.push_back(entity->GetComponentAt(i)->GetObjectId());
 			}
 			ImGui::SetDragDropPayload("OBJECT_ID", ids.data(), ids.size() * sizeof(ObjectId));
-			ImGui::Text("%s", entity->GetName().c_str());
+			ImGui::Text(entity->GetName().c_str());
 			ImGui::EndDragDropSource();
 		}
 
@@ -384,7 +384,7 @@ namespace Blueberry
 					color.w *= 0.5f;
 				}
 				ImGui::PushStyleColor(ImGuiCol_Text, color);
-				ImGui::Text("%s", entity->GetName().c_str());
+				ImGui::Text(entity->GetName().c_str());
 				ImGui::PopStyleColor();
 			}
 		}

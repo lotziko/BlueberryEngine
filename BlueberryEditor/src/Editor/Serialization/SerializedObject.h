@@ -86,6 +86,7 @@ namespace Blueberry
 
 		Object* GetTarget();
 		const List<Object*>& GetTargets();
+		size_t GetTargetCount() const;
 
 		bool IsValid();
 		void Update();

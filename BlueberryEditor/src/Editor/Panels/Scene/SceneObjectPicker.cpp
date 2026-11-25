@@ -1,8 +1,5 @@
 #include "SceneObjectPicker.h"
 
-#include "Editor\Selection.h"
-#include "Editor\Inspector\ObjectEditor.h"
-#include "Editor\Inspector\ObjectEditorDB.h"
 #include "Blueberry\Core\Screen.h"
 #include "Blueberry\Assets\AssetLoader.h"
 #include "Blueberry\Scene\Components\Transform.h"
@@ -16,14 +13,28 @@
 #include "Blueberry\Graphics\GfxBuffer.h"
 #include "Blueberry\Graphics\GfxTexture.h"
 #include "Blueberry\Scene\Scene.h"
-#include "Blueberry\Graphics\Buffers\PerCameraDataConstantBuffer.h"
 #include "Blueberry\Graphics\Buffers\PerDrawDataConstantBuffer.h"
 #include "Blueberry\Graphics\StandardMeshes.h"
 #include "Blueberry\Graphics\Skinning.h"
+
+#include "Editor\Selection.h"
+#include "Editor\Inspector\ObjectEditor.h"
+#include "Editor\Inspector\ObjectEditorDB.h"
+#include "Editor\Misc\SceneHelper.h"
+
 #include "PerObjectDataConstantBuffer.h"
 
 namespace Blueberry
 {
+	GfxTexture* SceneObjectPicker::s_SceneRenderTarget = nullptr;
+	GfxTexture* SceneObjectPicker::s_SceneDepthStencil = nullptr;
+	Material* SceneObjectPicker::s_SpriteObjectPickerMaterial = nullptr;
+	Material* SceneObjectPicker::s_MeshObjectPickerMaterial = nullptr;
+	Material* SceneObjectPicker::s_IconObjectPickerMaterial = nullptr;
+	Material* SceneObjectPicker::s_ObjectPickerOutlineMaterial = nullptr;
+
+	static size_t s_PickingTextureId = TO_HASH("_PickingTexture");
+
 	Color ConvertIndexToColor(uint16_t index)
 	{
 		Color result;
@@ -32,33 +43,33 @@ namespace Blueberry
 		return result;
 	}
 
-	SceneObjectPicker::SceneObjectPicker()
+	void SceneObjectPicker::Initialize()
 	{
 		TextureProperties textureProperties = {};
 		textureProperties.width = Screen::GetWidth();
 		textureProperties.height = Screen::GetHeight();
 		textureProperties.format = TextureFormat::R8G8B8A8_UNorm;
 		textureProperties.usageFlags = TextureUsageFlags::RenderTarget | TextureUsageFlags::CPUReadable;
-		GfxDevice::CreateTexture(textureProperties, m_SceneRenderTarget);
+		GfxDevice::CreateTexture(textureProperties, s_SceneRenderTarget);
 
 		textureProperties.usageFlags = TextureUsageFlags::RenderTarget;
 		textureProperties.format = TextureFormat::D24_UNorm;
-		GfxDevice::CreateTexture(textureProperties, m_SceneDepthStencil);
+		GfxDevice::CreateTexture(textureProperties, s_SceneDepthStencil);
 
-		m_SpriteObjectPickerMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/SpriteObjectPicker.shader")));
-		m_MeshObjectPickerMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/MeshObjectPicker.shader")));
-		m_IconObjectPickerMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/IconObjectPicker.shader")));
-		m_ObjectPickerOutlineMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/ObjectPickerOutline.shader")));
+		s_SpriteObjectPickerMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/SpriteObjectPicker.shader")));
+		s_MeshObjectPickerMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/MeshObjectPicker.shader")));
+		s_IconObjectPickerMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/IconObjectPicker.shader")));
+		s_ObjectPickerOutlineMaterial = Material::Create(static_cast<Shader*>(AssetLoader::Load("assets/shaders/ObjectPickerOutline.shader")));
 	}
 
-	SceneObjectPicker::~SceneObjectPicker()
+	void SceneObjectPicker::Shutdown()
 	{
-		delete m_SceneRenderTarget;
-		delete m_SceneDepthStencil;
-		Object::Destroy(m_SpriteObjectPickerMaterial);
-		Object::Destroy(m_MeshObjectPickerMaterial);
-		Object::Destroy(m_IconObjectPickerMaterial);
-		Object::Destroy(m_ObjectPickerOutlineMaterial);
+		delete s_SceneRenderTarget;
+		delete s_SceneDepthStencil;
+		Object::Destroy(s_SpriteObjectPickerMaterial);
+		Object::Destroy(s_MeshObjectPickerMaterial);
+		Object::Destroy(s_IconObjectPickerMaterial);
+		Object::Destroy(s_ObjectPickerOutlineMaterial);
 	}
 
 	Object* SceneObjectPicker::Pick(Scene* scene, Camera* camera, int positionX, int positionY)
@@ -68,14 +79,14 @@ namespace Blueberry
 			return nullptr;
 		}
 
-		PerCameraDataConstantBuffer::BindData(camera, m_SceneRenderTarget);
-
+		Ray ray = SceneHelper::ScreenPointToWorldRay(Vector2(static_cast<float>(positionX), static_cast<float>(positionY)), camera);
+		float distance = 0;
 		Rectangle area = Rectangle(std::min(std::max(positionX, 0), static_cast<int>(camera->GetPixelSize().x)), std::min(std::max(positionY, 0), static_cast<int>(camera->GetPixelSize().y)), 1, 1);
 		unsigned char pixel[4];
 		Dictionary<int, ObjectId> validObjects;
 		uint32_t index = 1;
 
-		GfxDevice::SetRenderTarget(m_SceneRenderTarget, m_SceneDepthStencil);
+		GfxDevice::SetRenderTarget(s_SceneRenderTarget, s_SceneDepthStencil);
 		GfxDevice::SetViewport(0, 0, static_cast<int>(camera->GetPixelSize().x), static_cast<int>(camera->GetPixelSize().y));
 		GfxDevice::ClearColor(Color(0.0f, 0.0f, 0.0f, 0.0f));
 		GfxDevice::ClearDepth(1.0f);
@@ -85,9 +96,9 @@ namespace Blueberry
 			Entity* entity = spriteRenderer->GetEntity();
 			if (entity->IsActiveInHierarchy())
 			{
-				if (spriteRenderer->GetTexture() != nullptr)
+				if (spriteRenderer->GetTexture() != nullptr && ray.Intersects(spriteRenderer->GetBounds(), distance))
 				{
-					Renderer2D::Draw(spriteRenderer->GetLocalToWorldMatrix(), spriteRenderer->GetTexture(), m_SpriteObjectPickerMaterial, ConvertIndexToColor(index), spriteRenderer->GetSortingOrder());
+					Renderer2D::Draw(spriteRenderer->GetLocalToWorldMatrix(), spriteRenderer->GetTexture(), s_SpriteObjectPickerMaterial, ConvertIndexToColor(index), spriteRenderer->GetSortingOrder());
 					validObjects[index] = entity->GetObjectId();
 					++index;
 				}
@@ -99,11 +110,11 @@ namespace Blueberry
 		{
 			Entity* entity = meshRenderer->GetEntity();
 			Mesh* mesh = meshRenderer->GetMesh();
-			if (mesh != nullptr)
+			if (mesh != nullptr && ray.Intersects(meshRenderer->GetBounds(), distance))
 			{
 				PerDrawDataConstantBuffer::BindData(meshRenderer->GetLocalToWorldMatrix());
 				PerObjectDataConstantBuffer::BindData(ConvertIndexToColor(index));
-				GfxDevice::Draw(GfxDrawingOperation(mesh, m_MeshObjectPickerMaterial));
+				GfxDevice::Draw(GfxDrawingOperation(mesh, s_MeshObjectPickerMaterial));
 				validObjects[index] = entity->GetObjectId();
 				++index;
 			}
@@ -113,11 +124,11 @@ namespace Blueberry
 		{
 			Entity* entity = skinnedMeshRenderer->GetEntity();
 			Mesh* mesh = skinnedMeshRenderer->GetMesh();
-			if (mesh != nullptr)
+			if (mesh != nullptr && ray.Intersects(skinnedMeshRenderer->GetBounds(), distance))
 			{
 				PerDrawDataConstantBuffer::BindData(skinnedMeshRenderer->GetLocalToWorldMatrix());
 				PerObjectDataConstantBuffer::BindData(ConvertIndexToColor(index));
-				GfxDevice::Draw(GfxDrawingOperation(mesh, Skinning::GetVertexBuffer(skinnedMeshRenderer), m_MeshObjectPickerMaterial));
+				GfxDevice::Draw(GfxDrawingOperation(mesh, Skinning::GetVertexBuffer(skinnedMeshRenderer), s_MeshObjectPickerMaterial));
 				validObjects[index] = entity->GetObjectId();
 				++index;
 			}
@@ -136,12 +147,12 @@ namespace Blueberry
 					Texture* icon;
 					if ((icon = editor->GetIcon(component)) != nullptr)
 					{
-						m_IconObjectPickerMaterial->SetTexture("_BaseMap", icon);
+						s_IconObjectPickerMaterial->SetTexture("_BaseMap", icon);
 						Vector3 position = entity->GetTransform()->GetPosition();
 						Matrix modelMatrix = Matrix::CreateScale(-0.75f, 0.75f, 0.75f) * Matrix::CreateBillboard(position, position + cameraDirection, Vector3(0, 1, 0));
 						PerDrawDataConstantBuffer::BindData(modelMatrix);
 						PerObjectDataConstantBuffer::BindData(ConvertIndexToColor(index));
-						GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_IconObjectPickerMaterial));
+						GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_IconObjectPickerMaterial));
 						validObjects[index] = entity->GetObjectId();
 						++index;
 						break;
@@ -151,7 +162,7 @@ namespace Blueberry
 		}
 
 		GfxDevice::SetRenderTarget(nullptr);
-		m_SceneRenderTarget->GetData(pixel, area);
+		s_SceneRenderTarget->GetData(pixel, area);
 
 		if (pixel[0] > 0 || pixel[1] > 0)
 		{
@@ -164,10 +175,8 @@ namespace Blueberry
 		}
 	}
 
-	void SceneObjectPicker::DrawOutline(Scene* scene, Camera* camera, GfxTexture* renderTarget)
+	void SceneObjectPicker::DrawOutline(Scene* scene, Camera* camera, GfxTexture* colorRenderTarget, GfxTexture* depthStencilRenderTarget, const Vector2Int& viewport)	// TODO handle OnSelectionChanged
 	{
-		static size_t pickingTextureId = TO_HASH("_PickingTexture");
-
 		if (scene == nullptr)
 		{
 			return;
@@ -209,10 +218,8 @@ namespace Blueberry
 			}
 		}
 
-		PerCameraDataConstantBuffer::BindData(camera, renderTarget);
-
-		GfxDevice::SetRenderTarget(m_SceneRenderTarget);
-		GfxDevice::SetViewport(0, 0, static_cast<int>(camera->GetPixelSize().x), static_cast<int>(camera->GetPixelSize().y));
+		GfxDevice::SetRenderTarget(s_SceneRenderTarget);
+		GfxDevice::SetViewport(0, 0, viewport.x, viewport.y);
 		GfxDevice::ClearColor(Color(0.0f, 0.0f, 0.0f, 0.0f));
 		GfxDevice::ClearDepth(1.0f);
 
@@ -224,7 +231,7 @@ namespace Blueberry
 			{
 				if (spriteRenderer->GetTexture() != nullptr)
 				{
-					Renderer2D::Draw(spriteRenderer->GetLocalToWorldMatrix(), spriteRenderer->GetTexture(), m_SpriteObjectPickerMaterial, ConvertIndexToColor(65535), spriteRenderer->GetSortingOrder());
+					Renderer2D::Draw(spriteRenderer->GetLocalToWorldMatrix(), spriteRenderer->GetTexture(), s_SpriteObjectPickerMaterial, ConvertIndexToColor(65535), spriteRenderer->GetSortingOrder());
 				}
 			}
 		}
@@ -240,7 +247,7 @@ namespace Blueberry
 				{
 					PerDrawDataConstantBuffer::BindData(meshRenderer->GetLocalToWorldMatrix());
 					PerObjectDataConstantBuffer::BindData(ConvertIndexToColor(10000));
-					GfxDevice::Draw(GfxDrawingOperation(mesh, m_MeshObjectPickerMaterial));
+					GfxDevice::Draw(GfxDrawingOperation(mesh, s_MeshObjectPickerMaterial));
 				}
 			}
 		}
@@ -257,16 +264,16 @@ namespace Blueberry
 					{
 						PerDrawDataConstantBuffer::BindData(skinnedMeshRenderer->GetLocalToWorldMatrix());
 						PerObjectDataConstantBuffer::BindData(ConvertIndexToColor(10000));
-						GfxDevice::Draw(GfxDrawingOperation(mesh, Skinning::GetVertexBuffer(skinnedMeshRenderer), m_MeshObjectPickerMaterial));
+						GfxDevice::Draw(GfxDrawingOperation(mesh, Skinning::GetVertexBuffer(skinnedMeshRenderer), s_MeshObjectPickerMaterial));
 					}
 				}
 			}
 		}
 		
-		GfxDevice::SetRenderTarget(renderTarget);
-		GfxDevice::SetViewport(0, 0, m_SceneRenderTarget->GetWidth(), m_SceneRenderTarget->GetHeight());
-		GfxDevice::SetGlobalTexture(pickingTextureId, m_SceneRenderTarget);
-		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), m_ObjectPickerOutlineMaterial));
-		GfxDevice::SetRenderTarget(nullptr);
+		GfxDevice::SetRenderTarget(colorRenderTarget, depthStencilRenderTarget);
+		GfxDevice::SetViewport(0, 0, s_SceneRenderTarget->GetWidth(), s_SceneRenderTarget->GetHeight());
+		GfxDevice::SetGlobalTexture(s_PickingTextureId, s_SceneRenderTarget);
+		GfxDevice::Draw(GfxDrawingOperation(StandardMeshes::GetFullscreen(), s_ObjectPickerOutlineMaterial));
+		GfxDevice::SetViewport(0, 0, viewport.x, viewport.y);
 	}
 }

@@ -9,12 +9,6 @@ namespace Blueberry
 	GfxBuffer* PerDrawDataConstantBuffer::s_ConstantBuffer = nullptr;
 	GfxBuffer* PerDrawDataConstantBuffer::s_ConstantBufferInstanced = nullptr;
 
-	struct PerDrawData
-	{
-		Matrix modelMatrix;
-		Vector4 index;
-	};
-
 	void PerDrawDataConstantBuffer::BindData(const Matrix& localToWorldMatrix)
 	{
 		static size_t perDrawDataId = TO_HASH("PerDrawData");
@@ -40,7 +34,7 @@ namespace Blueberry
 		GfxDevice::SetGlobalBuffer(perDrawDataId, s_ConstantBuffer);
 	}
 
-	void PerDrawDataConstantBuffer::BindDataInstanced(std::pair<Matrix, Vector4>* data, const uint32_t& count)
+	void PerDrawDataConstantBuffer::BindDataInstanced(PerDrawData* data, size_t count)
 	{
 		static size_t perDrawDataId = TO_HASH("_PerDrawData");
 

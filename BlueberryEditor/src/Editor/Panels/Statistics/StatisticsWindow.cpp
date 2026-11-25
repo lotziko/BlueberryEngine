@@ -5,8 +5,6 @@
 #include "Editor\Menu\EditorMenuManager.h"
 #include "Editor\Misc\ImGuiHelper.h"
 
-#include "Blueberry\Graphics\Concrete\GraphicsSettings.h"
-
 #include <imgui\imgui.h>
 
 namespace Blueberry
@@ -26,18 +24,14 @@ namespace Blueberry
 
 	void StatisticsWindow::OnDrawUI()
 	{
-		bool screenReflections = GraphicsSettings::GetScreenReflections();
-		if (ImGui::Checkbox("Screen Reflections", &screenReflections))	// TODO move to Debug window
-		{
-			GraphicsSettings::SetScreenReflections(screenReflections);
-		}
-
 		ImGui::EditorStyle& style = ImGui::GetEditorStyle();
 		ImGui::BeginPaddedArea(ImVec2(10, 5), ImVec2(10, 5));
+
 		for (auto& pair : Profiler::GetData())
 		{
 			ImGui::Text("%s %f milliseconds", pair.first, pair.second);
 		}
+
 		ImGui::EndPaddedArea();
 	}
 }

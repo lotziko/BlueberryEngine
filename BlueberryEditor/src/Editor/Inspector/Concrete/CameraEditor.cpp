@@ -80,7 +80,6 @@ namespace Blueberry
 			frustum.CreateFromMatrix(frustum, projection);
 			frustum.Transform(frustum, view);
 
-			Gizmos::SetMatrix(Matrix::Identity);
 			Gizmos::DrawFrustum(frustum);
 		}
 	}

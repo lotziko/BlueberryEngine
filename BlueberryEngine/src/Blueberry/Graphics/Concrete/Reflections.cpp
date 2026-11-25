@@ -46,15 +46,23 @@ namespace Blueberry
 	struct ReflectionsLightData
 	{
 		float hasMainLight;
-		Vector3 dummy;
 		Vector3 mainLightColor;
 		float mainLightHasShadow;
 		Vector3 mainLightDirection;
 		float hasProbeVolume;
-		Vector4 probeVolumeMin;
-		Vector4 probeVolumeSize;
-		Vector4 probeVolumeInvSize;
-		Vector4 probeVolumeCellSize;
+		Vector3Uint lightsCount;
+	};
+
+	struct ProbeVolumeBufferData
+	{
+		Vector3 positionMinWS;
+		Vector3 positionMinVS;
+		Vector3 positionMaxWS;
+		Vector3 positionMaxVS;
+		Vector3 invSizeWS;
+		Vector3Uint topLevelSize;
+		uint32_t probeAtlasOffset;
+		float dummy;
 	};
 
 	struct ReblurSharedData
@@ -361,22 +369,64 @@ namespace Blueberry
 			}
 		}
 
+		// TODO update it only once and refresh when volumes move
+		// For now use probes from PerCameraLightDataConstantBuffer
 		for (ProbeVolume* probeVolume : scene->GetComponents<ProbeVolume>())
 		{
-			lightData.hasProbeVolume = 1;
-			// TODO OBB
-			Vector3 center = probeVolume->GetTransform()->GetPosition();
-			Vector3 size = probeVolume->GetSize();
-			Vector3 extents = size / 2;
-			Vector3Int density = probeVolume->GetDensity();
-			Vector3Int volumeSize = density + Vector3Int(1, 1, 1);
-			Vector3 cellSize = Vector3(size.x / density.x, size.y / density.y, size.z / density.z);
-			lightData.probeVolumeMin = Vector4(center - extents - cellSize * 0.5f);
-			lightData.probeVolumeSize = Vector4(static_cast<float>(volumeSize.x), static_cast<float>(volumeSize.y), static_cast<float>(volumeSize.z), 0.0f);
-			lightData.probeVolumeInvSize = Vector4(1.0f / (size.x + cellSize.x), 1.0f / (size.y + cellSize.y), 1.0f / (size.z + cellSize.z), 0);
-			lightData.probeVolumeCellSize = Vector4(cellSize);
-			break;
+			if (probeVolume->GetIndex() != UINT32_MAX)
+			{
+				lightData.hasProbeVolume = true;
+				++lightData.lightsCount.z;
+			}
 		}
+		//for (ProbeVolume* probeVolume : scene->GetComponents<ProbeVolume>())
+		//{
+		//	lightData.hasProbeVolume = 1;
+
+		//	if (probeVolume->GetIndex() != UINT32_MAX)
+		//	{
+		//		Vector3 positionWS = probeVolume->GetTransform()->GetPosition();
+		//		Vector3 size = probeVolume->GetSize();
+		//		Vector3Int volumeSize = probeVolume->GetDensity();
+
+		//		Vector3 positionMinVS = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
+		//		Vector3 positionMaxVS = Vector3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+		//		Vector3 halfSize = size * 0.5f;
+
+		//		for (uint32_t j = 0; j < 8; ++j)
+		//		{
+		//			Vector3 cornerWS = positionWS + Vector3((j & 1 ? 1 : -1) * halfSize.x, (j & 2 ? 1 : -1) * halfSize.y, (j & 4 ? 1 : -1) * halfSize.z);
+		//			Vector3 cornerVS = Vector3::Transform(cornerWS, view);
+		//			positionMinVS = Vector3::Min(positionMinVS, cornerVS);
+		//			positionMaxVS = Vector3::Max(positionMaxVS, cornerVS);
+		//		}
+
+		//		ProbeVolumeBufferData data;
+		//		data.positionMinWS = positionWS - halfSize;
+		//		data.positionMinVS = positionMinVS;
+		//		data.positionMaxWS = positionWS + halfSize;
+		//		data.positionMaxVS = positionMaxVS;
+		//		data.invSizeWS = Vector3(1.0f / size.x, 1.0f / size.y, 1.0f / size.z);
+		//		data.topLevelSize = Vector3Uint(static_cast<uint32_t>(volumeSize.x), static_cast<uint32_t>(volumeSize.y), static_cast<uint32_t>(volumeSize.z));
+		//		data.probeAtlasOffset = probeVolume->m_ProbeAtlasOffset;
+
+		//		s_ProbeVolumeDatas[probeVolumeOffset] = data;
+		//		++probeVolumeOffset;
+		//		++lightData.lightsCount.z;
+		//	}
+		//	//// TODO OBB
+		//	//Vector3 center = probeVolume->GetTransform()->GetPosition();
+		//	//Vector3 size = probeVolume->GetSize();
+		//	//Vector3 extents = size / 2;
+		//	//Vector3Int density = probeVolume->GetDensity();
+		//	//Vector3Int volumeSize = density + Vector3Int(1, 1, 1);
+		//	//Vector3 cellSize = Vector3(size.x / density.x, size.y / density.y, size.z / density.z);
+		//	//lightData.probeVolumeMin = Vector4(center - extents - cellSize * 0.5f);
+		//	//lightData.probeVolumeSize = Vector4(static_cast<float>(volumeSize.x), static_cast<float>(volumeSize.y), static_cast<float>(volumeSize.z), 0.0f);
+		//	//lightData.probeVolumeInvSize = Vector4(1.0f / (size.x + cellSize.x), 1.0f / (size.y + cellSize.y), 1.0f / (size.z + cellSize.z), 0);
+		//	//lightData.probeVolumeCellSize = Vector4(cellSize);
+		//	//break;
+		//}
 		s_ReflectionsLightBuffer->SetData(reinterpret_cast<char*>(&lightData), sizeof(ReflectionsLightData));
 
 		ReblurSharedData reblurData = {};

@@ -82,6 +82,9 @@ namespace Blueberry
 					case D3D11_SIT_UAV_RWTYPED:
 						m_TextureUAVSlots.push_back(std::make_pair(TO_HASH(String(inputBindDesc.Name)), inputBindDesc.BindPoint));
 						break;
+					case D3D_SIT_STRUCTURED:
+						m_BufferSRVSlots.push_back(std::make_pair(TO_HASH(String(inputBindDesc.Name)), inputBindDesc.BindPoint));
+						break;
 					case D3D_SIT_SAMPLER:
 					{
 						String samplerName = String(inputBindDesc.Name);
@@ -181,6 +184,9 @@ namespace Blueberry
 							}
 						}
 						break;
+						case D3D_SIT_STRUCTURED:
+							m_BufferSRVSlots.push_back(std::make_pair(TO_HASH(String(inputBindDesc.Name)), inputBindDesc.BindPoint));
+							break;
 						case D3D_SIT_SAMPLER:
 						{
 							String samplerName = String(inputBindDesc.Name);

@@ -1,16 +1,15 @@
 #pragma once
 
-#include "Blueberry\Math\Math.h"
-#include "SceneObjectPicker.h"
+#include "Blueberry\Core\Base.h"
 
 #include "Editor\Panels\EditorWindow.h"
 
 namespace Blueberry
 {
 	class GfxTexture;
+	class Material;
 	class Camera;
 	class ObjectUpdateEventArgs;
-	class Texture;
 
 	class SceneArea : public EditorWindow
 	{
@@ -58,7 +57,6 @@ namespace Blueberry
 
 		void SetupCamera(float width, float height);
 		void DrawControls();
-		void DrawGizmos(const Rectangle& viewport);
 		void DrawScene(float width, float height);
 		void LookAt(const Vector3& point, const Quaternion& direction, float newSize, bool isOrthographic);
 
@@ -72,7 +70,6 @@ namespace Blueberry
 		GfxTexture* m_ColorCopyRenderTarget = nullptr;
 		Material* m_GridMaterial;
 		Camera* m_Camera;
-		SceneObjectPicker* m_ObjectPicker = nullptr;
 
 		Vector3 m_Position = Vector3(0, 0, 0);
 		Quaternion m_Rotation = Quaternion::Identity;
@@ -89,9 +86,5 @@ namespace Blueberry
 		static uint32_t s_SceneRedrawRequestsCount;
 
 		Viewport m_Viewport;
-
-		Texture* m_ScenePositionIconSmall;
-		Texture* m_SceneRotationIconSmall;
-		Texture* m_SceneScaleIconSmall;
 	};
 }

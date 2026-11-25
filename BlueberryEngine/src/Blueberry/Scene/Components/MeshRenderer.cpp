@@ -131,6 +131,11 @@ namespace Blueberry
 		return GetTransform()->GetLocalToWorldMatrix();
 	}
 
+	const Matrix& MeshRenderer::GetWorldToLocalMatrix()
+	{
+		return GetTransform()->GetWorldToLocalMatrix();
+	}
+
 	const bool& MeshRenderer::IsBakeable()
 	{
 		return m_IsBakeable;
@@ -150,8 +155,9 @@ namespace Blueberry
 	{
 		if (m_Mesh.IsValid())
 		{
+			ObjectId meshId = m_Mesh->GetObjectId();
 			uint32_t meshUpdateCount = m_Mesh->GetUpdateCount();
-			if (m_MeshUpdateCount != meshUpdateCount)
+			if (m_MeshId != meshId || m_MeshUpdateCount != meshUpdateCount)
 			{
 				m_AccelerationStructure = nullptr;
 			}
@@ -166,6 +172,7 @@ namespace Blueberry
 					}
 				}
 				m_AccelerationStructure = GfxBottomLevelAccelerationStructure::Get(m_Mesh.Get(), opaqueMask);
+				m_MeshId = meshId;
 				m_MeshUpdateCount = meshUpdateCount;
 			}
 		}

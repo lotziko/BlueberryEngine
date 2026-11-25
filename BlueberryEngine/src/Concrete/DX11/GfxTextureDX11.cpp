@@ -418,6 +418,7 @@ namespace Blueberry
 
 	void GfxTextureDX11::SetData(void* data, size_t size)
 	{
+		char* ptr = reinterpret_cast<char*>(data);
 		uint32_t bitsPerPixel = DxgiHelper::GetBitsPerPixel(m_DxgiFormat);
 		if (DxgiHelper::IsCompressed(m_DxgiFormat))
 		{
@@ -431,7 +432,8 @@ namespace Blueberry
 					UINT subresource = D3D11CalcSubresource(j, i, m_MipLevels);
 					UINT rowPitch = std::max(1u, (width + 3) / 4) * blockSize;
 					UINT slicePitch = m_Depth > 0 ? (std::max(1u, (height + 3) / 4) * rowPitch) : 0;
-					m_DeviceContext->UpdateSubresource(m_Resource.Get(), subresource, nullptr, data, rowPitch, slicePitch);
+					m_DeviceContext->UpdateSubresource(m_Resource.Get(), subresource, nullptr, ptr, rowPitch, slicePitch);
+					ptr += (slicePitch ? slicePitch : rowPitch * height);
 					width /= 2;
 					height /= 2;
 				}
@@ -448,7 +450,8 @@ namespace Blueberry
 					UINT subresource = D3D11CalcSubresource(j, i, m_MipLevels);
 					UINT rowPitch = width * bitsPerPixel / 8;
 					UINT slicePitch = m_Depth > 0 ? (height * rowPitch) : 0;
-					m_DeviceContext->UpdateSubresource(m_Resource.Get(), subresource, nullptr, data, rowPitch, slicePitch);
+					m_DeviceContext->UpdateSubresource(m_Resource.Get(), subresource, nullptr, ptr, rowPitch, slicePitch);
+					ptr += (slicePitch ? slicePitch : rowPitch * height);
 					width /= 2;
 					height /= 2;
 				}

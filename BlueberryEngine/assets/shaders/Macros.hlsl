@@ -26,6 +26,7 @@ static uint _RenderInstanceId;
 #endif
 
 #define OBJECT_TO_WORLD_MATRIX				_PerDrawData[_RenderInstanceId].modelMatrix
+#define WORLD_TO_OBJECT_MATRIX				_PerDrawData[_RenderInstanceId].normalMatrix
 #define LIGHTMAP_CHART_OFFSET				_PerDrawData[_RenderInstanceId].lightmapChartOffset
 #define VIEW_MATRIX							_ViewMatrix[_ViewIndex]
 #define PROJECTION_MATRIX					_ProjectionMatrix[_ViewIndex]

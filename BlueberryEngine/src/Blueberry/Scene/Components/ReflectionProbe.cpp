@@ -43,9 +43,19 @@ namespace Blueberry
 		return m_Radius;
 	}
 
+	void ReflectionProbe::SetRadius(float radius)
+	{
+		m_Radius = radius;
+	}
+
 	const Vector3& ReflectionProbe::GetSize() const
 	{
 		return m_Size;
+	}
+
+	void ReflectionProbe::SetSize(const Vector3& size)
+	{
+		m_Size = size;
 	}
 
 	float ReflectionProbe::GetFade() const
